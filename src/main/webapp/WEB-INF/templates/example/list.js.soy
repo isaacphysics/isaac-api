@@ -1,0 +1,15 @@
+{namespace example}
+
+/**
+ * Main frontend
+ *
+ * @param items
+ */
+{template .list}
+Loaded from api:
+<ul>
+{foreach $a in $items}
+<li>{$a}</li> 
+{/foreach}
+</ul>
+{/template}
