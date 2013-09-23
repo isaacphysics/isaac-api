@@ -17,7 +17,7 @@ public class ApplicationRegister extends Application {
 	@Override
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> result = new HashSet<Class<?>>();
-		result.add(ExampleController.class);
+		result.add(RutherfordController.class);
 		return result;
 	}
 

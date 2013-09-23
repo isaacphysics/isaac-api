@@ -1,0 +1,198 @@
+html, body
+{
+	height: 100%;
+}
+
+body
+{
+	background-attachment:fixed;
+}
+
+.wrapper
+{
+	min-height: 100%;
+	margin: 0 auto -28px;
+}
+
+#header{
+	background-color: #404040;
+	text-align: center;
+	padding: 20px 10px 12px 10px;
+}
+
+#header h2
+{
+	color: #a8b400;
+}
+
+.top-bar-section ul li > a
+{
+	color: #a8b400;
+}
+
+.top-bar-section ul li.active > a
+{
+	color: #a8b400;
+}
+
+#content
+{
+	background: rgba(255,255,255,0.7);
+}
+
+.footer-area
+{
+	text-align:right;
+	}
+
+#footer
+{
+	padding-top: 5px;
+	background-color: #404040;
+	color: #a8b400;
+	padding-bottom: 5px;
+}
+.footer-area, .push
+{
+	height: 38px;
+}
+
+
+
+.left-question-column
+{
+	text-align: left;
+}
+
+.concept-column
+{
+	text-align: center;
+}
+
+.right-question-column
+{
+	text-align: right;
+}
+
+.related-link
+{
+	outline: 3px dashed grey;
+}
+
+span.question-wrong
+{
+	margin-left: 20px;
+	display:none;
+	font-size: inherit;
+}
+
+span.question-explanation
+{
+	display:block;
+	background: green;
+	font-size: inherit;
+}
+
+/* Gears */
+
+.gear {
+	position: absolute;
+}
+
+.gear a {
+	width: 60%;
+	position: relative;
+	display: block;
+	margin: 0 auto;
+	text-align: center;
+	text-decoration: none;
+	color: #a8b400;
+}
+
+#real-world-problems {
+	height: 143px;
+	width: 144px;
+	left: 408px;
+	top: 20px;
+}
+
+#real-world-problems a {
+	top: 54px;
+}
+
+#learn {
+	height: 230px;
+	width: 229px;
+	left: 230px;
+	top: 78px;
+}
+
+#learn a {
+	top: 100px;
+}
+
+#why-physics {
+	height: 230px;
+	width: 229px;
+	right: 228px;
+	top: 64px;
+}
+
+#why-physics a {
+	top: 112px;
+}
+
+#register {
+	height: 310px;
+	width: 308px;
+	left: 340px;
+	top: 228px;	
+}
+
+#register a {
+	top: 140px;
+}
+
+#discuss {
+	height: 143px;
+	width: 144px;
+	left: 111px;
+	top: 255px;	
+}
+
+#discuss a {
+	top: 62px;
+}
+
+#applying-to-university {
+	height: 143px;
+	width: 144px;
+	right: 128px;
+	top: 200px;		
+}
+
+#applying-to-university a {
+	top: 54px;
+}
+
+#challenge-of-the-week {
+	height: 241px;
+	width: 240px;
+	left: 146px;
+	top: 358px;	
+}
+
+#challenge-of-the-week a {
+	top: 105px;
+}
+
+#about {
+	height: 191px;
+	width: 194px;
+	right: 190px;
+	top: 408px;	
+}
+
+#about a {
+	top: 85px;
+}
