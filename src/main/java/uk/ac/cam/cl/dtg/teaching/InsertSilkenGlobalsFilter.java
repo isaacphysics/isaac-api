@@ -26,7 +26,7 @@ public class InsertSilkenGlobalsFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		req.setAttribute("globals",
 				ImmutableMap.of("contextPath", req.getContextPath(),
-						        "proxyPath", req.getContextPath()  //,"/research/dtg/rutherford"
+						        "proxyPath", "/research/dtg/rutherford"
 						        ));
 		chain.doFilter(request, response);
 	}
