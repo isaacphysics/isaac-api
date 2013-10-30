@@ -1,63 +1,102 @@
 
-function loadContent(uri) {
+function loadContent(uri, addToHistory) {
+	
 	
 	// Catch URLS that can be rendered without a round-trip to the server
+	var renderedLocally = true;
 	switch(uri)
 	{
 	case "/get-started":
 		soy.renderElement($("#content")[0], rutherford.pages.get_started);
-		return;
+		break;
 	case "/learn":
 		soy.renderElement($("#content")[0], rutherford.pages.learn);
-		return;
+		break;
 	case "/discussion":
 		soy.renderElement($("#content")[0], rutherford.pages.discussion);
-		return;
+		break;
 	case "/about-us":
 		soy.renderElement($("#content")[0], rutherford.pages.about_us);
-		return;
+		break;
 	case "/real-world":
 		soy.renderElement($("#content")[0], rutherford.pages.real_world);
-		return;
+		break;
 	case "/applying":
 		soy.renderElement($("#content")[0], rutherford.pages.applying);
-		return;
+		break;
 	case "/challenge":
 		soy.renderElement($("#content")[0], rutherford.pages.challenge);
-		return;
+		break;
 	case "/why-physics":
 		soy.renderElement($("#content")[0], rutherford.pages.why_physics);
-		return;
+		break;
+	default:
+		renderedLocally = false;
+		break;
 	}
 	
-	
-	// We need to request the page from the server. Do that.
-	
-	var template = null;
-	
-	if (uri.indexOf("/topics/") == 0)
-		template = rutherford.pages.topic;
-	
-	if (uri.indexOf("/questions/") == 0)
-		template = rutherford.pages.question;
-	
-	if (uri.indexOf("/concepts/") == 0)
-		template = rutherford.pages.concept;
-	
-	if (template)
+	if (!renderedLocally)
 	{
-		$.get(contextPath + "/api" + uri, function(json) {
-			soy.renderElement($("#content")[0], template, json);
-			MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
-		});
-	}
-	else
-	{
-		console.error("Template not found for uri", uri);
+		// We need to request the page from the server. Do that.
+		
+		var template = null;
+		
+		if (uri.indexOf("/topics/") == 0)
+			template = rutherford.pages.topic;
+		
+		if (uri.indexOf("/questions/") == 0)
+			template = rutherford.pages.question;
+		
+		if (uri.indexOf("/concepts/") == 0)
+			template = rutherford.pages.concept;
+		
+		
+		if (template)
+		{
+			// This is a URI we know about
+			$.get(contextPath + "/api" + uri, function(json) {
+				soy.renderElement($("#content")[0], template, json);
+				MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+			});
+		}
+		else
+		{
+			// Not sure that this URI has a matching template on the server. Die.
+			console.error("Template not found for uri", uri);
+		}
 	}
 	
+	//var oldLoc = window.location.href;
+	//urlHistory.push(oldLoc);
+	
+	console.log("Leaving", window.location.href);
+	console.log("Arriving at", uri);
+	if (addToHistory)
+	{
+		history.pushState(uri,null,uri);	
+	}
 	
 }
+
+//var urlHistory = [document.location.href];
+
+function popHistoryState(e)
+{
+	console.log("Popping state. Moved to", document.location.href, "State:", e.state);
+	//loadContent(document.location.href);
+	if (e.state !== null)
+	{
+		if (e.state == "<HOME>") //ARRRRGH. This is horrible. Don't do this.
+		{
+			document.location.reload();
+		}
+		else
+		{
+			loadContent(e.state, false);
+		}
+	}
+}
+
 
 function click_a(e)
 {
@@ -67,10 +106,12 @@ function click_a(e)
 	{
 		console.log("Loading URI", uri);
 		
-		loadContent(uri);
+		loadContent(uri, true);
 		
 		// Hack to close dropdowns:
 		$(".hover").removeClass("hover");		
+		
+		return false;
 	}
 }
 
@@ -147,4 +188,8 @@ $(function()
 	{
 		$("video").remove();
 	});
+	
+	window.addEventListener("popstate", popHistoryState);
+
+	history.replaceState("<HOME>", null, contextPath + "/soy/rutherford.main"); // Ugh.
 });
