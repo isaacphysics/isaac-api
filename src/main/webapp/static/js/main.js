@@ -192,4 +192,8 @@ $(function()
 	window.addEventListener("popstate", popHistoryState);
 
 	history.replaceState("<HOME>", null, contextPath + "/soy/rutherford.main"); // Ugh.
+	
+	MathJax.Hub.Config({
+		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+		});
 });

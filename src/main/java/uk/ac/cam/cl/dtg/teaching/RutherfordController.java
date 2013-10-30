@@ -83,6 +83,11 @@ public class RutherfordController {
 					.put("video", "/videos/c_of_e")
 					.put("type", "physics")
 					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
+			.put("friction", ImmutableMap.builder()
+					.put("title", "Friction")
+					.put("video", "/videos/c_of_e")
+					.put("type", "physics")
+					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
 			.put("potential_energy", ImmutableMap.builder()
 					.put("title", "Potential Energy")
 					.put("video", "/videos/c_of_e")
@@ -117,6 +122,7 @@ public class RutherfordController {
 										"c_of_e",
 										"collisions",
 										"momentum",
+										"friction",
 										"potential_energy",
 										"work",
 										"eq_motion"))));
@@ -181,7 +187,7 @@ public class RutherfordController {
 		String cContent = "";
 		try
 		{
-			cContent = renderer.render("rutherford.concepts." + concept, null);
+			cContent = renderer.render("rutherford.concepts." + ((ImmutableMap)concepts.get(concept)).get("type") + "." + concept, null);
 		} catch (SoyTofuException e)
 		{
 			cContent = "<i>No content available.</i>";
