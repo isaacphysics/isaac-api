@@ -6,8 +6,8 @@ function loadContent(uri, addToHistory) {
 	var renderedLocally = true;
 	switch(uri)
 	{
-	case "/get-started":
-		soy.renderElement($("#content")[0], rutherford.pages.get_started);
+	case "/register":
+		soy.renderElement($("#content")[0], rutherford.pages.register);
 		break;
 	case "/learn":
 		soy.renderElement($("#content")[0], rutherford.pages.learn);
