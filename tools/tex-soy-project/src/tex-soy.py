@@ -10,11 +10,11 @@ REPLACE_WORD = '{replace_me}'
 TITLE_INDICATOR = '%\maketitle'
 TITLE_MARKUP = 'h3'
 SECTION_MARKUP = 'h4'
+NAMESPACE_PATH_START = 'rutherford'
 
-def usage():
-   print 'tex-soy.py -h | -i <inputfile> -o <outputfile>'
+# Utility Functions
 
-# whitelist for initial pass
+# whitelist for initial pass (anything not specified of the format \\ABC{x} will be removed including x)
 def generate_whitelist():
    whitelist = Set()
    whitelist.add(r'\\section{')
@@ -44,7 +44,7 @@ def generate_whitelist():
    logging.debug("Whitelist: " + str(whitelist))
    return whitelist
 
-# generates remove list
+# generates black list (these items will be removed after the whitelist has been executed)
 def generate_blacklist():
    blacklist = Set()
    blacklist.add(r'\begin{document}')
@@ -52,14 +52,18 @@ def generate_blacklist():
    blacklist.add(r'\center ')
    blacklist.add(r'\centering')
    blacklist.add(r'\Large')
+   blacklist.add(r'\large')
+   blacklist.add(r'\huge')   
    blacklist.add(r'\bf')
    blacklist.add(r'\break')
    blacklist.add(r'\it')
    blacklist.add(r'\textit')
+   blacklist.add(r'\textbf')
    blacklist.add(r'\noindent')
    logging.debug("Blacklist: " + str(blacklist))
    return blacklist
 
+# This is where simple find replace strings are added
 def generate_conversion_dictionary():
    tex_to_html_opening_tag_dictionary = dict()
    tex_to_html_opening_tag_dictionary[r'\\section']=r'<'+SECTION_MARKUP+'>'+REPLACE_WORD+'</'+SECTION_MARKUP+'>'
@@ -68,6 +72,45 @@ def generate_conversion_dictionary():
    tex_to_html_opening_tag_dictionary[r'\\end{tabular}']=r'</table>'
    tex_to_html_opening_tag_dictionary[r'\\includegraphics\[.*?\]*']=r'<img src="'+REPLACE_WORD+'"/>\n'
    return tex_to_html_opening_tag_dictionary
+
+# Simple utility function to look for soy commands added by this script so that they are not interfered with.
+def __contains_soy_command(line):
+    if("{template" not in line and '{namespace' not in line and '{/template' not in line):
+        return False
+    else:
+        return True
+
+# Utility method to give you the soy command to declare a namespace based on a file provided
+def __get_namespace(file_of_interest):
+   # TODO generate namespace based on tex file location
+   # TODO refactor so that it isn't in such a random place
+   path = os.path.abspath(file_of_interest)
+   path = path.split('/') # assumes runs in linux at the moment
+   namespace = ''
+   tmpindex = 0
+   for value in path:
+        if(value == NAMESPACE_PATH_START):
+            namespace = '{namespace ' + value
+        elif(namespace != '' and tmpindex != len(path)-1): #need to ignore last element as its the actual filename
+            namespace = namespace + '.' + value
+
+        tmpindex+=1
+
+   namespace = namespace + '}'
+
+   return namespace
+
+# Utility method to give you the soy command to declare a template based on a file provided
+def __get_template(file_of_interest):
+   filename = os.path.splitext(os.path.basename(file_of_interest))[0]
+   
+   template_comment= "/**\n\
+ * " + filename + "\n\
+ */"
+
+   template = template_comment +'\n' +'{template .' + filename+'}'
+
+   return template
 
 # Removes any strings matching the blacklist
 def remove_blacklist(string, blacklist):
@@ -79,6 +122,7 @@ def remove_blacklist(string, blacklist):
    else:
       return ''
 
+# Generates a regex based on the whitelist provided - regex returned is just an exclude based on the replaced token REPLACE_WORD
 def get_reg_ex_from_whitelist(whitelist):
    regex_exclude_template = '(?!'+REPLACE_WORD+')'
    regex = ''
@@ -88,12 +132,30 @@ def get_reg_ex_from_whitelist(whitelist):
 
    return regex
 
+# Returns string array/list of the file contents
+def read_source_file_from_disk(inputfile):
+   fin = open(inputfile)
+   logging.info("Reading File: " + inputfile)
 
- # Initial strip of latex content
- # Ignores everything up until the \begin(document) command
- # uses regex to remove all commands of the form xyz{abc} with optional [] between z and { - this will exclude whitelist sequences
- # removes lines starting with % or any new lines before the first non-newline character
- # outputs results as output file
+   file_string = list()
+   for line in fin:
+      file_string.append(line)
+   
+   fin.close()
+   return file_string
+
+# Help / usage output
+def usage():
+   print 'tex-soy.py -h | -i <inputfile> -o <outputfile>'
+
+
+# Step 1 - Strip random LaTeX commands
+# Initial strip of latex content
+# Ignores everything up until the \begin(document) command
+# uses regex to remove all commands of the form xyz{abc} with optional [] between z and { - this will exclude whitelist sequences
+# removes lines starting with % or any new lines before the first non-newline character
+# outputs results as temporary output file.
+# TODO this will need to be changed to do it all in memory rather than file io - it was used for debugging originally
 def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklist):
    fin = inputstring
 
@@ -131,9 +193,11 @@ def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklis
    fout.close()
    return outputfile+'_tmp'
 
-
+# Step 2 - Build structure of the document and add Soy specific commands
+# This is the quick dirty conversion to a structured html fragment using string replacement techniques
+# This function arranges for the soy commands to be included, attempts to detect when paragraphs should be started
+# attempts to guess where sections start and finish as well as tables and equations.
 def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
-   
    # apply special one-off rules to temp_input_list
    
    # Rule 1 \%maketitle will always appear immediately before the title
@@ -163,34 +227,18 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
             logging.error("Unable to find main title. The title indicator " + TITLE_INDICATOR + " should preceed the title of the form \\x{}.")
       tmpindex+=1
 
-   # TODO generate namespace based on tex file location
-   # TODO refactor so that it isn't in such a random place
-   path = os.path.abspath(inputfile)
-   path = path.split('/') #assumes runs in linux
-   namespace = ''
-   tmpindex = 0
-   for value in path:
-        if(value == 'rutherford'):
-            namespace = '{namespace ' + value
-        elif(namespace != '' and tmpindex != len(path)-1):
-            namespace = namespace + '.' + value
+   # generate namespace based on tex file location
+   namespace = __get_namespace(inputfile)
 
-        tmpindex+=1
+   template=__get_template(inputfile)
 
-   namespace = namespace + '}'
-   
-   #add template info and required comment
-   template_comment= "/**\n\
- * " + path[len(path)-1].split('.')[0] + "\n\
- */"
+   soyheader = namespace + '\n\n' + template
 
-   namespace = namespace + '\n\n' + template_comment +'\n' +'{template .' + path[len(path)-1].split('.')[0]+'}'
+   temp_input_list.insert(0, soyheader)
 
-   temp_input_list.insert(0, namespace)
-
-   #convert known types to markup equivalent (e.g. section to h2's, double space to p tags, figures to image placeholders)
    fin = temp_input_list
 
+   # TODO strip out file writer stuff and just do it in memory until the end
    fout = open(outputfile, "w+")
    logging.info("Creating/Updating File: " + outputfile)
 
@@ -208,6 +256,7 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
             m = re.search(r'\{(.*?)\}', line) # easy braces extraction
             line = conversion_dictionary[key].replace(REPLACE_WORD,m.group(1))
 
+      # multi-line equations
       if('\\begin{equation' in line):
         line = line.replace('\\begin{equation*}', '$$')
         line = line.replace('\\begin{equation}', '$$')
@@ -250,11 +299,12 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
              line = '</p>\n{/template}'
              inparagraph = False
 
-          #remove all random curly braces that may be in the text
-          #line = line.replace('{','')
-          #line = line.replace('}','')
+          #remove all random curly braces that may be in the text unless they are part of equations
+          if(not inequation and '$' not in line and not __contains_soy_command(line)):
+              line = line.replace('{','')
+              line = line.replace('}','')
       
-      if("{template" not in line and '{namespace' not in line and '{/template' not in line):
+      if(not __contains_soy_command(line)):
         # deal with lb / rb soy issue
           line = line.replace('{', '~lb~')
           line = line.replace('}', '~rb~')
@@ -266,18 +316,6 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
       tmpindex+=1
 
    fout.close()
-
-# Returns string of the file contents
-def read_source_file_from_disk(inputfile):
-   fin = open(inputfile)
-   logging.info("Reading File: " + inputfile)
-
-   file_string = list()
-   for line in fin:
-      file_string.append(line)
-   
-   fin.close()
-   return file_string
 
 # main method
 def main(argv):
