@@ -8,10 +8,9 @@ from sets import Set
 #constants
 REPLACE_WORD = '{replace_me}'
 TITLE_INDICATOR = '%\maketitle'
-TITLE_MARKUP = 'h1'
-SECTION_MARKUP = 'h2'
+TITLE_MARKUP = 'h3'
+SECTION_MARKUP = 'h4'
 
-print TITLE_INDICATOR
 def usage():
    print 'tex-soy.py -h | -i <inputfile> -o <outputfile>'
 
@@ -37,8 +36,8 @@ def generate_whitelist():
    whitelist.add(r"\\begin{document}")
    whitelist.add(r"\\end{document}")
    whitelist.add(r"\\vtr{")
-   # whitelist.add(r"\\begin{tabular}")
-   # whitelist.add(r"\\end{tabular}")
+   whitelist.add(r"\\begin{tabular}")
+   whitelist.add(r"\\end{tabular}")
    #whitelist.add(r"\\label{")
    whitelist.add(r"\\textrm{")
    whitelist.add(r"\\\\")
@@ -57,6 +56,7 @@ def generate_blacklist():
    blacklist.add(r'\break')
    blacklist.add(r'\it')
    blacklist.add(r'\textit')
+   blacklist.add(r'\noindent')
    logging.debug("Blacklist: " + str(blacklist))
    return blacklist
 
@@ -105,13 +105,11 @@ def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklis
 
    for line in fin:
       if(line.startswith(r'\begin{document}')):
-         doc_start_found = True
+         doc_start_found = True         
 
       # handle comments that are in the middle of lines
       if('%' in line and not '\%' in line and not TITLE_INDICATOR in line):
          line = line.split('%')[0]
-
-      #
 
       if(index >= 0 and doc_start_found):
          check_for_commands_with_braces = re.compile(get_reg_ex_from_whitelist(whitelist) + r'((\\[A-Za-z]*(\[.*?\])*\{(.)*\})*)')
@@ -121,12 +119,10 @@ def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklis
          match2 = re.search(check_for_single_commands, line)
                
          if(match1 or match2):
-            logging.debug("Original line: " + line)
             line = re.sub(check_for_commands_with_braces,"",line) #removes x{ unless in whitelist
             line = re.sub(check_for_single_commands,"",line) #removes \nl and \center etc
             
             line = remove_blacklist(line, blacklist)
-            logging.debug("Updated: " + line)
 
          if((not line.startswith('%')) or line.startswith(TITLE_INDICATOR) or (index == 0 and not line.startswith('\r') or line.startswith('\n'))):
             fout.write(line)
@@ -136,7 +132,7 @@ def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklis
    return outputfile+'_tmp'
 
 
-def convert_to_soy(temp_input_list,outputfile,conversion_dictionary):
+def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
    
    # apply special one-off rules to temp_input_list
    
@@ -168,6 +164,29 @@ def convert_to_soy(temp_input_list,outputfile,conversion_dictionary):
       tmpindex+=1
 
    # TODO generate namespace based on tex file location
+   # TODO refactor so that it isn't in such a random place
+   path = os.path.abspath(inputfile)
+   path = path.split('/') #assumes runs in linux
+   namespace = ''
+   tmpindex = 0
+   for value in path:
+        if(value == 'rutherford'):
+            namespace = '{namespace ' + value
+        elif(namespace != '' and tmpindex != len(path)-1):
+            namespace = namespace + '.' + value
+
+        tmpindex+=1
+
+   namespace = namespace + '}'
+   
+   #add template info and required comment
+   template_comment= "/**\n\
+ * " + path[len(path)-1].split('.')[0] + "\n\
+ */"
+
+   namespace = namespace + '\n\n' + template_comment +'\n' +'{template .' + path[len(path)-1].split('.')[0]+'}'
+
+   temp_input_list.insert(0, namespace)
 
    #convert known types to markup equivalent (e.g. section to h2's, double space to p tags, figures to image placeholders)
    fin = temp_input_list
@@ -177,6 +196,8 @@ def convert_to_soy(temp_input_list,outputfile,conversion_dictionary):
 
    tmpindex = 0
    inparagraph = False
+   inequation = False
+   intable = False
 
    for line in fin:
 
@@ -186,30 +207,59 @@ def convert_to_soy(temp_input_list,outputfile,conversion_dictionary):
          if(match):
             m = re.search(r'\{(.*?)\}', line) # easy braces extraction
             line = conversion_dictionary[key].replace(REPLACE_WORD,m.group(1))
+
+      if('\\begin{equation' in line):
+        line = line.replace('\\begin{equation*}', '$$')
+        line = line.replace('\\begin{equation}', '$$')
+        inequation = True
       
+      if('\\end{equation' in line):         
+        line = line.replace('\\end{equation*}', '$$')
+        line = line.replace('\\end{equation}', '$$')
+        inequation = False
+
+      if('<table>' in line):         
+        intable = True
+
+      if('</table>' in line):         
+        intable = False
+
       # paragraphs
-      if(SECTION_MARKUP in line or TITLE_MARKUP in line):
-         if(inparagraph):
-            line = '</p>\n' + line
+      if(not inequation and not intable):
 
-         #create new paragraph 
-         fin.insert(tmpindex+1,'\n<p>')
-         inparagraph = True
+          if(SECTION_MARKUP in line or TITLE_MARKUP in line):
+             if(inparagraph):
+                line = '</p>\n' + line
 
-      if('<p' in line):
-         inparagraph = True
+             #create new paragraph 
+             fin.insert(tmpindex+1,'\n<p>')
+             inparagraph = True
 
-      if(line.endswith('</p>')):
-         inparagraph = False
+          if('<p' in line):
+             inparagraph = True
 
-      if('\\\\' in line and inparagraph):
-         line = line.replace('\\\\', '</p>' + '\n' + '<p>') 
-      elif('\\\\' in line):
-         inparagraph = True
-         line = line.replace('\\\\', '\n' + '<p>') 
-      elif('\end{document}' in line):
-         line = '</p>'
-         inparagraph = False
+          if(line.endswith('</p>')):
+             inparagraph = False
+
+          if('\\\\' in line and inparagraph):
+             line = line.replace('\\\\', '</p>' + '\n' + '<p>') 
+          elif('\\\\' in line):
+             inparagraph = True
+             line = line.replace('\\\\', '\n' + '<p>') 
+          elif('\end{document}' in line):
+             line = '</p>\n{/template}'
+             inparagraph = False
+
+          #remove all random curly braces that may be in the text
+          #line = line.replace('{','')
+          #line = line.replace('}','')
+      
+      if("{template" not in line and '{namespace' not in line and '{/template' not in line):
+        # deal with lb / rb soy issue
+          line = line.replace('{', '~lb~')
+          line = line.replace('}', '~rb~')
+          line = line.replace('~lb~','{lb}')
+          line = line.replace('~rb~','{rb}')
 
       fout.write(line)
       fin[tmpindex] = line #write value to list
@@ -264,7 +314,7 @@ def main(argv):
    logging.info("Removing temporary file from disk " + tmpoutput)
    os.remove(tmpoutput)
    
-   finaloutput = convert_to_soy(tmpoutput_source_list,outputfile,generate_conversion_dictionary())
+   finaloutput = convert_to_soy(inputfile, tmpoutput_source_list,outputfile,generate_conversion_dictionary())
    
 if __name__ == "__main__":
    main(sys.argv[1:])
