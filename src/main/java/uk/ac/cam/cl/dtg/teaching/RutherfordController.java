@@ -38,6 +38,27 @@ public class RutherfordController {
 					"title", "Example Question",
 					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
 					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
+					"problemVideos", ImmutableList.of("/videos/problemOne")))
+			
+			.put("particle_circle", ImmutableMap.of(
+					"title", "Particle Circle",
+					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
+					"problemVideos", ImmutableList.of("/videos/problemOne")))
+			.put("satellite", ImmutableMap.of(
+					"title", "Satellite",
+					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
+					"problemVideos", ImmutableList.of("/videos/problemOne")))
+			.put("minute_hand", ImmutableMap.of(
+					"title", "Minute Hand",
+					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
+					"problemVideos", ImmutableList.of("/videos/problemOne")))
+			.put("mass_on_elastic", ImmutableMap.of(
+					"title", "Mass on Elastic",
+					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
 					"problemVideos", ImmutableList.of("/videos/problemOne"))).build();
 					                                 
 	
@@ -58,6 +79,13 @@ public class RutherfordController {
 					.put("questions", ImmutableList.of("vector_vs_scalar")).build())
 			.put("calculus", ImmutableMap.builder()
 					.put("title", "Calculus")
+					.put("video", "/videos/vectors")
+					.put("type", "maths")
+					.put("relatedPhysicsConcepts", ImmutableList.of("newton_1", "newton_3"))
+					.put("relatedMathsConcepts", ImmutableList.of("vectors"))
+					.put("questions", ImmutableList.of()).build())
+			.put("algebra_na", ImmutableMap.builder()
+					.put("title", "Algebra")
 					.put("video", "/videos/vectors")
 					.put("type", "maths")
 					.put("relatedPhysicsConcepts", ImmutableList.of("newton_1", "newton_3"))
@@ -107,7 +135,7 @@ public class RutherfordController {
 	
 	private ImmutableMap topicQuestions = ImmutableMap.of(
 			"dynamics", ImmutableMap.of(
-					"as-1", ImmutableMap.of(
+					"level-2", ImmutableMap.of(
 								"questions", ImmutableList.of(
 										"a_toboggan", 
 										"vector_vs_scalar",
@@ -125,7 +153,17 @@ public class RutherfordController {
 										"friction",
 										"potential_energy",
 										"work",
-										"eq_motion"))));
+										"eq_motion"))),
+			"circular-motion", ImmutableMap.of(
+					"level-4", ImmutableMap.of(
+							"questions", ImmutableList.of(
+									"particle_circle",
+									"satellite",
+									"minute_hand",
+									"mass_on_elastic"),
+							"concepts", ImmutableList.of(
+									"algebra_na",
+									"c_of_m"))));
 	
 
 	
@@ -149,7 +187,7 @@ public class RutherfordController {
 	@Path("topics/{topic}")
 	@Produces("application/json")
 	public Map<String,?> getTopic(@PathParam("topic") String topic){
-		String level = "as-1";
+		String level = "level-1";
 		return getTopicWithLevel(topic, level);
 	}
 	
