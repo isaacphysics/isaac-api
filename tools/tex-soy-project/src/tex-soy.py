@@ -13,6 +13,7 @@ SECTION_MARKUP = 'h4'
 SUB_SECTION_MARKUP = 'h5'
 NEW_PARAGRAPH_INDICATOR = 'NEW_PARAGRAPH'
 NAMESPACE_PATH_START = 'rutherford'
+IMAGE_PATH = '{$ij.proxyPath}/static/figures/'
 
 # Utility Functions
 
@@ -78,12 +79,12 @@ def generate_conversion_dictionary():
    tex_to_html_opening_tag_dictionary[r'\\caption']=r'<span class="caption">'+REPLACE_WORD+'</span>'
    tex_to_html_opening_tag_dictionary[r'\\begin{tabular}']=r'<table>'
    tex_to_html_opening_tag_dictionary[r'\\end{tabular}']=r'</table>'
-   tex_to_html_opening_tag_dictionary[r'\\includegraphics\[.*?\]*']=r'<img src="'+REPLACE_WORD+'"/>\n'
+   tex_to_html_opening_tag_dictionary[r'\\includegraphics\[.*?\]*']=r'<img src="'+IMAGE_PATH+REPLACE_WORD+'"/>\n'
    return tex_to_html_opening_tag_dictionary
 
 # Simple utility function to look for soy commands added by this script so that they are not interfered with.
 def __contains_soy_command(line):
-    if("{template" not in line and '{namespace' not in line and '{/template' not in line):
+    if("{template" not in line and '{namespace' not in line and '{/template' not in line and '{$ij.proxyPath' not in line):
         return False
     else:
         return True
@@ -346,6 +347,10 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
           line = line.replace('}', '~rb~')
           line = line.replace('~lb~','{lb}') #final replace
           line = line.replace('~rb~','{rb}')
+
+      #deal with image file extensions
+      if('.eps' in line):
+        line = line.replace('.eps', '.svg')
 
       temp_input_list[tmpindex] = line #write value to list for consistency
       tmpindex+=1
