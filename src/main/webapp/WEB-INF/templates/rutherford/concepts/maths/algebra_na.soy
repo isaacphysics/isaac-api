@@ -1,0 +1,146 @@
+{namespace rutherford.concepts.maths}
+
+/**
+ * algebra_na
+ */
+{template .algebra_na}
+
+ Basic algebraic manipulation, including rearranging an equation to change the subject of that equation.
+<p>
+{lb} For example:{rb} rearrange the equation $\displaystyle \frac{lb}1{rb} {lb}f{rb} = \frac{lb}1{rb} {lb}u{rb} +\frac{lb}1{rb} {lb}v{rb}$ to find an expression for $u$ in terms of $f$ and $v$.
+So, starting with the equation
+$$
+  \frac{lb}1{rb} {lb}f{rb} = \frac{lb}1{rb} {lb}u{rb} +\frac{lb}1{rb} {lb}v{rb}
+$$
+obtain an expression for $1 / u$ by subtracting $1 / v$ from both sides i.e.
+$$
+  \frac{lb}1{rb} {lb}f{rb} - \frac{lb}1{rb} {lb}v{rb} = \frac{lb}1{rb} {lb}u{rb} +\frac{lb}1{rb} {lb}v{rb} - \frac{lb}1{rb} {lb}v{rb} = \frac{lb}1{rb} {lb}u{rb}.
+$$
+Before taking the reciprocal to find $u$ it is easiest to put the left-hand side over a common factor $fv$ i.e.
+$$
+  \frac{lb}v - f{rb} {lb}fv{rb} = \frac{lb}1{rb} {lb}u{rb}.
+$$
+Now take the reciprocal of both sides to give
+$$
+  u = \frac{lb}fv{rb} {lb}v-f{rb}.
+$$
+
+{lb} For example:{rb} rearrange the equation $F = m v^2 / r$ to find an expression for $v$ in terms of $F$, $m$ and $r$.</p>
+<p>
+So, starting with the equation
+$$
+  F = \frac {lb}m v^2{rb} {lb}r{rb},
+$$
+to obtain an expression for $v^2$ multiply both sides by $r$ and divide by $m$ 
+$$
+  \frac {lb}r{rb} {lb}m{rb} F = \frac {lb}r{rb} {lb}m{rb} \frac {lb}m v^2{rb} {lb}r{rb}.
+$$
+Thus, cancelling $m$ and $r$ on the top and bottom of the expression on the right-hand side gives
+$$
+  \frac {lb}r{rb} {lb}m{rb} F = v^2,
+$$
+and taking the square root of both sides we obtain
+$$ 
+  v = .
+$$
+
+ Substituting numerical values into algebraic equations and using appropriate units.
+
+{lb} For example:{rb} find the kinetic energy of a particle with a mass of 0.61 kg and a speed of 13 m s$^{lb}-1{rb}$.</p>
+<p>
+The kinetic energy of a particle is given by $E_k = \frac {lb}1{rb} {lb}2{rb} m v^2$, thus
+$$
+  E_k =  \frac{lb}1{rb} {lb}2{rb} (0.61 \ {lb}\rm kg{rb}) (13 \ {lb}\rm m \ s{rb}^{lb}-1{rb})^2 = 52 \ {lb}\rm J{rb}
+$$ 
+since energy has the units of joules.</p>
+<p>
+{lb} For example:{rb} find the force (in newtons) on a particle of mass 11 g if it has an acceleration of 3.2 cm s$^{lb}-2{rb}$.</p>
+<p>
+The force on an accelerating particle is given by $F = m a$.  To calculate the force in newtons the units of $m$ are kg and of $a$ are m s$^{lb}-2{rb}$; thus in this case, to convert from g to kg multiply by $10^{lb}-3{rb}$ and from cm s$^{lb}-2{rb}$ to m s$^{lb}-2{rb}$ multiply by $10^{lb}-2{rb}$, so
+$$
+  F = (11 \times 10^{lb}-3{rb} \ {lb}\rm kg{rb}) (3.2 \times 10^{lb}-2{rb} \ {lb}\rm m \ s{rb}^{lb}-2{rb}) = 3.5 \times 10^{lb}-4{rb} \ {lb}\rm N{rb}
+$$
+  
+ {rb}
+
+
+{lb}In this problem, rearrange the physical formulae and relationships given to obtain an expression for the variable/variables indicated (for example in (i) $a = F / m$).</p>
+<p>
+(i) $F = ma$, subject: $a$.</p>
+<p>
+(ii) $W = mg$, subject: $m$. </p>
+<p>
+(iii) $\displaystyle \rho = \frac {lb}m{rb} {lb}V{rb}$, subject: $m$.</p>
+<p> 
+(iv) $V = IR$, subjects: $I$, $R$.</p>
+<p>
+(v) $\displaystyle F = \frac {lb}\Delta p{rb} {lb}\Delta t{rb}$, subject: $\Delta p$.</p>
+<p>
+(vi) $pV = nRT$, subject: $n$.</p>
+<p>
+(vii) $\displaystyle F = \frac {lb}Q q {rb} {lb}4 \pi \epsilon_0 r^2{rb}$, subject: $q$.</p>
+<p>
+(viii) $\displaystyle F = \frac {lb}m v^2{rb} {lb}r{rb}$, subject: $r$.</p>
+<p>
+(ix) $\displaystyle \frac {lb}1{rb}{lb}R{rb} = \frac {lb}1{rb}{lb}R_1{rb} + \frac {lb}1{rb}{lb}R_2{rb}$, subjects: $R$ (not $1 / R$), $R_1$ (not $1 / R_1$).</p>
+<p>
+(x) $E_k = \frac{lb}1{rb} {lb}2{rb} m v^2$, subject: $v$.</p>
+<p>
+(xi) $\displaystyle P = \frac{lb}V^2{rb} {lb}R{rb}$, subject $V$.</p>
+<p>
+(xii) $\displaystyle F = - \frac {lb}G M m{rb} {lb}r^2{rb}$, subject: $r$.</p>
+<p>  
+(xiii) $F = B I L \sin \theta$, subject: $\theta$.  
+{rb}
+{lb}{rb}
+{lb}
+{rb}
+
+
+
+
+
+
+{lb}In this problem, rearrange the equations given to obtain an expression for one variable in terms of the others.</p>
+<p> 
+(i) $v = u + at$, $t$ (in terms of $u$, $v$ and $a$) and $a$ (in terms of $u$, $v$ and $t$). </p>
+<p> 
+(ii) $s = \frac {lb}1{rb} {lb}2{rb} (u + v) t$, $u$ (in terms of $s$, $v$ and $a$) and $t$ (in terms of $s$, $u$ and $v$).</p>
+<p>  
+(iii) $s = ut + \frac {lb}1{rb} {lb}2{rb}a t^2$, $u$ (in terms of $s$, $a$ and $t$), $a$ (in terms of $s$, $u$ and $t$), $t$ (in terms of $s$ and $a$ assuming $u = 0$) and $t$ (in terms of $s$, $u$ and $a$).</p>
+<p>  
+(iv) $v^2 = u^2 + 2 a s$, $u$ (in terms of $s$, $v$ and $a$), $a$ (in terms of $u$, $v$ and $s$) and $s$ (in terms of $u$, $v$ and $a$).  
+
+Starting with the equations $v = u + at$ and $s = ut + \frac {lb}1{rb} {lb}2{rb}a t^2$ eliminate $t$ to show that  $v^2 = u^2 + 2 a s$.
+
+Starting with the equations $v = u + at$ and $s = \frac {lb}1{rb} {lb}2{rb} (u + v) t$ show that $s = ut + \frac {lb}1{rb} {lb}2{rb}a t^2$. 
+{rb}
+{lb}{rb}
+{lb}
+{rb}
+
+
+
+{lb}In this problem, calculate the values of the specified quantity using appropriate units.</p>
+<p> 
+(i) Using $v = u + at$, find $v$ if $u = 3.0 \, \mbox{lb}m s{rb}^{lb}-1{rb}$, $a = 9.8 \, \mbox{lb}m s{rb}^{lb}-2{rb}$ and $t = 2.0 \, \mbox{lb}s{rb}$. </p>
+<p> 
+(ii)  Using $v = u + at$, find $v$ if $u = 3.0 \, \mbox{lb}cm s{rb}^{lb}-1{rb}$, $a = 9.8 \, \mbox{lb}m s{rb}^{lb}-2{rb}$ and $t = 2.0 \, \mbox{lb}ms{rb}$.</p>
+<p>  
+
+{rb}
+{lb}{rb}
+{lb}
+{rb}
+
+
+
+
+
+
+
+
+
+
+</p>
+{/template}
