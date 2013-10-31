@@ -76,25 +76,29 @@ to finish them within a week since they were posted.</p>
  */
 {template .learn}
 <h2>Learn</h2>
-<p>In the future, this page will have links to many topics and levels. For now, there is just one option:</p>
+<p>In the future, this page will have links to many topics and levels. For now, there are just a few options:</p>
 <div class="row" style="text-align: center;">
 	<div class="small-4 columns">
-		<a class="button round" href="#" data-content-uri="/topics/dynamics/as-1">Dynamics AS-1</a>
+		<ul class="button-group round">
+			<li><a class="button" href="#" data-content-uri="/topics/dynamics/level-2">Dynamics L2</a></li>
+			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/topics/dynamics/dynamics_level-2.pdf">PDF</a></li>
+		</ul>
 	</div>
-	/*
+	
 	<div class="small-4 columns">
-		<a class="button round" href="#" data-content-uri="/topics/dynamics/as-2">Dynamics AS-2</a>
+		<ul class="button-group round">
+			<li><a class="button" href="#" data-content-uri="/topics/dynamics/level-3">Dynamics L3</a></li>
+			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/topics/dynamics/dynamics_level-3.pdf">PDF</a></li>
+		</ul>
 	</div>
 	<div class="small-4 columns">
-		<a class="button round" href="#" data-content-uri="/topics/circular-motion/as-1">Circular Motion AS-1</a>
-	</div>*/
+		<ul class="button-group round">
+			<li><a class="button" href="#" data-content-uri="/topics/circular-motion/level-4">Circular Motion L4</a></li>
+			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/topics/circular-motion/circular-motion_level-4.pdf">PDF</a></li>
+		</ul>
+	</div>
 </div>
-/*
-<h3>Dynamics</h3>
-<ul>
-	<li><a href="#" data-content-uri="/topics/dynamics/as-1">AS-1</a></li>
-	<li><a href="#" data-content-uri="/topics/dynamics/as-2">AS-2</a></li>
-</ul>*/
+
 {/template}
 
 /**
@@ -285,7 +289,7 @@ We have sister projects with the same aims.  Physics is essential for engineerin
  * @param question
  */
 {template .questionSidebar}
-<h3>A little help...</h3>
+<!--<h3>A little help...</h3>-->
 <h4>Physical Concepts</h4>
 {call .conceptList}{param conceptList: ($question.details.physicsConcepts ?: []) /}{/call}
 <h4>Maths Concepts</h4>
@@ -299,13 +303,15 @@ We have sister projects with the same aims.  Physics is essential for engineerin
  * @param concept
  */
 {template .conceptSidebar}
-<h3>You may like...</h3>
+<!--<h3>You may like...</h3>-->
 <h4>Physical Concepts</h4>
 {call .conceptList}{param conceptList: ($concept.details.relatedPhysicsConcepts ?: []) /}{/call}
 <h4>Maths Concepts</h4>
 {call .conceptList}{param conceptList: ($concept.details.relatedMathsConcepts ?: []) /}{/call}
 <h4>Problems</h4>
 {call .conceptList}{param conceptList: ($concept.details.problems ?: []) /}{/call}
+<h4>Download</h4>
+<a target="_blank" href="/rutherford-server/static/pdf/concepts/{$concept.details.type}/{$concept.id}.pdf">Download as PDF</a>
 {/template}
 
 /**
@@ -322,7 +328,7 @@ We have sister projects with the same aims.  Physics is essential for engineerin
 	<div class="small-8 columns">
 		{$question.content|noAutoescape}
 	</div>
-	<div class="small-4 columns">
+	<div id="questionSidebar" class="small-4 columns">
 		{call .questionSidebar data="all" /}
 	</div>
 </div>
@@ -342,7 +348,7 @@ We have sister projects with the same aims.  Physics is essential for engineerin
 	<div class="small-8 columns">
 		{$concept.content|noAutoescape}
 	</div>
-	<div class="small-4 columns">
+	<div id="conceptSidebar" class="small-4 columns">
 		{call .conceptSidebar data="all"/}
 	</div>
 </div>
