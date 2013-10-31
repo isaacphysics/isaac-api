@@ -59,6 +59,7 @@ def generate_blacklist():
    blacklist.add(r'\it')
    blacklist.add(r'\textit')
    blacklist.add(r'\textbf')
+   blacklist.add(r'\hline')
    blacklist.add(r'\noindent')
    logging.debug("Blacklist: " + str(blacklist))
    return blacklist
@@ -246,6 +247,7 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
    inparagraph = False
    inequation = False
    intable = False
+   intablerow = False
 
    for line in fin:
 
@@ -267,11 +269,27 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
         line = line.replace('\\end{equation}', '$$')
         inequation = False
 
+      # tables
       if('<table>' in line):         
         intable = True
+        # we may as well start a new row
+        line = line + '\n<tr>'
+        intablerow = True
 
       if('</table>' in line):         
         intable = False
+        # we probably need to finish our last row
+        #line = '\n</tr>'+ line
+        intablerow = False
+
+      if(intable):
+            if(not intablerow and '&' in line):
+                line = '<tr><td>'+line
+                intablerow = True
+            if(intablerow):
+                line = line.replace('&', '</td> <td>')
+                line = line.replace('\\\\', '</td></tr>')
+                intablerow = False
 
       # paragraphs
       if(not inequation and not intable):
@@ -304,15 +322,15 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
               line = line.replace('{','')
               line = line.replace('}','')
       
+      # deal with lb / rb soy issue
       if(not __contains_soy_command(line)):
-        # deal with lb / rb soy issue
-          line = line.replace('{', '~lb~')
+          line = line.replace('{', '~lb~') #intermediate replace
           line = line.replace('}', '~rb~')
-          line = line.replace('~lb~','{lb}')
+          line = line.replace('~lb~','{lb}') #final replace
           line = line.replace('~rb~','{rb}')
 
       fout.write(line)
-      fin[tmpindex] = line #write value to list
+      fin[tmpindex] = line #write value to list for consistency
       tmpindex+=1
 
    fout.close()
