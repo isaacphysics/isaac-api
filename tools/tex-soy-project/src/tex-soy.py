@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Quick and dirty LaTeX to converter
+# Quick and dirty LaTeX to soy converter - highly tailored to specific tex file inputs
 
 import sys, getopt, re, logging, os
 from sets import Set
@@ -149,6 +149,18 @@ def read_source_file_from_disk(inputfile):
 def usage():
    print 'tex-soy.py -h | -i <inputfile> -o <outputfile>'
 
+# Output string array to disk line by line
+def write_string_array_to_file(string_list, outputfile):
+    
+    fout = open(outputfile, "w+")
+    
+    logging.info("Creating/Updating File: " + outputfile)
+    
+    for line in string_list:
+        
+        fout.write(line)
+
+    fout.close()
 
 # Step 1 - Strip random LaTeX commands
 # Initial strip of latex content
@@ -158,15 +170,17 @@ def usage():
 # outputs results as temporary output file.
 # TODO this will need to be changed to do it all in memory rather than file io - it was used for debugging originally
 def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklist):
-   fin = inputstring
+   #fin = inputstring
 
-   fout = open(outputfile+'_tmp', "w+")
-   logging.info("Creating/Updating File: " + outputfile+'_tmp')
+  # fout = open(outputfile+'_tmp', "w+")
+  # logging.info("Creating/Updating File: " + outputfile+'_tmp')
 
    index = 0
    doc_start_found = False
 
-   for line in fin:
+   outputstring = []
+
+   for line in inputstring:
       if(line.startswith(r'\begin{document}')):
          doc_start_found = True         
 
@@ -188,11 +202,13 @@ def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklis
             line = remove_blacklist(line, blacklist)
 
          if((not line.startswith('%')) or line.startswith(TITLE_INDICATOR) or (index == 0 and not line.startswith('\r') or line.startswith('\n'))):
-            fout.write(line)
+            #fout.write(line)
+            outputstring.append(line)
             index += 1
    
-   fout.close()
-   return outputfile+'_tmp'
+   #fout.close()
+   #return outputfile+'_tmp'
+   return outputstring
 
 # Step 2 - Build structure of the document and add Soy specific commands
 # This is the quick dirty conversion to a structured html fragment using string replacement techniques
@@ -237,20 +253,14 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
 
    temp_input_list.insert(0, soyheader)
 
-   fin = temp_input_list
-
-   # TODO strip out file writer stuff and just do it in memory until the end
-   fout = open(outputfile, "w+")
-   logging.info("Creating/Updating File: " + outputfile)
-
+   # build structure to the document
    tmpindex = 0
    inparagraph = False
    inequation = False
    intable = False
    intablerow = False
 
-   for line in fin:
-
+   for line in temp_input_list:
       # do easy dictionary conversions
       for key in conversion_dictionary:
          match = re.search(key, line)
@@ -279,7 +289,6 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
       if('</table>' in line):         
         intable = False
         # we probably need to finish our last row
-        #line = '\n</tr>'+ line
         intablerow = False
 
       if(intable):
@@ -299,7 +308,7 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
                 line = '</p>\n' + line
 
              #create new paragraph 
-             fin.insert(tmpindex+1,'\n<p>')
+             temp_input_list.insert(tmpindex+1,'\n<p>')
              inparagraph = True
 
           if('<p' in line):
@@ -329,11 +338,10 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
           line = line.replace('~lb~','{lb}') #final replace
           line = line.replace('~rb~','{rb}')
 
-      fout.write(line)
-      fin[tmpindex] = line #write value to list for consistency
+      temp_input_list[tmpindex] = line #write value to list for consistency
       tmpindex+=1
 
-   fout.close()
+   return temp_input_list
 
 # main method
 def main(argv):
@@ -363,15 +371,13 @@ def main(argv):
    #build up data structures
    tex_source_list = read_source_file_from_disk(inputfile)
 
-   #execute the program - TODO fix unnecessary output to disk after debugging complete
+   #execute the program 
    tmpoutput = initial_strip_of_latex_commands(tex_source_list,outputfile,generate_whitelist(), generate_blacklist())
-   tmpoutput_source_list = read_source_file_from_disk(tmpoutput)
-   
-   logging.info("Removing temporary file from disk " + tmpoutput)
-   os.remove(tmpoutput)
-   
-   finaloutput = convert_to_soy(inputfile, tmpoutput_source_list,outputfile,generate_conversion_dictionary())
-   
+   finaloutput = convert_to_soy(inputfile,tmpoutput,outputfile,generate_conversion_dictionary())
+
+   #output the answer to a file
+   write_string_array_to_file(finaloutput, outputfile)
+
 if __name__ == "__main__":
    main(sys.argv[1:])
 
