@@ -93,6 +93,12 @@ span.question-explanation
 	font-size: inherit;
 }
 
+#questionSidebar
+{
+	border-left: 1px solid #444;
+}
+
+
 /* Gears */
 
 .gear {
@@ -120,21 +126,21 @@ span.question-explanation
 	top: 54px;
 }
 
-#learn {
+#register {
 	height: 230px;
 	width: 229px;
 	left: 230px;
 	top: 78px;
 }
 
-#learn a {
+#register a {
 	top: 100px;
 }
 
 #why-physics {
 	height: 230px;
 	width: 229px;
-	right: 228px;
+	right: 268px;
 	top: 64px;
 }
 
@@ -142,15 +148,17 @@ span.question-explanation
 	top: 112px;
 }
 
-#register {
+#get-started {
 	height: 310px;
 	width: 308px;
 	left: 340px;
 	top: 228px;	
 }
 
-#register a {
+#get-started a {
 	top: 140px;
+	font-weight: bold;
+	font-size: 24px;
 }
 
 #discuss {
@@ -167,7 +175,7 @@ span.question-explanation
 #applying-to-university {
 	height: 143px;
 	width: 144px;
-	right: 128px;
+	right: 168px;
 	top: 200px;		
 }
 
@@ -189,7 +197,7 @@ span.question-explanation
 #about {
 	height: 191px;
 	width: 194px;
-	right: 190px;
+	right: 230px;
 	top: 408px;	
 }
 
