@@ -10,6 +10,8 @@ REPLACE_WORD = '{replace_me}'
 TITLE_INDICATOR = '%\maketitle'
 TITLE_MARKUP = 'h3'
 SECTION_MARKUP = 'h4'
+SUB_SECTION_MARKUP = 'h5'
+NEW_PARAGRAPH_INDICATOR = 'NEW_PARAGRAPH'
 NAMESPACE_PATH_START = 'rutherford'
 
 # Utility Functions
@@ -18,6 +20,7 @@ NAMESPACE_PATH_START = 'rutherford'
 def generate_whitelist():
    whitelist = Set()
    whitelist.add(r'\\section{')
+   whitelist.add(r'\\subsection{')
    whitelist.add(r'\\caption{')
    #whitelist.add(r'\\begin{')
    whitelist.add(r"\\begin{equation}")
@@ -38,6 +41,8 @@ def generate_whitelist():
    whitelist.add(r"\\vtr{")
    whitelist.add(r"\\begin{tabular}")
    whitelist.add(r"\\end{tabular}")
+   whitelist.add(r"\\Concepttitle{")
+   whitelist.add(r"\\ref{")
    #whitelist.add(r"\\label{")
    whitelist.add(r"\\textrm{")
    whitelist.add(r"\\\\")
@@ -67,7 +72,9 @@ def generate_blacklist():
 # This is where simple find replace strings are added
 def generate_conversion_dictionary():
    tex_to_html_opening_tag_dictionary = dict()
+   tex_to_html_opening_tag_dictionary[r'\\Concepttitle']=r'<'+TITLE_MARKUP+'>'+REPLACE_WORD+'</'+TITLE_MARKUP+'>'
    tex_to_html_opening_tag_dictionary[r'\\section']=r'<'+SECTION_MARKUP+'>'+REPLACE_WORD+'</'+SECTION_MARKUP+'>'
+   tex_to_html_opening_tag_dictionary[r'\\subsection']=r'<'+SUB_SECTION_MARKUP+'>'+REPLACE_WORD+'</'+SUB_SECTION_MARKUP+'>'
    tex_to_html_opening_tag_dictionary[r'\\caption']=r'<span class="caption">'+REPLACE_WORD+'</span>'
    tex_to_html_opening_tag_dictionary[r'\\begin{tabular}']=r'<table>'
    tex_to_html_opening_tag_dictionary[r'\\end{tabular}']=r'</table>'
@@ -170,11 +177,6 @@ def write_string_array_to_file(string_list, outputfile):
 # outputs results as temporary output file.
 # TODO this will need to be changed to do it all in memory rather than file io - it was used for debugging originally
 def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklist):
-   #fin = inputstring
-
-  # fout = open(outputfile+'_tmp', "w+")
-  # logging.info("Creating/Updating File: " + outputfile+'_tmp')
-
    index = 0
    doc_start_found = False
 
@@ -301,11 +303,18 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
                 intablerow = False
 
       # paragraphs
+      if('\\nll' in line):
+        line = line.replace('\\nll', NEW_PARAGRAPH_INDICATOR)
+      if('\\nl' in line):  
+        line = line.replace('\\nl', NEW_PARAGRAPH_INDICATOR)
+
       if(not inequation and not intable):
 
-          if(SECTION_MARKUP in line or TITLE_MARKUP in line):
+          if(SECTION_MARKUP in line or TITLE_MARKUP in line or SUB_SECTION_MARKUP in line or NEW_PARAGRAPH_INDICATOR in line):
              if(inparagraph):
                 line = '</p>\n' + line
+                if(NEW_PARAGRAPH_INDICATOR in line):
+                    line = line.replace(NEW_PARAGRAPH_INDICATOR, '') #remove artificially inserted new paragraph indicator
 
              #create new paragraph 
              temp_input_list.insert(tmpindex+1,'\n<p>')
@@ -327,7 +336,7 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
              inparagraph = False
 
           #remove all random curly braces that may be in the text unless they are part of equations
-          if(not inequation and '$' not in line and not __contains_soy_command(line)):
+          if(not inequation and '$' not in line and not __contains_soy_command(line)): #TODO bug because it doesnt detect inline equations properly
               line = line.replace('{','')
               line = line.replace('}','')
       
