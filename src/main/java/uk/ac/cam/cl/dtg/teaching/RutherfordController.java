@@ -2,10 +2,14 @@ package uk.ac.cam.cl.dtg.teaching;
 
 import java.util.Map;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -15,6 +19,7 @@ import com.papercut.silken.TemplateRenderer;
 
 @Path("/")
 public class RutherfordController {
+
 
 	// Every question has a map including title and videos. Each question also has a template named by question.id, which is the key here.
 	private ImmutableMap questions = ImmutableMap.builder()
@@ -166,6 +171,12 @@ public class RutherfordController {
 									"c_of_m"))));
 	
 
+	public static ImmutableMap getSoyGlobalMap(HttpServletRequest req)
+	{
+		return ImmutableMap.of( "contextPath", req.getContextPath(),
+		        				"proxyPath", "/rutherford-server" //"/research/dtg/rutherford"
+		        				);
+	}
 	
 	@GET
 	@Path("topics/{topic}/{level}")

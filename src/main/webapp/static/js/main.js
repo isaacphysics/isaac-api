@@ -7,28 +7,28 @@ function loadContent(uri, addToHistory) {
 	switch(uri)
 	{
 	case "/register":
-		soy.renderElement($("#content")[0], rutherford.pages.register);
+		soy.renderElement($("#content")[0], rutherford.pages.register, null, ij);
 		break;
 	case "/learn":
-		soy.renderElement($("#content")[0], rutherford.pages.learn);
+		soy.renderElement($("#content")[0], rutherford.pages.learn, null, ij);
 		break;
 	case "/discussion":
-		soy.renderElement($("#content")[0], rutherford.pages.discussion);
+		soy.renderElement($("#content")[0], rutherford.pages.discussion, null, ij);
 		break;
 	case "/about-us":
-		soy.renderElement($("#content")[0], rutherford.pages.about_us);
+		soy.renderElement($("#content")[0], rutherford.pages.about_us, null, ij);
 		break;
 	case "/real-world":
-		soy.renderElement($("#content")[0], rutherford.pages.real_world);
+		soy.renderElement($("#content")[0], rutherford.pages.real_world, null, ij);
 		break;
 	case "/applying":
-		soy.renderElement($("#content")[0], rutherford.pages.applying);
+		soy.renderElement($("#content")[0], rutherford.pages.applying, null, ij);
 		break;
 	case "/challenge":
-		soy.renderElement($("#content")[0], rutherford.pages.challenge);
+		soy.renderElement($("#content")[0], rutherford.pages.challenge, null, ij);
 		break;
 	case "/why-physics":
-		soy.renderElement($("#content")[0], rutherford.pages.why_physics);
+		soy.renderElement($("#content")[0], rutherford.pages.why_physics, null, ij);
 		break;
 	default:
 		renderedLocally = false;
@@ -55,7 +55,7 @@ function loadContent(uri, addToHistory) {
 		{
 			// This is a URI we know about
 			$.get(contextPath + "/api" + uri, function(json) {
-				soy.renderElement($("#content")[0], template, json);
+				soy.renderElement($("#content")[0], template, json, ij);
 				MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 			});
 		}
@@ -199,7 +199,7 @@ $(function()
 	
 	window.addEventListener("popstate", popHistoryState);
 
-	history.replaceState("<HOME>", null, contextPath + "/soy/rutherford.main"); // Ugh.
+	history.replaceState("<HOME>", null, ij.contextPath + "/soy/rutherford.main"); // Ugh.
 	
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}

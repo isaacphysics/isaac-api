@@ -130,10 +130,14 @@
   
   <a class="close-reveal-modal">&#215;</a>
 </div>
-	
+
 <script>
   	document.write('<script src=' + ('__proto__' in {lb}{rb} ? ' {$ij.proxyPath}/static/js/vendor/zepto' : '{$ij.proxyPath}/static/js/vendor/jquery') + '.js><\/script>');
-	var contextPath = '{$ij.proxyPath}';
+
+	// Manually rebuild injected data for client-side rendering of soy templates. Ugh.
+	var ij = {lb}proxyPath: "{$ij.proxyPath}",
+		      contextPath: "{$ij.contextPath}"{rb};
+	
 </script>
 
 	<script src="{$ij.proxyPath}/static/js/vendor/foundation.min.js"></script>

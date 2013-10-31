@@ -25,9 +25,7 @@ public class InsertSilkenGlobalsFilter implements Filter {
 			FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
 		req.setAttribute("globals",
-				ImmutableMap.of("contextPath", req.getContextPath(),
-						        "proxyPath", "/research/dtg/rutherford"
-						        ));
+				RutherfordController.getSoyGlobalMap(req));
 		chain.doFilter(request, response);
 	}
 
