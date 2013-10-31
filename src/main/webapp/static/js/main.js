@@ -146,6 +146,14 @@ function checkAnswer_click(e)
 	{
 		correct = correct && (e.value == "1" && e.checked  || e.value == "0" && !e.checked);
 	});
+	$("input[type='radio']").each(function(i,e)
+	{
+		correct = correct && (e.value == "1" && e.checked  || e.value == "0" && !e.checked);
+	});
+	$("input[type='text']").each(function(i,e)
+	{
+		correct = correct && ($(e).data("expectedAnswer") == e.value);
+	});
 	
 	if(correct)
 	{
