@@ -54,7 +54,7 @@ function loadContent(uri, addToHistory) {
 		if (template)
 		{
 			// This is a URI we know about
-			$.get(contextPath + "/api" + uri, function(json) {
+			$.get(ij.contextPath + "/api" + uri, function(json) {
 				soy.renderElement($("#content")[0], template, json, ij);
 				MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 			});
@@ -180,7 +180,7 @@ function button_click(e)
 function playVideo(video)
 {
 	$("#video-modal video").remove();
-	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", contextPath + "/static/video/" + video));
+	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", ij.contextPath + "/static/video/" + video));
 	$('#video-modal').foundation('reveal', 'open');
 }
 

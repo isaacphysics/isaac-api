@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.teaching;
 
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.ServletRequest;
@@ -229,14 +230,14 @@ public class RutherfordController {
 	@GET
 	@Path("concepts/{concept}")
 	@Produces("application/json")
-	public Map<String, ?> getConcept(@PathParam("concept") String concept)
+	public Map<String, ?> getConcept(@Context HttpServletRequest req, @PathParam("concept") String concept)
 	{
 		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
 		
 		String cContent = "";
 		try
 		{
-			cContent = renderer.render("rutherford.concepts." + ((ImmutableMap)concepts.get(concept)).get("type") + "." + concept, null);
+			cContent = renderer.render("rutherford.concepts." + ((ImmutableMap)concepts.get(concept)).get("type") + "." + concept, null, getSoyGlobalMap(req), Locale.ENGLISH);
 		} catch (SoyTofuException e)
 		{
 			cContent = "<i>No content available.</i>";
