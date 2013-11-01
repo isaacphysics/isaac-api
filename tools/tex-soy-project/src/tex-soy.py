@@ -483,7 +483,7 @@ def convert_questions_to_soy(inputfile, input_list):
         elif('\\end{enumerate}' in line):
             line = ']/}\n'+'{/call}\n'
             inanswerslist = False
-            footer = '{call .questionExplanation}\n{param explanation}\n' + strip_all_braces(input_list[tmpindex+1]) + '{/param}\n{/call}\n'
+            footer = '{call .questionFooter}\n{param footer}\n' + strip_all_braces(input_list[tmpindex+1]) + '{/param}\n{/call}\n'
             footerindex = tmpindex+1
             explanation = '{call .questionExplanation}\n{param explanation}\n' + strip_all_braces(input_list[tmpindex+2]) + '{/param}\n{/call}\n'
             explanationindex = tmpindex+2
