@@ -112,7 +112,6 @@ def generate_simple_find_replace_dictionary():
    simple_f_r_dictionary['\\nll']='<br/>'
    return simple_f_r_dictionary
 
-
 # Simple utility function to look for soy commands added by this script so that they are not interfered with.
 def __contains_soy_command(line):
     soy_commands = Set()
@@ -572,6 +571,21 @@ def main(argv):
 
        #output the answer to a file
        write_string_array_to_file(finaloutput, outputfile)
+   elif(questions and traversal_directory):
+        filelist = traverse(inputfile,'tex')
+
+        for item in filelist:
+            logging.info("Processing: " + item)
+            tex_source_list = read_source_file_from_disk(item)
+            tmpoutput_string_list = convert_questions_to_soy(item,tex_source_list)
+            outputpath = item.replace('.tex','.soy')
+            
+            logging.info('Writing out: ' + outputpath)
+            outputfile = write_string_array_to_file(tmpoutput_string_list, outputpath)
+            
+            logging.info("Batch processing complete")
+        exit()
+
    elif(questions):
         # do question processing
         tex_source_list = read_source_file_from_disk(inputfile)
