@@ -1,0 +1,32 @@
+{namespace rutherford.questions.dynamics}
+
+/**
+ * A1986PIQ4l
+ */
+{template .a1986piq4l}
+{lb}A ball is fired vertically upwards with a given velocity. Neglecting air resistance, which one of the following statements is correct?
+{call .mcq}
+{param type: 'checkbox' /}
+{param choices: [['desc':'	 The kinetic energy of the ball is a maximum at the maximum height attained.
+'],
+['desc':'	 In accordance with the principle of conservation of energy, the total energy of the ball is constant throughout the motion.
+'],
+['desc':'	 In accordance with the principle of conservation of momentum, the total momentum of the ball is constant throughout the motion.
+'],
+['desc':'	 The ball travels equal distances during equal periods of time during both ascent and descent.
+'],
+['desc':'	 The potential energy of the ball increases uniformly with time during ascent.
+']
+]/}
+{/call}
+{call .questionFooter}
+{param footer}
+Used with permission from UCLES, A Level Physics, June 1986, Paper 1, Question 4.
+{/param}
+{/call}
+{call .questionExplanation}
+{param explanation}
+{lb}The correct answer is (b). The kinetic energy is zero at the maximum height attained, momentum is only conserved when no external forces such as gravity act, the speed is not constant so the distances in equal times are not the same, and the potential energy increases uniformly with height but quadratically with time. Thus the statement about conservation of energy is the only correct one, and indeed the sum of kinetic and potential energy will be constant if there is no air resistance.{rb}
+{/param}
+{/call}
+{/template}

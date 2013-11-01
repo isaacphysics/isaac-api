@@ -1,0 +1,22 @@
+{namespace rutherford.questions.circular_motion}
+
+/**
+ * AO1989PIQ10l
+ */
+{template .ao1989piq10l}
+{lb}When a particle travels in a circle of radius $r$ with constant speed $v$, its acceleration is:
+{call .mcq}
+{param type: 'checkbox' /}
+{param choices: [['desc':'	 $\fracv^2r$ towards the centre.'],
+['desc':'	 $\fracv^2r$ away from the centre.'],
+['desc':'	 zero'],
+['desc':'	 $rv^2$ towards the centre.'],
+['desc':'	 $rv^2$ away from the centre.']
+]/}
+{/call}
+{call .questionFooter}
+{param footer}
+Used with permission from UCLES, AO Level Physics, June 1989, Paper 1, Question 10.
+{/param}
+{/call}
+ $\mathit{\underline{\boldsymbol{call .questionExplanation}}}$ {/template}

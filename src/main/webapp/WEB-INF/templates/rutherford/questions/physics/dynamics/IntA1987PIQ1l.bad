@@ -1,0 +1,33 @@
+{namespace rutherford.questions.dynamics}
+
+/**
+ * IntA1987PIQ1l
+ */
+{template .inta1987piq1l}
+{lb}A toboggan is sliding down a hillside with a uniform acceleration. The resultant force acting on the toboggan:
+{call .mcq}
+{param type: 'checkbox' /}
+{param choices: [['desc':'	 is zero.
+'],
+['desc':'	 is constant.
+'],
+['desc':'	 increases uniformly with time.
+'],
+['desc':'	 decreases uniformly with time.
+'],
+['desc':'	 is proportional to the displacement from a fixed point.
+']
+]/}
+{/call}
+{call .questionFooter}
+{param footer}
+
+{/param}
+{/call}
+{call .questionExplanation}
+{param explanation}
+{/param}
+{/call}
+{lb}{lb}Adapted with permission from UCLES, A Level Physics, November 1987, Paper 1, Question 1.{rb}{rb}
+{lb}The correct answer is (b). This just relies on a statement of Newton's Second Law.{rb}
+{/template}

@@ -1,0 +1,12 @@
+{namespace rutherford.questions.circular_motion}
+
+/**
+ * A1984PIQ1l
+ */
+{template .a1984piq1l}
+{lb}The reading of a speedometer fitted to the front wheel of a bicycle is directly proportional to the angular speed of the wheel. A certain speedometer is correctly calibrated for use with a wheel of diameter $66\textrm{lb} cm{rb}$ but, by mistake, is fitted to a $60\textrm{lb} cm{rb}$ wheel. Explain whether the indicated linear speed would be greater or less than the actual linear speed and find the percentage error in the readings. {rb}
+{lb}{lb}Used with permission from UCLES, A Level Physics, June 1984, Paper 1, Question 1.{rb}{rb}
+{lb}The speedometer works by recording the angular speed $\omega$ and converting that into a linear speed using the formula $v=r\omega$. So by attaching it to a bike that has a smaller wheel radius the calculated linear speed will to too great, since the angular speed will be multiplied by $0.66\textrm{lb} m{rb}$ instead of the actual $0.60\textrm{lb} m{rb}$. The percentage error is simply given by 
+$$ \frac{lb}66-60{rb}{lb}60{rb}\cdot100=10\% $$
+{rb}
+{/template}

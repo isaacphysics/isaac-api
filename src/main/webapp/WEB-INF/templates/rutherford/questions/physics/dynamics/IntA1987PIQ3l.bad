@@ -1,0 +1,33 @@
+{namespace rutherford.questions.dynamics}
+
+/**
+ * IntA1987PIQ3l
+ */
+{template .inta1987piq3l}
+{lb}Which of the following pairs contains one vector quantity and one scalar quantity?
+{call .mcq}
+{param type: 'checkbox' /}
+{param choices: [['desc':'	 Displacement \quad : \quad Acceleration
+'],
+['desc':'	 Force \quad : \quad Kinetic Energy
+'],
+['desc':'	 Momentum \quad : \quad Velocity
+'],
+['desc':'	 Power \quad : \quad Speed
+'],
+['desc':'	 Work \quad : \quad Potential Energy
+']
+]/}
+{/call}
+{call .questionFooter}
+{param footer}
+
+{/param}
+{/call}
+{call .questionExplanation}
+{param explanation}
+Used with permission from UCLES, A Level Physics, November 1987, Paper 1, Question 3.
+{/param}
+{/call}
+{lb}The correct answer is (b). Displacement, acceleration, force, momentum and velocity are all vector quantities. Kinetic Energy, power, speed, work and potential energy are all scalar quantities.{rb}
+{/template}
