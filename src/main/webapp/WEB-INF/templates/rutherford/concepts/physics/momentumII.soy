@@ -1,0 +1,143 @@
+{namespace rutherford.concepts.physics}
+
+/**
+ * momentumII
+ */
+{template .momentumII}
+
+
+<h3>Momentum and its conservation;</p>
+<p> collisions. - Part 2</h3>
+<p>
+This sheet is the second of two which discusses concepts relating to the conservation of momentum and collisions and will refer to examples that have been discussed in Part 1.  Part 2 presents an alternate approach to understanding conservation of momentum and collisions using an alternate reference frame called the Zero Momentum Frame or ZMF.
+<h4>Level 5+: Zero Momentum Frame</h4>
+<p>
+The zero momentum frame is a construct that physicists use to simplify the algebra that is involved in collision calculations where momentum is conserved.  By transferring to a frame in which the total momentum of the system is zero we can remove the need to solve simultaneous equations for energy and momentum.</p>
+<p>
+
+
+<img src="{$ij.proxyPath}/static/figures/ZMF1.svg"/>
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of a  perfectly inelastic</span>
+
+{lb} Example 1:{rb}  A perfectly inelastic head on collision between equal masses, one at rest the other at velocity $v$. (Also explained in figure \ref{lb}fig:ZMF1{rb})</p>
+<p>
+
+ We will begin by taking the simplest example where a mass, $m$, travelling at velocity, $v$, collides head-on, and {lb} perfectly inelastically{rb}, with an object of the same mass, $m$, which is at rest (previously seen in  Part 1, example 1 and figure 2).</p>
+<p>
+
+ Because the zero momentum frame removes the need for any detailed algebra in simple cases, figure \reffig:ZMF1 essentially performs the calculation for us.  We will refer therefore to two frames which we can imagine as the platform at a train station and a train passing through the station.
+The first, the station platform, is the laboratory (lab) frame where the collision is happening.  The second, the train passing through the station at a specific velocity in the same direction as the moving mass, is zero momentum frame.  An observer on the {lb} platform{rb} sees one mass moving at $v$ and one at rest,  imagine that you are on that train how will the velocities of masses appear to you? </p>
+<p>
+
+ First of all we need to calculate the specific velocity of the zero momentum frame (the train) such that the total momentum in this frame is zero.  To do this we need to calculate the total momentum of the system and divide by the total mass.
+
+$$
+v_{lb}zmf{rb}=\frac{lb}\sum_i{lb}m_i v_i{rb}{rb}{lb}\sum_i m_i{rb} = \frac{lb}mv+0{rb}{lb}2m{rb} = \frac{lb}v{rb}{lb}2{rb}
+$$
+
+ To work out what the observer on the train (in the ZMF) sees we need to subtract the speed of the train from each mass so in figure \ref{lb}fig:ZMF1{rb} we move from (a) to (b) by subtracting $v/2$ to the right.  Therefore mass 1 in the ZMF has velocity
+$$
+v-v_{lb}zmf{rb}=v-\frac{lb}v{rb}{lb}2{rb}=\frac{lb}v{rb}{lb}2{rb}
+$$
+Mass 2 in the ZMF has velocity
+$$
+0-v_{lb}zmf{rb}=-\frac{lb}v{rb}{lb}2{rb}\ \  \mbox{lb}which is the same as{rb}\ \frac{lb}v{rb}{lb}2{rb}\ \mbox{lb}to the left{rb}.
+$$
+
+
+<img src="{$ij.proxyPath}/static/figures/ZMF1.svg"/>
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of a  perfectly inelastic</span>
+<img src="{$ij.proxyPath}/static/figures/ZMF2.svg"/>
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of an  elastic</span> 
+
+</p>
+<p>
+ In a perfectly inelastic collision the two individual masses must stick together to make one object of mass $2m$.  If we have just one object in the zero momentum frame there is only one was that the momentum can be conserved as zero - if the velocity of this $2m$ is $ 0$! </p>
+<p>
+ To return to the lab frame we must then add back on the velocity of the ZMF. So, defining velocities to the right as positive, the velocity of the $2m$ is now
+$$
+0+v_{lb}zmf{rb}=\frac{lb}v{rb}{lb}2{rb} \ \mbox{lb}to the right{rb}
+$$
+as shown in figure \reffig:ZMF1 (d).  After such a calculation you should always check that momentum is also conserved between the lab frame before and after the collision. 
+
+{lb} Example 2:{rb} An elastic head on collision between equal masses, one at rest the other at velocity $v$. (Also explained in figure \ref{lb}fig:ZMF2{rb}).
+
+In this example we have a a mass, $m$, travelling at velocity, $v$, collides head-on, and {lb} elastically{rb}, with an object of the same mass, $m$, which is at rest (previously seen in Part 1, example 2 and figure 3).
+
+By the same reasoning as that in example 1, the velocities of the two masses in the zero momentum frame are equal in magnitude, $v/2$, but opposite in direction.  In the {lb} inelastic{rb} example the zero momentum frame was useful as we could quickly reason that after the collision the velocity of the combined mass, $2m$ must be zero in the ZMF.  The reason that we use the ZMF for an {lb} elastic{rb} head-on collision is that the the only way to conserve both momentum ($=0$) and energy in this frame is if the magnitude of the velocities remain the same but the direction of each {lb} after{rb} the collision is reversed.  Therefore {lb} no{rb} further calculation is required.
+
+To return to the laboratory frame we just add back on the velocity of the zero momentum frame (as before), which in our example is $v/2$ to the right. </p>
+<p>
+ We define the positive direction as to the right so, for mass 1
+$$
+-\frac{lb}v{rb}{lb}2{rb}+v_{lb}zmf{rb}=-\frac{lb}v{rb}{lb}2{rb}+\frac{lb}v{rb}{lb}2{rb}=0
+$$
+and mass 2 in the lab frame has velocity
+$$
+\frac{lb}v{rb}{lb}2{rb}+v_{lb}zmf{rb}=\frac{lb}v{rb}{lb}2{rb}+\frac{lb}v{rb}{lb}2{rb} =v\ \  \mbox{lb}to the right{rb}.
+$$
+
+
+<img src="{$ij.proxyPath}/static/figures/ZMF1a.svg"/>
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of a  perfectly inelastic</span>
+<img src="{$ij.proxyPath}/static/figures/ZMF2a.svg"/>
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of a  perfectly inelastic</span>
+
+{lb} Example 3:{rb} A perfectly inelastic collision between a mass, $m$, travelling at velocity, $v$, and a mass, $2m$, that is stationary. (Also explained in figure \ref{lb}fig:ZMF1a{rb})<br/>l
+As before the only real calculation that is required is to compute the velocity of the zero momentum frame.
+$$
+v_{lb}zmf{rb}=\frac{lb}mv{rb}{lb}3m{rb}=\frac{lb}v{rb}{lb}3{rb}
+$$
+We can now follow the process once again, through figure \ref{lb}fig:ZMF1a{rb}, subtracting the velocity of the ZMF from the velocity of each mass to become an observer in the ZMF.  For a perfectly inelastic collision the masses must join together and become one so we know that the velocity of these combined masses must be zero in the ZMF.  The final step therefore is to add back on the velocity of the ZMF to return to the laboratory frame.  Thus the combined $3m$ mass must be travelling with velocity $v/3$ and we check again that momentum is conserved in the lab frame before and after the collision.</p>
+<p>
+
+{lb} Example 4:{rb} A perfectly elastic collision between a mass, $m$, travelling at velocity, $v$, and a mass, $2m$, that is stationary. (Also explained in figure \ref{lb}fig:ZMF2a{rb}).</p>
+<p>
+
+ The left hand side of our diagram, before the collision, is the same as for the inelastic case.   <br/>l  To move from figure \reffig:ZMF2a(b) to figure \reffig:ZMF2a(c)  For a perfectly elastic collision we know that the magnitude of the velocities remain the same but the directions are reversed. 
+ The final step therefore is to add back on the velocity of the ZMF to return to the laboratory frame.  Thus the particle of mass $m$ must bounce back to the left with velocity $v/3$ and the particle of mass $2m$ moves off with velocity $2v/3$ to the right.
+
+<h4>Level 6</h4>
+<p>By generalisation we can use the zero momentum frame for two particles of different masses and different, non-zero velocities, in both elastic and inelastic cases.
+
+
+
+<img src="{$ij.proxyPath}/static/figures/ZMF3.svg"/>
+
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of a  perfectly inelastic</span>
+<img src="{$ij.proxyPath}/static/figures/ZMF4.svg"/>
+<span class="caption">A table of diagrams showing how we use the zero momentum frame (ZMF) to calculate the result of a  perfectly elastic</span>
+
+ {lb} Example 5:{rb} A perfectly inelastic collision of masses, $m_1$ and $m_2$ with respective velocities $v_1$ and $v_2$.  (Also explained in figure \ref{lb}fig:ZMF3{rb}).
+
+The process for the general case is identical to that of the specific cases and most of the work will be done using the table of diagrams as before.  The first thing is to calculate the velocity, $v_{lb}zmf{rb}$ of the ZMF.
+$$
+v_{lb}zmf{rb}=\frac{lb}m_1 v_1+m_2 v_2{rb}{lb}m_1 +m_2{rb}
+$$
+
+
+
+ We know that the velocity of the combined mass after the perfectly inelastic collision must be zero in the zero momentum frame so the velocity of the combined mass in the lab frame is therefore just the velocity of the zero momentum frame.
+$$
+\mbox{lb}final lab frame velocity{rb}=\frac{lb}m_1 v_1+m_2 v_2{rb}{lb}m_1 +m_2{rb}
+$$
+
+{lb} Example 6:{rb} Perfectly elastic collision of masses, $m_1$ and $m_2$ with respective velocities $v_1$ and $v_2$.   (Also explained in figure \ref{lb}fig:ZMF4{rb}).
+</p>
+<p>
+</p>
+<p>
+Once again we calculate the velocity, $v_{lb}zmf{rb}$ of the zero momentum frame, which as in the inelastic case is,
+$$
+v_{lb}zmf{rb}=\frac{lb}m_1 v_1+m_2 v_2{rb}{lb}m_1 +m_2{rb}
+$$
+
+We know that the magnitudes of the velocities of each particle must remain the same after the collision but that their directions must reverse.  To return to the lab frame we must add back on the velocity of the zero momentum frame so that in the lab frame the
+$$
+\mbox{lb}final velocity of $m_1${rb}=\frac{lb}v_1(m_1-m_2)+2m_2v_2{rb}{lb}m_1 +m_2{rb}\nonumber\\
+\mbox{lb}final velocity of $m_2${rb}=\frac{lb}v_2(m_2-m_1)+2m_1v_1{rb}{lb}m_1 +m_2{rb}\nonumber\\
+$$
+You should now convince yourself that these statements are correct for examples 6 and 7 in the previous level 5+ section.
+
+</p>
+{/template}

@@ -1,0 +1,97 @@
+{namespace rutherford.concepts.physics}
+
+/**
+ * Eq_of_motions_diff
+ */
+{template .Eq_of_motions_diff}
+
+
+<h3>Equations of Motion (SUVAT)</h3>
+<p>
+The equations of motion relate the displacement of an object with its velocity, acceleration and time. The motion of a particle can follow many different paths, but in the following sections we will focus on motion in a straight line, i.e. in one dimension. 
+
+<h4>Equations of Motion using Differentiation and Integration</h4>
+<p><h5>Displacement and Velocity:</h5>
+<p>The average velocity $v$ of car can be determined by taking its distance travelled $\Delta s$ and dividing it by the time taken to travel that distance, $\Delta t$:
+
+$$
+v = \frac{lb}\Delta s{rb}{lb}\Delta t{rb}   
+$$
+This equation just gives us an indication of the average speed of the car. It does not indicate whether the car was speeding up or slowing down over that distance. In order to find the velocity of the car at a given location from the starting point, we need to break up the distance travelled in to many small chunks. The more the size of the chunks are reduced, the closer the time interval tends to zero, eventually giving the instantaneous velocity. This is written as:
+
+$$
+v = \frac{lb}\d s{rb}{lb}\d t{rb} 
+
+$$</p>
+<p>
+If you have done some integration and differentiation, you will recognise that the velocity is simply the time derivative of the displacement. <br/>l
+{lb}Example 1:{rb} If the displacement is given by $s = 4t - 5 t^2$, what is v?</p>
+<p>
+{lb}Answer 1:{rb} The instantaneous velocity $v$ is $\frac{lb}\d s{rb}{lb}\d t{rb}$. Thus,
+$$
+v = \frac{lb}\d (4t - 5 t^2){rb}{lb}\d t{rb} = 4 - 2 \times 5 t = 4-10t
+$$
+</p>
+<p>
+But how to find the displacement after a certain time if the velocity is known? Let's rearrange the equation for the velocity:
+ $$
+ s = v \d t 
+
+$$
+Now integrating both sides, we obtain the displacement at a given point in time:
+  $$
+ s = \int v \d t = vt + c
+$$
+c is just the constant of integration. If $t=0$, then $s=c$, and so c is initial position of the car.
+
+<h5>Velocity and Acceleration:</h5>
+<p>The car may be continuously changing speed. And so how can we quantify the change in the velocity as function of time? Let's start by considering the average change of the velocity over time, known as the acceleration $a$:
+$$
+a = \frac{lb}\Delta v{rb}{lb}\Delta t{rb} 
+$$
+
+Similarly to the velocity in the previous section, this change may not be constant at each point on the car's trajectory. Reducing the time intervals to almost zero, the average acceleration can be rewritten as the instantaneous acceleration, $a = \frac{lb}\d v{rb}{lb}\d t{rb}$. And so, the acceleration is the time derivative of the velocity. From the previous section, we know that $v = \frac{lb}\d s{rb}{lb}\d t{rb}$. Thus, the acceleration can be related to the displacement of the car by:
+ $$
+a = \frac{lb}\d \left(\d v/ \d t\right){rb}{lb}\d t{rb} = \frac{lb}\d^2 s{rb}{lb}\d t^2{rb} 
+$$
+ The acceleration is the second time derivative of the displacement. 
+
+{lb}Example 2:{rb} What is the acceleration of the displacement in example 1, $s = 4t - 5 t^2$?</p>
+<p>
+Answer 2: 
+$$
+a = \frac{lb}\d^2 (4t - 5 t^2){rb}{lb}\d t^2{rb} = \frac{lb}\d \left(4-10t\right){rb}{lb}\d t{rb} = - 10
+$$
+
+As before, the velocity and the displacement can be obtained by integrating the acceleration with respect to time, once in the case of velocity and twice to obtain the displacement.
+  $$
+v = \int a \d t = at + c
+
+$$
+where c is equal the $u$, the velocity at $t=0$. And the displacement is:
+ $$
+v = \int a \d t =& at + u\\
+s = \int \left(at + u\right) =& \frac{lb}1{rb}{lb}2{rb} a t^2 + u t + s_0
+
+$$
+where $s_0$ is the position of the car at $t=0$. 
+
+<h5>Rearranging Equations</h5>
+<p>These equations can be rearranged such that the position can be found as a function of the velocity and the acceleration if the time is not known. Rewriting equation \ref{lb}vel{rb} as a function of $t$:
+  $$
+t = \frac{lb}v-u{rb}{lb}a{rb}
+$$
+Now inserting it into the equation for the position, we get:
+  $$
+s =& \frac{lb}1{rb}{lb}2{rb} a \left(\frac{lb}v-u{rb}{lb}a{rb}\right)^2 + u\left(\frac{lb}v-u{rb}{lb}a{rb}\right) + s_0\\
+s =& \frac{lb}1{rb}{lb}2{rb}\frac{lb}(v-u)^2 + 2uv - 2u^2{rb}{lb}a{rb} + s_0\\
+s =& \frac{lb}1{rb}{lb}2{rb}\frac{lb}v^2 + u^2 - 2uv + 2uv - 2u^2{rb}{lb}a{rb} + s_0\\
+s =& \frac{lb}1{rb}{lb}2{rb} \frac{lb}v^2 - u^2{rb}{lb}a{rb} + s_0
+$$
+If the initial position is $s_0=0$, this equation can be rearranged to:
+  $$
+v^2 = u^2 + 2as
+$$
+</p>
+{/template} 
+ 

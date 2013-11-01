@@ -1,0 +1,71 @@
+{namespace rutherford.concepts.physics}
+
+/**
+ * energy
+ */
+{template .energy}
+
+
+<h3>Energy, work and power</h3>
+<p>
+<h4>Definitions</h4>
+<p>Energy, either potential or kinetic (due to motion), is possessed by a body.  It can be converted into other forms and will ultimately degrade to heat energy (the random motions of atoms and molecules).  The unit of energy is the Joule.
+<h5>Potential energy:</h5>
+<p>For instance:
+
+  em Gravitational potential energy is:
+    $$ V = m g h \;\;\; \textrm{lb}or{rb} \;\;\; V = - m_1m_2 G/r.
+$$
+The former is for a body of mass $m$ in a uniform gravitational field with acceleration $g$ when it is a height $h$ above a reference level.  For instance, this formulation is suitable for bodies close to the surface of the Earth where the gravitational field (pull from the Earth) does not vary much with height.</p>
+<p>
+The latter is for or two masses $m_1$ and $m_2$ separated by a distance $r$, with $G$ the universal gravitational constant.  The negative sign indicates attraction -- the energy is reduced further as the masses approach each other.  See below for the connection between force, work and potential energy change.
+  em Electric potential energy is:
+   $$ V = - q E h \;\;\; \textrm{lb}or{rb} \;\;\; V = q_1q_2/(4\pi \epsilon_0 r).
+$$ The former is for a body of charge $q$ in a uniform electric field $E$ with $h$ the distance moved by the charge along the electric field from a reference position.</p>
+<p>
+In general fields vary with position, and the latter is the potential energy associated with two charges $q_1$ and $q_2$ separated by $r$, where $\epsilon_0$ is a constant known as the permittivity of free space.  The potential energy is positive if $q_1$ and $q_2$ are both of the same sign -- like charges repel and lower their energy by moving apart.
+
+<h5>Kinetic energy:</h5>
+<p> $$ T = $\frac{lb}1{rb}{lb}2{rb}$ m v^2 \;\;\; \textrm{lb}or{rb} \;\;\; T = $\frac{lb}1{rb}{lb}2{rb}$ I \omega^2.
+$$
+Here $m$ is the particle mass, and $$\frac{lb}1{rb}{lb}2{rb}$ m v^2$ is the familiar kinetic energy.  The angular equivalent of mass is the moment of inertia $I$  --- see notes on angular motion.  Kinetic energy takes many forms.  We focus on that due to simple translational motion.
+
+<h4>Conservation of energy</h4>
+<p>In the absence of friction (resisting motion and leading to heat), the sum $E$ of the kinetic and potential energy is conserved.
+$$ E = T + V =  \textrm{lb}constant{rb}.
+$$
+The energy can be converted between the forms $T$ and $V$ by the particle doing work, or work being done on the particle. So when $V(x)$ varies with position $x$, then so will $T = E - V(x)$ also vary.  In turn, speed $v(x)$ must vary with position since $T = $\frac{lb}1{rb}{lb}2{rb}$ m v^2$.  This approach to dynamics is explored in ``Conservation Methods in Dynamics".</p>
+<p> When there is friction, then heat $Q$ can be produced from the motion.  A stricter statement of energy conservation is
+$$ E = T + V + Q =  \textrm{lb}constant{rb}.
+$$
+However, conversion of energy  back from heat $Q$ to kinetic $T$ or potential energy $V$ is never perfect and leads us to the study of Thermodynamics.
+<h5>Questions</h5>
+<p>
+[1.] What is the gravitational potential energy of a mass of 1kg resting 1m above the ground? [Take $g= 10\textrm{lb}ms{rb}^{lb}-2{rb}$.]  After being dropped, what speed does the mass attain before hitting the ground?  How much heat is produced when motion has ceased?
+[2.] By considering energy, show that the speed $v$ reached when a particle is dropped from rest through a height $h$ is $v^2 = 2 g h$.  Show that if it initially has a downward speed $u$ as it starts dropping through $h$, then its final speed is $v^2 = u^2 + 2 gh$.  [Notice how this energy method yields the result ``$v^2 - u^2 = 2 as$" familiar from kinematics.]
+[3.] A particle of mass $m$ approaches a slope with initial speed $v_0$.  It moves up the slope conserving energy.</p>
+<p>
+ (i)  What is its initial energy?</p>
+<p>
+(ii) To what vertical height $h_f$ does it rise when it finally stops?</p>
+<p>
+(iii) What speed is it travelling at when it attains heights $h_f/4$, $h_f/2$ and $3h_f/4$?  What is the speed at these heights on the way down when the particle reverses direction at the top of its trajectory?
+
+<h4>Work</h4>
+<p>  Work $W$ is given by
+$$ 
+W = {lb}F{rb}.{lb}x{rb}
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}x{rb}{rb}{rb}$  Examples are:</p>
+<p>
+    (a) picking up a mass with a vertical force and raising it through a height $h$.  In that case $f = mg$ and $x = h$ whereupon $W = mg h$.  Note that the work done is stored as gravitational potential energy of the form discussed above.  Clearly forces arise when potentials vary with position.  </p>
+<p> If the mass is allowed to drop back, the gravitational force can be used to e.g. turn an electrical generator and electrical work can be recovered.  That in turn could be used to charge a battery and the energy would finally be chemical potential energy.<br/>l
+    (b) circular motion of a mass at the end of a string with the tension in the string creating the centripetal acceleration.  The force and acceleration are perpendicular to the motion and no work is done.  The energy (and speed) of the particle do not increase as the motion elapses.
+<h5>Questions</h5>
+<p>
+[$1.$] A horizontal force $f$ pulls a mass on a rough surface of sliding friction $\mu_k$ through a distance $d$.  Show that the work done is $W = mg \mu_k d$.  Where does the work end up?  [If necessary, consult the concept sheet on Friction.]</p>
+<p>
+[$2.$] The same force is applied at an angle $\theta$ to the horizontal.  Show that now, $W =\mu_k\cos\theta(mg - f \sin\theta)d$.
+
+</p>
+{/template}

@@ -1,0 +1,103 @@
+{namespace rutherford.concepts.physics}
+
+/**
+ * Impulse
+ */
+{template .Impulse}
+
+
+<h3>Impulse</h3>
+<p>
+
+<h4>What is impulse?</h4>
+<p> $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr  F{rb}{rb}{rb}$ 
+
+
+<img src="{$ij.proxyPath}/static/figures/Impulse1.jpg"/>
+<span class="caption">How does the final speed of a broken down car change if you apply the same force for different lengths of time?</span> 
+
+ If we think about some real physical situations, our intuition tells us that if we apply a force to an object for longer, its final velocity will be greater.  Imagine trying to push start a car.  If the car is at rest and you begin pushing with a constant force, then the longer you keep pushing, the faster the car will be moving when you let go.</p>
+<p>
+
+ The definition or formula to calculate an impulse is simply,
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$  {lb}equation{rb}
+As force is a vector quantity so must the impulse be a vector; Newton's second law hints at this because he tells us that it is important to consider the direction in which the impulse was applied.
+
+
+<h4>But what does it mean?</h4>This formula does not give us much of a sense of what impulse {lb} actually{rb} is or what it means.  Let's go back to the idea that Newton describes in his second law of motion that {lb} an applied impulse acts to change the momentum of a body in the direction that the impulse is applied{rb}.\\
+
+ 
+
+<img src="{$ij.proxyPath}/static/figures/Momentum1.svg"/>
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}The graph of a constant force of $10$ N applied to an object for $5$ seconds.  The impulse that the object experiences is ${lb}\vtr F{rb}{rb}{rb}$ 
+
+ When we apply an impulse to something our intuition tells us that it will change from being at rest to moving with some speed in the direction that we applied the impulse.  By applying an impulse we will change its momentum from zero to some value given by its mass times its velocity and we would guess that the larger the impulse the greater the change in momentum.
+
+<h5>Levels 1-4</h5>If a constant force is applied to a body for a given time then the impulse is the vector quantity given by
+$$ 
+ $\mathit{lb}\underline{lb}\boldsymbol{lb} Impulse{rb}{rb}{rb}$ $$
+This relationship (equation \refimp1) shows that we can increase the magnitude of the impulse by either increasing the magnitude of the force or increasing the amount of time over which we apply the force.</p>
+<p>
+
+ So following Newton's Law,
+$$
+\mbox{lb}Impulse{rb}&=&\mbox{lb}change in momentum{rb}\nonumber \\
+&=&\mbox{lb}final momentum{rb} - \mbox{lb}initial momentum{rb}\nonumber \\
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F{rb}{rb}{rb}$ $$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr v{rb}{rb}{rb}$ 
+ We can now see the connection to Newton's Second Law as we learn it at school if we do a little rearrangement of our formula,
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F{rb}{rb}{rb}$ $$
+
+ A change in velocity $(v-u)$ divided by the time it takes for that change $t$ is the average acceleration of the body, so
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F{rb}{rb}{rb}$ $$
+
+
+<h5>Quick Questions</h5>
+<p>
+[1.] A broken down car of $1000$\ kg is pushed with a force of $50$ N for $2$ minutes.  If we neglect friction, what speed would the car finally reach? [$v=6$ ms$^{lb}-1{rb}=21.6$ kph$=13.5$ mph]
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}-1{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}-1{rb}{rb}{rb}$ [4.] In July 2011 a baby fell 10 stories from a hotel window and was caught by a passer-by and they both survived (http://www.bbc.co.uk/news/magazine-14150524).  If the force that the catcher experienced was $30$ kN over a period of $0.02$ s, how fast was the baby falling just before the catch happened (we estimate the mass of the baby as $10$ kg)? [$u=60$ ms$^{lb}-1{rb}$ downwards.]
+[5.] A squash ball, of mass $25$ g, rebounds off a wall at $60$ ms$^{lb}-1{rb}$ and the wall exerts an force of $300$ N for a period of $10$ ms.  How fast is the ball going when it first collides with the wall?  Is your answer physically possible? If not why not? [$u=60$  ms$^{lb}-1{rb}$ towards the wall.  This is not physically possible because in reality the collision will not be elastic.]
+
+
+<h5>Level 5 +</h5>
+<p>The simplest case, in which we can calculate an impulse, is where a constant force is applied to a body for an amount of time $t$ (as shown in figure \ref{lb}impulse1{rb}) but we might also want to consider situations where the strength of the force varies in time (figure \ref{lb}impulse2{rb}).  If the force is not constant with time then we need to calculate the total impulse applied over a given time interval to calculate the total change in momentum.  This total impulse is again equal to the area under the force-time graph.
+
+ The geometry in our example is reasonably simple (figure \refimpulse2) so we can use the area of a triangle subtracted from the area of a rectangle to work this area out.
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$ $$
+
+ 
+
+<img src="{$ij.proxyPath}/static/figures/Momentum2.svg"/>
+<span class="caption">The graph of a force that changes over time from an initial value of $F_i$ N  to $F_f $ N over a time of $t$ seconds.  The impulse that the object experiences can be calculated using the area under the line of graph, shown in pink.</span> 
+ But we can also use this force-time graph to illustrate how we would calculate the impulse in a general case, when the area cannot be simply expressed because the force-time relationship is more complex.</p>
+<p>
+
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}impulse2{rb}{rb}{rb}$ $$
+ t
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}impulse2{rb}{rb}{rb}$ $$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}({lb}\vtr F_f{rb}{rb}{rb}$ $$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F_i{rb}{rb}{rb}$ $$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F{rb}{rb}{rb}$ $$
+
+ To find the total impulse we need to add up all the small areas which we can do by integrating this equation for the force over time.
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}t_f{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$  $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr I{rb}{rb}{rb}$ $$
+We can see, therefore, that integrating the equation for the force over time produces the same result as calculating the area under the graph by triangles given by equation \refarea_tri.
+
+<h5>Quite Quick Questions</h5>
+<p>
+[1.] An impulse is applied to a ball of mass, $500$ g, according to the force-time relation shown in figure \ref{lb}impulse2{rb}  in the same direction as its initial velocity.  What is the final velocity of the ball if it has an initial velocity of $10$ ms$^{lb}-1{rb}$ and the parameters of the force-time graph are, $t_f=1$ s, $F_i=5$ N and $F_f=10$ N. [$v=25$ ms$^{lb}-1{rb}$ in the direction of motion.] 
+[2.] A pram complete with baby ($20$ kg) is left $1$ km up along a straight path from the bottom of a hill which is inclined at $30^\circ$ to the horizontal. The pram's brakes fail and the pram begins to perfectly roll down the hill under gravity.   What impulse will be required to stop the pram at the bottom of the hill? [Let the acceleration due to gravity, $g=10$ ms$^{lb}-2{rb}$]. [$I=2000$ Ns in the direction opposite to the motion of the pram]
+[3.] A pinball table uses a compressed spring, with spring constant $k$, to accelerate a steel ball of mass $m$, from rest to as high a speed as possible.   Hooke's Law tells us that the force exerted by the spring depends on the extension, $x$ of the spring;
+$$
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}\vtr F{rb}{rb}{rb}$ $$
+and the extension of the spring in our example will change with time as $x=A\cos(\omega t)$.  Write down the integral expression for the impulse over the interval $t=0$ to $t'$ that would allow us to calculate the velocity of the ball when it leaves the spring at time $t'$. Using this expression what is the velocity of the steel ball after a time, $t'$.$$[v=\frac{lb}-kA{rb}{lb}m{rb}\int_0^{lb}t'{rb} \cos(\omega t) \d t\nonumber$$ $$v=\frac{lb}kA\sin(\omega t'){rb}{lb}m\omega{rb}]\nonumber$$
+
+
+</p>
+{/template}

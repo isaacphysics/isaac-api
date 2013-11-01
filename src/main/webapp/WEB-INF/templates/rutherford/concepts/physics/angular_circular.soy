@@ -1,0 +1,50 @@
+{namespace rutherford.concepts.physics}
+
+/**
+ * angular_circular
+ */
+{template .angular_circular}
+
+
+<h3>Circular motion</h3>
+<p>
+<h4>Circular kinematics</h4>
+<p>
+
+<img src="{$ij.proxyPath}/static/figures/circular.svg"/>
+<span class="caption">Anti-clockwise motion with speed $v$ around the perimeter of a circle of radius $a$.  The angle $\theta$ increases in the anticlockwise (positive) sense.  A small arc $\d l = v \d t$ subtends an angle $\d \theta$ in a time $\d t$.</span>
+
+Figure \ref{lb}fig:circular{rb} shows a circle of radius $a$ with an arc of length $l$ subtending angle $\theta$ at the centre.  Thus $\theta$ is the angle between the radii going to the ends of the arc. Arc length, radius and angle are connected by $l = a \theta$.  The angle in radians is $\theta = l/a$.  A differential length is connected to a differential angle similarly: $\d l = a \d \theta$.<br/>l
+The angle increases at rate $\omega = \d \theta / \d t$, with $\omega$ the angular frequency or speed in radians per second.  The above gives us $v = \d l/\d t = a \d \theta/\d t = a \omega$.  Thus the speed around the circle and the angular frequency are related by:
+$$ 
+ v = a \omega \;\;\; \textrm{lb}or{rb} \;\;\;  \omega = v/a.
+$$  
+The direction of the velocity is tangential.  The units of $\omega$ are $\textrm{lb}s{rb}^{lb}-1{rb}$, radians being dimensionless.
+
+For constant angular speed, the angle is $\theta = \omega t$ in time $t$.</p>
+<p>
+The period $T$ is the time taken to traverse one revolution or one cycle: $\theta = 0 \rightarrow \theta = 2\pi$.</p>
+<p>
+Thus $2\pi = \omega T$ and hence:
+ $$ \omega = 2\pi/T \;\;\; \textrm{lb}or{rb} \;\;\;  T = 2\pi/\omega .
+$$
+ 
+
+<img src="{$ij.proxyPath}/static/figures/centripetal.svg"/>
+<span class="caption">Velocity is tangential to the circle.  The acceleration and hence force is to the centre.</span>
+
+<img src="{$ij.proxyPath}/static/figures/centripetal-derive.svg"/>
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}Velocities $\vtr{lb}v{rb}{rb}{rb}$ 
+
+
+
+<h4>Circular dynamics</h4>
+<p>In circular motion the direction of motion is tangential and always changing; figure~\reffig:centripetal.
+The speed is constant.  The force required to change the velocity, and hence the momentum is always to the centre of the circle and perpendicular to the motion.  This centripetal force does no work.  The energy of the particle is unchanging.  Note that the velocity and thus momentum has reversed direction between the points 1 (at the top of the circle) and 3 (at thebototm of the circle) as a result of the continuing action of the centripetal force.<br/>l
+Figure~\ref{lb}fig:centripetal-derive{rb} shows the velocity changing in a time $\d t$.
+ $\mathit{lb}\underline{lb}\boldsymbol{lb}v{rb}{rb}{rb}$ $$
+Since $v = \omega r$,  we have two equivalent expressions for the {lb}centripetal{rb} (inward) acceleration $a$:
+$$ a = v^2/r \equiv  \omega^2 r .
+$$
+</p>
+{/template}
