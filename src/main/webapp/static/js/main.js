@@ -1,6 +1,7 @@
 
 function loadContent(uri, addToHistory) {
 	
+	uri = uri.replace(ij.proxyPath,"");
 	
 	// Catch URLS that can be rendered without a round-trip to the server
 	var renderedLocally = true;
@@ -54,7 +55,7 @@ function loadContent(uri, addToHistory) {
 		if (template)
 		{
 			// This is a URI we know about
-			$.get(ij.contextPath + "/api" + uri, function(json) {
+			$.get(ij.proxyPath + "/api" + uri, function(json) {
 				soy.renderElement($("#content")[0], template, json, ij);
 				MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 			});
@@ -73,7 +74,7 @@ function loadContent(uri, addToHistory) {
 	console.log("Arriving at", uri);
 	if (addToHistory)
 	{
-		history.pushState(uri,null,uri);	
+		history.pushState(ij.proxyPath + uri,null,ij.proxyPath + uri);	
 	}
 	
 }
@@ -180,7 +181,7 @@ function button_click(e)
 function playVideo(video)
 {
 	$("#video-modal video").remove();
-	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", ij.contextPath + "/static/video/" + video));
+	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", ij.proxyPath + "/static/video/" + video));
 	$('#video-modal').foundation('reveal', 'open');
 }
 
@@ -199,7 +200,7 @@ $(function()
 	
 	window.addEventListener("popstate", popHistoryState);
 
-	history.replaceState("<HOME>", null, ij.contextPath + "/soy/rutherford.main"); // Ugh.
+	history.replaceState("<HOME>", null, ij.proxyPath + "/soy/rutherford.main"); // Ugh.
 	
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}

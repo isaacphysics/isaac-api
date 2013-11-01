@@ -190,8 +190,18 @@ public class RutherfordController {
 
 	public static ImmutableMap getSoyGlobalMap(HttpServletRequest req)
 	{
+		String proxyPath;
+		if (req.getLocalAddr().equals("128.232.20.43")) {
+			proxyPath = "/research/dtg/rutherford-staging";
+		}
+		else if (req.getLocalAddr().equals("128.232.20.40")) {
+			proxyPath = "/research/dtg/rutherford";
+		}
+		else {
+			proxyPath = req.getContextPath();
+		}
 		return ImmutableMap.of( "contextPath", req.getContextPath(),
-		        				"proxyPath", "/rutherford-server" //"/research/dtg/rutherford"
+		        				"proxyPath", proxyPath
 		        				);
 	}
 	
