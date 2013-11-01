@@ -55,7 +55,15 @@ def generate_whitelist():
    whitelist.add(r"\\sin")
    whitelist.add(r"\\cos")
    whitelist.add(r"\\sqrt{")
+   whitelist.add(r"\\times{")
    whitelist.add(r"\\\\")
+   #questions whitelist
+   whitelist.add(r"\\begin{problem}")
+   whitelist.add(r"\\end{problem}")
+   whitelist.add(r"\\begin{enumerate}")
+   whitelist.add(r"\\end{enumerate}")
+   whitelist.add(r"\\item")
+
    logging.debug("Whitelist: " + str(whitelist))
    return whitelist
 
@@ -112,6 +120,11 @@ def __contains_soy_command(line):
     soy_commands.add("{namespace")
     soy_commands.add("{/template")
     soy_commands.add("{$ij.proxyPath")
+    soy_commands.add("{call")
+    soy_commands.add("{/call}")
+    soy_commands.add("{param")
+    soy_commands.add("{literal")
+    soy_commands.add("{/literal")
 
     for command in soy_commands:
         if(command in line):
@@ -129,9 +142,9 @@ def __get_namespace(file_of_interest):
    tmpindex = 0
    for value in path:
         if(value == NAMESPACE_PATH_START):
-            namespace = '{namespace ' + value
+            namespace = '{namespace ' + value.lower()
         elif(namespace != '' and tmpindex != len(path)-1): #need to ignore last element as its the actual filename
-            namespace = namespace + '.' + value
+            namespace = namespace + '.' + value.lower()
 
         tmpindex+=1
 
@@ -147,7 +160,7 @@ def __get_template(file_of_interest):
  * " + filename + "\n\
  */"
 
-   template = template_comment +'\n' +'{template .' + filename+'}'
+   template = template_comment +'\n' +'{template .' + filename.lower() +'}'
 
    return template
 
@@ -185,7 +198,7 @@ def read_source_file_from_disk(inputfile):
 
 # Help / usage output
 def usage():
-   print 'tex-soy.py -h | -i <inputfile> -o <outputfile>'
+   print 'tex-soy.py -h | -q (to use additional question rules) | -t (to user traversal logic to go looking for .tex files in the <inputfile> directory path) | -i <inputfile> -o <outputfile>'
 
 # Output string array to disk line by line
 def write_string_array_to_file(string_list, outputfile):
@@ -207,14 +220,14 @@ def write_string_array_to_file(string_list, outputfile):
 # removes lines starting with % or any new lines before the first non-newline character
 # outputs results as temporary output file.
 # TODO this will need to be changed to do it all in memory rather than file io - it was used for debugging originally
-def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklist):
+def initial_strip_of_latex_commands(inputstring, whitelist, blacklist):
    index = 0
    doc_start_found = False
 
    outputstring = []
 
    for line in inputstring:
-      if(line.startswith(r'\begin{document}')):
+      if(line.startswith(r'\begin{document}') or line.startswith(r'\begin{problem}')):
          doc_start_found = True         
 
       # handle comments that are in the middle of lines
@@ -235,19 +248,16 @@ def initial_strip_of_latex_commands(inputstring, outputfile, whitelist, blacklis
             line = remove_blacklist(line, blacklist)
 
          if((not line.startswith('%')) or line.startswith(TITLE_INDICATOR) or (index == 0 and not line.startswith('\r') or line.startswith('\n'))):
-            #fout.write(line)
             outputstring.append(line)
             index += 1
    
-   #fout.close()
-   #return outputfile+'_tmp'
    return outputstring
 
 # Step 2 - Build structure of the document and add Soy specific commands
 # This is the quick dirty conversion to a structured html fragment using string replacement techniques
 # This function arranges for the soy commands to be included, attempts to detect when paragraphs should be started
 # attempts to guess where sections start and finish as well as tables and equations.
-def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
+def convert_to_soy(inputfile,temp_input_list,question_flag,conversion_dictionary):
    # apply special one-off rules to temp_input_list
    
    # Rule 1 \%maketitle will always appear immediately before the title
@@ -346,7 +356,7 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
       # if('\\nl' in line):  
       #   line = line.replace('\\nl', NEW_PARAGRAPH_INDICATOR)
 
-      if(not inequation and not intable):
+      if(not inequation and not intable and not question_flag):
 
           if(SECTION_MARKUP in line or TITLE_MARKUP in line or SUB_SECTION_MARKUP in line):
              # if(inparagraph):
@@ -378,11 +388,9 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
               line = line.replace('{','')
               line = line.replace('}','')
       
-      if((inequation and not inparagraph) or ('$' in line and not inparagraph)):
+      if(((inequation and not inparagraph) or ('$' in line and not inparagraph)) and not question_flag):
         inparagraph = True
-        print "before:" + line 
         line ='<p>' + line
-        print "after:" + line 
 
       # deal with lb / rb soy issue
       if(not __contains_soy_command(line)):
@@ -400,14 +408,112 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
 
    return temp_input_list
 
+def traverse(currentDir,searchext):
+    infos = []
+    for curdir, dirs, files in os.walk(currentDir): # Walk directory tree
+        for f in files:
+            if(str(f).split('.')[1] == searchext):
+                infos.append(os.path.abspath(os.path.join(curdir, f)))
+    return infos
+
+def replace_braces_with_soy(stringinput):
+    # deal with lb / rb soy issue
+    if(not __contains_soy_command(stringinput)):
+      stringinput = stringinput.replace('{', '~lb~') #intermediate replace
+      stringinput = stringinput.replace('}', '~rb~')
+      stringinput = stringinput.replace('~lb~','{lb}') #final replace
+      stringinput = stringinput.replace('~rb~','{rb}')
+    return stringinput
+
+def strip_all_braces(stringinput):
+    stringinput = stringinput.replace('{','')
+    stringinput = stringinput.replace('}','')
+    return stringinput
+
+# Semantics are known only by line order unfortunately so this is very fragile!
+def convert_questions_to_soy(inputfile, input_list):
+    #use same whitelist and blacklist
+    whitelist = generate_whitelist()
+    blacklist = generate_blacklist()
+
+    template_name = __get_template(inputfile)
+    found_first_answer = False
+    tmpindex = 0
+    for line in input_list:
+        if('\\item' in line):
+
+            line = '[\'desc\':\'' + strip_all_braces(line.replace('\r\n','')) + '\']'
+            
+            if('\\item' not in input_list[tmpindex+1]):
+                line = line + '\n'
+            else:
+                line = line + ',\n'
+
+            line = line.replace('\\item','')
+            line = line.replace('\\textrm','')
+            if(found_first_answer == False):
+                found_first_answer = True
+                line = "{param type: 'checkbox' /}\n"+ "{param choices: [" + strip_all_braces(line)
+
+        input_list[tmpindex] = line
+        tmpindex+=1
+
+    input_list = initial_strip_of_latex_commands(input_list,whitelist,blacklist)
+
+    tmpindex = 0
+    inanswerslist = False
+    nextLineIsFooter = False
+    footer =''
+    explanation = ''
+    footerindex = -1
+    explanationindex = -1
+    for line in input_list:
+
+        #find question start / question end
+        if('\\begin{problem}' in line):
+            line = '\n'
+
+        elif('\\end{problem}' in line):
+            line = ''
+
+        #find begin enumerate for answers
+        if('\\begin{enumerate}' in line):
+            line = '{call .mcq}\n'
+            inanswerslist = True
+        elif('\\end{enumerate}' in line):
+            line = ']/}\n'+'{/call}\n'
+            inanswerslist = False
+            footer = '{call .questionExplanation}\n{param explanation}\n' + strip_all_braces(input_list[tmpindex+1]) + '{/param}\n{/call}\n'
+            footerindex = tmpindex+1
+            explanation = '{call .questionExplanation}\n{param explanation}\n' + strip_all_braces(input_list[tmpindex+2]) + '{/param}\n{/call}\n'
+            explanationindex = tmpindex+2
+
+        input_list[tmpindex] = line
+
+        tmpindex+=1
+
+    input_list[footerindex] = footer
+    input_list[explanationindex] = explanation
+    input_list.append('{/template}')
+
+    input_list = convert_to_soy(inputfile, input_list, True, generate_conversion_dictionary())
+
+
+
+    return input_list
+
 # main method
 def main(argv):
    logging.basicConfig(format='%(levelname)s - %(message)s', level=logging.INFO)
 
    inputfile = ''
    outputfile = ''
+   traversal_directory = False
+   questions = False
+   concepts = True
+
    try:
-      opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+      opts, args = getopt.getopt(argv,"hqcti:o:",["ifile=","ofile="])
    except getopt.GetoptError:
       usage()
       sys.exit(2)
@@ -424,16 +530,53 @@ def main(argv):
          inputfile = arg
       elif opt in ("-o", "--ofile"):
          outputfile = arg
+      elif opt in ("-t", "--traverse"):
+         traversal_directory = True
+      elif opt in ("-c", "--concepts"):
+         concepts = True
+         questions = False
+      elif opt in ("-q", "--questions"):
+         questions = True
+         concepts = False         
 
-   #build up data structures
-   tex_source_list = read_source_file_from_disk(inputfile)
+   if(traversal_directory and concepts):
+       # locate all files to be included
+       filelist = traverse(inputfile,'tex')
 
-   #execute the program 
-   tmpoutput = initial_strip_of_latex_commands(tex_source_list,outputfile,generate_whitelist(), generate_blacklist())
-   finaloutput = convert_to_soy(inputfile,tmpoutput,outputfile,generate_conversion_dictionary())
+       whitelist = generate_whitelist()
+       blacklist = generate_blacklist()
+       conversion_dictionary = generate_conversion_dictionary()
 
-   #output the answer to a file
-   write_string_array_to_file(finaloutput, outputfile)
+       for item in filelist:
+        logging.info('Processing: ' + item)
+        tex_source_list = read_source_file_from_disk(os.path.abspath(item))
+
+        tmpoutput = initial_strip_of_latex_commands(tex_source_list,whitelist,blacklist)
+
+        finaloutput = convert_to_soy(item,tmpoutput,False,conversion_dictionary)
+
+        outputpath = item.replace('.tex', '.soy')
+        
+        logging.info('Writing out: ' + outputpath)
+        write_string_array_to_file(finaloutput, outputpath)
+       
+       logging.info("Batch processing complete")
+       exit()
+   elif(concepts):
+       #build up data structures
+       tex_source_list = read_source_file_from_disk(inputfile)
+
+       #execute the program 
+       tmpoutput = initial_strip_of_latex_commands(tex_source_list,generate_whitelist(), generate_blacklist())
+       finaloutput = convert_to_soy(inputfile,tmpoutput,False,generate_conversion_dictionary())
+
+       #output the answer to a file
+       write_string_array_to_file(finaloutput, outputfile)
+   elif(questions):
+        # do question processing
+        tex_source_list = read_source_file_from_disk(inputfile)
+        tmpoutput_string_list = convert_questions_to_soy(inputfile,tex_source_list)
+        outputfile = write_string_array_to_file(tmpoutput_string_list, outputfile)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
