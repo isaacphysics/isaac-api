@@ -111,7 +111,7 @@ public class RutherfordController {
 					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
 					.put("relatedMathsConcepts", ImmutableList.of("vectors"))
 					.put("questions", ImmutableList.of()).build())
-			.put("c_of_m", ImmutableMap.builder()
+			.put("momentumii", ImmutableMap.builder()
 					.put("title", "Conservation of Momentum")
 					.put("video", "/videos/c_of_m")
 					.put("type", "physics")
@@ -136,7 +136,7 @@ public class RutherfordController {
 					.put("video", "/videos/c_of_e")
 					.put("type", "physics")
 					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("potential_energy", ImmutableMap.builder()
+			.put("energy", ImmutableMap.builder()
 					.put("title", "Potential Energy")
 					.put("video", "/videos/c_of_e")
 					.put("type", "physics")
@@ -145,12 +145,22 @@ public class RutherfordController {
 					.put("title", "Work")
 					.put("video", "/videos/c_of_e")
 					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("eq_motion", ImmutableMap.builder()
+					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())				
+			.put("eq_of_motions_diff", ImmutableMap.builder()
 					.put("title", "Equations of Motion")
 					.put("video", "/videos/c_of_e")
 					.put("type", "physics")
 					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
+			.put("angular_circular", ImmutableMap.builder()
+					.put("title", "Circular kinematics")
+					.put("video", "/videos/angular_circular")
+					.put("type", "physics")
+					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
+			.put("impulse", ImmutableMap.builder()
+					.put("title", "Impulse")
+					.put("video", "/videos/impulse")
+					.put("type", "physics")
+					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())						
 			.build();
 	
 	private ImmutableMap topicQuestions = ImmutableMap.of(
@@ -168,14 +178,16 @@ public class RutherfordController {
 										"newtoniii",
 										"vectors",
 										"calculus",
-										"c_of_m",
+										"momentumii",
 										"c_of_e",
 										"collisions",
 										"momentum",
 										"friction",
-										"potential_energy",
+										"energy",
 										"work",
-										"eq_motion"))),
+										"eq_of_motions_diff",
+										"angular_circular",
+										"impulse"))),
 			"circular-motion", ImmutableMap.of(
 					"level-4", ImmutableMap.of(
 							"questions", ImmutableList.of(
