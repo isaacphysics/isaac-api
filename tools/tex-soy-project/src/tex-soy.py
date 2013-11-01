@@ -11,7 +11,7 @@ TITLE_INDICATOR = '%\maketitle'
 TITLE_MARKUP = 'h3'
 SECTION_MARKUP = 'h4'
 SUB_SECTION_MARKUP = 'h5'
-NEW_PARAGRAPH_INDICATOR = 'NEW_PARAGRAPH'
+#NEW_PARAGRAPH_INDICATOR = 'NEW_PARAGRAPH'
 NAMESPACE_PATH_START = 'rutherford'
 IMAGE_PATH = '{$ij.proxyPath}/static/figures/'
 
@@ -21,12 +21,14 @@ IMAGE_PATH = '{$ij.proxyPath}/static/figures/'
 def generate_whitelist():
    whitelist = Set()
    whitelist.add(r'\\section{')
-   whitelist.add(r'\\subsection{')
+   whitelist.add(r'\\subsection\**{')
    whitelist.add(r'\\caption{')
    #whitelist.add(r'\\begin{')
    whitelist.add(r"\\begin{equation}")
    whitelist.add(r"\\begin{equation\*}")
    whitelist.add(r"\\end{equation}")
+   whitelist.add(r"\\begin{eqnarray}")
+   whitelist.add(r"\\end{eqnarray}")   
    whitelist.add(r"\\end{equation\*}")
    #whitelist.add(r"\\end{")
    whitelist.add(r"\\frac{")
@@ -46,6 +48,13 @@ def generate_whitelist():
    whitelist.add(r"\\ref{")
    #whitelist.add(r"\\label{")
    whitelist.add(r"\\textrm{")
+   whitelist.add(r"\\quarter{")
+   whitelist.add(r"\\third{")
+   whitelist.add(r"\\half{")
+   whitelist.add(r"\\color{")
+   whitelist.add(r"\\sin")
+   whitelist.add(r"\\cos")
+   whitelist.add(r"\\sqrt{")
    whitelist.add(r"\\\\")
    logging.debug("Whitelist: " + str(whitelist))
    return whitelist
@@ -80,14 +89,35 @@ def generate_conversion_dictionary():
    tex_to_html_opening_tag_dictionary[r'\\begin{tabular}']=r'<table>'
    tex_to_html_opening_tag_dictionary[r'\\end{tabular}']=r'</table>'
    tex_to_html_opening_tag_dictionary[r'\\includegraphics\[.*?\]*']=r'<img src="'+IMAGE_PATH+REPLACE_WORD+'"/>\n'
+   tex_to_html_opening_tag_dictionary[r'\\includegraphics\[.*?\]*']=r'<img src="'+IMAGE_PATH+REPLACE_WORD+'"/>\n'
+   tex_to_html_opening_tag_dictionary[r'\\vtr']=r' $\mathit{\underline{\boldsymbol{'+REPLACE_WORD+'}}}$ '
    return tex_to_html_opening_tag_dictionary
+
+def generate_simple_find_replace_dictionary():
+   simple_f_r_dictionary = dict()
+   simple_f_r_dictionary['\\half']='$\\frac{1}{2}$'
+   simple_f_r_dictionary['\\third']='$\\frac{1}{3}$'
+   simple_f_r_dictionary['\\quarter']='$\\frac{1}{4}$'
+   simple_f_r_dictionary['\\color{red}']=''
+   simple_f_r_dictionary['\\color{black}']=''
+   simple_f_r_dictionary['\\nl']='<br/>'
+   simple_f_r_dictionary['\\nll']='<br/>'
+   return simple_f_r_dictionary
+
 
 # Simple utility function to look for soy commands added by this script so that they are not interfered with.
 def __contains_soy_command(line):
-    if("{template" not in line and '{namespace' not in line and '{/template' not in line and '{$ij.proxyPath' not in line):
-        return False
-    else:
-        return True
+    soy_commands = Set()
+    soy_commands.add("{template")
+    soy_commands.add("{namespace")
+    soy_commands.add("{/template")
+    soy_commands.add("{$ij.proxyPath")
+
+    for command in soy_commands:
+        if(command in line):
+            return True
+
+    return False
 
 # Utility method to give you the soy command to declare a namespace based on a file provided
 def __get_namespace(file_of_interest):
@@ -271,15 +301,22 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
             m = re.search(r'\{(.*?)\}', line) # easy braces extraction
             line = conversion_dictionary[key].replace(REPLACE_WORD,m.group(1))
 
+      # do easy find replace from simple dictionary
+      simple_f_r_dictionary = generate_simple_find_replace_dictionary()
+      for key in simple_f_r_dictionary:
+        line = line.replace(key, simple_f_r_dictionary[key])
+
       # multi-line equations
-      if('\\begin{equation' in line):
+      if('\\begin{eq' in line):
         line = line.replace('\\begin{equation*}', '$$')
         line = line.replace('\\begin{equation}', '$$')
+        line = line.replace('\\begin{eqnarray}', '$$')
         inequation = True
       
-      if('\\end{equation' in line):         
+      if('\\end{eq' in line):         
         line = line.replace('\\end{equation*}', '$$')
         line = line.replace('\\end{equation}', '$$')
+        line = line.replace('\\end{eqnarray}', '$$')        
         inequation = False
 
       # tables
@@ -304,18 +341,18 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
                 intablerow = False
 
       # paragraphs
-      if('\\nll' in line):
-        line = line.replace('\\nll', NEW_PARAGRAPH_INDICATOR)
-      if('\\nl' in line):  
-        line = line.replace('\\nl', NEW_PARAGRAPH_INDICATOR)
+      # if('\\nll' in line):
+      #   line = line.replace('\\nll', NEW_PARAGRAPH_INDICATOR)
+      # if('\\nl' in line):  
+      #   line = line.replace('\\nl', NEW_PARAGRAPH_INDICATOR)
 
       if(not inequation and not intable):
 
-          if(SECTION_MARKUP in line or TITLE_MARKUP in line or SUB_SECTION_MARKUP in line or NEW_PARAGRAPH_INDICATOR in line):
-             if(inparagraph):
-                line = '</p>\n' + line
-                if(NEW_PARAGRAPH_INDICATOR in line):
-                    line = line.replace(NEW_PARAGRAPH_INDICATOR, '') #remove artificially inserted new paragraph indicator
+          if(SECTION_MARKUP in line or TITLE_MARKUP in line or SUB_SECTION_MARKUP in line):
+             # if(inparagraph):
+             #    line = '</p>\n<p>' + line
+             #    if(NEW_PARAGRAPH_INDICATOR in line):
+             #        line = line.replace(NEW_PARAGRAPH_INDICATOR, '') #remove artificially inserted new paragraph indicator
 
              #create new paragraph 
              temp_input_list.insert(tmpindex+1,'\n<p>')
@@ -341,6 +378,12 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
               line = line.replace('{','')
               line = line.replace('}','')
       
+      if((inequation and not inparagraph) or ('$' in line and not inparagraph)):
+        inparagraph = True
+        print "before:" + line 
+        line ='<p>' + line
+        print "after:" + line 
+
       # deal with lb / rb soy issue
       if(not __contains_soy_command(line)):
           line = line.replace('{', '~lb~') #intermediate replace
@@ -348,7 +391,7 @@ def convert_to_soy(inputfile,temp_input_list,outputfile,conversion_dictionary):
           line = line.replace('~lb~','{lb}') #final replace
           line = line.replace('~rb~','{rb}')
 
-      #deal with image file extensions
+      # replace with image file extensions
       if('.eps' in line):
         line = line.replace('.eps', '.svg')
 
