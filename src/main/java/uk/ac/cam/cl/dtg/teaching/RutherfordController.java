@@ -26,7 +26,7 @@ public class RutherfordController {
 	private ImmutableMap questions = ImmutableMap.builder()
 			.put("a_toboggan", ImmutableMap.of(
 					"title", "A Toboggan",
-					"physicsConcepts", ImmutableList.of("newton_2")))
+					"physicsConcepts", ImmutableList.of("newtonii")))
 			.put("vector_vs_scalar", ImmutableMap.of(
 					"title", "Vector vs. Scalar",
 					"mathsConcepts", ImmutableList.of("vectors")))
@@ -38,63 +38,77 @@ public class RutherfordController {
 					"physicsConcepts", ImmutableList.of("c_of_e", "potential_energy", "work")))
 			.put("on_ice", ImmutableMap.of(
 					"title", "On Ice",
-					"physicsConcepts", ImmutableList.of("newton_2", "eq_motion"),
+					"physicsConcepts", ImmutableList.of("newtonii", "eq_motion"),
 					"mathsConcepts", ImmutableList.of("vectors", "calculus")))
 			.put("example_question", ImmutableMap.of(
 					"title", "Example Question",
-					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
 					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
 					"problemVideos", ImmutableList.of("/videos/problemOne")))
 			
 			.put("particle_circle", ImmutableMap.of(
 					"title", "Particle Circle",
-					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
 					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
 					"problemVideos", ImmutableList.of("/videos/problemOne")))
 			.put("satellite", ImmutableMap.of(
 					"title", "Satellite",
-					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
 					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
 					"problemVideos", ImmutableList.of("/videos/problemOne")))
 			.put("minute_hand", ImmutableMap.of(
 					"title", "Minute Hand",
-					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
 					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
 					"problemVideos", ImmutableList.of("/videos/problemOne")))
 			.put("mass_on_elastic", ImmutableMap.of(
 					"title", "Mass on Elastic",
-					"physicsConcepts", ImmutableList.of("newton_2", "other_physics_concept"),
+					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
 					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
 					"problemVideos", ImmutableList.of("/videos/problemOne"))).build();
 					                                 
 	
 	private ImmutableMap concepts = ImmutableMap.builder()
-			.put("newton_2", ImmutableMap.builder()
-					.put("title", "Newton's Second Law")
-					.put("video", "/videos/newton_2")
+			.put("newtoni", ImmutableMap.builder()
+					.put("title", "Newton's First Law")
+					.put("video", "/videos/newtoni")
 					.put("type", "physics")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newton_1", "newton_3"))
+					.put("relatedPhysicsConcepts", ImmutableList.of("newtonii", "newtoniii"))
+					.put("relatedMathsConcepts", ImmutableList.of("vectors", "calculus"))
+					.put("questions", ImmutableList.of("a_toboggan")).build())
+			.put("newtonii", ImmutableMap.builder()
+					.put("title", "Newton's Second Law")
+					.put("video", "/videos/newtonii")
+					.put("type", "physics")
+					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
+					.put("relatedMathsConcepts", ImmutableList.of("vectors", "calculus"))
+					.put("questions", ImmutableList.of("a_toboggan")).build())
+			.put("newtoniii", ImmutableMap.builder()
+					.put("title", "Newton's Third Law")
+					.put("video", "/videos/newtoniii")
+					.put("type", "physics")
+					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtonii"))
 					.put("relatedMathsConcepts", ImmutableList.of("vectors", "calculus"))
 					.put("questions", ImmutableList.of("a_toboggan")).build())
 			.put("vectors", ImmutableMap.builder()
 					.put("title", "Vectors")
 					.put("video", "/videos/vectors")
 					.put("type", "maths")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newton_1", "newton_3"))
+					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
 					.put("relatedMathsConcepts", ImmutableList.of("calculus"))
 					.put("questions", ImmutableList.of("vector_vs_scalar")).build())
 			.put("calculus", ImmutableMap.builder()
 					.put("title", "Calculus")
 					.put("video", "/videos/vectors")
 					.put("type", "maths")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newton_1", "newton_3"))
+					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
 					.put("relatedMathsConcepts", ImmutableList.of("vectors"))
 					.put("questions", ImmutableList.of()).build())
 			.put("algebra_na", ImmutableMap.builder()
 					.put("title", "Algebra")
 					.put("video", "/videos/vectors")
 					.put("type", "maths")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newton_1", "newton_3"))
+					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
 					.put("relatedMathsConcepts", ImmutableList.of("vectors"))
 					.put("questions", ImmutableList.of()).build())
 			.put("c_of_m", ImmutableMap.builder()
@@ -149,7 +163,9 @@ public class RutherfordController {
 										"what_goes_up"/*,
 										"on_ice"*/),
 								"concepts", ImmutableList.of(
-										"newton_2",
+										"newtoni",
+										"newtonii",
+										"newtoniii",
 										"vectors",
 										"calculus",
 										"c_of_m",
@@ -241,6 +257,7 @@ public class RutherfordController {
 		} catch (SoyTofuException e)
 		{
 			cContent = "<i>No content available.</i>";
+			e.printStackTrace();
 		}
 		
 		return ImmutableMap.of("concept", ImmutableMap.of("id", concept,
