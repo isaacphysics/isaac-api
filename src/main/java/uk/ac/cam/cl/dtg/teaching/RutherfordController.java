@@ -275,7 +275,7 @@ public class RutherfordController {
 		String cContent = "";
 		try
 		{
-			cContent = renderer.render("rutherford.concepts." + ((ImmutableMap)concepts.get(concept)).get("type") + "." + concept, null, getSoyGlobalMap(req), Locale.ENGLISH);
+			cContent = renderer.render("rutherford.content." + concept, null, getSoyGlobalMap(req), Locale.ENGLISH);
 		} catch (SoyTofuException e)
 		{
 			cContent = "<i>No content available.</i>";
