@@ -33,7 +33,35 @@ public class RutherfordController {
 	private static final Logger log = LoggerFactory
 			.getLogger(RutherfordController.class);
 
-	private Map<String, ContentDetail> details = ContentDetail.load();
+	// Map of contentID to detail
+	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
+	
+	// Map of topicPath to detail
+	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
+
+	@GET
+	@Path("learn")
+	@Produces("application/json")
+	public IndexPage getTopics() {
+		ImmutableList.Builder<IndexPageItem> builder = ImmutableList.builder();
+		SortedSet<TopicDetail> values = new TreeSet<TopicDetail>(
+				topicDetails.values());
+		for (TopicDetail t : values) {
+			for (Map.Entry<String, String> e : t.pdf.entrySet()) {
+				// see whether there is any concepts or questions for this
+				boolean found = false;
+				for(ContentDetail d : contentDetails.values()) {
+					if (d.topic.equals(t.topic) && d.level.equals(e.getKey())) {
+						found = true;
+						break;
+					}
+				}
+				builder.add(new IndexPageItem(t.linkTitle, e.getKey(), t.topic,
+						e.getValue(),found));
+			}
+		}
+		return new IndexPage(builder.build());
+	}
 
 	/**
 	 * Return the list of concepts and questions available for this topic at
