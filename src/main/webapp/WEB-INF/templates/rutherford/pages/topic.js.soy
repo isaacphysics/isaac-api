@@ -2,14 +2,14 @@
 
 /**
  * Topic
- * @param topicName
+ * @param topicTitle
  * @param level
  * @param conceptIds
  * @param questionIds
  * @param environment
  */
 {template .topic}
-<h2>Topic: {$topicName}</h2>
+<h2>Topic: {$topicTitle}</h2>
 <h3>Level: {$level}</h2>
 
 {let $numRows: max(ceiling(length($questionIds) / 2), length($conceptIds))/}
