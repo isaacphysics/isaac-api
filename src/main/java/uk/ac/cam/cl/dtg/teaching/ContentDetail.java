@@ -18,7 +18,7 @@ import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 
 import com.google.common.collect.ImmutableList;
 
-public class ContentDetail {
+public class ContentDetail implements Comparable<ContentDetail> {
 	
 	private static final Logger log = LoggerFactory.getLogger(ContentDetail.class);
 	
@@ -45,6 +45,9 @@ public class ContentDetail {
 
 	@JsonProperty("QUESTIONS")
 	List<String> relatedQuestionIds;
+	
+	@JsonProperty("ORDER")
+	int order;
 
 	public static final String TYPE_QUESTION = "question";
 	public static final String TYPE_CONCEPT = "concept";
@@ -79,5 +82,13 @@ public class ContentDetail {
 			log.error("Unexpected IO exception reading JSON input stream", e);
 		}
 		return null;
+	}
+
+	@Override
+	public int compareTo(ContentDetail o) {
+		int cmp = new Integer(order).compareTo(o.order);
+		if (cmp == 0) cmp = linkTitle.compareTo(o.linkTitle);
+		if (cmp == 0) cmp = id.compareTo(id);
+		return cmp;
 	}
 }

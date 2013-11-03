@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.teaching;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -51,7 +53,9 @@ public class RutherfordController {
 				.builder();
 		ImmutableList.Builder<String> questionIdBuilder = ImmutableList
 				.builder();
-		for (ContentDetail detail : details.values()) {
+		
+		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(details.values());
+		for (ContentDetail detail : values) {
 			if (topic1.equals(detail.topic) && level.equals(detail.level)) {
 				if (ContentDetail.TYPE_CONCEPT.equals(detail.type)) {
 					conceptIdBuilder.add(detail.id);
