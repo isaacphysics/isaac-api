@@ -90,10 +90,10 @@ public class RutherfordController {
 				contentDetails.values());
 		for (ContentDetail detail : values) {
 			if (topic.equals(detail.topic) && level.equals(detail.level)) {
-				if (ContentDetail.TYPE_CONCEPT.equals(detail.type)) {
-					conceptIdBuilder.add(detail.id);
-				} else if (ContentDetail.TYPE_QUESTION.equals(detail.type)) {
+				if (ContentDetail.TYPE_QUESTION.equals(detail.type)) {
 					questionIdBuilder.add(detail.id);
+				} else {
+					conceptIdBuilder.add(detail.id);
 				}
 			}
 		}

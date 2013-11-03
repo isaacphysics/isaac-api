@@ -82,7 +82,7 @@
  * @param concept
  */
 {template .conceptLink}
-{let $buttonClass: strContains($concept.topic,'physics/') ? 'success' : '' /}
+{let $buttonClass: $concept.type == 'physics' ? 'success' : '' /}
 	<a href="#" 
 	   class="button round {$buttonClass} plumbLink"
 	   style="width:90%"

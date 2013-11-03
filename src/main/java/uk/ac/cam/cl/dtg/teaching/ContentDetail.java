@@ -51,8 +51,9 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	int order;
 
 	public static final String TYPE_QUESTION = "question";
-	public static final String TYPE_CONCEPT = "concept";
-
+	public static final String TYPE_PHYSICS = "physics";
+	public static final String TYPE_MATHS = "maths";
+	
 	public ContentInfo toContentInfo() {
 		return new ContentInfo(id, type, title, topic, level, videoId,
 				relatedConceptIds == null ? ImmutableList.<String> of()
