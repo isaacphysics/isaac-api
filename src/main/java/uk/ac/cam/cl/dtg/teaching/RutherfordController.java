@@ -58,7 +58,7 @@ public class RutherfordController {
 						break;
 					}
 				}
-				builder.add(new IndexPageItem(t.linkTitle, e.getKey(), t.topic,
+				builder.add(new IndexPageItem(t.title, e.getKey(), t.topic,
 						e.getValue(),found));
 			}
 		}
@@ -103,7 +103,7 @@ public class RutherfordController {
 
 		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
 
-		return new TopicPage(topicDetail.linkTitle, level, conceptIds, questionIds, environment);
+		return new TopicPage(topicDetail.title, level, conceptIds, questionIds, environment);
 	}
 
 	@GET

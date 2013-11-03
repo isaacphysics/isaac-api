@@ -29,8 +29,8 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	@JsonProperty("TYPE")
 	String type;
 
-	@JsonProperty("LINKTITLE")
-	String linkTitle;
+	@JsonProperty("TITLE")
+	String title;
 
 	@JsonProperty("TOPIC")
 	String topic;
@@ -54,7 +54,7 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	public static final String TYPE_CONCEPT = "concept";
 
 	public ContentInfo toContentInfo() {
-		return new ContentInfo(id, type, linkTitle, topic, level, videoId,
+		return new ContentInfo(id, type, title, topic, level, videoId,
 				relatedConceptIds == null ? ImmutableList.<String> of()
 						: ImmutableList.copyOf(relatedConceptIds),
 				relatedQuestionIds == null ? ImmutableList.<String> of()
@@ -88,7 +88,7 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	@Override
 	public int compareTo(ContentDetail o) {
 		int cmp = new Integer(order).compareTo(o.order);
-		if (cmp == 0) cmp = linkTitle.compareTo(o.linkTitle);
+		if (cmp == 0) cmp = title.compareTo(o.title);
 		if (cmp == 0) cmp = id.compareTo(id);
 		return cmp;
 	}

@@ -10,7 +10,7 @@
 {template .concept}
 <div class="row">
 	<div class="small-12 columns">
-		<h2>Concept: {$environment[$id].linkTitle}</h2>
+		<h2>Concept: {$environment[$id].title}</h2>
 	</div>
 </div>
 <div class="row">
@@ -71,7 +71,7 @@
 	{let $detail: $environment[$id]/}
 	{if $detail}
 		{if strContains($detail.topic,$filter)}
-			<a href="#" data-content-uri="/concepts/{$id}">{$detail.linkTitle}</a><br/>
+			<a href="#" data-content-uri="/concepts/{$id}">{$detail.title}</a><br/>
 		{/if}
 	{else}
 		{$id} <i>(missing)</i><br/>

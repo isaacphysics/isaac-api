@@ -7,16 +7,16 @@ public class IndexPage {
 	private ImmutableList<IndexPageItem> items;
 
 	public static class IndexPageItem {
-		private String linkTitle;
+		private String title;
 		private String level;
 		private String topic;
 		private String pdf;
 		private boolean contentAvailable;
 		
-		public IndexPageItem(String linkTitle, String level, String topic,
+		public IndexPageItem(String title, String level, String topic,
 				String pdf, boolean contentAvailable) {
 			super();
-			this.linkTitle = linkTitle;
+			this.title = title;
 			this.level = level;
 			this.topic = topic;
 			this.pdf = pdf;
@@ -27,8 +27,8 @@ public class IndexPage {
 			return contentAvailable;
 		}
 
-		public String getLinkTitle() {
-			return linkTitle;
+		public String getTitle() {
+			return title;
 		}
 
 		public String getLevel() {

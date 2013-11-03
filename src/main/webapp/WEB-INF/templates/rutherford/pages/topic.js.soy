@@ -73,7 +73,7 @@
 	   id="{$question.id}" 
 	   data-content-uri="/questions/{$question.id}"
 	   data-concept-links="{call .implode}{param list: $question.relatedConceptIds /}{/call}"
-		Q{$number}: {$question.linkTitle}
+		Q{$number}: {$question.title}
 	</a>
 {/template}
 
@@ -89,7 +89,7 @@
 	   id="{$concept.id}"
 	   data-content-uri="/concepts/{$concept.id}"
 	   data-question-links="{call .implode}{param list: $concept.relatedQuestionIds /}{/call}">
-		{$concept.linkTitle}
+		{$concept.title}
 	</a>
 {/template}
 

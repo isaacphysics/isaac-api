@@ -8,7 +8,7 @@ public class ContentInfo {
 
 	private String type;
 
-	private String linkTitle;
+	private String title;
 
 	private String topic;
 
@@ -20,14 +20,14 @@ public class ContentInfo {
 
 	private ImmutableList<String> relatedQuestionIds;
 
-	public ContentInfo(String id, String type, String linkTitle, String topic,
+	public ContentInfo(String id, String type, String title, String topic,
 			String level, String videoId,
 			ImmutableList<String> relatedConceptIds,
 			ImmutableList<String> relatedQuestionIds) {
 		super();
 		this.id = id;
 		this.type = type;
-		this.linkTitle = linkTitle;
+		this.title = title;
 		this.topic = topic;
 		this.level = level;
 		this.videoId = videoId;
@@ -43,8 +43,8 @@ public class ContentInfo {
 		return type;
 	}
 
-	public String getLinkTitle() {
-		return linkTitle;
+	public String getTitle() {
+		return title;
 	}
 
 	public String getTopic() {

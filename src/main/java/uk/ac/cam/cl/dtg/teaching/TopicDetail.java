@@ -22,8 +22,8 @@ public class TopicDetail implements Comparable<TopicDetail> {
 	@JsonProperty("TOPIC")
 	String topic;
 
-	@JsonProperty("LINKTITLE")
-	String linkTitle;
+	@JsonProperty("TITLE")
+	String title;
 
 	@JsonProperty("PDF")
 	Map<String, String> pdf;
@@ -59,7 +59,7 @@ public class TopicDetail implements Comparable<TopicDetail> {
 	public int compareTo(TopicDetail o) {
 		int cmp = new Integer(order).compareTo(o.order);
 		if (cmp == 0)
-			cmp = linkTitle.compareTo(o.linkTitle);
+			cmp = title.compareTo(o.title);
 		if (cmp == 0)
 			cmp = topic.compareTo(o.topic);
 		return cmp;
