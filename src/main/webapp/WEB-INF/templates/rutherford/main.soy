@@ -15,8 +15,8 @@
 	
 	<link rel="stylesheet" href="{$ij.proxyPath}/static/css/vendor/foundation.css">
 	<link rel="stylesheet" href="{$ij.proxyPath}/static/css/rutherford.css">
+	<!-- This needs to be in the head of the document -->
 	<script src="{$ij.proxyPath}/static/js/vendor/custom.modernizr.js"></script>
-	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 </head>
 <body style="background: url({$ij.proxyPath}/static/img/bg.png) repeat 10px 10px fixed;">
 <div class="wrapper">
@@ -132,7 +132,8 @@
 </div>
 
 <script>
-  	document.write('<script src=' + ('__proto__' in {lb}{rb} ? ' {$ij.proxyPath}/static/js/vendor/zepto' : '{$ij.proxyPath}/static/js/vendor/jquery') + '.js><\/script>');
+// Disable zepto since jsPlumb seems to really need jQuery
+//  	document.write('<script src=' + ('__proto__' in {lb}{rb} ? ' {$ij.proxyPath}/static/js/vendor/zepto' : '{$ij.proxyPath}/static/js/vendor/jquery') + '.js><\/script>');
 
 	// Manually rebuild injected data for client-side rendering of soy templates. Ugh.
 	var ij = {lb}proxyPath: "{$ij.proxyPath}",
@@ -140,13 +141,15 @@
 	
 </script>
 
+	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+	<script type="text/javascript" src="{$ij.proxyPath}/static/js/vendor/jquery-1.9.1.min.js"></script>
 	<script src="{$ij.proxyPath}/static/js/vendor/foundation.min.js"></script>
+	<script type="text/javascript" src="{$ij.proxyPath}/static/js/vendor/jquery.jsPlumb-1.5.3-min.js "></script>
 	
-<!--	<script type="text/javascript" src="{$ij.proxyPath}/static/js/vendor/jquery-1.9.1.min.js"></script>-->
 	<script type="text/javascript" src="{$ij.proxyPath}/static/js/vendor/soyutils.js"></script>
 	<script type="text/javascript" src="{$ij.proxyPath}/static/js/main.js"></script>
 	<script type="text/javascript" src="{$ij.proxyPath}/soy/js/1/rutherford.pages.js"></script>
-
 	<script>
 		$(document).foundation();
 	</script>

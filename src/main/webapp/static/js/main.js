@@ -205,6 +205,8 @@ $(function()
 	{
 		$("video").remove();
 	});
+
+	$("body").on("mouseenter",".plumbLink",plumb);
 	
 	window.addEventListener("popstate", popHistoryState);
 
@@ -213,4 +215,33 @@ $(function()
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
 		});
+});
+
+function plumb(e) {
+	var myid = e.target.id;
+	
+	var conceptLinks = $(e.target).data("conceptLinks") || "";
+	var questionLinks = $(e.target).data("questionLinks") || "";
+	
+	var links = [];
+	links = links.concat(conceptLinks !== "" ? conceptLinks.split(",") : []);
+	links = links.concat(questionLinks !== "" ? questionLinks.split(",") : []);
+	
+	jsPlumb.detachEveryConnection();
+	for(var i in links) {
+		if ($("#"+links[i]).length > 0) { // if the concept/question is missing then do nothing
+			jsPlumb.connect({
+				source:myid,
+				target:links[i],
+				endpoint:"Blank",
+				connector: ["Bezier", {"curviness":50} ] ,
+				anchors:[ [ [0, 0.5, -1, 0], [1,0.5,1,0] ],[ [0, 0.5, -1, 0], [1,0.5,1,0] ]]});
+		}
+	}
+}
+
+jsPlumb.ready(function() {
+	jsPlumb.Defaults.Container = $("#content");
+	// your jsPlumb related init code goes here
+
 });

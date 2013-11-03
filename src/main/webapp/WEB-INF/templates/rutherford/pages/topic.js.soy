@@ -68,11 +68,11 @@
  */
 {template .questionLink}
 	<a href="#"
-	   class="alert button radius"
+	   class="alert button radius plumbLink"
 	   style="width:90%"
 	   id="{$question.id}" 
 	   data-content-uri="/questions/{$question.id}"
-	   data-concept-links="{call .implode}{param list: $question.relatedConceptIds /}{/call}"
+	   data-concept-links="{call .implode}{param list: $question.relatedConceptIds /}{/call}">
 		Q{$number}: {$question.title}
 	</a>
 {/template}
@@ -84,7 +84,7 @@
 {template .conceptLink}
 {let $buttonClass: strContains($concept.topic,'physics/') ? 'success' : '' /}
 	<a href="#" 
-	   class="button round {$buttonClass}"
+	   class="button round {$buttonClass} plumbLink"
 	   style="width:90%"
 	   id="{$concept.id}"
 	   data-content-uri="/concepts/{$concept.id}"
