@@ -2,42 +2,56 @@
 
 /**
  * Question
- * @param question
- */
+ * @param renderedContent
+ * @param id
+ * @param environment
+  */
 {template .question}
 <div class="row">
 	<div class="small-12 columns">
-		{call .questionHeader data="all" /}
+		<h2>Question: {$environment[$id].title}</h2>
 	</div>
 </div
 <div class="row">
 	<div class="small-8 columns">
-		{$question.content|noAutoescape}
+		{$renderedContent|noAutoescape}
 	</div>
 	<div id="questionSidebar" class="small-4 columns">
-		{call .questionSidebar data="all" /}
+		{call .questionSidebar}
+			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
+			{param relatedQuestionIds : $environment[$id].relatedQuestionIds /}
+			{param environment: $environment /}
+		{/call}
 	</div>
 </div>
 {/template}
 
 /**
  * Question Sidebar
+ * @param relatedConceptIds
+ * @param relatedQuestionIds
+ * @param environment
  */
 {template .questionSidebar}
 <!--<h3>A little help...</h3>-->
 <h4>Physical Concepts</h4>
-//{call .conceptList}{param conceptList: ($question.details.physicsConcepts ?: []) /}{/call}
+{call .conceptList}
+	{param filter: 'physics' /}
+	{param ids: $relatedConceptIds /}	
+	{param environment: $environment /}
+{/call}
 <h4>Maths Concepts</h4>
-//{call .conceptList}{param conceptList: ($question.details.mathsConcepts ?: []) /}{/call}
+{call .conceptList}
+	{param filter: 'maths' /}
+	{param ids: $relatedConceptIds /}	
+	{param environment: $environment /}
+{/call}
 <h4>This Problem</h4>
-//{call .conceptList}{param conceptList: ($question.details.problemVideo ?: []) /}{/call}
+// this had a video link in it before - TODO
+{call .conceptList}
+	{param filter: '' /}
+	{param ids: $relatedQuestionIds /}	
+	{param environment: $environment /}
+{/call}
 {/template}
 
-/**
- * Question Header
- * @param question
- */
-{template .questionHeader}
-<h2>Question: {$question.details.title} /*<a href="#" data-content-uri="/questions/{$question.id}">(reload)</a>*/</h2>
-
-{/template}
