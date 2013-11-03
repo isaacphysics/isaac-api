@@ -1,0 +1,105 @@
+{namespace rutherford.pages}
+
+/**
+ * Topic
+ * @param topicName
+ * @param level
+ * @param conceptIds
+ * @param questionIds
+ * @param environment
+ */
+{template .topic}
+<h2>Topic: {$topicName}</h2>
+<h3>Level: {$level}</h2>
+
+{let $numRows: max(ceiling(length($questionIds) / 2), length($conceptIds))/}
+<div class="row topic-row">
+	<div class="small-4 columns left-question-column">
+<h4>Questions</h4>
+	</div>
+	<div class="small-4 columns concept-column">
+<h4>Concepts</h4>
+	</div>
+	<div class="small-4 columns right-question-column">
+<h4>Questions</h4>
+	</div>
+</div>
+
+{for $i in range($numRows)}
+<div class="row topic-row">
+	<div class="small-4 columns left-question-column">
+	{if $i*2 < length($questionIds)}
+		{call .questionLink}
+			{param question: $environment[$questionIds[$i*2]] /}
+			{param number: $i*2+1 /}		
+		{/call}
+	{else}
+		&nbsp;
+	{/if}
+	</div>
+	<div class="small-4 columns concept-column">
+	{if $i < length($conceptIds)}
+		{call .conceptLink}
+			{param concept: $environment[$conceptIds[$i]] /}		
+		{/call}
+	{else}
+		&nbsp;
+	{/if}
+	</div>
+	<div class="small-4 columns right-question-column">
+	{if $i*2+1 < length($questionIds)}
+		{call .questionLink}
+			{param question: $environment[$questionIds[$i*2+1]]/}
+			{param number: $i*2+2 /}		
+		{/call}
+	{else}
+		&nbsp;
+	{/if}
+	
+	</div>
+</div>
+{/for}
+{/template}
+
+/**
+ * Question Link Fragment
+ * @param question
+ * @param number
+ */
+{template .questionLink}
+	<a href="#"
+	   class="alert button radius"
+	   style="width:90%"
+	   id="{$question.id}" 
+	   data-content-uri="/questions/{$question.id}"
+	   data-concept-links="{call .implode}{param list: $question.relatedConceptIds /}{/call}"
+		Q{$number}: {$question.linkTitle}
+	</a>
+{/template}
+
+/**
+ * Concept Link Fragment
+ * @param concept
+ */
+{template .conceptLink}
+{let $buttonClass: strContains($concept.topic,'physics/') ? 'success' : '' /}
+	<a href="#" 
+	   class="button round {$buttonClass}"
+	   style="width:90%"
+	   id="{$concept.id}"
+	   data-content-uri="/concepts/{$concept.id}"
+	   data-question-links="{call .implode}{param list: $concept.relatedQuestionIds /}{/call}">
+		{$concept.linkTitle}
+	</a>
+{/template}
+
+/**
+ * Implode
+ * @param list
+ */
+{template .implode}
+{foreach $i in $list ?: []}
+{$i}{if not isLast($i)},{/if}
+{/foreach}
+{/template}
+ 

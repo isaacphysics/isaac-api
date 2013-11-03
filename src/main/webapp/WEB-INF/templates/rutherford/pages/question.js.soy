@@ -1,0 +1,43 @@
+{namespace rutherford.pages}
+
+/**
+ * Question
+ * @param question
+ */
+{template .question}
+<div class="row">
+	<div class="small-12 columns">
+		{call .questionHeader data="all" /}
+	</div>
+</div
+<div class="row">
+	<div class="small-8 columns">
+		{$question.content|noAutoescape}
+	</div>
+	<div id="questionSidebar" class="small-4 columns">
+		{call .questionSidebar data="all" /}
+	</div>
+</div>
+{/template}
+
+/**
+ * Question Sidebar
+ */
+{template .questionSidebar}
+<!--<h3>A little help...</h3>-->
+<h4>Physical Concepts</h4>
+//{call .conceptList}{param conceptList: ($question.details.physicsConcepts ?: []) /}{/call}
+<h4>Maths Concepts</h4>
+//{call .conceptList}{param conceptList: ($question.details.mathsConcepts ?: []) /}{/call}
+<h4>This Problem</h4>
+//{call .conceptList}{param conceptList: ($question.details.problemVideo ?: []) /}{/call}
+{/template}
+
+/**
+ * Question Header
+ * @param question
+ */
+{template .questionHeader}
+<h2>Question: {$question.details.title} /*<a href="#" data-content-uri="/questions/{$question.id}">(reload)</a>*/</h2>
+
+{/template}

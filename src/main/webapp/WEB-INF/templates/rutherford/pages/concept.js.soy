@@ -1,0 +1,82 @@
+{namespace rutherford.pages}
+
+/**
+ * Concept
+ * 
+ * @param renderedContent
+ * @param id
+ * @param environment
+ */
+{template .concept}
+<div class="row">
+	<div class="small-12 columns">
+		<h2>Concept: {$environment[$id].linkTitle}</h2>
+	</div>
+</div>
+<div class="row">
+	<div class="small-8 columns">
+		{$renderedContent|noAutoescape}
+	</div>
+	<div id="conceptSidebar" class="small-4 columns">
+		{call .conceptSidebar}
+			{param conceptId : $id /}
+			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
+			{param relatedQuestionIds : $environment[$id].relatedQuestionIds /}
+			{param environment: $environment /}
+		{/call}
+	</div>
+</div>
+{/template}
+
+
+/**
+ * Concept Sidebar
+ * @param conceptId
+ * @param relatedConceptIds
+ * @param relatedQuestionIds
+ * @param environment
+ */
+{template .conceptSidebar}
+<!--<h3>You may like...</h3>-->
+<h4>Physical Concepts</h4>
+{call .conceptList}
+	{param filter: 'physics/' /}
+	{param ids: $relatedConceptIds /}	
+	{param environment: $environment /}
+{/call}
+<h4>Maths Concepts</h4>
+{call .conceptList}
+	{param filter: 'maths/' /}
+	{param ids: $relatedConceptIds /}	
+	{param environment: $environment /}
+{/call}
+<h4>Problems</h4>
+{call .conceptList}
+	{param filter: '' /}
+	{param ids: $relatedQuestionIds /}	
+	{param environment: $environment /}
+{/call}
+<h4>Download</h4>
+<a target="_blank" href="/rutherford-server/static/pdf/{$conceptId}.pdf">Download as PDF</a>
+{/template}
+
+/**
+ * Concept list fragment
+ * @param filter
+ * @param ids
+ * @param environment
+ */
+{template .conceptList}
+{foreach $id in $ids}
+	{let $detail: $environment[$id]/}
+	{if $detail}
+		{if strContains($detail.topic,$filter)}
+			<a href="#" data-content-uri="/concepts/{$id}">{$detail.linkTitle}</a><br/>
+		{/if}
+	{else}
+		{$id} <i>(missing)</i><br/>
+	{/if}
+{ifempty}
+	<i>None</i>
+{/foreach}
+{/template} 

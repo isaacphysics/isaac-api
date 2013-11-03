@@ -3,17 +3,24 @@ package uk.ac.cam.cl.dtg.teaching;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
+import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
+import uk.ac.cam.cl.dtg.teaching.models.TopicPage;
+
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
@@ -21,271 +28,115 @@ import com.papercut.silken.TemplateRenderer;
 @Path("/")
 public class RutherfordController {
 
+	private static final Logger log = LoggerFactory
+			.getLogger(RutherfordController.class);
 
-	// Every question has a map including title and videos. Each question also has a template named by question.id, which is the key here.
-	private ImmutableMap questions = ImmutableMap.builder()
-			.put("a_toboggan", ImmutableMap.of(
-					"title", "A Toboggan",
-					"physicsConcepts", ImmutableList.of("newtonii")))
-			.put("vector_vs_scalar", ImmutableMap.of(
-					"title", "Vector vs. Scalar",
-					"mathsConcepts", ImmutableList.of("vectors")))
-			.put("head_on_collision", ImmutableMap.of(
-					"title", "Head-on Collision",
-					"physicsConcepts", ImmutableList.of("c_of_m", "c_of_e", "collisions", "momentum")))
-			.put("what_goes_up", ImmutableMap.of(
-					"title", "What Goes Up...",
-					"physicsConcepts", ImmutableList.of("c_of_e", "potential_energy", "work")))
-			.put("on_ice", ImmutableMap.of(
-					"title", "On Ice",
-					"physicsConcepts", ImmutableList.of("newtonii", "eq_motion"),
-					"mathsConcepts", ImmutableList.of("vectors", "calculus")))
-			.put("example_question", ImmutableMap.of(
-					"title", "Example Question",
-					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
-					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
-					"problemVideos", ImmutableList.of("/videos/problemOne")))
-			
-			.put("particle_circle", ImmutableMap.of(
-					"title", "Particle Circle",
-					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
-					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
-					"problemVideos", ImmutableList.of("/videos/problemOne")))
-			.put("satellite", ImmutableMap.of(
-					"title", "Satellite",
-					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
-					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
-					"problemVideos", ImmutableList.of("/videos/problemOne")))
-			.put("minute_hand", ImmutableMap.of(
-					"title", "Minute Hand",
-					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
-					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
-					"problemVideos", ImmutableList.of("/videos/problemOne")))
-			.put("mass_on_elastic", ImmutableMap.of(
-					"title", "Mass on Elastic",
-					"physicsConcepts", ImmutableList.of("newtonii", "other_physics_concept"),
-					"mathsConcepts", ImmutableList.of("vectors", "other_maths_concept"),
-					"problemVideos", ImmutableList.of("/videos/problemOne"))).build();
-					                                 
-	
-	private ImmutableMap concepts = ImmutableMap.builder()
-			.put("newtoni", ImmutableMap.builder()
-					.put("title", "Newton's First Law")
-					.put("video", "/videos/newtoni")
-					.put("type", "physics")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newtonii", "newtoniii"))
-					.put("relatedMathsConcepts", ImmutableList.of("vectors", "calculus"))
-					.put("questions", ImmutableList.of("a_toboggan")).build())
-			.put("newtonii", ImmutableMap.builder()
-					.put("title", "Newton's Second Law")
-					.put("video", "/videos/newtonii")
-					.put("type", "physics")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
-					.put("relatedMathsConcepts", ImmutableList.of("vectors", "calculus"))
-					.put("questions", ImmutableList.of("a_toboggan")).build())
-			.put("newtoniii", ImmutableMap.builder()
-					.put("title", "Newton's Third Law")
-					.put("video", "/videos/newtoniii")
-					.put("type", "physics")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtonii"))
-					.put("relatedMathsConcepts", ImmutableList.of("vectors", "calculus"))
-					.put("questions", ImmutableList.of("a_toboggan")).build())
-			.put("vectors", ImmutableMap.builder()
-					.put("title", "Vectors")
-					.put("video", "/videos/vectors")
-					.put("type", "maths")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
-					.put("relatedMathsConcepts", ImmutableList.of("calculus"))
-					.put("questions", ImmutableList.of("vector_vs_scalar")).build())
-			.put("calculus", ImmutableMap.builder()
-					.put("title", "Calculus")
-					.put("video", "/videos/vectors")
-					.put("type", "maths")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
-					.put("relatedMathsConcepts", ImmutableList.of("vectors"))
-					.put("questions", ImmutableList.of()).build())
-			.put("algebra_na", ImmutableMap.builder()
-					.put("title", "Algebra")
-					.put("video", "/videos/vectors")
-					.put("type", "maths")
-					.put("relatedPhysicsConcepts", ImmutableList.of("newtoni", "newtoniii"))
-					.put("relatedMathsConcepts", ImmutableList.of("vectors"))
-					.put("questions", ImmutableList.of()).build())
-			.put("momentumii", ImmutableMap.builder()
-					.put("title", "Conservation of Momentum")
-					.put("video", "/videos/c_of_m")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision")).build())
-			.put("c_of_e", ImmutableMap.builder()
-					.put("title", "Conservation of Energy")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("collisions", ImmutableMap.builder()
-					.put("title", "Collisions")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("momentum", ImmutableMap.builder()
-					.put("title", "Momentum")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("friction", ImmutableMap.builder()
-					.put("title", "Friction")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("energy", ImmutableMap.builder()
-					.put("title", "Potential Energy")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("work", ImmutableMap.builder()
-					.put("title", "Work")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())				
-			.put("eq_of_motions_diff", ImmutableMap.builder()
-					.put("title", "Equations of Motion")
-					.put("video", "/videos/c_of_e")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("angular_circular", ImmutableMap.builder()
-					.put("title", "Circular kinematics")
-					.put("video", "/videos/angular_circular")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())
-			.put("impulse", ImmutableMap.builder()
-					.put("title", "Impulse")
-					.put("video", "/videos/impulse")
-					.put("type", "physics")
-					.put("questions", ImmutableList.of("head_on_collision", "what_goes_up")).build())						
-			.build();
-	
-	private ImmutableMap topicQuestions = ImmutableMap.of(
-			"dynamics", ImmutableMap.of(
-					"level-2", ImmutableMap.of(
-								"questions", ImmutableList.of(
-										"a_toboggan", 
-										"vector_vs_scalar",
-										"head_on_collision",
-										"what_goes_up"/*,
-										"on_ice"*/),
-								"concepts", ImmutableList.of(
-										"newtoni",
-										"newtonii",
-										"newtoniii",
-										"vectors",
-										"calculus",
-										"momentumii",
-										"c_of_e",
-										"collisions",
-										"momentum",
-										"friction",
-										"energy",
-										"work",
-										"eq_of_motions_diff",
-										"angular_circular",
-										"impulse"))),
-			"circular-motion", ImmutableMap.of(
-					"level-4", ImmutableMap.of(
-							"questions", ImmutableList.of(
-									"particle_circle",
-									"satellite",
-									"minute_hand",
-									"mass_on_elastic"),
-							"concepts", ImmutableList.of(
-									"algebra_na",
-									"c_of_m"))));
-	
+	private Map<String, ContentDetail> details = ContentDetail.load();
 
-	public static ImmutableMap getSoyGlobalMap(HttpServletRequest req)
-	{
-		String proxyPath;
-		if (req.getLocalAddr().equals("128.232.20.43")) {
-			proxyPath = "/research/dtg/rutherford-staging";
-		}
-		else if (req.getLocalAddr().equals("128.232.20.40")) {
-			proxyPath = "/research/dtg/rutherford";
-		}
-		else {
-			proxyPath = req.getContextPath();
-		}
-		return ImmutableMap.of( "contextPath", req.getContextPath(),
-		        				"proxyPath", proxyPath
-		        				);
-	}
-	
+	/**
+	 * Return the list of concepts and questions available for this topic at
+	 * this level
+	 * 
+	 * @param topic
+	 * @param level
+	 * @return
+	 */
 	@GET
-	@Path("topics/{topic}/{level}")
+	@Path("topics/{topic}/level-{level}")
 	@Produces("application/json")
-	public Map<String,?> getTopicWithLevel(@PathParam("topic") String topic, @PathParam("level") String level){
-		
-		ImmutableList questions = ((ImmutableList)((ImmutableMap)((ImmutableMap)topicQuestions.get(topic)).get(level)).get("questions"));
-		ImmutableList concepts = ((ImmutableList)((ImmutableMap)((ImmutableMap)topicQuestions.get(topic)).get(level)).get("concepts"));
+	public TopicPage getTopicWithLevel(@PathParam("topic") String topic,
+			@PathParam("level") String level) {
+		String topic1 = "physics/mechanics/" + topic;
+		ImmutableList.Builder<String> conceptIdBuilder = ImmutableList
+				.builder();
+		ImmutableList.Builder<String> questionIdBuilder = ImmutableList
+				.builder();
+		for (ContentDetail detail : details.values()) {
+			if (topic1.equals(detail.topic) && level.equals(detail.level)) {
+				if (ContentDetail.TYPE_CONCEPT.equals(detail.type)) {
+					conceptIdBuilder.add(detail.id);
+				} else if (ContentDetail.TYPE_QUESTION.equals(detail.type)) {
+					questionIdBuilder.add(detail.id);
+				}
+			}
+		}
 
-		return ImmutableMap.of("topic", ImmutableMap.builder().put("name", topic)
-				                                              .put("level", level)
-				                                              .put("questions", questions)
-				                                              .put("concepts", concepts).build(),
-				               "questionDb", this.questions,
-				               "conceptDb", this.concepts);
+		ImmutableList<String> conceptIds = conceptIdBuilder.build();
+		ImmutableList<String> questionIds = questionIdBuilder.build();
+
+		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
+
+		return new TopicPage(topic1, level, conceptIds, questionIds,
+				environment);
 	}
-	
+
 	@GET
 	@Path("topics/{topic}")
 	@Produces("application/json")
-	public Map<String,?> getTopic(@PathParam("topic") String topic){
-		String level = "level-1";
-		return getTopicWithLevel(topic, level);
+	public TopicPage getTopic(@PathParam("topic") String topic) {
+		return getTopicWithLevel(topic, "1");
 	}
-	
+
 	@GET
 	@Path("questions/{question}")
 	@Produces("application/json")
-	public Map<String, ?> getQuestion(@PathParam("question") String question)
-	{
-		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
-		
-		String qContent = "";
-		try
-		{
-			qContent = renderer.render("rutherford.questions." + question, null);
-		} catch (SoyTofuException e)
-		{
-			e.printStackTrace();
-			qContent = "<i>No content available.</i>";
-		}
-		
-		
-		return ImmutableMap.of("question", ImmutableMap.of("id", question,
-					                                       "details", questions.get(question),
-				                                           "content", qContent),
-				               "concepts", concepts);
+	public ContentPage getQuestion(@Context HttpServletRequest req,
+			@PathParam("question") String question) {
+		String renderedContent = renderTemplate("rutherford.questions."
+				+ question, getSoyGlobalMap(req));
+		return new ContentPage(question, renderedContent, collectEnvironment());
 	}
 
 	@GET
 	@Path("concepts/{concept}")
 	@Produces("application/json")
-	public Map<String, ?> getConcept(@Context HttpServletRequest req, @PathParam("concept") String concept)
-	{
+	public ContentPage getConcept(@Context HttpServletRequest req,
+			@PathParam("concept") String concept) {
+		String renderedContent = renderTemplate(
+				"rutherford.content." + concept, getSoyGlobalMap(req));
+		return new ContentPage(concept, renderedContent, collectEnvironment());
+	}
+
+	private String renderTemplate(String templateName,
+			ImmutableMap<String, String> globalMap) {
 		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
-		
+
 		String cContent = "";
-		try
-		{
-			cContent = renderer.render("rutherford.content." + concept, null, getSoyGlobalMap(req), Locale.ENGLISH);
-		} catch (SoyTofuException e)
-		{
+		try {
+			cContent = renderer.render(templateName, null, globalMap,
+					Locale.ENGLISH);
+		} catch (SoyTofuException e) {
 			cContent = "<i>No content available.</i>";
-			e.printStackTrace();
+			log.error("Error applying soy template", e);
 		}
-		
-		return ImmutableMap.of("concept", ImmutableMap.of("id", concept,
-					                                      "details", concepts.get(concept),
-				                                          "content", cContent),
-				               "questions", ((ImmutableMap)concepts.get(concept)) != null ? ((ImmutableMap)concepts.get(concept)).get("questions") : ImmutableList.of(),
-				               "questionDb", this.questions);
+		return cContent;
+	}
+
+	private ImmutableMap<String, ContentInfo> collectEnvironment() {
+		// for the moment just return everything in the environment - when we
+		// get to lots of things change this to only give the relevant bits
+		ImmutableMap<String, ContentInfo> environment = ImmutableMap
+				.copyOf(Maps.transformValues(details,
+						new Function<ContentDetail, ContentInfo>() {
+							@Override
+							public ContentInfo apply(ContentDetail input) {
+								return input.toContentInfo();
+							}
+						}));
+		return environment;
+	}
+
+	public static ImmutableMap<String, String> getSoyGlobalMap(
+			HttpServletRequest req) {
+		String proxyPath;
+		if (req.getLocalAddr().equals("128.232.20.43")) {
+			proxyPath = "/research/dtg/rutherford-staging";
+		} else if (req.getLocalAddr().equals("128.232.20.40")) {
+			proxyPath = "/research/dtg/rutherford";
+		} else {
+			proxyPath = req.getContextPath();
+		}
+		return ImmutableMap.of("contextPath", req.getContextPath(),
+				"proxyPath", proxyPath);
 	}
 }
