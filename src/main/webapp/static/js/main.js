@@ -10,9 +10,9 @@ function loadContent(uri, addToHistory) {
 	case "/register":
 		soy.renderElement($("#content")[0], rutherford.pages.register, null, ij);
 		break;
-	case "/learn":
-		soy.renderElement($("#content")[0], rutherford.pages.learn, null, ij);
-		break;
+//	case "/learn":
+//		soy.renderElement($("#content")[0], rutherford.pages.learn, null, ij);
+//		break;
 	case "/discussion":
 		soy.renderElement($("#content")[0], rutherford.pages.discussion, null, ij);
 		break;
@@ -41,6 +41,9 @@ function loadContent(uri, addToHistory) {
 		// We need to request the page from the server. Do that.
 		
 		var template = null;
+		
+		if (uri.indexOf("/learn") == 0)
+			template = rutherford.pages.learn;
 		
 		if (uri.indexOf("/topics/") == 0)
 			template = rutherford.pages.topic;

@@ -2,30 +2,20 @@
 
 /**
  * Learn
+ * @param items
  */
 {template .learn}
 <h2>Get Started</h2>
 <p>In the future, this page will have links to many topics and levels. For now, there are just a few options:</p>
 <div class="row" style="text-align: center;">
+	{foreach $item in $items}
 	<div class="small-4 columns">
 		<ul class="button-group round">
-			<li><a class="button" href="#" data-content-uri="/topics/dynamics/level-2">Dynamics L2</a></li>
-			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/topics/dynamics/dynamics_level-2.pdf">PDF</a></li>
+			<li><a class="button {$item.contentAvailable ? '' : 'disabled'}" href="#" data-content-uri="/topics/{$item.topic}/level-{$item.level}">{$item.linkTitle} L{$item.level}</a></li>
+			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/{$item.pdf}">PDF</a></li>
 		</ul>
 	</div>
-	
-	<div class="small-4 columns">
-		<ul class="button-group round">
-			<li><a class="button" href="#" data-content-uri="/topics/dynamics/level-3">Dynamics L3</a></li>
-			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/topics/dynamics/dynamics_level-3.pdf">PDF</a></li>
-		</ul>
-	</div>
-	<div class="small-4 columns">
-		<ul class="button-group round">
-			<li><a class="button" href="#" data-content-uri="/topics/circular-motion/level-4">Circular Motion L4</a></li>
-			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/topics/circular-motion/circular-motion_level-4.pdf">PDF</a></li>
-		</ul>
-	</div>
+	{/foreach}	
 </div>
 
 {/template}
