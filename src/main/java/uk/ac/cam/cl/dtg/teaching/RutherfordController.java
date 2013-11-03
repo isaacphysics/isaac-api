@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
+import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
+import uk.ac.cam.cl.dtg.teaching.models.IndexPage.IndexPageItem;
 import uk.ac.cam.cl.dtg.teaching.models.TopicPage;
 
 import com.google.common.base.Function;
@@ -72,19 +74,22 @@ public class RutherfordController {
 	 * @return
 	 */
 	@GET
-	@Path("topics/{topic}/level-{level}")
+	@Path("topics/{topic:.*}/level-{level}")
 	@Produces("application/json")
 	public TopicPage getTopicWithLevel(@PathParam("topic") String topic,
 			@PathParam("level") String level) {
-		String topic1 = "physics/mechanics/" + topic;
+
+		TopicDetail topicDetail = topicDetails.get(topic);
+
 		ImmutableList.Builder<String> conceptIdBuilder = ImmutableList
 				.builder();
 		ImmutableList.Builder<String> questionIdBuilder = ImmutableList
 				.builder();
-		
-		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(details.values());
+
+		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(
+				contentDetails.values());
 		for (ContentDetail detail : values) {
-			if (topic1.equals(detail.topic) && level.equals(detail.level)) {
+			if (topic.equals(detail.topic) && level.equals(detail.level)) {
 				if (ContentDetail.TYPE_CONCEPT.equals(detail.type)) {
 					conceptIdBuilder.add(detail.id);
 				} else if (ContentDetail.TYPE_QUESTION.equals(detail.type)) {
@@ -98,8 +103,7 @@ public class RutherfordController {
 
 		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
 
-		return new TopicPage(topic1, level, conceptIds, questionIds,
-				environment);
+		return new TopicPage(topicDetail.linkTitle, level, conceptIds, questionIds, environment);
 	}
 
 	@GET
@@ -148,7 +152,7 @@ public class RutherfordController {
 		// for the moment just return everything in the environment - when we
 		// get to lots of things change this to only give the relevant bits
 		ImmutableMap<String, ContentInfo> environment = ImmutableMap
-				.copyOf(Maps.transformValues(details,
+				.copyOf(Maps.transformValues(contentDetails,
 						new Function<ContentDetail, ContentInfo>() {
 							@Override
 							public ContentInfo apply(ContentDetail input) {
