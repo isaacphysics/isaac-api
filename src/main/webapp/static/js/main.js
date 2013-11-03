@@ -106,6 +106,11 @@ function click_a(e)
 {
 	var uri = $(e.target).data("contentUri");
 	
+	if ($(e.target).hasClass("disabled")) {
+        e.stopImmediatePropagation();
+        return false;
+	}
+	
 	if (uri != undefined)
 	{
 		console.log("Loading URI", uri);
