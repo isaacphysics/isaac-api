@@ -118,7 +118,7 @@ public class RutherfordController {
 	@Produces("application/json")
 	public ContentPage getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
-		String renderedContent = renderTemplate("rutherford.questions."
+		String renderedContent = renderTemplate("rutherford.content."
 				+ question, getSoyGlobalMap(req));
 		return new ContentPage(question, renderedContent, collectEnvironment());
 	}
