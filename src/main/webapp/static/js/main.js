@@ -197,7 +197,7 @@ function playVideo(video)
 $(function()
 {
 	$("body").on("click", "a", click_a);
-	$("body").on("mouseenter", "a", mouseenter_a);
+	//$("body").on("mouseenter", "a", mouseenter_a);
 	$("body").on("click", "#checkAnswer", checkAnswer_click);
 	$("body").on("click", "button", button_click);
 	
