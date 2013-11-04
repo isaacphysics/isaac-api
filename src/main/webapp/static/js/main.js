@@ -60,7 +60,9 @@ function loadContent(uri, addToHistory) {
 			// This is a URI we know about
 			$.get(ij.proxyPath + "/api" + uri, function(json) {
 				soy.renderElement($("#content")[0], template, json, ij);
-				MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+				pageRendered();
+				
+				
 			});
 		}
 		else
@@ -68,6 +70,10 @@ function loadContent(uri, addToHistory) {
 			// Not sure that this URI has a matching template on the server. Die.
 			console.error("Template not found for uri", uri);
 		}
+	}
+	else
+	{
+		pageRendered();
 	}
 	
 	//var oldLoc = window.location.href;
@@ -243,5 +249,11 @@ function plumb(e) {
 jsPlumb.ready(function() {
 	jsPlumb.Defaults.Container = $("#content");
 	// your jsPlumb related init code goes here
-
 });
+
+// Equivalent to our page ready
+function pageRendered()
+{
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+	calculateFigureNums();
+}
