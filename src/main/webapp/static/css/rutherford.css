@@ -69,6 +69,24 @@ body
 	text-align: center;
 }
 
+.concept-page
+{
+	counter-reset: figures;	
+}
+
+.concept-page figure
+{
+	float:right;
+	clear:right;
+	width:30%;
+	padding-left:8px;
+}
+
+.concept-page figure figcaption
+{
+	font-size:0.8em;
+}
+
 .right-question-column
 {
 	text-align: right;
@@ -211,4 +229,8 @@ span.question-explanation
 
 .mcq input {
 	margin-right: 1em;
+}
+
+.hidden{
+	display:none;
 }
