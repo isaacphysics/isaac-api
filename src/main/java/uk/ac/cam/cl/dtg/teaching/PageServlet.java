@@ -46,7 +46,8 @@ public class PageServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException
 	{
 		PrintWriter out = res.getWriter();
-		
+		res.setContentType("text/html");
+		res.setCharacterEncoding("UTF-8");
 		
 		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
 
