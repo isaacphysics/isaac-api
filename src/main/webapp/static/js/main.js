@@ -103,6 +103,12 @@ function popHistoryState(e)
 
 function click_a(e)
 {
+	if ($(e.target).data("playVideo"))
+	{
+		playVideo($(e.target).data("playVideo"));
+		return;
+	}
+
 	var uri = $(e.target).data("contentUri");
 	
 	if ($(e.target).hasClass("disabled")) {
