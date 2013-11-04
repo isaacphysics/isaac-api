@@ -101,7 +101,8 @@ public class RutherfordController {
 				
 				for (String cid : detail.relatedConceptIds)
 				{
-					linkedConceptIds.add(cid);
+					if (contentDetails.containsKey(cid))
+						linkedConceptIds.add(cid);
 				}
 			}
 		}
