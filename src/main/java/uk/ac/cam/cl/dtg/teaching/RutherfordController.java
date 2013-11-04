@@ -53,7 +53,7 @@ public class RutherfordController {
 				// see whether there are any questions for this
 				boolean found = false;
 				for(ContentDetail d : contentDetails.values()) {
-					if (d.type == ContentDetail.TYPE_QUESTION  // This is a question
+					if (d.type.equals(ContentDetail.TYPE_QUESTION)  // This is a question
 							&& d.topic.equals(t.topic)         // and the question belongs to this topic
 							&& d.level.equals(e.getKey()))     // and the level is correct
 					{
