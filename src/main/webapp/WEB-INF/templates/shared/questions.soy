@@ -1,0 +1,56 @@
+{namespace shared.questions}
+
+/**
+ * Multiple choice questions
+ * This should be in a shared namespace, but then it doesn't work. No idea why.
+ * @param choices
+ * @param type
+ */
+{template .mcq}
+<hr/>
+<ol class="mcq">
+	{foreach $answer in $choices}
+		<li><input type="{$type}" name="mcq" value="{$answer.ans ? 1 : 0}">{$answer.desc}</input></li>
+	{/foreach}
+</ul>
+<button id="checkAnswer" type="button" class="button">Check my answer</button>
+<span class="error question-wrong">
+	Sorry, that's wrong. Please try again.
+</span>
+{/template}
+
+/**
+ * Numeric questions
+ * @param answer
+ */
+{template .numericQuestion}
+<hr/>
+<input type="text" data-expected-answer="{$answer}" placeholder="Type your answer here"/>
+<button id="checkAnswer" type="button" class="button">Check my answer</button>
+<span class="error question-wrong">
+	Sorry, that's wrong. Please try again.
+</span>
+{/template}
+
+/**
+ * Question footer. Usually copyright etc.
+ * @param footer
+ */
+{template .questionFooter}
+<div class="question-footer">
+	{$footer}
+</div>
+{/template}
+
+/**
+ * Question explanation.
+ * @param explanation
+ */
+{template .questionExplanation}
+<p>
+<span class="error large question-explanation" style="display:none;">
+	Well done! {$explanation}
+</span>
+</p>
+{/template}
+

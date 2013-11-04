@@ -204,3 +204,11 @@ span.question-explanation
 #about a {
 	top: 85px;
 }
+
+.mcq {
+	list-style-type:lower-alpha;
+}
+
+.mcq input {
+	margin-right: 1em;
+}
