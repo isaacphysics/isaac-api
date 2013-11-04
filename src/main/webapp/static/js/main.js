@@ -221,6 +221,8 @@ $(function()
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
 		});
+	
+	pageRendered();
 });
 
 function plumb(e) {
@@ -255,5 +257,5 @@ jsPlumb.ready(function() {
 function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
-	calculateFigureNums();
 }
+
