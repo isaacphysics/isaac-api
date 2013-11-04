@@ -10,15 +10,33 @@
 difficulty of the problems therein, <strong>increasing in difficulty from 1 to 6</strong>.
 If you are currently studying in <strong>year 12</strong> then we suggest that you begin at <strong>level 2</strong> and if you are currently in <strong>year 13</strong> then begin at <strong>level 4</strong>.  However,
 students are of course encouraged to explore all the levels.</p>
+{for $i in range(ceiling(length($items)/3))}
 <div class="row" style="text-align: center;">
-	{foreach $item in $items}
+	{call .bluepill}
+		{param item: $items[$i*3]/}
+	{/call}
+	{call .bluepill}
+		{param item: $items[$i*3+1]/}
+	{/call}
+	{call .bluepill}
+		{param item: $items[$i*3+2]/}
+	{/call}
+</div>
+{/for}
+{/template}
+
+/**
+ * Template to draw the 'blue pill' link on the topic page
+ * 
+ * @param item
+ */
+{template .bluepill}
+{if $item}
 	<div class="small-4 columns">
 		<ul class="button-group round">
 			<li><a class="button {$item.contentAvailable ? '' : 'disabled'}" href="#" data-content-uri="/topics/{$item.topic}/level-{$item.level}">{$item.title} L{$item.level}</a></li>
 			<li><a class="button secondary" target="_blank" href="{$ij.proxyPath}/static/pdf/{$item.pdf}">PDF</a></li>
 		</ul>
 	</div>
-	{/foreach}	
-</div>
-
+{/if}
 {/template}
