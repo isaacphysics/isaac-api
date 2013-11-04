@@ -12,7 +12,7 @@
 	<div class="small-4 columns">
 		<ul class="button-group round">
 			<li><a class="button {$item.contentAvailable ? '' : 'disabled'}" href="#" data-content-uri="/topics/{$item.topic}/level-{$item.level}">{$item.title} L{$item.level}</a></li>
-			<li><a class="button secondary" target="_blank" href="/rutherford-server/static/pdf/{$item.pdf}">PDF</a></li>
+			<li><a class="button secondary" target="_blank" href="{$ij.proxyPath}/static/pdf/{$item.pdf}">PDF</a></li>
 		</ul>
 	</div>
 	{/foreach}	
