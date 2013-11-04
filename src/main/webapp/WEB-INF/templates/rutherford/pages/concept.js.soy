@@ -22,6 +22,7 @@
 			{param conceptId : $id /}
 			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
 			{param relatedQuestionIds : $environment[$id].relatedQuestionIds /}
+			{param videoIds : $environment[$id].videoIds /}
 			{param environment: $environment /}
 		{/call}
 	</div>
@@ -34,6 +35,7 @@
  * @param conceptId
  * @param relatedConceptIds
  * @param relatedQuestionIds
+ * @param videoIds
  * @param environment
  */
 {template .conceptSidebar}
@@ -56,6 +58,13 @@
 	{param ids: $relatedQuestionIds /}	
 	{param environment: $environment /}
 {/call}
+<h4>Videos</h4>
+	{foreach $id in $videoIds}
+		<a href="#" data-play-video="/{$id}">View Video</a><br/> // TODO - Videos need titles! Arg.
+	{ifempty}
+		<i>No videos</i>
+	{/foreach}
+
 <h4>Download</h4>
 <a target="_blank" href="/rutherford-server/static/pdf/{$conceptId}.pdf">Download as PDF</a>
 {/template}
