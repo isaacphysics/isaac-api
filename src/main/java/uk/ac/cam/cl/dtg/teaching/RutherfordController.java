@@ -1,7 +1,9 @@
 package uk.ac.cam.cl.dtg.teaching;
 
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -82,13 +84,14 @@ public class RutherfordController {
 
 		TopicDetail topicDetail = topicDetails.get(topic);
 
-		ImmutableList.Builder<String> conceptIdBuilder = ImmutableList
-				.builder();
-		ImmutableList.Builder<String> questionIdBuilder = ImmutableList
-				.builder();
+		ImmutableList.Builder<String> conceptIdBuilder = ImmutableList.builder();
+		ImmutableList.Builder<String> questionIdBuilder = ImmutableList.builder();
+		
+		HashSet<String> linkedConceptIds = new HashSet<String>();
 
 		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(contentDetails.values());
-		
+
+
 		// Find all the questions for this topic.
 		for (ContentDetail detail : values) 
 		{
@@ -98,10 +101,14 @@ public class RutherfordController {
 				
 				for (String cid : detail.relatedConceptIds)
 				{
-					conceptIdBuilder.add(cid);
+					linkedConceptIds.add(cid);
 				}
 			}
 		}
+		
+
+		conceptIdBuilder.addAll(linkedConceptIds);
+		
 		
 		ImmutableList<String> questionIds = questionIdBuilder.build();
 		
