@@ -1,4 +1,4 @@
 <%
-	String redirectURL = request.getRequestURL() + "/soy/rutherford.main";
+	String redirectURL = request.getRequestURL() + "home";
     response.sendRedirect(redirectURL);
 %>

@@ -7,12 +7,12 @@ function loadContent(uri, addToHistory) {
 	var renderedLocally = true;
 	switch(uri)
 	{
+	case "/home":
+		soy.renderElement($("#content")[0], rutherford.pages.home, null, ij);
+		break;
 	case "/register":
 		soy.renderElement($("#content")[0], rutherford.pages.register, null, ij);
 		break;
-//	case "/learn":
-//		soy.renderElement($("#content")[0], rutherford.pages.learn, null, ij);
-//		break;
 	case "/discussion":
 		soy.renderElement($("#content")[0], rutherford.pages.discussion, null, ij);
 		break;
@@ -96,14 +96,7 @@ function popHistoryState(e)
 	//loadContent(document.location.href);
 	if (e.state !== null)
 	{
-		if (e.state == "<HOME>") //ARRRRGH. This is horrible. Don't do this.
-		{
-			document.location.reload();
-		}
-		else
-		{
-			loadContent(e.state, false);
-		}
+		loadContent(e.state, false);
 	}
 }
 
@@ -216,7 +209,8 @@ $(function()
 	
 	window.addEventListener("popstate", popHistoryState);
 
-	history.replaceState("<HOME>", null, ij.proxyPath + "/soy/rutherford.main"); // Ugh.
+	var uri = document.location.pathname.substring(ij.proxyPath.length);
+	history.replaceState(uri, null, ij.proxyPath + uri);
 	
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}

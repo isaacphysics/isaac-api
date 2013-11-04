@@ -32,8 +32,7 @@ import com.papercut.silken.TemplateRenderer;
 @Path("/")
 public class RutherfordController {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(RutherfordController.class);
+	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
