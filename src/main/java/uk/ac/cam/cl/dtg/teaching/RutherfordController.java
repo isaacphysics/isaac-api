@@ -32,8 +32,7 @@ import com.papercut.silken.TemplateRenderer;
 @Path("/")
 public class RutherfordController {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(RutherfordController.class);
+	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
@@ -50,10 +49,13 @@ public class RutherfordController {
 				topicDetails.values());
 		for (TopicDetail t : values) {
 			for (Map.Entry<String, String> e : t.pdf.entrySet()) {
-				// see whether there is any concepts or questions for this
+				// see whether there are any questions for this
 				boolean found = false;
 				for(ContentDetail d : contentDetails.values()) {
-					if (d.topic.equals(t.topic) && d.level.equals(e.getKey())) {
+					if (d.type.equals(ContentDetail.TYPE_QUESTION)  // This is a question
+							&& d.topic.equals(t.topic)         // and the question belongs to this topic
+							&& d.level.equals(e.getKey()))     // and the level is correct
+					{
 						found = true;
 						break;
 					}
@@ -76,8 +78,7 @@ public class RutherfordController {
 	@GET
 	@Path("topics/{topic:.*}/level-{level}")
 	@Produces("application/json")
-	public TopicPage getTopicWithLevel(@PathParam("topic") String topic,
-			@PathParam("level") String level) {
+	public TopicPage getTopicWithLevel(@PathParam("topic") String topic, @PathParam("level") String level) {
 
 		TopicDetail topicDetail = topicDetails.get(topic);
 
@@ -86,20 +87,25 @@ public class RutherfordController {
 		ImmutableList.Builder<String> questionIdBuilder = ImmutableList
 				.builder();
 
-		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(
-				contentDetails.values());
-		for (ContentDetail detail : values) {
-			if (topic.equals(detail.topic) && level.equals(detail.level)) {
-				if (ContentDetail.TYPE_QUESTION.equals(detail.type)) {
-					questionIdBuilder.add(detail.id);
-				} else {
-					conceptIdBuilder.add(detail.id);
+		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(contentDetails.values());
+		
+		// Find all the questions for this topic.
+		for (ContentDetail detail : values) 
+		{
+			if (detail.type.equals(ContentDetail.TYPE_QUESTION) && topic.equals(detail.topic) && level.equals(detail.level)) 
+			{
+				questionIdBuilder.add(detail.id);
+				
+				for (String cid : detail.relatedConceptIds)
+				{
+					conceptIdBuilder.add(cid);
 				}
 			}
 		}
-
-		ImmutableList<String> conceptIds = conceptIdBuilder.build();
+		
 		ImmutableList<String> questionIds = questionIdBuilder.build();
+		
+		ImmutableList<String> conceptIds = conceptIdBuilder.build();
 
 		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
 
@@ -133,14 +139,12 @@ public class RutherfordController {
 		return new ContentPage(concept, renderedContent, collectEnvironment());
 	}
 
-	private String renderTemplate(String templateName,
-			ImmutableMap<String, String> globalMap) {
+	private String renderTemplate(String templateName, ImmutableMap<String, String> globalMap) {
 		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
 
 		String cContent = "";
 		try {
-			cContent = renderer.render(templateName, null, globalMap,
-					Locale.ENGLISH);
+			cContent = renderer.render(templateName, null, globalMap, Locale.ENGLISH);
 		} catch (SoyTofuException e) {
 			cContent = "<i>No content available.</i>";
 			log.error("Error applying soy template", e);
@@ -162,8 +166,7 @@ public class RutherfordController {
 		return environment;
 	}
 
-	public static ImmutableMap<String, String> getSoyGlobalMap(
-			HttpServletRequest req) {
+	public static ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
 		String proxyPath;
 		if (req.getLocalAddr().equals("128.232.20.43")) {
 			proxyPath = "/research/dtg/rutherford-staging";

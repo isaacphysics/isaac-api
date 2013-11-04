@@ -8,11 +8,13 @@
  */
 {template .mcq}
 <hr/>
+<div class="small-offset-1">
 <ol class="mcq">
 	{foreach $answer in $choices}
 		<li><input type="{$type}" name="mcq" value="{$answer.ans ? 1 : 0}">{$answer.desc}</input></li>
 	{/foreach}
-</ul>
+</ol>
+</div>
 <button id="checkAnswer" type="button" class="button">Check my answer</button>
 <span class="error question-wrong">
 	Sorry, that's wrong. Please try again.

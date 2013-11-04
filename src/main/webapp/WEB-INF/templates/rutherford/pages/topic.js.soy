@@ -82,6 +82,7 @@
  * @param concept
  */
 {template .conceptLink}
+{if $concept }
 {let $buttonClass: $concept.type == 'physics' ? 'success' : '' /}
 	<a href="#" 
 	   class="button round {$buttonClass} plumbLink"
@@ -91,6 +92,7 @@
 	   data-question-links="{call .implode}{param list: $concept.relatedQuestionIds /}{/call}">
 		{$concept.title}
 	</a>
+{/if}
 {/template}
 
 /**

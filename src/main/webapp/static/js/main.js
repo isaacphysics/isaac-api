@@ -7,12 +7,12 @@ function loadContent(uri, addToHistory) {
 	var renderedLocally = true;
 	switch(uri)
 	{
+	case "/home":
+		soy.renderElement($("#content")[0], rutherford.pages.home, null, ij);
+		break;
 	case "/register":
 		soy.renderElement($("#content")[0], rutherford.pages.register, null, ij);
 		break;
-//	case "/learn":
-//		soy.renderElement($("#content")[0], rutherford.pages.learn, null, ij);
-//		break;
 	case "/discussion":
 		soy.renderElement($("#content")[0], rutherford.pages.discussion, null, ij);
 		break;
@@ -60,7 +60,9 @@ function loadContent(uri, addToHistory) {
 			// This is a URI we know about
 			$.get(ij.proxyPath + "/api" + uri, function(json) {
 				soy.renderElement($("#content")[0], template, json, ij);
-				MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+				pageRendered();
+				
+				
 			});
 		}
 		else
@@ -68,6 +70,10 @@ function loadContent(uri, addToHistory) {
 			// Not sure that this URI has a matching template on the server. Die.
 			console.error("Template not found for uri", uri);
 		}
+	}
+	else
+	{
+		pageRendered();
 	}
 	
 	//var oldLoc = window.location.href;
@@ -90,20 +96,19 @@ function popHistoryState(e)
 	//loadContent(document.location.href);
 	if (e.state !== null)
 	{
-		if (e.state == "<HOME>") //ARRRRGH. This is horrible. Don't do this.
-		{
-			document.location.reload();
-		}
-		else
-		{
-			loadContent(e.state, false);
-		}
+		loadContent(e.state, false);
 	}
 }
 
 
 function click_a(e)
 {
+	if ($(e.target).data("playVideo"))
+	{
+		playVideo($(e.target).data("playVideo"));
+		return;
+	}
+
 	var uri = $(e.target).data("contentUri");
 	
 	if ($(e.target).hasClass("disabled")) {
@@ -210,11 +215,14 @@ $(function()
 	
 	window.addEventListener("popstate", popHistoryState);
 
-	history.replaceState("<HOME>", null, ij.proxyPath + "/soy/rutherford.main"); // Ugh.
+	var uri = document.location.pathname.substring(ij.proxyPath.length);
+	history.replaceState(uri, null, ij.proxyPath + uri);
 	
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
 		});
+	
+	pageRendered();
 });
 
 function plumb(e) {
@@ -243,5 +251,11 @@ function plumb(e) {
 jsPlumb.ready(function() {
 	jsPlumb.Defaults.Container = $("#content");
 	// your jsPlumb related init code goes here
-
 });
+
+// Equivalent to our page ready
+function pageRendered()
+{
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+}
+
