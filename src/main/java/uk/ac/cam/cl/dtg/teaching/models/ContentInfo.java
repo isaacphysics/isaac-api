@@ -14,14 +14,14 @@ public class ContentInfo {
 
 	private String level;
 
-	private String videoId;
+	private ImmutableList<String> videoIds;
 
 	private ImmutableList<String> relatedConceptIds;
 
 	private ImmutableList<String> relatedQuestionIds;
 
 	public ContentInfo(String id, String type, String title, String topic,
-			String level, String videoId,
+			String level, ImmutableList<String> videoIds,
 			ImmutableList<String> relatedConceptIds,
 			ImmutableList<String> relatedQuestionIds) {
 		super();
@@ -30,7 +30,7 @@ public class ContentInfo {
 		this.title = title;
 		this.topic = topic;
 		this.level = level;
-		this.videoId = videoId;
+		this.videoIds = videoIds;
 		this.relatedConceptIds = relatedConceptIds;
 		this.relatedQuestionIds = relatedQuestionIds;
 	}
@@ -55,8 +55,8 @@ public class ContentInfo {
 		return level;
 	}
 
-	public String getVideoId() {
-		return videoId;
+	public ImmutableList<String> getVideoIds() {
+		return videoIds;
 	}
 
 	public ImmutableList<String> getRelatedConceptIds() {

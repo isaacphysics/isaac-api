@@ -40,8 +40,8 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	@JsonProperty("LEVEL")
 	String level;
 
-	@JsonProperty("VIDEO")
-	String videoId;
+	@JsonProperty("VIDEOS")
+	List<String> videoIds;
 
 	@JsonProperty("CONCEPTS")
 	List<String> relatedConceptIds;
@@ -57,11 +57,10 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	public static final String TYPE_MATHS = "maths";
 	
 	public ContentInfo toContentInfo() {
-		return new ContentInfo(id, type, title, topic, level, videoId,
-				relatedConceptIds == null ? ImmutableList.<String> of()
-						: ImmutableList.copyOf(relatedConceptIds),
-				relatedQuestionIds == null ? ImmutableList.<String> of()
-						: ImmutableList.copyOf(relatedQuestionIds));
+		return new ContentInfo(id, type, title, topic, level, 
+				videoIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(videoIds),
+				relatedConceptIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(relatedConceptIds),
+				relatedQuestionIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(relatedQuestionIds));
 	}
 
 	public static Map<String,ContentDetail> load() {
