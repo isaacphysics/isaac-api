@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -19,6 +20,7 @@ import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 
 import com.google.common.collect.ImmutableList;
 
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class ContentDetail implements Comparable<ContentDetail> {
 
 	private static final Logger log = LoggerFactory.getLogger(ContentDetail.class);
