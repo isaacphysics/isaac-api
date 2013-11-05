@@ -225,6 +225,21 @@ $(function()
 	pageRendered();
 });
 
+function quickQuestions(){
+        $('.quick-question .question').append(" <a href='#' class='qq-toggle'>Show Answer</a>");
+
+        $('.quick-question .question a').click(function (){
+                var answer = $(this).parent().siblings("div:last");
+
+                if(answer.hasClass("hidden")){
+                        answer.removeClass("hidden");
+                }
+                else{
+                        answer.addClass("hidden");
+                }
+        });
+}
+
 function plumb(e) {
 	var myid = e.target.id;
 	
@@ -257,5 +272,6 @@ jsPlumb.ready(function() {
 function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+	quickQuestions();
 }
 
