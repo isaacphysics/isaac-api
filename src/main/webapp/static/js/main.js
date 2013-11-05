@@ -228,7 +228,7 @@ $(function()
 function quickQuestions(){
         $('.quick-question .question').append(" <a href='#' class='qq-toggle'>Show Answer</a>");
 
-        $('.quick-question .question a').click(function (){
+        $('.quick-question .question a').click(function (e){
                 var answer = $(this).parent().siblings("div:last");
 
                 if(answer.hasClass("hidden")){
@@ -237,6 +237,8 @@ function quickQuestions(){
                 else{
                         answer.addClass("hidden");
                 }
+		e.preventDefault();
+		return false;
         });
 }
 
