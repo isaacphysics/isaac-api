@@ -1,19 +1,25 @@
 package uk.ac.cam.cl.dtg.teaching;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
+import org.codehaus.jackson.map.JsonDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +36,13 @@ import com.google.common.collect.Maps;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
+
+import datomic.Entity;
+import datomic.Connection;
+import datomic.Database;
+import datomic.Peer;
+import datomic.Util;
+
 
 @Path("/")
 public class RutherfordController {
@@ -189,6 +202,53 @@ public class RutherfordController {
 		}
 		return ImmutableMap.of("contextPath", req.getContextPath(),
 				"proxyPath", proxyPath,
-				"analyticsTrackingId", trackingId);
+				"analyticsTrackingId", trackingId,
+				"newSessionId", UUID.randomUUID().toString());
 	}
+
+	@POST
+	@Path("log")
+	@Produces("application/json")
+	public ImmutableMap<String, String> postLog(
+			@Context HttpServletRequest req,
+			@FormParam("sessionId") String sessionId,
+			@FormParam("event[sourcePage]") String sourcePage,
+			@FormParam("event[server]") String server) {
+		
+		System.out.println("Log msg from session " + sessionId);
+		
+		String uri = "datomic:free://localhost:4334/rutherford";
+        Peer.createDatabase(uri);
+        
+    	Connection conn = Peer.connect(uri);
+
+        Map eventMap = new HashMap();
+        
+        eventMap.put(":db/id", Peer.tempid(":db.part/user"));
+        eventMap.put(":logging.event/session", Peer.tempid(":db.part/user", -1));
+
+        
+        if (sourcePage != null)
+        	eventMap.put(":logging.event/sourcePage", sourcePage);
+        
+        if (server != null)
+        	eventMap.put(":logging.event/server", server);
+
+        try {
+			conn.transact(Util.list(Util.map(":db/id", Peer.tempid(":db.part/user", -1),
+					                         ":logging/sessionId", sessionId),
+					                eventMap)).get();
+		} catch (InterruptedException e) {
+			//e.printStackTrace();
+	       	return ImmutableMap.of("result", "error", "message", "InterruptedException.");
+		} catch (ExecutionException e) {
+			//e.printStackTrace();
+        	return ImmutableMap.of("result", "error", "message", "ExecutionException");
+		}
+        
+        conn.release();
+         
+		return ImmutableMap.of("result", "success");
+	}
+
 }

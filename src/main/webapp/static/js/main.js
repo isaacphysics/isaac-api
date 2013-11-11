@@ -1,3 +1,11 @@
+function log(event) {
+	event.sourcePage = window.location.pathname;
+	event.server = window.location.host;
+	$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId, event: event})
+	 .error(function() {
+		 console.error("Error logging action:", event);
+	 });
+}
 
 function loadContent(uri, addToHistory) {
 	
@@ -114,6 +122,7 @@ function click_a(e)
 
 	var uri = $(e.target).data("contentUri");
 	
+	
 	if ($(e.target).hasClass("disabled")) {
         e.stopImmediatePropagation();
         return false;
@@ -121,6 +130,9 @@ function click_a(e)
 	
 	if (uri != undefined)
 	{
+		log({type: "link_click",
+			 target: uri});
+	
 		console.log("Loading URI", uri);
 		
 		loadContent(uri, true);
@@ -196,6 +208,9 @@ function button_click(e)
 
 function playVideo(video)
 {
+	log({type: "play_video",
+		 target: video});
+
 	$("#video-modal video").remove();
 	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", ij.proxyPath + "/static/video/" + video));
 	$('#video-modal').foundation('reveal', 'open');
@@ -224,6 +239,10 @@ $(function()
 	MathJax.Hub.Config({
 		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
 		});
+	
+	
+	if (!sessionStorage.getItem("sessionId"))
+		sessionStorage.setItem("sessionId", ij.newSessionId);
 	
 	pageRendered();
 });

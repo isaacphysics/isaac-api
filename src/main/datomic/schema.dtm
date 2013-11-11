@@ -1,0 +1,39 @@
+[
+ ;; Logging
+ 
+ {:db/id #db/id[:db.part/db]
+  :db/ident :logging/sessionId
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "The unique session id associated with a browser session"
+  :db.install/_attribute :db.part/db}
+  
+ {:db/id #db/id[:db.part/db]
+  :db/ident :logging.event/server
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "The server that served the page raising the event"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :logging.event/sourcePage
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "The page that raised the event"
+  :db.install/_attribute :db.part/db}
+  
+ {:db/id #db/id[:db.part/db]
+  :db/ident :logging.event/session
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The active session when the event was raised"
+  :db.install/_attribute :db.part/db}
+  
+
+  #_(
+  {:db/id #db/id[:db.part/user]
+   :logging/sessionId "blah"}
+  
+  )
+ ]

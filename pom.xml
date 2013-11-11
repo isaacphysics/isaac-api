@@ -73,6 +73,11 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.datomic</groupId>
+			<artifactId>datomic-free</artifactId>
+			<version>0.8.4260</version>
+		</dependency>
 	</dependencies>
 
 	<build>
