@@ -275,5 +275,8 @@ function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	quickQuestions();
+	
+	// Google Analytics
+	ga('send', 'pageview');
 }
 
