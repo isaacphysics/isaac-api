@@ -87,7 +87,7 @@ function loadContent(uri, addToHistory) {
 	}
 
 	// Google Analytics
-	ga('send', 'pageview');
+	ga('send', 'pageview', window.location.pathname);
 
 }
 
