@@ -85,7 +85,10 @@ function loadContent(uri, addToHistory) {
 	{
 		history.pushState(ij.proxyPath + uri,null,ij.proxyPath + uri);	
 	}
-	
+
+	// Google Analytics
+	ga('send', 'pageview');
+
 }
 
 //var urlHistory = [document.location.href];
@@ -276,7 +279,5 @@ function pageRendered()
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	quickQuestions();
 	
-	// Google Analytics
-	ga('send', 'pageview');
 }
 
