@@ -18,7 +18,7 @@
          (map #(name (first %)) (q '[:find ?i :where [?e :db/ident ?i]
                                                      [_ :db.install/attribute ?e]
                                                      [(namespace ?i) ?n]
-                                                     [(= ?n "logging.event")]] (db rd/conn))))
+                                                     [(= ?n "logging.event")]] (db @rd/conn))))
        
        
        (def matches (filter #(some #{(name %)} logging-attributes) 
@@ -27,7 +27,7 @@
        (def values (for [m matches] {(keyword "logging.event" (name m)) (m event)}))
 
        ;; Add the event to the database
-	     @(d/transact rd/conn [{:db/id #db/id[:db.part/user -1]
+	     @(d/transact @rd/conn [{:db/id #db/id[:db.part/user -1]
 	                            :logging/sessionId session-id}
                          
                              (apply merge {:db/id #db/id[:db.part/user]
