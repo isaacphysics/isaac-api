@@ -19,9 +19,9 @@ public class Clojure {
 	private static void init()
 	{
 		Var REQUIRE = RT.var("clojure.core", "require");
-		REQUIRE.invoke(Symbol.intern("rutherford.core"), Keyword.intern("reload"));
+		REQUIRE.invoke(Symbol.intern("rutherford.core"));
 		
-		Var g = RT.var("rutherford.core", "generate");
+		Var g = RT.var("rutherford.interop", "generate");
 		generate = g.fn();		
 	}
 	
@@ -29,14 +29,5 @@ public class Clojure {
 	protected static <I> I generate(Class<I> i)
 	{
 		return (I)generate.invoke(i);
-	}	
-	
-	@SuppressWarnings("unchecked")
-	protected static <I> I generate(Class<I> i, boolean reload)
-	{
-		if (reload)
-			init();
-		return (I)generate.invoke(i);
 	}
-
 }

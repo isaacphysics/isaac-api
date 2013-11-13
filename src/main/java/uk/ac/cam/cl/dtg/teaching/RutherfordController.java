@@ -19,7 +19,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
-import org.codehaus.jackson.map.JsonDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,12 +35,6 @@ import com.google.common.collect.Maps;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
-
-import datomic.Entity;
-import datomic.Connection;
-import datomic.Database;
-import datomic.Peer;
-import datomic.Util;
 
 
 @Path("/")
@@ -213,9 +206,6 @@ public class RutherfordController {
 			@Context HttpServletRequest req,
 			@FormParam("sessionId") String sessionId,
 			@FormParam("event") String eventJson) {
-		
-		
-		//System.out.println("Log msg from session " + sessionId);
 		
 		DatomicLogger t = Clojure.generate(DatomicLogger.class);
 		t.logEvent(sessionId, eventJson);
