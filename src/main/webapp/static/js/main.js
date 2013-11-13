@@ -198,7 +198,9 @@ function checkAnswer_click(e)
 		$(".question-explanation").hide();
 		$(".question-wrong").fadeIn(200);
 	}
-	console.log(correct)
+	console.log(correct);
+	log({type: "question_response",
+		 answerCorrect: correct});
 }
 
 function button_click(e)
@@ -258,6 +260,7 @@ function quickQuestions(){
 
                 if(answer.hasClass("hidden")){
                         answer.removeClass("hidden");
+                    	log({type: "show_quick_question_answer"});
                 }
                 else{
                         answer.addClass("hidden");

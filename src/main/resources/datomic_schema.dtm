@@ -53,5 +53,12 @@
   :db/doc "The target of a clicked link"
   :db.install/_attribute :db.part/db}
  
+ ;; Whether an answer is correct
+ {:db/id #db/id[:db.part/db]
+  :db/ident :logging.event/answerCorrect
+  :db/valueType :db.type/boolean
+  :db/cardinality :db.cardinality/one
+  :db/doc "Whether an answer is correct"
+  :db.install/_attribute :db.part/db}
   
  ]
