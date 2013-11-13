@@ -1,5 +1,6 @@
 (ns rutherford.core
-  (:use [rutherford.interop]
+  (:use [rutherford.nrepl]
+        [rutherford.interop]
         [rutherford.datomic.logger]))
 
 
