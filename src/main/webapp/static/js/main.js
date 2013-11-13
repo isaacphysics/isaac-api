@@ -1,7 +1,7 @@
 function log(event) {
 	event.sourcePage = window.location.pathname;
 	event.server = window.location.host;
-	$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId, event: event})
+	$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId, event: JSON.stringify(event)})
 	 .error(function() {
 		 console.error("Error logging action:", event);
 	 });

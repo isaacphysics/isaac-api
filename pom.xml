@@ -78,6 +78,16 @@
 			<artifactId>datomic-free</artifactId>
 			<version>0.8.4260</version>
 		</dependency>
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure</artifactId>
+			<version>1.5.1</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.clojure</groupId>
+		  <artifactId>data.json</artifactId>
+		  <version>0.2.3</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -97,6 +107,11 @@
 				<version>2.4</version>
 			</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<directory>src/main/clojure</directory>
+			</resource>
+		</resources>
 	</build>
 
 	<dependencyManagement>

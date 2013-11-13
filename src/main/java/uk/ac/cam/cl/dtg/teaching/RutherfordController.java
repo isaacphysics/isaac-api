@@ -212,43 +212,16 @@ public class RutherfordController {
 	public ImmutableMap<String, String> postLog(
 			@Context HttpServletRequest req,
 			@FormParam("sessionId") String sessionId,
-			@FormParam("event[sourcePage]") String sourcePage,
-			@FormParam("event[server]") String server) {
+			@FormParam("event") String eventJson) {
 		
-		System.out.println("Log msg from session " + sessionId);
 		
-		String uri = "datomic:free://localhost:4334/rutherford";
-        Peer.createDatabase(uri);
-        
-    	Connection conn = Peer.connect(uri);
+		//System.out.println("Log msg from session " + sessionId);
+		
+		DatomicLogger t = Clojure.generate(DatomicLogger.class);
+		t.logEvent(sessionId, eventJson);
 
-        Map eventMap = new HashMap();
-        
-        eventMap.put(":db/id", Peer.tempid(":db.part/user"));
-        eventMap.put(":logging.event/session", Peer.tempid(":db.part/user", -1));
-
-        
-        if (sourcePage != null)
-        	eventMap.put(":logging.event/sourcePage", sourcePage);
-        
-        if (server != null)
-        	eventMap.put(":logging.event/server", server);
-
-        try {
-			conn.transact(Util.list(Util.map(":db/id", Peer.tempid(":db.part/user", -1),
-					                         ":logging/sessionId", sessionId),
-					                eventMap)).get();
-		} catch (InterruptedException e) {
-			//e.printStackTrace();
-	       	return ImmutableMap.of("result", "error", "message", "InterruptedException.");
-		} catch (ExecutionException e) {
-			//e.printStackTrace();
-        	return ImmutableMap.of("result", "error", "message", "ExecutionException");
-		}
-        
-        conn.release();
-         
 		return ImmutableMap.of("result", "success");
 	}
+	
 
 }
