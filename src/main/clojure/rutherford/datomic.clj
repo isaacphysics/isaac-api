@@ -1,6 +1,8 @@
 (ns rutherford.datomic
   (:require [clojure.java.io]
             [datomic.api :as d :refer [db q]])
+  (:import [java.util.concurrent ExecutionException]
+           [java.lang RuntimeException])
   (:use [clojure.pprint]))
 
 (defonce uri "datomic:free://localhost:4334/rutherford")
@@ -17,6 +19,11 @@
   (connect)
   (update-schema))
 
-(connect)
+(try
+  (connect)
+  (catch ExecutionException e
+    (println "Could not connect to datomic transactor. Is the transactor running?"))
+  (catch RuntimeException e
+    (println "Connected to transactor, but could not find database. Does" uri "exist?")))
 
 
