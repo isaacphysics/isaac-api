@@ -96,6 +96,9 @@ function loadContent(uri, addToHistory) {
 
 	// Google Analytics
 	ga('send', 'pageview', ij.proxyPath + uri);
+	
+	// Our analytics
+	log({type: "page_render"});
 
 }
 
@@ -297,6 +300,5 @@ function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	quickQuestions();
-	
 }
 
