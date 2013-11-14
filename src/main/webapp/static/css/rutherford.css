@@ -104,12 +104,18 @@ span.question-wrong
 	font-size: inherit;
 }
 
-span.question-explanation
+.question-explanation, .answer
 {
+	color:white;
 	display:block;
 	background: green;
 	font-size: inherit;
 	margin-top: 20px;
+}
+
+.answer
+{
+	padding: 10px 10px 1px;	
 }
 
 #questionContent, #conceptContent
