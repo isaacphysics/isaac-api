@@ -44,10 +44,12 @@
 {/call}
 <h6>This Problem</h6>
 // this had a video link in it before - TODO
+	<ul>
 	{foreach $id in $videoIds}
-		<a href="#" data-play-video="/{$id}">View Video</a><br/>
+		<li><a href="#" data-play-video="/{$id}">Hint Video</a></li>
 	{ifempty}
-		<i>No videos</i>
+		<li><i>No videos</i></li>
 	{/foreach}
+	</ul>
 {/template}
 
