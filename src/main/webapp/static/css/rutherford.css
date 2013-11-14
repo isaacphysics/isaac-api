@@ -104,7 +104,7 @@ span.question-wrong
 	font-size: inherit;
 }
 
-.question-explanation, .answer
+span.question-explanation, .answer
 {
 	color:white;
 	display:block;
