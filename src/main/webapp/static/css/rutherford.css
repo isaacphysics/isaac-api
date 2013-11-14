@@ -45,6 +45,10 @@ body
 	text-decoration:underline;
 }
 
+ul
+{
+	list-style-type:none;'
+}
 
 #questionContent li
 {
