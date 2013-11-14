@@ -1,3 +1,24 @@
+.clearfix:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+ 
+.clearfix {
+    display: inline-block;
+}
+ 
+html[xmlns] .clearfix {
+    display: block;
+}
+ 
+* html .clearfix {
+    height: 1%;
+}
+
 html, body
 {
 	height: 100%;
@@ -38,6 +59,25 @@ body
 #content
 {
 	background: rgba(255,255,255,0.7);
+}
+
+#conceptContent .section-container.accordion{
+	clear: both;
+}
+
+#content a:hover
+{
+	text-decoration:underline;
+}
+
+ul
+{
+	list-style-type:none;'
+}
+
+ol li
+{
+	margin-left:20px;
 }
 
 .footer-area
@@ -104,12 +144,18 @@ span.question-wrong
 	font-size: inherit;
 }
 
-span.question-explanation
+span.question-explanation, .answer
 {
+	color:white;
 	display:block;
 	background: green;
 	font-size: inherit;
 	margin-top: 20px;
+}
+
+.answer
+{
+	padding: 10px 10px 1px;	
 }
 
 #questionContent, #conceptContent
@@ -129,10 +175,17 @@ span.question-explanation
 	position: absolute;
 }
 
-.gear a {
-	width: 60%;
-	position: relative;
+.gear a{
+	display:block;border-radius:100%;line-height:100px;text-align:center;
+	height:100%;
+	width:100%;
+}
+
+.gear a span{
+	width: 100%;
+	position: absolute;
 	display: block;
+	line-height:1em;
 	margin: 0 auto;
 	text-align: center;
 	text-decoration: none;
@@ -146,8 +199,10 @@ span.question-explanation
 	top: 20px;
 }
 
-#real-world-problems a {
+#real-world-problems a span{
 	top: 54px;
+	width:60%;
+	left:30px;
 }
 
 #register {
@@ -157,7 +212,7 @@ span.question-explanation
 	top: 78px;
 }
 
-#register a {
+#register a span{
 	top: 100px;
 }
 
@@ -168,18 +223,18 @@ span.question-explanation
 	top: 64px;
 }
 
-#why-physics a {
+#why-physics a span{
 	top: 112px;
 }
 
 #get-started {
 	height: 310px;
-	width: 308px;
+	width: 302px;
 	left: 340px;
 	top: 228px;	
 }
 
-#get-started a {
+#get-started a span{
 	top: 140px;
 	font-weight: bold;
 	font-size: 24px;
@@ -192,7 +247,7 @@ span.question-explanation
 	top: 255px;	
 }
 
-#discuss a {
+#discuss a span{
 	top: 62px;
 }
 
@@ -203,7 +258,7 @@ span.question-explanation
 	top: 200px;		
 }
 
-#applying-to-university a {
+#applying-to-university a span{
 	top: 54px;
 }
 
@@ -214,7 +269,7 @@ span.question-explanation
 	top: 358px;	
 }
 
-#challenge-of-the-week a {
+#challenge-of-the-week a span{
 	top: 105px;
 }
 
@@ -225,7 +280,7 @@ span.question-explanation
 	top: 408px;	
 }
 
-#about a {
+#about a span{
 	top: 85px;
 }
 

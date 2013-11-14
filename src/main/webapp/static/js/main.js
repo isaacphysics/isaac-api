@@ -125,6 +125,10 @@ function click_a(e)
 
 	var uri = $(e.target).data("contentUri");
 	
+	// handle case where you may be clicking on an object inside of an anchor
+	if(uri == undefined && !$(e.target).is("a") && $(e.target).parent().is("a")){
+		uri = $(e.target).parent().data("contentUri");
+	}
 	
 	if ($(e.target).hasClass("disabled")) {
         e.stopImmediatePropagation();
@@ -253,10 +257,13 @@ $(function()
 });
 
 function quickQuestions(){
-        $('.quick-question .question').append(" <br/><a href='#' class='qq-toggle'>Show Answer</a>");
-
-        $('.quick-question .question a').click(function (e){
-                var answer = $(this).parent().siblings("div:last");
+        $('.quick-question').append("<a href='#' class='qq-toggle'>Show Answer</a>");
+        
+        //Hack to hide any numbers that have found there way in the list
+        $('.quick-question').prev('.item-number').remove();
+        
+        $('.quick-question a').click(function (e){
+                var answer = $(this).siblings("div:last");
 
                 if(answer.hasClass("hidden")){
                         answer.removeClass("hidden");
@@ -270,6 +277,25 @@ function quickQuestions(){
 		e.preventDefault();
 		return false;
         });
+}
+
+// Set to only work in concepts currently
+function buildConcertina(){
+	$('#conceptContent h5').each(function(){ 
+		var headerText = $(this).text();
+		
+		$(this).nextUntil("h5").wrapAll('<div class="content" data-section-content/>');
+		
+	    $(this).nextUntil("h5").andSelf().wrapAll('<section/>');
+	    
+	    $(this).wrap('<div class="title" data-section-title/>');
+	    
+	    // Added anchor so that the link is clearly visible to screenreaders.
+	    $(this).replaceWith('<h5><a href="#">' +$(this).text() + '</a></h5>');
+	    
+	});
+	
+	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="multi_expand:true;"/>');
 }
 
 function plumb(e) {
@@ -305,5 +331,6 @@ function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	quickQuestions();
+	buildConcertina();
 }
 

@@ -55,12 +55,13 @@
 	{param environment: $environment /}
 {/call}
 <h6>Videos</h6>
+	<ul>
 	{foreach $id in $videoIds}
-		<a href="#" data-play-video="/{$id}">View Video</a><br/> // TODO - Videos need titles! Arg.
+		<li><a href="#" data-play-video="/{$id}">View Video</a></li> // TODO - Videos need titles! Arg.
 	{ifempty}
-		<i>No videos</i>
+		<li><i>No videos</i></li>
 	{/foreach}
-
+	</ul>
 <h6>Download</h6>
 <a target="_blank" href="{$ij.proxyPath}/static/pdf/{$conceptId}.pdf">Download as PDF</a>
 {/template}
@@ -72,17 +73,19 @@
  * @param environment
  */
 {template .conceptList}
+<ul>
 {foreach $id in $ids}
 	{let $detail: $environment[$id]/}
 	{if $detail}
 		{if $filter == '' or $detail.type == $filter}
 			{let $type: $environment[$id].type == 'question' ? 'questions' : 'concepts'/}
-			<a href="#" data-content-uri="/{$type}/{$id}">{$detail.title}</a><br/>
+			<li><a href="#" data-content-uri="/{$type}/{$id}">{$detail.title}</a></li>
 		{/if}
 	{else}
-		{$id} <i>(missing)</i><br/>
+		<li>{$id} <i>(missing)</i><br/></li>
 	{/if}
 {ifempty}
-	<i>None</i> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.
+	<li><i>None</i></li> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.
 {/foreach}
+</ul>
 {/template} 

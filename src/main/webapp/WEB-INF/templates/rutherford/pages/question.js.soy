@@ -36,11 +36,22 @@
  */
 {template .questionSidebar}
 <h3>Hints and Help</h3>
+	{let $length : length($videoIds)/}
+	{if $length > 1}
+	<ol>
+	{else}
+	<ul>
+	{/if}
 	{foreach $id in $videoIds}
-		<a href="#" data-play-video="/{$id}">Hint Video</a><br/>
+		<li><a href="#" data-play-video="/{$id}">Hint Video</a></li>
 	{ifempty}
-		<i>No videos</i>
+		<li><i>No videos</i></li>
 	{/foreach}
+	{if $length > 1}
+	</ol>
+	{else}
+	</ul>
+	{/if}
 <h6>Physical Concepts</h6>
 {call .conceptList}
 	{param filter: 'physics' /}
