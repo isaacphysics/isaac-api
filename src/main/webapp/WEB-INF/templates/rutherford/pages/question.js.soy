@@ -44,12 +44,21 @@
 {/call}
 <h6>This Problem</h6>
 // this had a video link in it before - TODO
+	{let $length : length($videoIds)/}
+	{if $length > 1}
+	<ol>
+	{else}
 	<ul>
+	{/if}
 	{foreach $id in $videoIds}
 		<li><a href="#" data-play-video="/{$id}">Hint Video</a></li>
 	{ifempty}
 		<li><i>No videos</i></li>
 	{/foreach}
+	{if $length > 1}
+	</ol>
+	{else}
 	</ul>
+	{/if}
 {/template}
 
