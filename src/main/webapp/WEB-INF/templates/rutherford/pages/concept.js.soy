@@ -59,7 +59,7 @@
 	{foreach $id in $videoIds}
 		<li><a href="#" data-play-video="/{$id}">View Video</a></li> // TODO - Videos need titles! Arg.
 	{ifempty}
-		</li><i>No videos</i></li>
+		<li><i>No videos</i></li>
 	{/foreach}
 	</ul>
 <h6>Download</h6>
@@ -85,7 +85,7 @@
 		<li>{$id} <i>(missing)</i><br/></li>
 	{/if}
 {ifempty}
-	<i>None</i> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.
+	<li><i>None</i></li> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.
 {/foreach}
 </ul>
 {/template} 
