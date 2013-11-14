@@ -275,6 +275,22 @@ function quickQuestions(){
         });
 }
 
+// Set to only work in concepts currently
+function buildConcertina(){
+	$('#conceptContent h5').each(function(){ 
+		var headerText = $(this).text();
+		
+		$(this).nextUntil("h5").wrapAll('<div class="content" data-section-content/>');
+		
+	    $(this).nextUntil("h5").andSelf().wrapAll('<section/>');
+	    
+	    $(this).wrap('<div class="title" data-section-title/>');    
+	    
+	});
+	
+	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="multi_expand:true;"/>');
+}
+
 function plumb(e) {
 	var myid = e.target.id;
 	
@@ -308,5 +324,6 @@ function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	quickQuestions();
+	buildConcertina();
 }
 
