@@ -9,15 +9,7 @@
  */
 {template .concept}
 <div class="row">
-	<div class="small-12 columns">
-		<h2>Concept: {$environment[$id].title}</h2>
-	</div>
-</div>
-<div class="row">
-	<div class="concept-page small-8 columns">
-		{$renderedContent|noAutoescape}
-	</div>
-	<div id="conceptSidebar" class="small-4 columns">
+	<div id="conceptSidebar" class="small-3 columns">
 		{call .conceptSidebar}
 			{param conceptId : $id /}
 			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
@@ -25,6 +17,10 @@
 			{param videoIds : $environment[$id].videoIds /}
 			{param environment: $environment /}
 		{/call}
+	</div>
+	<div id="conceptContent" class="concept-page small-9 columns">
+		<h2>Concept: {$environment[$id].title}</h2>
+		{$renderedContent|noAutoescape}
 	</div>
 </div>
 {/template}
@@ -40,32 +36,32 @@
  */
 {template .conceptSidebar}
 <!--<h3>You may like...</h3>-->
-<h4>Physical Concepts</h4>
+<h6>Physical Concepts</h6>
 {call .conceptList}
 	{param filter: 'physics' /}
 	{param ids: $relatedConceptIds /}	
 	{param environment: $environment /}
 {/call}
-<h4>Maths Concepts</h4>
+<h6>Maths Concepts</h6>
 {call .conceptList}
 	{param filter: 'maths' /}
 	{param ids: $relatedConceptIds /}	
 	{param environment: $environment /}
 {/call}
-<h4>Problems</h4>
+<h6>Problems</h6>
 {call .conceptList}
 	{param filter: '' /}
 	{param ids: $relatedQuestionIds /}	
 	{param environment: $environment /}
 {/call}
-<h4>Videos</h4>
+<h6>Videos</h6>
 	{foreach $id in $videoIds}
 		<a href="#" data-play-video="/{$id}">View Video</a><br/> // TODO - Videos need titles! Arg.
 	{ifempty}
 		<i>No videos</i>
 	{/foreach}
 
-<h4>Download</h4>
+<h6>Download</h6>
 <a target="_blank" href="{$ij.proxyPath}/static/pdf/{$conceptId}.pdf">Download as PDF</a>
 {/template}
 
