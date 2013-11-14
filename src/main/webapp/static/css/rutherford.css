@@ -40,6 +40,12 @@ body
 	background: rgba(255,255,255,0.7);
 }
 
+#content a:hover
+{
+	text-decoration:underline;
+}
+
+
 #questionContent li
 {
 	margin-left:20px;
