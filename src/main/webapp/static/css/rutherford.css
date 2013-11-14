@@ -117,6 +117,12 @@ span.question-explanation
 	border-left: 1px solid #444;
 }
 
+.question-footer
+{
+	font-style: italic;
+	font-size: 10px;
+}
+
 /* Gears */
 
 .gear {

@@ -33,10 +33,11 @@ students are of course encouraged to explore all the levels.</p>
 {template .bluepill}
 {if $item}
 	<div class="small-4 columns">
-		<ul class="button-group round">
-			<li><a class="button {$item.contentAvailable ? '' : 'disabled'}" href="#" data-content-uri="/topics/{$item.topic}/level-{$item.level}">{$item.title} L{$item.level}</a></li>
-			<li><a class="button secondary" target="_blank" href="{$ij.proxyPath}/static/pdf/{$item.pdf}">PDF</a></li>
-		</ul>
+		{if $item.contentAvailable}
+			<a class="button round" href="#" data-content-uri="/topics/{$item.topic}/level-{$item.level}">{$item.title} L{$item.level}</a>
+		{else}
+			<a class="button round secondary" target="_blank" href="{$ij.proxyPath}/static/pdf/{$item.pdf}">{$item.title} L{$item.level} (PDF)</a>
+		{/if}
 	</div>
 {/if}
 {/template}

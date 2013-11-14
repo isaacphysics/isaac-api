@@ -51,6 +51,9 @@ public class ContentDetail implements Comparable<ContentDetail> {
 
 	@JsonProperty("ORDER")
 	int order;
+	
+	public String prevContentId = null;
+	public String nextContentId = null;
 
 	public static final String TYPE_QUESTION = "question";
 	public static final String TYPE_PHYSICS = "physics";

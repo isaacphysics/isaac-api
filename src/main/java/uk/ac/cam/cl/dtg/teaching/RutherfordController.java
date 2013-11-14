@@ -17,6 +17,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
 import org.slf4j.Logger;
@@ -47,6 +48,33 @@ public class RutherfordController {
 	
 	// Map of topicPath to detail
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
+	
+	private boolean questionNavigationDataLoaded = false;
+	
+	// I apologise for this function.
+	private void loadQuestionNavigationData()
+	{
+		for(TopicDetail t : topicDetails.values())
+		{
+			for (int level = 1; level <= 6; level++)
+			{
+				ContentDetail prevQ = null;
+				for (ContentDetail q : contentDetails.values()) 
+				{
+					if (q.type.equals(ContentDetail.TYPE_QUESTION) && t.topic.equals(q.topic) && ((Integer)level).toString().equals(q.level)) 
+					{
+						if (prevQ != null)
+						{
+							q.prevContentId = prevQ.id;
+							prevQ.nextContentId = q.id;
+						}
+						prevQ = q;
+					}
+				}
+			}
+		}
+		questionNavigationDataLoaded = true;
+	}
 
 	@GET
 	@Path("learn")
@@ -123,7 +151,7 @@ public class RutherfordController {
 
 		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
 
-		return new TopicPage(topicDetail.title, level, conceptIds, questionIds, environment);
+		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, environment, topicDetail.pdf.get(level));
 	}
 
 	@GET
@@ -138,10 +166,19 @@ public class RutherfordController {
 	@Produces("application/json")
 	public ContentPage getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
+
+		if (!questionNavigationDataLoaded)
+			loadQuestionNavigationData();
+		
 		String renderedContent = renderTemplate("rutherford.content."
 				+ question, getSoyGlobalMap(req));
-		return new ContentPage(question, renderedContent, collectEnvironment());
+		
+		return new ContentPage(question, renderedContent, collectEnvironment(), 
+				contentDetails.get(question).prevContentId != null ? "/questions/" + contentDetails.get(question).prevContentId : null, 
+				"/topics/" + contentDetails.get(question).topic + "/level-" + contentDetails.get(question).level, 
+				contentDetails.get(question).nextContentId != null ? "/questions/" + contentDetails.get(question).nextContentId : null);
 	}
+
 
 	@GET
 	@Path("concepts/{concept}")
@@ -150,7 +187,7 @@ public class RutherfordController {
 			@PathParam("concept") String concept) {
 		String renderedContent = renderTemplate(
 				"rutherford.content." + concept, getSoyGlobalMap(req));
-		return new ContentPage(concept, renderedContent, collectEnvironment());
+		return new ContentPage(concept, renderedContent, collectEnvironment(), null, null, null);
 	}
 
 	private String renderTemplate(String templateName, ImmutableMap<String, String> globalMap) {

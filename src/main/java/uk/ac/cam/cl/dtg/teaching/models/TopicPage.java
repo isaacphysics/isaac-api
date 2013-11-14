@@ -10,17 +10,22 @@ public class TopicPage {
 	private ImmutableList<String> conceptIds;
 	private ImmutableList<String> questionIds;
 	private ImmutableMap<String, ContentInfo> environment;
+	private String topicPdf;
+	private String topicId;
 
-	public TopicPage(String topicTitle, String level,
+	public TopicPage(String topicId, String topicTitle, String level,
 			ImmutableList<String> conceptIds,
 			ImmutableList<String> questionIds,
-			ImmutableMap<String, ContentInfo> environment) {
+			ImmutableMap<String, ContentInfo> environment,
+			String topicPdf) {
 		super();
 		this.topicTitle = topicTitle;
 		this.level = level;
 		this.conceptIds = conceptIds;
 		this.questionIds = questionIds;
 		this.environment = environment;
+		this.topicPdf = topicPdf;
+		this.topicId = topicId;
 	}
 
 	public String getTopicTitle() {
@@ -42,5 +47,12 @@ public class TopicPage {
 	public ImmutableMap<String, ContentInfo> getEnvironment() {
 		return environment;
 	}
+	
+	public String getTopicPdf() {
+		return topicPdf;
+	}
 
+	public String getTopicId() {
+		return topicId;
+	}
 }

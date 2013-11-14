@@ -5,6 +5,9 @@
  * @param renderedContent
  * @param id
  * @param environment
+ * @param prevContentUri
+ * @param nextContentUri
+ * @param upContentUri
   */
 {template .question}
 <div class="row">
@@ -16,8 +19,11 @@
 		{/call}
 	</div>
 	<div id="questionContent" class="small-9 columns">
+		{call .questionNavigationLinks data="all"/}
 		<h2>Question: {$environment[$id].title}</h2>
 		{$renderedContent|noAutoescape}
+		<hr />
+		{call .questionNavigationLinks data="all"/}
 	</div>
 </div>
 {/template}
@@ -30,6 +36,11 @@
  */
 {template .questionSidebar}
 <h3>Hints and Help</h3>
+	{foreach $id in $videoIds}
+		<a href="#" data-play-video="/{$id}">Hint Video</a><br/>
+	{ifempty}
+		<i>No videos</i>
+	{/foreach}
 <h6>Physical Concepts</h6>
 {call .conceptList}
 	{param filter: 'physics' /}
@@ -42,12 +53,24 @@
 	{param ids: $relatedConceptIds /}	
 	{param environment: $environment /}
 {/call}
-<h6>This Problem</h6>
-// this had a video link in it before - TODO
-	{foreach $id in $videoIds}
-		<a href="#" data-play-video="/{$id}">View Video</a><br/>
-	{ifempty}
-		<i>No videos</i>
-	{/foreach}
 {/template}
 
+/**
+ * Question Navigation Links
+ * @param prevContentUri
+ * @param upContentUri
+ * @param nextContentUri
+ */
+{template .questionNavigationLinks}
+	<div class="row">
+		<div class="small-4 columns text-left">
+			{if $prevContentUri}<a href="#" data-content-uri="{$prevContentUri}">Previous Question</a>{else}&nbsp;{/if}
+		</div>
+		<div class="small-4 columns text-center">
+			{if $upContentUri}<a href="#" data-content-uri="{$upContentUri}">Question List</a>{else}&nbsp;{/if}
+		</div>
+		<div class="small-4 columns text-right">
+			{if $nextContentUri}<a href="#" data-content-uri="{$nextContentUri}">Next Question</a>{else}&nbsp;{/if}
+		</div>
+	</div>
+{/template}
