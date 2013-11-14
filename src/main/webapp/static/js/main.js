@@ -125,6 +125,10 @@ function click_a(e)
 
 	var uri = $(e.target).data("contentUri");
 	
+	// handle case where you may be clicking on an object inside of an anchor
+	if(uri == undefined && !$(e.target).is("a") && $(e.target).parent().is("a")){
+		uri = $(e.target).parent().data("contentUri");
+	}
 	
 	if ($(e.target).hasClass("disabled")) {
         e.stopImmediatePropagation();
