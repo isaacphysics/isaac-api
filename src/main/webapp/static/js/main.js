@@ -284,7 +284,10 @@ function buildConcertina(){
 		
 	    $(this).nextUntil("h5").andSelf().wrapAll('<section/>');
 	    
-	    $(this).wrap('<div class="title" data-section-title/>');    
+	    $(this).wrap('<div class="title" data-section-title/>');
+	    
+	    // Added anchor so that the link is clearly visible to screenreaders.
+	    $(this).replaceWith('<h5><a href="#">' +$(this).text() + '</a></h5>');
 	    
 	});
 	
