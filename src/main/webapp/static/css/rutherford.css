@@ -109,13 +109,13 @@ span.question-explanation
 	display:block;
 	background: green;
 	font-size: inherit;
+	margin-top: 20px;
 }
 
-#questionSidebar
+#questionContent, #conceptContent
 {
 	border-left: 1px solid #444;
 }
-
 
 /* Gears */
 

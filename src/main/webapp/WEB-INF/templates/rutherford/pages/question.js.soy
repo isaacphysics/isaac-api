@@ -8,20 +8,16 @@
   */
 {template .question}
 <div class="row">
-	<div class="small-12 columns">
-		<h2>Question: {$environment[$id].title}</h2>
-	</div>
-</div
-<div class="row">
-	<div class="small-8 columns">
-		{$renderedContent|noAutoescape}
-	</div>
-	<div id="questionSidebar" class="small-4 columns">
+	<div id="questionSidebar" class="small-3 columns">
 		{call .questionSidebar}
 			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
 			{param videoIds : $environment[$id].videoIds /}
 			{param environment: $environment /}
 		{/call}
+	</div>
+	<div id="questionContent" class="small-9 columns">
+		<h2>Question: {$environment[$id].title}</h2>
+		{$renderedContent|noAutoescape}
 	</div>
 </div>
 {/template}
@@ -34,19 +30,19 @@
  */
 {template .questionSidebar}
 <h3>Hints and Help</h3>
-<h4>Physical Concepts</h4>
+<h6>Physical Concepts</h6>
 {call .conceptList}
 	{param filter: 'physics' /}
 	{param ids: $relatedConceptIds /}	
 	{param environment: $environment /}
 {/call}
-<h4>Maths Concepts</h4>
+<h6>Maths Concepts</h6>
 {call .conceptList}
 	{param filter: 'maths' /}
 	{param ids: $relatedConceptIds /}	
 	{param environment: $environment /}
 {/call}
-<h4>This Problem</h4>
+<h6>This Problem</h6>
 // this had a video link in it before - TODO
 	{foreach $id in $videoIds}
 		<a href="#" data-play-video="/{$id}">View Video</a><br/>
