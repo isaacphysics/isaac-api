@@ -40,6 +40,10 @@ body
 	background: rgba(255,255,255,0.7);
 }
 
+#conceptContent .section-container.accordion{
+	clear: both;
+}
+
 #content a:hover
 {
 	text-decoration:underline;
