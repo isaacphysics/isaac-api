@@ -70,9 +70,13 @@ body
 	text-decoration:underline;
 }
 
+#content .button:hover{
+	text-decoration:none;
+}
+
 ul
 {
-	list-style-type:none;'
+	list-style-type:none;
 }
 
 ol li
