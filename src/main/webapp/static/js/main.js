@@ -1,10 +1,26 @@
+var continueLogging = true;
+
 function log(event) {
+	
 	event.sourcePage = window.location.pathname;
 	event.server = window.location.host;
-	$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId, event: JSON.stringify(event)})
-	 .error(function() {
-		 console.error("Error logging action:", event);
-	 });
+	
+	if (continueLogging) {
+		
+		$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId, event: JSON.stringify(event)})
+		 .success(function(e) {
+			 if (!e.success)
+				 continueLogging = false;
+		 })
+		 .error(function() {
+			 console.error("Error logging action:", event);
+			 continueLogging = false;
+		 });
+	}
+	else {
+		
+		console.log("Skipping log request - a previous request failed.");
+	}
 }
 
 function loadContent(uri, addToHistory) {

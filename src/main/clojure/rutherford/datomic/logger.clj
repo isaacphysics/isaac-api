@@ -36,8 +36,11 @@
 	                         
 	                             (apply merge {:db/id #db/id[:db.part/user]
 	                                           :logging.event/session #db/id[:db.part/user -1]}
-	                                          values)]))
+	                                          values)])
+         true)
       
-      ;; We only get here if @conn is nil
-      (println "DB not available for log message storage"))))
+       ;; We only get here if @conn is nil
+       (do 
+         (println "DB not available for log message storage")
+         false))))
 

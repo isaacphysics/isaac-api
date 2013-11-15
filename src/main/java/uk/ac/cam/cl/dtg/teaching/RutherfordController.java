@@ -242,14 +242,14 @@ public class RutherfordController {
 	@POST
 	@Path("log")
 	@Produces("application/json")
-	public ImmutableMap<String, String> postLog(
+	public ImmutableMap<String, Boolean> postLog(
 			@Context HttpServletRequest req,
 			@FormParam("sessionId") String sessionId,
 			@FormParam("event") String eventJson) {
 		
-		datomicLogger.logEvent(sessionId, eventJson);
+		boolean success = datomicLogger.logEvent(sessionId, eventJson);
 
-		return ImmutableMap.of("result", "success");
+		return ImmutableMap.of("success", success);
 	}
 	
 
