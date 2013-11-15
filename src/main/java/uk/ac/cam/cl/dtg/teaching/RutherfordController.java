@@ -42,6 +42,7 @@ import com.papercut.silken.TemplateRenderer;
 public class RutherfordController {
 
 	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
+	private static final DatomicLogger datomicLogger = Clojure.generate(DatomicLogger.class);
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
@@ -246,8 +247,7 @@ public class RutherfordController {
 			@FormParam("sessionId") String sessionId,
 			@FormParam("event") String eventJson) {
 		
-		DatomicLogger t = Clojure.generate(DatomicLogger.class);
-		t.logEvent(sessionId, eventJson);
+		datomicLogger.logEvent(sessionId, eventJson);
 
 		return ImmutableMap.of("result", "success");
 	}
