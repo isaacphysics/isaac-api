@@ -155,7 +155,8 @@ span.question-explanation, .answer
 
 .answer
 {
-	padding: 10px 10px 1px;	
+	padding: 10px 10px 1px;
+	margin-bottom:5px;	
 }
 
 #questionContent, #conceptContent
