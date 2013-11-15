@@ -54,12 +54,14 @@ public class RutherfordController {
 	// I apologise for this function.
 	private void loadQuestionNavigationData()
 	{
+		SortedSet<ContentDetail> content = new TreeSet<ContentDetail>(contentDetails.values());
+
 		for(TopicDetail t : topicDetails.values())
 		{
 			for (int level = 1; level <= 6; level++)
 			{
 				ContentDetail prevQ = null;
-				for (ContentDetail q : contentDetails.values()) 
+				for (ContentDetail q : content) 
 				{
 					if (q.type.equals(ContentDetail.TYPE_QUESTION) && t.topic.equals(q.topic) && ((Integer)level).toString().equals(q.level)) 
 					{
