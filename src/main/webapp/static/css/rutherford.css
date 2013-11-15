@@ -178,7 +178,10 @@ span.question-explanation, .answer
 }
 
 .gear a{
-	display:block;border-radius:100%;line-height:100px;text-align:center;
+	display:block;
+	border-radius:100%;
+	line-height:100px;
+	text-align:center;
 	height:100%;
 	width:100%;
 }
@@ -221,7 +224,7 @@ span.question-explanation, .answer
 #why-physics {
 	height: 230px;
 	width: 229px;
-	right: 268px;
+	left: 502px;
 	top: 64px;
 }
 
@@ -256,7 +259,7 @@ span.question-explanation, .answer
 #applying-to-university {
 	height: 143px;
 	width: 144px;
-	right: 168px;
+	left: 685px;
 	top: 200px;		
 }
 
@@ -278,7 +281,7 @@ span.question-explanation, .answer
 #about {
 	height: 191px;
 	width: 194px;
-	right: 230px;
+	left: 580px;
 	top: 408px;	
 }
 
