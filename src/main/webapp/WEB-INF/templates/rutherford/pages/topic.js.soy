@@ -2,14 +2,22 @@
 
 /**
  * Topic
+ * @param topicPdf
  * @param topicTitle
  * @param level
  * @param conceptIds
  * @param questionIds
  * @param environment
+ * @param topicId
  */
 {template .topic}
 <h2>Topic: {$topicTitle}</h2>
+<div class="row" style="float:right;">
+	<div class="small-12 columns">
+	<a href="{$ij.proxyPath}/static/pdf/{$topicPdf}">Click here to download the question sheet for this topic.</a>
+	</div>
+</div>
+
 <h3>Level: {$level}</h2>
 
 {let $numRows: max(ceiling(length($questionIds) / 2), length($conceptIds))/}
@@ -31,7 +39,11 @@
 	{if $i*2 < length($questionIds)}
 		{call .questionLink}
 			{param question: $environment[$questionIds[$i*2]] /}
-			{param number: $i*2+1 /}		
+			{param number: $i*2+1 /}
+			{param prevQuestion: $environment[$questionIds[$i*2]].id /}
+			{param topicId: $topicId /}
+			{param topicLevel: $level /}
+			{param nextQuestion: $environment[$questionIds[$i*2]].id /}
 		{/call}
 	{else}
 		&nbsp;
@@ -51,6 +63,10 @@
 		{call .questionLink}
 			{param question: $environment[$questionIds[$i*2+1]]/}
 			{param number: $i*2+2 /}		
+			{param prevQuestion: $environment[$questionIds[$i*2+1]].id /}
+			{param topicId: $topicId /}
+			{param topicLevel: $level /}
+			{param nextQuestion: $environment[$questionIds[$i*2+1]].id /}
 		{/call}
 	{else}
 		&nbsp;
@@ -65,13 +81,17 @@
  * Question Link Fragment
  * @param question
  * @param number
+ * @param nextQuestion
+ * @param prevQuestion
+ * @param topicId
+ * @param topicLevel
  */
 {template .questionLink}
 	<a href="#"
 	   class="alert button radius plumbLink"
 	   style="width:90%"
 	   id="{$question.id}" 
-	   data-content-uri="/questions/{$question.id}"
+	   data-content-uri="/questions/{$question.id}?prevQuestion={$prevQuestion}&topicId={$topicId}&topicLevel={$topicLevel}&nextQuestion={$nextQuestion}"
 	   data-concept-links="{call .implode}{param list: $question.relatedConceptIds /}{/call}">
 		Q{$number}: {$question.title}
 	</a>
