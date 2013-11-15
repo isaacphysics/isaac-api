@@ -81,17 +81,13 @@
  * Question Link Fragment
  * @param question
  * @param number
- * @param nextQuestion
- * @param prevQuestion
- * @param topicId
- * @param topicLevel
  */
 {template .questionLink}
 	<a href="#"
 	   class="alert button radius plumbLink"
 	   style="width:90%"
 	   id="{$question.id}" 
-	   data-content-uri="/questions/{$question.id}?prevQuestion={$prevQuestion}&topicId={$topicId}&topicLevel={$topicLevel}&nextQuestion={$nextQuestion}"
+	   data-content-uri="/questions/{$question.id}"
 	   data-concept-links="{call .implode}{param list: $question.relatedConceptIds /}{/call}">
 		Q{$number}: {$question.title}
 	</a>
