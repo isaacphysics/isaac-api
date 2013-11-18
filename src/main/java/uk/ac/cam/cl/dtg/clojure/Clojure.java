@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.teaching;
+package uk.ac.cam.cl.dtg.clojure;
 
 import clojure.lang.IFn;
 import clojure.lang.RT;
@@ -26,7 +26,7 @@ public class Clojure {
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected static <I> I generate(Class<I> i)
+	public static <I> I generate(Class<I> i)
 	{
 		return (I)generate.invoke(i);
 	}
