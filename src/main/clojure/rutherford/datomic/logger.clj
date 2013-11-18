@@ -2,7 +2,7 @@
   (:require [datomic.api :as d :refer [db q]]
             [rutherford.datomic :as rd]
             [clojure.data.json :as json])
-  (:import [uk.ac.cam.cl.dtg.teaching DatomicLogger])
+  (:import [uk.ac.cam.cl.dtg.clojure DatomicLogger])
   (:use [clojure.pprint]
         [rutherford.interop]))
 
