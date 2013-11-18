@@ -133,10 +133,18 @@ function popHistoryState(e)
 
 function click_a(e)
 {
+	if ($(e.target).hasClass("back"))
+	{
+		window.history.back();
+		e.preventDefault();
+		return false;
+	}
+	
 	if ($(e.target).data("playVideo"))
 	{
 		playVideo($(e.target).data("playVideo"));
-		return;
+		e.preventDefault();
+		return false;
 	}
 
 	var uri = $(e.target).data("contentUri");
