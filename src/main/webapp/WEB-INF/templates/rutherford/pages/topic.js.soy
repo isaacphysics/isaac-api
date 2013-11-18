@@ -19,7 +19,31 @@
 </div>
 
 <h3>Level: {$level}</h2>
-
+<div class="text-center">
+	<table style="width: 500px;margin:auto;">
+		<thead>
+			<tr>
+				<th style="text-align:center;">Q1</td>
+				<th style="text-align:center;">Q2</td>
+				<th style="text-align:center;">Q3</td>
+				<th style="text-align:center;">Q4</td>
+				<th style="text-align:center;">Q5</td>
+				<th style="text-align:center;">Q6</td>
+				<th style="text-align:center;">Q7</td>
+				<th style="text-align:center;">Q8</td>
+				<th style="text-align:center;">Q9</td>
+				<th style="text-align:center;">Q10</td>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td colspan="4" style="border-right: 1px solid #888;">Multiple Choice</td>
+				<td colspan="3" style="border-right: 1px solid #888;border-left: 1px solid #888;">Numeric Questions</td>
+				<td colspan="3" style="border-left: 1px solid #888;">Symbolic Questions</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
 {let $numRows: max(ceiling(length($questionIds) / 2), length($conceptIds))/}
 <div class="row topic-row">
 	<div class="small-4 columns left-question-column">

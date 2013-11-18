@@ -7,9 +7,30 @@
 {template .learn}
 <h2>Get Started</h2>
 <p>Each of the topics here will be divided into six levels according to the
-difficulty of the problems therein, <strong>increasing in difficulty from 1 to 6</strong>.
-If you are currently studying in <strong>year 12</strong> then we suggest that you begin at <strong>level 2</strong> and if you are currently in <strong>year 13</strong> then begin at <strong>level 4</strong>.  However,
-students are of course encouraged to explore all the levels.</p>
+difficulty of the problems therein, <strong>increasing in difficulty from 1 to 6</strong>.</p>
+<div class="row">
+	<table style="text-align:center;width: 500px;margin:auto;">
+		<thead>
+			<tr>
+				<th style="text-align:center;">L1</td>
+				<th style="text-align:center;">L2</td>
+				<th style="text-align:center;">L3</td>
+				<th style="text-align:center;">L4</td>
+				<th style="text-align:center;">L5</td>
+				<th style="text-align:center;">L6</td>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td colspan="1" style="text-align:center;border-right: 1px solid #888;">Pre-Y12</td>
+				<td colspan="2" style="text-align:center;border-right: 1px solid #888;border-left: 1px solid #888;">Y12</td>
+				<td colspan="2" style="text-align:center;border-right: 1px solid #888;border-left: 1px solid #888;">Y13</td>
+				<td colspan="1" style="text-align:center;border-left: 1px solid #888;">Post-Y13</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<p>
 {for $i in range(ceiling(length($items)/3))}
 <div class="row" style="text-align: center;">
 	{call .bluepill}
@@ -23,6 +44,7 @@ students are of course encouraged to explore all the levels.</p>
 	{/call}
 </div>
 {/for}
+</p>
 {/template}
 
 /**
