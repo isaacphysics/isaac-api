@@ -311,7 +311,7 @@ function buildConcertina(){
 	    
 	});
 	
-	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="multi_expand:true;"/>');
+	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="one_up:false; multi_expand:true"/>');
 }
 
 function plumb(e) {
