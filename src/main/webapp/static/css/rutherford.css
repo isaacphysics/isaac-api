@@ -304,3 +304,16 @@ span.question-explanation, .answer
 .hidden{
 	display:none;
 }
+
+.arrow-down {
+	width: 0; 
+	height: 0; 
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 5px solid #000;
+	
+	display:inline;
+	position:relative;
+	top: 12px;
+	left: -5px;
+}
