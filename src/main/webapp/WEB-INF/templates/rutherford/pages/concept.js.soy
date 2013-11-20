@@ -19,7 +19,7 @@
 		{/call}
 	</div>
 	<div id="conceptContent" class="concept-page small-9 columns">
-		<div class="row"><div class="small-12 columns text-left"><a href="#" class="back">Back</a></div></div>
+		<div class="row"><div class="small-12 columns text-left pagination-bar"><a href="#" class="back">Back</a></div></div>
 		<h2>Concept: {$environment[$id].title}</h2>
 		{$renderedContent|noAutoescape}
 	</div>
@@ -83,7 +83,7 @@
 			<li><a href="#" data-content-uri="/{$type}/{$id}">{$detail.title}</a></li>
 		{/if}
 	{else}
-		<li>{$id} <i>(missing)</i><br/></li>
+		<li class="disabled-text">{$id} <i>(missing)</i><br/></li>
 	{/if}
 {ifempty}
 	<li><i>None</i></li> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.

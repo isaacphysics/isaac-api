@@ -74,6 +74,14 @@ body
 	text-decoration:none;
 }
 
+#content .disabled-text{
+	color:#999999;
+}
+
+#content .pagination-bar{
+	margin-top:5px;
+}
+
 ul
 {
 	list-style-type:none;
