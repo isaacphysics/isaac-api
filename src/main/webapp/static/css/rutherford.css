@@ -28,13 +28,15 @@ body
 {
 	background-attachment:fixed;
 }
-
 .wrapper
 {
 	min-height: 100%;
 	margin: 0 auto -28px;
 }
 
+.main.wrapper{
+	background: url(../img/bg.png) repeat 10px 10px fixed;
+}
 #header{
 	background-color: #404040;
 	text-align: center;
