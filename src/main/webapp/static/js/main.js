@@ -322,6 +322,49 @@ function buildConcertina(){
 	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="one_up:false; multi_expand:true"/>');
 }
 
+function postIntercepts(){
+	
+	$(".contact-us form").on("valid invalid submit", function(g){
+		  g.stopPropagation();
+		  g.preventDefault();
+		  if (g.type === "valid"){
+		    // AJAX call
+			  
+			  $theForm = $(this);
+
+			     // send xhr request
+			     $.ajax({
+			         type: $theForm.attr('method'),
+			         url: $theForm.attr('action'),
+			         data: $theForm.serialize(),
+			         dataType: 'json',
+			         success: function(data) {
+			        	 if(data["result"] == "success"){
+			        		 
+			        		 console.log('Form sent.');
+				             
+				             $(".contact-us").append('<span class="error large question-explanation hidden" >Your feedback has been sent. Thank you for your message.</span>');
+				             
+				             $(".contact-us form").fadeOut();
+				             $(".contact-us .span").fadeIn();
+			        	 }
+			        	 else
+		        		 {
+			                 $(".contact-us").append('<span class="error large hidden">Error: An error occurred while trying to send your feedback.</span>');
+			                 $(".contact-us .span").fadeIn();
+		        		 }
+			         }
+			     });			  
+		  }
+		  else if (g.type === "invalid"){
+	           console.log('Error Form not sent!');
+
+	           $(".contact-us").append('<span class="error large hidden">Error: We have been unable to send your feedback. Please check the form above is filled in correctly.</span>');
+	           $(".contact-us .span").fadeIn();			  
+		  }
+		});
+}
+
 function plumb(e) {
 	var myid = e.target.id;
 	
@@ -356,5 +399,6 @@ function pageRendered()
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	quickQuestions();
 	buildConcertina();
+	postIntercepts();
 }
 

@@ -35,7 +35,8 @@ urlPatterns = {
 		"/real-world",
 		"/applying",
 		"/challenge",
-		"/why-physics"},
+		"/why-physics",
+		"/contact-us"},
 loadOnStartup = 1,//
 initParams = { @WebInitParam(name = "disableCaching", value = "true") }//
 )

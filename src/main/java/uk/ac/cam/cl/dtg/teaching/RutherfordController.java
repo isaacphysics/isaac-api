@@ -10,7 +10,10 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -19,7 +22,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +58,9 @@ public class RutherfordController {
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
 	
 	private boolean questionNavigationDataLoaded = false;
+	
+	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
+	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
 	
 	// I apologise for this function.
 	private void loadQuestionNavigationData()
@@ -252,6 +260,78 @@ public class RutherfordController {
 		boolean success = datomicLogger.logEvent(sessionId, eventJson);
 
 		return ImmutableMap.of("success", success);
+	}
+	
+	@POST
+	@Consumes({"application/x-www-form-urlencoded"})
+	@Path("contact-us/sendContactUsMessage")
+	public ImmutableMap<String,String> postContactUsMessage(
+			@FormParam("full-name") String fullName,
+			@FormParam("email") String email,
+			@FormParam("subject") String subject,
+			@FormParam("message-text") String messageText,
+			@Context HttpServletRequest request){
+		
+		String[] recipients = {"sacummins@gmail.com"};
+
+		// construct a new instance of the mailer object
+		Mailer contactUsMailer = new Mailer(RutherfordController.MailerSmtpServer,RutherfordController.MailerFromAddress);
+		
+		if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email) && StringUtils.isBlank(subject) && StringUtils.isBlank(messageText)){
+			log.debug("Contact us required field validation error ");
+			return ImmutableMap.of("full-name", fullName,
+					"email", email,
+					"subject", subject,
+					"result", "failed",
+					"statusMessage", "message not sent - Missing required field - Validation Error");			
+		}
+		
+		// Get IpAddress of client
+		String ipAddress = request.getHeader("X-FORWARDED-FOR");
+		
+		if (ipAddress == null) {
+			ipAddress = request.getRemoteAddr();
+		}
+
+		// Construct message
+		StringBuilder message = new StringBuilder();
+		message.append("- Sender Details - " + "\n");
+		message.append("From: " + fullName + "\n");
+		message.append("E-mail: " + email + "\n");
+		message.append("IP address: " + ipAddress + "\n");
+		message.append("Message Subject: " + subject + "\n");
+		message.append("- Message - " + "\n");
+		message.append(messageText);
+		
+		try {
+			// attempt to send the message via the smtp server
+			contactUsMailer.sendMail(recipients, email, subject, message.toString());
+			
+		} catch (AddressException e) {				
+			log.warn("E-mail Address validation error " + e.toString());
+			
+			return ImmutableMap.of(
+					"full-name", fullName,
+					"email", email,
+					"subject", subject,
+					"result", "failed",
+					"statusMessage", "message not sent - E-mail address malformed - Validation Error \n " + e.toString());		
+			
+		} catch (MessagingException e) {
+			log.error("Messaging error " + e.toString());
+			
+			return ImmutableMap.of("full-name", fullName,
+					"email", email,
+					"subject", subject,
+					"result", "failed",
+					"statusMessage", "message not sent - Unknown Messaging error\n " + e.toString());	
+		}
+		
+		return ImmutableMap.of("full-name", fullName,
+				"email", email,
+				"subject", subject,
+				"result", "success",
+				"statusMessage", "message sent correctly");
 	}
 	
 
