@@ -299,12 +299,12 @@ function quickQuestions(){
 
                 if(answer.hasClass("hidden")){
                         answer.removeClass("hidden");
-                        $(this).text("Hide Answer")
+                        $(this).text("Hide Answer");
                     	log({type: "show_quick_question_answer"});
                 }
                 else{
                         answer.addClass("hidden");
-                        $(this).text("Show Answer")
+                        $(this).text("Show Answer");
                 }
 		e.preventDefault();
 		return false;
