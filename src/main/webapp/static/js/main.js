@@ -7,7 +7,9 @@ function log(event) {
 	
 	if (continueLogging) {
 		
-		$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId, event: JSON.stringify(event)})
+		$.post(ij.proxyPath + "/api/log", {sessionId: sessionStorage.sessionId,
+			                               cookieId: docCookies.getItem("rutherfordUserId"),
+			                               event: JSON.stringify(event)})
 		 .success(function(e) {
 			 if (!e.success)
 				 continueLogging = false;
@@ -279,6 +281,9 @@ $(function()
 	
 	if (!sessionStorage.getItem("sessionId"))
 		sessionStorage.setItem("sessionId", ij.newSessionId);
+	
+	if (!docCookies.hasItem("rutherfordUserId"))
+		docCookies.setItem("rutherfordUserId", ij.newUserId, Infinity);
 	
 	pageRendered();
 });
