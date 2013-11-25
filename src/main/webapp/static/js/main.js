@@ -287,7 +287,7 @@ function quickQuestions(){
         $('.quick-question').append("<a href='#' class='qq-toggle'>Show Answer</a>");
         
         //Hack to hide any numbers that have found there way in the list
-        $('.quick-question').prev('.item-number').remove();
+        $('.quick-question').prevAll('.item-number').remove();
         
         $('.quick-question a').click(function (e){
                 var answer = $(this).siblings("div:last");
