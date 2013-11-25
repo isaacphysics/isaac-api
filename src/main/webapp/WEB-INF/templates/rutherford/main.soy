@@ -136,7 +136,8 @@
 	// Manually rebuild injected data for client-side rendering of soy templates. Ugh.
 	var ij = {lb}proxyPath: "{$ij.proxyPath}",
 		      contextPath: "{$ij.contextPath}",
-		      newSessionId: "{$ij.newSessionId}"{rb};
+		      newSessionId: "{$ij.newSessionId}",
+		      newUserId: "{$ij.newUserId}"{rb};
 	
 </script>
 
@@ -180,6 +181,7 @@
 	<script src="{$ij.proxyPath}/static/js/vendor/foundation/foundation.dropdown.js"></script>
 		
 	<script type="text/javascript" src="{$ij.proxyPath}/static/js/vendor/soyutils.js"></script>
+	<script type="text/javascript" src="{$ij.proxyPath}/static/js/cookies.js"></script>
 	<script type="text/javascript" src="{$ij.proxyPath}/static/js/main.js"></script>
 	<script type="text/javascript" src="{$ij.proxyPath}/soy/js/1/rutherford.pages.js"></script>
 	<script>

@@ -247,7 +247,8 @@ public class RutherfordController {
 		return ImmutableMap.of("contextPath", req.getContextPath(),
 				"proxyPath", proxyPath,
 				"analyticsTrackingId", trackingId,
-				"newSessionId", UUID.randomUUID().toString());
+				"newSessionId", UUID.randomUUID().toString(),
+				"newUserId", UUID.randomUUID().toString());
 	}
 
 	@POST
@@ -256,9 +257,10 @@ public class RutherfordController {
 	public ImmutableMap<String, Boolean> postLog(
 			@Context HttpServletRequest req,
 			@FormParam("sessionId") String sessionId,
+			@FormParam("cookieId") String cookieId,
 			@FormParam("event") String eventJson) {
 		
-		boolean success = datomicLogger.logEvent(sessionId, eventJson);
+		boolean success = datomicLogger.logEvent(sessionId, cookieId, eventJson);
 
 		return ImmutableMap.of("success", success);
 	}

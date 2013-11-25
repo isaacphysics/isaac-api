@@ -13,7 +13,7 @@
 (defimpl DatomicLogger
   (toString [this] (str "This is a DatomicLogger defined in Clojure"))
   
-  (logEvent [this session-id event-json]
+  (logEvent [this session-id cookie-id event-json]
      (if @rd/conn
         
 	     (let [event (json/read-str event-json :key-fn keyword)]
@@ -32,7 +32,8 @@
 	
 		       ;; Add the event to the database
 			    @(d/transact @rd/conn [{:db/id #db/id[:db.part/user -1]
-			                            :logging/sessionId session-id}
+			                            :logging/sessionId session-id
+                                  :logging/cookieId cookie-id}
 		                         
 		                             (apply merge {:db/id #db/id[:db.part/user]
 		                                           :logging.event/session #db/id[:db.part/user -1]}
