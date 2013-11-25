@@ -61,6 +61,7 @@ public class RutherfordController {
 	
 	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
 	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
+	private static final String[] recipients = {"dst28@cam.ac.uk"};
 	
 	// I apologise for this function.
 	private void loadQuestionNavigationData()
@@ -271,8 +272,6 @@ public class RutherfordController {
 			@FormParam("subject") String subject,
 			@FormParam("message-text") String messageText,
 			@Context HttpServletRequest request){
-		
-		String[] recipients = {"sacummins@gmail.com"};
 
 		// construct a new instance of the mailer object
 		Mailer contactUsMailer = new Mailer(RutherfordController.MailerSmtpServer,RutherfordController.MailerFromAddress);
