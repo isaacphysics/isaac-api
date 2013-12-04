@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.clojure.Clojure;
 import uk.ac.cam.cl.dtg.clojure.DatomicLogger;
+import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
@@ -262,6 +263,24 @@ public class RutherfordController {
 		
 		boolean success = datomicLogger.logEvent(sessionId, cookieId, eventJson);
 
+		return ImmutableMap.of("success", success);
+	}
+	
+	@GET
+	@Path("register-interest-sample")
+	public ImmutableMap<String, Boolean> registerInterestSample() {
+		
+		String name = "Ian";
+		String email = "me@here.com";
+		String role = "student";
+		String school = "The Perse School";
+		String year = "GCSE";
+		boolean feedback = true;
+		
+		InterestRegistration reg = Clojure.generate(InterestRegistration.class);
+		
+		boolean success = reg.register(name, email, role, school, year, feedback);
+		
 		return ImmutableMap.of("success", success);
 	}
 	
