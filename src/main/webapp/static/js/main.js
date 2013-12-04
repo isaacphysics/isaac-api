@@ -246,12 +246,25 @@ function button_click(e)
 
 function playVideo(video)
 {
-	log({type: "play_video",
-		 target: video});
+	$("#video-modal video, #video-modal .failed-to-load").remove();
+	
+	// check to see if the resource exists before showing the video element
+	$.get(ij.proxyPath + "/static/video/" + video)
+    .done(function() { 
+    	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", ij.proxyPath + "/static/video/" + video));
 
-	$("#video-modal video").remove();
-	$("#video-modal").append($('<video width="640" height="480" controls autoplay/>').attr("src", ij.proxyPath + "/static/video/" + video));
+    	log({type: "play_video",
+   		 target: video});
+
+    }).fail(function() { 
+        // not exists code
+    	$("#video-modal").append($('<div class="failed-to-load" style="width:50%; margin:0 auto;"><span class="error">Sorry, we have been unable to locate the video you have requested on our servers. This error has been recorded and will be investigated.</span></div>'));
+
+    	log({type: "video_404",
+   		 target: ij.proxyPath + "/static/video/" + video});
+    });
 	$('#video-modal').foundation('reveal', 'open');
+	
 }
 
 

@@ -185,6 +185,15 @@ span.question-explanation, .answer
 	font-size: 10px;
 }
 
+.failed-to-load{
+	width:50%; 
+	margin:0 auto;
+}
+
+.failed-to-load span{
+	font-size:1em;	
+}
+
 /* Gears */
 
 .gear {
