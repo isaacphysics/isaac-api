@@ -19,14 +19,19 @@
          (println "Logging registration from" email)
        
          ;; Add the event to the database
-        @(d/transact @rd/conn [{:db/id #db/id[:db.part/user]
-                                :registration/name name
-                                :registration/email email
-                                :registration/role role
-                                :registration/school school
-                                :registration/year year
-                                :registration/feedback feedback}])
-        true)
+        
+         (try 
+          @(d/transact @rd/conn [{:db/id #db/id[:db.part/user]
+                                  :registration/name name
+                                  :registration/email email
+                                  :registration/role role
+                                  :registration/school school
+                                  :registration/year year
+                                  :registration/feedback feedback}])
+            true
+          (catch clojure.lang.ExceptionInfo e
+            (println "Transaction failed:" (:db/error (.getData e)))
+            false)))
        
        ;; We only get here if @conn is nil
        (do 
