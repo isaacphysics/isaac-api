@@ -359,7 +359,6 @@ function postIntercepts(){
 			         data: $theForm.serialize(),
 			         dataType: 'json',
 			         success: function(data) {
-			        	 
 			        	 if(data["result"] == "success"){
 			        		 $theForm.parent().append('<span class="error large question-explanation hidden" >Your request has been sent. Thank you for your time.</span>');
 			        		 $theForm.fadeOut();
@@ -370,6 +369,10 @@ function postIntercepts(){
 			        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: An internal error occurred while trying to process your request.</span>');
 			                 $theForm.children("span").fadeIn();
 		        		 }
+			         },
+			         error: function(data){
+		        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: An internal error occurred while trying to process your request.</span>');
+		                 $theForm.children("span").fadeIn();
 			         }
 			     });			  
 		  }
