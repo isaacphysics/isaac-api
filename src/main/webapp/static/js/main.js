@@ -348,8 +348,10 @@ function postIntercepts(){
 		  g.stopPropagation();
 		  g.preventDefault();
 		  $theForm = $(this);
+		  
 		  if (g.type === "valid"){
-		    // AJAX call
+			  $(".internal-error, .validation-error").remove();
+			  // AJAX call
 			     // send xhr request
 			     $.ajax({
 			         type: $theForm.attr('method'),
@@ -357,7 +359,7 @@ function postIntercepts(){
 			         data: $theForm.serialize(),
 			         dataType: 'json',
 			         success: function(data) {
-
+			        	 
 			        	 if(data["result"] == "success"){
 			        		 $theForm.parent().append('<span class="error large question-explanation hidden" >Your request has been sent. Thank you for your time.</span>');
 			        		 $theForm.fadeOut();
@@ -365,14 +367,14 @@ function postIntercepts(){
 			        	 }
 			        	 else
 		        		 {
-			        		 $theForm.parent().append('<span class="error large hidden">Error: An internal error occurred while trying to process your request.</span>');
+			        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: An internal error occurred while trying to process your request.</span>');
 			                 $theForm.children("span").fadeIn();
 		        		 }
 			         }
 			     });			  
 		  }
 		  else if (g.type === "invalid"){
-	           $(".validation-error").remove();
+			   $(".internal-error, .validation-error").remove();
 			   $theForm.parent().append('<span class="error large hidden validation-error">Validation Error: Please check the form above is filled in correctly.</span>');	           
 	           $theForm.children("span").fadeIn();			  
 		  }
