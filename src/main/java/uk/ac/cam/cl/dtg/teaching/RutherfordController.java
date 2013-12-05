@@ -266,22 +266,43 @@ public class RutherfordController {
 		return ImmutableMap.of("success", success);
 	}
 	
-	@GET
-	@Path("register-interest-sample")
-	public ImmutableMap<String, Boolean> registerInterestSample() {
+	@POST
+	@Consumes({"application/x-www-form-urlencoded"})
+	@Path("contact-us/register-interest")
+	public ImmutableMap<String, String> postRegisterInterest(
+			@FormParam("name") String name,
+			@FormParam("email") String email,
+			@FormParam("role") String role,
+			@FormParam("school") String school,
+			@FormParam("year") String year,
+			@FormParam("feedback") String feedbackAgreement) {
 		
-		String name = "Ian";
-		String email = "me@here.com";
-		String role = "student";
-		String school = "The Perse School";
-		String year = "GCSE";
-		boolean feedback = true;
+		boolean feedback = false;
+		
+		if(null != feedbackAgreement){
+			feedback = true;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("Name: " + name);
+		sb.append(" email: " + email);
+		sb.append(" role: " + role);
+		sb.append(" school: " + school);
+		sb.append(" year: " + year);
+		sb.append(" feedback: " + new Boolean(feedback).toString());
+		
+		log.info("Register Interest details: " + sb.toString());
 		
 		InterestRegistration reg = Clojure.generate(InterestRegistration.class);
 		
 		boolean success = reg.register(name, email, role, school, year, feedback);
 		
-		return ImmutableMap.of("success", success);
+		String outcome = "success";
+		if(!success){
+			outcome = "Registration failed: Error registering user.";
+		}
+		
+		return ImmutableMap.of("result", outcome);
 	}
 	
 	@POST
@@ -299,11 +320,7 @@ public class RutherfordController {
 		
 		if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email) && StringUtils.isBlank(subject) && StringUtils.isBlank(messageText)){
 			log.debug("Contact us required field validation error ");
-			return ImmutableMap.of("full-name", fullName,
-					"email", email,
-					"subject", subject,
-					"result", "failed",
-					"statusMessage", "message not sent - Missing required field - Validation Error");			
+			return ImmutableMap.of("result", "message not sent - Missing required field - Validation Error");			
 		}
 		
 		// Get IpAddress of client
@@ -331,27 +348,16 @@ public class RutherfordController {
 			log.warn("E-mail Address validation error " + e.toString());
 			
 			return ImmutableMap.of(
-					"full-name", fullName,
-					"email", email,
-					"subject", subject,
-					"result", "failed",
-					"statusMessage", "message not sent - E-mail address malformed - Validation Error \n " + e.toString());		
+					"result", "message not sent - E-mail address malformed - Validation Error \n " + e.toString());		
 			
 		} catch (MessagingException e) {
 			log.error("Messaging error " + e.toString());
 			
-			return ImmutableMap.of("full-name", fullName,
-					"email", email,
-					"subject", subject,
-					"result", "failed",
-					"statusMessage", "message not sent - Unknown Messaging error\n " + e.toString());	
+			return ImmutableMap.of(
+					"result", "message not sent - Unknown Messaging error\n " + e.toString());	
 		}
 		
-		return ImmutableMap.of("full-name", fullName,
-				"email", email,
-				"subject", subject,
-				"result", "success",
-				"statusMessage", "message sent correctly");
+		return ImmutableMap.of("result", "success");
 	}
 	
 

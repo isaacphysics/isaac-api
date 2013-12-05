@@ -22,9 +22,10 @@
  * 
  */
 {template .register}
-<h2>Register</h2>
 <!--<p>This site is here to help you improve your problem solving skills. There are many questions for you to solve in different topics and at different levels. You will find the problems under <a href="#" data-content-uri="/learn">Learn</a>, along with videos of example problems, of physics concepts and maths tools. You may want to look at the 'Getting started' worksheet for some useful tools to tackling physics problems.</p>-->
-<p>When you register with the site, your progress will be recorded as you work through the different problems. You will also be notified of any new problems and our weekly challenge. You will also be able to seek guidance and discuss problems in the discussion forum.</p>
+<!--<p>When you register with the site, your progress will be recorded as you work through the different problems. You will also be notified of any new problems and our weekly challenge. You will also be able to seek guidance and discuss problems in the discussion forum.</p>-->
+<h2>Register your interest</h2>
+{call .register_interest/}
 {/template}
 
 /**
@@ -109,7 +110,7 @@ We have sister projects with the same aims.  Physics is essential for engineerin
  * Contact Us
  */
 {template .contact_us}
-<div class="contact-us">
+<div class="contact-us ajax-form">
 	<h3>Contact Us</h3>
 	<p>
 	We hope that you have enjoyed interacting with our pilot resources.  We are still very much in the development phase of our online course and we would welcome any constructive feedback that you have about any aspect of your interaction with the information that we present here.  Please do tell us what works well for you as well as what you are not so keen on! 
@@ -153,4 +154,64 @@ We have sister projects with the same aims.  Physics is essential for engineerin
 </div>
 {/template}
 
+/**
+ * Register your interest
+ */
+{template .register_interest}
+<div class="register-interest ajax-form">
 
+	<p> 
+	If you are interested in our MOOC and would like to receive updates about any new content or new development on the website, please register below. If you have any immediate feedback for us, please use the <a href="#" data-content-uri="/contact-us"/>Contact Us</a> form, thank you. 
+	
+	<form data-abide action="{$ij.proxyPath}/api/contact-us/register-interest" method="post" class="custom">
+	  <div class="row">
+	    <div class="large-6 columns">
+	      <label>Your name <small>required</small></label>
+	      <input name="name" type="text" required placeholder="Your name" />
+	      <small class="error">A full name is required.</small>
+	    </div>
+	    <div class="large-6 columns">
+	      <label>Your email address <small>required</small></label>
+	      <input name="email" type="email" required placeholder="Your email address" />
+	      <small class="error">A valid email address is required.</small>
+	    </div>
+	  </div>
+	  <div class="row">
+	    <div class="large-4 columns">
+	      <label>I am a ...</label>
+	      <select name="role">
+	        <option value="student">Student</option>
+	        <option value="teacher">Teacher</option>
+	        <option value="parent">Parent</option>
+	        <option value="other">Other</option>
+	      </select>
+	    </div>
+	    <div class="large-4 columns">
+	      <label>School <small>if applicable</small></label>
+	      <input name="school" type="text" placeholder="school" />
+	    </div>
+	    <div class="large-4 columns">
+	      <label>Year of study <small>if applicable</small></label>
+	      <select name="year">
+	      	<option value="None">None</option>
+	        <option value="GCSE">GCSE</option>
+	        <option value="Lower Sixth">Lower Sixth</option>
+	        <option value="Upper Sixth">Upper Sixth</option>
+	        <option value="other">Other</option>
+	      </select>
+	    </div>	 	    	    
+	  </div>
+	  <div class="row consent">
+	    <div class="large-12 columns">
+			<input name="feedback" type="checkbox">
+			<label>Tick if you are willing to participate in an virtual feedback group.</label>
+	    </div>  
+	  </div>	  
+	  <div class="row">
+	    <div class="large-12 columns">
+			<input class="button" type="submit" value="Submit"/>
+	    </div>
+	  </div> 
+	</form>
+</div>
+{/template}
