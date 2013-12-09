@@ -371,7 +371,7 @@ function postIntercepts(){
 		        		 }
 			         },
 			         error: function(data){
-		        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: An internal error occurred while trying to process your request.</span>');
+		        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: A HTTP error occurred while trying to process your request.</span>');
 		                 $theForm.children("span").fadeIn();
 			         }
 			     });			  
