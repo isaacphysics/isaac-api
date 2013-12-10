@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.teaching;
 
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -25,12 +26,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
+import org.mongojack.JacksonDBCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.clojure.Clojure;
 import uk.ac.cam.cl.dtg.clojure.DatomicLogger;
 import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
+import uk.ac.cam.cl.dtg.teaching.models.Content;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
@@ -42,6 +45,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.template.soy.tofu.SoyTofuException;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.MongoClient;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
 
@@ -260,6 +267,38 @@ public class RutherfordController {
 			@FormParam("sessionId") String sessionId,
 			@FormParam("cookieId") String cookieId,
 			@FormParam("event") String eventJson) {
+		
+		try {
+			MongoClient mongo = new MongoClient( "localhost" , 27017 );
+			
+			DB db = mongo.getDB( "rutherford" );
+			
+			DBCollection coll = db.getCollection("content");
+			
+			JacksonDBCollection<Content,String> jc = JacksonDBCollection.wrap(coll, Content.class, String.class);
+			
+			Content ct = new Content(null, "my_obj_id", "The Title", "concept", "Ian", "text", null, "1-col", null, "Hello", "Comes from somewhere", null, 1);
+			
+			jc.insert(ct);
+			
+			
+			long c = jc.count();
+			
+			Content r = jc.findOne();
+			
+			r.src = "Wooooo";
+			jc.save(r);
+			
+			int a = 1;
+			a = 7;
+			int b = a;
+			
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 		
 		boolean success = datomicLogger.logEvent(sessionId, cookieId, eventJson);
 
