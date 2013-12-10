@@ -94,6 +94,10 @@ ol li
 	margin-left:20px;
 }
 
+ol li ol{
+	list-style-type:lower-alpha;
+}
+
 .footer-area
 {
 	text-align:right;
