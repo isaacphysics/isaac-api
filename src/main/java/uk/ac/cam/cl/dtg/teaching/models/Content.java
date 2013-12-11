@@ -3,23 +3,22 @@ package uk.ac.cam.cl.dtg.teaching.models;
 import org.bson.types.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Content {
-	private ObjectId _id;
-	private String id;
-	private String title;
-	private String type;
-	private String author;
-	private String encoding;
-	public String src;
-	private String layout;
-	private String[] contentReferenced;
-	private String contentLiteral;
-	private String attribution;
-	private String[] relatedContent;
-	private int version;
+public class Content extends ContentBase {
+	protected ObjectId _id;
+	protected String id;
+	protected String title;
+	protected String type;
+	protected String author;
+	protected String encoding;
+	protected String src;
+	protected String layout;
+	protected String[] contentReferenced;
+	protected String contentLiteral;
+	protected String attribution;
+	protected String[] relatedContent;
+	protected int version;
 	
 	@JsonCreator
 	public Content(@JsonProperty("_id") ObjectId _id,
@@ -38,7 +37,7 @@ public class Content {
 		this._id = _id;
 		this.id = id;
 		this.title = title;
-		this.type = type;
+		this.type = type != null ? type : "string";
 		this.author = author;
 		this.encoding = encoding;
 		this.src = src;
@@ -50,8 +49,8 @@ public class Content {
 		this.version = version;
 	}
 	
-
-	public ObjectId get_Id() {
+	@JsonProperty("_id")
+	public ObjectId getDbId() {
 		return _id;
 	}
 	public String getId() {

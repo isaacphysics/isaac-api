@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.teaching;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,20 +27,31 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.ObjectId;
 import org.mongojack.JacksonDBCollection;
+import org.mongojack.WriteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.clojure.Clojure;
 import uk.ac.cam.cl.dtg.clojure.DatomicLogger;
 import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
+import uk.ac.cam.cl.dtg.teaching.models.Choice;
 import uk.ac.cam.cl.dtg.teaching.models.Content;
+import uk.ac.cam.cl.dtg.teaching.models.ContentBase;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
+import uk.ac.cam.cl.dtg.teaching.models.ContentMapper;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage.IndexPageItem;
+import uk.ac.cam.cl.dtg.teaching.models.JsonLoader;
 import uk.ac.cam.cl.dtg.teaching.models.TopicPage;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -286,8 +298,6 @@ public class RutherfordController {
 			
 			Content r = jc.findOne();
 			
-			r.src = "Wooooo";
-			jc.save(r);
 			
 			int a = 1;
 			a = 7;
@@ -400,4 +410,39 @@ public class RutherfordController {
 	}
 	
 
+	@POST
+	@Produces("application/json")
+	@Path("content/save")
+	public Response contentSave(@FormParam("doc") String docJson) {
+		System.out.println("INSERTING DOC: " + docJson);
+		
+		
+		ContentMapper.registerJsonType(Choice.class);
+		
+		String newId = null;
+		try {
+			
+			DB db = Mongo.getDB();
+			
+			Content cnt = ContentMapper.load(docJson);
+			
+			newId = cnt.save(db);
+			
+			
+		} catch (JsonParseException e) {
+			e.printStackTrace();
+			return Response.serverError().entity(ImmutableMap.of("error", e.toString())).build();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+			return Response.serverError().entity(ImmutableMap.of("error", e.toString())).build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Response.serverError().entity(ImmutableMap.of("error", e.toString())).build();
+		}
+		
+		if (newId != null)
+			return Response.ok().entity(ImmutableMap.of("result", "success", "newId", newId)).build();
+		else
+			return Response.serverError().entity(ImmutableMap.of("error", "No new Id was assigned by the database")).build();
+	}
 }
