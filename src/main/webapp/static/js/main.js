@@ -420,8 +420,8 @@ function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	$(document).foundation();
+	$(document).foundation("abide","events");
 	quickQuestions();
 	buildConcertina();
 	postIntercepts();
 }
-
