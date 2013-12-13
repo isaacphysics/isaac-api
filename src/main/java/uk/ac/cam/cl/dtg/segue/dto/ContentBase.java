@@ -1,19 +1,17 @@
-package uk.ac.cam.cl.dtg.teaching.models;
-
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
+package uk.ac.cam.cl.dtg.segue.dto;
 
 import org.bson.types.ObjectId;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 
+/**
+ * Super Class for every content item in the Content Management System
+ *
+ */
 public abstract class ContentBase {
-	
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public String save(DB db) {
@@ -22,6 +20,11 @@ public abstract class ContentBase {
 		return r.getSavedId().toString();
 	}
 	
-	
+	public static String getById(DB db, String id){
+		BasicDBObject query = new BasicDBObject("id", id);
 
+		String content = db.getCollection("content").findOne(query).toString();
+		
+		return content;
+	}
 }

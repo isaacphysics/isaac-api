@@ -1,12 +1,18 @@
-package uk.ac.cam.cl.dtg.teaching.models;
+package uk.ac.cam.cl.dtg.segue.dto;
 
 import org.bson.types.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Content Class (Data Transfer Object)
+ * This class represents a majority of content types within the Content Management system. It is generalised to encourage reuse as much as is appropriate.
+ * This object should be kept as being easily serializable to enable it to be exposed via web views.
+ * 
+ */
 public class Content extends ContentBase {
-	protected ObjectId _id;
+	private ObjectId _id;
 	protected String id;
 	protected String title;
 	protected String type;
@@ -49,44 +55,117 @@ public class Content extends ContentBase {
 		this.version = version;
 	}
 	
+	/** 
+	 * Default constructor required for Jackson
+	 */
+	public Content(){
+		super();
+	}
+	
 	@JsonProperty("_id")
 	public ObjectId getDbId() {
 		return _id;
 	}
+	
+	@JsonProperty("_id")	
+	public void setDbId(ObjectId _id) {
+		this._id = _id;
+	}	
+
 	public String getId() {
 		return id;
 	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 	public String getTitle() {
 		return title;
 	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
 	public String getType() {
 		return type;
 	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
 	public String getAuthor() {
 		return author;
 	}
+
+	public void setAuthor(String author) {
+		this.author = author;
+	}
+
 	public String getEncoding() {
 		return encoding;
 	}
+
+	public void setEncoding(String encoding) {
+		this.encoding = encoding;
+	}
+
 	public String getSrc() {
 		return src;
 	}
+
+	public void setSrc(String src) {
+		this.src = src;
+	}
+
 	public String getLayout() {
 		return layout;
 	}
+
+	public void setLayout(String layout) {
+		this.layout = layout;
+	}
+
 	public String[] getContentReferenced() {
 		return contentReferenced;
 	}
+
+	public void setContentReferenced(String[] contentReferenced) {
+		this.contentReferenced = contentReferenced;
+	}
+
 	public String getContentLiteral() {
 		return contentLiteral;
 	}
+
+	public void setContentLiteral(String contentLiteral) {
+		this.contentLiteral = contentLiteral;
+	}
+
 	public String getAttribution() {
 		return attribution;
 	}
+
+	public void setAttribution(String attribution) {
+		this.attribution = attribution;
+	}
+
 	public String[] getRelatedContent() {
 		return relatedContent;
 	}
+
+	public void setRelatedContent(String[] relatedContent) {
+		this.relatedContent = relatedContent;
+	}
+
 	public int getVersion() {
 		return version;
 	}
+
+	public void setVersion(int version) {
+		this.version = version;
+	}
+	
 }

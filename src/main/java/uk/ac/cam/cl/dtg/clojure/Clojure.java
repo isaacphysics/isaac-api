@@ -4,7 +4,6 @@ import clojure.lang.IFn;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 import clojure.lang.Var;
-import clojure.lang.Keyword;
 
 public class Clojure {
 	

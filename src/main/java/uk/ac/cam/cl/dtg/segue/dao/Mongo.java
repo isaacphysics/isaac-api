@@ -1,11 +1,7 @@
-package uk.ac.cam.cl.dtg.teaching;
+package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.io.IOException;
 import java.net.UnknownHostException;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 

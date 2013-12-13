@@ -2,15 +2,12 @@ package uk.ac.cam.cl.dtg.teaching;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -22,36 +19,32 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
-import org.bson.types.ObjectId;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.mongojack.JacksonDBCollection;
-import org.mongojack.WriteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.clojure.Clojure;
 import uk.ac.cam.cl.dtg.clojure.DatomicLogger;
 import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
-import uk.ac.cam.cl.dtg.teaching.models.Choice;
-import uk.ac.cam.cl.dtg.teaching.models.Content;
-import uk.ac.cam.cl.dtg.teaching.models.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.Mongo;
+import uk.ac.cam.cl.dtg.segue.dto.Choice;
+import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
-import uk.ac.cam.cl.dtg.teaching.models.ContentMapper;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage.IndexPageItem;
-import uk.ac.cam.cl.dtg.teaching.models.JsonLoader;
 import uk.ac.cam.cl.dtg.teaching.models.TopicPage;
+import uk.ac.cam.cl.dtg.util.Mailer;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -60,6 +53,7 @@ import com.google.template.soy.tofu.SoyTofuException;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
@@ -445,4 +439,68 @@ public class RutherfordController {
 		else
 			return Response.serverError().entity(ImmutableMap.of("error", "No new Id was assigned by the database")).build();
 	}
+	
+	/**
+	 * GetContentBy Id from the database
+	 * Currently this method will return a single Json Object
+	 * @param id
+	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/get/{id}")
+	public Response getContentById(@PathParam("id") String id) {
+		System.out.println("Retrieving DOC id: " + id);
+		
+		DB db = Mongo.getDB();
+		DBCollection dbCollection = db.getCollection("content");
+		
+		// Do database query using plain mongodb so we only have to read from the database once.
+		DBObject node = dbCollection.findOne(new BasicDBObject("id", id));
+		ObjectMapper contentMapper = ContentMapper.getContentObjectMapper();
+		
+		if(null != node){
+			// Use custom deserializer
+			try {
+				return Response.ok().entity(contentMapper.readValue(node.toString(), ContentBase.class)).build();				
+			} catch (org.codehaus.jackson.JsonParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return Response.serverError().entity(e).build();
+			} catch (org.codehaus.jackson.map.JsonMappingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return Response.serverError().entity(e).build();
+			} catch (IOException e) {
+				e.printStackTrace();
+				return Response.serverError().entity(e).build();
+			}
+		}
+		
+		return Response.noContent().entity("error no object found").build();			
+		
+		//This is another approach of doing the above just using mongojack, but it means that we have to do more casting and stuff at this layer.
+		// I would prefer to keep all the casting of objects in the DAO / Serialization layer
+//		if(null != node){
+//			Map m = node.toMap();
+//			
+//			if(ContentMapper.getRegistrationMap().containsKey(m.get("type"))){
+//				JacksonDBCollection jc = JacksonDBCollection.wrap(dbCollection, (Class) ContentMapper.getRegistrationMap().get(m.get("type")), String.class);
+//				return Response.ok().entity(jc.findOne(DBQuery.is("id", id))).build();
+//				
+//			}
+//			else
+//			{
+//				JacksonDBCollection<Content,String> jc = JacksonDBCollection.wrap(dbCollection, Content.class, String.class);
+//				return Response.ok().entity(jc.findOne(DBQuery.is("id", id))).build();				
+//			}
+//		}
+//		else
+//		{
+//			return Response.noContent().entity("error no object found").build();
+//		}
+			
+	}
+	
+	
 }

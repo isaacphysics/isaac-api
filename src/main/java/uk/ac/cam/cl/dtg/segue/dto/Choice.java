@@ -1,10 +1,17 @@
-package uk.ac.cam.cl.dtg.teaching.models;
+package uk.ac.cam.cl.dtg.segue.dto;
 
 import org.bson.types.ObjectId;
+
+import uk.ac.cam.cl.dtg.teaching.models.JsonType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Choice object
+ * The choice object is a specialized form of content and allows the storage of data relating to possible answers to questions. 
+ *
+ */
 @JsonType("choice")
 public class Choice extends Content {
 
@@ -45,10 +52,25 @@ public class Choice extends Content {
 		this.explanation = explanation;
 	}
 
-	public boolean getCorrect() {
+	public Choice(){
+		super();
+	}
+	
+	public boolean isCorrect() {
 		return correct;
 	}
+
+	public void setCorrect(boolean correct) {
+		this.correct = correct;
+	}
+
 	public String getExplanation() {
 		return explanation;
 	}
+
+	public void setExplanation(String explanation) {
+		this.explanation = explanation;
+	}
+
+
 }
