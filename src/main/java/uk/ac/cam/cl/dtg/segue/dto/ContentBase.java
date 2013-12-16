@@ -19,12 +19,4 @@ public abstract class ContentBase {
 		WriteResult r = jc.save(this);
 		return r.getSavedId().toString();
 	}
-	
-	public static String getById(DB db, String id){
-		BasicDBObject query = new BasicDBObject("id", id);
-
-		String content = db.getCollection("content").findOne(query).toString();
-		
-		return content;
-	}
 }
