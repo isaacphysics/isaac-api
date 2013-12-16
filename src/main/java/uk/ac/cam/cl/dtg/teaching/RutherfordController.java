@@ -444,21 +444,23 @@ public class RutherfordController {
 	@GET
 	@Produces("application/json")
 	@Path("content/get/{id}")
-	public Response getContentById(@PathParam("id") String id) {
-		System.out.println("Retrieving DOC id: " + id);
-		
+	public Response getContentById(@PathParam("id") String id) {		
 		DB db = Mongo.getDB();
 		DBCollection dbCollection = db.getCollection("content");
 		
 		// Do database query using plain mongodb so we only have to read from the database once.
 		DBObject node = dbCollection.findOne(new BasicDBObject("id", id));
 		
-		// Deserialize object into POJO of specified type. 
-		Content c = ContentMapper.contentFromDb(node, Content.class);
-
+		Content c = null;
+		
+		// Deserialize object into POJO of specified type, providing one exists. 
+		try{
+			c = ContentMapper.mapDBOjectToContentDTO(node);
+		}
+		catch(IllegalArgumentException e){
+			return Response.serverError().entity(e).build();
+		}
+		
 		return Response.ok().entity(c).build();
-			
 	}
-	
-	
 }

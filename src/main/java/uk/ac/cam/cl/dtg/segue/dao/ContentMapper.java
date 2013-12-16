@@ -34,10 +34,19 @@ public class ContentMapper {
 			return JsonLoader.load(docJson, Content.class);
 	}
 	
-	
-	
+	/**
+	 * Map a Content object into the appropriate DTO
+	 * 
+	 * @param reference to the DBObject obj
+	 * @return A content object or a subclass of Content or Null if the obj param is not provided.
+	 * @throws IllegalArgumentException if the database item retrieved fails to map into a content object.
+	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Content> T contentFromDb(DBObject obj, Class<T> type) {
+	public static <T extends Content> T mapDBOjectToContentDTO(DBObject obj) throws IllegalArgumentException {
+		
+		if(null == obj){
+			return null;
+		}
 		
 		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
 		ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
@@ -48,19 +57,15 @@ public class ContentMapper {
 		// Lookup the matching POJO class
 		Class<? extends Content> contentClass = jsonTypes.get(labelledType); // Returns null if no entry for this type
 
-		if (contentClass == null) {
-			// We have a registered POJO class. Deserialize into it.
-			return (T) contentMapper.convertValue(obj, Content.class); 
-		} else {
+		if (null == contentClass) {
 			// We haven't registered this type. Deserialize into the Content base class.
 			
-			// TODO: Work out whether we should configure the contentMapper to ignore missing fields in this case. 
+			return (T) contentMapper.convertValue(obj, Content.class); 
+		} else {
 			
+			// We have a registered POJO class. Deserialize into it.
+			// TODO: Work out whether we should configure the contentMapper to ignore missing fields in this case. 
 			return (T) contentMapper.convertValue(obj, contentClass);  
 		}
-
-
 	}
-	
-
 }
