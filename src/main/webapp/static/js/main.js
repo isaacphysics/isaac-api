@@ -282,6 +282,13 @@ $(function()
 
 	$("body").on("mouseenter",".plumbLink",plumb);
 	
+	$("body").on("click", "#beta-modal a", function() {
+		$("#beta-modal").foundation('reveal', 'close');
+	});
+	$("body").on("click", ".beta-link", function() {
+		$("#beta-modal").foundation('reveal','open');
+	});
+	
 	window.addEventListener("popstate", popHistoryState);
 
 	var uri = document.location.pathname.substring(ij.proxyPath.length);
@@ -295,8 +302,10 @@ $(function()
 	if (!sessionStorage.getItem("sessionId"))
 		sessionStorage.setItem("sessionId", ij.newSessionId);
 	
-	if (!docCookies.hasItem("rutherfordUserId"))
+	if (!docCookies.hasItem("rutherfordUserId")) {
+		$("#beta-modal").foundation('reveal', 'open');
 		docCookies.setItem("rutherfordUserId", ij.newUserId, Infinity);
+	}
 	
 	pageRendered();
 });
