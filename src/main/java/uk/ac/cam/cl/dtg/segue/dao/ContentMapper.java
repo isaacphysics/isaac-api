@@ -3,17 +3,15 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.codehaus.jackson.Version;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.module.SimpleModule;
+import org.mongojack.internal.MongoJackModule;
 
-import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.teaching.models.JsonType;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.DBObject;
 
 public class ContentMapper {
 	// Used for serialization into the correct POJO as well as deserialization. Currently depends on the string key being the same text value as the type field.
@@ -36,23 +34,33 @@ public class ContentMapper {
 			return JsonLoader.load(docJson, Content.class);
 	}
 	
-	/**
-	 * This method can be used to get a specialized object mapper that is set to look for ContentBase Classes and do some magic deserialization, so that we can get
-	 * a subclass at runtime.
-	 * 
-	 * @return ObjectMapper that has been preconfigured to be able to deserialize content from mongodb.
-	 */
-	public static ObjectMapper getContentObjectMapper(){
-		ContentMapper.registerJsonType(Choice.class);
-		ContentBaseDeserializer contentBaseDeserializer = new ContentBaseDeserializer();
-		contentBaseDeserializer.registerTypeMap(jsonTypes);
+	
+	
+	@SuppressWarnings("unchecked")
+	public static <T extends Content> T contentFromDb(DBObject obj, Class<T> type) {
 		
-		SimpleModule simpleModule = new SimpleModule("ContentDeserializerModule", new Version(1,0,0,null));
-		simpleModule.addDeserializer(ContentBase.class, contentBaseDeserializer);
+		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
+		ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
 		
-		ObjectMapper objectMapper = new ObjectMapper();
-		objectMapper.registerModule(simpleModule);
-		return objectMapper;
+		// Find out what type label the JSON object has 
+		String labelledType = (String)obj.get("type");
+
+		// Lookup the matching POJO class
+		Class<? extends Content> contentClass = jsonTypes.get(labelledType); // Returns null if no entry for this type
+
+		if (contentClass == null) {
+			// We have a registered POJO class. Deserialize into it.
+			return (T) contentMapper.convertValue(obj, Content.class); 
+		} else {
+			// We haven't registered this type. Deserialize into the Content base class.
+			
+			// TODO: Work out whether we should configure the contentMapper to ignore missing fields in this case. 
+			
+			return (T) contentMapper.convertValue(obj, contentClass);  
+		}
+
+
 	}
+	
 
 }

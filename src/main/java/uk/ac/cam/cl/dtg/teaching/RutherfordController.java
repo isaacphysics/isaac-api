@@ -23,19 +23,16 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.mongojack.JacksonDBCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.clojure.Clojure;
-import uk.ac.cam.cl.dtg.clojure.DatomicLogger;
 import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.Mongo;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
@@ -63,7 +60,6 @@ import com.papercut.silken.TemplateRenderer;
 public class RutherfordController {
 
 	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
-	private static final DatomicLogger datomicLogger = Clojure.generate(DatomicLogger.class);
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
@@ -304,9 +300,8 @@ public class RutherfordController {
 		
 		
 		
-		boolean success = datomicLogger.logEvent(sessionId, cookieId, eventJson);
 
-		return ImmutableMap.of("success", success);
+		return ImmutableMap.of("success", false);
 	}
 	
 	@POST
@@ -457,48 +452,11 @@ public class RutherfordController {
 		
 		// Do database query using plain mongodb so we only have to read from the database once.
 		DBObject node = dbCollection.findOne(new BasicDBObject("id", id));
-		ObjectMapper contentMapper = ContentMapper.getContentObjectMapper();
 		
-		if(null != node){
-			// Use custom deserializer
-			try {
-				return Response.ok().entity(contentMapper.readValue(node.toString(), ContentBase.class)).build();				
-			} catch (org.codehaus.jackson.JsonParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return Response.serverError().entity(e).build();
-			} catch (org.codehaus.jackson.map.JsonMappingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return Response.serverError().entity(e).build();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return Response.serverError().entity(e).build();
-			}
-		}
-		
-		return Response.noContent().entity("error no object found").build();			
-		
-		//This is another approach of doing the above just using mongojack, but it means that we have to do more casting and stuff at this layer.
-		// I would prefer to keep all the casting of objects in the DAO / Serialization layer
-//		if(null != node){
-//			Map m = node.toMap();
-//			
-//			if(ContentMapper.getRegistrationMap().containsKey(m.get("type"))){
-//				JacksonDBCollection jc = JacksonDBCollection.wrap(dbCollection, (Class) ContentMapper.getRegistrationMap().get(m.get("type")), String.class);
-//				return Response.ok().entity(jc.findOne(DBQuery.is("id", id))).build();
-//				
-//			}
-//			else
-//			{
-//				JacksonDBCollection<Content,String> jc = JacksonDBCollection.wrap(dbCollection, Content.class, String.class);
-//				return Response.ok().entity(jc.findOne(DBQuery.is("id", id))).build();				
-//			}
-//		}
-//		else
-//		{
-//			return Response.noContent().entity("error no object found").build();
-//		}
+		// Deserialize object into POJO of specified type. 
+		Content c = ContentMapper.contentFromDb(node, Content.class);
+
+		return Response.ok().entity(c).build();
 			
 	}
 	
