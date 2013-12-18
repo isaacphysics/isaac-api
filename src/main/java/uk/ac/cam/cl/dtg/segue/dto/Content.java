@@ -1,8 +1,12 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.types.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -21,6 +25,8 @@ public class Content{
 	protected String src;
 	protected String layout;
 	protected String[] contentReferenced;
+	@JsonIgnore
+	protected List<Content> contentReferencedList;
 	protected String contentLiteral;
 	protected String attribution;
 	protected String[] relatedContent;
@@ -53,6 +59,8 @@ public class Content{
 		this.attribution = attribution;
 		this.relatedContent = relatedContent;
 		this.version = version;
+		// useful for when we want to augment this POJO
+		this.contentReferencedList = new ArrayList<Content>();
 	}
 	
 	/** 
@@ -60,6 +68,8 @@ public class Content{
 	 */
 	public Content(){
 		super();
+		// useful for when we want to augment this POJO
+		this.contentReferencedList = new ArrayList<Content>();
 	}
 	
 	@JsonProperty("_id")
@@ -166,6 +176,11 @@ public class Content{
 
 	public void setVersion(int version) {
 		this.version = version;
+	}
+	
+	@JsonIgnore
+	public List<Content> getContentReferencedList(){
+		return this.contentReferencedList;
 	}
 	
 }
