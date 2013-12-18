@@ -35,14 +35,15 @@ public class ContentMapper {
 	}
 	
 	/**
-	 * Map a Content object into the appropriate DTO
+	 * Map a DBObject into the appropriate Content DTO, without having to know  what type it is.
+	 * 
+	 * It so happens that RestEasy will correctly serialize Content or any of its subtypes when it is provided with an object from this method (without having to do instanceof checks or anything).
 	 * 
 	 * @param reference to the DBObject obj
-	 * @return A content object or a subclass of Content or Null if the obj param is not provided.
+	 * @return A content object or any subclass of Content or Null if the obj param is not provided.
 	 * @throws IllegalArgumentException if the database item retrieved fails to map into a content object.
 	 */
-	@SuppressWarnings("unchecked")
-	public static <T extends Content> T mapDBOjectToContentDTO(DBObject obj) throws IllegalArgumentException {
+	public static Content mapDBOjectToContentDTO(DBObject obj) throws IllegalArgumentException {
 		
 		if(null == obj){
 			return null;
@@ -59,13 +60,13 @@ public class ContentMapper {
 
 		if (null == contentClass) {
 			// We haven't registered this type. Deserialize into the Content base class.
-			
-			return (T) contentMapper.convertValue(obj, Content.class); 
+
+			return contentMapper.convertValue(obj, Content.class); 
 		} else {
 			
 			// We have a registered POJO class. Deserialize into it.
 			// TODO: Work out whether we should configure the contentMapper to ignore missing fields in this case. 
-			return (T) contentMapper.convertValue(obj, contentClass);  
+			return contentMapper.convertValue(obj, contentClass);  
 		}
 	}
 }

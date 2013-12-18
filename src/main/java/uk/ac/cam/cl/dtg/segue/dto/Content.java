@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This object should be kept as being easily serializable to enable it to be exposed via web views.
  * 
  */
-public class Content extends ContentBase {
+public class Content{
 	private ObjectId _id;
 	protected String id;
 	protected String title;

@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.clojure.Clojure;
 import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.ContentPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.IContentPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.Mongo;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
@@ -47,10 +49,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.template.soy.tofu.SoyTofuException;
-import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
@@ -403,21 +403,19 @@ public class RutherfordController {
 	@Produces("application/json")
 	@Path("content/save")
 	public Response contentSave(@FormParam("doc") String docJson) {
+		
+		IContentPersistenceManager contentPersistenceManager = new ContentPersistenceManager(Mongo.getDB());
+		
 		System.out.println("INSERTING DOC: " + docJson);
 		
 		
 		ContentMapper.registerJsonType(Choice.class);
 		
 		String newId = null;
-		try {
-			
-			DB db = Mongo.getDB();
-			
+		try {			
 			Content cnt = ContentMapper.load(docJson);
 			
-			newId = cnt.save(db);
-			
-			
+			newId = contentPersistenceManager.save(cnt);			
 		} catch (JsonParseException e) {
 			e.printStackTrace();
 			return Response.serverError().entity(ImmutableMap.of("error", e.toString())).build();
@@ -437,7 +435,9 @@ public class RutherfordController {
 	
 	/**
 	 * GetContentBy Id from the database
-	 * Currently this method will return a single Json Object
+	 * 
+	 * Currently this method will return a single Json Object containing all of the fields available to the object retrieved from the database.
+	 * 
 	 * @param id
 	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
 	 */
@@ -445,17 +445,15 @@ public class RutherfordController {
 	@Produces("application/json")
 	@Path("content/get/{id}")
 	public Response getContentById(@PathParam("id") String id) {		
-		DB db = Mongo.getDB();
-		DBCollection dbCollection = db.getCollection("content");
+		IContentPersistenceManager contentPersistenceManager = new ContentPersistenceManager(Mongo.getDB());
 		
-		// Do database query using plain mongodb so we only have to read from the database once.
-		DBObject node = dbCollection.findOne(new BasicDBObject("id", id));
-		
+		ContentMapper.registerJsonType(Choice.class);
+
 		Content c = null;
 		
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
-			c = ContentMapper.mapDBOjectToContentDTO(node);
+			c = contentPersistenceManager.getById(id);
 		}
 		catch(IllegalArgumentException e){
 			return Response.serverError().entity(e).build();
