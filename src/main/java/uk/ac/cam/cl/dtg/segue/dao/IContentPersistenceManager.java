@@ -14,5 +14,10 @@ public interface IContentPersistenceManager {
 	 */
 	public Content getById(String id);
 	
+	/**
+	 * Method to support the expansion of the recursive datastructure.
+	 * @param content
+	 * @return Augmented Content object
+	 */
 	public Content expandReferencedContent(Content content);
 }

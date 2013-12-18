@@ -42,6 +42,7 @@ public class ContentPersistenceManager implements IContentPersistenceManager {
 		
 		Content c =  ContentMapper.mapDBOjectToContentDTO(node);
 		
+		// TODO: Move somewhere else. Currently this is here just for testing. We may want to have the non-augmented objects too.
 		this.expandReferencedContent(c);
 		
 		return c;
