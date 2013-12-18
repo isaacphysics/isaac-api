@@ -12,8 +12,8 @@
 		<resteasy.version>2.3.1.GA</resteasy.version>
 		<log4j.version>1.2.17</log4j.version>
 		<slf4j.version>1.7.5</slf4j.version>
+	    <powermock.version>1.5.2</powermock.version>		
 	</properties>
-
 	<repositories>
 		<repository>
 			<id>codedance on Github</id>
@@ -53,9 +53,31 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>3.8.1</version>
+			<version>4.0</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+  			<groupId>com.google.inject</groupId>
+  			<artifactId>guice</artifactId>
+  			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>3.2</version>
+		</dependency>
+	   <dependency>
+	      <groupId>org.powermock</groupId>
+	      <artifactId>powermock-module-junit4-legacy</artifactId>
+	      <version>${powermock.version}</version>
+	      <scope>test</scope>
+	   </dependency>
+	   <dependency>
+	      <groupId>org.powermock</groupId>
+	      <artifactId>powermock-api-easymock</artifactId>
+	      <version>${powermock.version}</version>
+	      <scope>test</scope>
+	   </dependency>		
 
 		<dependency>
 			<groupId>com.papercut.silken</groupId>
