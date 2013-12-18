@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao;
+package uk.ac.cam.cl.dtg.segue.database;
 
 import java.net.UnknownHostException;
 
@@ -17,7 +17,11 @@ public class Mongo {
 			e.printStackTrace();
 		}
 	}
-	
+
+	/**
+	 * Provides a handle to the local MongoDB instance  
+	 * @return DB handle
+	 */
 	public static DB getDB() {
 		return db;
 	}

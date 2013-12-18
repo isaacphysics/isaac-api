@@ -4,6 +4,7 @@ import org.bson.types.ObjectId;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
+import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -11,10 +12,15 @@ import com.mongodb.DBObject;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
+/**
+ * Implementation that specifically works with MongoDB objects
+ *
+ */
 public class ContentPersistenceManager implements IContentPersistenceManager {
 
 	private DB database;
 	
+	@Inject
 	public ContentPersistenceManager(DB db) {
 		// TODO Auto-generated constructor stub
 		this.database = db;

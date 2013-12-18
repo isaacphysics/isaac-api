@@ -32,7 +32,8 @@ import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.ContentPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.Mongo;
+import uk.ac.cam.cl.dtg.segue.database.Mongo;
+import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
@@ -48,6 +49,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -403,13 +406,12 @@ public class RutherfordController {
 	@Produces("application/json")
 	@Path("content/save")
 	public Response contentSave(@FormParam("doc") String docJson) {
-		
-		IContentPersistenceManager contentPersistenceManager = new ContentPersistenceManager(Mongo.getDB());
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IContentPersistenceManager contentPersistenceManager = injector.getInstance(IContentPersistenceManager.class);
+
+		ContentMapper.registerJsonType(Choice.class);
 		
 		System.out.println("INSERTING DOC: " + docJson);
-		
-		
-		ContentMapper.registerJsonType(Choice.class);
 		
 		String newId = null;
 		try {			
@@ -445,7 +447,8 @@ public class RutherfordController {
 	@Produces("application/json")
 	@Path("content/get/{id}")
 	public Response getContentById(@PathParam("id") String id) {		
-		IContentPersistenceManager contentPersistenceManager = new ContentPersistenceManager(Mongo.getDB());
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IContentPersistenceManager contentPersistenceManager = injector.getInstance(IContentPersistenceManager.class);
 		
 		ContentMapper.registerJsonType(Choice.class);
 
@@ -453,6 +456,7 @@ public class RutherfordController {
 		
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
+			System.out.println("Searching Database for Content object with id: " + id);
 			c = contentPersistenceManager.getById(id);
 		}
 		catch(IllegalArgumentException e){
