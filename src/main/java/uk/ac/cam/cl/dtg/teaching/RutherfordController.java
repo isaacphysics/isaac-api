@@ -407,13 +407,13 @@ public class RutherfordController {
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentPersistenceManager contentPersistenceManager = injector.getInstance(IContentPersistenceManager.class);
 
-		ContentMapper.registerJsonType(Choice.class);
+		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		
-		System.out.println("INSERTING DOC: " + docJson);
+		log.info("INSERTING DOC: " + docJson);
 		
 		String newId = null;
 		try {			
-			Content cnt = ContentMapper.load(docJson);
+			Content cnt = mapper.load(docJson);
 			
 			newId = contentPersistenceManager.save(cnt);			
 		} catch (JsonParseException e) {
@@ -448,13 +448,11 @@ public class RutherfordController {
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentPersistenceManager contentPersistenceManager = injector.getInstance(IContentPersistenceManager.class);
 		
-		ContentMapper.registerJsonType(Choice.class);
-
 		Content c = null;
 		
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
-			System.out.println("Searching Database for Content object with id: " + id);
+			log.info("RETRIEVING DOC: " + id);
 			c = contentPersistenceManager.getById(id);
 		}
 		catch(IllegalArgumentException e){

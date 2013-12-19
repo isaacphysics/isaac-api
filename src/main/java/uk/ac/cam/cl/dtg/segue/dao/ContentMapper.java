@@ -15,15 +15,19 @@ import com.mongodb.DBObject;
 
 public class ContentMapper {
 	// Used for serialization into the correct POJO as well as deserialization. Currently depends on the string key being the same text value as the type field.
-	private static HashMap<String, Class<? extends Content>> jsonTypes = new HashMap<String, Class<? extends Content>>();
+	private HashMap<String, Class<? extends Content>> jsonTypes = new HashMap<String, Class<? extends Content>>();
 	
-	public static void registerJsonType(Class<? extends Content> cls) {
+	public void registerJsonType(Class<? extends Content> cls) {
 		JsonType jt = cls.getAnnotation(JsonType.class);
 		if (jt != null)
 			jsonTypes.put(jt.value(), cls);
 	}
 	
-	public static Content load(String docJson) throws JsonParseException, JsonMappingException, IOException {
+	public ContentMapper(HashMap<String, Class<? extends Content>> additionalTypes) {
+		jsonTypes.putAll(additionalTypes);
+	}
+	
+	public Content load(String docJson) throws JsonParseException, JsonMappingException, IOException {
 		Content c = JsonLoader.load(docJson, Content.class, true);
 
 		Class<? extends Content> cls = jsonTypes.get(c.getType());
@@ -43,7 +47,7 @@ public class ContentMapper {
 	 * @return A content object or any subclass of Content or Null if the obj param is not provided.
 	 * @throws IllegalArgumentException if the database item retrieved fails to map into a content object.
 	 */
-	public static Content mapDBOjectToContentDTO(DBObject obj) throws IllegalArgumentException {
+	public Content mapDBOjectToContentDTO(DBObject obj) throws IllegalArgumentException {
 		
 		if(null == obj){
 			return null;

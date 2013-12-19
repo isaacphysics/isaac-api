@@ -4,13 +4,16 @@ import org.bson.types.ObjectId;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
+import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
 /**
@@ -20,16 +23,19 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
 public class ContentPersistenceManager implements IContentPersistenceManager {
 
 	private final DB database;
+	private final ContentMapper mapper;
 	
 	@Inject
 	public ContentPersistenceManager(DB database) {
 		this.database = database;
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		this.mapper = injector.getInstance(ContentMapper.class);
 	}
 
 	@Override
-	public String save(Content objectToSave) throws IllegalArgumentException {
-		JacksonDBCollection jc = JacksonDBCollection.wrap(database.getCollection("content"), objectToSave.getClass(), ObjectId.class);
-		WriteResult r = jc.save(objectToSave);
+	public <T extends Content> String save(T objectToSave) throws IllegalArgumentException {
+		JacksonDBCollection<T, ObjectId> jc = JacksonDBCollection.wrap(database.getCollection("content"), getContentSubclass(objectToSave), ObjectId.class);
+		WriteResult<T, ObjectId> r = jc.save(objectToSave);
 		return r.getSavedId().toString();
 	}
 	
@@ -40,7 +46,7 @@ public class ContentPersistenceManager implements IContentPersistenceManager {
 		// Do database query using plain mongodb so we only have to read from the database once.
 		DBObject node = dbCollection.findOne(new BasicDBObject("id", id));
 		
-		Content c =  ContentMapper.mapDBOjectToContentDTO(node);
+		Content c =  mapper.mapDBOjectToContentDTO(node);
 		
 		// TODO: Move somewhere else. Currently this is here just for testing. We may want to have the non-augmented objects too.
 		this.expandReferencedContent(c);
@@ -63,9 +69,17 @@ public class ContentPersistenceManager implements IContentPersistenceManager {
 		DBCursor cursor = database.getCollection("content").find(query);
 		while(cursor.hasNext()){
 			DBObject item = cursor.next();
-			Content childContent =  ContentMapper.mapDBOjectToContentDTO(item);	
+			Content childContent =  mapper.mapDBOjectToContentDTO(item);	
 			content.getContentReferencedList().add(expandReferencedContent(childContent));
 		}		
 		return content;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <T extends Content> Class<T> getContentSubclass(T obj) {
+		if(obj instanceof Content)
+			return (Class<T>) obj.getClass();
+		
+		throw new IllegalArgumentException("object is not a subtype of Content");
 	}
 }

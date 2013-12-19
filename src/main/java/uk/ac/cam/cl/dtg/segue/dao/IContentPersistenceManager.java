@@ -4,7 +4,7 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
 
 public interface IContentPersistenceManager {
 
-	public String save(Content objectToSave);
+	public <T extends Content> String save(T objectToSave);
 	
 	/**
 	 * Goes to the configured Database and attempts to find a content item with the specified ID
