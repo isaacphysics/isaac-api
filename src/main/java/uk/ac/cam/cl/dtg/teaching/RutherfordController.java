@@ -32,7 +32,6 @@ import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IContentPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
@@ -339,6 +338,7 @@ public class RutherfordController {
 		String outcome = "success";
 		if(!success){
 			outcome = "Registration failed: Error registering user.";
+			log.error("Error in registering interest for user " + name + " " + email);
 		}
 		
 		return ImmutableMap.of("result", outcome);
@@ -382,16 +382,15 @@ public class RutherfordController {
 		try {
 			// attempt to send the message via the smtp server
 			contactUsMailer.sendMail(recipients, email, subject, message.toString());
+			log.info("Contact Us - E-mail sent to " + recipients + " " + email + " " + subject + " " + message.toString());
 			
 		} catch (AddressException e) {				
 			log.warn("E-mail Address validation error " + e.toString());
-			
 			return ImmutableMap.of(
 					"result", "message not sent - E-mail address malformed - Validation Error \n " + e.toString());		
 			
 		} catch (MessagingException e) {
 			log.error("Messaging error " + e.toString());
-			
 			return ImmutableMap.of(
 					"result", "message not sent - Unknown Messaging error\n " + e.toString());	
 		}
@@ -456,6 +455,7 @@ public class RutherfordController {
 			c = contentPersistenceManager.getById(id);
 		}
 		catch(IllegalArgumentException e){
+			log.error("Unable to map content object.", e);
 			return Response.serverError().entity(e).build();
 		}
 		
