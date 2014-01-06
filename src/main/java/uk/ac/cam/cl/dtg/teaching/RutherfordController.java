@@ -1,11 +1,13 @@
 package uk.ac.cam.cl.dtg.teaching;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
@@ -17,13 +19,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.clojure.Clojure;
-import uk.ac.cam.cl.dtg.clojure.DatomicLogger;
-import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
+import uk.ac.cam.cl.dtg.segue.dao.LogManager;
+import uk.ac.cam.cl.dtg.segue.dao.RegistrationManager;
+import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
@@ -43,7 +46,6 @@ import com.papercut.silken.TemplateRenderer;
 public class RutherfordController {
 
 	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
-	private static final DatomicLogger datomicLogger = Clojure.generate(DatomicLogger.class);
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
@@ -252,9 +254,12 @@ public class RutherfordController {
 			@Context HttpServletRequest req,
 			@FormParam("sessionId") String sessionId,
 			@FormParam("cookieId") String cookieId,
-			@FormParam("event") String eventJson) {
+			@FormParam("event") String eventJSON) {
 		
-		boolean success = datomicLogger.logEvent(sessionId, cookieId, eventJson);
+		//boolean success = datomicLogger.logEvent(sessionId, cookieId, eventJson);
+		
+		LogManager logManager = new LogManager(Mongo.getDB());
+		boolean success = logManager.log(sessionId, cookieId, eventJSON);
 
 		return ImmutableMap.of("success", success);
 	}
@@ -286,9 +291,11 @@ public class RutherfordController {
 		
 		log.info("Register Interest details: " + sb.toString());
 		
-		InterestRegistration reg = Clojure.generate(InterestRegistration.class);
+		RegistrationManager registrationManager = new RegistrationManager(Mongo.getDB());
 		
-		boolean success = reg.register(name, email, role, school, year, feedback);
+		User newUser = new User(null, name, email, role, school, year, feedback, new Date());
+		
+		boolean success = registrationManager.register(newUser);
 		
 		String outcome = "success";
 		if(!success){

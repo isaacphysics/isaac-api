@@ -9,7 +9,7 @@ import com.mongodb.DB;
 
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
-public class RegistrationManager implements IRegistrationManager {
+public class RegistrationManager {
 
 	private final DB database;
 	

@@ -8,7 +8,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
-public class LogManager implements ILogManager {
+public class LogManager {
 
 	private final DB database;
 	
