@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.teaching;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -30,9 +31,13 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.clojure.Clojure;
 import uk.ac.cam.cl.dtg.clojure.InterestRegistration;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.IContentPersistenceManager;
+import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.IRegistrationManager;
+import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
 import uk.ac.cam.cl.dtg.teaching.models.ContentPage;
 import uk.ac.cam.cl.dtg.teaching.models.IndexPage;
@@ -51,7 +56,10 @@ import com.google.inject.Injector;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.WriteResult;
+import com.mongodb.util.JSON;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
 
@@ -268,40 +276,14 @@ public class RutherfordController {
 			@Context HttpServletRequest req,
 			@FormParam("sessionId") String sessionId,
 			@FormParam("cookieId") String cookieId,
-			@FormParam("event") String eventJson) {
+			@FormParam("event") String eventJSON) {
 		
-		try {
-			MongoClient mongo = new MongoClient( "localhost" , 27017 );
-			
-			DB db = mongo.getDB( "rutherford" );
-			
-			DBCollection coll = db.getCollection("content");
-			
-			JacksonDBCollection<Content,String> jc = JacksonDBCollection.wrap(coll, Content.class, String.class);
-			
-			Content ct = new Content(null, "my_obj_id", "The Title", "concept", "Ian", "text", null, "1-col", null, "Hello", "Comes from somewhere", null, 1);
-			
-			jc.insert(ct);
-			
-			
-			long c = jc.count();
-			
-			Content r = jc.findOne();
-			
-			
-			int a = 1;
-			a = 7;
-			int b = a;
-			
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-		
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		ILogManager logPersistenceManager = injector.getInstance(ILogManager.class);
 
-		return ImmutableMap.of("success", false);
+		boolean success = logPersistenceManager.log(sessionId, cookieId, eventJSON);
+
+		return ImmutableMap.of("success", success);
 	}
 	
 	@POST
@@ -321,6 +303,7 @@ public class RutherfordController {
 			feedback = true;
 		}
 
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append("Name: " + name);
 		sb.append(" email: " + email);
@@ -331,9 +314,12 @@ public class RutherfordController {
 		
 		log.info("Register Interest details: " + sb.toString());
 		
-		InterestRegistration reg = Clojure.generate(InterestRegistration.class);
+		User newUser = new User(null, name, email, role, school, year, feedback, new Date());
 		
-		boolean success = reg.register(name, email, role, school, year, feedback);
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IRegistrationManager registrationManager = injector.getInstance(IRegistrationManager.class);
+
+		boolean success = registrationManager.register(newUser);
 		
 		String outcome = "success";
 		if(!success){
@@ -404,7 +390,7 @@ public class RutherfordController {
 	@Path("content/save")
 	public Response contentSave(@FormParam("doc") String docJson) {
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
-		IContentPersistenceManager contentPersistenceManager = injector.getInstance(IContentPersistenceManager.class);
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		
@@ -445,7 +431,7 @@ public class RutherfordController {
 	@Path("content/get/{id}")
 	public Response getContentById(@PathParam("id") String id) {		
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
-		IContentPersistenceManager contentPersistenceManager = injector.getInstance(IContentPersistenceManager.class);
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
 		Content c = null;
 		

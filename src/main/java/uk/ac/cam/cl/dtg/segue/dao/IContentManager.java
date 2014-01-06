@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
-public interface IContentPersistenceManager {
+public interface IContentManager {
 
 	public <T extends Content> String save(T objectToSave);
 	

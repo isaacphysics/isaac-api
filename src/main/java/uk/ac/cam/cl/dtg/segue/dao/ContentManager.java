@@ -20,13 +20,13 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
  * Implementation that specifically works with MongoDB Content objects
  *
  */
-public class ContentPersistenceManager implements IContentPersistenceManager {
+public class ContentManager implements IContentManager {
 
 	private final DB database;
 	private final ContentMapper mapper;
 	
 	@Inject
-	public ContentPersistenceManager(DB database) {
+	public ContentManager(DB database) {
 		this.database = database;
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		this.mapper = injector.getInstance(ContentMapper.class);

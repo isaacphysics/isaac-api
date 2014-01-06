@@ -67,7 +67,7 @@ public class Content{
 	 * Default constructor required for Jackson
 	 */
 	public Content(){
-		super();
+
 		// useful for when we want to augment this POJO
 		this.contentReferencedList = new ArrayList<Content>();
 	}
