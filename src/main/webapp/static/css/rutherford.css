@@ -80,6 +80,11 @@ body
 	color:#999999;
 }
 
+#content .emphasise-text{
+	font-style:italic;
+	font-weight:bold;
+}
+
 #content .pagination-bar{
 	margin-top:5px;
 }
