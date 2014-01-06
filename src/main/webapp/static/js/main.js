@@ -294,7 +294,10 @@ $(function()
 	history.replaceState(uri, null, ij.proxyPath + uri);
 	
 	MathJax.Hub.Config({
-		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+		  "HTML-CSS": {
+			    scale: 85
+			  }
 		});
 	
 	
