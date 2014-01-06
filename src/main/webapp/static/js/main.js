@@ -117,10 +117,9 @@ function loadContent(uri, addToHistory) {
 
 	// Google Analytics
 	ga('send', 'pageview', ij.proxyPath + uri);
-	
+
 	// Our analytics
 	log({type: "page_render"});
-
 }
 
 //var urlHistory = [document.location.href];
@@ -308,6 +307,9 @@ $(function()
 	}
 	
 	pageRendered();
+	
+	// Our analytics
+	log({type: "land"});
 });
 
 function quickQuestions(){
