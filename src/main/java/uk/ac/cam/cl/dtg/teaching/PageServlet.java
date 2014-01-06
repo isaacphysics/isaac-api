@@ -32,7 +32,7 @@ urlPatterns = {
 		"/questions/*", 
 		"/concepts/*",
 		"/discussion",
-		"/real-world",
+		"/featured",
 		"/applying",
 		"/challenge",
 		"/why-physics",

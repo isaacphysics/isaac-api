@@ -35,7 +35,7 @@ body
 }
 
 .main.wrapper{
-	background: url(../img/bg.png) repeat 10px 10px fixed;
+	/*background: url(../img/bg.png) repeat 10px 10px fixed;*/
 }
 #header{
 	background-color: #404040;
@@ -234,14 +234,14 @@ span.question-explanation, .answer
 	color: #a8b400;
 }
 
-#real-world-problems {
+#featured-problems {
 	height: 143px;
 	width: 144px;
 	left: 408px;
 	top: 20px;
 }
 
-#real-world-problems a span{
+#featured-problems a span{
 	top: 54px;
 	width:60%;
 	left:30px;

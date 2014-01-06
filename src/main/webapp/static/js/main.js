@@ -45,8 +45,8 @@ function loadContent(uri, addToHistory) {
 	case "/about-us":
 		soy.renderElement($("#content")[0], rutherford.pages.about_us, null, ij);
 		break;
-	case "/real-world":
-		soy.renderElement($("#content")[0], rutherford.pages.real_world, null, ij);
+	case "/featured":
+		soy.renderElement($("#content")[0], rutherford.pages.featured, null, ij);
 		break;
 	case "/applying":
 		soy.renderElement($("#content")[0], rutherford.pages.applying, null, ij);
