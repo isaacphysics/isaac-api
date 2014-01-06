@@ -120,6 +120,10 @@ function loadContent(uri, addToHistory) {
 
 	// Our analytics
 	log({type: "page_render"});
+	
+	// If we've reloaded the page content manually, we need to re-add the form validation events.
+	$(document).foundation("abide","events");
+
 }
 
 //var urlHistory = [document.location.href];
@@ -266,6 +270,46 @@ function playVideo(video)
 	
 }
 
+function initFormIntercepts() {
+	$("body").on("valid invalid submit", ".ajax-form form", function(g){
+		  g.stopPropagation();
+		  g.preventDefault();
+		  $theForm = $(this);
+		  
+		  if (g.type === "valid"){
+			  $(".internal-error, .validation-error").remove();
+			  // AJAX call
+			     // send xhr request
+			     $.ajax({
+			         type: $theForm.attr('method'),
+			         url: $theForm.attr('action'),
+			         data: $theForm.serialize(),
+			         dataType: 'json',
+			         success: function(data) {
+			        	 if(data["result"] == "success"){
+			        		 $theForm.parent().append('<span class="error large question-explanation hidden" >Your request has been sent. Thank you for your time.</span>');
+			        		 $theForm.fadeOut();
+			        		 $theForm.children("span").fadeIn();
+			        	 }
+			        	 else
+		        		 {
+			        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: An internal error occurred while trying to process your request.</span>');
+			                 $theForm.children("span").fadeIn();
+		        		 }
+			         },
+			         error: function(data){
+		        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: A HTTP error occurred while trying to process your request.</span>');
+		                 $theForm.children("span").fadeIn();
+			         }
+			     });			  
+		  }
+		  else if (g.type === "invalid"){
+			   $(".internal-error, .validation-error").remove();
+			   $theForm.parent().append('<span class="error large hidden validation-error">Validation Error: Please check the form above is filled in correctly.</span>');	           
+	           $theForm.children("span").fadeIn();			  
+		  }
+		});
+}
 
 $(function()
 {
@@ -273,6 +317,8 @@ $(function()
 	//$("body").on("mouseenter", "a", mouseenter_a);
 	$("body").on("click", "#checkAnswer", checkAnswer_click);
 	$("body").on("click", "button", button_click);
+	
+	initFormIntercepts();
 	
 	$("#video-modal").on("closed", function()
 	{
@@ -357,49 +403,7 @@ function buildConcertina(){
 	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="one_up:false; multi_expand:true"/>');
 }
 
-function postIntercepts(){	
-	$(".ajax-form form").on("valid invalid submit", function(g){
-		  g.stopPropagation();
-		  g.preventDefault();
-		  $theForm = $(this);
-		  
-		  if (g.type === "valid"){
-			  $(".internal-error, .validation-error").remove();
-			  // AJAX call
-			     // send xhr request
-			     $.ajax({
-			         type: $theForm.attr('method'),
-			         url: $theForm.attr('action'),
-			         data: $theForm.serialize(),
-			         dataType: 'json',
-			         success: function(data) {
-			        	 if(data["result"] == "success"){
-			        		 $theForm.parent().append('<span class="error large question-explanation hidden" >Your request has been sent. Thank you for your time.</span>');
-			        		 $theForm.fadeOut();
-			        		 $theForm.children("span").fadeIn();
-			        	 }
-			        	 else
-		        		 {
-			        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: An internal error occurred while trying to process your request.</span>');
-			                 $theForm.children("span").fadeIn();
-		        		 }
-			         },
-			         error: function(data){
-		        		 $theForm.parent().append('<span class="error large hidden internal-error">Error: A HTTP error occurred while trying to process your request.</span>');
-		                 $theForm.children("span").fadeIn();
-			         }
-			     });			  
-		  }
-		  else if (g.type === "invalid"){
-			   $(".internal-error, .validation-error").remove();
-			   $theForm.parent().append('<span class="error large hidden validation-error">Validation Error: Please check the form above is filled in correctly.</span>');	           
-	           $theForm.children("span").fadeIn();			  
-		  }
-		});
-	
-	
-	
-}
+
 
 function plumb(e) {
 	var myid = e.target.id;
@@ -434,8 +438,6 @@ function pageRendered()
 {
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	$(document).foundation();
-	$(document).foundation("abide","events");
 	quickQuestions();
 	buildConcertina();
-	postIntercepts();
 }
