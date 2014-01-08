@@ -213,122 +213,35 @@ span.question-explanation, .answer
 	margin-bottom:5px;
 }
 
-/* Gears */
-
-.gear {
-	position: absolute;
+/* Homepage */
+#homepage-intro{
+	padding-top:20px;
+}
+#homepage-links{
+	margin-bottom:20px;
+}
+#homepage-links a{
+	margin:0;
 }
 
-.gear a{
-	display:block;
-	border-radius:100%;
-	line-height:100px;
-	text-align:center;
-	height:100%;
+#homepage-links li{
+	float:left;
+	padding-right:5px;
+	padding-top:5px;
+}
+#homepage-links:last-child{
+	padding-right:0px;
+}
+.youtube-video{
 	width:100%;
+	min-height:50%;
 }
-
-.gear a span{
-	width: 100%;
-	position: absolute;
-	display: block;
-	line-height:1em;
-	margin: 0 auto;
-	text-align: center;
-	text-decoration: none;
-	color: #a8b400;
+.large-promo{
+	padding-bottom:10px;
+	text-align:center;
 }
-
-#featured-problems {
-	height: 143px;
-	width: 144px;
-	left: 408px;
-	top: 20px;
-}
-
-#featured-problems a span{
-	top: 54px;
-	width:60%;
-	left:30px;
-}
-
-#register {
-	height: 230px;
-	width: 229px;
-	left: 230px;
-	top: 78px;
-}
-
-#register a span{
-	top: 100px;
-}
-
-#why-physics {
-	height: 230px;
-	width: 229px;
-	left: 502px;
-	top: 64px;
-}
-
-#why-physics a span{
-	top: 112px;
-}
-
-#get-started {
-	height: 310px;
-	width: 302px;
-	left: 340px;
-	top: 228px;	
-}
-
-#get-started a span{
-	top: 140px;
-	font-weight: bold;
-	font-size: 24px;
-}
-
-#discuss {
-	height: 143px;
-	width: 144px;
-	left: 111px;
-	top: 255px;	
-}
-
-#discuss a span{
-	top: 62px;
-}
-
-#applying-to-university {
-	height: 143px;
-	width: 144px;
-	left: 685px;
-	top: 200px;		
-}
-
-#applying-to-university a span{
-	top: 54px;
-}
-
-#challenge-of-the-week {
-	height: 241px;
-	width: 240px;
-	left: 146px;
-	top: 358px;	
-}
-
-#challenge-of-the-week a span{
-	top: 105px;
-}
-
-#about {
-	height: 191px;
-	width: 194px;
-	left: 580px;
-	top: 408px;	
-}
-
-#about a span{
-	top: 85px;
+.centered-links{
+	text-align:center;
 }
 
 .mcq {
