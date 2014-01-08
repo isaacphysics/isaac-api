@@ -59,6 +59,7 @@ function loadContent(uri, addToHistory) {
 		break;
 	case "/contact-us":
 		soy.renderElement($("#content")[0], rutherford.pages.contact_us, null, ij);
+		$("#beta-modal").foundation('reveal','open');
 		break;
 	default:
 		renderedLocally = false;
