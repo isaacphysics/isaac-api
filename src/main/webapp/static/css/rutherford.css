@@ -234,11 +234,12 @@ span.question-explanation, .answer
 }
 .youtube-video{
 	width:100%;
-	min-height:50%;
+	height:501px;
 }
 .large-promo{
 	padding-bottom:10px;
 	text-align:center;
+	height:50%;
 }
 .centered-links{
 	text-align:center;
