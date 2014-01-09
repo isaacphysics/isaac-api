@@ -245,6 +245,27 @@ span.question-explanation, .answer
 	text-align:center;
 }
 
+.featured-physicist span, .promo-box span{
+	font-weight:bold;
+}
+.featured-physicist img{
+	height:225px;
+}
+
+.featured-content{
+	padding:15px;
+}
+.panel-content{
+	height:250px;
+}
+.promo-box .button{
+	width:100%;
+}
+
+.events .panel-content li{
+	margin-bottom:10px;
+}
+
 .mcq {
 	list-style-type:lower-alpha;
 }
