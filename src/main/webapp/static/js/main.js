@@ -57,6 +57,9 @@ function loadContent(uri, addToHistory) {
 	case "/why-physics":
 		soy.renderElement($("#content")[0], rutherford.pages.why_physics, null, ij);
 		break;
+	case "/events":
+		soy.renderElement($("#content")[0], rutherford.pages.events, null, ij);
+		break;
 	case "/contact-us":
 		soy.renderElement($("#content")[0], rutherford.pages.contact_us, null, ij);
 		$("#beta-modal").foundation('reveal','open');

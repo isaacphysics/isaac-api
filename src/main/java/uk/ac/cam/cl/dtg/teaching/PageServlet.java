@@ -35,6 +35,7 @@ urlPatterns = {
 		"/featured",
 		"/applying",
 		"/challenge",
+		"/events",
 		"/why-physics",
 		"/contact-us"},
 loadOnStartup = 1,//
