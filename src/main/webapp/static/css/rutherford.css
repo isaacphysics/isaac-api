@@ -40,7 +40,8 @@ body
 #header{
 	background-color: #404040;
 	text-align: center;
-	padding: 20px 10px 12px 10px;
+	/*padding: 20px 10px 12px 10px;*/
+	padding: 10px 10px 0px 10px;
 }
 
 #header h2
@@ -103,10 +104,16 @@ ol li ol{
 	list-style-type:lower-alpha;
 }
 
-.footer-area
+.footer-area .dfe-logo
 {
-	text-align:right;
-	}
+	background-color: #fff;
+	padding: 5px;
+	height:76px;
+}
+
+#footer p{
+	display:inline;
+}
 
 #footer
 {
@@ -114,6 +121,7 @@ ol li ol{
 	background-color: #404040;
 	color: #a8b400;
 	padding-bottom: 5px;
+	font-size:0.8em;
 }
 .footer-area, .push
 {
@@ -215,7 +223,11 @@ span.question-explanation, .answer
 
 /* Homepage */
 #homepage-intro{
-	padding-top:20px;
+	padding-top:10px;
+	font-size:0.9em;
+}
+#homepage-intro p{
+	margin-bottom:10px;
 }
 #homepage-links{
 	margin-bottom:20px;
@@ -232,32 +244,34 @@ span.question-explanation, .answer
 #homepage-links:last-child{
 	padding-right:0px;
 }
-.youtube-video{
-	width:100%;
-	height:501px;
-}
-.large-promo{
-	padding-bottom:10px;
-	text-align:center;
-	height:50%;
-}
 .centered-links{
 	text-align:center;
 }
-
 .featured-physicist span, .promo-box span{
 	font-weight:bold;
 }
-.featured-physicist img{
-	height:225px;
+.caption p{
+	font-size:0.8em;
+	margin-bottom:10px;
+}
+
+.featured-physicist p{
+	font-size:0.8em;
 }
 
 .featured-content{
-	padding:15px;
+	padding: 10px 15px 15px 15px;
 }
 .panel-content{
-	height:250px;
+	height:225px;
 }
+.promo-box h3{
+	font-size:1.1em;
+}
+.promo-box.panel{
+	padding-bottom:5px;
+}
+
 .promo-box .button{
 	width:100%;
 }
