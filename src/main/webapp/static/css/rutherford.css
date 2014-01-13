@@ -113,6 +113,11 @@ ol li ol{
 
 #footer p{
 	display:inline;
+	font-weight:bold;
+	font-size:1.2em;
+}
+#footer p a{
+	
 }
 
 #footer
