@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.teaching;
+package uk.ac.cam.cl.dtg.rspp.app;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,7 @@ import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.teaching.models.ContentInfo;
+import uk.ac.cam.cl.dtg.rspp.models.ContentInfo;
 
 import com.google.common.collect.ImmutableList;
 

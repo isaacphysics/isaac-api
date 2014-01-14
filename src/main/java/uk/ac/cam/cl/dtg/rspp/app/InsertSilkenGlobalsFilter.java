@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.teaching;
+package uk.ac.cam.cl.dtg.rspp.app;
 
 import java.io.IOException;
 

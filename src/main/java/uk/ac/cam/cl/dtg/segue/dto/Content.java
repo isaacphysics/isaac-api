@@ -5,9 +5,12 @@ import java.util.List;
 
 import org.bson.types.ObjectId;
 
+import uk.ac.cam.cl.dtg.segue.models.DataView;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Content Class (Data Transfer Object)
@@ -24,12 +27,12 @@ public class Content{
 	protected String encoding;
 	protected String src;
 	protected String layout;
-	protected String[] contentReferenced;
+	protected List<String> contentReferenced;
 	@JsonIgnore
 	protected List<Content> contentReferencedList;
 	protected String contentLiteral;
 	protected String attribution;
-	protected String[] relatedContent;
+	protected List<String> relatedContent;
 	protected int version;
 	
 	@JsonCreator
@@ -41,10 +44,10 @@ public class Content{
 				   @JsonProperty("encoding") String encoding,
 				   @JsonProperty("src") String src,
 				   @JsonProperty("layout") String layout,
-				   @JsonProperty("contentReferenced") String[] contentReferenced,
+				   @JsonProperty("contentReferenced") List<String> contentReferenced,
 				   @JsonProperty("contentLiteral") String contentLiteral,
 				   @JsonProperty("attribution") String attribution,
-				   @JsonProperty("relatedContent") String[] relatedContent,
+				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") int version) {
 		this._id = _id;
 		this.id = id;
@@ -73,6 +76,7 @@ public class Content{
 	}
 	
 	@JsonProperty("_id")
+	@JsonView(DataView.InternalOnlyView.class)
 	public ObjectId getDbId() {
 		return _id;
 	}
@@ -138,11 +142,11 @@ public class Content{
 		this.layout = layout;
 	}
 
-	public String[] getContentReferenced() {
+	public List<String> getContentReferenced() {
 		return contentReferenced;
 	}
 
-	public void setContentReferenced(String[] contentReferenced) {
+	public void setContentReferenced(List<String> contentReferenced) {
 		this.contentReferenced = contentReferenced;
 	}
 
@@ -162,11 +166,11 @@ public class Content{
 		this.attribution = attribution;
 	}
 
-	public String[] getRelatedContent() {
+	public List<String> getRelatedContent() {
 		return relatedContent;
 	}
 
-	public void setRelatedContent(String[] relatedContent) {
+	public void setRelatedContent(List<String> relatedContent) {
 		this.relatedContent = relatedContent;
 	}
 

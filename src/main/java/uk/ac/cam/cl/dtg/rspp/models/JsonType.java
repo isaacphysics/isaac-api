@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.teaching.models;
+package uk.ac.cam.cl.dtg.rspp.models;
 
 import java.lang.annotation.*;
 

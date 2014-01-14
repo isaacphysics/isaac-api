@@ -2,14 +2,12 @@
 
 /**
  * Concept
- * 
- * @param renderedContent
- * @param id
- * @param environment
+ * @param title
+ * @param contentLiteral
  */
 {template .concept}
 <div class="row">
-	<div id="conceptSidebar" class="small-3 columns">
+	/*<div id="conceptSidebar" class="small-3 columns">
 		{call .conceptSidebar}
 			{param conceptId : $id /}
 			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
@@ -18,14 +16,14 @@
 			{param environment: $environment /}
 		{/call}
 	</div>
+	*/
 	<div id="conceptContent" class="concept-page small-9 columns">
 		<div class="row"><div class="small-12 columns text-left pagination-bar"><a href="#" class="back">Back</a></div></div>
-		<h2>Concept: {$environment[$id].title}</h2>
-		{$renderedContent|noAutoescape}
+		<h2>Concept: {$title}</h2>
+		{$contentLiteral|noAutoescape}
 	</div>
 </div>
 {/template}
-
 
 /**
  * Concept Sidebar

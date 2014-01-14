@@ -1,0 +1,263 @@
+package uk.ac.cam.cl.dtg.rspp.app;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.rspp.models.ContentInfo;
+import uk.ac.cam.cl.dtg.rspp.models.ContentPage;
+import uk.ac.cam.cl.dtg.rspp.models.IndexPage;
+import uk.ac.cam.cl.dtg.rspp.models.TopicPage;
+import uk.ac.cam.cl.dtg.rspp.models.IndexPage.IndexPageItem;
+import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.models.DataView;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.template.soy.tofu.SoyTofuException;
+import com.papercut.silken.SilkenServlet;
+import com.papercut.silken.TemplateRenderer;
+
+/**
+ * Rutherford Controller
+ * 
+ * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to the Segue api for use only on the Rutherford site.
+ * 
+ */
+@Path("/")
+public class RutherfordController {
+
+	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
+	
+	private static final SegueApiFacade api = new SegueApiFacade();
+
+	// Map of contentID to detail
+	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
+	
+	// Map of topicPath to detail
+	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
+	
+	private boolean questionNavigationDataLoaded = false;
+	
+	// I apologise for this function.
+	private void loadQuestionNavigationData()
+	{
+		SortedSet<ContentDetail> content = new TreeSet<ContentDetail>(contentDetails.values());
+
+		for(TopicDetail t : topicDetails.values())
+		{
+			for (int level = 1; level <= 6; level++)
+			{
+				ContentDetail prevQ = null;
+				for (ContentDetail q : content) 
+				{
+					if (q.type.equals(ContentDetail.TYPE_QUESTION) && t.topic.equals(q.topic) && ((Integer)level).toString().equals(q.level)) 
+					{
+						if (prevQ != null)
+						{
+							q.prevContentId = prevQ.id;
+							prevQ.nextContentId = q.id;
+						}
+						prevQ = q;
+					}
+				}
+			}
+		}
+		questionNavigationDataLoaded = true;
+	}
+
+	@GET
+	@Path("learn")
+	@Produces("application/json")
+	public IndexPage getTopics() {
+		ImmutableList.Builder<IndexPageItem> builder = ImmutableList.builder();
+		SortedSet<TopicDetail> values = new TreeSet<TopicDetail>(
+				topicDetails.values());
+		for (TopicDetail t : values) {
+			for (Map.Entry<String, String> e : t.pdf.entrySet()) {
+				// see whether there are any questions for this
+				boolean found = false;
+				for(ContentDetail d : contentDetails.values()) {
+					if (d.type.equals(ContentDetail.TYPE_QUESTION)  // This is a question
+							&& d.topic.equals(t.topic)         // and the question belongs to this topic
+							&& d.level.equals(e.getKey()))     // and the level is correct
+					{
+						found = true;
+						break;
+					}
+				}
+				builder.add(new IndexPageItem(t.title, e.getKey(), t.topic,
+						e.getValue(),found));
+			}
+		}
+		return new IndexPage(builder.build());
+	}
+
+	/**
+	 * Return the list of concepts and questions available for this topic at
+	 * this level
+	 * 
+	 * @param topic
+	 * @param level
+	 * @return
+	 */
+	@GET
+	@Path("topics/{topic:.*}/level-{level}")
+	@Produces("application/json")
+	public TopicPage getTopicWithLevel(@PathParam("topic") String topic, @PathParam("level") String level) {
+
+		TopicDetail topicDetail = topicDetails.get(topic);
+
+		ImmutableList.Builder<String> conceptIdBuilder = ImmutableList.builder();
+		ImmutableList.Builder<String> questionIdBuilder = ImmutableList.builder();
+		
+		HashSet<String> linkedConceptIds = new HashSet<String>();
+
+		SortedSet<ContentDetail> values = new TreeSet<ContentDetail>(contentDetails.values());
+
+		// Find all the questions for this topic.
+		for (ContentDetail detail : values) 
+		{
+			if (detail.type.equals(ContentDetail.TYPE_QUESTION) && topic.equals(detail.topic) && level.equals(detail.level)) 
+			{
+				questionIdBuilder.add(detail.id);
+				
+				for (String cid : detail.relatedConceptIds)
+				{
+					if (contentDetails.containsKey(cid))
+						linkedConceptIds.add(cid);
+				}
+			}
+		}
+		
+		conceptIdBuilder.addAll(linkedConceptIds);
+		
+		ImmutableList<String> questionIds = questionIdBuilder.build();
+		
+		ImmutableList<String> conceptIds = conceptIdBuilder.build();
+
+		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
+
+		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, environment, topicDetail.pdf.get(level));
+	}
+
+	@GET
+	@Path("topics/{topic}")
+	@Produces("application/json")
+	public TopicPage getTopic(@PathParam("topic") String topic) {
+		return getTopicWithLevel(topic, "1");
+	}
+	
+	@GET
+	@Path("concepts/{concept}")
+	@Produces("application/json")
+	public Content getConcept(@Context HttpServletRequest req,
+			@PathParam("concept") String concept) {
+		
+		/*String renderedContent = renderTemplate(
+				"rutherford.content." + concept, getSoyGlobalMap(req));*/
+		
+		//return new ContentPage(concept, renderedContent, collectEnvironment(), null, null, null);
+		
+		Content c = (Content) api.getContentById(concept).getEntity();
+
+		try {
+			String output = new ObjectMapper().writer().withView(DataView.PublicView.class).writeValueAsString(c);
+			Content restrictedContent = new ObjectMapper().readValue(output, Content.class); 
+			return restrictedContent;
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+
+	@GET
+	@Path("questions/{question}")
+	@Produces("application/json")
+	public ContentPage getQuestion(@Context HttpServletRequest req,
+			@PathParam("question") String question) {
+
+		if (!questionNavigationDataLoaded)
+			loadQuestionNavigationData();
+		
+		String renderedContent = renderTemplate("rutherford.content."
+				+ question, getSoyGlobalMap(req));
+		
+		return new ContentPage(question, renderedContent, collectEnvironment(), 
+				contentDetails.get(question).prevContentId != null ? "/questions/" + contentDetails.get(question).prevContentId : null, 
+				"/topics/" + contentDetails.get(question).topic + "/level-" + contentDetails.get(question).level, 
+				contentDetails.get(question).nextContentId != null ? "/questions/" + contentDetails.get(question).nextContentId : null);
+	}
+
+	
+	private String renderTemplate(String templateName, ImmutableMap<String, String> globalMap) {
+		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
+
+		String cContent = "";
+		try {
+			cContent = renderer.render(templateName, null, globalMap, Locale.ENGLISH);
+		} catch (SoyTofuException e) {
+			cContent = "<i>No content available.</i>";
+			log.error("Error applying soy template", e);
+		}
+		return cContent;
+	}
+
+	private ImmutableMap<String, ContentInfo> collectEnvironment() {
+		// for the moment just return everything in the environment - when we
+		// get to lots of things change this to only give the relevant bits
+		ImmutableMap<String, ContentInfo> environment = ImmutableMap
+				.copyOf(Maps.transformValues(contentDetails,
+						new Function<ContentDetail, ContentInfo>() {
+							@Override
+							public ContentInfo apply(ContentDetail input) {
+								return input.toContentInfo();
+							}
+						}));
+		return environment;
+	}
+
+	public static ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
+		String proxyPath;
+		String trackingId;
+		if (req.getLocalAddr().equals("128.232.20.43")) {
+			proxyPath = "/research/dtg/rutherford-staging";
+			trackingId = "UA-45629473-1";
+		} else if (req.getLocalAddr().equals("128.232.20.40")) {
+			proxyPath = "/research/dtg/rutherford";
+			trackingId = "UA-45629473-2";
+		} else {
+			proxyPath = req.getContextPath();
+			trackingId = "";
+		}
+		return ImmutableMap.of("contextPath", req.getContextPath(),
+				"proxyPath", proxyPath,
+				"analyticsTrackingId", trackingId,
+				"newSessionId", UUID.randomUUID().toString(),
+				"newUserId", UUID.randomUUID().toString());
+	}
+}

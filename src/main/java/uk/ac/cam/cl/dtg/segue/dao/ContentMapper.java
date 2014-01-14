@@ -5,8 +5,8 @@ import java.util.HashMap;
 
 import org.mongojack.internal.MongoJackModule;
 
+import uk.ac.cam.cl.dtg.rspp.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.teaching.models.JsonType;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -55,7 +55,7 @@ public class ContentMapper {
 		
 		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
 		ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
-		
+
 		// Find out what type label the JSON object has 
 		String labelledType = (String)obj.get("type");
 

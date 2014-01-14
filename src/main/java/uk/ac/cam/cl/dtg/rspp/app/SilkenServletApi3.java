@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.teaching;
+package uk.ac.cam.cl.dtg.rspp.app;
 
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;

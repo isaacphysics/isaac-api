@@ -1,8 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import java.util.List;
+
 import org.bson.types.ObjectId;
 
-import uk.ac.cam.cl.dtg.teaching.models.JsonType;
+import uk.ac.cam.cl.dtg.rspp.models.JsonType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,10 +29,10 @@ public class Choice extends Content {
 				   @JsonProperty("encoding") String encoding,
 				   @JsonProperty("src") String src,
 				   @JsonProperty("layout") String layout,
-				   @JsonProperty("contentReferenced") String[] contentReferenced,
+				   @JsonProperty("contentReferenced") List<String> contentReferenced,
 				   @JsonProperty("contentLiteral") String contentLiteral,
 				   @JsonProperty("attribution") String attribution,
-				   @JsonProperty("relatedContent") String[] relatedContent,
+				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") int version,
 				   @JsonProperty("correct") boolean correct,
 				   @JsonProperty("explanation") String explanation) {
