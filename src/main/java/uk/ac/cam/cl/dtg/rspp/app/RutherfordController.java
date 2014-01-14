@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.rspp.app;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
@@ -35,11 +34,8 @@ import uk.ac.cam.cl.dtg.segue.dao.IRegistrationManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
-import uk.ac.cam.cl.dtg.segue.models.DataView;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -197,20 +193,8 @@ public class RutherfordController {
 		//return new ContentPage(concept, renderedContent, collectEnvironment(), null, null, null);
 		
 		Content c = (Content) api.getContentById(concept).getEntity();
-
-		try {
-			String output = new ObjectMapper().writer().withView(DataView.PublicView.class).writeValueAsString(c);
-			Content restrictedContent = new ObjectMapper().readValue(output, Content.class); 
-			return restrictedContent;
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
-		return null;
+		return c;
 	}
 
 	@GET

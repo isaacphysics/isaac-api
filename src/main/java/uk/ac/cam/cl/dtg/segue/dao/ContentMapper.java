@@ -55,7 +55,7 @@ public class ContentMapper {
 		
 		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
 		ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
-
+		
 		// Find out what type label the JSON object has 
 		String labelledType = (String)obj.get("type");
 

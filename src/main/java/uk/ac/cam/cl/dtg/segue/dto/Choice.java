@@ -21,7 +21,7 @@ public class Choice extends Content {
 	protected String explanation;
 	
 	@JsonCreator
-	public Choice(@JsonProperty("_id") ObjectId _id,
+	public Choice(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
 				   @JsonProperty("title") String title, 
 				   @JsonProperty("type") String type, 

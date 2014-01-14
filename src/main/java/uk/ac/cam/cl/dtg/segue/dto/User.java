@@ -2,13 +2,13 @@ package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
 
-import org.bson.types.ObjectId;
+import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class User {
-	private ObjectId _id;
+	private String _id;
 	protected String name;
 	protected String email;
 	protected String role;
@@ -18,7 +18,7 @@ public class User {
 	protected Date registrationTime;
 	
 	@JsonCreator
-	public User(@JsonProperty("_id") ObjectId _id,
+	public User(@JsonProperty("_id") String _id,
 				@JsonProperty("name") String name,
 				@JsonProperty("email") String email,
 				@JsonProperty("role") String role,
@@ -45,7 +45,8 @@ public class User {
 	}
 	
 	@JsonProperty("_id")
-	public ObjectId getDbId() {
+	@ObjectId
+	public String getDbId() {
 		return _id;
 	}
 

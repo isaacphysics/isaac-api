@@ -3,14 +3,11 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.types.ObjectId;
-
-import uk.ac.cam.cl.dtg.segue.models.DataView;
+import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonView;
 
 /**
  * Content Class (Data Transfer Object)
@@ -19,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonView;
  * 
  */
 public class Content{
-	private ObjectId _id;
+	private String _id;
 	protected String id;
 	protected String title;
 	protected String type;
@@ -36,7 +33,7 @@ public class Content{
 	protected int version;
 	
 	@JsonCreator
-	public Content(@JsonProperty("_id") ObjectId _id,
+	public Content(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
 				   @JsonProperty("title") String title, 
 				   @JsonProperty("type") String type, 
@@ -76,13 +73,14 @@ public class Content{
 	}
 	
 	@JsonProperty("_id")
-	@JsonView(DataView.InternalOnlyView.class)
-	public ObjectId getDbId() {
+	@ObjectId
+	public String getDbId() {
 		return _id;
 	}
 	
-	@JsonProperty("_id")	
-	public void setDbId(ObjectId _id) {
+	@JsonProperty("_id")
+	@ObjectId
+	public void setDbId(String _id) {
 		this._id = _id;
 	}	
 
