@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.rspp.app;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -8,13 +9,19 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +31,12 @@ import uk.ac.cam.cl.dtg.rspp.models.IndexPage;
 import uk.ac.cam.cl.dtg.rspp.models.TopicPage;
 import uk.ac.cam.cl.dtg.rspp.models.IndexPage.IndexPageItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.dao.IRegistrationManager;
+import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.segue.models.DataView;
+import uk.ac.cam.cl.dtg.util.Mailer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +44,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
@@ -57,6 +70,11 @@ public class RutherfordController {
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
 	
 	private boolean questionNavigationDataLoaded = false;
+	
+	// TODO: Move to a configuration file
+	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
+	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
+	private static final String[] recipients = {"dst28@cam.ac.uk"};
 	
 	// I apologise for this function.
 	private void loadQuestionNavigationData()
@@ -212,7 +230,124 @@ public class RutherfordController {
 				"/topics/" + contentDetails.get(question).topic + "/level-" + contentDetails.get(question).level, 
 				contentDetails.get(question).nextContentId != null ? "/questions/" + contentDetails.get(question).nextContentId : null);
 	}
+	
+	@POST
+	@Consumes({"application/x-www-form-urlencoded"})
+	@Path("contact-us/register-interest")
+	public ImmutableMap<String, String> postRegisterInterest(
+			@FormParam("name") String name,
+			@FormParam("email") String email,
+			@FormParam("role") String role,
+			@FormParam("school") String school,
+			@FormParam("year") String year,
+			@FormParam("feedback") String feedbackAgreement) {
+		
+		boolean feedback = false;
+		
+		if(null != feedbackAgreement){
+			feedback = true;
+		}
 
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("Name: " + name);
+		sb.append(" email: " + email);
+		sb.append(" role: " + role);
+		sb.append(" school: " + school);
+		sb.append(" year: " + year);
+		sb.append(" feedback: " + new Boolean(feedback).toString());
+		
+		log.info("Register Interest details: " + sb.toString());
+		
+		User newUser = new User(null, name, email, role, school, year, feedback, new Date());
+		
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IRegistrationManager registrationManager = injector.getInstance(IRegistrationManager.class);
+
+		boolean success = registrationManager.register(newUser);
+		
+		String outcome = "success";
+		if(!success){
+			outcome = "Registration failed: Error registering user.";
+			log.error("Error in registering interest for user " + name + " " + email);
+		}
+		
+		return ImmutableMap.of("result", outcome);
+	}
+	
+	@POST
+	@Consumes({"application/x-www-form-urlencoded"})
+	@Path("contact-us/sendContactUsMessage")
+	public ImmutableMap<String,String> postContactUsMessage(
+			@FormParam("full-name") String fullName,
+			@FormParam("email") String email,
+			@FormParam("subject") String subject,
+			@FormParam("message-text") String messageText,
+			@Context HttpServletRequest request){
+
+		// construct a new instance of the mailer object
+		Mailer contactUsMailer = new Mailer(RutherfordController.MailerSmtpServer,RutherfordController.MailerFromAddress);
+		
+		if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email) && StringUtils.isBlank(subject) && StringUtils.isBlank(messageText)){
+			log.debug("Contact us required field validation error ");
+			return ImmutableMap.of("result", "message not sent - Missing required field - Validation Error");			
+		}
+		
+		// Get IpAddress of client
+		String ipAddress = request.getHeader("X-FORWARDED-FOR");
+		
+		if (ipAddress == null) {
+			ipAddress = request.getRemoteAddr();
+		}
+
+		// Construct message
+		StringBuilder message = new StringBuilder();
+		message.append("- Sender Details - " + "\n");
+		message.append("From: " + fullName + "\n");
+		message.append("E-mail: " + email + "\n");
+		message.append("IP address: " + ipAddress + "\n");
+		message.append("Message Subject: " + subject + "\n");
+		message.append("- Message - " + "\n");
+		message.append(messageText);
+		
+		try {
+			// attempt to send the message via the smtp server
+			contactUsMailer.sendMail(recipients, email, subject, message.toString());
+			log.info("Contact Us - E-mail sent to " + recipients + " " + email + " " + subject + " " + message.toString());
+			
+		} catch (AddressException e) {				
+			log.warn("E-mail Address validation error " + e.toString());
+			return ImmutableMap.of(
+					"result", "message not sent - E-mail address malformed - Validation Error \n " + e.toString());		
+			
+		} catch (MessagingException e) {
+			log.error("Messaging error " + e.toString());
+			return ImmutableMap.of(
+					"result", "message not sent - Unknown Messaging error\n " + e.toString());	
+		}
+		
+		return ImmutableMap.of("result", "success");
+	}
+	
+	public static ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
+		String proxyPath;
+		String trackingId;
+		if (req.getLocalAddr().equals("128.232.20.43")) {
+			proxyPath = "/research/dtg/rutherford-staging";
+			trackingId = "UA-45629473-1";
+		} else if (req.getLocalAddr().equals("128.232.20.40")) {
+			proxyPath = "/research/dtg/rutherford";
+			trackingId = "UA-45629473-2";
+		} else {
+			proxyPath = req.getContextPath();
+			trackingId = "";
+		}
+		return ImmutableMap.of("contextPath", req.getContextPath(),
+				"proxyPath", proxyPath,
+				"analyticsTrackingId", trackingId,
+				"newSessionId", UUID.randomUUID().toString(),
+				"newUserId", UUID.randomUUID().toString());
+	}
 	
 	private String renderTemplate(String templateName, ImmutableMap<String, String> globalMap) {
 		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
@@ -239,25 +374,5 @@ public class RutherfordController {
 							}
 						}));
 		return environment;
-	}
-
-	public static ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
-		String proxyPath;
-		String trackingId;
-		if (req.getLocalAddr().equals("128.232.20.43")) {
-			proxyPath = "/research/dtg/rutherford-staging";
-			trackingId = "UA-45629473-1";
-		} else if (req.getLocalAddr().equals("128.232.20.40")) {
-			proxyPath = "/research/dtg/rutherford";
-			trackingId = "UA-45629473-2";
-		} else {
-			proxyPath = req.getContextPath();
-			trackingId = "";
-		}
-		return ImmutableMap.of("contextPath", req.getContextPath(),
-				"proxyPath", proxyPath,
-				"analyticsTrackingId", trackingId,
-				"newSessionId", UUID.randomUUID().toString(),
-				"newUserId", UUID.randomUUID().toString());
 	}
 }
