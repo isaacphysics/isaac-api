@@ -49,19 +49,11 @@ import com.google.inject.Injector;
 @Path("/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
-
-	// Map of contentID to detail
-	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
-	
-	// Map of topicPath to detail
-	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
 	
 	// TODO: Move to a configuration file
 	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
 	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
 	private static final String[] recipients = {"dst28@cam.ac.uk"};
-
-
 
 	@POST
 	@Path("log")
