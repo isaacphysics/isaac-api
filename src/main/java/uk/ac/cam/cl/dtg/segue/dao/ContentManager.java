@@ -1,12 +1,12 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import org.bson.types.ObjectId;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -34,8 +34,8 @@ public class ContentManager implements IContentManager {
 
 	@Override
 	public <T extends Content> String save(T objectToSave) throws IllegalArgumentException {
-		JacksonDBCollection<T, ObjectId> jc = JacksonDBCollection.wrap(database.getCollection("content"), getContentSubclass(objectToSave), ObjectId.class);
-		WriteResult<T, ObjectId> r = jc.save(objectToSave);
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getCollection("content"), getContentSubclass(objectToSave), String.class);
+		WriteResult<T, String> r = jc.save(objectToSave);
 		return r.getSavedId().toString();
 	}
 	
