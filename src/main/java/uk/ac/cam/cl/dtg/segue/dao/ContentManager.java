@@ -1,12 +1,15 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bson.types.ObjectId;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -64,7 +67,7 @@ public class ContentManager implements IContentManager {
 		
 		// build up query for database everytime we see an object so we don't have to do as many round trips to the database as might be necessary
 		BasicDBObject query = new BasicDBObject();
-		query.put("id", new BasicDBObject("$in", content.getContentReferenced()));
+		query.put("_id", new BasicDBObject("$in", wrapObjectIds(content.getContentReferenced())));
 	
 		DBCursor cursor = database.getCollection("content").find(query);
 		while(cursor.hasNext()){
@@ -81,5 +84,22 @@ public class ContentManager implements IContentManager {
 			return (Class<T>) obj.getClass();
 		
 		throw new IllegalArgumentException("object is not a subtype of Content");
+	}
+	
+	/**
+	 * Wrapper method that converts a list of string representations of object ids into a list of objectids
+	 * 
+	 * This is needed for querying mongodb
+	 * 
+	 * @param List of string object Ids
+	 * @return List of object ids 
+	 */
+	private List<ObjectId> wrapObjectIds(List<String> stringIds){
+		List<ObjectId> newList = new ArrayList<ObjectId>();
+		for(String objectString : stringIds){
+			newList.add(new ObjectId(objectString));
+		}
+		
+		return newList;
 	}
 }
