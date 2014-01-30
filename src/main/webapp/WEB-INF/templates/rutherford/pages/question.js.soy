@@ -2,26 +2,40 @@
 
 /**
  * Question
- * @param renderedContent
- * @param id
- * @param environment
- * @param prevContentUri
- * @param nextContentUri
- * @param upContentUri
+ * @param contentObject
   */
 {template .question}
 <div class="row">
-	<div id="questionSidebar" class="small-3 columns">
+/*	<div id="questionSidebar" class="small-3 columns">
 		{call .questionSidebar}
 			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
 			{param videoIds : $environment[$id].videoIds /}
 			{param environment: $environment /}
 		{/call}
-	</div>
+	</div>*/
 	<div id="questionContent" class="small-9 columns">
 		{call .questionNavigationLinks data="all"/}
-		<h2>Question: {$environment[$id].title}</h2>
-		{$renderedContent|noAutoescape}
+		<h2>Question: {$contentObject.title}</h2>
+		{foreach $contentItem in $contentObject.contentReferencedList}
+			{if $contentItem.answer } /*and not $contentItem.choices*/
+				<div class="quick-question">
+					<div class="question">
+						<p>{$contentItem.contentLiteral}</p>
+					</div>
+					<div class="answer hidden">
+						<p>{$contentItem.answer.contentLiteral}</p>
+					</div>
+				</div>
+				<br/>
+			{elseif $contentItem.contentLiteral}
+				<p>{$contentItem.contentLiteral}</p>
+			{/if}
+			{if $contentItem.hints}
+				{foreach $hintItem in $contentItem.hints}
+					<p><strong>Hint:</strong> {$hintItem.contentLiteral}</p>
+				{/foreach}
+			{/if}			
+		{/foreach}
 		<hr />
 		{call .questionNavigationLinks data="all"/}
 	</div>

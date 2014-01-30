@@ -1,25 +1,27 @@
 package uk.ac.cam.cl.dtg.rspp.models;
 
+import uk.ac.cam.cl.dtg.segue.dto.Content;
+
 import com.google.common.collect.ImmutableMap;
 
 public class ContentPage {
 
 	private String id;
-	private String renderedContent;
+	private Content contentObject;
 	private ImmutableMap<String, ContentInfo> environment;
 	private String nextContentUri;
 	private String prevContentUri;
 	private String upContentUri;
 
 	public ContentPage(String id, 
-			String renderedContent,
+			Content contentObject,
 			ImmutableMap<String, ContentInfo> environment,
 			String prevContentUri,
 			String upContentUri,
 			String nextContentUri) {
 		super();
 		this.id = id;
-		this.renderedContent = renderedContent;
+		this.contentObject = contentObject;
 		this.environment = environment;
 		this.nextContentUri = nextContentUri;
 		this.prevContentUri = prevContentUri;
@@ -30,8 +32,8 @@ public class ContentPage {
 		return id;
 	}
 
-	public String getRenderedContent() {
-		return renderedContent;
+	public Content getContentObject() {
+		return contentObject;
 	}
 
 	public ImmutableMap<String, ContentInfo> getEnvironment() {

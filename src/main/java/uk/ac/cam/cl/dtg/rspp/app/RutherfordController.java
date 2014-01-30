@@ -187,11 +187,6 @@ public class RutherfordController {
 	public Content getConcept(@Context HttpServletRequest req,
 			@PathParam("concept") String concept) {
 		
-		/*String renderedContent = renderTemplate(
-				"rutherford.content." + concept, getSoyGlobalMap(req));*/
-		
-		//return new ContentPage(concept, renderedContent, collectEnvironment(), null, null, null);
-		
 		Content c = (Content) api.getContentById(concept).getEntity();
 		
 		return c;
@@ -202,17 +197,11 @@ public class RutherfordController {
 	@Produces("application/json")
 	public ContentPage getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
-
-		if (!questionNavigationDataLoaded)
-			loadQuestionNavigationData();
 		
-		String renderedContent = renderTemplate("rutherford.content."
-				+ question, getSoyGlobalMap(req));
+		Content c = (Content) api.getContentById(question).getEntity();
 		
-		return new ContentPage(question, renderedContent, collectEnvironment(), 
-				contentDetails.get(question).prevContentId != null ? "/questions/" + contentDetails.get(question).prevContentId : null, 
-				"/topics/" + contentDetails.get(question).topic + "/level-" + contentDetails.get(question).level, 
-				contentDetails.get(question).nextContentId != null ? "/questions/" + contentDetails.get(question).nextContentId : null);
+		ContentPage cp = new ContentPage(c.getId(),c,collectEnvironment(), null, null, null);		
+		return cp;
 	}
 	
 	@POST
