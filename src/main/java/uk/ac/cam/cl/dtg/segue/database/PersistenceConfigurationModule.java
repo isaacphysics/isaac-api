@@ -11,6 +11,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LogManager;
 import uk.ac.cam.cl.dtg.segue.dao.RegistrationManager;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.Question;
 
 import com.google.inject.AbstractModule;
 import com.mongodb.DB;
@@ -32,6 +33,7 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		HashMap<String, Class<? extends Content>> map = new HashMap<String, Class<? extends Content>>();
 		
 		map.put("choice", Choice.class);
+		map.put("question", Question.class);
 		return map;
 	}
 }
