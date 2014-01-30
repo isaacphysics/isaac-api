@@ -85,7 +85,7 @@ public class SegueApiFacade {
 	 * 
 	 * Currently this method will return a single Json Object containing all of the fields available to the object retrieved from the database.
 	 * 
-	 * @param id
+	 * @param id - our id not the dbid
 	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
 	 */
 	@GET
