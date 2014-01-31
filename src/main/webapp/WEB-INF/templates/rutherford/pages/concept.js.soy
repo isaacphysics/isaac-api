@@ -2,8 +2,7 @@
 
 /**
  * Concept
- * @param title
- * @param contentLiteral
+ * @param contentObject
  */
 {template .concept}
 <div class="row">
@@ -19,8 +18,10 @@
 	*/
 	<div id="conceptContent" class="concept-page small-9 columns">
 		<div class="row"><div class="small-12 columns text-left pagination-bar"><a href="#" class="back">Back</a></div></div>
-		<h2>Concept: {$title}</h2>
-		{$contentLiteral|noAutoescape}
+		<h2>Concept: {$contentObject.title}</h2>
+		{call shared.segue.utils.renderContent}
+			{param contentObject:$contentObject/}
+		{/call}
 	</div>
 </div>
 {/template}

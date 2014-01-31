@@ -184,12 +184,13 @@ public class RutherfordController {
 	@GET
 	@Path("concepts/{concept}")
 	@Produces("application/json")
-	public Content getConcept(@Context HttpServletRequest req,
+	public ContentPage getConcept(@Context HttpServletRequest req,
 			@PathParam("concept") String concept) {
 		
 		Content c = (Content) api.getContentById(concept).getEntity();
+		ContentPage cp = new ContentPage(c.getId(),c,collectEnvironment(), null, null, null);	
 		
-		return c;
+		return cp;
 	}
 
 	@GET
