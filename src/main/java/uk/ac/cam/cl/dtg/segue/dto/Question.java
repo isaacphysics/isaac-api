@@ -62,17 +62,8 @@ public class Question extends Content {
 		return answer;
 	}
 
-	public void setCorrect(Content answer) {
-		this.answer = answer;
-	}
-
 	public List<Content> getHints() {
 		return hints;
 	}
-
-	public void setHints(List<Content> hints) {
-		this.hints = hints;
-	}
-
 
 }
