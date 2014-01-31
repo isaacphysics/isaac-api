@@ -2,6 +2,7 @@
 
 /**
  * RenderQuestionContent
+ * This template is responsible for rendering question pages and selecting the correct question templates
  * @param contentObject - map of content
  */
 {template .renderQuestionContent}	
@@ -44,6 +45,9 @@
 
 /**
  * RenderShowHideQuestion
+ * This template reuses the quick question structure to facilitate simple show/hide style questions
+ * This question style should work by default for all well formed questions imported from LaTeX
+ * 
  * @param contentObject - map of content
   */
 {template .renderShowHideQuestion}
@@ -79,7 +83,6 @@
 
 /**
  * Multiple choice questions
- * This should be in a shared namespace, but then it doesn't work. No idea why.
  * @param contentObject
  * @param type
  */
