@@ -1,0 +1,24 @@
+{namespace shared.segue.utils}
+
+/**
+ * RenderContent
+ * Assumption is that if a content object has a list of referenced content it will not also have a content literal
+ * 
+ * Additional content types can be added later e.g. video
+ * @param contentObject - map of content
+ */
+{template .renderContent}
+	/* Base case we just spit out the literal content */
+	{if $contentObject.contentLiteral}
+		{$contentObject.contentLiteral |noAutoescape}
+
+	/* Recursive case: we have a list of content to render */
+	{elseif $contentObject.contentReferencedList and length($contentObject.contentReferencedList) > 0 }
+		{foreach $contentItem in $contentObject.contentReferencedList}
+			{call .renderContent}
+				{param contentObject:$contentItem /}
+			{/call}
+		{/foreach}	
+	{/if}
+{/template}
+

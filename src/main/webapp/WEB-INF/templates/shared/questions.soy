@@ -1,17 +1,95 @@
 {namespace shared.questions}
 
 /**
+ * RenderQuestionContent
+ * @param contentObject - map of content
+ */
+{template .renderQuestionContent}	
+	/* Render quick question style question (show / hide functionality) */
+	{if $contentObject.type == 'question'}
+		{call .renderShowHideQuestion}
+			{param contentObject:$contentObject /}
+		{/call}	
+	/* Render mcq question */
+	{elseif $contentObject.type == 'choiceQuestion'}
+		<div class="question">
+			<p>
+			{call shared.segue.utils.renderContent}
+				{param contentObject:$contentObject /}
+			{/call}
+			</p>
+		</div>
+		{call shared.questions.mcq}
+			{param contentObject:$contentObject /}
+			{param type:'radio' /}
+		{/call}
+	/* Recursive case - continue looking for questions in the list of content provided */
+	{elseif $contentObject.contentReferencedList and length($contentObject.contentReferencedList) > 0 }
+		{foreach $contentItem in $contentObject.contentReferencedList}
+			{call .renderQuestionContent}
+				{param contentObject:$contentItem /}
+			{/call}
+		{/foreach}				
+	/* Fall back to just rendering the content as plain content */
+	{elseif $contentObject.contentLiteral != null}
+		<p>
+		{call shared.segue.utils.renderContent}
+			{param contentObject:$contentObject /}
+		{/call}
+		</p>
+	{else}
+		<p>Unrecognised question content.. Unable to render anything.</p>
+	{/if}
+{/template}
+
+/**
+ * RenderShowHideQuestion
+ * @param contentObject - map of content
+  */
+{template .renderShowHideQuestion}
+	/* Render quick question style question (show / hide functionality) */
+	<div class="quick-question">
+		<div class="question">
+			<p>
+			/* Current assumption that questions will only have literal content */
+			{call shared.segue.utils.renderContent}
+				{param contentObject:$contentObject /}
+			{/call}
+			</p>
+			/* if we have a hint list then we should render them after the question */
+			<p>
+			{if $contentObject.hints}
+				{foreach $hintItem in $contentObject.hints}
+					<p><strong>Hint:</strong> {$hintItem.contentLiteral}</p>
+				{/foreach}
+			{/if}
+			</p>					
+		</div>
+		<div class="answer hidden">
+			<p>
+			{call shared.segue.utils.renderContent}
+				{param contentObject:$contentObject.answer /}
+			{/call}
+			</p>
+		</div>
+	</div>
+	<br/>
+{/template}
+
+
+/**
  * Multiple choice questions
  * This should be in a shared namespace, but then it doesn't work. No idea why.
- * @param choices
+ * @param contentObject
  * @param type
  */
 {template .mcq}
 <hr/>
 <div class="small-offset-1">
 <ol class="mcq">
+	{let $choices: $contentObject.choices /}
 	{foreach $answer in $choices}
-		<li><input type="{$type}" name="mcq" value="{$answer.ans ? 1 : 0}">{$answer.desc}</input></li>
+		<li><input type="{$type}" name="mcq" value="{$answer.correct ? 1 : 0}">{call shared.segue.utils.renderContent}{param contentObject : $answer/}{/call}</input></li>
 	{/foreach}
 </ol>
 </div>
@@ -19,31 +97,9 @@
 <span class="error question-wrong">
 	Sorry, that's wrong. Please try again.
 </span>
-{/template}
-
-/**
- * Numeric questions
- * @param answer
- */
-{template .numeric}
-<hr/>
-<input type="text" data-expected-answer="{$answer}" placeholder="Type your answer here"/>
-<button id="checkAnswer" type="button" class="button">Check my answer</button>
-<span class="error question-wrong">
-	Sorry, that's wrong. Please try again.
-</span>
-{/template}
-
-/**
- * Question footer. Usually copyright etc.
- * @param footer
- */
-{template .questionFooter}
-<p>
-<div class="question-footer">
-	{$footer}
-</div>
-</p>
+{call .questionExplanation}
+	{param explanation}{call shared.segue.utils.renderContent}{param contentObject : $contentObject.answer/}{/call}{/param}
+{/call}
 {/template}
 
 /**
@@ -53,8 +109,7 @@
 {template .questionExplanation}
 <p>
 <span class="error large question-explanation" style="display:none;">
-	Well done! {$explanation}
+	Well done! {$explanation |noAutoescape}
 </span>
 </p>
 {/template}
-

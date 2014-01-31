@@ -14,30 +14,13 @@
 		{/call}
 	</div>*/
 	<div id="questionContent" class="small-9 columns">
-		{call .questionNavigationLinks data="all"/}
 		<h2>Question: {$contentObject.title}</h2>
-		{foreach $contentItem in $contentObject.contentReferencedList}
-			{if $contentItem.answer } /*and not $contentItem.choices*/
-				<div class="quick-question">
-					<div class="question">
-						<p>{$contentItem.contentLiteral}</p>
-					</div>
-					<div class="answer hidden">
-						<p>{$contentItem.answer.contentLiteral}</p>
-					</div>
-				</div>
-				<br/>
-			{elseif $contentItem.contentLiteral}
-				<p>{$contentItem.contentLiteral}</p>
-			{/if}
-			{if $contentItem.hints}
-				{foreach $hintItem in $contentItem.hints}
-					<p><strong>Hint:</strong> {$hintItem.contentLiteral}</p>
-				{/foreach}
-			{/if}			
-		{/foreach}
+		{call shared.questions.renderQuestionContent}
+			{param contentObject : $contentObject/}
+		{/call}
 		<hr />
-		{call .questionNavigationLinks data="all"/}
+		<div class="question-footer">	
+		</div>
 	</div>
 </div>
 {/template}
