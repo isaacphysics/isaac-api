@@ -79,7 +79,7 @@ public class ContentManager implements IContentManager {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <T extends Content> Class<T> getContentSubclass(T obj) {
+	private <T extends Content> Class<T> getContentSubclass(T obj) throws IllegalArgumentException {
 		if(obj instanceof Content)
 			return (Class<T>) obj.getClass();
 		
