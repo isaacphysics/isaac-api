@@ -1,7 +1,9 @@
 package uk.ac.cam.cl.dtg.rspp.app;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
@@ -36,10 +38,8 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.template.soy.tofu.SoyTofuException;
@@ -169,9 +169,9 @@ public class RutherfordController {
 		
 		ImmutableList<String> conceptIds = conceptIdBuilder.build();
 
-		ImmutableMap<String, ContentInfo> environment = collectEnvironment();
+		//ImmutableMap<String, ContentInfo> environment = collectEnvironment();
 
-		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, environment, topicDetail.pdf.get(level));
+		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, null, topicDetail.pdf.get(level));
 	}
 
 	@GET
@@ -188,7 +188,10 @@ public class RutherfordController {
 			@PathParam("concept") String concept) {
 		
 		Content c = (Content) api.getContentById(concept).getEntity();
-		ContentPage cp = new ContentPage(c.getId(),c,collectEnvironment(), null, null, null);	
+		
+		ContentPage cp = new ContentPage(c.getId(), c ,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));	
+		
+		// we need to create the ContentInfo object
 		
 		return cp;
 	}
@@ -201,7 +204,7 @@ public class RutherfordController {
 		
 		Content c = (Content) api.getContentById(question).getEntity();
 		
-		ContentPage cp = new ContentPage(c.getId(),c,collectEnvironment(), null, null, null);		
+		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));		
 		return cp;
 	}
 	
@@ -335,18 +338,37 @@ public class RutherfordController {
 		}
 		return cContent;
 	}
-
-	private ImmutableMap<String, ContentInfo> collectEnvironment() {
-		// for the moment just return everything in the environment - when we
-		// get to lots of things change this to only give the relevant bits
-		ImmutableMap<String, ContentInfo> environment = ImmutableMap
-				.copyOf(Maps.transformValues(contentDetails,
-						new Function<ContentDetail, ContentInfo>() {
-							@Override
-							public ContentInfo apply(ContentDetail input) {
-								return input.toContentInfo();
-							}
-						}));
-		return environment;
+	
+	/**
+	 * This method will return a list of contentInfo objects which can be used for creating links to related content
+	 * 
+	 * This method returns null if the content object provided has no related Content
+	 * 
+	 * @param proxyPath - the string prefix for the server being used
+	 * @param content - the content object which contains related content
+	 * @return
+	 */
+	private List<ContentInfo> buildMetaContentmap(String proxyPath, Content content){
+		if(null == content){
+			return null;
+		}else if(content.getRelatedContent() == null || content.getRelatedContent().isEmpty()){
+			return null;
+		}
+		
+		List<ContentInfo> contentInfoList = new ArrayList<ContentInfo>();
+		
+		for(String id : content.getRelatedContent()){
+			Content relatedContent = (Content) api.getContentById(id).getEntity();
+			
+			if(relatedContent == null){
+				log.warn("Related content does not exist in the data store.");
+			} else {
+				// TODO fix url parameter to be less horrid
+				ContentInfo contentInfo = new ContentInfo(relatedContent.getId(), relatedContent.getTitle(), relatedContent.getType(), proxyPath + '/' + relatedContent.getType().toLowerCase() + '/' + relatedContent.getId());
+				contentInfoList.add(contentInfo);
+			}
+		}
+		
+		return contentInfoList;
 	}
 }

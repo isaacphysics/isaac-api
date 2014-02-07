@@ -3,19 +3,15 @@
 /**
  * Concept
  * @param contentObject
+ * @param sidebarContent
  */
 {template .concept}
 <div class="row">
-	/*<div id="conceptSidebar" class="small-3 columns">
+	<div id="conceptSidebar" class="small-3 columns">
 		{call .conceptSidebar}
-			{param conceptId : $id /}
-			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
-			{param relatedQuestionIds : $environment[$id].relatedQuestionIds /}
-			{param videoIds : $environment[$id].videoIds /}
-			{param environment: $environment /}
+			{param sidebarContent:$sidebarContent/}
 		{/call}
 	</div>
-	*/
 	<div id="conceptContent" class="concept-page small-9 columns">
 		<div class="row"><div class="small-12 columns text-left pagination-bar"><a href="#" class="back">Back</a></div></div>
 		<h2>Concept: {$contentObject.title}</h2>
@@ -28,61 +24,38 @@
 
 /**
  * Concept Sidebar
- * @param conceptId
- * @param relatedConceptIds
- * @param relatedQuestionIds
- * @param videoIds
- * @param environment
+ * @param sidebarContent a list of ContentInfo objects
  */
 {template .conceptSidebar}
 <!--<h3>You may like...</h3>-->
-<h6>Physical Concepts</h6>
+<h6>Concepts</h6>
 {call .conceptList}
-	{param filter: 'physics' /}
-	{param ids: $relatedConceptIds /}	
-	{param environment: $environment /}
-{/call}
-<h6>Maths Concepts</h6>
-{call .conceptList}
-	{param filter: 'maths' /}
-	{param ids: $relatedConceptIds /}	
-	{param environment: $environment /}
-{/call}
-<h6>Problems</h6>
-{call .conceptList}
-	{param filter: '' /}
-	{param ids: $relatedQuestionIds /}	
-	{param environment: $environment /}
-{/call}
-<h6>Videos</h6>
-	<ul>
-	{foreach $id in $videoIds}
-		<li><a href="#" data-play-video="/{$id}">View Video</a></li> // TODO - Videos need titles! Arg.
-	{ifempty}
-		<li><i>No videos</i></li>
-	{/foreach}
-	</ul>
-<h6>Download</h6>
-<a target="_blank" href="{$ij.proxyPath}/static/pdf/{$conceptId}.pdf">Download as PDF</a>
+	{param sidebarContentItems: $sidebarContent /}
+{/call} 
+//<h6>Videos</h6>
+//	<ul>
+//	{foreach $id in $videoIds}
+//		<li><a href="#" data-play-video="/{$id}">View Video</a></li> // TODO - Videos need titles! Arg.
+//	{ifempty}
+//		<li><i>No videos</i></li>
+//	{/foreach}
+//	</ul>
+//<h6>Download</h6>
+//<a target="_blank" href="{$ij.proxyPath}/static/pdf/{$conceptId}.pdf">Download as PDF</a>
 {/template}
 
 /**
  * Concept list fragment
- * @param filter
- * @param ids
- * @param environment
+ * @param sidebarContentItems a list of contentInfo objects
  */
 {template .conceptList}
 <ul>
-{foreach $id in $ids}
-	{let $detail: $environment[$id]/}
+{foreach $detail in $sidebarContentItems}
 	{if $detail}
-		{if $filter == '' or $detail.type == $filter}
-			{let $type: $environment[$id].type == 'question' ? 'questions' : 'concepts'/}
-			<li><a href="#" data-content-uri="/{$type}/{$id}">{$detail.title}</a></li>
-		{/if}
+		{let $type: $detail['type'] == 'question' ? 'questions' : 'concepts'/}
+		<li><a href="#" data-content-uri="/{$type}/{$detail['id']}">{$detail['title']}</a></li>
 	{else}
-		<li class="disabled-text">{$id} <i>(missing)</i><br/></li>
+		<li class="disabled-text">{$detail['id']} <i>(missing)</i><br/></li>
 	{/if}
 {ifempty}
 	<li><i>None</i></li> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.

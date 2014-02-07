@@ -59,12 +59,12 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	public static final String TYPE_PHYSICS = "physics";
 	public static final String TYPE_MATHS = "maths";
 	
-	public ContentInfo toContentInfo() {
-		return new ContentInfo(id, type, title, topic, level, 
-				videoIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(videoIds),
-				relatedConceptIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(relatedConceptIds),
-				relatedQuestionIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(relatedQuestionIds));
-	}
+//	public ContentInfo toContentInfo() {
+//		return new ContentInfo(id, type, title, topic, level, 
+//				videoIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(videoIds),
+//				relatedConceptIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(relatedConceptIds),
+//				relatedQuestionIds == null ? ImmutableList.<String> of() : ImmutableList.copyOf(relatedQuestionIds));
+//	}
 
 	public static Map<String,ContentDetail> load() {
 		InputStream is = ContentDetail.class.getClassLoader().getResourceAsStream(

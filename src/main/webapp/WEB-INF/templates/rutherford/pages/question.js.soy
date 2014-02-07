@@ -3,16 +3,15 @@
 /**
  * Question
  * @param contentObject
-  */
+ * @param sidebarContent
+ */
 {template .question}
 <div class="row">
-/*	<div id="questionSidebar" class="small-3 columns">
+	<div id="questionSidebar" class="small-3 columns">
 		{call .questionSidebar}
-			{param relatedConceptIds : $environment[$id].relatedConceptIds /}
-			{param videoIds : $environment[$id].videoIds /}
-			{param environment: $environment /}
+			{param sidebarContent : $sidebarContent /}
 		{/call}
-	</div>*/
+	</div>
 	<div id="questionContent" class="small-9 columns">
 		<h2>Question: {$contentObject.title}</h2>
 		{call shared.questions.renderQuestionContent}
@@ -27,39 +26,12 @@
 
 /**
  * Question Sidebar
- * @param relatedConceptIds
- * @param videoIds
- * @param environment
+ * @param sidebarContent
  */
 {template .questionSidebar}
-<h3>Hints and Help</h3>
-	{let $length : length($videoIds)/}
-	{if $length > 1}
-	<ol>
-	{else}
-	<ul>
-	{/if}
-	{foreach $id in $videoIds}
-		<li><a href="#" data-play-video="/{$id}">Hint Video</a></li>
-	{ifempty}
-		<li><i>No videos</i></li>
-	{/foreach}
-	{if $length > 1}
-	</ol>
-	{else}
-	</ul>
-	{/if}
-<h6>Physical Concepts</h6>
+<h3>Related Content</h3>
 {call .conceptList}
-	{param filter: 'physics' /}
-	{param ids: $relatedConceptIds /}	
-	{param environment: $environment /}
-{/call}
-<h6>Maths Concepts</h6>
-{call .conceptList}
-	{param filter: 'maths' /}
-	{param ids: $relatedConceptIds /}	
-	{param environment: $environment /}
+	{param sidebarContentItems: $sidebarContent /}
 {/call}
 {/template}
 
