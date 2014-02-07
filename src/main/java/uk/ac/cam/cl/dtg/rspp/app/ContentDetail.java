@@ -20,6 +20,10 @@ import uk.ac.cam.cl.dtg.rspp.models.ContentInfo;
 
 import com.google.common.collect.ImmutableList;
 
+/**
+ * @deprecated Not sure if we need this now
+ *
+ */
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class ContentDetail implements Comparable<ContentDetail> {
 
