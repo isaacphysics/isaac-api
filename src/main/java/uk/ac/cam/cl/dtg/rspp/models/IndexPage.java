@@ -1,10 +1,13 @@
 package uk.ac.cam.cl.dtg.rspp.models;
 
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 
 public class IndexPage {
 
 	private ImmutableList<IndexPageItem> items;
+	private List<ContentInfo> concepts;
 
 	public static class IndexPageItem {
 		private String title;
@@ -49,8 +52,16 @@ public class IndexPage {
 		this.items = items;
 	}
 
+	public IndexPage(List<ContentInfo> concepts) {
+		this.concepts = concepts;
+	}
+	
 	public ImmutableList<IndexPageItem> getItems() {
 		return items;
+	}
+	
+	public List<ContentInfo> getConcepts(){
+		return concepts;
 	}
 
 }

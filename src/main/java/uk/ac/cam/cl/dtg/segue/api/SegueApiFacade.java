@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.IOException;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -19,6 +21,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.ImmutableMap;
@@ -101,6 +104,28 @@ public class SegueApiFacade {
 		try{
 			log.info("RETRIEVING DOC: " + id);
 			c = contentPersistenceManager.getById(id);
+		}
+		catch(IllegalArgumentException e){
+			log.error("Unable to map content object.", e);
+			return Response.serverError().entity(e).build();
+		}
+		
+		return Response.ok().entity(c).build();
+	}
+	
+	@GET
+	@Produces("application/json")
+	@Path("content/getAllContentByType/{type}")
+	public Response getAllContentByType(String type, Integer limit){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		List<Content> c = null;
+		
+		// Deserialize object into POJO of specified type, providing one exists. 
+		try{
+			log.info("Finding all concepts from the api.");
+			c = contentPersistenceManager.findAllByType(type, limit);
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);

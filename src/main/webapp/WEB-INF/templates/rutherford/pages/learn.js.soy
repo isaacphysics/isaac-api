@@ -2,7 +2,7 @@
 
 /**
  * Learn
- * @param items
+ * @param concepts
  */
 {template .learn}
 <h2>Get Started</h2>
@@ -31,16 +31,16 @@ difficulty of the problems therein, <strong>increasing in difficulty from 1 to 6
 	</table>
 </div>
 <p>
-{for $i in range(ceiling(length($items)/3))}
+{for $i in range(ceiling(length($concepts)/3))}
 <div class="row" style="text-align: center;">
 	{call .bluepill}
-		{param item: $items[$i*3]/}
+		{param item: $concepts[$i*3]/}
 	{/call}
 	{call .bluepill}
-		{param item: $items[$i*3+1]/}
+		{param item: $concepts[$i*3+1]/}
 	{/call}
 	{call .bluepill}
-		{param item: $items[$i*3+2]/}
+		{param item: $concepts[$i*3+2]/}
 	{/call}
 </div>
 {/for}
@@ -48,17 +48,22 @@ difficulty of the problems therein, <strong>increasing in difficulty from 1 to 6
 {/template}
 
 /**
- * Template to draw the 'blue pill' link on the topic page
+ * Template to draw the 'blue pill' link on the topic page or red if it is a question
  * 
  * @param item
  */
 {template .bluepill}
 {if $item}
 	<div class="small-4 columns">
-		{if $item.contentAvailable}
-			<a class="button round" href="#" data-content-uri="/topics/{$item.topic}/level-{$item.level}">{$item.title} L{$item.level}</a>
+		{if $item.type == 'concept'}
+			<a class="button round" href="#" data-content-uri="{$item.url}">{$item.title}</a>
 		{else}
-			<a class="button round secondary" target="_blank" href="{$ij.proxyPath}/static/pdf/{$item.pdf}">{$item.title} L{$item.level} (PDF)</a>
+			<a href="#" 
+				   class="button round alert plumbLink"
+				   id="{$item.id}"
+				   data-content-uri="/questions/{$item.id}">
+					{$item.title}
+				</a>			
 		{/if}
 	</div>
 {/if}

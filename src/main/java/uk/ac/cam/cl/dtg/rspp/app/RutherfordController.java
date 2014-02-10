@@ -99,37 +99,34 @@ public class RutherfordController {
 		questionNavigationDataLoaded = true;
 	}
 
+	/**
+	 * Temporary solution to show all content of different types in no particular order
+	 * 
+	 * @param req
+	 * @return
+	 */
 	@GET
 	@Path("learn")
 	@Produces("application/json")
-	public IndexPage getTopics() {
-		ImmutableList.Builder<IndexPageItem> builder = ImmutableList.builder();
-		SortedSet<TopicDetail> values = new TreeSet<TopicDetail>(
-				topicDetails.values());
-		for (TopicDetail t : values) {
-			for (Map.Entry<String, String> e : t.pdf.entrySet()) {
-				// see whether there are any questions for this
-				boolean found = false;
-				for(ContentDetail d : contentDetails.values()) {
-					if (d.type.equals(ContentDetail.TYPE_QUESTION)  // This is a question
-							&& d.topic.equals(t.topic)         // and the question belongs to this topic
-							&& d.level.equals(e.getKey()))     // and the level is correct
-					{
-						found = true;
-						break;
-					}
-				}
-				builder.add(new IndexPageItem(t.title, e.getKey(), t.topic,
-						e.getValue(),found));
-			}
-		}
-		return new IndexPage(builder.build());
+	public IndexPage getTopics(@Context HttpServletRequest req) {		
+		// get all concepts
+		List<ContentInfo> conceptsList = this.extractContentInfo((List<Content>) api.getAllContentByType("concept",0).getEntity(), getSoyGlobalMap(req).get("proxyPath"));
+		
+		// temporary solution to get all questions as well for testing purposes. 
+
+		//TODO we need to work out a good way of allowing editors to group concepts and questions based on level in a rutherford specific sort of way.
+		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_scq",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
+		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_numeric",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
+		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_symbolic",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
+		return new IndexPage(conceptsList);
+		
+		// get all questions
 	}
 
 	/**
 	 * Return the list of concepts and questions available for this topic at
 	 * this level
-	 * 
+	 * @deprecated until we come up with new approach
 	 * @param topic
 	 * @param level
 	 * @return
@@ -174,6 +171,13 @@ public class RutherfordController {
 		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, null, topicDetail.pdf.get(level));
 	}
 
+	/**
+	 * For now we can circumvent this by just showing all content in the learn page.
+	 * 
+	 * @deprecated until we come up with new approach
+	 * @param topic
+	 * @return
+	 */
 	@GET
 	@Path("topics/{topic}")
 	@Produces("application/json")
@@ -340,7 +344,7 @@ public class RutherfordController {
 	}
 	
 	/**
-	 * This method will return a list of contentInfo objects which can be used for creating links to related content
+	 * This method will look at a content objects related content list and return a list of contentInfo objects which can be used for creating links etc.
 	 * 
 	 * This method returns null if the content object provided has no related Content
 	 * 
@@ -363,12 +367,48 @@ public class RutherfordController {
 			if(relatedContent == null){
 				log.warn("Related content does not exist in the data store.");
 			} else {
-				// TODO fix url parameter to be less horrid
-				ContentInfo contentInfo = new ContentInfo(relatedContent.getId(), relatedContent.getTitle(), relatedContent.getType(), proxyPath + '/' + relatedContent.getType().toLowerCase() + '/' + relatedContent.getId());
+				ContentInfo contentInfo = extractContentInfo(relatedContent, proxyPath);
 				contentInfoList.add(contentInfo);
 			}
 		}
 		
 		return contentInfoList;
+	}
+
+	/**
+	 * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to the client instead.
+	 * 
+	 * TODO: we should use an automapper to do this in a nicer way.
+	 * @param content
+	 * @param proxyPath
+	 * @return
+	 */
+	private ContentInfo extractContentInfo(Content content, String proxyPath){
+		if (null == content)
+			return null;
+		// TODO fix url parameter to be less horrid
+		ContentInfo contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + content.getId());
+		
+		return contentInfo;
+	}
+
+	/**
+	 * Utility method to convert a list of content objects into a list of ContentInfo Objects 
+	 * @param contentList
+	 * @param proxyPath
+	 * @return
+	 */
+	private List<ContentInfo> extractContentInfo(List<Content> contentList, String proxyPath){
+		if (null == contentList)
+			return null;
+		
+		List<ContentInfo> listOfContentInfo = new ArrayList<ContentInfo>();
+		
+		for(Content content : contentList){
+			ContentInfo contentInfo = extractContentInfo(content,proxyPath); 
+			if(null != contentInfo)
+				listOfContentInfo.add(contentInfo);
+		}		
+		return listOfContentInfo;
 	}
 }

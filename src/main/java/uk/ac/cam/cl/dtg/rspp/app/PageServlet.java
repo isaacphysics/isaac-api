@@ -59,7 +59,7 @@ public class PageServlet extends HttpServlet {
 			
 			if (uri.startsWith("/learn"))
 			{
-				cContent = renderer.render("rutherford.pages.learn", rc.getTopics(), ij, Locale.ENGLISH);
+				cContent = renderer.render("rutherford.pages.learn", rc.getTopics(req), ij, Locale.ENGLISH);
 			}
 			else if (uri.startsWith("/topics"))
 			{
