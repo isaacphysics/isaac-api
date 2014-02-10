@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bson.types.ObjectId;
+import org.mongojack.DBQuery;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
@@ -56,7 +57,29 @@ public class ContentManager implements IContentManager {
 		
 		return c;
 	}
+	
+	@Override
+	public List<Content> findAllByType(String type, Integer limit){
+		if(null == limit)
+			limit = 0;
 
+		DBCollection dbCollection = database.getCollection("content");
+		
+		BasicDBObject query = new BasicDBObject("type", type);
+		
+		// Do database query using plain mongodb so we only have to read from the database once.
+		DBCursor cursor = dbCollection.find(query).limit(limit);
+		
+		List<Content> listOfContent = new ArrayList<Content>();
+		
+		for(DBObject node : cursor){
+			Content c =  mapper.mapDBOjectToContentDTO(node);
+			listOfContent.add(c);
+		}		
+		
+		return listOfContent;
+	}
+	
 	@Override
 	public Content expandReferencedContent(Content content) {		
 		// TODO: This should be improved. At the moment there is one query per content object that we see. It doesn't feel very elegant either

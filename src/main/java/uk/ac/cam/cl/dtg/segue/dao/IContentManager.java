@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.List;
+
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
 public interface IContentManager {
@@ -20,4 +22,12 @@ public interface IContentManager {
 	 * @return Augmented Content object
 	 */
 	public Content expandReferencedContent(Content content);
+	
+	/**
+	 * Method to allow bulk search of content based on the type field
+	 * @param type - should match whatever is stored in the database
+	 * @param limit - limit the number of results returned - if null or 0 is provided no limit will be applied. 
+	 * @return List of Content Objects
+	 */
+	public List<Content> findAllByType(String type, Integer limit);
 }
