@@ -9,7 +9,10 @@
  */
 {template .renderContent}
 	/* Base case we just spit out the literal content */
-	{if $contentObject.contentLiteral}
+	{if $contentObject.type == 'image'}
+		<img src="{$ij.proxyPath}/static/figures/{$contentObject.src}"/>
+		<figcaption>{$contentObject.contentLiteral |noAutoescape}</figcaption>
+	{elseif $contentObject.contentLiteral}
 		{$contentObject.contentLiteral |noAutoescape}
 
 	/* Recursive case: we have a list of content to render */
@@ -17,8 +20,7 @@
 		{foreach $contentItem in $contentObject.contentReferencedList}
 			{call .renderContent}
 				{param contentObject:$contentItem /}
-			{/call}
+			{/call}			
 		{/foreach}	
 	{/if}
 {/template}
-
