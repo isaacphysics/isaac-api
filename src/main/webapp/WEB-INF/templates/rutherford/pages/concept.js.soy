@@ -15,9 +15,21 @@
 	<div id="conceptContent" class="concept-page small-9 columns">
 		<div class="row"><div class="small-12 columns text-left pagination-bar"><a href="#" class="back">Back</a></div></div>
 		<h2>Concept: {$contentObject.title}</h2>
-		{call shared.segue.utils.renderContent}
-			{param contentObject:$contentObject/}
-		{/call}
+			{if $contentObject.contentReferencedList and length($contentObject.contentReferencedList) > 0 }
+				{foreach $contentItem in $contentObject.contentReferencedList}
+					{if $contentItem.type == 'question'}
+						{call shared.questions.renderQuestionContent}
+							{param contentObject:$contentItem /}
+						{/call}
+					{else}
+						<p>
+						{call shared.segue.utils.renderContent}
+							{param contentObject:$contentItem/}
+						{/call}
+						</p>
+					{/if}		
+				{/foreach}	
+			{/if}
 	</div>
 </div>
 {/template}
