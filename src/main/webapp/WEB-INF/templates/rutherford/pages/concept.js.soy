@@ -15,8 +15,8 @@
 	<div id="conceptContent" class="concept-page small-9 columns">
 		<div class="row"><div class="small-12 columns text-left pagination-bar"><a href="#" class="back">Back</a></div></div>
 		<h2>Concept: {$contentObject.title}</h2>
-			{if $contentObject.contentReferencedList and length($contentObject.contentReferencedList) > 0 }
-				{foreach $contentItem in $contentObject.contentReferencedList}
+			{if $contentObject.children and length($contentObject.children) > 0 }
+				{foreach $contentItem in $contentObject.children}
 					{if $contentItem.type == 'question'}
 						{call shared.questions.renderQuestionContent}
 							{param contentObject:$contentItem /}

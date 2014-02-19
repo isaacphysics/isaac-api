@@ -25,14 +25,14 @@
 			{param type:'radio' /}
 		{/call}
 	/* Recursive case - continue looking for questions in the list of content provided */
-	{elseif $contentObject.contentReferencedList and length($contentObject.contentReferencedList) > 0 }
-		{foreach $contentItem in $contentObject.contentReferencedList}
+	{elseif $contentObject.children and length($contentObject.children) > 0 }
+		{foreach $contentItem in $contentObject.children}
 			{call .renderQuestionContent}
 				{param contentObject:$contentItem /}
 			{/call}
 		{/foreach}				
 	/* Fall back to just rendering the content as plain content */
-	{elseif $contentObject.contentLiteral != null}
+	{elseif $contentObject.value != null}
 		<p>
 		{call shared.segue.utils.renderContent}
 			{param contentObject:$contentObject /}
@@ -64,7 +64,7 @@
 			<p>
 			{if $contentObject.hints}
 				{foreach $hintItem in $contentObject.hints}
-					<p><strong>Hint:</strong> {$hintItem.contentLiteral}</p>
+					<p><strong>Hint:</strong> {$hintItem.value}</p>
 				{/foreach}
 			{/if}
 			</p>					

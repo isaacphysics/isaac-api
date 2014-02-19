@@ -11,13 +11,13 @@
 	/* Base case we just spit out the literal content */
 	{if $contentObject.type == 'image'}
 		<img src="{$ij.proxyPath}/static/figures/{$contentObject.src}"/>
-		<figcaption>{$contentObject.contentLiteral |noAutoescape}</figcaption>
-	{elseif $contentObject.contentLiteral}
-		{$contentObject.contentLiteral |noAutoescape}
+		<figcaption>{$contentObject.value |noAutoescape}</figcaption>
+	{elseif $contentObject.value}
+		{$contentObject.value |noAutoescape}
 
 	/* Recursive case: we have a list of content to render */
-	{elseif $contentObject.contentReferencedList and length($contentObject.contentReferencedList) > 0 }
-		{foreach $contentItem in $contentObject.contentReferencedList}
+	{elseif $contentObject.children and length($contentObject.children) > 0 }
+		{foreach $contentItem in $contentObject.children}
 			{call .renderContent}
 				{param contentObject:$contentItem /}
 			{/call}			
