@@ -53,7 +53,7 @@ public class ContentManager implements IContentManager {
 		Content c =  mapper.mapDBOjectToContentDTO(node);
 		
 		// TODO: Move somewhere else. Currently this is here just for testing. We may want to have the non-augmented objects too.
-		this.expandReferencedContent(c);
+		//this.expandReferencedContent(c);
 		
 		return c;
 	}
@@ -79,26 +79,18 @@ public class ContentManager implements IContentManager {
 		
 		return listOfContent;
 	}
-	
+
+	/**
+	 * @deprecated not using mongo for this any more 
+	 */
 	@Override
 	public Content expandReferencedContent(Content content) {		
-		// TODO: This should be improved. At the moment there is one query per content object that we see. It doesn't feel very elegant either
-		
-		if(null == content || null == content.getContentReferenced()){
-			return content;
+		if(null == content || null == content.getChildren()){
+			return null;
 		}
 		
-		// build up query for database everytime we see an object so we don't have to do as many round trips to the database as might be necessary
-		BasicDBObject query = new BasicDBObject();
-		query.put("_id", new BasicDBObject("$in", wrapObjectIds(content.getContentReferenced())));
-	
-		DBCursor cursor = database.getCollection("content").find(query);
-		while(cursor.hasNext()){
-			DBObject item = cursor.next();
-			Content childContent =  mapper.mapDBOjectToContentDTO(item);	
-			content.getContentReferencedList().add(expandReferencedContent(childContent));
-		}		
-		return content;
+		// TODO: This should be removed as it was only useful for use with mongodb. 
+		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -113,7 +105,7 @@ public class ContentManager implements IContentManager {
 	 * Wrapper method that converts a list of string representations of object ids into a list of objectids
 	 * 
 	 * This is needed for querying mongodb
-	 * 
+	 * @deprecated not using mongo
 	 * @param List of string object Ids
 	 * @return List of object ids 
 	 */
