@@ -6,7 +6,6 @@ import java.util.List;
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -24,10 +23,9 @@ public class Content{
 	protected String encoding;
 	protected String src;
 	protected String layout;
-	protected List<String> contentReferenced;
-	@JsonIgnore
-	protected List<Content> contentReferencedList;
-	protected String contentLiteral;
+	// this is the actual list of children content objects.
+	protected List<Content> children;
+	protected String value;
 	protected String attribution;
 	protected List<String> relatedContent;
 	protected int version;
@@ -41,8 +39,8 @@ public class Content{
 				   @JsonProperty("encoding") String encoding,
 				   @JsonProperty("src") String src,
 				   @JsonProperty("layout") String layout,
-				   @JsonProperty("contentReferenced") List<String> contentReferenced,
-				   @JsonProperty("contentLiteral") String contentLiteral,
+				   @JsonProperty("contentReferenced") List<String> children,
+				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") int version) {
@@ -54,13 +52,12 @@ public class Content{
 		this.encoding = encoding;
 		this.src = src;
 		this.layout = layout;
-		this.contentReferenced = contentReferenced;
-		this.contentLiteral = contentLiteral;
+		this.value = value;
 		this.attribution = attribution;
 		this.relatedContent = relatedContent;
 		this.version = version;
 		// useful for when we want to augment this POJO
-		this.contentReferencedList = new ArrayList<Content>();
+		this.children = new ArrayList<Content>();
 	}
 	
 	/** 
@@ -69,7 +66,7 @@ public class Content{
 	public Content(){
 
 		// useful for when we want to augment this POJO
-		this.contentReferencedList = new ArrayList<Content>();
+		this.children = new ArrayList<Content>();
 	}
 	
 	@JsonProperty("_id")
@@ -140,20 +137,12 @@ public class Content{
 		this.layout = layout;
 	}
 
-	public List<String> getContentReferenced() {
-		return contentReferenced;
+	public String getValue() {
+		return value;
 	}
 
-	public void setContentReferenced(List<String> contentReferenced) {
-		this.contentReferenced = contentReferenced;
-	}
-
-	public String getContentLiteral() {
-		return contentLiteral;
-	}
-
-	public void setContentLiteral(String contentLiteral) {
-		this.contentLiteral = contentLiteral;
+	public void setValue(String value) {
+		this.value = value;
 	}
 
 	public String getAttribution() {
@@ -180,9 +169,8 @@ public class Content{
 		this.version = version;
 	}
 	
-	@JsonIgnore
-	public List<Content> getContentReferencedList(){
-		return this.contentReferencedList;
+	public List<Content> getChildren(){
+		return this.children;
 	}
 	
 }
