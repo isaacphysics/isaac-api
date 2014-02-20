@@ -73,4 +73,40 @@ public class ContentMapper {
 			return contentMapper.convertValue(obj, contentClass);  
 		}
 	}
+	
+	public Content mapJsonStringToContentDTO(String json) throws IllegalArgumentException, JsonParseException, JsonMappingException, IOException{
+		if(null == json){
+			return null;
+		}
+
+		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
+		ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
+		
+		HashMap<String,String> rawMap = new HashMap<String,String>();
+		
+		rawMap = contentMapper.readValue(json, HashMap.class);
+		
+		// Find out what type label the JSON object has 
+		String labelledType = rawMap.get("type");
+
+		// Lookup the matching POJO class
+		Class<? extends Content> contentClass = jsonTypes.get(labelledType); // Returns null if no entry for this type
+
+		if (null == contentClass) {
+			// We haven't registered this type. Deserialize into the Content base class.
+			return contentMapper.readValue(json, Content.class);
+			//return contentMapper.convertValue(rawMap, Content.class); 
+		} else {
+			
+			// We have a registered POJO class. Deserialize into it.
+			// TODO: Work out whether we should configure the contentMapper to ignore missing fields in this case. 
+			
+			return contentMapper.readValue(json, contentClass);
+			//return contentMapper.convertValue(rawMap, contentClass);  
+		}
+	}
+	
+	public HashMap<String, Class<? extends Content>> getJsonTypes(){
+		return jsonTypes;
+	}
 }
