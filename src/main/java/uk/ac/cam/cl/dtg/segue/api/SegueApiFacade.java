@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -17,8 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
@@ -112,6 +115,37 @@ public class SegueApiFacade {
 		
 		return Response.ok().entity(c).build();
 	}
+	
+	/**
+	 * GetContentBy filename from the git database
+	 * 
+	 * Currently this method will return a single Json Object containing all of the fields available to the object retrieved from the database.
+	 * 
+	 * @param id - our id not the dbid
+	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/fromGit/{sha}/{id}")
+	public Response getFromGit(@PathParam("sha") String sha, @PathParam("id") String id) {		
+		Content c = null;
+		try {
+			GitDb gdb = new GitDb("c:\\rutherford-test\\.git");
+			GitContentManager gcm = new GitContentManager(gdb);
+			gcm.buildGitIndex(sha);
+			
+			c = gcm.getById(id);
+			
+			//b = gdb.getFileByCommitSHA(sha, filename);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			log.error("Unable to locate Git repo.");
+		}
+		if (null == c){
+			return Response.ok().entity("No results found for your search").build();
+		}
+		return Response.ok().entity(c).build();
+	}	
 	
 	@GET
 	@Produces("application/json")
