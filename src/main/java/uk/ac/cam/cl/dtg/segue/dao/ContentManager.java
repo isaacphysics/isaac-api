@@ -83,7 +83,6 @@ public class ContentManager implements IContentManager {
 	/**
 	 * @deprecated not using mongo for this any more 
 	 */
-	@Override
 	public Content expandReferencedContent(Content content) {		
 		if(null == content || null == content.getChildren()){
 			return null;

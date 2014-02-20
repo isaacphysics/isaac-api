@@ -17,13 +17,6 @@ public interface IContentManager {
 	public Content getById(String id);
 	
 	/**
-	 * Method to support the expansion of the recursive datastructure.
-	 * @param content
-	 * @return Augmented Content object
-	 */
-	public Content expandReferencedContent(Content content);
-	
-	/**
 	 * Method to allow bulk search of content based on the type field
 	 * @param type - should match whatever is stored in the database
 	 * @param limit - limit the number of results returned - if null or 0 is provided no limit will be applied. 
