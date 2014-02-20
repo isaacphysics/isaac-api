@@ -19,9 +19,17 @@
 			<id>codedance on Github</id>
 			<url>https://github.com/codedance/maven-repository/raw/master</url>
 		</repository>
+	    <repository>
+    		<id>jgit-repository</id>
+      		<url>https://repo.eclipse.org/content/groups/releases/</url>
+    	</repository>	
 	</repositories>
-
 	<dependencies>
+		<dependency>
+      	  <groupId>org.eclipse.jgit</groupId>
+      	  <artifactId>org.eclipse.jgit</artifactId>
+    	  <version>3.2.0.201312181205-r</version>
+	    </dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
