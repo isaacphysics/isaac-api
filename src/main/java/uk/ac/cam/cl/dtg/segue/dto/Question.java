@@ -8,6 +8,8 @@ import uk.ac.cam.cl.dtg.rspp.models.JsonType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Choice object
@@ -15,6 +17,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 @JsonType("question")
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME,  
+include=JsonTypeInfo.As.PROPERTY,  
+property="type")
+@JsonSubTypes({  
+	@JsonSubTypes.Type(value = ChoiceQuestion.class, name = "choiceQuestion")
+	})  
 public class Question extends Content {
 
 	protected Content answer;

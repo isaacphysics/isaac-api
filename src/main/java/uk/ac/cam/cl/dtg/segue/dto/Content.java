@@ -7,6 +7,8 @@ import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Content Class (Data Transfer Object)
@@ -14,6 +16,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This object should be kept as being easily serializable to enable it to be exposed via web views.
  * 
  */
+
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME,  
+include=JsonTypeInfo.As.PROPERTY,  
+property="type",
+defaultImpl = Content.class)
+@JsonSubTypes({  
+	@JsonSubTypes.Type(value = Question.class, name = "question"),  
+	@JsonSubTypes.Type(value = Choice.class, name = "choice"),
+	@JsonSubTypes.Type(value = ChoiceQuestion.class, name = "choiceQuestion")})  
 public class Content{
 	private String _id;
 	protected String id;
@@ -29,6 +40,7 @@ public class Content{
 	protected String attribution;
 	protected List<String> relatedContent;
 	protected int version;
+	
 	
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
