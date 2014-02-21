@@ -159,6 +159,45 @@
 	
 </script>
 
+    <script type="text/x-mathjax-config">
+		// Allow labels and numbers to be reset:
+		// https://groups.google.com/forum/#!msg/mathjax-users/kzOOFw1qtxw/YdAEPJfCEXUJ
+		
+		MathJax.resetLabels = function() {lb}
+			var AMS = MathJax.Extension["TeX/AMSmath"];
+			AMS.startNumber = 0;
+			AMS.labels = {lb}{rb};
+		{rb};
+		
+		// Allow inline maths with single $s
+		
+		MathJax.Hub.Config({lb}
+			tex2jax: {lb}
+			inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+			displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+			processEscapes: true
+			{rb},
+			"HTML-CSS": {lb}
+			    scale: 85
+			  {rb}
+		{rb});
+		
+		// Fix font issues in Chrome 32
+		// https://groups.google.com/forum/#!msg/mathjax-users/S5x-RQDPJrI/p4nmRXJvoskJ
+		
+		MathJax.Hub.Config({lb}
+			extensions: ["MatchWebFonts.js"]
+		{rb});
+		
+		if (MathJax.Hub.Browser.isChrome && MathJax.Hub.Browser.version.substr(0,3) === "32.") {lb}
+			MathJax.Hub.Register.StartupHook(
+				"HTML-CSS Jax Config",
+				function () {lb}MathJax.OutputJax["HTML-CSS"].FontFaceBug = true{rb}
+			);
+		{rb}
+    	
+    </script>
+
 	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
 	<script type="text/javascript" src="{$ij.proxyPath}/static/js/vendor/jquery-1.9.1.min.js"></script>

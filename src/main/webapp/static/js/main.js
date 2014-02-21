@@ -343,13 +343,6 @@ $(function()
 	var uri = document.location.pathname.substring(ij.proxyPath.length);
 	history.replaceState(uri, null, ij.proxyPath + uri);
 	
-	MathJax.Hub.Config({
-		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
-		  "HTML-CSS": {
-			    scale: 85
-			  }
-		});
-	
 	
 	if (!sessionStorage.getItem("sessionId"))
 		sessionStorage.setItem("sessionId", ij.newSessionId);
@@ -440,6 +433,7 @@ jsPlumb.ready(function() {
 // Equivalent to our page ready
 function pageRendered()
 {
+	MathJax.resetLabels();
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	$(document).foundation();
 	quickQuestions();
