@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.mongojack.ObjectId;
 
+import uk.ac.cam.cl.dtg.rspp.models.JsonType;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -16,16 +18,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * This object should be kept as being easily serializable to enable it to be exposed via web views.
  * 
  */
-
-@JsonTypeInfo(use=JsonTypeInfo.Id.NAME,  
-include=JsonTypeInfo.As.PROPERTY,  
-property="type",
-defaultImpl = Content.class)
-@JsonSubTypes({  
-	@JsonSubTypes.Type(value = Question.class, name = "question"),  
-	@JsonSubTypes.Type(value = Choice.class, name = "choice"),
-	@JsonSubTypes.Type(value = ChoiceQuestion.class, name = "choiceQuestion")})  
-public class Content{
+@JsonType("content")
+public class Content extends ContentBase{
 	private String _id;
 	protected String id;
 	protected String title;
@@ -35,7 +29,7 @@ public class Content{
 	protected String src;
 	protected String layout;
 	// this is the actual list of children content objects.
-	protected List<Content> children;
+	protected List<ContentBase> children;
 	protected String value;
 	protected String attribution;
 	protected List<String> relatedContent;
@@ -69,7 +63,7 @@ public class Content{
 		this.relatedContent = relatedContent;
 		this.version = version;
 		// useful for when we want to augment this POJO
-		this.children = new ArrayList<Content>();
+		this.children = new ArrayList<ContentBase>();
 	}
 	
 	/** 
@@ -78,7 +72,7 @@ public class Content{
 	public Content(){
 
 		// useful for when we want to augment this POJO
-		this.children = new ArrayList<Content>();
+		this.children = new ArrayList<ContentBase>();
 	}
 	
 	@JsonProperty("_id")
@@ -181,7 +175,7 @@ public class Content{
 		this.version = version;
 	}
 	
-	public List<Content> getChildren(){
+	public List<ContentBase> getChildren(){
 		return this.children;
 	}
 	

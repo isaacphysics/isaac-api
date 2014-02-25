@@ -17,16 +17,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  *
  */
 @JsonType("question")
-@JsonTypeInfo(use=JsonTypeInfo.Id.NAME,  
-include=JsonTypeInfo.As.PROPERTY,  
-property="type")
-@JsonSubTypes({  
-	@JsonSubTypes.Type(value = ChoiceQuestion.class, name = "choiceQuestion")
-	})  
 public class Question extends Content {
 
-	protected Content answer;
-	protected List<Content> hints;
+	protected ContentBase answer;
+	protected List<ContentBase> hints;
 	
 	@JsonCreator
 	public Question(@JsonProperty("_id") String _id,
@@ -42,8 +36,8 @@ public class Question extends Content {
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") int version,
-				   @JsonProperty("answer") Content answer,
-				   @JsonProperty("hints") List<Content> hints) {
+				   @JsonProperty("answer") ContentBase answer,
+				   @JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, 
 		      id, 
 		      title, 
@@ -66,11 +60,11 @@ public class Question extends Content {
 		super();
 	}
 	
-	public Content getAnswer() {
+	public ContentBase getAnswer() {
 		return answer;
 	}
 
-	public List<Content> getHints() {
+	public List<ContentBase> getHints() {
 		return hints;
 	}
 

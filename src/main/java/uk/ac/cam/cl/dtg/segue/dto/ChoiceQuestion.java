@@ -31,8 +31,8 @@ public class ChoiceQuestion extends Question {
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") int version,
-				   @JsonProperty("answer") Content answer,
-				   @JsonProperty("hints") List<Content> hints,
+				   @JsonProperty("answer") ContentBase answer,
+				   @JsonProperty("hints") List<ContentBase> hints,
 				   @JsonProperty("choices") List<Choice> choices) {
 		super(_id, 
 		      id, 

@@ -12,7 +12,7 @@
 	{if $contentObject.type == 'image'}
 		<img src="{$ij.proxyPath}/static/figures/{$contentObject.src}"/>
 		<figcaption>{$contentObject.value |noAutoescape}</figcaption>
-	{elseif $contentObject.value}
+	{elseif $contentObject.value != null}
 		{$contentObject.value |noAutoescape}
 
 	/* Recursive case: we have a list of content to render */
