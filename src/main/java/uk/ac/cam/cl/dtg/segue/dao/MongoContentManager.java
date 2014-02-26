@@ -24,13 +24,13 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
  * Implementation that specifically works with MongoDB Content objects
  *
  */
-public class ContentManager implements IContentManager {
+public class MongoContentManager implements IContentManager {
 
 	private final DB database;
 	private final ContentMapper mapper;
 	
 	@Inject
-	public ContentManager(DB database) {
+	public MongoContentManager(DB database) {
 		this.database = database;
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		this.mapper = injector.getInstance(ContentMapper.class);
@@ -44,7 +44,12 @@ public class ContentManager implements IContentManager {
 	}
 	
 	@Override
-	public Content getById(String id) throws IllegalArgumentException{
+	public Content getById(String id, String version) throws IllegalArgumentException{
+		if(null == id){
+			return null;
+		}
+		
+		// version parameter is unused in this particular implementation
 		DBCollection dbCollection = database.getCollection("content");
 		
 		// Do database query using plain mongodb so we only have to read from the database once.
@@ -52,14 +57,11 @@ public class ContentManager implements IContentManager {
 		
 		Content c =  mapper.mapDBOjectToContentDTO(node);
 		
-		// TODO: Move somewhere else. Currently this is here just for testing. We may want to have the non-augmented objects too.
-		//this.expandReferencedContent(c);
-		
 		return c;
 	}
 	
 	@Override
-	public List<Content> findAllByType(String type, Integer limit){
+	public List<Content> findAllByType(String type, String version, Integer limit){
 		if(null == limit)
 			limit = 0;
 
@@ -78,18 +80,6 @@ public class ContentManager implements IContentManager {
 		}		
 		
 		return listOfContent;
-	}
-
-	/**
-	 * @deprecated not using mongo for this any more 
-	 */
-	public Content expandReferencedContent(Content content) {		
-		if(null == content || null == content.getChildren()){
-			return null;
-		}
-		
-		// TODO: This should be removed as it was only useful for use with mongodb. 
-		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 	
 	@SuppressWarnings("unchecked")

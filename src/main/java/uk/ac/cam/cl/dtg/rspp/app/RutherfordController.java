@@ -115,6 +115,7 @@ public class RutherfordController {
 		// temporary solution to get all questions as well for testing purposes. 
 
 		//TODO we need to work out a good way of allowing editors to group concepts and questions based on level in a rutherford specific sort of way.
+		// This code is just to allow easy access to all api content from one page for testing
 		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_scq",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
 		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_numeric",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
 		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_symbolic",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
@@ -193,10 +194,7 @@ public class RutherfordController {
 		
 		Content c = (Content) api.getContentById(concept).getEntity();
 		
-		ContentPage cp = new ContentPage(c.getId(), c ,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));	
-		
-		// we need to create the ContentInfo object
-		
+		ContentPage cp = new ContentPage(c.getId(), c ,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));			
 		return cp;
 	}
 
@@ -362,13 +360,18 @@ public class RutherfordController {
 		List<ContentInfo> contentInfoList = new ArrayList<ContentInfo>();
 		
 		for(String id : content.getRelatedContent()){
-			Content relatedContent = (Content) api.getContentById(id).getEntity();
-			
-			if(relatedContent == null){
-				log.warn("Related content does not exist in the data store.");
-			} else {
-				ContentInfo contentInfo = extractContentInfo(relatedContent, proxyPath);
-				contentInfoList.add(contentInfo);
+			try{
+				Content relatedContent = (Content) api.getContentById(id).getEntity();
+				
+				if(relatedContent == null){
+					log.warn("Related content does not exist in the data store.");
+				} else {
+					ContentInfo contentInfo = extractContentInfo(relatedContent, proxyPath);
+					contentInfoList.add(contentInfo);
+				}
+			}
+			catch(ClassCastException exception){
+				log.warn("Class Cast exception: unable to locate source from git");
 			}
 		}
 		

@@ -17,11 +17,18 @@ import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 
+ * This class is a representation of the Git Database
+ * 
+ * It is responsible for providing basic functionality to search a specified Git Repository and find files based on a given SHA
+ * 
+ */
 public class GitDb { 
-	
 	private static final Logger log = LoggerFactory.getLogger(GitDb.class);
+	
 	private String repositoryLocation;
-	private static Git gitHandle;
+	private Git gitHandle;
 	
 	/**
 	 * Create a new instance of a GitDb object
@@ -33,7 +40,7 @@ public class GitDb {
 	 */
 	public GitDb(String repoLocation) throws IOException{
 		this.repositoryLocation = repoLocation;
-		GitDb.gitHandle = Git.open(new File(this.repositoryLocation));
+		gitHandle = Git.open(new File(this.repositoryLocation));
 	}
 
 	/**
@@ -52,7 +59,7 @@ public class GitDb {
 		if(null == sha || null == filename)
 			return null;
 		
-		Repository repository = GitDb.gitHandle.getRepository();
+		Repository repository = gitHandle.getRepository();
 		
 		// TODO refactor this
 		ObjectId commitId = null;
@@ -109,7 +116,7 @@ public class GitDb {
 	    return out;
 	}	
 
-	public static Git getGitHandle(){
+	public Git getGitHandle(){
 		return gitHandle;
 	}
 }

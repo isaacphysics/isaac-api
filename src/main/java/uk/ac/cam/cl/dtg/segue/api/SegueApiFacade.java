@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -35,6 +34,11 @@ import com.google.inject.Injector;
 @Path("/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
+	
+	private static GitContentManager gcm;
+
+	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
+	private static final String liveSHA = "c7648afd7585fbebff0cae3c0cb77d305bd713a4";
 
 	@POST
 	@Path("log")
@@ -53,6 +57,12 @@ public class SegueApiFacade {
 		return ImmutableMap.of("success", success);
 	}	
 
+	/**
+	 * This method specifically uses mongodb to save content objects
+	 * @deprecated
+	 * @param docJson
+	 * @return
+	 */
 	@POST
 	@Produces("application/json")
 	@Path("content/save")
@@ -87,7 +97,7 @@ public class SegueApiFacade {
 	}
 	
 	/**
-	 * GetContentBy Id from the database
+	 * GetContentById from the database
 	 * 
 	 * Currently this method will return a single Json Object containing all of the fields available to the object retrieved from the database.
 	 * 
@@ -106,7 +116,12 @@ public class SegueApiFacade {
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("RETRIEVING DOC: " + id);
-			c = contentPersistenceManager.getById(id);
+			c = contentPersistenceManager.getById(id, this.liveSHA);
+			
+			if (null == c){
+				return Response.noContent().entity(null).build();
+			}
+			
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
@@ -129,21 +144,20 @@ public class SegueApiFacade {
 	@Path("content/fromGit/{sha}/{id}")
 	public Response getFromGit(@PathParam("sha") String sha, @PathParam("id") String id) {		
 		Content c = null;
-		try {
-			GitDb gdb = new GitDb("c:\\rutherford-test\\.git");
-			GitContentManager gcm = new GitContentManager(gdb);
-			gcm.buildGitIndex(sha);
+		
+		if(null == gcm){
+			Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+			GitDb gdb = injector.getInstance(GitDb.class);
 			
-			c = gcm.getById(id);
-			
-			//b = gdb.getFileByCommitSHA(sha, filename);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			log.error("Unable to locate Git repo.");
+			gcm = new GitContentManager(gdb);
 		}
+		
+		c = gcm.getById(id, sha);
+		
 		if (null == c){
-			return Response.ok().entity("No results found for your search").build();
+			return Response.noContent().entity(null).build();
 		}
+		
 		return Response.ok().entity(c).build();
 	}	
 	
@@ -158,8 +172,8 @@ public class SegueApiFacade {
 		
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
-			log.info("Finding all concepts from the api.");
-			c = contentPersistenceManager.findAllByType(type, limit);
+			log.info("Finding all content from the api with type: " + type);
+			c = contentPersistenceManager.findAllByType(type, this.liveSHA, limit);
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
