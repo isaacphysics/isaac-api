@@ -6,11 +6,14 @@ import java.util.List;
 import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.rspp.models.JsonType;
+import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
+import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Content Class (Data Transfer Object)
@@ -86,11 +89,12 @@ public class Content extends ContentBase{
 	public void setDbId(String _id) {
 		this._id = _id;
 	}	
-
+	
 	public String getId() {
 		return id;
 	}
-
+	
+	@JsonDeserialize(using=TrimWhitespaceDeserializer.class)
 	public void setId(String id) {
 		this.id = id;
 	}
@@ -163,6 +167,7 @@ public class Content extends ContentBase{
 		return relatedContent;
 	}
 
+	@JsonDeserialize(using=TrimWhitespaceListDeserializer.class)
 	public void setRelatedContent(List<String> relatedContent) {
 		this.relatedContent = relatedContent;
 	}
