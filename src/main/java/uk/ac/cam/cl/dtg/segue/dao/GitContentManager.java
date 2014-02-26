@@ -104,9 +104,8 @@ public class GitContentManager implements IContentManager {
 		if(!gitCache.containsKey(version)){
 			log.info("Rebuilding cache as sha does not exist in hashmap");
 			buildGitIndex(version);
+			validateReferentialIntegrity(version);
 		}
-		
-		validateReferentialIntegrity(version);
 		
 		return gitCache.containsKey(version);
 	}
@@ -117,6 +116,7 @@ public class GitContentManager implements IContentManager {
 	 * @param sha
 	 */
 	private void buildGitIndex(String sha){
+		// This set of code only needs to happen if we have to read from git again.
 		if(null != sha && gitCache.get(sha) == null){
 			
 			// find all json files for a given git commit
@@ -194,7 +194,6 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	private boolean validateReferentialIntegrity(String versionToCheck){
-		
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
 
