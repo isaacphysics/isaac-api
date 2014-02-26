@@ -6,8 +6,8 @@ import java.util.Map;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -29,7 +29,7 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 
 	@Override
 	public Content deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-			throws IOException, JsonProcessingException{
+			throws IOException, JsonProcessingException, JsonMappingException{
 
 		if(null == typeMap){
 			throw new IllegalStateException("No Map provided for Content Type deserialization.");
@@ -39,6 +39,9 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 		ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);  
 		Class<? extends Content> contentClass = null;  
 
+		if(null == root.get("type"))
+			throw new JsonMappingException("Error: unable to parse content as there is no type property within the json input.");
+		
 		String contentType = root.get("type").textValue();
 
 		if (typeMap.containsKey(contentType))
@@ -49,5 +52,4 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 
 		return mapper.readValue(root.toString(), Content.class);
 	}
-
 }

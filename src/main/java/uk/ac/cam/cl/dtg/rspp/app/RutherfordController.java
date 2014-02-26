@@ -364,14 +364,14 @@ public class RutherfordController {
 				Content relatedContent = (Content) api.getContentById(id).getEntity();
 				
 				if(relatedContent == null){
-					log.warn("Related content does not exist in the data store.");
+					log.warn("Related content (" + id + ") does not exist in the data store.");
 				} else {
 					ContentInfo contentInfo = extractContentInfo(relatedContent, proxyPath);
 					contentInfoList.add(contentInfo);
 				}
 			}
 			catch(ClassCastException exception){
-				log.warn("Class Cast exception: unable to locate source from git");
+				exception.printStackTrace();
 			}
 		}
 		
