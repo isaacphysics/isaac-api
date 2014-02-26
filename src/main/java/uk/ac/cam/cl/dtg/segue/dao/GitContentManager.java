@@ -3,9 +3,13 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Constants;
@@ -20,6 +24,7 @@ import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.inject.Guice;
@@ -61,35 +66,49 @@ public class GitContentManager implements IContentManager {
 		if(null == id)
 			return null;
 		
-		this.ensureCache(version);
+		if(this.ensureCache(version)){
+			log.info("Loading content from cache: " + id);
+			return gitCache.get(version).get(id);			
+		}
+		else{
+			log.error("Unable to access Content with ID "+ id + " from git commit: " + version + " from cache.");
+			return null;
+		}
 		
-		log.info("Loading content from cache: " + id);
-		return gitCache.get(version).get(id);
 	}
 	
 	@Override
 	public List<Content> findAllByType(String type, String version, Integer limit){
-		this.ensureCache(version);
-		
 		ArrayList<Content> result = new ArrayList<Content>();
-		for(Content c : gitCache.get(version).values()){
-			if(result.size() == limit && limit > 0)
-				break;
-			
-			if(c.getType().equals(type)){
-				result.add(c);
-			}
-			
+		if(this.ensureCache(version)){
+			for(Content c : gitCache.get(version).values()){
+				if(result.size() == limit && limit > 0)
+					break;
+				
+				if(c.getType().equals(type)){
+					result.add(c);
+				}
+			}			
 		}
 		
 		return result;
 	}
 	
-	private void ensureCache(String version){
+	/**
+	 * Will build cache if necessary. 
+	 * 
+	 * @param version - SHA
+	 * @return True if version exists in cache, false if not
+	 */
+	private boolean ensureCache(String version){
 		if(!gitCache.containsKey(version)){
 			log.info("Rebuilding cache as sha does not exist in hashmap");
 			buildGitIndex(version);
-		}		
+		}
+		
+		validateReferentialIntegrity(version);
+		
+		return gitCache.containsKey(version);
 	}
 	
 	/**
@@ -112,51 +131,88 @@ public class GitContentManager implements IContentManager {
 			    	commitId = repository.resolve(Constants.HEAD);
 				else
 					commitId = repository.resolve(sha);
-				 
-			    RevWalk revWalk = new RevWalk(repository);
-			    RevCommit commit = revWalk.parseCommit(commitId);
 				
-			    RevTree tree = commit.getTree();	    
+				if(null == commitId){
+					log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
+				
+				}else{
+					
+					RevWalk revWalk = new RevWalk(repository);
+				    RevCommit commit = revWalk.parseCommit(commitId);
+					
+				    RevTree tree = commit.getTree();
 
-			    TreeWalk treeWalk = new TreeWalk(repository);
-			    treeWalk.addTree(tree);
-			    treeWalk.setRecursive(true);
-			    treeWalk.setFilter(PathSuffixFilter.create(".json"));
-			    HashMap<String,Content> shaCache = new HashMap<String,Content>();
-			    
-			    while(treeWalk.next()){
-			    	// TODO: throw exception if we find that there are duplicate ids.
-			    	
-		    		ObjectId objectId = treeWalk.getObjectId(0);
-		    	    ObjectLoader loader = repository.open(objectId);
-		    		 
-		    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-		    	    loader.copyTo(out);
-		    	    
-		    	    //Content c = mapper.load(out.toString());
+				    TreeWalk treeWalk = new TreeWalk(repository);
+				    treeWalk.addTree(tree);
+				    treeWalk.setRecursive(true);
+				    treeWalk.setFilter(PathSuffixFilter.create(".json"));
+				    Map<String,Content> shaCache = new HashMap<String,Content>();
 
-		    	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
-		    	    contentDeserializer.registerTypeMap(mapper.getJsonTypes());
-		    	    		
-		    	    SimpleModule simpleModule = new SimpleModule("ContentDeserializerModule");
-		    	    simpleModule.addDeserializer(ContentBase.class, contentDeserializer);
-		    	    		
-		    	    ObjectMapper objectMapper = new ObjectMapper();
-		    	    objectMapper.registerModule(simpleModule);
-		    	    
-		    	    Content c = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
-		    	    
-		    	    log.info("Loading into cache: " + c.getTitle() + " " + c.getType());
-		    	    shaCache.put(c.getId(), c);
-			    }
-			    
-			    gitCache.put(sha, shaCache);
-			    
+				    // Traverse the git repository looking for everything that matches the PathSuffixFilter
+				    while(treeWalk.next()){
+				    	
+			    		ObjectId objectId = treeWalk.getObjectId(0);
+			    	    ObjectLoader loader = repository.open(objectId);
+			    		 
+			    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+			    	    loader.copyTo(out);
+
+			    	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
+			    	    contentDeserializer.registerTypeMap(mapper.getJsonTypes());
+			    	    		
+			    	    SimpleModule simpleModule = new SimpleModule("ContentDeserializerModule");
+			    	    simpleModule.addDeserializer(ContentBase.class, contentDeserializer);
+			    	    		
+			    	    ObjectMapper objectMapper = new ObjectMapper();
+			    	    objectMapper.registerModule(simpleModule);
+			    	    Content c = null;
+			    	    try{
+				    	    c = (Content) objectMapper.readValue(out.toString(), ContentBase.class);	
+			    	    }
+			    	    catch(JsonMappingException e){
+			    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...");
+			    	    }
+			    	    
+			    	    if (null != c){
+				    	    log.info("Loading into cache: " + c.getId() + " from " + treeWalk.getPathString());
+					    	// throw a fit if we find that there are duplicate ids.
+				    	    if(shaCache.containsKey(c.getId()))
+				    	    	log.error("Resource with duplicate ID (" + c.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+				    	    else
+				    	    	shaCache.put(c.getId(), c);		    	    	
+			    	    }
+				    }
+				    
+				    gitCache.put(sha, shaCache);					
+				}
 			}
 			catch(IOException exception){
 				log.error("IOException while trying to access git repository. " + exception.getMessage());
 				exception.printStackTrace();
 			}
 		}
+	}
+	
+	private boolean validateReferentialIntegrity(String versionToCheck){
+		
+		Set<String> expectedIds = new HashSet<String>();
+		Set<String> definedIds = new HashSet<String>();
+
+		// Currently check relatedContent Only. Children of Content objects are a different matter still to be defined.
+		for(Content c : gitCache.get(versionToCheck).values()){
+			definedIds.add(c.getId());
+			
+			expectedIds.addAll(c.getRelatedContent());
+		}
+		
+		if(expectedIds.equals(definedIds)){
+			return true;
+		}
+		else
+		{
+			expectedIds.removeAll(definedIds);
+			log.error("Referential integrity broken for related Content. The following ids are referenced but do not exist: " + expectedIds.toString());
+			return false;
+		}	
 	}
 }
