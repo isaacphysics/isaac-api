@@ -2,14 +2,10 @@ package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.List;
 
-import org.bson.types.ObjectId;
-
 import uk.ac.cam.cl.dtg.rspp.models.JsonType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Choice object
