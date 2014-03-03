@@ -45,6 +45,7 @@ public class Content extends ContentBase{
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
 				   @JsonProperty("src") String src,
+				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
 				   @JsonProperty("contentReferenced") List<String> children,
 				   @JsonProperty("contentLiteral") String value,
@@ -58,6 +59,7 @@ public class Content extends ContentBase{
 		this.author = author;
 		this.encoding = encoding;
 		this.src = src;
+		this.setCanonicalSourceFile(canonicalSourceFile);
 		this.layout = layout;
 		this.value = value;
 		this.attribution = attribution;

@@ -5,5 +5,13 @@ package uk.ac.cam.cl.dtg.segue.dto;
  *
  */
 public abstract class ContentBase {
+	private String canonicalSourceFile;
 
+	public String getCanonicalSourceFile() {
+		return canonicalSourceFile;
+	}
+
+	public void setCanonicalSourceFile(String canonicalSourceFile) {
+		this.canonicalSourceFile = canonicalSourceFile;
+	}
 }
