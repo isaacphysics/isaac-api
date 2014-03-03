@@ -165,7 +165,8 @@ public class GitContentManager implements IContentManager {
 			    	    objectMapper.registerModule(simpleModule);
 			    	    Content c = null;
 			    	    try{
-				    	    c = (Content) objectMapper.readValue(out.toString(), ContentBase.class);	
+				    	    c = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
+				    	    c = this.augmentChildContent(c, treeWalk.getPathString());
 			    	    }
 			    	    catch(JsonMappingException e){
 			    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...");
@@ -189,6 +190,30 @@ public class GitContentManager implements IContentManager {
 				exception.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Augments all child objects recursively to include additional information.
+	 * @param content
+	 * @param canonicalSourceFile
+	 * @return Content object with new reference
+	 */
+	private Content augmentChildContent(Content content, String canonicalSourceFile){
+		if(null == content){
+			return null;
+		}
+		
+		if(!content.getChildren().isEmpty()){
+			for(ContentBase cb : content.getChildren()){
+				if(cb instanceof Content){
+					Content c = (Content) cb;
+					this.augmentChildContent(c, canonicalSourceFile);
+				} 
+			}
+		}
+		
+		content.setCanonicalSourceFile(canonicalSourceFile);
+		return content;		
 	}
 	
 	private boolean validateReferentialIntegrity(String versionToCheck){
