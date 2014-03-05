@@ -2,6 +2,9 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
@@ -58,7 +62,7 @@ public class GitContentManager implements IContentManager {
 	public <T extends Content> String save(T objectToSave) throws IllegalArgumentException {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
-	
+
 	@Override
 	public Content getById(String id, String version) throws IllegalArgumentException{
 		if(null == id)
@@ -91,11 +95,16 @@ public class GitContentManager implements IContentManager {
 		
 		return result;
 	}
+
+	@Override
+	public ByteArrayOutputStream getFileBytes(String version, String filename) throws IOException{
+		return database.getFileByCommitSHA(version, filename);
+	}
 	
 	/**
 	 * Will build cache if necessary. 
 	 * 
-	 * @param version - SHA
+	 * @param version - version
 	 * @return True if version exists in cache, false if not
 	 */
 	private boolean ensureCache(String version){
@@ -174,7 +183,7 @@ public class GitContentManager implements IContentManager {
 			    	    
 			    	    if (null != c){
 				    	    log.info("Loading into cache: " + c.getId() + " from " + treeWalk.getPathString());
-					    	// throw a fit if we find that there are duplicate ids.
+					    	// log an error if we find that there are duplicate ids.
 				    	    if(shaCache.containsKey(c.getId()))
 				    	    	log.error("Resource with duplicate ID (" + c.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
 				    	    else
@@ -213,6 +222,13 @@ public class GitContentManager implements IContentManager {
 		}
 		
 		content.setCanonicalSourceFile(canonicalSourceFile);
+
+		// Hack to convert image source into something that the api can use to locate the specific image in the repository.
+		if(content.getType().equals("image")){
+			String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + content.getSrc(),true);
+			content.setSrc(newPath);
+		}
+
 		return content;		
 	}
 	

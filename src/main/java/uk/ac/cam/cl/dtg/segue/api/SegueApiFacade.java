@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
@@ -27,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -132,18 +135,35 @@ public class SegueApiFacade {
 	}
 	
 	/**
-	 * GetContentBy filename from the git database
+	 * getFileContent from the file store
 	 * 
-	 * Currently this method will return a single Json Object containing all of the fields available to the object retrieved from the database.
+	 * This method will return a byte array of the contents of a single file for the given path.
 	 * 
-	 * @param id - our id not the dbid
+	 * This is a temporary method for serving image files directly from git with a view that we can have a CDN cache these for us.
+	 * 
+	 * @param version number - e.g. a sha
 	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+	 * @throws java.lang.UnsupportedOperationException if multiple files match the search input
 	 */
 	@GET
-	@Produces("application/json")
-	@Path("content/fromGit/{sha}/{id}")
-	public Response getFromGit(@PathParam("sha") String sha, @PathParam("id") String id) {		
-		Content c = null;
+	@Produces("*/*")
+	@Path("content/getFileContent/{sha}/{path:.*}")
+	public Response getFileContent(@PathParam("sha") String sha, @PathParam("path") String path) {				
+		// TODO check if the content being requested is valid for this api call. e.g. only images?
+		if(null == sha || null == path || Files.getFileExtension(path).isEmpty()){
+			log.info("Bad input to api call. Returning null");
+			return Response.serverError().entity(null).build();
+		}
+
+		ByteArrayOutputStream fileContent = null;
+		String mimeType = MediaType.WILDCARD; 
+		
+		switch(Files.getFileExtension(path).toLowerCase()){
+			case "svg":{
+				mimeType = "image/svg+xml";
+				break;
+			}
+		}
 		
 		if(null == gcm){
 			Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
@@ -151,14 +171,20 @@ public class SegueApiFacade {
 			
 			gcm = new GitContentManager(gdb);
 		}
+		try {
+			fileContent = gcm.getFileBytes(sha, path);
+		} catch (IOException e) {
+			log.error("Error reading from file repository");
+			e.printStackTrace();
+		} catch (UnsupportedOperationException e){
+			log.error("Multiple files match the search path provided. Returning null as the result.");
+		}
 		
-		c = gcm.getById(id, sha);
-		
-		if (null == c){
+		if (null == fileContent){
 			return Response.noContent().entity(null).build();
 		}
 		
-		return Response.ok().entity(c).build();
+		return Response.ok().type(mimeType).entity(fileContent.toByteArray()).build();
 	}	
 	
 	@GET

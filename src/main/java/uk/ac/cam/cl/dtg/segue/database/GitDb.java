@@ -13,7 +13,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
+import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class GitDb {
 	    TreeWalk treeWalk = new TreeWalk(repository);
 	    treeWalk.addTree(tree);
 	    treeWalk.setRecursive(true);
-	    treeWalk.setFilter(PathSuffixFilter.create(filename));
+	    treeWalk.setFilter(PathFilter.create(filename));
 	    
 	    int count = 0;
 	    ObjectId objectId = null;

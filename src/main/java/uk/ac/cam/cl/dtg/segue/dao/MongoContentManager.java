@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,5 +107,12 @@ public class MongoContentManager implements IContentManager {
 		}
 		
 		return newList;
+	}
+
+	@Override
+	public ByteArrayOutputStream getFileBytes(String version, String filename)
+			throws IOException {
+
+		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 }

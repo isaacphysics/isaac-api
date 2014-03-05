@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
@@ -25,4 +27,14 @@ public interface IContentManager {
 	 * @return List of Content Objects or an empty list if none are found
 	 */
 	public List<Content> findAllByType(String type, String version, Integer limit);
+	
+	
+	/**
+	 * Method allows raw output to be retrieved for given files in the git repository. This is mainly so we can retrieve image files.
+	 * 
+	 * @param version - The version of the content to retrieve
+	 * @param filename - The full path of the file you wish to retrieve. 
+	 * @return The outputstream of the file contents
+	 */
+	public ByteArrayOutputStream getFileBytes(String version, String filename) throws IOException;
 }
