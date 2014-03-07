@@ -39,8 +39,8 @@ public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
-	private static final String liveSHA = "c7648afd7585fbebff0cae3c0cb77d305bd713a4";
-
+	private static String liveVersion = "a82ac5e8d8bd8ee6b8f98bbd973710ab5f0adc9a";
+	
 	@POST
 	@Path("log")
 	@Produces("application/json")
@@ -117,7 +117,7 @@ public class SegueApiFacade {
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("RETRIEVING DOC: " + id);
-			c = contentPersistenceManager.getById(id, this.liveSHA);
+			c = contentPersistenceManager.getById(id, SegueApiFacade.liveVersion);
 			
 			if (null == c){
 				return Response.noContent().entity(null).build();
@@ -194,7 +194,7 @@ public class SegueApiFacade {
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("Finding all content from the api with type: " + type);
-			c = contentPersistenceManager.findAllByType(type, this.liveSHA, limit);
+			c = contentPersistenceManager.findAllByType(type, SegueApiFacade.liveVersion, limit);
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
@@ -203,4 +203,31 @@ public class SegueApiFacade {
 		
 		return Response.ok().entity(c).build();
 	}
+	
+	/**
+	 * This method will allow the live version served by the site to be changed 
+	 * TODO: Maybe some security???!
+	 * 
+	 * @param version
+	 * @return Success shown by returning the new liveSHA or failed message "Invalid version selected".
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("admin/changeLiveVersion/{version}")
+	public Response changeLiveVersion(@PathParam("version") String version){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
+		
+		if(null == liveVersion || liveVersion.equals(""))
+			liveVersion = availableVersions.get(0);
+		
+		if(!availableVersions.contains(version))
+			return Response.ok().entity("Invalid version selected").build();
+		else
+			liveVersion = version;
+		
+		return Response.ok().entity("live Version changed to " + version).build();
+	}	
 }
