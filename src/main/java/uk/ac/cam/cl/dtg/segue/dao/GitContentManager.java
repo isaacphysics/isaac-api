@@ -162,18 +162,25 @@ public class GitContentManager implements IContentManager {
 			    	    ObjectMapper objectMapper = new ObjectMapper();
 			    	    objectMapper.registerModule(getContentDeserializerModule());
 			    	    
-			    	    Content c = null;
+			    	    Content content = null;
 			    	    try{
-				    	    c = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
-				    	    c = this.augmentChildContent(c, treeWalk.getPathString());
+				    	    content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
+				    	    content = this.augmentChildContent(content, treeWalk.getPathString());
 				    	    
-				    	    if (null != c){
-					    	    log.info("Loading into cache: " + c.getId() + " from " + treeWalk.getPathString());
+				    	    if (null != content){
 						    	// log an error if we find that there are duplicate ids.
-					    	    if(shaCache.containsKey(c.getId()))
-					    	    	log.error("Resource with duplicate ID (" + c.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+					    	    if(shaCache.containsKey(content.getId()))
+					    	    	log.error("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
 					    	    else
-					    	    	shaCache.put(c.getId(), c);		    	    	
+					    	    {
+					    	    	// add children (and parent) from flattened Set to cache if they have ids
+						    	    for(Content parentOrChild : this.flattenContentObjects(content)){
+						    	    	if(parentOrChild.getId() != null){
+								    	    log.info("Loading into cache: " + parentOrChild.getId() + " from " + treeWalk.getPathString());
+						    	    		shaCache.put(parentOrChild.getId(), parentOrChild);
+						    	    	}
+						    	    }
+					    	    }
 				    	    }		    	    
 			    	    }
 			    	    catch(JsonMappingException e){
