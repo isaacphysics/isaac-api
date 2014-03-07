@@ -37,8 +37,6 @@ import com.google.inject.Injector;
 @Path("/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
-	
-	private static GitContentManager gcm;
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
 	private static final String liveSHA = "c7648afd7585fbebff0cae3c0cb77d305bd713a4";
@@ -147,14 +145,17 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Produces("*/*")
-	@Path("content/getFileContent/{sha}/{path:.*}")
-	public Response getFileContent(@PathParam("sha") String sha, @PathParam("path") String path) {				
+	@Path("content/getFileContent/{version}/{path:.*}")
+	public Response getFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
 		// TODO check if the content being requested is valid for this api call. e.g. only images?
-		if(null == sha || null == path || Files.getFileExtension(path).isEmpty()){
+		if(null == version || null == path || Files.getFileExtension(path).isEmpty()){
 			log.info("Bad input to api call. Returning null");
 			return Response.serverError().entity(null).build();
 		}
 
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		GitContentManager gcm = injector.getInstance(GitContentManager.class);
+		
 		ByteArrayOutputStream fileContent = null;
 		String mimeType = MediaType.WILDCARD; 
 		
@@ -165,14 +166,8 @@ public class SegueApiFacade {
 			}
 		}
 		
-		if(null == gcm){
-			Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
-			GitDb gdb = injector.getInstance(GitDb.class);
-			
-			gcm = new GitContentManager(gdb);
-		}
 		try {
-			fileContent = gcm.getFileBytes(sha, path);
+			fileContent = gcm.getFileBytes(version, path);
 		} catch (IOException e) {
 			log.error("Error reading from file repository");
 			e.printStackTrace();
