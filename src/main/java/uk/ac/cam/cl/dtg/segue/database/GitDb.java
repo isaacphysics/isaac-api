@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -14,14 +13,14 @@ import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
+import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * This class is a representation of the Git Database and provides some helper methods to allow file access.
  * 
- * This class is a representation of the Git Database
- * 
- * It is responsible for providing basic functionality to search a specified Git Repository and find files based on a given SHA
+ * It is responsible for providing basic functionality to search a specified Git Repository and find files based on a given SHA.
  * 
  */
 public class GitDb { 
@@ -46,27 +45,108 @@ public class GitDb {
 	/**
 	 * getFileByCommitSHA
 	 * 
-	 * This method will search the git repository for a particular SHA and will attempt to locate a unique file within the repository at the time of the SHA provided.
+	 * This method will access the git repository given a particular SHA and will attempt to locate a unique file and return a bytearrayoutputstream of the files contents.
 	 * 
-	 * @param SHA to search for
-	 * @param Filename to search for
+	 * @param SHA to search in.
+	 * @param Full file path to search for e.g. /src/filename.json
 	 * @return the ByteArrayOutputStream - which you can extract the file contents via the toString method.
 	 * @throws IOException
 	 * @throws UnsupportedOperationException - This method is intended to only locate one file at a time. If your search matches multiple files then this exception will be thrown.
 	 */
-	public ByteArrayOutputStream getFileByCommitSHA(String sha, String filename) throws IOException, UnsupportedOperationException{
-		
-		if(null == sha || null == filename)
+	public ByteArrayOutputStream getFileByCommitSHA(String sha, String fullFilePath) throws IOException, UnsupportedOperationException{
+		if(null == sha || null == fullFilePath)
 			return null;
+		
+		ObjectId objectId = this.findGitObject(sha, fullFilePath);
+		
+		if(null == objectId){
+			return null;
+		}
+		
+		Repository repository = gitHandle.getRepository();
+	    ObjectLoader loader = repository.open(objectId);
+	 
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    loader.copyTo(out);
+	    
+	    repository.close();
+	    return out;
+	}	
+
+	/**
+	 * This method will configure a treewalk object that can be used to navigate the git repository.
+	 * 
+	 * @param sha - the version that the treewalk should be configured to search within.
+	 * @param searchString - the search string which can be a full path or simply a file extension.
+	 * @return A preconfigured treewalk object.
+	 * @throws IOException
+	 * @throws UnsupportedOperationException
+	 */
+	public TreeWalk getTreeWalk(String sha, String searchString) throws IOException, UnsupportedOperationException{
+		if(null == sha || null == searchString){
+			return null;
+		}
+		
+		ObjectId commitId = gitHandle.getRepository().resolve(sha);
+		if(null == commitId){
+			log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
+		}else{
+			RevWalk revWalk = new RevWalk(gitHandle.getRepository());
+		    RevCommit commit = revWalk.parseCommit(commitId);
+			
+		    RevTree tree = commit.getTree();
+
+		    TreeWalk treeWalk = new TreeWalk(gitHandle.getRepository());
+		    treeWalk.addTree(tree);
+		    treeWalk.setRecursive(true);
+		    treeWalk.setFilter(PathSuffixFilter.create(searchString));
+		    
+		    return treeWalk;
+		}
+		return null;
+	}
+	
+	/**
+	 * Get the git handle for the database 
+	 * @return
+	 */
+	public Repository getGitRepository(){
+		return gitHandle.getRepository();
+	}
+	
+	/**
+	 * Attempt to verify if an object exists in the git repository for a given sha and full path.
+	 * 
+	 * @param sha
+	 * @param fullfilePath
+	 * @return True if we can successfully find the object, false if not. False if we encounter an exception.
+	 */
+	public boolean checkGitObject(String sha, String fullfilePath){
+		try {
+			if(findGitObject(sha, fullfilePath)!= null){
+				return true;
+			}
+		} catch (UnsupportedOperationException | IOException e) {
+			return false;
+		}
+		return false;
+	}
+	
+	/**
+	 * Will find an object from the git repository if given a sha and a full git path.
+	 * 
+	 * @param sha
+	 * @param filename
+	 * @return ObjectId which will allow you to access information about the node.
+	 */
+	private ObjectId findGitObject(String sha, String filename) throws IOException, UnsupportedOperationException{
+		if(null == sha || null == filename){
+			return null;
+		}
 		
 		Repository repository = gitHandle.getRepository();
 		
-		// TODO refactor this
-		ObjectId commitId = null;
-		if(sha.toLowerCase() == "head")
-	    	commitId = repository.resolve(Constants.HEAD);
-		else
-			commitId = repository.resolve(sha);
+		ObjectId commitId = repository.resolve(sha);
 		 
 	    RevWalk revWalk = new RevWalk(repository);
 	    RevCommit commit = revWalk.parseCommit(commitId);
@@ -103,20 +183,9 @@ public class GitDb {
 		    log.warn("No objects found matching the search criteria ("+ sha + "," +filename  +") in Git");  
 		    return null;
 	    }
-	   
-	    ObjectLoader loader = repository.open(objectId);
-	 
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-	    loader.copyTo(out);
-	    
-	    log.info("Retrieved Commit Id: " + commitId.getName() + " Searching for: "+ filename + " found: " + path);
 	    
 	    revWalk.dispose();
-	    repository.close();
-	    return out;
-	}	
-
-	public Git getGitHandle(){
-		return gitHandle;
+	    log.info("Retrieved Commit Id: " + commitId.getName() + " Searching for: "+ filename + " found: " + path);
+	    return objectId;
 	}
 }

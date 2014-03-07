@@ -2,9 +2,6 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,7 +115,9 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	/**
-	 * This method will populate the gitCache based on the content object files found for a given SHA 
+	 * This method will populate the gitCache based on the content object files found for a given SHA.
+	 * 
+	 * Currently it only looks for json files in the repository.
 	 * 
 	 * @param sha
 	 */
@@ -126,72 +125,52 @@ public class GitContentManager implements IContentManager {
 		// This set of code only needs to happen if we have to read from git again.
 		if(null != sha && gitCache.get(sha) == null){
 			
-			// find all json files for a given git commit
-			Git gitHandle = database.getGitHandle();
-			
 			// iterate through them to create content objects
-			Repository repository = gitHandle.getRepository();
+			Repository repository = database.getGitRepository();
 			
 			try{
-				ObjectId commitId = null;
-				if(sha.toLowerCase() == "head")
-			    	commitId = repository.resolve(Constants.HEAD);
-				else
-					commitId = repository.resolve(sha);
+				ObjectId commitId = repository.resolve(sha);
 				
 				if(null == commitId){
 					log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
 				
-				}else{
-					
-					RevWalk revWalk = new RevWalk(repository);
-				    RevCommit commit = revWalk.parseCommit(commitId);
-					
-				    RevTree tree = commit.getTree();
-
-				    TreeWalk treeWalk = new TreeWalk(repository);
-				    treeWalk.addTree(tree);
-				    treeWalk.setRecursive(true);
-				    treeWalk.setFilter(PathSuffixFilter.create(".json"));
+				}else{										
 				    Map<String,Content> shaCache = new HashMap<String,Content>();
+					TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
 
-				    // Traverse the git repository looking for everything that matches the PathSuffixFilter
+				    // Traverse the git repository looking for the .json files
 				    while(treeWalk.next()){
-				    	
 			    		ObjectId objectId = treeWalk.getObjectId(0);
 			    	    ObjectLoader loader = repository.open(objectId);
 			    		 
 			    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
 			    	    loader.copyTo(out);
 
-			    	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
-			    	    contentDeserializer.registerTypeMap(mapper.getJsonTypes());
-			    	    		
-			    	    SimpleModule simpleModule = new SimpleModule("ContentDeserializerModule");
-			    	    simpleModule.addDeserializer(ContentBase.class, contentDeserializer);
-			    	    		
+			    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
 			    	    ObjectMapper objectMapper = new ObjectMapper();
-			    	    objectMapper.registerModule(simpleModule);
+			    	    objectMapper.registerModule(getContentDeserializerModule());
+			    	    
 			    	    Content c = null;
 			    	    try{
 				    	    c = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 				    	    c = this.augmentChildContent(c, treeWalk.getPathString());
+				    	    
+				    	    if (null != c){
+					    	    log.info("Loading into cache: " + c.getId() + " from " + treeWalk.getPathString());
+						    	// log an error if we find that there are duplicate ids.
+					    	    if(shaCache.containsKey(c.getId()))
+					    	    	log.error("Resource with duplicate ID (" + c.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+					    	    else
+					    	    	shaCache.put(c.getId(), c);		    	    	
+				    	    }		    	    
 			    	    }
 			    	    catch(JsonMappingException e){
 			    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...");
 			    	    }
-			    	    
-			    	    if (null != c){
-				    	    log.info("Loading into cache: " + c.getId() + " from " + treeWalk.getPathString());
-					    	// log an error if we find that there are duplicate ids.
-				    	    if(shaCache.containsKey(c.getId()))
-				    	    	log.error("Resource with duplicate ID (" + c.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
-				    	    else
-				    	    	shaCache.put(c.getId(), c);		    	    	
-			    	    }
 				    }
 				    
-				    gitCache.put(sha, shaCache);					
+				    gitCache.put(sha, shaCache);
+				    repository.close();
 				}
 			}
 			catch(IOException exception){
@@ -203,6 +182,7 @@ public class GitContentManager implements IContentManager {
 	
 	/**
 	 * Augments all child objects recursively to include additional information.
+	 * 
 	 * @param content
 	 * @param canonicalSourceFile
 	 * @return Content object with new reference
@@ -232,6 +212,24 @@ public class GitContentManager implements IContentManager {
 		return content;		
 	}
 	
+	/**
+	 * Provides a preconfigured module that can be added to an object mapper so that contentBase objects can be deseerialized using the custom deserializer.
+	 * @return
+	 */
+	private SimpleModule getContentDeserializerModule(){ 
+	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
+	    contentDeserializer.registerTypeMap(mapper.getJsonTypes());
+	    		
+	    SimpleModule simpleModule = new SimpleModule("ContentDeserializerModule");
+	    simpleModule.addDeserializer(ContentBase.class, contentDeserializer);
+	    return simpleModule;
+	}
+	
+	/**
+	 * This method will attempt to traverse the cache to ensure that all content references are valid.
+	 * @param versionToCheck
+	 * @return
+	 */
 	private boolean validateReferentialIntegrity(String versionToCheck){
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
