@@ -249,11 +249,11 @@ public class GitContentManager implements IContentManager {
 			// content type specific checks
 			if(c.getType().equals("image")){
 				if(c.getSrc() != null && !c.getSrc().startsWith("http") && !database.checkGitObject(versionToCheck, c.getSrc())){
-					log.warn("Unable to find Image: " + c.getSrc() + " in Git. Could the reference be incorrect?");
+					log.warn("Unable to find Image: " + c.getSrc() + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
 					missingContent.add("Image: " + c.getSrc());
 				}					
 				else
-					log.info("Verified image " + c.getSrc() + " exists in git.");
+					log.debug("Verified image " + c.getSrc() + " exists in git.");
 			}
 		}
 		
