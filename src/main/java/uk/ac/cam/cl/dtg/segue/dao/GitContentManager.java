@@ -10,16 +10,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevTree;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -231,24 +225,71 @@ public class GitContentManager implements IContentManager {
 	 * @return
 	 */
 	private boolean validateReferentialIntegrity(String versionToCheck){
+		Set<Content> allObjectsSeen = new HashSet<Content>();
+		
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
-
-		// Currently check relatedContent Only. Children of Content objects are a different matter still to be defined.
-		for(Content c : gitCache.get(versionToCheck).values()){
-			definedIds.add(c.getId());
-			
-			expectedIds.addAll(c.getRelatedContent());
+		Set<String> missingContent = new HashSet<String>();
+		
+		// Build up a set of all content (and content fragments for validation)
+		for(Content c : gitCache.get(versionToCheck).values()){			
+			allObjectsSeen.addAll(this.flattenContentObjects(c));
 		}
 		
-		if(expectedIds.equals(definedIds)){
+		// Start looking for issues in the flattened content data
+		for(Content c : allObjectsSeen){
+			// add the id to the list of defined ids if one is set for this content object
+			if(c.getId() != null)
+				definedIds.add(c.getId());
+
+			// add the ids to the list of expected ids if we see a list of referenced content  
+			if(c.getRelatedContent() != null)
+				expectedIds.addAll(c.getRelatedContent());
+			
+			// content type specific checks
+			if(c.getType().equals("image")){
+				if(c.getSrc() != null && !c.getSrc().startsWith("http") && !database.checkGitObject(versionToCheck, c.getSrc())){
+					log.warn("Unable to find Image: " + c.getSrc() + " in Git. Could the reference be incorrect?");
+					missingContent.add("Image: " + c.getSrc());
+				}					
+				else
+					log.info("Verified image " + c.getSrc() + " exists in git.");
+			}
+		}
+		
+		if(expectedIds.equals(definedIds) && missingContent.isEmpty()){
 			return true;
 		}
 		else
 		{
 			expectedIds.removeAll(definedIds);
+			missingContent.addAll(expectedIds);
 			log.error("Referential integrity broken for related Content. The following ids are referenced but do not exist: " + expectedIds.toString());
 			return false;
-		}	
+		}
+	}
+	
+	/**
+	 * Unpack the content objects into one big set. Useful for validation but will produce a very large set
+	 * 
+	 * @param c
+	 * @return
+	 */
+	private Set<Content> flattenContentObjects(Content c){
+		Set<Content> setOfContentObjects = new HashSet<Content>();
+		
+		if(!c.getChildren().isEmpty()){
+
+			List<ContentBase> children = c.getChildren();
+			
+			for(ContentBase child : children){
+				setOfContentObjects.add((Content) child);
+				setOfContentObjects.addAll(flattenContentObjects((Content) child));
+			}
+		}
+
+		setOfContentObjects.add(c);
+		
+		return setOfContentObjects;
 	}
 }
