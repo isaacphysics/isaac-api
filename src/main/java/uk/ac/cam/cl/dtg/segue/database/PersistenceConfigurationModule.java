@@ -7,9 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.rspp.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.MongoContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -37,13 +35,14 @@ public class PersistenceConfigurationModule extends AbstractModule {
 	protected void configure() {
 		// Setup different persistence bindings
 
-		// MongoDB
-		bind(DB.class).toInstance(Mongo.getDB());
-		//bind(IContentManager.class).to(MongoContentManager.class); //Allows Mongo take over Content Management
-
-		// GitDb
 		try {
+			// MongoDB
+			bind(DB.class).toInstance(Mongo.getDB());
+
+			// GitDb			
 			bind(GitDb.class).toInstance(new GitDb(gitDbUri));
+			
+			//bind(IContentManager.class).to(MongoContentManager.class); //Allows Mongo take over Content Management
 			bind(IContentManager.class).to(GitContentManager.class); //Allows GitDb take over Content Management
 		} catch (IOException e) {
 			e.printStackTrace();
