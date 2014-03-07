@@ -180,7 +180,16 @@ public class SegueApiFacade {
 		
 		return Response.ok().type(mimeType).entity(fileContent.toByteArray()).build();
 	}	
-	
+
+	/**
+	 * Developer method that will return all content of a given type.
+	 * 
+	 * Useful for retrieving all content of a specific type from the cache.
+	 *  
+	 * @param type
+	 * @param limit
+	 * @return
+	 */
 	@GET
 	@Produces("application/json")
 	@Path("content/getAllContentByType/{type}")
