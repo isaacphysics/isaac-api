@@ -10,7 +10,7 @@
 {template .renderContent}
 	/* Base case we just spit out the literal content */
 	{if $contentObject.type == 'image'}
-		<img src="{$ij.proxyPath}/static/figures/{$contentObject.src}"/>
+		<img src="{$ij.proxyPath}/api/content/getFileContent/a82ac5e8d8bd8ee6b8f98bbd973710ab5f0adc9a/{$contentObject.src}"/>
 		<figcaption>{$contentObject.value |noAutoescape}</figcaption>
 	{elseif $contentObject.value != null}
 		{$contentObject.value |noAutoescape}
