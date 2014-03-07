@@ -9,6 +9,10 @@ import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -192,6 +196,24 @@ public class GitDb {
 			log.error("Git returned an IO exception. Unable to list all commits.");
 		}	
 		return logList;
+	}
+	
+	/**
+	 * Retrieve the SHA that is the head of the repository
+	 * 
+	 * @return String of sha id
+	 */
+	public String getHeadSha(){
+		String result = null;
+		
+		try {
+			result =  gitHandle.getRepository().resolve(Constants.HEAD).getName();
+		} catch (RevisionSyntaxException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			log.error("Error getting the head from the repository.");
+		}
+		return result;
 	}
 	
 	/**
