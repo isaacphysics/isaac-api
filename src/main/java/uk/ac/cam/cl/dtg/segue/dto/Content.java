@@ -46,7 +46,7 @@ public class Content extends ContentBase{
 				   @JsonProperty("src") String src,
 				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
-				   @JsonProperty("contentReferenced") List<String> children,
+				   @JsonProperty("contentReferenced") List<ContentBase> children,
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
@@ -64,8 +64,12 @@ public class Content extends ContentBase{
 		this.attribution = attribution;
 		this.relatedContent = relatedContent;
 		this.version = version;
+		this.children = children;
+		
 		// useful for when we want to augment this POJO
-		this.children = new ArrayList<ContentBase>();
+		if(null == this.children)
+			this.children = new ArrayList<ContentBase>();
+		
 	}
 	
 	/** 
