@@ -3,8 +3,12 @@ package uk.ac.cam.cl.dtg.segue.database;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -121,7 +125,7 @@ public class GitDb {
 	 * @param fullfilePath
 	 * @return True if we can successfully find the object, false if not. False if we encounter an exception.
 	 */
-	public boolean checkGitObject(String sha, String fullfilePath){
+	public boolean verifyGitObject(String sha, String fullfilePath){
 		try {
 			if(findGitObject(sha, fullfilePath)!= null){
 				return true;
@@ -130,6 +134,64 @@ public class GitDb {
 			return false;
 		}
 		return false;
+	}
+	
+	/**
+	 * Check that a commit sha exists within the git repository.
+	 * 
+	 * @param sha
+	 * @return True if we have found the git sha false if not.
+	 */
+	public boolean verifyCommitExists(String sha){
+		try {
+			Iterable<RevCommit> logs = gitHandle.log().all().call();
+			
+			for(RevCommit rev : logs){
+				if(rev.getName().equals(sha))
+					return true;
+			}
+			
+		} catch (NoHeadException e) {
+			log.error("Git returned a no head exception. Unable to list all commits.");
+			e.printStackTrace();
+		} catch (GitAPIException e) {
+			log.error("Git returned an API exception. Unable to list all commits.");
+			e.printStackTrace();
+		} catch (IOException e) {
+			log.error("Git returned an IO exception. Unable to list all commits.");
+			e.printStackTrace();
+		}
+		log.warn("Commit " + sha + " does not exist");
+		return false;
+	}
+	
+	/**
+	 * gets a complete list of commits with the most recent commit first.
+	 * 
+	 * @return List of the commit shas we have found in the git repository.
+	 */
+	public List<RevCommit> listCommits(){
+		List<RevCommit> logList = null;
+		try {
+			Iterable<RevCommit> logs = gitHandle.log().all().call();
+			logList = new ArrayList<RevCommit>();
+			
+			for(RevCommit rev : logs){
+				logList.add(rev);
+			}
+			
+		} catch (NoHeadException e) {
+			log.error("Git returned a no head exception. Unable to list all commits.");
+		} catch (GitAPIException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			log.error("Git returned an API exception. Unable to list all commits.");			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			log.error("Git returned an IO exception. Unable to list all commits.");
+		}	
+		return logList;
 	}
 	
 	/**
@@ -188,4 +250,5 @@ public class GitDb {
 	    log.info("Retrieved Commit Id: " + commitId.getName() + " Searching for: "+ filename + " found: " + path);
 	    return objectId;
 	}
+
 }

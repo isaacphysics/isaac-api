@@ -100,9 +100,14 @@ public class GitContentManager implements IContentManager {
 	 */
 	private boolean ensureCache(String version){
 		if(!gitCache.containsKey(version)){
-			log.info("Rebuilding cache as sha does not exist in hashmap");
-			buildGitIndex(version);
-			validateReferentialIntegrity(version);
+			if(database.verifyCommitExists(version)){
+				log.info("Rebuilding cache as sha does not exist in hashmap");
+				buildGitIndex(version);
+				validateReferentialIntegrity(version);				
+			}else{
+				// we can't find the commit in git.
+				return false;
+			}
 		}
 		
 		return gitCache.containsKey(version);
@@ -248,7 +253,7 @@ public class GitContentManager implements IContentManager {
 			
 			// content type specific checks
 			if(c.getType().equals("image")){
-				if(c.getSrc() != null && !c.getSrc().startsWith("http") && !database.checkGitObject(versionToCheck, c.getSrc())){
+				if(c.getSrc() != null && !c.getSrc().startsWith("http") && !database.verifyGitObject(versionToCheck, c.getSrc())){
 					log.warn("Unable to find Image: " + c.getSrc() + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
 					missingContent.add("Image: " + c.getSrc());
 				}					
