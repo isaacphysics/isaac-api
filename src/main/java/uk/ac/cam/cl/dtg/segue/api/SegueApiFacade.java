@@ -22,7 +22,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
@@ -214,7 +213,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("admin/changeLiveVersion/{version}")
-	public Response changeLiveVersion(@PathParam("version") String version){
+	public synchronized Response changeLiveVersion(@PathParam("version") String version){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
@@ -225,9 +224,11 @@ public class SegueApiFacade {
 		
 		if(!availableVersions.contains(version))
 			return Response.ok().entity("Invalid version selected").build();
-		else
+		else{
 			liveVersion = version;
-		
+			log.info("Live version of the site changed to: " + version);
+		}
+			
 		return Response.ok().entity("live Version changed to " + version).build();
 	}	
 }
