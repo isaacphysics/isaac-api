@@ -36,7 +36,6 @@ public class Content extends ContentBase{
 	protected List<String> relatedContent;
 	protected int version;
 	
-	
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
@@ -182,6 +181,43 @@ public class Content extends ContentBase{
 	
 	public List<ContentBase> getChildren(){
 		return this.children;
+	}
+	
+	@Override
+	public boolean equals(Object o){
+		if(null == o || !(o instanceof Content))
+			return false;
+		
+		Content c = (Content) o;
+		boolean result = true;
+		
+		if(this.id != null){
+			result = result && this.id.equals(c.getId());
+		}
+		if(this.title != null){
+			result = result && this.title.equals(c.getTitle());
+		}
+		if(this.value != null){
+			result = result && this.value.equals(c.getValue());
+		}
+			
+		return result;
+	}
+	
+	@Override
+	public int hashCode(){
+		int hashCode = 0;
+		
+		if(this.id != null)
+			hashCode = hashCode + this.id.hashCode();
+		
+		if(this.title != null)
+			hashCode = hashCode + this.title.hashCode();
+
+		if(this.value != null)
+			hashCode = hashCode + this.value.hashCode();
+		
+		return hashCode;
 	}
 	
 }
