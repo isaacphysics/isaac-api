@@ -13,6 +13,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,18 @@ public class GitContentManager implements IContentManager {
 	@Override
 	public ByteArrayOutputStream getFileBytes(String version, String filename) throws IOException{
 		return database.getFileByCommitSHA(version, filename);
+	}
+	
+	@Override
+	public List<String> listAvailableVersions()
+			throws UnsupportedOperationException {
+		
+		List<String> result = new ArrayList<String>();
+		for(RevCommit rc : database.listCommits()){
+			result.add(rc.getName());
+		}
+		
+		return result;
 	}
 	
 	/**
@@ -297,4 +310,5 @@ public class GitContentManager implements IContentManager {
 		
 		return setOfContentObjects;
 	}
+
 }

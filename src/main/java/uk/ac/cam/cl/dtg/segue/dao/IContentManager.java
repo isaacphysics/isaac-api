@@ -37,4 +37,13 @@ public interface IContentManager {
 	 * @return The outputstream of the file contents
 	 */
 	public ByteArrayOutputStream getFileBytes(String version, String filename) throws IOException;
+	
+	/**
+	 * Provide a list of all possible versions from the underlying database
+	 * 
+	 * This method will only work on IContentManagers that store snapshots with attached version numbers.
+	 * 
+	 * @return
+	 */
+	public List<String> listAvailableVersions() throws UnsupportedOperationException;
 }

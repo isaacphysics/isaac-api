@@ -84,6 +84,12 @@ public class MongoContentManager implements IContentManager {
 		return listOfContent;
 	}
 	
+	@Override
+	public List<String> listAvailableVersions()
+			throws UnsupportedOperationException {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
+	
 	@SuppressWarnings("unchecked")
 	private <T extends Content> Class<T> getContentSubclass(T obj) throws IllegalArgumentException {
 		if(obj instanceof Content)
