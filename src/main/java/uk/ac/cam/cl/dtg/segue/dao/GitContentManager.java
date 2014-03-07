@@ -145,7 +145,6 @@ public class GitContentManager implements IContentManager {
 				
 				if(null == commitId){
 					log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
-				
 				}else{										
 				    Map<String,Content> shaCache = new HashMap<String,Content>();
 					TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
@@ -168,19 +167,31 @@ public class GitContentManager implements IContentManager {
 				    	    content = this.augmentChildContent(content, treeWalk.getPathString());
 				    	    
 				    	    if (null != content){
-						    	// log an error if we find that there are duplicate ids.
-					    	    if(shaCache.containsKey(content.getId()))
-					    	    	log.error("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
-					    	    else
-					    	    {
-					    	    	// add children (and parent) from flattened Set to cache if they have ids
-						    	    for(Content parentOrChild : this.flattenContentObjects(content)){
-						    	    	if(parentOrChild.getId() != null){
-								    	    log.info("Loading into cache: " + parentOrChild.getId() + " from " + treeWalk.getPathString());
-						    	    		shaCache.put(parentOrChild.getId(), parentOrChild);
-						    	    	}
-						    	    }
+				    	    	// add children (and parent) from flattened Set to cache if they have ids
+					    	    for(Content flattenedContent : this.flattenContentObjects(content)){
+					    	    	if(flattenedContent.getId() != null){
+
+					    	    		// check if we have seen this key before if we have then we don't want to add it again
+					    	    		if(shaCache.containsKey(flattenedContent.getId())){
+
+					    	    			// if the key is the same but the content is different then something has gone wrong - log an error
+					    	    			if(!shaCache.get(flattenedContent.getId()).equals(flattenedContent)){
+								    	    	// log an error if we find that there are duplicate ids and the content is different.
+								    	    	log.error("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+							    	    	}
+					    	    			// if the content is the same then it is just reuse of a content object so that is fine.
+					    	    			else{
+								    	    	log.debug("Resource (" + content.getId() +") already seen in cache. Skipping " + treeWalk.getPathString());
+							    	    	}
+							    	    }
+					    	    		// It must be new so we can add it
+							    	    else{
+							    	    	log.info("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
+							    	    	shaCache.put(flattenedContent.getId(), flattenedContent);
+							    	    }
+					    	    	}
 					    	    }
+					    	    
 				    	    }		    	    
 			    	    }
 			    	    catch(JsonMappingException e){
