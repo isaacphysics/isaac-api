@@ -46,6 +46,17 @@
 			<artifactId>guava</artifactId>
 			<version>11.0.1</version>
 		</dependency>
+	    <dependency>
+	      <groupId>com.google.oauth-client</groupId>
+	      <artifactId>google-oauth-client</artifactId>
+	      <version>1.17.0-rc</version>
+	    </dependency>
+		<dependency>
+  			<groupId>com.google.inject</groupId>
+  			<artifactId>guice</artifactId>
+  			<version>3.0</version>
+		</dependency>
+			    
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-multipart-provider</artifactId>
@@ -64,11 +75,7 @@
 			<version>4.0</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-  			<groupId>com.google.inject</groupId>
-  			<artifactId>guice</artifactId>
-  			<version>3.0</version>
-		</dependency>
+
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
