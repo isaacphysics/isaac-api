@@ -9,7 +9,7 @@
 	<url>http://maven.apache.org</url>
 
 	<properties>
-		<resteasy.version>2.3.1.GA</resteasy.version>
+		<resteasy.version>3.0.6.Final</resteasy.version>
 		<log4j.version>1.2.17</log4j.version>
 		<slf4j.version>1.7.5</slf4j.version>
 	    <powermock.version>1.5.2</powermock.version>		
