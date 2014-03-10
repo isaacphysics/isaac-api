@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,6 +147,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("*/*")
 	@Path("content/getFileContent/{version}/{path:.*}")
+	@Cache
 	public Response getFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
 		// TODO check if the content being requested is valid for this api call. e.g. only images?
 		if(null == version || null == path || Files.getFileExtension(path).isEmpty()){
@@ -219,7 +222,7 @@ public class SegueApiFacade {
 	 * @param version
 	 * @return Success shown by returning the new liveSHA or failed message "Invalid version selected".
 	 */
-	@GET
+	@PUT
 	@Produces("application/json")
 	@Path("admin/changeLiveVersion/{version}")
 	public synchronized Response changeLiveVersion(@PathParam("version") String version){
