@@ -104,11 +104,6 @@
 			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.datomic</groupId>
-			<artifactId>datomic-free</artifactId>
-			<version>0.8.4260</version>
-		</dependency>
-		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>clojure</artifactId>
 			<version>1.5.1</version>
