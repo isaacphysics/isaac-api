@@ -26,9 +26,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.models.ContentDetail;
 import uk.ac.cam.cl.dtg.isaac.models.ContentInfo;
 import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
 import uk.ac.cam.cl.dtg.isaac.models.IndexPage;
+import uk.ac.cam.cl.dtg.isaac.models.TopicDetail;
 import uk.ac.cam.cl.dtg.isaac.models.TopicPage;
 import uk.ac.cam.cl.dtg.isaac.models.IndexPage.IndexPageItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;

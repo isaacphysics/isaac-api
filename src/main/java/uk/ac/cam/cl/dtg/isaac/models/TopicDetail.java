@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.models;
 
 import java.io.IOException;
 import java.io.InputStream;
