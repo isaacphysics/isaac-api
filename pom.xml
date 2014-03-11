@@ -5,8 +5,8 @@
 	<artifactId>rutherford-server</artifactId>
 	<packaging>war</packaging>
 	<version>1.0-SNAPSHOT</version>
-	<name>rutherford-server</name>
-	<url>http://maven.apache.org</url>
+	<name>Isaac on a Segue</name>
+	<url>http://isaacphysics.org/</url>
 
 	<properties>
 		<resteasy.version>3.0.6.Final</resteasy.version>
