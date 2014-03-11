@@ -20,16 +20,16 @@ public class TopicDetail implements Comparable<TopicDetail> {
 			.getLogger(TopicDetail.class);
 
 	@JsonProperty("TOPIC")
-	String topic;
+	private String topic;
 
 	@JsonProperty("TITLE")
-	String title;
+	private String title;
 
 	@JsonProperty("PDF")
-	Map<String, String> pdf;
+	private Map<String, String> pdf;
 
 	@JsonProperty("ORDER")
-	int order;
+	private int order;
 
 	public static Map<String, TopicDetail> load() {
 		InputStream is = ContentDetail.class.getClassLoader()
@@ -57,12 +57,44 @@ public class TopicDetail implements Comparable<TopicDetail> {
 
 	@Override
 	public int compareTo(TopicDetail o) {
-		int cmp = new Integer(order).compareTo(o.order);
+		int cmp = new Integer(getOrder()).compareTo(o.getOrder());
 		if (cmp == 0)
-			cmp = title.compareTo(o.title);
+			cmp = getTitle().compareTo(o.getTitle());
 		if (cmp == 0)
-			cmp = topic.compareTo(o.topic);
+			cmp = getTopic().compareTo(o.getTopic());
 		return cmp;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public Map<String, String> getPdf() {
+		return pdf;
+	}
+
+	public void setPdf(Map<String, String> pdf) {
+		this.pdf = pdf;
+	}
+
+	public int getOrder() {
+		return order;
+	}
+
+	public void setOrder(int order) {
+		this.order = order;
 	}
 
 }

@@ -16,10 +16,6 @@ import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.models.ContentInfo;
-
-import com.google.common.collect.ImmutableList;
-
 /**
  * @deprecated Not sure if we need this now
  *
@@ -30,31 +26,31 @@ public class ContentDetail implements Comparable<ContentDetail> {
 	private static final Logger log = LoggerFactory.getLogger(ContentDetail.class);
 
 	@JsonProperty("ID")
-	String id;
+	private String id;
 
 	@JsonProperty("TYPE")
-	String type;
+	private String type;
 
 	@JsonProperty("TITLE")
-	String title;
+	private String title;
 
 	@JsonProperty("TOPIC")
-	String topic;
+	private String topic;
 
 	@JsonProperty("LEVEL")
-	String level;
+	private String level;
 
 	@JsonProperty("VIDEOS")
-	List<String> videoIds;
+	private List<String> videoIds;
 
 	@JsonProperty("CONCEPTS")
-	List<String> relatedConceptIds;
+	private List<String> relatedConceptIds;
 
 	@JsonProperty("QUESTIONS")
-	List<String> relatedQuestionIds;
+	private List<String> relatedQuestionIds;
 
 	@JsonProperty("ORDER")
-	int order;
+	private int order;
 	
 	public String prevContentId = null;
 	public String nextContentId = null;
@@ -96,9 +92,81 @@ public class ContentDetail implements Comparable<ContentDetail> {
 
 	@Override
 	public int compareTo(ContentDetail o) {
-		int cmp = new Integer(order).compareTo(o.order);
-		if (cmp == 0) cmp = title.compareTo(o.title);
-		if (cmp == 0) cmp = id.compareTo(id);
+		int cmp = new Integer(getOrder()).compareTo(o.getOrder());
+		if (cmp == 0) cmp = getTitle().compareTo(o.getTitle());
+		if (cmp == 0) cmp = getId().compareTo(getId());
 		return cmp;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+
+	public String getLevel() {
+		return level;
+	}
+
+	public void setLevel(String level) {
+		this.level = level;
+	}
+
+	public List<String> getVideoIds() {
+		return videoIds;
+	}
+
+	public void setVideoIds(List<String> videoIds) {
+		this.videoIds = videoIds;
+	}
+
+	public List<String> getRelatedConceptIds() {
+		return relatedConceptIds;
+	}
+
+	public void setRelatedConceptIds(List<String> relatedConceptIds) {
+		this.relatedConceptIds = relatedConceptIds;
+	}
+
+	public List<String> getRelatedQuestionIds() {
+		return relatedQuestionIds;
+	}
+
+	public void setRelatedQuestionIds(List<String> relatedQuestionIds) {
+		this.relatedQuestionIds = relatedQuestionIds;
+	}
+
+	public int getOrder() {
+		return order;
+	}
+
+	public void setOrder(int order) {
+		this.order = order;
 	}
 }

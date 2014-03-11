@@ -84,12 +84,12 @@ public class IsaacController {
 				ContentDetail prevQ = null;
 				for (ContentDetail q : content) 
 				{
-					if (q.type.equals(ContentDetail.TYPE_QUESTION) && t.topic.equals(q.topic) && ((Integer)level).toString().equals(q.level)) 
+					if (q.getType().equals(ContentDetail.TYPE_QUESTION) && t.getTopic().equals(q.getTopic()) && ((Integer)level).toString().equals(q.getLevel())) 
 					{
 						if (prevQ != null)
 						{
-							q.prevContentId = prevQ.id;
-							prevQ.nextContentId = q.id;
+							q.prevContentId = prevQ.getId();
+							prevQ.nextContentId = q.getId();
 						}
 						prevQ = q;
 					}
@@ -149,11 +149,11 @@ public class IsaacController {
 		// Find all the questions for this topic.
 		for (ContentDetail detail : values) 
 		{
-			if (detail.type.equals(ContentDetail.TYPE_QUESTION) && topic.equals(detail.topic) && level.equals(detail.level)) 
+			if (detail.getType().equals(ContentDetail.TYPE_QUESTION) && topic.equals(detail.getTopic()) && level.equals(detail.getLevel())) 
 			{
-				questionIdBuilder.add(detail.id);
+				questionIdBuilder.add(detail.getId());
 				
-				for (String cid : detail.relatedConceptIds)
+				for (String cid : detail.getRelatedConceptIds())
 				{
 					if (contentDetails.containsKey(cid))
 						linkedConceptIds.add(cid);
@@ -167,7 +167,7 @@ public class IsaacController {
 		
 		ImmutableList<String> conceptIds = conceptIdBuilder.build();
 
-		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, null, topicDetail.pdf.get(level));
+		return new TopicPage(topicDetail.getTopic(), topicDetail.getTitle(), level, conceptIds, questionIds, null, topicDetail.getPdf().get(level));
 	}
 
 	/**
