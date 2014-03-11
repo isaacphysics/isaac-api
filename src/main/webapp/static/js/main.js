@@ -87,7 +87,7 @@ function loadContent(uri, addToHistory) {
 		if (template)
 		{
 			// This is a URI we know about
-			$.get(ij.proxyPath + "/api" + uri, function(json) {
+			$.get(ij.proxyPath + "/isaac/api" + uri, function(json) {
 				soy.renderElement($("#content")[0], template, json, ij);
 				pageRendered();
 				

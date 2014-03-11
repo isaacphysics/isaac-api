@@ -14,12 +14,12 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
  * @author acr31
  * 
  */
-public class ApplicationRegister extends Application {
+public class IsaacApplicationRegister extends Application {
 
 	@Override
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> result = new HashSet<Class<?>>();
-		result.add(RutherfordController.class);
+		result.add(IsaacController.class);
 		//result.add(SegueApiFacade.class);
 		return result;
 	}

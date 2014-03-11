@@ -53,9 +53,9 @@ public class PageServlet extends HttpServlet {
 
 		String cContent = "";
 		try {
-			ImmutableMap<String,String> ij = RutherfordController.getSoyGlobalMap(req);
+			ImmutableMap<String,String> ij = IsaacController.getSoyGlobalMap(req);
 			String uri = req.getRequestURI().substring(((String)ij.get("contextPath")).length());
-			RutherfordController rc = new RutherfordController();
+			IsaacController rc = new IsaacController();
 			
 			if (uri.startsWith("/learn"))
 			{
@@ -95,7 +95,7 @@ public class PageServlet extends HttpServlet {
 		
 		String cLayout = "";
 		try {
-			cLayout = renderer.render("rutherford.main", ImmutableMap.of("content", cContent), RutherfordController.getSoyGlobalMap(req), Locale.ENGLISH);
+			cLayout = renderer.render("rutherford.main", ImmutableMap.of("content", cContent), IsaacController.getSoyGlobalMap(req), Locale.ENGLISH);
 		} catch (SoyTofuException e) {
 			cLayout = "<i>No content available.</i>";
 			log.error("Error applying soy template", e);

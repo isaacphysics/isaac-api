@@ -23,7 +23,7 @@ public class InsertSilkenGlobalsFilter implements Filter {
 			FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
 		req.setAttribute("globals",
-				RutherfordController.getSoyGlobalMap(req));
+				IsaacController.getSoyGlobalMap(req));
 		chain.doFilter(request, response);
 	}
 

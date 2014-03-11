@@ -53,9 +53,9 @@ import com.papercut.silken.TemplateRenderer;
  * 
  */
 @Path("/")
-public class RutherfordController {
+public class IsaacController {
 
-	private static final Logger log = LoggerFactory.getLogger(RutherfordController.class);
+	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
 	private static final SegueApiFacade api = new SegueApiFacade();
 
@@ -263,7 +263,7 @@ public class RutherfordController {
 			@Context HttpServletRequest request){
 
 		// construct a new instance of the mailer object
-		Mailer contactUsMailer = new Mailer(RutherfordController.MailerSmtpServer,RutherfordController.MailerFromAddress);
+		Mailer contactUsMailer = new Mailer(IsaacController.MailerSmtpServer,IsaacController.MailerFromAddress);
 		
 		if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email) && StringUtils.isBlank(subject) && StringUtils.isBlank(messageText)){
 			log.debug("Contact us required field validation error ");
