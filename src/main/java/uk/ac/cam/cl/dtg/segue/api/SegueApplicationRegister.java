@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.rspp.app;
+package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,13 +14,12 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
  * @author acr31
  * 
  */
-public class ApplicationRegister extends Application {
+public class SegueApplicationRegister extends Application {
 
 	@Override
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> result = new HashSet<Class<?>>();
-		result.add(RutherfordController.class);
-		//result.add(SegueApiFacade.class);
+		result.add(SegueApiFacade.class);
 		return result;
 	}
 
