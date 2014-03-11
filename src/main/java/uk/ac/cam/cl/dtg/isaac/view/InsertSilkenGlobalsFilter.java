@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.view;
 
 import java.io.IOException;
 
@@ -10,6 +10,8 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
+
+import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
 
 @WebFilter("/*")
 public class InsertSilkenGlobalsFilter implements Filter {

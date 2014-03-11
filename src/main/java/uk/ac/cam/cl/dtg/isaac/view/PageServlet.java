@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.view;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -14,6 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.template.soy.tofu.SoyTofuException;
