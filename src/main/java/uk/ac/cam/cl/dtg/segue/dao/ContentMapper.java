@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.mongojack.internal.MongoJackModule;
 
-import uk.ac.cam.cl.dtg.rspp.models.JsonType;
+import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
 import com.fasterxml.jackson.core.JsonParseException;

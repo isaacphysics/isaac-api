@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.mongojack.ObjectId;
 
-import uk.ac.cam.cl.dtg.rspp.models.JsonType;
+import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 

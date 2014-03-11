@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.rspp.app;
+package uk.ac.cam.cl.dtg.isaac.app;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,11 +26,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.rspp.models.ContentInfo;
-import uk.ac.cam.cl.dtg.rspp.models.ContentPage;
-import uk.ac.cam.cl.dtg.rspp.models.IndexPage;
-import uk.ac.cam.cl.dtg.rspp.models.TopicPage;
-import uk.ac.cam.cl.dtg.rspp.models.IndexPage.IndexPageItem;
+import uk.ac.cam.cl.dtg.isaac.models.ContentInfo;
+import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
+import uk.ac.cam.cl.dtg.isaac.models.IndexPage;
+import uk.ac.cam.cl.dtg.isaac.models.TopicPage;
+import uk.ac.cam.cl.dtg.isaac.models.IndexPage.IndexPageItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IRegistrationManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
@@ -166,8 +166,6 @@ public class RutherfordController {
 		ImmutableList<String> questionIds = questionIdBuilder.build();
 		
 		ImmutableList<String> conceptIds = conceptIdBuilder.build();
-
-		//ImmutableMap<String, ContentInfo> environment = collectEnvironment();
 
 		return new TopicPage(topicDetail.topic, topicDetail.title, level, conceptIds, questionIds, null, topicDetail.pdf.get(level));
 	}
