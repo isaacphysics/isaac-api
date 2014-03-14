@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
-public interface IRegistrationManager {
+public interface IUserDataManager {
 
-	public boolean register(User user);
+	public String register(User user);
 }

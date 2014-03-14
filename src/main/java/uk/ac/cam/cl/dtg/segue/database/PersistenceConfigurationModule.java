@@ -7,13 +7,14 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.IRegistrationManager;
+import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManager;
-import uk.ac.cam.cl.dtg.segue.dao.RegistrationManager;
+import uk.ac.cam.cl.dtg.segue.dao.UserDataManager;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
@@ -24,10 +25,14 @@ import com.mongodb.DB;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes
+ * TODO: should this be a singleton 
  */
 public class PersistenceConfigurationModule extends AbstractModule {
 
 	private ContentMapper mapper = new ContentMapper(buildDefaultJsonTypeMap());
+
+	private GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
+	
 	private static final Logger log = LoggerFactory.getLogger(PersistenceConfigurationModule.class);
 	private static final String gitDbUri = "c:\\rutherford-test\\.git";
 	
@@ -48,10 +53,13 @@ public class PersistenceConfigurationModule extends AbstractModule {
 			e.printStackTrace();
 			log.error("Error instantiating the Git database for the given path: " + gitDbUri);
 		}
-		
+
 		bind(ILogManager.class).to(LogManager.class);
-		bind(IRegistrationManager.class).to(RegistrationManager.class);
+		bind(IUserDataManager.class).to(UserDataManager.class);
+
 		bind(ContentMapper.class).toInstance(mapper);
+		bind(GoogleAuthenticator.class).toInstance(googleAuthenticator);
+		
 	}
 	
 	/**
@@ -70,4 +78,7 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		map.put("choiceQuestion", ChoiceQuestion.class);
 		return map;
 	}
+	
+	
+	
 }

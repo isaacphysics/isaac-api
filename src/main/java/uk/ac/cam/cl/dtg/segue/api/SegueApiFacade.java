@@ -2,9 +2,11 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -26,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.User;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -242,5 +245,87 @@ public class SegueApiFacade {
 		}
 			
 		return Response.ok().entity("live Version changed to " + version).build();
-	}	
+	}
+	
+	/**
+	 * Get the details of the currently logged in user
+	 * TODO: test me
+	 * 
+	 * @return Returns the current user DTO if we can get it or null if we can't
+	 */
+	public User getCurrentUser(HttpServletRequest request){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		UserManager userManager = injector.getInstance(UserManager.class);
+		
+		return userManager.getCurrentUser(request);
+	}
+	
+	/**
+	 * This is the initial step of the authentication process.
+	 * 
+	 * @param request
+	 * @param signinProvider - string representing the supported auth provider so that we know who to redirect the user to.
+	 * @return Redirect response to the auth providers site.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("auth/{provider}/authenticate")
+	public Response authenticationInitialisation(@Context HttpServletRequest request, @PathParam("provider") String signinProvider){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		UserManager userManager = injector.getInstance(UserManager.class);
+		
+		User currentUser = getCurrentUser(request);
+		
+		if(null != currentUser){
+			return Response.ok().entity(currentUser).build();
+		}
+		
+		// ok we need to hand over to user manager
+		return userManager.authenticate(request, signinProvider);
+		
+	}
+
+	/**
+	 * This is the callback url that auth providers should use to send us information about users.
+	 * 
+	 * @param request
+	 * @param response
+	 * @param signinProvider
+	 * @return Redirect?
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("auth/{provider}/callback")
+	public Response authenticationCallback(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("provider") String signinProvider){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		UserManager userManager = injector.getInstance(UserManager.class);
+		
+		userManager.authenticateCallback(request, response, signinProvider);
+		
+		//return authenticationResult;
+		//TODO: make less hacky
+		return Response.temporaryRedirect(URI.create("../../learn")).build();
+	}
+	
+	/**
+	 * End point that allows the user to logout - i.e. destroy our cookie.
+	 * 
+	 * @param request
+	 * @param response
+	 * @return TODO ? do we return to homepage.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("auth/logout")
+	public Response userLogout(@Context HttpServletRequest request, @Context HttpServletResponse response){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		UserManager userManager = injector.getInstance(UserManager.class);
+		
+		userManager.logUserOut(request);
+		
+		// TODO: make less hacky
+		return Response.temporaryRedirect(URI.create("../../home")).build();
+		
+	}
+	
 }

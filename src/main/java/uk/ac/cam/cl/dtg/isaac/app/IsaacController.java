@@ -21,6 +21,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -32,11 +33,11 @@ import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
 import uk.ac.cam.cl.dtg.isaac.models.IndexPage;
 import uk.ac.cam.cl.dtg.isaac.models.TopicDetail;
 import uk.ac.cam.cl.dtg.isaac.models.TopicPage;
-import uk.ac.cam.cl.dtg.isaac.models.IndexPage.IndexPageItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.dao.IRegistrationManager;
+import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
@@ -47,6 +48,7 @@ import com.google.inject.Injector;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
+
 
 /**
  * Rutherford Controller
@@ -110,7 +112,17 @@ public class IsaacController {
 	@GET
 	@Path("learn")
 	@Produces("application/json")
-	public IndexPage getTopics(@Context HttpServletRequest req) {		
+	public Response getTopics(@Context HttpServletRequest req) {		
+		
+		//test of user registration
+		User user = api.getCurrentUser(req);
+		
+		if(null == user)
+			return api.authenticationInitialisation(req, "google");
+		else
+			log.info("User Logged in: " + user.getEmail());
+			
+		
 		// get all concepts
 		List<ContentInfo> conceptsList = this.extractContentInfo((List<Content>) api.getAllContentByType("concept",0).getEntity(), getSoyGlobalMap(req).get("proxyPath"));
 		
@@ -121,7 +133,7 @@ public class IsaacController {
 		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_scq",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
 		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_numeric",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
 		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_symbolic",0).getEntity(), getSoyGlobalMap(req).get("proxyPath")));
-		return new IndexPage(conceptsList);
+		return Response.ok(new IndexPage(conceptsList)).build();
 		
 		// get all questions
 	}
@@ -237,13 +249,13 @@ public class IsaacController {
 		sb.append(" feedback: " + new Boolean(feedback).toString());
 		
 		log.info("Register Interest details: " + sb.toString());
-		
-		User newUser = new User(null, name, email, role, school, year, feedback, new Date());
+		// TODO split last name and firstname.
+		User newUser = new User(null, name, null, email, role, school, year, feedback, new Date(), new ArrayList<LinkedAccount>());
 		
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
-		IRegistrationManager registrationManager = injector.getInstance(IRegistrationManager.class);
+		IUserDataManager registrationManager = injector.getInstance(IUserDataManager.class);
 
-		boolean success = registrationManager.register(newUser);
+		boolean success = registrationManager.register(newUser) != null;
 		
 		String outcome = "success";
 		if(!success){

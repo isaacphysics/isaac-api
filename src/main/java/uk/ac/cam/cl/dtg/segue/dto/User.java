@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.mongojack.ObjectId;
 
@@ -8,33 +10,40 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class User {
-	private String _id;
-	protected String name;
+	protected String _id;
+	protected String givenName;
+	protected String familyName;
 	protected String email;
 	protected String role;
 	protected String school;
 	protected String year;
 	protected Boolean feedbackAgreement;
 	protected Date registrationTime;
+	protected List<LinkedAccount> linkedAccounts;
 	
 	@JsonCreator
 	public User(@JsonProperty("_id") String _id,
-				@JsonProperty("name") String name,
+				@JsonProperty("givenName") String givenName,
+				@JsonProperty("familyName") String familyName,
 				@JsonProperty("email") String email,
 				@JsonProperty("role") String role,
 				@JsonProperty("school") String school,
 				@JsonProperty("year") String year,
 				@JsonProperty("feedbackAgreement") Boolean feedbackAgreement,
-				@JsonProperty("registrationTime") Date registrationTime
+				@JsonProperty("registrationTime") Date registrationTime,
+				@JsonProperty("linkedAccounts") List<LinkedAccount> linkedAccounts
 				) {
 		this._id = _id;
-		this.name = name;
+		this.familyName = familyName;
+		this.givenName = givenName;
 		this.email = email;
 		this.role = role;
 		this.school = school;
 		this.year = year;
 		this.feedbackAgreement = feedbackAgreement;
 		this.registrationTime = registrationTime;
+		if(null == linkedAccounts)
+			this.linkedAccounts = new ArrayList<LinkedAccount>();
 	}
 	
 	/** 
@@ -49,8 +58,16 @@ public class User {
 	public String getDbId() {
 		return _id;
 	}
+	
+	@JsonProperty("_id")
+	@ObjectId
+	public void setDbId(String _id) {
+		this._id = _id;
+	}
 
-	public String getName() { return name; }
+	public String getFamilyName() { return familyName; }
+	
+	public String getGivenName() { return givenName; }
 	
 	public String getEmail() { return email; }
 	
