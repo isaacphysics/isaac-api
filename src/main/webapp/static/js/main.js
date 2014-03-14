@@ -71,9 +71,13 @@ function loadContent(uri, addToHistory) {
 		
 		var template = null;
 		
-		if (uri.indexOf("/learn") == 0)
+		if (uri.indexOf("/learn") == 0){
+			
 			template = rutherford.pages.learn;
-		
+
+			// temp code to test authentication
+		}
+			
 		if (uri.indexOf("/topics/") == 0)
 			template = rutherford.pages.topic;
 		

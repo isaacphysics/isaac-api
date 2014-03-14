@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.view;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,11 +12,13 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
+import uk.ac.cam.cl.dtg.isaac.models.IndexPage;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.template.soy.tofu.SoyTofuException;
@@ -61,7 +64,13 @@ public class PageServlet extends HttpServlet {
 			
 			if (uri.startsWith("/learn"))
 			{
-				cContent = renderer.render("rutherford.pages.learn", rc.getTopics(req), ij, Locale.ENGLISH);
+				Response restEasyResponse = rc.getTopics(req);
+				if(restEasyResponse.getEntity() instanceof URI){
+					res.sendRedirect(restEasyResponse.getEntity().toString());
+				}
+				else{
+					cContent = renderer.render("rutherford.pages.learn", restEasyResponse.getEntity(), ij, Locale.ENGLISH);	
+				}
 			}
 			else if (uri.startsWith("/topics"))
 			{
