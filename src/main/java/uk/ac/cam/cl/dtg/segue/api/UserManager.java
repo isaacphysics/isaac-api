@@ -48,7 +48,7 @@ public class UserManager{
 	private static final String DATE_SIGNED = "DATE_SIGNED";
 	private static final String SESSION_ID = "SESSION_ID";
 	private static final String HMAC = "HMAC";
-	private static final String HMAC_KEY = "fbf4c8996fb92427ae41e4649SUPER-SECRET-KEY896354df48w7q5s23a";
+	private static final String HMAC_KEY = "fbf4c8996fb92427ae41e4649SUPER-SECRET-KEY896354df48w7q5s231a";
 	
 	@Inject
 	public UserManager(IUserDataManager database){
@@ -253,7 +253,7 @@ public class UserManager{
 	public void createSession(HttpServletRequest request, String userId){
 		String currentDate = new SimpleDateFormat(DATE_FORMAT).format(new Date());
 		String sessionId =  request.getSession().getId();
-		String sessionHMAC = this.calculateHMAC(HMAC_KEY, userId + sessionId + currentDate);
+		String sessionHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
 		request.getSession().setAttribute(SESSION_USER_ID, userId);
 		request.getSession().setAttribute(SESSION_ID, sessionId);
@@ -274,7 +274,7 @@ public class UserManager{
 		String sessionId = (String) request.getSession().getAttribute(SESSION_ID);
 		String sessionHMAC = (String) request.getSession().getAttribute(HMAC);
 		
-		String ourHMAC = this.calculateHMAC(HMAC_KEY, userId + sessionId + currentDate);
+		String ourHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
 		if(ourHMAC.equals(sessionHMAC)){
 			log.info("Valid user session continuing...");
