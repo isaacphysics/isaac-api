@@ -79,7 +79,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 				getClientCredential().getDetails().getClientId(),
 				CALLBACK_URI,
 				SCOPE)
-		.setAccessType("online")
+		//.setAccessType("online")
 		.setApprovalPrompt("force");
 
 		urlBuilder.set("state", this.antiForgeryStateToken);
@@ -132,7 +132,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 
 	public GoogleClientSecrets getClientCredential() throws IOException {
 		if (clientSecrets == null) {
-			InputStream inputStream = GoogleAuthHelper.class.getResourceAsStream(AUTH_RESOURCE_LOC);
+			InputStream inputStream = GoogleAuthenticator.class.getResourceAsStream(AUTH_RESOURCE_LOC);
 			Preconditions.checkNotNull(inputStream, "missing resource %s",
 					AUTH_RESOURCE_LOC);
 
