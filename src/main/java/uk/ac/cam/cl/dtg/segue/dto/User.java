@@ -1,9 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -19,7 +16,6 @@ public class User {
 	protected String year;
 	protected Boolean feedbackAgreement;
 	protected Date registrationTime;
-	protected List<LinkedAccount> linkedAccounts;
 	
 	@JsonCreator
 	public User(@JsonProperty("_id") String _id,
@@ -30,8 +26,7 @@ public class User {
 				@JsonProperty("school") String school,
 				@JsonProperty("year") String year,
 				@JsonProperty("feedbackAgreement") Boolean feedbackAgreement,
-				@JsonProperty("registrationTime") Date registrationTime,
-				@JsonProperty("linkedAccounts") List<LinkedAccount> linkedAccounts
+				@JsonProperty("registrationTime") Date registrationTime
 				) {
 		this._id = _id;
 		this.familyName = familyName;
@@ -42,8 +37,6 @@ public class User {
 		this.year = year;
 		this.feedbackAgreement = feedbackAgreement;
 		this.registrationTime = registrationTime;
-		if(null == linkedAccounts)
-			this.linkedAccounts = new ArrayList<LinkedAccount>();
 	}
 	
 	/** 

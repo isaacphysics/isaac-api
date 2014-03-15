@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.DB;
 
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -27,7 +26,6 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.UserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
@@ -38,7 +36,8 @@ import uk.ac.cam.cl.dtg.segue.dto.User;
 public class UserManager{
 
 	public static final String SESSION_USER_ID = "currentUserId";
-	public static enum AuthenticationProvider {GOOGLE, FACEBOOK, RAVEN};
+	
+	public enum AuthenticationProvider {GOOGLE, FACEBOOK, RAVEN;};
 	
 	private IUserDataManager database;
 	private static final Logger log = LoggerFactory.getLogger(UserManager.class);
@@ -71,11 +70,12 @@ public class UserManager{
 			return Response.ok().entity(currentUser).build();
 		}
 
+		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.
 		IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
 
 		if(null == federatedAuthenticator){
-			log.error("Unable to identify authenticator");
-			return Response.serverError().entity("Unable to identify authenticator").build();
+			log.error("Unable to map to an authenticator. The provider: " + provider + " is unknown");
+			return Response.serverError().entity("Failed to identify authenticator.").build();
 		}
 
 		// if we are an OAuthProvider redirect to the provider authorization url.	
@@ -93,13 +93,13 @@ public class UserManager{
 				log.error("IOException when trying to redirect to OAuth provider");
 			}
 		}
-
-		// no cookie set? We need to find out who you are.		
+	
 		return Response.serverError().entity("We should never see this if a correct provider has been given").build();
 	}
 
 	/**
-	 * AuthenticateCallback will perform the authentication required by the different provider types. (e.g. OAuth 2.0 (IOAuth2Authenticator) or bespoke)
+	 * Authenticate Callback will receive the authentication information from the different provider types. 
+	 * (e.g. OAuth 2.0 (IOAuth2Authenticator) or bespoke)
 	 * 
 	 * @param request
 	 * @param response
@@ -121,43 +121,68 @@ public class UserManager{
 			return Response.serverError().entity("Unable to identify authenticator").build();
 		}
 
-		// if we are an OAuthProvider redirect to the provider authorization url.	
+		// if we are an OAuthProvider complete next steps of oauth
 		if(federatedAuthenticator instanceof IOAuth2Authenticator){
 			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
-			StringBuffer fullUrlBuf = request.getRequestURL();
 			// verify there is no cross site request forgery going on.
 			if(!ensureNoCSRF(request) || request.getQueryString() == null)
 				return Response.status(401).entity("CSRF check failed.").build();
 
 			// this will have our authorization code within it.
+			StringBuffer fullUrlBuf = request.getRequestURL();
 			fullUrlBuf.append('?').append(request.getQueryString());
 
 			try{
-				// extract auth code from url
+				// extract auth code from string buffer
 				String authCode = oauthProvider.extractAuthCode(fullUrlBuf.toString());
 
 				if (authCode == null) {
 					log.info("User denied access to our app.");
 					return Response.status(401).entity("Provider failed to give us an authorization code.").build();
 				} else {	      
-					log.info("User granted access to our app : oauth access code is: " + authCode );
+					log.debug("User granted access to our app");
 
-					request.getSession().setAttribute("code", authCode);
 					String internalReference = oauthProvider.exchangeCode(authCode);
 					log.info(request.getSession().getId());
 
-					//get user info
-					User user = federatedAuthenticator.getUserInfo(internalReference);
+					// get user info from provider
+					// note the userid field in this object will contain the providers user id.
+					User userFromProvider = federatedAuthenticator.getUserInfo(internalReference);
 					
-					if(null == user)
+					if(null == userFromProvider)
 						return Response.noContent().entity("Can't create user").build();
 
-					log.info("User with name " + user.getEmail() + " retrieved");
+					log.info("User with name " + userFromProvider.getEmail() + " retrieved");
+
+					// this is the providers unique id for the user
+					String providerId = userFromProvider.getDbId();
 					
-					this.createSession(request, registerUser(user));
+					// clear user object id so that it is ready to receive our local one.
+					userFromProvider.setDbId(null);
+
+					AuthenticationProvider providerReference = AuthenticationProvider.valueOf(provider.toUpperCase());					
+					User localUserInformation = this.getUserFromLinkedAccount(providerReference, providerId);
+
+					//decide if we need to register a new user or link to an existing account
+					if(null == localUserInformation){
+						log.info("New registration - User does not already exist.");
+						//register user
+						String localUserId = registerUser(userFromProvider, providerReference, providerId);
+						localUserInformation = this.database.getById(localUserId);
+						
+						if(null == localUserInformation){
+							// we just put it in so something has gone very wrong.
+							log.error("Failed to retreive user even though we just put it in the database.");
+							throw new NoUserIdException();
+						}
+					}
+					
+					// create a signed session for this user so that we don't need to do this again for a while.
+					this.createSession(request, localUserInformation.getDbId());
+					
 					log.info("Cookie with userid = " + request.getSession().getAttribute(SESSION_USER_ID));
-					return Response.ok(user).build();
+					return Response.ok(localUserInformation).build();
 				}				
 			}
 			catch(IOException e){
@@ -173,6 +198,13 @@ public class UserManager{
 		}
 		return Response.ok().build();
 	}
+	
+	public User getUserFromLinkedAccount(AuthenticationProvider provider, String providerId){
+		User user = database.getByLinkedAccount(provider, providerId);
+		
+		log.info("Unable to locate user based on provider information provided.");
+		return user;
+	}
 
 	/**
 	 * Get the details of the currently logged in user
@@ -181,7 +213,7 @@ public class UserManager{
 	 * @return Returns the current user DTO if we can get it or null if user is not currently logged in
 	 */
 	public User getCurrentUser(HttpServletRequest request){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		//Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 
 		// get the current user based on their session id information.
 		String currentUserId = (String) request.getSession().getAttribute(UserManager.SESSION_USER_ID);
@@ -199,10 +231,8 @@ public class UserManager{
 		}
 
 		// retrieve the user from database.
-
-		UserDataManager rm = new UserDataManager(injector.getInstance(DB.class));
-
-		return rm.getById(currentUserId);
+		
+		return database.getById(currentUserId);
 	}
 
 	/**
@@ -309,9 +339,15 @@ public class UserManager{
 		}
 	}
 
-	// TODO: only to do this if the user is not already registered.
-	private String registerUser(User user){
-		String userId = database.register(user);
+	/**
+	 * This method should handle the situation where we haven't seen a user before.
+	 * 
+	 * @param user
+	 * @param linkedAccount
+	 * @return
+	 */
+	private String registerUser(User user, AuthenticationProvider provider, String providerId){
+		String userId = database.register(user, provider, providerId);
 		return userId;
-	}
+	}	
 }

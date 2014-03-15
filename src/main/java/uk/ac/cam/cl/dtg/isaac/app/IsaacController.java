@@ -249,14 +249,16 @@ public class IsaacController {
 		sb.append(" feedback: " + new Boolean(feedback).toString());
 		
 		log.info("Register Interest details: " + sb.toString());
+
 		// TODO split last name and firstname.
-		User newUser = new User(null, name, null, email, role, school, year, feedback, new Date(), new ArrayList<LinkedAccount>());
+		User newUser = new User(null, name, null, email, role, school, year, feedback, new Date());
 		
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IUserDataManager registrationManager = injector.getInstance(IUserDataManager.class);
 
-		boolean success = registrationManager.register(newUser) != null;
-		
+		//boolean success = registrationManager.register(newUser) != null;
+		// TODO this code is going to have to be re-written.
+		boolean success = false;
 		String outcome = "success";
 		if(!success){
 			outcome = "Registration failed: Error registering user.";

@@ -1,29 +1,42 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 
+import org.mongojack.DBQuery;
 import org.mongojack.JacksonDBCollection;
-import org.mongojack.ObjectId;
 import org.mongojack.WriteResult;
 
 import com.google.inject.Inject;
 import com.mongodb.DB;
+
+import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dto.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
 public class UserDataManager implements IUserDataManager {
 
 	private final DB database;
 	private static final String USER_COLLECTION_NAME = "users";
+	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
 	
 	@Inject
 	public UserDataManager(DB database) {
 		this.database = database;
 	}
 	
-	public String register(User user) {
-		JacksonDBCollection<User, ObjectId> jc = JacksonDBCollection.wrap(database.getCollection(USER_COLLECTION_NAME), User.class, ObjectId.class);
-		WriteResult<User, ObjectId> r = jc.save(user);
+	public String register(User user, AuthenticationProvider provider, String providerId) {
+		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(database.getCollection(USER_COLLECTION_NAME), User.class, String.class);
+
+		// ensure userId is empty as if this is a registration then it should get a new id.
+		user.setDbId(null);
+		WriteResult<User, String> r = jc.save(user);
 		
-		return r.getDbObject().get("_id").toString();
+		User localUser = r.getSavedObject();
+		String localUserId = r.getDbObject().get("_id").toString();
+		
+		// link the provider account to the newly created account.
+		this.linkAuthProviderToAccount(localUser, provider, providerId);
+				
+		return localUserId;
 	}
 	
 	public User getById(String id) throws IllegalArgumentException{
@@ -38,4 +51,40 @@ public class UserDataManager implements IUserDataManager {
 		
 		return user;
 	}
+	
+	/**
+	 * This method expects the linked account object to not have a local user id set but to have a provider and provider id
+	 * @param account
+	 * @return
+	 */
+	@Override
+	public User getByLinkedAccount(AuthenticationProvider provider, String providerId){
+		if(null == provider || null == providerId){
+			return null;
+		}
+		
+		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME), LinkedAccount.class, String.class);
+		
+		LinkedAccount linkAccount = jc.findOne(DBQuery.and(DBQuery.is("provider", provider),DBQuery.is("providerId", providerId)));
+		
+		if(null == linkAccount)
+			return null;
+		
+		return this.getById(linkAccount.getLocalUserId());
+	}
+	
+	public boolean linkAuthProviderToAccount(User user, AuthenticationProvider provider, String providerId){
+		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME), LinkedAccount.class, String.class);
+		
+		WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null,user.getDbId(),provider,providerId));
+		
+		if(r.getError() == null){
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
 }
