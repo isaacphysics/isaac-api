@@ -54,11 +54,10 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 			getClientCredential();
 			flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT,
 					JSON_FACTORY, clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(), SCOPE).setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance()).build();
-			
-			credentialStore = new WeakHashMap<String, Credential>();
+			if(credentialStore == null)
+				credentialStore = new WeakHashMap<String, Credential>();
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			log.error("IOException occurred while trying to initialise the Google Authenticator.");
 		}
@@ -87,6 +86,8 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 			urlBuilder.set("user_id", emailAddress);
 		}
 
+		// generatedNewAntiForgery Token for the next person.
+		generateAntiForgeryStateToken();
 		return urlBuilder.build();
 	}
 
@@ -157,7 +158,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 		try {
 			userInfo = userInfoService.userinfo().get().execute();
-			log.info("Retrieved User info from google: " + userInfo.toPrettyString());
+			log.debug("Retrieved User info from google: " + userInfo.toPrettyString());
 		} catch (IOException e) {
 			log.error("An IO error occurred while trying to retrieve user information: " + e);
 		}
