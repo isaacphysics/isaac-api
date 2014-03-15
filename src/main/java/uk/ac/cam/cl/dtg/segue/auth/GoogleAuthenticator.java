@@ -31,22 +31,21 @@ import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
 
-public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuthenticator {
+public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Authenticator  {
 
 	private static final Logger log = LoggerFactory.getLogger(GoogleAuthenticator.class);
 
 	// location of json file in resource path that contains the client id / secret
 	private static final String AUTH_RESOURCE_LOC = "/client_secret.json";
+	
+	//TODO: move these somewhere else
 	private static final String CALLBACK_URI = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback";
-
 	private static final Collection<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email".split(";"));
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	
 	private static WeakHashMap<String, Credential> credentialStore;
-
 	private static GoogleClientSecrets clientSecrets = null;
-
 	private static GoogleAuthorizationCodeFlow flow;
 	private String antiForgeryStateToken;
 
@@ -121,8 +120,6 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 			// I don't really want to use the flow storage.
 			flow.getCredentialDataStore().clear();
 			
-			//log.info("Token: " + response.getAccessToken());
-			
 			return internalReferenceToken;
 		} catch (IOException e) {
 			System.err.println("An error occurred: " + e);
@@ -130,8 +127,9 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 		}
 	}
 
-	public GoogleClientSecrets getClientCredential() throws IOException {
+	private GoogleClientSecrets getClientCredential() throws IOException {
 		if (clientSecrets == null) {
+			// load up the client secrets from the file system.
 			InputStream inputStream = GoogleAuthenticator.class.getResourceAsStream(AUTH_RESOURCE_LOC);
 			Preconditions.checkNotNull(inputStream, "missing resource %s",
 					AUTH_RESOURCE_LOC);
@@ -150,37 +148,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 		return clientSecrets;
 	}
 
-	public Credential getCredentials(String authorizationCode) throws CodeExchangeException, NoRefreshTokenException, IOException {
-		try {
-			Credential credentials = this.credentialStore.get(exchangeCode(authorizationCode));
-			//User userInfo = getUserInfo(credentials);
-			//userId = userInfo.getId();
-			if (credentials.getRefreshToken() != null) {
-				return credentials;
-			} else {
-				//get stored creds if we were storing them.
-//				credentials = this.getStoredCredential(userId);
-//				log.info("Getting stored credential");
-//				if (credentials != null && credentials.getRefreshToken() != null) {
-//					return credentials;
-//				}
-			}
-		} catch (CodeExchangeException e) {
-			e.printStackTrace();
-			throw e;
-		}
-		throw new NoRefreshTokenException("authorizationUrl");
-	}
-
-	/**
-	 * Send a request to the UserInfo API to retrieve the user's information.
-	 * 
-	 *
-	 * @param credentials OAuth 2.0 credentials to authorise the request.
-	 * @return User's information.
-	 * @throws NoUserIdException An error occurred.
-	 * @throws IOException 
-	 */
+	@Override
 	public User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		
@@ -195,7 +163,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 		}
 		if (userInfo != null && userInfo.getId() != null) {
 
-			return new User(null, userInfo.getGivenName(), userInfo.getFamilyName(),userInfo.getEmail(),null, null,null,null,null,null);
+			return new User(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),userInfo.getEmail(),null, null,null,null,null);
 		} else {
 			throw new NoUserIdException();
 		}
@@ -205,10 +173,11 @@ public class GoogleAuthenticator implements IOAuth2Authenticator, IFederatedAuth
 	public String getAntiForgeryStateToken(){
 		return antiForgeryStateToken;
 	}
-
+	
 	private void generateAntiForgeryStateToken(){
 		String antiForgerySalt = new BigInteger(130, new SecureRandom()).toString(32);
 
 		antiForgeryStateToken = "google"+antiForgerySalt;
 	}
+
 }
