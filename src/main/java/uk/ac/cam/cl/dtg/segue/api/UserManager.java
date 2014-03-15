@@ -342,9 +342,10 @@ public class UserManager{
 	/**
 	 * This method should handle the situation where we haven't seen a user before.
 	 * 
-	 * @param user
-	 * @param linkedAccount
-	 * @return
+	 * @param user from authentication provider
+	 * @param provider information
+	 * @param unique reference for this user held by the authentication provider.
+	 * @return The localUser account user id of the user after registration.
 	 */
 	private String registerUser(User user, AuthenticationProvider provider, String providerId){
 		String userId = database.register(user, provider, providerId);
