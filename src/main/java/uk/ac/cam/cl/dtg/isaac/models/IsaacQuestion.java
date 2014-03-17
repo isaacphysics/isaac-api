@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.models;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
@@ -15,6 +16,7 @@ public class IsaacQuestion extends ChoiceQuestion{
 		
 	}
 
+	@JsonCreator
 	public IsaacQuestion(@JsonProperty("_id") String _id,
 		       @JsonProperty("id") String id, 
 			   @JsonProperty("title") String title, 
@@ -55,11 +57,11 @@ public class IsaacQuestion extends ChoiceQuestion{
 		
 	}
 	
-	public String getQuestionLevel() {
+	public String getLevel() {
 		return level;
 	}
 
-	public void setQuestionLevel(String level) {
+	public void setLevel(String level) {
 		this.level = level;
 	}
 
