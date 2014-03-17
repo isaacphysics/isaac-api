@@ -31,7 +31,7 @@ public class ChoiceQuestion extends Question {
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("version") int version,
+				   @JsonProperty("published") boolean published,
 				   @JsonProperty("answer") ContentBase answer,
 				   @JsonProperty("hints") List<ContentBase> hints,
 				   @JsonProperty("choices") List<Choice> choices) {
@@ -48,7 +48,7 @@ public class ChoiceQuestion extends Question {
 		      value, 
 		      attribution, 
 		      relatedContent, 
-		      version,
+		      published,
 		      answer,
 		      hints);
 		

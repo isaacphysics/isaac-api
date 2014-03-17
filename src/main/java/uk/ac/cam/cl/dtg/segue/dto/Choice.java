@@ -32,7 +32,7 @@ public class Choice extends Content {
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("version") int version,
+				   @JsonProperty("published") boolean published,
 				   @JsonProperty("correct") boolean correct,
 				   @JsonProperty("explanation") String explanation) {
 		super(_id, 
@@ -48,7 +48,7 @@ public class Choice extends Content {
 		      value, 
 		      attribution, 
 		      relatedContent, 
-		      version);
+		      published);
 		
 		this.correct = correct;
 		this.explanation = explanation;

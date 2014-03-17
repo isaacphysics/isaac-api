@@ -3,10 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mongojack.ObjectId;
-
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
-import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,10 +18,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 @JsonType("content")
 public class Content extends ContentBase{
-	private String _id;
-	protected String id;
 	protected String title;
-	protected String type;
 	protected String author;
 	protected String encoding;
 	protected String src;
@@ -34,7 +28,7 @@ public class Content extends ContentBase{
 	protected String value;
 	protected String attribution;
 	protected List<String> relatedContent;
-	protected int version;
+	protected boolean published;
 	
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
@@ -50,7 +44,7 @@ public class Content extends ContentBase{
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("version") int version) {
+				   @JsonProperty("published") boolean published) {
 		this._id = _id;
 		this.id = id;
 		this.title = title;
@@ -63,7 +57,7 @@ public class Content extends ContentBase{
 		this.value = value;
 		this.attribution = attribution;
 		this.relatedContent = relatedContent;
-		this.version = version;
+		this.published = published;
 		this.children = children;
 		
 		// useful for when we want to augment this POJO
@@ -80,27 +74,6 @@ public class Content extends ContentBase{
 		// useful for when we want to augment this POJO
 		this.children = new ArrayList<ContentBase>();
 	}
-	
-	@JsonProperty("_id")
-	@ObjectId
-	public String getDbId() {
-		return _id;
-	}
-	
-	@JsonProperty("_id")
-	@ObjectId
-	public void setDbId(String _id) {
-		this._id = _id;
-	}	
-	
-	public String getId() {
-		return id;
-	}
-	
-	@JsonDeserialize(using=TrimWhitespaceDeserializer.class)
-	public void setId(String id) {
-		this.id = id;
-	}
 
 	public String getTitle() {
 		return title;
@@ -108,14 +81,6 @@ public class Content extends ContentBase{
 
 	public void setTitle(String title) {
 		this.title = title;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
 	}
 
 	public String getAuthor() {
@@ -175,12 +140,12 @@ public class Content extends ContentBase{
 		this.relatedContent = relatedContent;
 	}
 
-	public int getVersion() {
-		return version;
+	public boolean getVersion() {
+		return published;
 	}
 
-	public void setVersion(int version) {
-		this.version = version;
+	public void setVersion(boolean published) {
+		this.published = published;
 	}
 	
 	public List<ContentBase> getChildren(){

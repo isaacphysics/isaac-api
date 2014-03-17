@@ -32,7 +32,7 @@ public class Question extends Content {
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("version") int version,
+				   @JsonProperty("version") boolean published,
 				   @JsonProperty("answer") ContentBase answer,
 				   @JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, 
@@ -48,7 +48,7 @@ public class Question extends Content {
 		      value, 
 		      attribution, 
 		      relatedContent, 
-		      version);
+		      published);
 		
 		this.answer = answer;
 		this.hints = hints;
