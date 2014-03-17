@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.models.ContentDetail;
 import uk.ac.cam.cl.dtg.isaac.models.ContentInfo;
 import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
@@ -61,7 +62,7 @@ public class IsaacController {
 
 	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
-	private static final SegueApiFacade api = new SegueApiFacade();
+	private static final SegueApiFacade api = new SegueApiFacade(new SegueConfigurationModule());
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();

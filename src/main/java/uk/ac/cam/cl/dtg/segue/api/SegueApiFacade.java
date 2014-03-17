@@ -43,7 +43,26 @@ public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
-	private static String liveVersion = "a82ac5e8d8bd8ee6b8f98bbd973710ab5f0adc9a";
+	private static String liveVersion = "6b7f8d2fc488c23b6266ff4b4d4ab6b25cb8cdfc";
+	
+	/**
+	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
+	 */
+	public SegueApiFacade(){
+		
+	}
+	
+	/**
+	 * Constructor that allows preconfiguration of the segue api. 
+	 * 
+	 * @param segueConfigurationModule
+	 */
+	public SegueApiFacade(ISegueConfigurationModule segueConfigurationModule){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		ContentMapper mapper = injector.getInstance(ContentMapper.class);
+		
+		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
+	}
 	
 	@POST
 	@Path("log")

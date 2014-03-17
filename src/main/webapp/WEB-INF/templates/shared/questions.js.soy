@@ -12,7 +12,7 @@
 			{param contentObject:$contentObject /}
 		{/call}	
 	/* Render mcq question */
-	{elseif $contentObject.type == 'choiceQuestion'}
+	{elseif $contentObject.type == 'isaacMultiChoiceQuestion'}
 		<div class="question">
 			<p>
 			{call shared.segue.utils.renderContent}
