@@ -44,16 +44,21 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	
-	private static WeakHashMap<String, Credential> credentialStore;
-	private static GoogleClientSecrets clientSecrets = null;
-	private static GoogleAuthorizationCodeFlow flow;
+	private WeakHashMap<String, Credential> credentialStore;
+	private GoogleClientSecrets clientSecrets = null;
+	private GoogleAuthorizationCodeFlow flow;
+
 	private String antiForgeryStateToken;
 
 	public GoogleAuthenticator(){
 		try {
 			getClientCredential();
 			flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT,
-					JSON_FACTORY, clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(), SCOPE).setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance()).build();
+					JSON_FACTORY, 
+					clientSecrets.getDetails().getClientId(), 
+					clientSecrets.getDetails().getClientSecret(), SCOPE)
+					.setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance())
+					.build();
 			if(credentialStore == null)
 				credentialStore = new WeakHashMap<String, Credential>();
 			

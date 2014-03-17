@@ -29,12 +29,22 @@ import com.mongodb.DB;
  */
 public class PersistenceConfigurationModule extends AbstractModule {
 
-	private ContentMapper mapper = new ContentMapper(buildDefaultJsonTypeMap());
-
-	private GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
-	
 	private static final Logger log = LoggerFactory.getLogger(PersistenceConfigurationModule.class);
 	private static final String gitDbUri = "c:\\rutherford-test\\.git";
+	
+	// we only ever want there to be one instance of each of these.
+	private static ContentMapper mapper;
+	private static GoogleAuthenticator googleAuthenticator;
+	
+	public PersistenceConfigurationModule(){
+		if(null == mapper){
+			mapper = new ContentMapper(buildDefaultJsonTypeMap());
+		}
+		
+		if(null == googleAuthenticator){
+			googleAuthenticator = new GoogleAuthenticator();			
+		}
+	}
 	
 	@Override
 	protected void configure() {
@@ -57,6 +67,7 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		bind(ILogManager.class).to(LogManager.class);
 		bind(IUserDataManager.class).to(UserDataManager.class);
 
+		// bind to single instances mainly because caches are used
 		bind(ContentMapper.class).toInstance(mapper);
 		bind(GoogleAuthenticator.class).toInstance(googleAuthenticator);
 		
