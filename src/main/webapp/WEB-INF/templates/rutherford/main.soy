@@ -135,7 +135,8 @@
 //  	document.write('<script src=' + ('__proto__' in {lb}{rb} ? ' {$ij.proxyPath}/static/js/vendor/zepto' : '{$ij.proxyPath}/static/js/vendor/jquery') + '.js><\/script>');
 
 	// Manually rebuild injected data for client-side rendering of soy templates. Ugh.
-	var ij = {lb}proxyPath: "{$ij.proxyPath}",
+	var ij = {lb}liveVersion: "{$ij.liveVersion}",
+			  proxyPath: "{$ij.proxyPath}",
 		      contextPath: "{$ij.contextPath}",
 		      newSessionId: "{$ij.newSessionId}",
 		      newUserId: "{$ij.newUserId}"{rb};
