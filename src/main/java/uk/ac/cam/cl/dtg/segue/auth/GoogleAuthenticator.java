@@ -81,9 +81,9 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 		urlBuilder = new GoogleAuthorizationCodeRequestUrl(
 				getClientCredential().getDetails().getClientId(),
 				CALLBACK_URI,
-				SCOPE)
+				SCOPE);
 		//.setAccessType("online")
-		.setApprovalPrompt("force");
+		//.setApprovalPrompt("force");
 
 		urlBuilder.set("state", this.antiForgeryStateToken);
 
