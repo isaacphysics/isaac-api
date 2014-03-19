@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -15,6 +16,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
  * 
  * Currently this is dependent on the register map key being the exact same text as the json type property value stored in the database.
  * 
+ * This class with trim any string elements it sees. If it sees an empty string element it will be removed from the list.
+ * 
  */
 public class TrimWhitespaceListDeserializer extends JsonDeserializer<List<String>> {
 
@@ -23,11 +26,17 @@ public class TrimWhitespaceListDeserializer extends JsonDeserializer<List<String
 			throws IOException, JsonProcessingException, JsonMappingException{
 		
 		List<String> listOfStringToTrim = jsonParser.readValueAs(ArrayList.class);
+		
 		int index = 0;
 		for(String s : listOfStringToTrim){
-			listOfStringToTrim.set(index, s.trim());
+			if(!s.trim().equals("")){
+				listOfStringToTrim.set(index, s.trim());	
+			}
 			index++;
 		}
+		
+		listOfStringToTrim.removeAll(Arrays.asList(""));
+		
 		return listOfStringToTrim;
 	}
 }
