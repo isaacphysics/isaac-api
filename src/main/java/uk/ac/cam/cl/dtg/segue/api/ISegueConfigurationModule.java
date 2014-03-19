@@ -11,6 +11,8 @@ public interface ISegueConfigurationModule {
 	 * 
 	 * The DTOs registered using this method should match the content objects stored in the content object datastore.
 	 * 
+	 * Note: It is expected that the 'type' key should be exactly the same as any type declared in json files that might need to be deserialized.
+	 * 
 	 * @return 
 	 */
 	public Map<String,Class<? extends Content>> getContentDataTransferObjectMap();

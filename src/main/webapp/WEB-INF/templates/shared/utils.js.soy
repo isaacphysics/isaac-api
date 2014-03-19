@@ -8,11 +8,13 @@
  * @param contentObject - map of content
  */
 {template .renderContent}
+	{if $contentObject == null}
+		// do nothing 
 	/* Base case we just spit out the literal content */
-	{if $contentObject.type == 'image'}
-		<img src="{$ij.proxyPath}/segue/api/content/getFileContent/a82ac5e8d8bd8ee6b8f98bbd973710ab5f0adc9a/{$contentObject.src}"/>
+	{elseif $contentObject.type == 'image'}
+		<img src="{$ij.proxyPath}/segue/api/content/getFileContent/{$ij.liveVersion}/{$contentObject.src}"/>
 		<figcaption>{$contentObject.value |noAutoescape}</figcaption>
-	{elseif $contentObject.value != null}
+	{elseif isNonnull($contentObject.value)}
 		{$contentObject.value |noAutoescape}
 
 	/* Recursive case: we have a list of content to render */

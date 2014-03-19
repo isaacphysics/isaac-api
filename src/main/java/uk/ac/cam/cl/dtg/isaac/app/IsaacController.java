@@ -117,7 +117,7 @@ public class IsaacController {
 		
 		//test of user registration
 		User user = api.getCurrentUser(req);
-		
+		// example of requiring user to be logged in.
 		if(null == user)
 			return api.authenticationInitialisation(req, "google");
 		else
@@ -336,11 +336,16 @@ public class IsaacController {
 			proxyPath = req.getContextPath();
 			trackingId = "";
 		}
-		return ImmutableMap.of("contextPath", req.getContextPath(),
-				"proxyPath", proxyPath,
-				"analyticsTrackingId", trackingId,
-				"newSessionId", UUID.randomUUID().toString(),
-				"newUserId", UUID.randomUUID().toString());
+		
+		ImmutableMap.Builder<String,String> globalMap = ImmutableMap.builder();
+		globalMap.put("liveVersion", (String) api.getLiveVersion().getEntity());
+		globalMap.put("contextPath", req.getContextPath());
+		globalMap.put("proxyPath", proxyPath);
+		globalMap.put("analyticsTrackingId", trackingId);
+		globalMap.put("newSessionId", UUID.randomUUID().toString());
+		globalMap.put("newUserId", UUID.randomUUID().toString());
+		
+		return globalMap.build();
 	}
 	
 	private String renderTemplate(String templateName, ImmutableMap<String, String> globalMap) {

@@ -6,6 +6,7 @@ import java.util.Map;
 import uk.ac.cam.cl.dtg.isaac.models.IsaacMultiChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.IsaacQuestion;
+import uk.ac.cam.cl.dtg.isaac.models.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.ISegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
@@ -18,6 +19,7 @@ public class SegueConfigurationModule implements ISegueConfigurationModule {
 		supplementaryContentDTOs.put("isaacQuestion", IsaacQuestion.class);
 		supplementaryContentDTOs.put("isaacMultiChoiceQuestion", IsaacMultiChoiceQuestion.class);
 		supplementaryContentDTOs.put("isaacNumericQuestion", IsaacNumericQuestion.class);
+		supplementaryContentDTOs.put("isaacSymbolicQuestion", IsaacSymbolicQuestion.class);
 		
 		return supplementaryContentDTOs;
 	}

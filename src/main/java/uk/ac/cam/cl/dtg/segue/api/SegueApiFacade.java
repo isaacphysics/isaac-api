@@ -43,7 +43,7 @@ public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
-	private static String liveVersion = "6b7f8d2fc488c23b6266ff4b4d4ab6b25cb8cdfc";
+	private static String liveVersion = "2cc8480540f21f81e25845042eff27f4000ceae9";
 	
 	/**
 	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
@@ -53,7 +53,7 @@ public class SegueApiFacade {
 	}
 	
 	/**
-	 * Constructor that allows preconfiguration of the segue api. 
+	 * Constructor that allows pre-configuration of the segue api. 
 	 * 
 	 * @param segueConfigurationModule
 	 */
@@ -265,6 +265,18 @@ public class SegueApiFacade {
 			
 		return Response.ok().entity("live Version changed to " + version).build();
 	}
+	
+	/**
+	 * This method will get the version id of the site that is currently set to be used as the live one.  
+	 * 
+	 * @return a version id
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("admin/getLiveVersion")
+	public Response getLiveVersion(){			
+		return Response.ok().entity(liveVersion).build();
+	}	
 	
 	/**
 	 * Get the details of the currently logged in user

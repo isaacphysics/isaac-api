@@ -7,7 +7,7 @@
  */
 {template .renderQuestionContent}	
 	/* Render quick question style question (show / hide functionality) */
-	{if $contentObject.type == 'question'}
+	{if $contentObject.type == 'question' or $contentObject.type == 'isaacQuestion' or $contentObject.type == 'isaacSymbolicQuestion' or $contentObject.type == 'isaacNumericQuestion'}
 		{call .renderShowHideQuestion}
 			{param contentObject:$contentObject /}
 		{/call}	
@@ -32,7 +32,7 @@
 			{/call}
 		{/foreach}				
 	/* Fall back to just rendering the content as plain content */
-	{elseif $contentObject.value != null}
+	{elseif isNonnull($contentObject.value)}
 		<p>
 		{call shared.segue.utils.renderContent}
 			{param contentObject:$contentObject /}
