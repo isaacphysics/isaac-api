@@ -330,4 +330,9 @@ public class GitContentManager implements IContentManager {
 		return setOfContentObjects;
 	}
 
+	@Override
+	public String getLatestVersionId() throws UnsupportedOperationException {
+		return database.getHeadSha();
+	}
+
 }

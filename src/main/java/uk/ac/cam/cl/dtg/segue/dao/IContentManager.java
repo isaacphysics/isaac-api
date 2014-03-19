@@ -46,4 +46,11 @@ public interface IContentManager {
 	 * @return
 	 */
 	public List<String> listAvailableVersions() throws UnsupportedOperationException;
+	
+	/**
+	 * Get the latest version id from the data source
+	 * 
+	 * @return
+	 */
+	public String getLatestVersionId() throws UnsupportedOperationException;
 }

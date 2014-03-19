@@ -118,7 +118,11 @@ public class MongoContentManager implements IContentManager {
 	@Override
 	public ByteArrayOutputStream getFileBytes(String version, String filename)
 			throws IOException {
+		throw new UnsupportedOperationException("This method is not implemented yet.");
+	}
 
+	@Override
+	public String getLatestVersionId() throws UnsupportedOperationException {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 }
