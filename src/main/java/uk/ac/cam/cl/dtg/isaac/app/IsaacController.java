@@ -76,36 +76,9 @@ public class IsaacController {
 	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
 	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
 	private static final String[] recipients = {"dst28@cam.ac.uk"};
-	
-	// I apologise for this function.
-	private void loadQuestionNavigationData()
-	{
-		SortedSet<ContentDetail> content = new TreeSet<ContentDetail>(contentDetails.values());
-
-		for(TopicDetail t : topicDetails.values())
-		{
-			for (int level = 1; level <= 6; level++)
-			{
-				ContentDetail prevQ = null;
-				for (ContentDetail q : content) 
-				{
-					if (q.getType().equals(ContentDetail.TYPE_QUESTION) && t.getTopic().equals(q.getTopic()) && ((Integer)level).toString().equals(q.getLevel())) 
-					{
-						if (prevQ != null)
-						{
-							q.prevContentId = prevQ.getId();
-							prevQ.nextContentId = q.getId();
-						}
-						prevQ = q;
-					}
-				}
-			}
-		}
-		questionNavigationDataLoaded = true;
-	}
 
 	/**
-	 * Temporary solution to show all content of different types in no particular order
+	 * Temporary solution to show all content of different types in no particular order. (For dev test)
 	 * 
 	 * @param req
 	 * @return
