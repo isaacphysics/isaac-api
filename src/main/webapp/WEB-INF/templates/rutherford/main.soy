@@ -12,7 +12,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Rutherford School Physics Project</title>
+	<title>Rutherford Physics Partnership</title>
 	
 	<link rel="stylesheet" href="{$ij.proxyPath}/static/css/vendor/foundation.css">
 	<link rel="stylesheet" href="{$ij.proxyPath}/static/css/rutherford.css">
@@ -25,7 +25,7 @@
 	<header class="full-width header-area">
 	    <div class="row">
 	        <div id="header" class="large-12 columns">
-	            <h2>Rutherford School Physics Project</h2>
+	            <h2>Rutherford Physics Partnership - <i><a class="beta-link" href="#">Beta</a></i></h2>
 	        </div>
 	    </div>
 	</header>
@@ -118,7 +118,9 @@
 	<div class="full-width footer-area">
 	    <div class="row">
 	        <div id="footer" class="large-12 columns">
-	            &nbsp;<!--&copy; University of Cambridge, 2013-->
+				<div class="row">
+					<div class="large-8 column"><p>Supported by: <a target="_blank" href="http://www.dfe.gov.uk">Department for Education</a><br></p><p>All material provided on this site is licensed under the <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons license</a>.</p></div>
+				</div>
 	        </div>
 	    </div>
 	</div>
@@ -126,6 +128,22 @@
 <div id="video-modal" class="reveal-modal" style="text-align:center;">
   <h2 id="modal-title"></h2>
   <p class="lead"></p>
+  
+  <a class="close-reveal-modal">&#215;</a>
+</div>
+
+<div id="beta-modal" class="reveal-modal medium" style="text-align:center;">
+  <h2 id="modal-title">Rutherford Physics Partnership<br/>Beta Version</h2>
+  <p class="lead">Welcome to a preview of our pilot content for the Rutherford Physics Partnership.</p>
+  <p>
+  	This site is a prototype, and is only verified to work with <a href="http://www.google.com/chrome">Google Chrome</a>.
+  </p>
+  <p>
+  	Our delivery platform is undergoing design. This prototype is merely to present a selection of our content. 
+  </p>
+  <p>
+    To comment on the content presented here, please <a href="#" data-content-uri="/contact-us">contact us</a>. If you would like to be kept informed of updates and face-to-face partner events, do <a href="#" data-content-uri="/register">register</a> (free).
+  </p>
   
   <a class="close-reveal-modal">&#215;</a>
 </div>
@@ -142,6 +160,44 @@
 		      newUserId: "{$ij.newUserId}"{rb};
 	
 </script>
+
+    <script type="text/x-mathjax-config">
+		// Allow labels and numbers to be reset:
+		// https://groups.google.com/forum/#!msg/mathjax-users/kzOOFw1qtxw/YdAEPJfCEXUJ
+		
+		MathJax.resetLabels = function() {lb}
+			var AMS = MathJax.Extension["TeX/AMSmath"];
+			AMS.startNumber = 0;
+			AMS.labels = {lb}{rb};
+		{rb};
+		
+		// Allow inline maths with single $s
+		
+		MathJax.Hub.Config({lb}
+			tex2jax: {lb}
+			inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+			processEscapes: true
+			{rb},
+			"HTML-CSS": {lb}
+			    scale: 85
+			  {rb}
+		{rb});
+		
+		// Fix font issues in Chrome 32
+		// https://groups.google.com/forum/#!msg/mathjax-users/S5x-RQDPJrI/p4nmRXJvoskJ
+		
+		MathJax.Hub.Config({lb}
+			extensions: ["MatchWebFonts.js"]
+		{rb});
+		
+		if (MathJax.Hub.Browser.isChrome && MathJax.Hub.Browser.version.substr(0,3) === "32.") {lb}
+			MathJax.Hub.Register.StartupHook(
+				"HTML-CSS Jax Config",
+				function () {lb}MathJax.OutputJax["HTML-CSS"].FontFaceBug = true{rb}
+			);
+		{rb}
+    	
+    </script>
 
 	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 

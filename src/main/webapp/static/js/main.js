@@ -57,8 +57,12 @@ function loadContent(uri, addToHistory) {
 	case "/why-physics":
 		soy.renderElement($("#content")[0], rutherford.pages.why_physics, null, ij);
 		break;
+	case "/events":
+		soy.renderElement($("#content")[0], rutherford.pages.events, null, ij);
+		break;
 	case "/contact-us":
 		soy.renderElement($("#content")[0], rutherford.pages.contact_us, null, ij);
+		$("#beta-modal").foundation('reveal','open');
 		break;
 	default:
 		renderedLocally = false;
@@ -331,21 +335,26 @@ $(function()
 
 	$("body").on("mouseenter",".plumbLink",plumb);
 	
+	$("body").on("click", "#beta-modal a", function() {
+		$("#beta-modal").foundation('reveal', 'close');
+	});
+	$("body").on("click", ".beta-link", function() {
+		$("#beta-modal").foundation('reveal','open');
+	});
+	
 	window.addEventListener("popstate", popHistoryState);
 
 	var uri = document.location.pathname.substring(ij.proxyPath.length);
 	history.replaceState(uri, null, ij.proxyPath + uri);
 	
-	MathJax.Hub.Config({
-		  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
-		});
-	
 	
 	if (!sessionStorage.getItem("sessionId"))
 		sessionStorage.setItem("sessionId", ij.newSessionId);
 	
-	if (!docCookies.hasItem("rutherfordUserId"))
+	if (!docCookies.hasItem("rutherfordUserId")) {
+		$("#beta-modal").foundation('reveal', 'open');
 		docCookies.setItem("rutherfordUserId", ij.newUserId, Infinity);
+	}
 	
 	pageRendered();
 	
@@ -395,6 +404,8 @@ function buildConcertina(){
 	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="one_up:false; multi_expand:true"/>');
 }
 
+
+
 function plumb(e) {
 	var myid = e.target.id;
 	
@@ -426,9 +437,9 @@ jsPlumb.ready(function() {
 // Equivalent to our page ready
 function pageRendered()
 {
+	MathJax.resetLabels();
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	$(document).foundation();
 	quickQuestions();
 	buildConcertina();
 }
-

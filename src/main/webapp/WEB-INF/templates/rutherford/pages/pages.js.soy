@@ -5,15 +5,61 @@
  * 
  */
 {template .home}
-<div style="height: 600px;">
-	<div class="gear" id="real-world-problems" style="background-image: url({$ij.proxyPath}/static/img/real-world-problems.png);"><a href="#" data-content-uri="/real-world"/><span>Real world problems</span></a></div>
-	<div class="gear" id="register" style="background-image: url({$ij.proxyPath}/static/img/register.png);"><a href="#" data-content-uri="/register"/><span>Register</span></a></div>
-	<div class="gear" id="why-physics" style="background-image: url({$ij.proxyPath}/static/img/why-physics.png);"><a href="#" data-content-uri="/why-physics"/><span>Why Physics?</span></a></div>
-	<div class="gear" id="get-started" style="background-image: url({$ij.proxyPath}/static/img/get-started.png);"><a href="#" data-content-uri="/learn"/><span>Get Started</span></a></div>
-	<div class="gear" id="discuss" style="background-image: url({$ij.proxyPath}/static/img/discuss.png);"><a href="#" data-content-uri="/discussion"/><span>Discuss</span></a></div>
-	<div class="gear" id="applying-to-university" style="background-image: url({$ij.proxyPath}/static/img/applying-to-university.png);"><a href="#" data-content-uri="/applying"/><span>Applying to university</span></a></div>
-	<div class="gear" id="challenge-of-the-week" style="background-image: url({$ij.proxyPath}/static/img/challenge-of-the-week.png);"><a href="#" data-content-uri="/challenge" /><span>Challenge of the week</span></a></div>
-	<div class="gear" id="about" style="background-image: url({$ij.proxyPath}/static/img/about.png);"><a href="#" data-content-uri="/about-us"/><span>About Us</span></a></div>
+<div>
+	<div id="homepage-intro">
+		<p>The Rutherford School Physics Partnership is a project designed to offer support and activities in physics problem solving to teachers and students transitioning from GCSE (Y11), through to Sixth Form (Y12 & 13), through to university. Here are some links to get you started.</p>
+		<div class="centered-links">
+			<ul id="homepage-links" class="clearfix">
+				<li><a class="button" href="#" data-content-uri="/why-physics"/>Why Physics?</a></li>
+				<li><a class="button" href="#" data-content-uri="/featured"/>Featured problems</a></li>
+				<li><a class="button success" href="#" data-content-uri="/learn"/>Get Started</a></li>
+				<li><a class="button" href="#" data-content-uri="/applying"/>Applying to university</a></li>
+				<li><a class="button" href="#" data-content-uri="/register" />Register</a></li>
+			</ul>
+		</div>
+	</div>
+	
+	<div class="row">
+		<div class="large-9 columns large-centered">
+			<div class="flex-video">
+				<iframe src="//www.youtube.com/embed/-eEi7fO0_O0" frameborder="0" allowfullscreen></iframe>	
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="large-9 columns large-centered caption">
+			<p>John Biggins and Mark Warner explain, in a video connected with their Royal Society paper, how the chain fountain works. In fact,  the chain statics and dynamics leading up to this research problem are accessible using Rutherford Physics topics.  
+			A <a target="_blank" href="{$ij.proxyPath}/static/pdf/chain-collection.pdf">collection of problems on chains</a>, inverted chains, suspension bridges and arches develops these ideas.</p>
+		</div>
+	</div>
+	<div class="row">
+		<div class="large-10 column large-centered">
+			<div class="row featured-content">
+				<div class="large-6 columns">
+					<div class="events promo-box panel">
+						<div class="row"><div class="large-12 column"><h3>Upcoming Events</h3></div></div>
+						<div class="panel-content">
+							<ul>
+								<li><span>28th-30th June 2014</span> <br> - <a href="#" data-content-uri="/events">Physics teacher residential</a> - Cambridge</li>
+								<li><span>29th June- 3rd July 2014</span> <br> - <a href="http://www-spc.phy.cam.ac.uk/" target="_blank">Senior Physics Challenge residential</a> - Cambridge</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="large-6 columns featured-physicist">
+					<div class="featured-physicist promo-box panel">
+						<div class="row"><div class="large-12 column"><h3>Featured Physicist</h3></div></div>
+						<div class="panel-content">
+							<div class="row">
+								<div class="small-8 medium-10 large-6 columns"><p><span>Name: </span>Wilhelm Conrad R&ouml;ntgen</p> <p><span>Description:</span> "R&ouml;ntgen was a German physicist, who produced and detected radiation now known as X-rays, earning him the first Nobel Prize in Physics in 1901." <a rel="nofollow" href="http://en.wikipedia.org/wiki/Wilhelm_R%C3%B6ntgen" target="_blank"><br/>Find out more</a></p></div>
+								<div class="small-4 medium-2 large-6 columns"><a rel="nofollow" href="http://en.wikipedia.org/wiki/Wilhelm_R%C3%B6ntgen" target="_blank"><img src="http://upload.wikimedia.org/wikipedia/commons/7/71/Roentgen2.jpg"/></a></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 {/template}
 
@@ -29,12 +75,13 @@
 {/template}
 
 /**
- * Real-World Problems
+ * Featured Problems
  * 
  */
-{template .real_world}
-<h2>Real-World Problems</h2>
-<p>In this section, you will be able to apply what you have learnt on real-world situations, such as hanging chains and why the more you lean into a corner on a bike, the faster you can go round it.</p>
+{template .featured}
+<h2>Featured Problems</h2>
+<p>In this section we will feature problems that, as physicists, we will be able to solve using the concepts and examples that you have explored in the other areas of this site.  </p>
+<p>Examples such as, why banked tracks allow cyclists and vehicles to travel faster when cornering (<a target="_blank" href="http://www.bbc.co.uk/news/magazine-19166035">http://www.bbc.co.uk/news/magazine-19166035</a>) and what the optimum speed to travel on a motorway might be to avoid traffic jams (<a target="_blank" href="http://www.bbc.co.uk/news/magazine-15620146">http://www.bbc.co.uk/news/magazine-15620146</a>).</p>
 {/template}
 
 /**
@@ -43,16 +90,24 @@
  */
 {template .applying}
 <h2>Applying to University</h2>
-
-<p>You have decided that you want to study physics or engineering at university. What next? Choose a university. You may not know, but what areas are you more interested in? If you like making things and understanding how things work together, then Engineering is probably best for you. If you like to understand the fundamentals of how the world functions, then Physics is probably best for you.</p>
-
-<p>Choose a university that offers a course which you are interested in. You may want to do more astronomy or more fluid mechanics, in which case one university may be more specialised in that area than another. But don't worry, it is quite common to change your mind on which area of physics you find most interesting. I want to do astrophysics and ended up doing solid state physics!</p>
-
-<p>Choosing your A-levels. Once you have chosen your course, make sure you satisfy all of the A-level requirements. In Physics and Engineering, it is best to aim to do as much maths as possible, especially the core modules, mechanics and further maths modules. If you have chosen a course that does other subjects as well, you may want to take chemistry or biology.</p>
-
-<p>Apply via UCAS to the universities of your choice and describe why you are interested in studying physics. The deadline for Oxford and Cambridge is 15th October.</p>
-
-<p>Study and practice your physics and do well at your A-levels.</p>
+<p>
+When thinking of applying to university it is really helpful to think ahead, especially if you have yet to choose your subject combinations for your final two years at school.  There are many things to think about but the most important three are:
+<ol>
+	<li>What course are you interested in and why?</li>
+	<li>Where would you like to study?</li>
+	<li>What qualifications do your preferred courses and university require for you to apply?</li>
+</ol>
+</p>
+<h3>How do you answer these questions?</h3>
+<p>
+Every university will have an admissions website which will allow you to look at the courses that they offer and what the requirements are for that course.  So to begin, you might want to look at what is involved in the different subjects, what topics are covered in each course?  Do you want to learn about how to make things work together practically (engineering) or are you more interested in the fundamentals how the world functions (physics)?  If you are interested in astronomy do you just want to specifically take an astrophysics course or would physics with astrophysics be more interesting to you?  Do you enjoy multiple sciences? &mdash; courses that start out quite broad and specialise through the degree called "natural sciences" exist (e.g. Cambridge), as well as courses that allow you to do mixed sciences.  Most importantly, really think about what you enjoy doing, because if you enjoy doing it you are more likely to do well and therefore get a good job at the end of your degree.	
+</p>
+<p>
+	By looking at the problems we <a href="#" data-content-uri="/learn">present here</a> you will begin to get a flavour of what physics is like at university and that it goes hand in hand with mathematics.  
+	For scientists and engineers is incredibly useful to study as much mathematics as possible as you go through school, mechanics and <a target="_blank" href="http://www.fmnetwork.org.uk/">further maths</a> are excellent options, for example.  For broader courses, such as natural sciences, another science with physics and maths is also positively encouraged.	
+</p>
+<p>Students apply to university through <a target="_blank" href="http://www.ucas.com">UCAS</a> and are asked to state the universities and courses of their choice at the initial application stage. Also on the application form students are asked to submit, a personal statement about why they are interested in the courses they have chosen, a reference from their teachers, and their examination results to date.</p>
+<p>Study hard, practise your physics and maths, and do well in school.</p>
 {/template}
 
 /**
@@ -61,10 +116,10 @@
  */
 {template .why_physics}
 <h2>Why Physics?</h2>
-<p>Physics means the knowledge of Nature. Studying physics helps you to understand the mechanisms that govern the world around you from a bouncing ball to a computer screen. Physics can also be interdisciplinary in nature and can be found in material science and the new area of biophysics. If you tend to ask questions such as why is the sky blue? or why is it tiring climbing a hill?, then physics is a good place to start.</p>
-
-<p>We will present you with a series of mini-biographies from scientists in many different areas
-and professions.</p>
+<p>Physics is the science which helps us to understand everything around us, from the tiniest particles through to the infinite (or not) universe.  Fundamentally physicists are problem solvers who, when presented with a puzzle, use the skills that they have practised to solve a huge variety of problems, from building more efficient solar panels to solve the worlds energy crisis, to the latest mobile devices that use up some of that energy.</p>
+<p>Physics is often seen as the "geeky far right" of the sciences but in reality physics and physicists cross all the boundaries of science from medical physics and biophysics to materials science and product and technology engineering.  Furthermore, understanding problem solving and physics also provides training for many other professions such as law, accountancy, banking, management consultancy, software development, science journalism....</p>
+<p>Physics and physicists will help us to solve many of the big questions we face in the modern world (energy production, food in a rapidly growing population) while also making our lives more entertaining (3D TV&apos;s and games consoles!).</p>
+<p>In this area of our final site we will present a series of mini-biographies and interviews with physicists working in many different areas and professions.</p>
 {/template}
 
 /**
@@ -73,8 +128,8 @@ and professions.</p>
  */
 {template .challenge}
 <h2>Challenge of the Week</h2>
-<p>In this section, we challenge you with a new question each week. The questions will be a mixture
-of real-world problems and some more abstract ones.</p>
+<p>Here we will challenge individuals, or groups, to solve a new physics problem each week.  The questions will be a mixture of real-world problems as well as more abstract ones and we hope that they will encourage visitors to explore the concepts, videos and problems in other areas of the site to help them to solve our challenges.</p>
+<p>When the week is up we propose, that after a short time delay of about one week, we will post answers to the challenge for discussion.</p>
 {/template}
 
 /**
@@ -82,9 +137,8 @@ of real-world problems and some more abstract ones.</p>
  */
 {template .discussion}
 <h2>Discussion</h2>
-<p>This is a forum where you can talk about the problems and ask for help. Or simply ask a
-    physics-related question to which you have not found a satisfactory answer yet.</p>
-  <p>The discussion forums would be only open to registered users. They could be monitored by teachers and schools could have their own forum or the same class could have one. It could also be open for everyone to talk to each other and monitored by the project.</p>
+<p>Collaboration and discussion is really helpful for understanding and solving problems and on the final version of our course we will provide a portal for discussion in which you can collaborate with others.  In this portal you may wish to discuss our <a href="#" data-content-uri="/real-world">real-world problems</a> or <a href="#" data-content-uri="/challenge">challenge of the week</a> or ask a general physics-related questions for which you would like an answer. </p>
+<p>The discussion areas will only be open to registered users and we are exploring ways in which they might be monitored, for example, by teachers and schools who may have their own forum for individual classes.</p>
 {/template}
 
 /**
@@ -93,18 +147,142 @@ of real-world problems and some more abstract ones.</p>
 {template .about_us}
 <h3>Aims of the Rutherford Project</h3>
 <p>
-The Rutherford School Physics Project has recently been announced. More
-information will appear on these pages as it becomes available. Physics
-teachers will be contacted with more information via the usual newsgroups and
-mailing lists. To be sure of receiving more information as it is available,
-and for ways to participate, <a href="/forms/reg.php">teachers</a> and <a href="/forms/regp.php">others</a> also interested (for instance parents and pupils - "friends") should register with us.  See the relevant registration buttons in left hand menu
+	The Rutherford School Physics Partnership is a project designed to offer support and activities in physics problem solving to teachers and students transitioning from GCSE (Y11), through to Sixth Form (Y12 &amp; 13), through to university, by combining an on-line study tool with face-to-face events at partner schools and institutions across the UK. 	
+</p>
 <p>
-Our aim is to reach all AS and A2 physics students, and their teachers, to offer support in physics problem solving, methods of analysis, back ground mathematics, . . .  to help bridge the gap between school and university physics, mathematics and engineering.
+	Our resources and events are designed to provide students with an additional arena in which to develop the skills required to solve physical problems.  An arena in which they will develop an intuition and understanding of physical principles by tackling a range of examples from idealised problems through to real-world situations.  With our online course we also provide pages that give insight and practice in fundamental mathematical and physical techniques that are essential for potential physicists and engineers to have at their fingertips.
+</p>
 <p>
-We will have an on-line study tool (like the open on-line courses - MOOCs - that are used in US universities), will run classes regionally, and will have materials and continuing professional development for physics and further maths (mechanics) teachers. 
+	The on-line platform that you see here is a pilot for a far more diverse offering which is currently under construction.  If you are interested in receiving updates as we modify our resources and schedule our face-to-face events please do <a href="#" data-content-uri="/register">register</a> with our partnership.
+</p>
 <p>
-We have sister projects with the same aims.  Physics is essential for engineering:  see <a href="http://i-want-to-study-engineering.org/">i-want-to-study-engineering.org/</a> which will become active in September 2013.  Mathematics is the natural language of physics and the two subjects have always been intimately related.  See also the <a href="http://www.maths.cam.ac.uk/cmep/">Cambridge Mathematics Project</a>. 
+We also have two sister projects that share our aims and who we are working with to achieve them. Physics and engineering courses at university desire many of the same skills in their undergraduates and therefore <a tagret="_blank" href="http://i-want-to-study-engineering.org/">http://i-want-to-study-engineering.org/</a> also presents many interesting problems for physics students and teachers to look at.  Mathematics is the natural language of physics and so the <a target="_blank" href="http://www.maths.cam.ac.uk/about/community/cmep/">Cambridge Mathematics Project</a> will also provide some interesting and useful challenges.
+</p>
 {/template}
+
+/**
+ * Events
+ */
+{template .events}
+<h3>Physics Teachers' Cambridge Residential</h3>
+<p>
+From the 28th June - 30th June 2014 the Cavendish Laboratory will host an annual FREE physics residential 
+course for teachers which will provide teachers with the resources and ideas behind the <a href="http://www-spc.phy.cam.ac.uk/">Senior Physics Challenge</a>. 
+This residential event forms part of the <a href="http://www.rutherford-physics.org.uk/">Rutherford Physics Partnership</a> and will provide all delegates 
+with <b>free evening meals and free accommodation</b> in a Cambridge college. We also invite sixth form physics teachers (or maths teachers teaching 
+mechanics) <b>from state schools to apply for a grant from this project to cover the supply teacher costs</b> to enable them to attend the Monday part of the programme 
+without any costs incurred to their school. Please see "<i><a href="#booking">booking a place</a></i>" section below.
+</p>
+
+<h4>Course Aims and Objectives</h4>
+<div class="row">
+	<div class="small-11-columns small-offset-1">
+		<ul class="disc">
+			<li>
+				We are aware that there are many talented students who are unable to attend the student SPC as we just do not have the spaces to host them. 
+			   	We hope that this opportunity will enable teachers to take the SPC back to school and into the classroom by providing attending teachers with 
+			   	the <b>relevant resources</b>. For example; current information about admissions and Cambridge physics research, example sheets and experimental ideas.
+		    </li>
+			<li>
+				For teachers to gain firsthand experience on the Cambridge collegiate system by staying and dining in a Cambridge college and seeing the base of 
+				physics research in Cambridge - the Cavendish laboratory. The programme will include a session on <b>Cambridge admissions</b> from those at the front-line 
+				i.e. directors of studies in physics and admissions interviewers.
+			</li>
+			<li>
+				We are keen to <b>discuss ideas and concepts</b> with teachers to further understand students' 
+				conceptual difficulties and bridge the gap between A-level and university physics.
+			</li>
+			<li>
+				<b>An inspirational environment</b> in which to discuss physics and physics education with <b>like-minded 
+				teachers</b>, time out from school to refresh, think in alternative ways and experiment.
+			</li>
+			<li>
+				This insight into the SPC takes place just before the students begin their course and therefore there will 
+				be opportunity to see some of the country's most talented <b>physics students in action</b>.
+			</li>
+		</ul>
+	</div>
+</div>
+
+<h4>Example Program (from 2013)</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th width="120">Time</th>
+      <th>Saturday</th>
+      <th>Sunday</th>
+      <th>Monday</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>08:00-08:45</td>
+      <td></td>
+      <td>Breakfast in College</td>
+      <td>Breakfast in College</td>
+    </tr>
+    <tr>
+      <td>09:00-11:00</td>
+      <td></td>
+      <td><b>Subject Workshop</b>:<br/>Mechanics - conceptual challenges and laying the foundations<br/><i>Robin Hughes</i></td>
+      <td><b>Experimental Labs</b>:<br/>Laser diffraction, the conical pendulum and $T^4$<br/><i>Dr Lisa Jardine-Wright and others</i></td>
+    </tr>
+    <tr>
+      <td>11:00-13:00</td>
+      <td>Arrival and registration at Robinson College</td>
+      <td><b>Admissions Session</b>:<br/>Physics in Cambridge and Q&amp;A<br/><i>Prof. Mark Warner and Dr. Lisa Jardine-Wright</i></td>
+      <td><b>Observations</b>:<br/>See the SPC students in action during their quantum mechanics workshop</td>
+    </tr>
+    <tr>
+      <td>13:00-15:00</td>
+      <td>Arrival and registration at Robinson College</td>
+      <td><b>Subject Workshop</b>:<br/>Special relativity and quantum mechanics- stirring the students' imagination<br/><i>Prof. Mark Warner</i><br/><br/><b>Cavendish Outreach Opportunities</b>:<br/><i>Dr Lisa Jardine-Wright</i></td>
+      <td>Teachers are free to leave in their own time or stay and observe further sessions.</td>
+    </tr>
+    <tr>
+      <td>15:00-18:00</td>
+      <td>Arrival and registration at Robinson College</td>
+      <td><b>Free time in Cambridge</b></td>
+      <td><b>End of course</b></td>
+    </tr>
+    <tr>
+      <td>18:00 onwards</td>
+      <td><b>Welcome and Introductions</b>:<br/><i>Dr Lisa Jardine-Wright</i><br/><b>Traditional College Dinner</b>:<br/><i>Corpus Christi College</i></td>
+      <td><b>Cafeteria Dinner</b>:<br/><i>Corpus Christi College</i><br/><b>Observation</b>:<br/>Student estimation session<br/><i>Prof. Mark Warner</i></td>
+      <td><b>End of course</b></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="booking"><h4>Booking and Registration</h4></a>
+<p>
+There are just 30 places available on this course. The final closing date is 31st March and places on this course will be allocated on a 
+first-come first-served basis. <b>Anyone teaching at a state school should indicate if they would like a grant to cover supply teacher 
+costs to enable them to stay on the Monday (these will not be allocated on a first come basis but will be judged after the collected 
+field of applications has been received)</b>. If you would like to register for a place please email Dr Lisa Jardine-Wright (ljw21@cam.ac.uk) 
+as soon as possible with the following information:
+</p>
+<div class="row">
+	<div class="small-11-columns small-offset-1">
+		<ul class="disc">
+			<li>Name</li>
+			<li>School</li>
+			<li>School Address</li>
+			<li>Email Address</li>
+			<li>Your contact telephone number</li>
+			<li>Whether you would like to apply for a cover grant</li>
+		</ul>
+	</div>
+</div>
+
+<p>
+Once your place has been allocated we will request a 50 GBP returnable deposit cheque to confirm acceptance of the place - the 
+cheque will be returned to you, uncashed, on your arrival in Cambridge.
+</p>
+{/template}
+
 
 /**
  * Contact Us
@@ -113,7 +291,7 @@ We have sister projects with the same aims.  Physics is essential for engineerin
 <div class="contact-us ajax-form">
 	<h3>Contact Us</h3>
 	<p>
-	We hope that you have enjoyed interacting with our pilot resources.  We are still very much in the development phase of our online course and we would welcome any constructive feedback that you have about any aspect of your interaction with the information that we present here.  Please do tell us what works well for you as well as what you are not so keen on! 
+	We hope that you have enjoyed interacting with our pilot resources.  We are still very much in the design and development phase of our online platform (the next phase should be active in April).  We would welcome any constructive feedback that you have about the physics problems and concepts that we present here.  Do tell us what works well for you as well as what you are not so keen on but <b>please remember the platform is a beta version while design work proceeds</b>.
 	
 	<p>
 	To send us your comments please fill out the form below:
@@ -161,7 +339,7 @@ We have sister projects with the same aims.  Physics is essential for engineerin
 <div class="register-interest ajax-form">
 
 	<p> 
-	If you are interested in our MOOC and would like to receive updates about any new content or new development on the website, please register below. If you have any immediate feedback for us, please use the <a href="#" data-content-uri="/contact-us"/>Contact Us</a> form, thank you. 
+	If you are interested in our partnership and would like to receive updates about any new content or new developments, please register below. If you have any immediate feedback for us, please use the <a href="#" data-content-uri="/contact-us"/>Contact Us</a> form, thank you. 
 	
 	<form data-abide action="{$ij.proxyPath}/api/contact-us/register-interest" method="post" class="custom">
 	  <div class="row">
