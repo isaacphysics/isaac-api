@@ -49,7 +49,7 @@ public class SegueApiFacade {
 	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
 	 */
 	public SegueApiFacade(){
-		
+
 	}
 	
 	/**
@@ -62,6 +62,11 @@ public class SegueApiFacade {
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		
 		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
+		
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		liveVersion = contentPersistenceManager.getLatestVersionId();
+		log.info("Using version: " + liveVersion +" of the site."); 
 	}
 	
 	@POST
