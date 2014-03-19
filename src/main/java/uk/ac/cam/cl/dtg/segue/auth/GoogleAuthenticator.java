@@ -36,10 +36,13 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	private static final Logger log = LoggerFactory.getLogger(GoogleAuthenticator.class);
 
 	// location of json file in resource path that contains the client id / secret
-	private static final String AUTH_RESOURCE_LOC = "/client_secret.json";
+	//private static final String AUTH_RESOURCE_LOC = "/client_secret_local.json";
+	private static final String AUTH_RESOURCE_LOC = "/client_secret_dev.json";
 	
 	//TODO: move these somewhere else
-	private static final String CALLBACK_URI = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback";
+	//private static final String CALLBACK_URI = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback";
+	private static final String CALLBACK_URI = "http://puppy50.dtg.cl.cam.ac.uk/rutherford-server/segue/api/auth/google/callback";	
+	
 	private static final Collection<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email".split(";"));
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();

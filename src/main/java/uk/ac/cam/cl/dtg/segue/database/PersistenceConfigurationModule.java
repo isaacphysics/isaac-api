@@ -30,7 +30,8 @@ import com.mongodb.DB;
 public class PersistenceConfigurationModule extends AbstractModule {
 
 	private static final Logger log = LoggerFactory.getLogger(PersistenceConfigurationModule.class);
-	private static final String gitDbUri = "C:\\Users\\sac92\\workspace\\rutherford-content\\.git";
+	//private static final String gitDbUri = "C:\\Users\\sac92\\workspace\\rutherford-content\\.git";
+	private static final String gitDbUri = "/local/data/rutherford/git-contentstore/rutherford-content/.git";
 	
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper;
