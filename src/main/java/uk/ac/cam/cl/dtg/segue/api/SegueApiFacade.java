@@ -300,7 +300,7 @@ public class SegueApiFacade {
 	public User getCurrentUser(HttpServletRequest request){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
-
+		//TODO: Make the underlying code more efficient?
 		return userManager.getCurrentUser(request);
 	}
 
@@ -371,7 +371,6 @@ public class SegueApiFacade {
 		String returnUrl = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HOST_NAME) + injector.getInstance(PropertiesLoader.class).getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
 		// TODO: make less hacky
 		return Response.temporaryRedirect(URI.create(returnUrl)).build();
-
 	}
 
 	@POST

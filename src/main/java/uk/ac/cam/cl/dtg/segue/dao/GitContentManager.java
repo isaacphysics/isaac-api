@@ -341,7 +341,7 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public void clearCache() {
-		log.info("Clearing content cache");
+		log.info("Clearing Git content cache.");
 		gitCache.clear();
 	}
 
