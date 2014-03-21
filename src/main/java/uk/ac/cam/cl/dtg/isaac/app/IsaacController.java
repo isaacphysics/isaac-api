@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.Mailer;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -70,11 +71,10 @@ public class IsaacController {
 	// Map of topicPath to detail
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
 	
-	// TODO: Move to a configuration file
-	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
-	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
-	private static final String[] recipients = {"dst28@cam.ac.uk"};
-
+	public IsaacController(){
+		
+	}
+	
 	/**
 	 * Temporary solution to show all content of different types in no particular order. (For dev test)
 	 * 
@@ -250,8 +250,12 @@ public class IsaacController {
 			@FormParam("message-text") String messageText,
 			@Context HttpServletRequest request){
 
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
+		IsaacPersistenceConfigurationModule configurationModule = injector.getInstance(IsaacPersistenceConfigurationModule.class);
+		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
+		
 		// construct a new instance of the mailer object
-		Mailer contactUsMailer = new Mailer(IsaacController.MailerSmtpServer,IsaacController.MailerFromAddress);
+		Mailer contactUsMailer = new Mailer(propertiesLoader.getProperty(Constants.MAILER_SMTP_SERVER), propertiesLoader.getProperty(Constants.MAIL_FROM_ADDRESS));
 		
 		if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email) && StringUtils.isBlank(subject) && StringUtils.isBlank(messageText)){
 			log.debug("Contact us required field validation error ");
@@ -277,8 +281,8 @@ public class IsaacController {
 		
 		try {
 			// attempt to send the message via the smtp server
-			contactUsMailer.sendMail(recipients, email, subject, message.toString());
-			log.info("Contact Us - E-mail sent to " + recipients + " " + email + " " + subject + " " + message.toString());
+			contactUsMailer.sendMail(propertiesLoader.getProperty(Constants.MAIL_RECEIVERS).split(","), email, subject, message.toString());
+			log.info("Contact Us - E-mail sent to " + propertiesLoader.getProperty(Constants.MAIL_RECEIVERS) + " " + email + " " + subject + " " + message.toString());
 			
 		} catch (AddressException e) {				
 			log.warn("E-mail Address validation error " + e.toString());
@@ -304,7 +308,7 @@ public class IsaacController {
 			proxyPath = "/research/dtg/rutherford";
 			trackingId = "UA-45629473-2";
 		} else if (req.getLocalAddr().equals("128.232.20.79")) {
-			proxyPath = "http://www.cl.cam.ac.uk/~ipd21/isaac-staging";
+			proxyPath = "http://rutherford-dev.dtg.cl.cam.ac.uk";
 			trackingId = "";
 		} else {
 			proxyPath = req.getContextPath();
