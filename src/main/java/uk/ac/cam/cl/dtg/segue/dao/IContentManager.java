@@ -53,4 +53,9 @@ public interface IContentManager {
 	 * @return
 	 */
 	public String getLatestVersionId() throws UnsupportedOperationException;
+	
+	/**
+	 * A utility method to instruct the content manager to evict all of its cached data.
+	 */
+	public void clearCache();
 }

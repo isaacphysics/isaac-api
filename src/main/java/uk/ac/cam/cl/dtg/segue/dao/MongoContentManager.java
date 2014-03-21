@@ -125,4 +125,11 @@ public class MongoContentManager implements IContentManager {
 	public String getLatestVersionId() throws UnsupportedOperationException {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
+
+	@Override
+	public void clearCache() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("This method is not implemented yet.");
+		
+	}
 }

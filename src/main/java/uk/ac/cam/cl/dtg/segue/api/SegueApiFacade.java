@@ -46,14 +46,14 @@ public class SegueApiFacade {
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
 	private static String liveVersion = "2cc8480540f21f81e25845042eff27f4000ceae9";
 	private static Date dateOfVersionChange = new Date();
-	
+
 	/**
 	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
 	 */
 	public SegueApiFacade(){
 
 	}
-	
+
 	/**
 	 * Constructor that allows pre-configuration of the segue api. 
 	 * 
@@ -63,12 +63,12 @@ public class SegueApiFacade {
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
-		
-		
+
+
 		// TODO: for dev purposes everytime we start segue we want to get the latest version
 		this.synchroniseDataStores();
 	}
-	
+
 	@POST
 	@Path("log")
 	@Produces("application/json")
@@ -77,7 +77,7 @@ public class SegueApiFacade {
 			@FormParam("sessionId") String sessionId,
 			@FormParam("cookieId") String cookieId,
 			@FormParam("event") String eventJSON) {
-		
+
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		ILogManager logPersistenceManager = injector.getInstance(ILogManager.class);
 
@@ -100,13 +100,13 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
-		
+
 		log.info("INSERTING DOC: " + docJson);
-		
+
 		String newId = null;
 		try {			
 			Content cnt = mapper.load(docJson);
-			
+
 			newId = contentPersistenceManager.save(cnt);			
 		} catch (JsonParseException e) {
 			e.printStackTrace();
@@ -118,13 +118,13 @@ public class SegueApiFacade {
 			e.printStackTrace();
 			return Response.serverError().entity(ImmutableMap.of("error", e.toString())).build();
 		}
-		
+
 		if (newId != null)
 			return Response.ok().entity(ImmutableMap.of("result", "success", "newId", newId)).build();
 		else
 			return Response.serverError().entity(ImmutableMap.of("error", "No new Id was assigned by the database")).build();
 	}
-	
+
 	/**
 	 * GetContentById from the database
 	 * 
@@ -139,27 +139,27 @@ public class SegueApiFacade {
 	public Response getContentById(@PathParam("id") String id) {		
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-		
+
 		Content c = null;
-		
+
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("RETRIEVING DOC: " + id);
 			c = contentPersistenceManager.getById(id, SegueApiFacade.liveVersion);
-			
+
 			if (null == c){
 				return Response.noContent().entity(null).build();
 			}
-			
+
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
 			return Response.serverError().entity(e).build();
 		}
-		
+
 		return Response.ok().entity(c).build();
 	}
-	
+
 	/**
 	 * getFileContent from the file store
 	 * 
@@ -184,17 +184,17 @@ public class SegueApiFacade {
 
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		GitContentManager gcm = injector.getInstance(GitContentManager.class);
-		
+
 		ByteArrayOutputStream fileContent = null;
 		String mimeType = MediaType.WILDCARD; 
-		
+
 		switch(Files.getFileExtension(path).toLowerCase()){
-			case "svg":{
-				mimeType = "image/svg+xml";
-				break;
-			}
+		case "svg":{
+			mimeType = "image/svg+xml";
+			break;
 		}
-		
+		}
+
 		try {
 			fileContent = gcm.getFileBytes(version, path);
 		} catch (IOException e) {
@@ -203,11 +203,11 @@ public class SegueApiFacade {
 		} catch (UnsupportedOperationException e){
 			log.error("Multiple files match the search path provided. Returning null as the result.");
 		}
-		
+
 		if (null == fileContent){
 			return Response.noContent().entity(null).build();
 		}
-		
+
 		return Response.ok().type(mimeType).entity(fileContent.toByteArray()).build();
 	}	
 
@@ -226,9 +226,9 @@ public class SegueApiFacade {
 	public Response getAllContentByType(String type, Integer limit){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-		
+
 		List<Content> c = null;
-		
+
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("Finding all content from the api with type: " + type);
@@ -238,10 +238,10 @@ public class SegueApiFacade {
 			log.error("Unable to map content object.", e);
 			return Response.serverError().entity(e).build();
 		}
-		
+
 		return Response.ok().entity(c).build();
 	}
-	
+
 	/**
 	 * This method will allow the live version served by the site to be changed 
 	 * TODO: Maybe some security???!
@@ -255,22 +255,22 @@ public class SegueApiFacade {
 	public synchronized Response changeLiveVersion(@PathParam("version") String version){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-		
+
 		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
-		
+
 		if(null == liveVersion || liveVersion.equals(""))
 			liveVersion = availableVersions.get(0);
-		
+
 		if(!availableVersions.contains(version))
 			return Response.ok().entity("Invalid version selected").build();
 		else{
 			liveVersion = version;
 			log.info("Live version of the site changed to: " + version);
 		}
-			
+
 		return Response.ok().entity("live Version changed to " + version).build();
 	}
-	
+
 	/**
 	 * This method will get the version id of the site that is currently set to be used as the live one.  
 	 * 
@@ -282,7 +282,7 @@ public class SegueApiFacade {
 	public Response getLiveVersion(){			
 		return Response.ok().entity(liveVersion).build();
 	}	
-	
+
 	/**
 	 * Get the details of the currently logged in user
 	 * TODO: test me
@@ -292,10 +292,10 @@ public class SegueApiFacade {
 	public User getCurrentUser(HttpServletRequest request){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
-		
+
 		return userManager.getCurrentUser(request);
 	}
-	
+
 	/**
 	 * This is the initial step of the authentication process.
 	 * 
@@ -309,16 +309,16 @@ public class SegueApiFacade {
 	public Response authenticationInitialisation(@Context HttpServletRequest request, @PathParam("provider") String signinProvider){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
-		
+
 		User currentUser = getCurrentUser(request);
-		
+
 		if(null != currentUser){
 			return Response.ok().entity(currentUser).build();
 		}
-		
+
 		// ok we need to hand over to user manager
 		return userManager.authenticate(request, signinProvider);
-		
+
 	}
 
 	/**
@@ -335,16 +335,16 @@ public class SegueApiFacade {
 	public Response authenticationCallback(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("provider") String signinProvider){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
-		
+
 		userManager.authenticateCallback(request, response, signinProvider);
-		
+
 		//return authenticationResult;
-		
+
 		log.info("ContextPath = " + request.getContextPath() + "../../learn");
 		//TODO: make less hacky
 		return Response.temporaryRedirect(URI.create("http://www.cl.cam.ac.uk/~ipd21/isaac-staging/learn")).build();
 	}
-	
+
 	/**
 	 * End point that allows the user to logout - i.e. destroy our cookie.
 	 * 
@@ -358,12 +358,12 @@ public class SegueApiFacade {
 	public Response userLogout(@Context HttpServletRequest request, @Context HttpServletResponse response){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
-		
+
 		userManager.logUserOut(request);
-		
+
 		// TODO: make less hacky
 		return Response.temporaryRedirect(URI.create("http://www.cl.cam.ac.uk/~ipd21/isaac-staging/home")).build();
-		
+
 	}
 
 	@POST
@@ -372,24 +372,24 @@ public class SegueApiFacade {
 	public Response synchroniseDataStores(){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-		
-		log.info("Notified of content change - Synchronizing with Git.");
-		
-		String newVersion = contentPersistenceManager.getLatestVersionId();
-		
-		 if(newVersion != liveVersion){
-			 liveVersion = newVersion;
-			 dateOfVersionChange = new Date();
 
-		 }
-		 contentPersistenceManager.clearCache();
+		log.info("Notified of content change - Synchronizing with Git.");
+
+		String newVersion = contentPersistenceManager.getLatestVersionId();
+
+		if(newVersion != liveVersion){
+			liveVersion = newVersion;
+			dateOfVersionChange = new Date();
+			contentPersistenceManager.clearCache();
+		}
+
 		log.info("Changing live version to be " + liveVersion);
-		
+
 		return Response.ok(newVersion).build();
 	}
-	
+
 	public Date dateOfVersionChange(){
 		return dateOfVersionChange;
 	}
-	
+
 }
