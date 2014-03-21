@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -138,9 +139,9 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	private GoogleClientSecrets getClientCredential() throws IOException {
 		if (clientSecrets == null) {
 			// load up the client secrets from the file system.
-			InputStream inputStream = GoogleAuthenticator.class.getResourceAsStream(AUTH_RESOURCE_LOC);
-			Preconditions.checkNotNull(inputStream, "missing resource %s",
-					AUTH_RESOURCE_LOC);
+			InputStream inputStream = new FileInputStream(AUTH_RESOURCE_LOC); 
+			
+			Preconditions.checkNotNull(inputStream, "missing resource %s", AUTH_RESOURCE_LOC);
 
 			InputStreamReader isr = new InputStreamReader(inputStream);
 
