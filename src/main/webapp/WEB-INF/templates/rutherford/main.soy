@@ -183,13 +183,24 @@
 		// Allow inline maths with single $s
 		
 		MathJax.Hub.Config({lb}
+			TeX: {lb}
+				Macros: {lb}
+					// See http://docs.mathjax.org/en/latest/tex.html#defining-tex-macros
+					"quantity": ["{lb}#1{rb}\\,{lb}\\sf{lb}#2{rb}{rb}",2],
+					"valuedef": ["{lb}#1{rb}={lb}\\quantity{lb}#2{rb}{lb}#3{rb}{rb}",3],
+					"vtr": ["{lb}\\underline{lb}\\boldsymbol{lb}#1{rb}{rb}{rb}",1],
+					"d": "\\operatorname{lb}d{rb}",
+					"vari": ["#1",1],
+					"s": ["_{lb}\\sf{lb}#1{rb}{rb}", 1],
+				{rb}
+			{rb},
 			tex2jax: {lb}
 			inlineMath: [ ['$','$'], ["\\(","\\)"] ],
 			processEscapes: true
 			{rb},
 			"HTML-CSS": {lb}
 			    scale: 85
-			  {rb}
+			  {rb},
 		{rb});
 		
 		// Fix font issues in Chrome 32
