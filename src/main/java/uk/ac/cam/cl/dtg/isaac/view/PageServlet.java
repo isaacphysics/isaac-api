@@ -40,7 +40,8 @@ urlPatterns = {
 		"/applying",
 		"/challenge",
 		"/why-physics",
-		"/contact-us"},
+		"/contact-us",
+		"/signin"},
 loadOnStartup = 1,//
 initParams = { @WebInitParam(name = "disableCaching", value = "true") }//
 )
@@ -93,6 +94,10 @@ public class PageServlet extends HttpServlet {
 			else if (uri.startsWith("/home"))
 			{
 				cContent = renderer.render("rutherford.pages.home", null, ij, Locale.ENGLISH);
+			}
+			else if (uri.startsWith("/signin"))
+			{
+				cContent = renderer.render("rutherford.pages.signin", null, ij, Locale.ENGLISH);
 			}
 			else
 			{

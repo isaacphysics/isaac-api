@@ -393,3 +393,23 @@ cheque will be returned to you, uncashed, on your arrival in Cambridge.
 	</form>
 </div>
 {/template}
+
+/**
+ * Contact Us
+ */
+{template .signin}
+<div class="contact-us ajax-form">
+	<h3>Registration / Login</h3>
+	<p>
+	In order for us to give you a more personalised experience and for you to record your achievements you will need to create an account with us.
+	
+	<p>
+	Creating an account is very easy if you have an account with one of these external services. All you  have to do is click the link below and login if prompted. You may see a message asking you to agree that we can
+	see your email address and basic details. If you agree then your account will be created immediately.
+	
+	<ul>
+		<li><a href="{$ij.proxyPath}/segue/api/auth/google/authenticate"><img src="{$ij.proxyPath}/static/img/google-signin.jpg" alt="google login"/></a></li>
+	</ul>
+	
+</div>
+{/template}
