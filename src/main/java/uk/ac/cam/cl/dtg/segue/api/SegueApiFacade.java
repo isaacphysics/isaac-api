@@ -152,10 +152,10 @@ public class SegueApiFacade {
 
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
-			log.info("RETRIEVING DOC: " + id);
 			c = contentPersistenceManager.getById(id, SegueApiFacade.liveVersion);
 
 			if (null == c){
+				log.debug("No content found with id: " + id);
 				return Response.noContent().entity(null).build();
 			}
 
