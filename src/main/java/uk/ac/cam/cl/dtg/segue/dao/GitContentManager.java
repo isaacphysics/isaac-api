@@ -135,7 +135,7 @@ public class GitContentManager implements IContentManager {
 	 * 
 	 * @param sha
 	 */
-	private void buildGitIndex(String sha){
+	private synchronized void buildGitIndex(String sha){
 		// This set of code only needs to happen if we have to read from git again.
 		if(null != sha && gitCache.get(sha) == null){
 			
@@ -303,7 +303,7 @@ public class GitContentManager implements IContentManager {
 		{
 			expectedIds.removeAll(definedIds);
 			missingContent.addAll(expectedIds);
-			log.error("Referential integrity broken for related Content. The following ids are referenced but do not exist: " + expectedIds.toString());
+			log.error("Referential integrity broken for (" + expectedIds.size() + ") related Content items. The following ids are referenced but do not exist: " + expectedIds.toString());
 			return false;
 		}
 	}
@@ -339,7 +339,6 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public void clearCache() {
-		// TODO Auto-generated method stub
 		log.info("Clearing content cache");
 		gitCache.clear();
 	}

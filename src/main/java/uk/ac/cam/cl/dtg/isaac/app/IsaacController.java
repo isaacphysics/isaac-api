@@ -320,6 +320,7 @@ public class IsaacController {
 		globalMap.put("analyticsTrackingId", trackingId);
 		globalMap.put("newSessionId", UUID.randomUUID().toString());
 		globalMap.put("newUserId", UUID.randomUUID().toString());
+		
 		User user = api.getCurrentUser(req);
 		if(null != user)
 			globalMap.put("usersFirstname", user.getGivenName());

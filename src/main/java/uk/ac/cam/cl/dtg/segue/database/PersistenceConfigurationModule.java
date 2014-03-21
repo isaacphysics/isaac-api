@@ -42,7 +42,8 @@ public class PersistenceConfigurationModule extends AbstractModule {
 
 	public PersistenceConfigurationModule(){
 		try {
-			globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
+			//globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
+			globalProperties = new PropertiesLoader("/config/dev-segue-config.properties");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

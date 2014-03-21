@@ -254,7 +254,7 @@ public class UserManager{
 		request.getSession().setAttribute(Constants.SESSION_USER_ID, userId);
 		request.getSession().setAttribute(Constants.SESSION_ID, sessionId);
 		request.getSession().setAttribute(Constants.DATE_SIGNED, currentDate);
-		request.getSession().setAttribute(Constants.HMAC,sessionHMAC);
+		request.getSession().setAttribute(Constants.HMAC, sessionHMAC);
 	}
 
 	/**
@@ -274,6 +274,11 @@ public class UserManager{
 		String sessionHMAC = (String) request.getSession().getAttribute(Constants.HMAC);
 		
 		String ourHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
+		
+		if(null == userId){
+			log.debug("No session set so not validating user identity.");
+			return false;
+		}
 		
 		if(ourHMAC.equals(sessionHMAC)){
 			log.debug("Valid user session continuing...");

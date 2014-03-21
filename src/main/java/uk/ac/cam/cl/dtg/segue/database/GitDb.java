@@ -249,7 +249,7 @@ public class GitDb {
 	 * 
 	 * @return The version id of the latest version after the fetch.
 	 */
-	public String pullLatestFromRemote(){
+	public synchronized String pullLatestFromRemote(){
 		try {
 			SshSessionFactory factory = new JschConfigSessionFactory() {
 				@Override
