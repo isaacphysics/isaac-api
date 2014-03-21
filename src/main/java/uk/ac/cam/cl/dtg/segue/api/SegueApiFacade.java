@@ -385,6 +385,7 @@ public class SegueApiFacade {
 		if(newVersion != liveVersion){
 			liveVersion = newVersion;
 			dateOfVersionChange = new Date();
+			// TODO come up with a better cache eviction strategy.
 			contentPersistenceManager.clearCache();
 		}
 
