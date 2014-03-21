@@ -70,8 +70,6 @@ public class IsaacController {
 	// Map of topicPath to detail
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
 	
-	private boolean questionNavigationDataLoaded = false;
-	
 	// TODO: Move to a configuration file
 	private static final String MailerSmtpServer = "ppsw.cam.ac.uk";
 	private static final String MailerFromAddress = "cl-rutherford@lists.cam.ac.uk";
