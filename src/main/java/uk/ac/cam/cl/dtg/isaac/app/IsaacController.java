@@ -88,13 +88,13 @@ public class IsaacController {
 	@Produces("application/json")
 	public Response getTopics(@Context HttpServletRequest req) {		
 		
-		//test of user registration
-		User user = api.getCurrentUser(req);
-		// example of requiring user to be logged in.
-		if(null == user)
-			return api.authenticationInitialisation(req, "google");
-		else
-			log.info("User Logged in: " + user.getEmail());
+//		//test of user registration
+//		User user = api.getCurrentUser(req);
+//		// example of requiring user to be logged in.
+//		if(null == user)
+//			return api.authenticationInitialisation(req, "google");
+//		else
+//			log.info("User Logged in: " + user.getEmail());
 			
 		
 		// get all concepts
