@@ -305,6 +305,9 @@ public class IsaacController {
 		} else if (req.getLocalAddr().equals("128.232.20.40")) {
 			proxyPath = "/research/dtg/rutherford";
 			trackingId = "UA-45629473-2";
+		} else if (req.getLocalAddr().equals("128.232.20.79")) {
+			proxyPath = "http://www.cl.cam.ac.uk/~ipd21/isaac-staging";
+			trackingId = "";
 		} else {
 			proxyPath = req.getContextPath();
 			trackingId = "";

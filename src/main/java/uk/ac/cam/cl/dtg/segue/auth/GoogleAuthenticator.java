@@ -41,7 +41,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	
 	//TODO: move these somewhere else
 	//private static final String CALLBACK_URI = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback";
-	private static final String CALLBACK_URI = "http://puppy50.dtg.cl.cam.ac.uk/rutherford-server/segue/api/auth/google/callback";	
+	private static final String CALLBACK_URI = "http://www.cl.cam.ac.uk/~ipd21/isaac-staging/segue/api/auth/google/callback";	
 	
 	private static final Collection<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email".split(";"));
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();

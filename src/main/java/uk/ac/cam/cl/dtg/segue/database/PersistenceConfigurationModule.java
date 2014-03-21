@@ -32,7 +32,12 @@ public class PersistenceConfigurationModule extends AbstractModule {
 	private static final Logger log = LoggerFactory.getLogger(PersistenceConfigurationModule.class);
 	//private static final String gitDbUri = "C:\\Users\\sac92\\workspace\\rutherford-content\\.git";
 	private static final String gitDbUri = "/local/data/rutherford/git-contentstore/rutherford-content/.git";
+    //private static final String gitDbUri = "c:\\rutherford-test\\.git";
 	
+	//private static final String privateKey = "C:\\Users\\sac92\\workspace\\rutherford-server\\src\\main\\resources\\dev_ssh_git.ppk";
+	private static final String privateKey = "/local/data/rutherford/keys/dev_ssh_git.ppk";
+	private static final String gitSSHFetchUrl = "git@github.com:ucam-cl-dtg/rutherford-content.git";
+
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper;
 	private static GoogleAuthenticator googleAuthenticator;
@@ -56,10 +61,11 @@ public class PersistenceConfigurationModule extends AbstractModule {
 			bind(DB.class).toInstance(Mongo.getDB());
 
 			// GitDb			
-			bind(GitDb.class).toInstance(new GitDb(gitDbUri));
+			bind(GitDb.class).toInstance(new GitDb(gitDbUri,gitSSHFetchUrl,privateKey));
 			
 			//bind(IContentManager.class).to(MongoContentManager.class); //Allows Mongo take over Content Management
 			bind(IContentManager.class).to(GitContentManager.class); //Allows GitDb take over Content Management
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 			log.error("Error instantiating the Git database for the given path: " + gitDbUri);
@@ -89,8 +95,6 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		map.put("question", Question.class);
 		map.put("choiceQuestion", ChoiceQuestion.class);
 		return map;
-	}
-	
-	
+	}	
 	
 }
