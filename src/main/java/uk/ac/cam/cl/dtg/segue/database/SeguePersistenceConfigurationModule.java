@@ -63,7 +63,6 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 		// Setup different persistence bindings
 
 		try {
-
 			bind(PropertiesLoader.class).toInstance(globalProperties);
 
 			// MongoDB

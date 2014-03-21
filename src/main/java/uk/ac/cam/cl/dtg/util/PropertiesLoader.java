@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 
 public class PropertiesLoader {
-	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
+	private static final Logger log = LoggerFactory.getLogger(PropertiesLoader.class);
 	private final Properties loadedProperties;
 	private final String propertiesFile;
 	
@@ -36,7 +36,7 @@ public class PropertiesLoader {
 		String value = loadedProperties.getProperty(key);
 		
 		if(null == value)
-			log.warn("Failed to resolve requested property with key: "+ key);
+			log.info("Failed to resolve requested property with key: "+ key);
 		
 		return value;
 	}

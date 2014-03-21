@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -63,17 +64,13 @@ public class IsaacController {
 
 	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
-	private static final SegueApiFacade api = new SegueApiFacade(new SegueConfigurationModule());
+	private static SegueApiFacade api = new SegueApiFacade(new SegueConfigurationModule());
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
 	
 	// Map of topicPath to detail
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
-	
-	public IsaacController(){
-		
-	}
 	
 	/**
 	 * Temporary solution to show all content of different types in no particular order. (For dev test)
@@ -251,7 +248,6 @@ public class IsaacController {
 			@Context HttpServletRequest request){
 
 		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		IsaacPersistenceConfigurationModule configurationModule = injector.getInstance(IsaacPersistenceConfigurationModule.class);
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
 		// construct a new instance of the mailer object
@@ -299,21 +295,28 @@ public class IsaacController {
 	}
 	
 	public static ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
-		String proxyPath;
-		String trackingId;
-		if (req.getLocalAddr().equals("128.232.20.43")) {
-			proxyPath = "/research/dtg/rutherford-staging";
-			trackingId = "UA-45629473-1";
-		} else if (req.getLocalAddr().equals("128.232.20.40")) {
-			proxyPath = "/research/dtg/rutherford";
-			trackingId = "UA-45629473-2";
-		} else if (req.getLocalAddr().equals("128.232.20.79")) {
-			proxyPath = "http://rutherford-dev.dtg.cl.cam.ac.uk";
-			trackingId = "";
-		} else {
+		Injector injector = Guice.createInjector(new IsaacPersistenceConfigurationModule());
+		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
+		
+		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
+		String trackingId = propertiesLoader.getProperty(Constants.ANALYTICS_TRACKING_ID);
+		
+		if(Strings.isNullOrEmpty(proxyPath)){
 			proxyPath = req.getContextPath();
+			log.debug("No proxyPath defined in properties file - using default context");
+		}
+		
+		if(Strings.isNullOrEmpty(trackingId)){
 			trackingId = "";
 		}
+		
+//		if (req.getLocalAddr().equals("128.232.20.43")) {
+//			proxyPath = "/research/dtg/rutherford-staging";
+//			trackingId = "UA-45629473-1";
+//		} else if (req.getLocalAddr().equals("128.232.20.40")) {
+//			proxyPath = "/research/dtg/rutherford";
+//			trackingId = "UA-45629473-2";
+//		}
 		
 		ImmutableMap.Builder<String,String> globalMap = ImmutableMap.builder();
 		globalMap.put("liveVersion", (String) api.getLiveVersion().getEntity());
@@ -322,7 +325,8 @@ public class IsaacController {
 		globalMap.put("analyticsTrackingId", trackingId);
 		globalMap.put("newSessionId", UUID.randomUUID().toString());
 		globalMap.put("newUserId", UUID.randomUUID().toString());
-		
+
+		// TODO: complete this so that we get proper user information.
 		User user = api.getCurrentUser(req);
 		if(null != user)
 			globalMap.put("usersFirstname", user.getGivenName());
@@ -331,7 +335,7 @@ public class IsaacController {
 		
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/M/yyyy");
 		String date = sdf.format(api.dateOfVersionChange());
-		globalMap.put("dateOfVersionChange", date);
+		globalMap.put("dateOfVersionChange", date); //This actually represents the last time we checked and updated the live version number.
 		
 		return globalMap.build();
 	}

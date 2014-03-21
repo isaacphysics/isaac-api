@@ -22,7 +22,8 @@ public class IsaacPersistenceConfigurationModule extends AbstractModule {
 	public IsaacPersistenceConfigurationModule(){
 		try {
 			if(null == globalProperties){
-				globalProperties = new PropertiesLoader("/config/local-isaac-config.properties");				
+				//globalProperties = new PropertiesLoader("/config/local-isaac-config.properties");
+				globalProperties = new PropertiesLoader("/config/dev-isaac-config.properties");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
