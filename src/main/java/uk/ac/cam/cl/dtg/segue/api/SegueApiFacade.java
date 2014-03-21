@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ public class SegueApiFacade {
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
 	private static String liveVersion = "2cc8480540f21f81e25845042eff27f4000ceae9";
+	private static Date dateOfVersionChange = new Date();
 	
 	/**
 	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
@@ -60,13 +62,11 @@ public class SegueApiFacade {
 	public SegueApiFacade(ISegueConfigurationModule segueConfigurationModule){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
-		
 		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
 		
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
-		liveVersion = contentPersistenceManager.getLatestVersionId();
-		log.info("Using version: " + liveVersion +" of the site."); 
+		// TODO: for dev purposes everytime we start segue we want to get the latest version
+		this.synchroniseDataStores();
 	}
 	
 	@POST
@@ -339,8 +339,10 @@ public class SegueApiFacade {
 		userManager.authenticateCallback(request, response, signinProvider);
 		
 		//return authenticationResult;
+		
+		log.info("ContextPath = " + request.getContextPath() + "../../learn");
 		//TODO: make less hacky
-		return Response.temporaryRedirect(URI.create("../../learn")).build();
+		return Response.temporaryRedirect(URI.create("http://www.cl.cam.ac.uk/~ipd21/isaac-staging/learn")).build();
 	}
 	
 	/**
@@ -360,8 +362,34 @@ public class SegueApiFacade {
 		userManager.logUserOut(request);
 		
 		// TODO: make less hacky
-		return Response.temporaryRedirect(URI.create("../../home")).build();
+		return Response.temporaryRedirect(URI.create("http://www.cl.cam.ac.uk/~ipd21/isaac-staging/home")).build();
 		
+	}
+
+	@POST
+	@Produces("application/json")
+	@Path("admin/synchroniseDatastores")	
+	public Response synchroniseDataStores(){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		log.info("Notified of content change - Synchronizing with Git.");
+		
+		String newVersion = contentPersistenceManager.getLatestVersionId();
+		
+		 if(newVersion != liveVersion){
+			 liveVersion = newVersion;
+			 dateOfVersionChange = new Date();
+
+		 }
+		 contentPersistenceManager.clearCache();
+		log.info("Changing live version to be " + liveVersion);
+		
+		return Response.ok(newVersion).build();
+	}
+	
+	public Date dateOfVersionChange(){
+		return dateOfVersionChange;
 	}
 	
 }

@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.app;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -325,6 +326,10 @@ public class IsaacController {
 			globalMap.put("usersFirstname", user.getGivenName());
 		else
 			globalMap.put("usersFirstname", "");
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/M/yyyy");
+		String date = sdf.format(api.dateOfVersionChange());
+		globalMap.put("dateOfVersionChange", date);
 		
 		return globalMap.build();
 	}
