@@ -144,7 +144,6 @@ public class UserManager{
 					log.debug("User granted access to our app");
 
 					String internalReference = oauthProvider.exchangeCode(authCode);
-					log.info(request.getSession().getId());
 
 					// get user info from provider
 					// note the userid field in this object will contain the providers user id.
@@ -221,12 +220,12 @@ public class UserManager{
 		// check if the users session is validated using our credentials.
 		
 		if(!this.validateUsersSession(request)){
-			log.error("User session failed validation. Assume they are not logged in.");
+			log.debug("User session is null or failed validation. Assume they are not logged in.");
 			return null;
 		}
 		
 		if(null == currentUserId){			
-			log.info("Current userID is null");
+			log.error("Current userID is null");
 			return null;
 		}
 
@@ -277,7 +276,7 @@ public class UserManager{
 		String ourHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
 		if(ourHMAC.equals(sessionHMAC)){
-			log.info("Valid user session continuing...");
+			log.debug("Valid user session continuing...");
 			return true;	
 		}
 		else
