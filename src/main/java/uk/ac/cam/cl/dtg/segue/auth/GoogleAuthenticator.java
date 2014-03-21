@@ -35,15 +35,10 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 	private static final Logger log = LoggerFactory.getLogger(GoogleAuthenticator.class);
 
-	// location of json file in resource path that contains the client id / secret
-	//private static final String AUTH_RESOURCE_LOC = "/client_secret_local.json";
-	private static final String AUTH_RESOURCE_LOC = "/client_secret_dev.json";
+	private String AUTH_RESOURCE_LOC;	// location of json file in resource path that contains the client id / secret
+	private String CALLBACK_URI;
+	private Collection<String> SCOPE;
 	
-	//TODO: move these somewhere else
-	//private static final String CALLBACK_URI = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback";
-	private static final String CALLBACK_URI = "http://www.cl.cam.ac.uk/~ipd21/isaac-staging/segue/api/auth/google/callback";	
-	
-	private static final Collection<String> SCOPE = Arrays.asList("https://www.googleapis.com/auth/userinfo.profile;https://www.googleapis.com/auth/userinfo.email".split(";"));
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	
@@ -53,8 +48,12 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 	private String antiForgeryStateToken;
 
-	public GoogleAuthenticator(){
+	public GoogleAuthenticator(String clientSecretLocation, String callBackURI, String requestedScopes){
 		try {
+			AUTH_RESOURCE_LOC = clientSecretLocation;
+			SCOPE =  Arrays.asList(requestedScopes.split(";"));
+			CALLBACK_URI = callBackURI;
+			
 			getClientCredential();
 			flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT,
 					JSON_FACTORY, 

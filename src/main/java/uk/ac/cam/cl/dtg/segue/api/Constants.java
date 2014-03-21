@@ -52,4 +52,20 @@ public class Constants {
 	 */
 	public static final String HMAC_SALT = "HMAC_SALT";
 	
+	// Federated Authentication Stuff
+	
+	/**
+	 * Constant representing the key for the GOOGLE client secret location.
+	 */
+	public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
+
+	/**
+	 * Constant representing the key for the GOOGLE OAUTH callback uri.
+	 */
+	public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
+	
+	/**
+	 * Constant representing the key for the GOOGLE OAUTH Scopes to be requested.
+	 */
+	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";	
 }

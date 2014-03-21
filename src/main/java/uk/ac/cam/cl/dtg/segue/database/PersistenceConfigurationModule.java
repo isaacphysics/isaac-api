@@ -41,12 +41,19 @@ public class PersistenceConfigurationModule extends AbstractModule {
 	private static GoogleAuthenticator googleAuthenticator;
 
 	public PersistenceConfigurationModule(){
+		try {
+			globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		if(null == mapper){
 			mapper = new ContentMapper(buildDefaultJsonTypeMap());
 		}
 
 		if(null == googleAuthenticator){
-			googleAuthenticator = new GoogleAuthenticator();			
+			googleAuthenticator = new GoogleAuthenticator(globalProperties.getProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION), globalProperties.getProperty(Constants.GOOGLE_CALLBACK_URI), globalProperties.getProperty(Constants.GOOGLE_OAUTH_SCOPES));			
 		}
 	}
 
@@ -55,7 +62,7 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		// Setup different persistence bindings
 
 		try {
-			globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
+
 			bind(PropertiesLoader.class).toInstance(globalProperties);
 
 			// MongoDB
