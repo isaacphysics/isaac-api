@@ -311,7 +311,16 @@ public class GitDb {
 		String result = null;
 
 		try {
-			result =  gitHandle.getRepository().resolve(Constants.FETCH_HEAD).getName();
+			ObjectId fetchHead = gitHandle.getRepository().resolve(Constants.FETCH_HEAD);
+			if(null != fetchHead){
+				result = fetchHead.getName();	
+			}
+			else
+			{
+				log.warn("Problem fetching head from remote. Providing local head instead.");
+				result =  gitHandle.getRepository().resolve(Constants.HEAD).getName();				
+			}			
+			
 		} catch (RevisionSyntaxException | IOException e) {
 			e.printStackTrace();
 			log.error("Error getting the head from the repository.");

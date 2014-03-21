@@ -54,6 +54,7 @@ public class SegueApiFacade {
 	public SegueApiFacade(){
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		liveVersion = injector.getInstance(PropertiesLoader.class).getProperty(Constants.INITIAL_LIVE_VERSION);
+		log.info("Starting the Segue api");
 	}
 
 	/**
