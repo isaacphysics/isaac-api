@@ -150,7 +150,8 @@ public class GitContentManager implements IContentManager {
 				}else{										
 				    Map<String,Content> shaCache = new HashMap<String,Content>();
 					TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
-
+					log.info("Populating git content cache based on sha " + sha + " ...");
+					
 				    // Traverse the git repository looking for the .json files
 				    while(treeWalk.next()){
 			    		ObjectId objectId = treeWalk.getObjectId(0);
@@ -179,7 +180,7 @@ public class GitContentManager implements IContentManager {
 					    	    			// if the key is the same but the content is different then something has gone wrong - log an error
 					    	    			if(!shaCache.get(flattenedContent.getId()).equals(flattenedContent)){
 								    	    	// log an error if we find that there are duplicate ids and the content is different.
-								    	    	log.error("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+								    	    	log.warn("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
 							    	    	}
 					    	    			// if the content is the same then it is just reuse of a content object so that is fine.
 					    	    			else{
@@ -188,7 +189,7 @@ public class GitContentManager implements IContentManager {
 							    	    }
 					    	    		// It must be new so we can add it
 							    	    else{
-							    	    	log.info("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
+							    	    	log.debug("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
 							    	    	shaCache.put(flattenedContent.getId(), flattenedContent);
 							    	    }
 					    	    	}
@@ -204,6 +205,7 @@ public class GitContentManager implements IContentManager {
 				    
 				    gitCache.put(sha, shaCache);
 				    repository.close();
+					log.info("Git content cache population for " + sha + " completed!");
 				}
 			}
 			catch(IOException exception){

@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  *  This class is responsible for all low level user management actions e.g. authentication and registration.
- *
+ * TODO: Split authentication functionality into another class and let this one focus on maintaining our segue user state.
  */
 public class UserManager{
 
@@ -146,7 +146,7 @@ public class UserManager{
 					if(null == userFromProvider)
 						return Response.noContent().entity("Can't create user").build();
 
-					log.info("User with name " + userFromProvider.getEmail() + " retrieved");
+					log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
 
 					// this is the providers unique id for the user
 					String providerId = userFromProvider.getDbId();
@@ -170,11 +170,13 @@ public class UserManager{
 							throw new NoUserIdException();
 						}
 					}
+					else{
+						log.debug("Returning user detected" + localUserInformation.getEmail());
+					}
 					
 					// create a signed session for this user so that we don't need to do this again for a while.
 					this.createSession(request, localUserInformation.getDbId());
 					
-					log.info("Cookie with userid = " + request.getSession().getAttribute(Constants.SESSION_USER_ID));
 					return Response.ok(localUserInformation).build();
 				}				
 			}
@@ -194,8 +196,9 @@ public class UserManager{
 	
 	public User getUserFromLinkedAccount(AuthenticationProvider provider, String providerId){
 		User user = database.getByLinkedAccount(provider, providerId);
-		
-		log.info("Unable to locate user based on provider information provided.");
+		if(null == user){
+			log.info("Unable to locate user based on provider information provided.");			
+		}
 		return user;
 	}
 
@@ -312,7 +315,7 @@ public class UserManager{
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 		IFederatedAuthenticator federatedAuthenticator = null;
 		
-		log.error(provider + " compared to " + AuthenticationProvider.GOOGLE.name());
+		log.debug("Mapping provider: " + provider + " to " + AuthenticationProvider.GOOGLE.name());
 		
 		if(AuthenticationProvider.GOOGLE.name().equals(provider.toUpperCase())){
 			federatedAuthenticator = injector.getInstance(GoogleAuthenticator.class);

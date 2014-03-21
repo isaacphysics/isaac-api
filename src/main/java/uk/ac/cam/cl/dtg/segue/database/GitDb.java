@@ -381,7 +381,7 @@ public class GitDb {
 		}
 
 		revWalk.dispose();
-		log.info("Retrieved Commit Id: " + commitId.getName() + " Searching for: "+ filename + " found: " + path);
+		log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: "+ filename + " found: " + path);
 		return objectId;
 	}
 

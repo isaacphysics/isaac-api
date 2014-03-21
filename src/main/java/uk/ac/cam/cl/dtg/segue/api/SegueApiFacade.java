@@ -46,15 +46,17 @@ public class SegueApiFacade {
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
 	private static String liveVersion;
-	private static Date dateOfVersionChange = new Date();
+	private static Date dateOfVersionChange;
 
 	/**
 	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
 	 */
 	public SegueApiFacade(){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
-		liveVersion = injector.getInstance(PropertiesLoader.class).getProperty(Constants.INITIAL_LIVE_VERSION);
-		log.info("Starting the Segue api");
+		if(null == liveVersion){
+			Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+			liveVersion = injector.getInstance(PropertiesLoader.class).getProperty(Constants.INITIAL_LIVE_VERSION);		
+			dateOfVersionChange = new Date();
+		}
 	}
 
 	/**
@@ -344,9 +346,6 @@ public class SegueApiFacade {
 
 		userManager.authenticateCallback(request, response, signinProvider);
 
-		//return authenticationResult;
-
-		log.info("ContextPath = " + request.getContextPath() + "../../learn");
 		String returnUrl = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HOST_NAME) + injector.getInstance(PropertiesLoader.class).getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
 		
 		//TODO: make less hacky
