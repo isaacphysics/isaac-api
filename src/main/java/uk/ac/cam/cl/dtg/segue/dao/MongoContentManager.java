@@ -19,7 +19,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
-import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
 /**
@@ -34,7 +34,7 @@ public class MongoContentManager implements IContentManager {
 	@Inject
 	public MongoContentManager(DB database) {
 		this.database = database;
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		this.mapper = injector.getInstance(ContentMapper.class);
 	}
 

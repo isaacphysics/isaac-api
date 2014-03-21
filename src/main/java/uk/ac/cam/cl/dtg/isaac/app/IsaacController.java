@@ -37,7 +37,7 @@ import uk.ac.cam.cl.dtg.isaac.models.TopicDetail;
 import uk.ac.cam.cl.dtg.isaac.models.TopicPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.Mailer;
@@ -225,7 +225,7 @@ public class IsaacController {
 		// TODO split last name and firstname.
 		User newUser = new User(null, name, null, email, role, school, year, feedback, new Date());
 		
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IUserDataManager registrationManager = injector.getInstance(IUserDataManager.class);
 
 		//boolean success = registrationManager.register(newUser) != null;

@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -247,7 +247,7 @@ public class UserManager{
 	 * @param userId
 	 */
 	public void createSession(HttpServletRequest request, String userId){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		String HMAC_KEY = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HMAC_SALT);
 		
 		String currentDate = new SimpleDateFormat(DATE_FORMAT).format(new Date());
@@ -268,7 +268,7 @@ public class UserManager{
 	 * @return True if we are happy, false if we are not.
 	 */
 	public boolean validateUsersSession(HttpServletRequest request){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		String HMAC_KEY = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HMAC_SALT);
 		
 		String userId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
@@ -312,7 +312,7 @@ public class UserManager{
 	}
 
 	private IFederatedAuthenticator mapToProvider(String provider){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IFederatedAuthenticator federatedAuthenticator = null;
 		
 		log.debug("Mapping provider: " + provider + " to " + AuthenticationProvider.GOOGLE.name());

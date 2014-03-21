@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -53,7 +53,7 @@ public class SegueApiFacade {
 	 */
 	public SegueApiFacade(){
 		if(null == liveVersion){
-			Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+			Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 			liveVersion = injector.getInstance(PropertiesLoader.class).getProperty(Constants.INITIAL_LIVE_VERSION);		
 			dateOfVersionChange = new Date();
 		}
@@ -68,7 +68,7 @@ public class SegueApiFacade {
 		// we want to make sure we have set a default liveVersion number
 		this();
 		
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
@@ -86,7 +86,7 @@ public class SegueApiFacade {
 			@FormParam("cookieId") String cookieId,
 			@FormParam("event") String eventJSON) {
 
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		ILogManager logPersistenceManager = injector.getInstance(ILogManager.class);
 
 		boolean success = logPersistenceManager.log(sessionId, cookieId, eventJSON);
@@ -104,7 +104,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/save")
 	public Response contentSave(@FormParam("doc") String docJson) {
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
@@ -145,7 +145,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/get/{id}")
 	public Response getContentById(@PathParam("id") String id) {		
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		Content c = null;
@@ -190,7 +190,7 @@ public class SegueApiFacade {
 			return Response.serverError().entity(null).build();
 		}
 
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		GitContentManager gcm = injector.getInstance(GitContentManager.class);
 
 		ByteArrayOutputStream fileContent = null;
@@ -232,7 +232,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/getAllContentByType/{type}")
 	public Response getAllContentByType(String type, Integer limit){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		List<Content> c = null;
@@ -261,7 +261,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/changeLiveVersion/{version}")
 	public synchronized Response changeLiveVersion(@PathParam("version") String version){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
@@ -298,7 +298,7 @@ public class SegueApiFacade {
 	 * @return Returns the current user DTO if we can get it or null if we can't
 	 */
 	public User getCurrentUser(HttpServletRequest request){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 		//TODO: Make the underlying code more efficient?
 		return userManager.getCurrentUser(request);
@@ -315,7 +315,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("auth/{provider}/authenticate")
 	public Response authenticationInitialisation(@Context HttpServletRequest request, @PathParam("provider") String signinProvider){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
 		User currentUser = getCurrentUser(request);
@@ -341,7 +341,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("auth/{provider}/callback")
 	public Response authenticationCallback(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("provider") String signinProvider){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
 		userManager.authenticateCallback(request, response, signinProvider);
@@ -363,7 +363,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("auth/logout")
 	public Response userLogout(@Context HttpServletRequest request, @Context HttpServletResponse response){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
 		userManager.logUserOut(request);
@@ -377,7 +377,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/synchroniseDatastores")	
 	public Response synchroniseDataStores(){
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		log.info("Notified of content change - Synchronizing with Git.");

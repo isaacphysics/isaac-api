@@ -30,9 +30,9 @@ import com.mongodb.DB;
  *
  * TODO: should this be a singleton 
  */
-public class PersistenceConfigurationModule extends AbstractModule {
+public class SeguePersistenceConfigurationModule extends AbstractModule {
 
-	private static final Logger log = LoggerFactory.getLogger(PersistenceConfigurationModule.class);
+	private static final Logger log = LoggerFactory.getLogger(SeguePersistenceConfigurationModule.class);
 
 	private static PropertiesLoader globalProperties;
 
@@ -40,7 +40,7 @@ public class PersistenceConfigurationModule extends AbstractModule {
 	private static ContentMapper mapper;
 	private static GoogleAuthenticator googleAuthenticator;
 
-	public PersistenceConfigurationModule(){
+	public SeguePersistenceConfigurationModule(){
 		try {
 			//globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
 			globalProperties = new PropertiesLoader("/config/dev-segue-config.properties");

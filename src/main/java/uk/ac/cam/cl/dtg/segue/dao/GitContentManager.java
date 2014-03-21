@@ -28,7 +28,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 
@@ -48,7 +48,7 @@ public class GitContentManager implements IContentManager {
 	@Inject
 	public GitContentManager(GitDb database) {
 		this.database = database;
-		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		this.mapper = injector.getInstance(ContentMapper.class);
 	}	
 	
