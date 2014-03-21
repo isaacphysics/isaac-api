@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -44,14 +45,15 @@ public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
 	// TODO Move to a config value, perhaps stored in Mongo? Should this be an app setting or API one?
-	private static String liveVersion = "2cc8480540f21f81e25845042eff27f4000ceae9";
+	private static String liveVersion;
 	private static Date dateOfVersionChange = new Date();
 
 	/**
 	 * Default constructor used when the default configuration is good enough and we don't need to give segue new dtos to handle
 	 */
 	public SegueApiFacade(){
-
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		liveVersion = injector.getInstance(PropertiesLoader.class).getProperty(Constants.INITIAL_LIVE_VERSION);
 	}
 
 	/**
@@ -60,10 +62,13 @@ public class SegueApiFacade {
 	 * @param segueConfigurationModule
 	 */
 	public SegueApiFacade(ISegueConfigurationModule segueConfigurationModule){
+		// we want to make sure we have set a default liveVersion number
+		this();
+		
 		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
-
 
 		// TODO: for dev purposes everytime we start segue we want to get the latest version
 		this.synchroniseDataStores();

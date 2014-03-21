@@ -7,6 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
@@ -19,56 +20,56 @@ import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.AbstractModule;
 import com.mongodb.DB;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes
+ *
  * TODO: should this be a singleton 
  */
 public class PersistenceConfigurationModule extends AbstractModule {
 
 	private static final Logger log = LoggerFactory.getLogger(PersistenceConfigurationModule.class);
-	//private static final String gitDbUri = "C:\\Users\\sac92\\workspace\\rutherford-content\\.git";
-	private static final String gitDbUri = "/local/data/rutherford/git-contentstore/rutherford-content/.git";
-    //private static final String gitDbUri = "c:\\rutherford-test\\.git";
-	
-	//private static final String privateKey = "C:\\Users\\sac92\\workspace\\rutherford-server\\src\\main\\resources\\dev_ssh_git.ppk";
-	private static final String privateKey = "/local/data/rutherford/keys/dev_ssh_git.ppk";
-	private static final String gitSSHFetchUrl = "git@github.com:ucam-cl-dtg/rutherford-content.git";
+
+	private static PropertiesLoader globalProperties;
 
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper;
 	private static GoogleAuthenticator googleAuthenticator;
-	
+
 	public PersistenceConfigurationModule(){
 		if(null == mapper){
 			mapper = new ContentMapper(buildDefaultJsonTypeMap());
 		}
-		
+
 		if(null == googleAuthenticator){
 			googleAuthenticator = new GoogleAuthenticator();			
 		}
 	}
-	
+
 	@Override
 	protected void configure() {
 		// Setup different persistence bindings
 
 		try {
+			globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
+			bind(PropertiesLoader.class).toInstance(globalProperties);
+
 			// MongoDB
 			bind(DB.class).toInstance(Mongo.getDB());
 
 			// GitDb			
-			bind(GitDb.class).toInstance(new GitDb(gitDbUri,gitSSHFetchUrl,privateKey));
-			
+			bind(GitDb.class).toInstance(new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties.getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties.getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
+
 			//bind(IContentManager.class).to(MongoContentManager.class); //Allows Mongo take over Content Management
 			bind(IContentManager.class).to(GitContentManager.class); //Allows GitDb take over Content Management
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
-			log.error("Error instantiating the Git database for the given path: " + gitDbUri);
+			log.error("IOException during setup process.");
 		}
 
 		bind(ILogManager.class).to(LogManager.class);
@@ -77,9 +78,9 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		// bind to single instances mainly because caches are used
 		bind(ContentMapper.class).toInstance(mapper);
 		bind(GoogleAuthenticator.class).toInstance(googleAuthenticator);
-		
+
 	}
-	
+
 	/**
 	 * This method will return you a populated Map which enables mapping to and from content objects.
 	 * 
@@ -96,5 +97,5 @@ public class PersistenceConfigurationModule extends AbstractModule {
 		map.put("choiceQuestion", ChoiceQuestion.class);
 		return map;
 	}	
-	
+
 }
