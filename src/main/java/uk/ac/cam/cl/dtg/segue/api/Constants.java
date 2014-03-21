@@ -2,6 +2,18 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 public class Constants {
 
+	
+	// General Configuration stuff
+	/**
+	 * Constant representing the key for the HOST_NAME property - Used for establishing the Base URL for fully qualified urls.
+	 */
+	public static final String HOST_NAME = "HOST_NAME"; 
+	
+	/**
+	 * Constant representing the key for the HOST_NAME property - Used for establishing the Base URL for fully qualified urls.
+	 */
+	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX"; 	
+	
 	// GIT stuff
 	
 	/**
@@ -68,4 +80,5 @@ public class Constants {
 	 * Constant representing the key for the GOOGLE OAUTH Scopes to be requested.
 	 */
 	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";	
+	
 }

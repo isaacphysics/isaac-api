@@ -346,8 +346,10 @@ public class SegueApiFacade {
 		//return authenticationResult;
 
 		log.info("ContextPath = " + request.getContextPath() + "../../learn");
+		String returnUrl = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HOST_NAME) + injector.getInstance(PropertiesLoader.class).getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
+		
 		//TODO: make less hacky
-		return Response.temporaryRedirect(URI.create("http://www.cl.cam.ac.uk/~ipd21/isaac-staging/learn")).build();
+		return Response.temporaryRedirect(URI.create(returnUrl)).build();
 	}
 
 	/**
@@ -365,9 +367,10 @@ public class SegueApiFacade {
 		UserManager userManager = injector.getInstance(UserManager.class);
 
 		userManager.logUserOut(request);
-
+		
+		String returnUrl = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HOST_NAME) + injector.getInstance(PropertiesLoader.class).getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
 		// TODO: make less hacky
-		return Response.temporaryRedirect(URI.create("http://www.cl.cam.ac.uk/~ipd21/isaac-staging/home")).build();
+		return Response.temporaryRedirect(URI.create(returnUrl)).build();
 
 	}
 
