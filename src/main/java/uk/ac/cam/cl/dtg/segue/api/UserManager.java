@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.PersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.User;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  *  This class is responsible for all low level user management actions e.g. authentication and registration.
@@ -35,20 +36,13 @@ import uk.ac.cam.cl.dtg.segue.dto.User;
  */
 public class UserManager{
 
-	public static final String SESSION_USER_ID = "currentUserId";
-	
 	public enum AuthenticationProvider {GOOGLE, FACEBOOK, RAVEN;};
 	
 	private IUserDataManager database;
 	private static final Logger log = LoggerFactory.getLogger(UserManager.class);
 
-	//TODO: Move the below to somewhere else!
-	private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
 	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
-	private static final String DATE_SIGNED = "DATE_SIGNED";
-	private static final String SESSION_ID = "SESSION_ID";
-	private static final String HMAC = "HMAC";
-	private static final String HMAC_KEY = "fbf4c8996fb92427ae41e4649SUPER-SECRET-KEY896354df48w7q5s231a";
 	
 	@Inject
 	public UserManager(IUserDataManager database){
@@ -180,7 +174,7 @@ public class UserManager{
 					// create a signed session for this user so that we don't need to do this again for a while.
 					this.createSession(request, localUserInformation.getDbId());
 					
-					log.info("Cookie with userid = " + request.getSession().getAttribute(SESSION_USER_ID));
+					log.info("Cookie with userid = " + request.getSession().getAttribute(Constants.SESSION_USER_ID));
 					return Response.ok(localUserInformation).build();
 				}				
 			}
@@ -215,7 +209,7 @@ public class UserManager{
 		//Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
 
 		// get the current user based on their session id information.
-		String currentUserId = (String) request.getSession().getAttribute(UserManager.SESSION_USER_ID);
+		String currentUserId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
 
 		// check if the users session is validated using our credentials.
 		
@@ -250,14 +244,17 @@ public class UserManager{
 	 * @param userId
 	 */
 	public void createSession(HttpServletRequest request, String userId){
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		String HMAC_KEY = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HMAC_SALT);
+		
 		String currentDate = new SimpleDateFormat(DATE_FORMAT).format(new Date());
 		String sessionId =  request.getSession().getId();
 		String sessionHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
-		request.getSession().setAttribute(SESSION_USER_ID, userId);
-		request.getSession().setAttribute(SESSION_ID, sessionId);
-		request.getSession().setAttribute(DATE_SIGNED, currentDate);
-		request.getSession().setAttribute(HMAC,sessionHMAC);
+		request.getSession().setAttribute(Constants.SESSION_USER_ID, userId);
+		request.getSession().setAttribute(Constants.SESSION_ID, sessionId);
+		request.getSession().setAttribute(Constants.DATE_SIGNED, currentDate);
+		request.getSession().setAttribute(Constants.HMAC,sessionHMAC);
 	}
 
 	/**
@@ -268,10 +265,13 @@ public class UserManager{
 	 * @return True if we are happy, false if we are not.
 	 */
 	public boolean validateUsersSession(HttpServletRequest request){
-		String userId = (String) request.getSession().getAttribute(SESSION_USER_ID);
-		String currentDate = (String) request.getSession().getAttribute(DATE_SIGNED);
-		String sessionId = (String) request.getSession().getAttribute(SESSION_ID);
-		String sessionHMAC = (String) request.getSession().getAttribute(HMAC);
+		Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
+		String HMAC_KEY = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HMAC_SALT);
+		
+		String userId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
+		String currentDate = (String) request.getSession().getAttribute(Constants.DATE_SIGNED);
+		String sessionId = (String) request.getSession().getAttribute(Constants.SESSION_ID);
+		String sessionHMAC = (String) request.getSession().getAttribute(Constants.HMAC);
 		
 		String ourHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
@@ -289,8 +289,8 @@ public class UserManager{
 	
 	private String calculateHMAC(String key, String dataToSign){
 		try {
-			SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
-			Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+			SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA_ALGORITHM);
+			Mac mac = Mac.getInstance(HMAC_SHA_ALGORITHM);
 			mac.init(signingKey);
 			
 			byte[] rawHmac = mac.doFinal(dataToSign.getBytes());

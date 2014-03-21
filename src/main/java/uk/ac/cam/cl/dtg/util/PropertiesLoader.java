@@ -32,7 +32,13 @@ public class PropertiesLoader {
 			log.error("Property key requested cannot be null");
 			throw new NullPointerException();
 		}
-		return loadedProperties.getProperty(key);
+		
+		String value = loadedProperties.getProperty(key);
+		
+		if(null == value)
+			log.warn("Failed to resolve requested property with key: "+ key);
+		
+		return value;
 	}
 	
 }
