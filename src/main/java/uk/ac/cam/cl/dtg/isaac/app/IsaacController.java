@@ -99,9 +99,7 @@ public class IsaacController {
 
 		//TODO we need to work out a good way of allowing editors to group concepts and questions based on level in a rutherford specific sort of way.
 		// This code is just to allow easy access to all api content from one page for testing
-		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_scq",0).getEntity(), getSoyGlobalMap(req).get(Constants.PROXY_PATH)));
-		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_numeric",0).getEntity(), getSoyGlobalMap(req).get(Constants.PROXY_PATH)));
-		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("legacy_latex_question_symbolic",0).getEntity(), getSoyGlobalMap(req).get(Constants.PROXY_PATH)));
+		conceptsList.addAll(this.extractContentInfo((List<Content>) api.getAllContentByType("isaacQuestionPage",0).getEntity(), getSoyGlobalMap(req).get(Constants.PROXY_PATH)));
 		return Response.ok(new IndexPage(conceptsList)).build();
 		
 		// get all questions
