@@ -32,6 +32,7 @@ public class IsaacQuestionPage extends Content {
 			   @JsonProperty("attribution") String attribution,
 			   @JsonProperty("relatedContent") List<String> relatedContent,
 			   @JsonProperty("published") boolean published,
+			   @JsonProperty("tags") Set<String> tags,
 			   @JsonProperty("level") String level){
 		
 		super(_id, 
@@ -47,7 +48,8 @@ public class IsaacQuestionPage extends Content {
 			      value, 
 			      attribution, 
 			      relatedContent, 
-			      published);
+			      published,
+			      tags);
 		
 		this.level = level;
 		

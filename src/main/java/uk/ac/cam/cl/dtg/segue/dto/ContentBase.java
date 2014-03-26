@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import java.util.Set;
+
 import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
@@ -19,6 +21,7 @@ public abstract class ContentBase {
 	
 	protected String id;
 	protected String type;
+	protected Set<String> tags;
 	protected String canonicalSourceFile;
 
 	@JsonProperty("_id")
@@ -56,5 +59,13 @@ public abstract class ContentBase {
 
 	public void setCanonicalSourceFile(String canonicalSourceFile) {
 		this.canonicalSourceFile = canonicalSourceFile;
+	}
+
+	public Set<String> getTags() {
+		return tags;
+	}
+
+	public void setTags(Set<String> tags) {
+		this.tags = tags;
 	}
 }

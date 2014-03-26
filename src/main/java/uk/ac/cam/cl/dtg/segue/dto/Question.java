@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 
@@ -33,6 +34,7 @@ public class Question extends Content {
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") boolean published,
+				   @JsonProperty("tags") Set<String> tags,
 				   @JsonProperty("answer") ContentBase answer,
 				   @JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, 
@@ -48,7 +50,8 @@ public class Question extends Content {
 		      value, 
 		      attribution, 
 		      relatedContent, 
-		      published);
+		      published,
+		      tags);
 		
 		this.answer = answer;
 		this.hints = hints;

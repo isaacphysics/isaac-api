@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 
@@ -33,6 +34,7 @@ public class Choice extends Content {
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("published") boolean published,
+				   @JsonProperty("tags") Set<String> tags,
 				   @JsonProperty("correct") boolean correct,
 				   @JsonProperty("explanation") String explanation) {
 		super(_id, 
@@ -48,7 +50,8 @@ public class Choice extends Content {
 		      value, 
 		      attribution, 
 		      relatedContent, 
-		      published);
+		      published,
+		      tags);
 		
 		this.correct = correct;
 		this.explanation = explanation;
@@ -73,6 +76,5 @@ public class Choice extends Content {
 	public void setExplanation(String explanation) {
 		this.explanation = explanation;
 	}
-
 
 }

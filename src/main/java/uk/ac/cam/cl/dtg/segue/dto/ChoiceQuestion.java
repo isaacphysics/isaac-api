@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 
@@ -32,6 +33,7 @@ public class ChoiceQuestion extends Question {
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("published") boolean published,
+				   @JsonProperty("tags") Set<String> tags,
 				   @JsonProperty("answer") ContentBase answer,
 				   @JsonProperty("hints") List<ContentBase> hints,
 				   @JsonProperty("choices") List<Choice> choices) {
@@ -49,6 +51,7 @@ public class ChoiceQuestion extends Question {
 		      attribution, 
 		      relatedContent, 
 		      published,
+		      tags,
 		      answer,
 		      hints);
 		

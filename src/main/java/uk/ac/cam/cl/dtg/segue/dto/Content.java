@@ -1,7 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
@@ -44,7 +46,8 @@ public class Content extends ContentBase{
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("published") boolean published) {
+				   @JsonProperty("published") boolean published,
+				   @JsonProperty("tags") Set<String> tags) {
 		this._id = _id;
 		this.id = id;
 		this.title = title;
@@ -59,10 +62,14 @@ public class Content extends ContentBase{
 		this.relatedContent = relatedContent;
 		this.published = published;
 		this.children = children;
+		this.tags = tags;
 		
 		// useful for when we want to augment this POJO
 		if(null == this.children)
 			this.children = new ArrayList<ContentBase>();
+		
+		if(null == this.tags)
+			this.tags = new HashSet<String>();
 		
 	}
 	
