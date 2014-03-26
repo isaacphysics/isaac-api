@@ -319,7 +319,8 @@ public class IsaacController {
 		ImmutableMap.Builder<String,String> globalMap = ImmutableMap.builder();
 		globalMap.put("liveVersion", (String) api.getLiveVersion().getEntity());
 		globalMap.put("contextPath", req.getContextPath());
-		globalMap.put("proxyPath", proxyPath);
+		globalMap.put("proxyPath", proxyPath); // TODO: sort out how we pass this information to the client.
+		globalMap.put(Constants.PROXY_PATH, proxyPath);
 		globalMap.put("analyticsTrackingId", trackingId);
 		globalMap.put("newSessionId", UUID.randomUUID().toString());
 		globalMap.put("newUserId", UUID.randomUUID().toString());
