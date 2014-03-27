@@ -191,6 +191,12 @@ public class GitDb {
 	 * @return True if we have found the git sha false if not.
 	 */
 	public boolean verifyCommitExists(String sha){
+		if(null== sha){
+			log.warn("Null version provided. Unable to verify commit exists.");
+			return false;
+		}
+			
+		
 		try {
 			Iterable<RevCommit> logs = gitHandle.log().all().call();
 
