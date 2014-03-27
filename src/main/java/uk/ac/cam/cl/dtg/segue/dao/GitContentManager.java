@@ -24,9 +24,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
@@ -106,6 +103,17 @@ public class GitContentManager implements IContentManager {
 		
 		return result;
 	}
+	
+	@Override
+	public String getLatestVersionId() throws UnsupportedOperationException {
+		return database.pullLatestFromRemote();
+	}
+
+	@Override
+	public void clearCache() {
+		log.info("Clearing Git content cache.");
+		gitCache.clear();
+	}	
 	
 	/**
 	 * Will build cache if necessary. 
@@ -333,16 +341,4 @@ public class GitContentManager implements IContentManager {
 		
 		return setOfContentObjects;
 	}
-
-	@Override
-	public String getLatestVersionId() throws UnsupportedOperationException {
-		return database.pullLatestFromRemote();
-	}
-
-	@Override
-	public void clearCache() {
-		log.info("Clearing Git content cache.");
-		gitCache.clear();
-	}
-
 }
