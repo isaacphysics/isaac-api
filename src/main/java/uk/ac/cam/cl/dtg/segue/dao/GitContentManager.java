@@ -42,6 +42,8 @@ public class GitContentManager implements IContentManager {
 	// TODO: should we make this a weak cache?
 	private static Map<String, Map<String,Content>> gitCache = new HashMap<String,Map<String,Content>>();
 	
+	private static Map<String, Map<String, Set<Content>>> gitTagCache = new HashMap<String, Map<String, Set<Content>>>();
+	
 	@Inject
 	public GitContentManager(GitDb database) {
 		this.database = database;
@@ -114,6 +116,51 @@ public class GitContentManager implements IContentManager {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
 	}	
+
+	@Override
+	public Set<Content> getContentByTags(String version, Set<String> tags){
+		if(this.ensureCache(version)){
+			if(null == tags || !gitTagCache.containsKey(version)){
+				return null;
+			}
+			Map<String, Set<Content>> tagMap = gitTagCache.get(version);
+			
+			Set<Content> result = new HashSet<Content>();
+			
+			for(String tag : tags){
+				Set<Content> fromCache = tagMap.get(tag);
+				if(null != fromCache){
+					result.addAll(fromCache);				
+				}
+			}
+
+			return result;
+		}
+		
+		return null;
+	}
+	
+	private void cacheContentByTags(String version, Content content){
+		Map<String, Set<Content>> tagMap = null;
+		if(gitTagCache.containsKey(version)){
+			tagMap = gitTagCache.get(version);
+		}
+		else{
+			Map<String,Set<Content>> newTagMap = new HashMap<String,Set<Content>>();
+			gitTagCache.put(version, newTagMap);
+		}
+		
+		for(String tag : content.getTags()){
+			if(tagMap.containsKey(tag)){
+				tagMap.get(tag).add(content);
+			}
+			else{
+				Set<Content> newContentSet = new HashSet<Content>();
+				newContentSet.add(content);
+				tagMap.put(tag, newContentSet);
+			}
+		}
+	}
 	
 	/**
 	 * Will build cache if necessary. 
@@ -199,6 +246,7 @@ public class GitContentManager implements IContentManager {
 							    	    else{
 							    	    	log.debug("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
 							    	    	shaCache.put(flattenedContent.getId(), flattenedContent);
+							    	    	this.cacheContentByTags(sha, flattenedContent);
 							    	    }
 					    	    	}
 					    	    }

@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
@@ -28,6 +29,14 @@ public interface IContentManager {
 	 */
 	public List<Content> findAllByType(String type, String version, Integer limit);
 	
+	/**
+	 * Search for content by providing a set of tags
+	 * 
+	 * @param version
+	 * @param tags
+	 * @return Content objects that are associated with any of the tags specified.
+	 */
+	public Set<Content> getContentByTags(String version, Set<String> tags);
 	
 	/**
 	 * Method allows raw output to be retrieved for given files in the git repository. This is mainly so we can retrieve image files.

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.bson.types.ObjectId;
 import org.mongojack.DBQuery;
@@ -128,8 +129,11 @@ public class MongoContentManager implements IContentManager {
 
 	@Override
 	public void clearCache() {
-		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("This method is not implemented yet.");
-		
+	}
+
+	@Override
+	public Set<Content> getContentByTags(String version, Set<String> tags) {
+		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 }

@@ -3,8 +3,11 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -166,6 +169,31 @@ public class SegueApiFacade {
 		}
 
 		return Response.ok().entity(c).build();
+	}
+
+	/**
+	 * Get content that matches the tags provided
+	 * 
+	 * Currently this method will return a set of content objects.
+	 * 
+	 * @param id - our id not the dbid
+	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/getByTags/{version}/{tags}")
+	public Response getContentByTags(@PathParam("version") String version, @PathParam("tags") String tags){
+		if(null == version || null == tags){
+			log.info("Bad input to api call.");
+			return Response.noContent().build();
+		}
+		
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
+		IContentManager contentManager = injector.getInstance(GitContentManager.class);
+		
+		Set<String> tagSet = new HashSet<String>(Arrays.asList(tags.split(",")));
+		
+		return Response.ok(contentManager.getContentByTags(version, tagSet)).build();
 	}
 
 	/**
