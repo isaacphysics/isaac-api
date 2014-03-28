@@ -42,8 +42,7 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 
 	public SeguePersistenceConfigurationModule(){
 		try {
-			//globalProperties = new PropertiesLoader("/config/local-segue-config.properties");
-			globalProperties = new PropertiesLoader("/config/dev-segue-config.properties");
+			globalProperties = new PropertiesLoader("/config/segue-config.properties");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

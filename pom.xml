@@ -179,5 +179,46 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
+	
+	<!-- Profiles configuration -->
+	<profiles>
+	    <profile>
+	        <id>dev</id>
+	        <properties>
+	            <build.profile.id>dev</build.profile.id>
+	        </properties>
+	        <build>
+	            <filters>
+	                <filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
+	            </filters>
+	            <resources>
+	                <resource>
+	                    <filtering>true</filtering>
+	                    <directory>src/main/resources</directory>
+	                </resource>
+	            </resources>
+	        </build>
+	    </profile>
+	    <profile>
+	        <id>local</id>
+	        <!-- local profile is active by default to help eclipse know what is going on-->
+	        <activation>
+	            <activeByDefault>true</activeByDefault>
+	        </activation>	        
+	        <properties>
+	            <build.profile.id>local</build.profile.id>
+	        </properties>
+	        <build>
+	            <filters>
+	                <filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
+	            </filters>
+	            <resources>
+	                <resource>
+	                    <filtering>true</filtering>
+	                    <directory>src/main/resources</directory>
+	                </resource>
+	            </resources>
+	        </build>
+	    </profile>
+	</profiles>
 </project>
