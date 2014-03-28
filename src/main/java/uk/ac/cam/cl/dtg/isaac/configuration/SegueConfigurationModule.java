@@ -3,11 +3,11 @@ package uk.ac.cam.cl.dtg.isaac.configuration;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.ac.cam.cl.dtg.isaac.models.IsaacMultiChoiceQuestion;
-import uk.ac.cam.cl.dtg.isaac.models.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.models.IsaacQuestion;
-import uk.ac.cam.cl.dtg.isaac.models.IsaacQuestionPage;
-import uk.ac.cam.cl.dtg.isaac.models.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.models.content.IsaacMultiChoiceQuestion;
+import uk.ac.cam.cl.dtg.isaac.models.content.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestion;
+import uk.ac.cam.cl.dtg.isaac.models.content.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.models.pages.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.segue.api.ISegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 

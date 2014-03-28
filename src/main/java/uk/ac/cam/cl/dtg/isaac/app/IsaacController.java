@@ -52,7 +52,6 @@ import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
 
-
 /**
  * Rutherford Controller
  * 
@@ -61,7 +60,6 @@ import com.papercut.silken.TemplateRenderer;
  */
 @Path("/")
 public class IsaacController {
-
 	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
 	private static SegueApiFacade api = new SegueApiFacade(new SegueConfigurationModule());
@@ -320,7 +318,7 @@ public class IsaacController {
 		globalMap.put("liveVersion", (String) api.getLiveVersion().getEntity());
 		globalMap.put("contextPath", req.getContextPath());
 		globalMap.put("proxyPath", proxyPath); // TODO: sort out how we pass this information to the client.
-		globalMap.put(Constants.PROXY_PATH, proxyPath);
+		globalMap.put(Constants.PROXY_PATH, proxyPath); // TODO: remove duplicate
 		globalMap.put("analyticsTrackingId", trackingId);
 		globalMap.put("newSessionId", UUID.randomUUID().toString());
 		globalMap.put("newUserId", UUID.randomUUID().toString());
