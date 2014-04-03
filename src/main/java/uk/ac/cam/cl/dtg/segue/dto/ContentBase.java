@@ -18,7 +18,6 @@ public abstract class ContentBase {
 
 	// this is a legacy field used for mongodb indexing
 	protected String _id;
-	
 	protected String id;
 	protected String type;
 	protected Set<String> tags;

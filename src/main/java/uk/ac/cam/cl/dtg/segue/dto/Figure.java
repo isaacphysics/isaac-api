@@ -3,9 +3,12 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.isaac.models.JsonType;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonType("figure")
 public class Figure extends Content {
 	
 	protected String src;
@@ -25,7 +28,7 @@ public class Figure extends Content {
 				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
 				   @JsonProperty("contentReferenced") List<ContentBase> children,
-				   @JsonProperty("contentLiteral") String value,
+				   @JsonProperty("value") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") boolean published,
