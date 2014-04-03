@@ -7,6 +7,8 @@ public interface ISearchProvider {
 	public boolean indexObject(final String index, final String indexType, final String content, final String uniqueId);
 	
 	public boolean indexObject(final String index, final String indexType, final String content);
+
+	public boolean hasIndex(final String index);
 	
 	public List<String> search(final String index, final String indexType, final String searchString, final String... fields);
 	
@@ -15,4 +17,5 @@ public interface ISearchProvider {
 	public boolean expungeEntireSearchCache();
 	
 	public boolean deleteById(final String index, final String indexType, final String id);
+	
 }

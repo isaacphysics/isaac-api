@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -112,5 +113,10 @@ public class ElasticSearchProvider implements ISearchProvider {
 		TransportClient transportClient = new TransportClient(settings);
 		transportClient = transportClient.addTransportAddress(address);
 		return transportClient;
+	}
+
+	@Override
+	public boolean hasIndex(final String index) {
+		return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
 	}
 }

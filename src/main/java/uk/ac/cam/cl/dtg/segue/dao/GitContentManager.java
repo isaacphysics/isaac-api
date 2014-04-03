@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -81,27 +82,31 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public List<Content> searchForContent(String version, String searchString){
-		List<String> searchHits = searchProvider.search(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
-	    
-		// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
-	    ObjectMapper objectMapper = new ObjectMapper();
-	    objectMapper.registerModule(getContentDeserializerModule());
-	    List<Content> searchResults = new ArrayList<Content>();
-	    for(String hit : searchHits){
-	    	try {
-				searchResults.add((Content) objectMapper.readValue(hit, ContentBase.class));
-			} catch (JsonParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (JsonMappingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	    }
-		return searchResults;
+		if(this.ensureCache(version)){
+			List<String> searchHits = searchProvider.search(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
+		    
+			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+		    ObjectMapper objectMapper = new ObjectMapper();
+		    objectMapper.registerModule(getContentDeserializerModule());
+		    List<Content> searchResults = new ArrayList<Content>();
+		    for(String hit : searchHits){
+		    	try {
+					searchResults.add((Content) objectMapper.readValue(hit, ContentBase.class));
+				} catch (JsonParseException e) {
+					e.printStackTrace();
+				} catch (JsonMappingException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+		    }
+			return searchResults;
+		}
+		else{
+			log.error("Unable to ensure cache for requested version" + version);
+			return null;
+		}
+		
 	}
 	
 	@Override
@@ -155,7 +160,7 @@ public class GitContentManager implements IContentManager {
 	@Override
 	public Set<Content> getContentByTags(String version, Set<String> tags){
 		// TODO: Change to use new search provider.
-		
+
 		if(this.ensureCache(version)){
 			
 			if(null == tags || !gitTagCache.containsKey(version)){
@@ -218,15 +223,53 @@ public class GitContentManager implements IContentManager {
 		if(!gitCache.containsKey(version)){
 			if(database.verifyCommitExists(version)){
 				log.info("Rebuilding cache as sha does not exist in hashmap");
-				buildGitIndex(version);
-				validateReferentialIntegrity(version);				
+				buildGitContentIndex(version);
+				buildSearchIndexFromLocalGitIndex(version);
+				validateReferentialIntegrity(version);
 			}else{
-				// we can't find the commit in git.
+				log.warn("Unable find the commit in git to ensure the cache");
 				return false;
 			}
 		}
 		
-		return gitCache.containsKey(version);
+		boolean searchIndexed = searchProvider.hasIndex(version);
+		if(!searchIndexed){
+			log.warn("Search does not have a valid index for the "+ version + " version of the content");
+			this.buildSearchIndexFromLocalGitIndex(version);
+		}
+		
+		return gitCache.containsKey(version) && searchIndexed;
+	}
+	
+	/**
+	 * This method will send off the 
+	 * @param sha
+	 */
+	private synchronized void buildSearchIndexFromLocalGitIndex(String sha){
+		if(!gitCache.containsKey(sha)){
+			log.error("Unable to create search index as git cache does not exist locally");
+			return;
+		}
+		
+		if(this.searchProvider.hasIndex(sha)){
+			log.info("Search index has already been updated by another thread. No need to reindex. Aborting...");
+			return;
+		}
+		
+		log.info("Building search index for: " + sha);
+		for(Content content : gitCache.get(sha).values()){
+    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+    	    ObjectMapper objectMapper = new ObjectMapper();
+    	    objectMapper.registerModule(getContentDeserializerModule());
+			
+			try {
+				this.searchProvider.indexObject(sha, CONTENT_TYPE, objectMapper.writeValueAsString(content), content.getId());
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		log.info("Search index built for: " + sha);
 	}
 	
 	/**
@@ -236,7 +279,7 @@ public class GitContentManager implements IContentManager {
 	 * 
 	 * @param sha
 	 */
-	private synchronized void buildGitIndex(String sha){
+	private synchronized void buildGitContentIndex(String sha){
 		// This set of code only needs to happen if we have to read from git again.
 		if(null != sha && gitCache.get(sha) == null){
 			
@@ -248,72 +291,69 @@ public class GitContentManager implements IContentManager {
 				
 				if(null == commitId){
 					log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
-				}else{										
-				    Map<String,Content> shaCache = new HashMap<String,Content>();
-					TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
-					log.info("Populating git content cache based on sha " + sha + " ...");
-					
-				    // Traverse the git repository looking for the .json files
-				    while(treeWalk.next()){
-			    		ObjectId objectId = treeWalk.getObjectId(0);
-			    	    ObjectLoader loader = repository.open(objectId);
-			    		 
-			    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-			    	    loader.copyTo(out);
-
-			    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
-			    	    ObjectMapper objectMapper = new ObjectMapper();
-			    	    objectMapper.registerModule(getContentDeserializerModule());
-			    	    
-			    	    Content content = null;
-			    	    try{
-				    	    String rawJson = out.toString();
-			    	    	content = (Content) objectMapper.readValue(rawJson, ContentBase.class);
-				    	    content = this.augmentChildContent(content, treeWalk.getPathString());
-				    	    
-				    	    if (null != content){
-				    	    	// Add content to search provider
-				    	    	searchProvider.indexObject(sha, CONTENT_TYPE, objectMapper.writeValueAsString(content), content.getId());
-				    	    	// TODO: this will probably be removed when search is implemented properly
-				    	    	
-				    	    	// add children (and parent) from flattened Set to cache if they have ids
-					    	    for(Content flattenedContent : this.flattenContentObjects(content)){
-					    	    	if(flattenedContent.getId() != null){
-
-					    	    		// check if we have seen this key before if we have then we don't want to add it again
-					    	    		if(shaCache.containsKey(flattenedContent.getId())){
-
-					    	    			// if the key is the same but the content is different then something has gone wrong - log an error
-					    	    			if(!shaCache.get(flattenedContent.getId()).equals(flattenedContent)){
-								    	    	// log an error if we find that there are duplicate ids and the content is different.
-								    	    	log.warn("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
-							    	    	}
-					    	    			// if the content is the same then it is just reuse of a content object so that is fine.
-					    	    			else{
-								    	    	log.debug("Resource (" + content.getId() +") already seen in cache. Skipping " + treeWalk.getPathString());
-							    	    	}
-							    	    }
-					    	    		// It must be new so we can add it
-							    	    else{
-							    	    	log.debug("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
-							    	    	shaCache.put(flattenedContent.getId(), flattenedContent);
-							    	    	this.cacheContentByTags(sha, flattenedContent);
-							    	    }
-					    	    	}
-					    	    }
-					    	    
-				    	    }		    	    
-			    	    }
-			    	    catch(JsonMappingException e){
-			    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...");
-			    	    	e.printStackTrace();
-			    	    }
-				    }
-				    
-				    gitCache.put(sha, shaCache);
-				    repository.close();
-					log.info("Git content cache population for " + sha + " completed!");
+					return;
 				}
+				
+			    Map<String,Content> shaCache = new HashMap<String,Content>();
+				TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
+				log.info("Populating git content cache based on sha " + sha + " ...");
+				
+			    // Traverse the git repository looking for the .json files
+			    while(treeWalk.next()){
+		    		ObjectId objectId = treeWalk.getObjectId(0);
+		    	    ObjectLoader loader = repository.open(objectId);
+		    		 
+		    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+		    	    loader.copyTo(out);
+
+		    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+		    	    ObjectMapper objectMapper = new ObjectMapper();
+		    	    objectMapper.registerModule(getContentDeserializerModule());
+		    	    
+		    	    Content content = null;
+		    	    try{
+			    	    String rawJson = out.toString();
+		    	    	content = (Content) objectMapper.readValue(rawJson, ContentBase.class);
+			    	    content = this.augmentChildContent(content, treeWalk.getPathString());
+			    	    
+			    	    if (null != content){				    	    	
+			    	    	// add children (and parent) from flattened Set to cache if they have ids
+				    	    for(Content flattenedContent : this.flattenContentObjects(content)){
+				    	    	if(flattenedContent.getId() != null){
+				    	    		// check if we have seen this key before if we have then we don't want to add it again
+				    	    		if(shaCache.containsKey(flattenedContent.getId())){
+				    	    			// if the key is the same but the content is different then something has gone wrong - log an error
+				    	    			if(!shaCache.get(flattenedContent.getId()).equals(flattenedContent)){
+							    	    	// log an error if we find that there are duplicate ids and the content is different.
+							    	    	log.warn("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+						    	    	}
+				    	    			// if the content is the same then it is just reuse of a content object so that is fine.
+				    	    			else{
+							    	    	log.info("Resource (" + content.getId() +") already seen in cache. Skipping " + treeWalk.getPathString());
+						    	    	}
+						    	    }
+				    	    		// It must be new so we can add it
+						    	    else{
+						    	    	log.debug("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
+						    	    	shaCache.put(flattenedContent.getId(), flattenedContent);
+						    	    }
+				    	    	}
+				    	    }
+				    	    
+			    	    }		    	    
+		    	    }
+		    	    catch(JsonMappingException e){
+		    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...");
+		    	    	e.printStackTrace();
+		    	    }
+			    }
+
+			    // add all of the work we have done to the git cache.
+			    gitCache.put(sha, shaCache);
+			    repository.close();
+			    
+				log.info("Git content cache population for " + sha + " completed!");
+				
 			}
 			catch(IOException exception){
 				log.error("IOException while trying to access git repository. " + exception.getMessage());
@@ -345,7 +385,7 @@ public class GitContentManager implements IContentManager {
 		
 		content.setCanonicalSourceFile(canonicalSourceFile);
 
-		// Hack to convert image source into something that the api can use to locate the specific image in the repository.
+		// TODO Improve Hack to convert image source into something that the api can use to locate the specific image in the repository.
 		if(content.getType().equals("image")){
 			String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + content.getSrc(),true);
 			content.setSrc(newPath);
@@ -418,7 +458,7 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	/**
-	 * Unpack the content objects into one big set. Useful for validation but will produce a very large set
+	 * Unpack the content objects into one big set. Useful for validation but could produce a very large set
 	 * 
 	 * @param c
 	 * @return
