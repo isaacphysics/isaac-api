@@ -40,8 +40,8 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	private String CALLBACK_URI;
 	private Collection<String> SCOPE;
 	
-	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
-	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+	private final JsonFactory JSON_FACTORY = new JacksonFactory();
+	private final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	
 	private WeakHashMap<String, Credential> credentialStore;
 	private GoogleClientSecrets clientSecrets = null;
