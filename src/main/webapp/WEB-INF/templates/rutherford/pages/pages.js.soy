@@ -296,7 +296,7 @@ cheque will be returned to you, uncashed, on your arrival in Cambridge.
 	<p>
 	To send us your comments please fill out the form below:
 	
-	<form data-abide action="{$ij.proxyPath}/api/contact-us/sendContactUsMessage" method="post">
+	<form data-abide action="{$ij.proxyPath}/isaac/api/contact-us/sendContactUsMessage" method="post">
 	  <div class="row">
 	    <div class="large-6 columns">
 	      <label>Your full name <small>required</small></label>
@@ -341,7 +341,7 @@ cheque will be returned to you, uncashed, on your arrival in Cambridge.
 	<p> 
 	If you are interested in our partnership and would like to receive updates about any new content or new developments, please register below. If you have any immediate feedback for us, please use the <a href="#" data-content-uri="/contact-us"/>Contact Us</a> form, thank you. 
 	
-	<form data-abide action="{$ij.proxyPath}/api/contact-us/register-interest" method="post" class="custom">
+	<form data-abide action="{$ij.proxyPath}/isaac/api/contact-us/register-interest" method="post" class="custom">
 	  <div class="row">
 	    <div class="large-6 columns">
 	      <label>Your name <small>required</small></label>
@@ -395,7 +395,8 @@ cheque will be returned to you, uncashed, on your arrival in Cambridge.
 {/template}
 
 /**
- * Contact Us
+ * Sign in page
+ *
  */
 {template .signin}
 <div class="contact-us ajax-form">
@@ -411,5 +412,31 @@ cheque will be returned to you, uncashed, on your arrival in Cambridge.
 		<li><a href="{$ij.proxyPath}/segue/api/auth/google/authenticate"><img src="{$ij.proxyPath}/static/img/google-signin.jpg" alt="google login"/></a></li>
 	</ul>
 	
+</div>
+{/template}
+
+/**
+ * Search Results Page
+ * @param searchResults
+ */
+{template .searchResults}
+<div class="contact-us ajax-form">
+	<h3>Search Results</h3>
+	<table>
+	  <thead>
+	    <tr>
+	      <th>Title</th>
+	      <th>Type</th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	    {foreach $result in $searchResults}
+		  <tr>
+		  	<td><a href="{$result.url}"> {$result.title}</a></td>
+	      	<td>{$result.type}</td>
+    	  </tr>
+		{/foreach}
+	  </tbody>
+	</table>
 </div>
 {/template}

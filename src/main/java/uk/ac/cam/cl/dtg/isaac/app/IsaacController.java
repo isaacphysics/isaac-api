@@ -180,12 +180,37 @@ public class IsaacController {
 	@Produces("application/json")
 	public ContentPage getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
-		
 		Content c = (Content) api.getContentById(question).getEntity();
 		
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));		
 		return cp;
 	}
+	
+	@GET
+	@Path("images/{imageId}")
+	@Produces("*/*")
+	public Response getImages(@Context HttpServletRequest req,
+			@PathParam("imageId") String imageId) {
+		log.info("test");
+		
+		return api.getFileContent(api.getLiveVersion().getEntity().toString(), ((Content)api.getContentById(imageId).getEntity()).getSrc());
+	}
+	
+	@POST
+	@Consumes({"application/x-www-form-urlencoded"})
+	@Path("search/full-site/")
+	@Produces("application/json")
+	public List<ContentInfo> search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
+		String proxyPath = getSoyGlobalMap(req).get("proxyPath");
+		Response searchResponse = api.search(searchString);
+		
+		List<ContentInfo> summaryOfSearchResults = null;
+		if(searchResponse.getEntity() instanceof List<?>){
+			summaryOfSearchResults = this.extractContentInfo((List<Content>) searchResponse.getEntity(), proxyPath);
+		}
+		
+		return summaryOfSearchResults;
+	}	
 	
 	@POST
 	@Consumes({"application/x-www-form-urlencoded"})
@@ -398,9 +423,14 @@ public class IsaacController {
 	private ContentInfo extractContentInfo(Content content, String proxyPath){
 		if (null == content)
 			return null;
-		// TODO fix url parameter to be less horrid
-		ContentInfo contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + content.getId());
 		
+		// TODO fix url parameter to be less horrid
+		ContentInfo contentInfo = null;
+		if(content.getType().equals("image")){
+			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + content.getId());
+		}else{
+			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + content.getId());
+		}
 		return contentInfo;
 	}
 

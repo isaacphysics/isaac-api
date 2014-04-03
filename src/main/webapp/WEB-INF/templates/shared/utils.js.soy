@@ -26,3 +26,23 @@
 		{/foreach}	
 	{/if}
 {/template}
+
+/**
+ * SiteSearch
+ * Assumption is that if a content object has a list of referenced content it will not also have a content literal
+ * 
+ * Additional content types can be added later e.g. video
+ */
+{template .siteSearch}
+	<form id="fullSiteSearch" data-abide action="{$ij.proxyPath}/isaac/api/search/full-site/" method="post">
+	  <div class="row">
+	    <div class="large-6 columns">&nbsp;</div>
+	    <div class="large-3 columns">
+	      <input name="searchString" type="text" required placeholder="Search Isaac" />
+	    </div>
+	    <div class="large-3 columns">
+			<input class="button" type="submit" value="search"/>
+	    </div>
+	  </div>
+	</form>
+{/template}

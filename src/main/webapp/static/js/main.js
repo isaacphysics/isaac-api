@@ -98,8 +98,6 @@ function loadContent(uri, addToHistory) {
 			$.get(ij.proxyPath + "/isaac/api" + uri, function(json) {
 				soy.renderElement($("#content")[0], template, json, ij);
 				pageRendered();
-				
-				
 			});
 		}
 		else
@@ -404,7 +402,30 @@ function buildConcertina(){
 	$("#conceptContent section").wrapAll('<div class="section-container accordion" data-section="accordion" data-options="one_up:false; multi_expand:true"/>');
 }
 
+function bindFullSiteSearch(){
+	$("#fullSiteSearch").submit(function(g){
 
+		g.stopPropagation();
+		  g.preventDefault();
+		  $theForm = $(this);
+			  
+		     $.ajax({
+		         type: $theForm.attr('method'),
+		         url: $theForm.attr('action'),
+		         data: $theForm.serialize(),
+		         dataType: 'json',
+		         success: function(data) {
+		        	 console.log(data);
+		        	 soy.renderElement($("#content")[0], rutherford.pages.searchResults, {searchResults : data}, ij);
+		 			//alert("test!");
+					exit();
+		         },
+		         error: function(data){
+	        		 console.log("SERVER ERROR.")
+		         }
+		     });			  
+		});
+}
 
 function plumb(e) {
 	var myid = e.target.id;
@@ -437,6 +458,7 @@ jsPlumb.ready(function() {
 // Equivalent to our page ready
 function pageRendered()
 {
+	bindFullSiteSearch();
 	MathJax.resetLabels();
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	$(document).foundation();

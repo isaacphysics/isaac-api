@@ -1,5 +1,11 @@
 package uk.ac.cam.cl.dtg.isaac.models;
 
+/**
+ * DTO represents high level information about a piece of content
+ * 
+ * This should be a light weight object used for presenting search results etc.
+ *
+ */
 public class ContentInfo {
 
 	private String id;
