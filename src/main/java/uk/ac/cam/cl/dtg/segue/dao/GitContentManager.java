@@ -86,8 +86,8 @@ public class GitContentManager implements IContentManager {
 			List<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
 		    
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
-		    ObjectMapper objectMapper = new ObjectMapper();
-		    objectMapper.registerModule(getContentDeserializerModule());
+		    ObjectMapper objectMapper = mapper.getContentObjectMapper();
+		    
 		    List<Content> searchResults = new ArrayList<Content>();
 		    for(String hit : searchHits){
 		    	try {
@@ -167,8 +167,7 @@ public class GitContentManager implements IContentManager {
 		if(this.ensureCache(version)){
 			List<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE, tags, "tags");
 			
-    	    ObjectMapper objectMapper = new ObjectMapper();
-    	    objectMapper.registerModule(getContentDeserializerModule());
+    	    ObjectMapper objectMapper = mapper.getContentObjectMapper();
     	    
     	    List<Content> contentResults = new ArrayList<Content>();
     	    
@@ -242,8 +241,7 @@ public class GitContentManager implements IContentManager {
 		log.info("Building search index for: " + sha);
 		for(Content content : gitCache.get(sha).values()){
     	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
-    	    ObjectMapper objectMapper = new ObjectMapper();
-    	    objectMapper.registerModule(getContentDeserializerModule());
+    	    ObjectMapper objectMapper = mapper.getContentObjectMapper();
 			
 			try {
 				this.searchProvider.indexObject(sha, CONTENT_TYPE, objectMapper.writeValueAsString(content), content.getId());
@@ -289,9 +287,8 @@ public class GitContentManager implements IContentManager {
 		    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
 		    	    loader.copyTo(out);
 
-		    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
-		    	    ObjectMapper objectMapper = new ObjectMapper();
-		    	    objectMapper.registerModule(getContentDeserializerModule());
+		    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism		    	    
+		    	    ObjectMapper objectMapper = mapper.getContentObjectMapper();
 		    	    
 		    	    Content content = null;
 		    	    try{
@@ -377,19 +374,6 @@ public class GitContentManager implements IContentManager {
 		}
 
 		return content;		
-	}
-	
-	/**
-	 * Provides a preconfigured module that can be added to an object mapper so that contentBase objects can be deseerialized using the custom deserializer.
-	 * @return
-	 */
-	private SimpleModule getContentDeserializerModule(){ 
-	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
-	    contentDeserializer.registerTypeMap(mapper.getJsonTypes());
-	    		
-	    SimpleModule simpleModule = new SimpleModule("ContentDeserializerModule");
-	    simpleModule.addDeserializer(ContentBase.class, contentDeserializer);
-	    return simpleModule;
 	}
 	
 	/**

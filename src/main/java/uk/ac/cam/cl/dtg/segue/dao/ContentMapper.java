@@ -8,10 +8,12 @@ import org.mongojack.internal.MongoJackModule;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.mongodb.DBObject;
 
 /**
@@ -92,5 +94,22 @@ public class ContentMapper {
 	 */
 	public Map<String, Class<? extends Content>> getJsonTypes(){
 		return jsonTypes;
+	}
+	
+	/**
+	 * Provides a preconfigured module that can be added to an object mapper so that contentBase objects can be deseerialized using the custom deserializer.
+	 * @return
+	 */
+	public ObjectMapper getContentObjectMapper(){ 
+	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
+	    contentDeserializer.registerTypeMap(getJsonTypes());
+	    		
+	    SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
+	    contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+	    
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    objectMapper.registerModule(contentDeserializerModule);
+
+	    return objectMapper;
 	}
 }
