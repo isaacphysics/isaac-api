@@ -46,10 +46,9 @@ public class GitContentManager implements IContentManager {
 
 	// TODO: should we make this a weak cache?
 	private static Map<String, Map<String,Content>> gitCache = new HashMap<String,Map<String,Content>>();
-	
 	private static Map<String, Map<String, Set<Content>>> gitTagCache = new HashMap<String, Map<String, Set<Content>>>();
 	
-	//TODO: keep search class in here as well as gitCache
+	// TODO: keep search class in here as well as gitCache
 	private ISearchProvider searchProvider = null;
 	
 	@Inject
@@ -83,7 +82,7 @@ public class GitContentManager implements IContentManager {
 	@Override
 	public List<Content> searchForContent(String version, String searchString){
 		if(this.ensureCache(version)){
-			List<String> searchHits = searchProvider.search(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
+			List<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
 		    
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
 		    ObjectMapper objectMapper = new ObjectMapper();
@@ -158,59 +157,41 @@ public class GitContentManager implements IContentManager {
 	}	
 
 	@Override
-	public Set<Content> getContentByTags(String version, Set<String> tags){
-		// TODO: Change to use new search provider.
-
+	public List<Content> getContentByTags(String version, Set<String> tags){
+		if(null==version || null == tags){
+			return null;
+		}
+		
+		// TODO: Change to use new search provider.		
 		if(this.ensureCache(version)){
+			List<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE, tags, "tags");
 			
-			if(null == tags || !gitTagCache.containsKey(version)){
-				return null;
-			}
-			
-			Map<String, Set<Content>> tagMap = gitTagCache.get(version);
-			
-			Set<Content> result = new HashSet<Content>();
-			
-			for(String tag : tags){
-				Set<Content> fromCache = tagMap.get(tag);
-				if(null != fromCache){
-					result.addAll(fromCache);				
+    	    ObjectMapper objectMapper = new ObjectMapper();
+    	    objectMapper.registerModule(getContentDeserializerModule());
+    	    
+    	    List<Content> contentResults = new ArrayList<Content>();
+    	    
+    	    for(String content : searchResults){
+    	    	try {
+					contentResults.add((Content) objectMapper.readValue(content, ContentBase.class));
+				} catch (JsonParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (JsonMappingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-			}
+    	    }
 
-			return result;
+			return contentResults;
 		}
 		else{
 			log.error("Cache not found. Failed to build cache with version: " + version);			
 		}
 		return null;
-	}
-	
-	/**
-	 * @deprecated
-	 * @param version
-	 * @param content
-	 */
-	private void cacheContentByTags(String version, Content content){
-		Map<String, Set<Content>> tagMap = null;
-		if(gitTagCache.containsKey(version)){
-			tagMap = gitTagCache.get(version);
-		}
-		else{
-			Map<String,Set<Content>> newTagMap = new HashMap<String,Set<Content>>();
-			gitTagCache.put(version, newTagMap);
-		}
-		
-		for(String tag : content.getTags()){
-			if(tagMap.containsKey(tag)){
-				tagMap.get(tag).add(content);
-			}
-			else{
-				Set<Content> newContentSet = new HashSet<Content>();
-				newContentSet.add(content);
-				tagMap.put(tag, newContentSet);
-			}
-		}
 	}
 	
 	/**
@@ -242,8 +223,9 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	/**
-	 * This method will send off the 
-	 * @param sha
+	 * This method will send off the information in the git cache to the search provider for indexing.
+	 * 
+	 * @param sha - the version in the git cache to send to the search provider.
 	 */
 	private synchronized void buildSearchIndexFromLocalGitIndex(String sha){
 		if(!gitCache.containsKey(sha)){

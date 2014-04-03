@@ -45,7 +45,7 @@ public interface IContentManager {
 	 * @param tags
 	 * @return Content objects that are associated with any of the tags specified.
 	 */
-	public Set<Content> getContentByTags(String version, Set<String> tags);
+	public List<Content> getContentByTags(String version, Set<String> tags);
 	
 	/**
 	 * Method allows raw output to be retrieved for given files in the git repository. This is mainly so we can retrieve image files.

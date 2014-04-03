@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.elasticsearch.ElasticsearchException;
@@ -55,7 +56,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public List<String> search(final String index, final String indexType, final String searchString, final String... fields) {
+	public List<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields) {
 		QueryBuilder query = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
 		SearchResponse response = client.prepareSearch(index)
 		        .setTypes(indexType)
@@ -69,6 +70,30 @@ public class ElasticSearchProvider implements ISearchProvider {
 		
 		List<SearchHit> hitAsList = Arrays.asList(results.getHits());
 		log.info("Search for: "+ searchString +" TOTAL SEARCH HITS " + results.getTotalHits());
+		
+		List<String> resultList = new ArrayList<String>();
+		
+		for(SearchHit item : hitAsList){
+			resultList.add(item.getSourceAsString());
+		}
+		return resultList; 
+	}
+	
+	@Override
+	public List<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field){
+		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
+		SearchResponse response = client.prepareSearch(index)
+		        .setTypes(indexType)
+		        .setQuery(query)
+		        .execute()
+		        .actionGet();
+		
+		log.debug("Query: " + query);
+		
+		SearchHits results = response.getHits();
+		
+		List<SearchHit> hitAsList = Arrays.asList(results.getHits());
+		log.info("Search for: "+ searchTerms +" TOTAL SEARCH HITS " + results.getTotalHits());
 		
 		List<String> resultList = new ArrayList<String>();
 		
@@ -100,12 +125,6 @@ public class ElasticSearchProvider implements ISearchProvider {
 		}
 		
 		return true;
-	}
-
-	@Override
-	public boolean deleteById(final String index, final String indexType, final String id) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 	
 	private Client getTransportClient(){		

@@ -436,7 +436,8 @@ public class SegueApiFacade {
 		IContentManager contentManager = injector.getInstance(IContentManager.class);
 		
 		List<Content> searchResults = contentManager.searchForContent(liveVersion, searchString);
-
+		//TODO: we probably only want to return summaries of content objects?
+		
 		return Response.ok(searchResults).build();
 	}
 		
