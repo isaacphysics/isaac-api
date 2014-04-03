@@ -3,39 +3,35 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.cam.cl.dtg.isaac.models.JsonType;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Choice object
- * The choice object is a specialised form of content and allows the storage of data relating to possible answers to questions. 
- *
- */
-@JsonType("choiceQuestion")
-public class ChoiceQuestion extends Question {
+public class Figure extends Content {
 	
-	protected List<Choice> choices;
+	protected String src;
+	protected String altText;
+	
+	public Figure(){
+		
+	}
 	
 	@JsonCreator
-	public ChoiceQuestion(@JsonProperty("_id") String _id,
+	public Figure(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
 				   @JsonProperty("title") String title, 
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
-				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,				   
+				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
 				   @JsonProperty("contentReferenced") List<ContentBase> children,
 				   @JsonProperty("contentLiteral") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("published") boolean published,
+				   @JsonProperty("version") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
-				   @JsonProperty("answer") ContentBase answer,
-				   @JsonProperty("hints") List<ContentBase> hints,
-				   @JsonProperty("choices") List<Choice> choices) {
+				   @JsonProperty("src") String src,
+				   @JsonProperty("altText") String altText) {
 		super(_id, 
 		      id, 
 		      title, 
@@ -49,18 +45,24 @@ public class ChoiceQuestion extends Question {
 		      attribution, 
 		      relatedContent, 
 		      published,
-		      tags,
-		      answer,
-		      hints);
-		
-		this.choices = choices;
+		      tags);
+		this.src = src;
+		this.altText = altText;
+	}
+	
+	public String getSrc() {
+		return src;
 	}
 
-	public ChoiceQuestion(){
-		super();
+	public void setSrc(String src) {
+		this.src = src;
 	}
 
-	public List<Choice> getChoices() {
-		return choices;
+	public String getAltText() {
+		return altText;
+	}
+
+	public void setAltText(String altText) {
+		this.altText = altText;
 	}
 }

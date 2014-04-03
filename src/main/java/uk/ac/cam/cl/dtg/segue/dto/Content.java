@@ -23,7 +23,6 @@ public class Content extends ContentBase{
 	protected String title;
 	protected String author;
 	protected String encoding;
-	protected String src;
 	protected String layout;
 	// this is the actual list of children content objects.
 	protected List<ContentBase> children;
@@ -39,7 +38,6 @@ public class Content extends ContentBase{
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
-				   @JsonProperty("src") String src,
 				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
 				   @JsonProperty("contentReferenced") List<ContentBase> children,
@@ -54,7 +52,6 @@ public class Content extends ContentBase{
 		this.type = type != null ? type : "string";
 		this.author = author;
 		this.encoding = encoding;
-		this.src = src;
 		this.setCanonicalSourceFile(canonicalSourceFile);
 		this.layout = layout;
 		this.value = value;
@@ -104,14 +101,6 @@ public class Content extends ContentBase{
 
 	public void setEncoding(String encoding) {
 		this.encoding = encoding;
-	}
-
-	public String getSrc() {
-		return src;
-	}
-
-	public void setSrc(String src) {
-		this.src = src;
 	}
 
 	public String getLayout() {

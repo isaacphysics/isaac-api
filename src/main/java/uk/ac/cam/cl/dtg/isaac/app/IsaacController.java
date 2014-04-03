@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.Figure;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -192,8 +193,8 @@ public class IsaacController {
 	public Response getImages(@Context HttpServletRequest req,
 			@PathParam("imageId") String imageId) {
 		log.info("test");
-		
-		return api.getFileContent(api.getLiveVersion().getEntity().toString(), ((Content)api.getContentById(imageId).getEntity()).getSrc());
+
+		return api.getFileContent(api.getLiveVersion().getEntity().toString(), ((Figure)api.getContentById(imageId).getEntity()).getSrc());
 	}
 	
 	@POST

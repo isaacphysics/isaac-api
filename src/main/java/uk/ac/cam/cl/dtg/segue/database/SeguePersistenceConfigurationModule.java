@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LogManager;
 import uk.ac.cam.cl.dtg.segue.dao.UserDataManager;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.Figure;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
@@ -132,6 +133,8 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 		map.put("choice", Choice.class);
 		map.put("question", Question.class);
 		map.put("choiceQuestion", ChoiceQuestion.class);
+		map.put("image", Figure.class);
+		map.put("figure", Figure.class);
 		return map;
 	}	
 
