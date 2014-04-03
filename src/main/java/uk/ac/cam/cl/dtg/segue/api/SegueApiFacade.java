@@ -76,8 +76,10 @@ public class SegueApiFacade {
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
 		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
 
-		// TODO: for dev purposes everytime we start segue we want to get the latest version
-		this.synchroniseDataStores();
+		// Check if we want to get the latest from git each time a request is made from segue. - Could add overhead
+		if(injector.getInstance(PropertiesLoader.class).getProperty(Constants.FOLLOW_GIT_VERSION).toLowerCase().equals("true")){
+			this.synchroniseDataStores();
+		}
 	}
 
 	@POST
@@ -354,7 +356,6 @@ public class SegueApiFacade {
 
 		// ok we need to hand over to user manager
 		return userManager.authenticate(request, signinProvider);
-
 	}
 
 	/**
@@ -401,6 +402,10 @@ public class SegueApiFacade {
 		return Response.temporaryRedirect(URI.create(returnUrl)).build();
 	}
 
+	/**
+	 * This method will try to bring the live version that segue is using to host content up-to-date with the latest in the git remote.
+	 * @return
+	 */
 	@POST
 	@Produces("application/json")
 	@Path("admin/synchroniseDatastores")	

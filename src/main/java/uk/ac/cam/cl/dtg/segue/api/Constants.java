@@ -36,6 +36,10 @@ public class Constants {
 	 */
 	public static final String INITIAL_LIVE_VERSION = "INITIAL_LIVE_VERSION";
 	
+	/**
+	 * Constant representing the key for the property id that represents whether segue should track and load all git changes as they arrive on the repository. 
+	 */
+	public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
 
 	// HMAC stuff
 	

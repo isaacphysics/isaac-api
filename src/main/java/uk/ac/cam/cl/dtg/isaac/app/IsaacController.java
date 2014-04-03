@@ -428,7 +428,11 @@ public class IsaacController {
 		ContentInfo contentInfo = null;
 		if(content.getType().equals("image")){
 			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + content.getId());
-		}else{
+		}
+		else if(content.getType().toLowerCase().contains("question")){
+			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + "questions/" + content.getId());
+		}
+		else{
 			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + content.getId());
 		}
 		return contentInfo;
