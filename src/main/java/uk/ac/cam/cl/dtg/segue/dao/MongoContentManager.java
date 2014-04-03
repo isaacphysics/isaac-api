@@ -136,4 +136,10 @@ public class MongoContentManager implements IContentManager {
 	public Set<Content> getContentByTags(String version, Set<String> tags) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
+
+	@Override
+	public List<Content> searchForContent(String version, String searchString) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("This method is not implemented yet.");
+	}
 }

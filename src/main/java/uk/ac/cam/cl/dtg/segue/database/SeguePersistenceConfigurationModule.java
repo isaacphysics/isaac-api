@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,8 @@ import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.AbstractModule;
@@ -28,7 +31,6 @@ import com.mongodb.DB;
 /**
  * This class is responsible for injecting configuration values for persistence related classes
  *
- * TODO: should this be a singleton 
  */
 public class SeguePersistenceConfigurationModule extends AbstractModule {
 
@@ -39,7 +41,9 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper;
 	private static GoogleAuthenticator googleAuthenticator;
+	private static ElasticSearchProvider elasticSearchProvider;
 
+	// TODO: These are all singletons... Maybe we should change this if possible?
 	public SeguePersistenceConfigurationModule(){
 		try {
 			globalProperties = new PropertiesLoader("/config/segue-config.properties");
@@ -55,38 +59,65 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 		if(null == googleAuthenticator){
 			googleAuthenticator = new GoogleAuthenticator(globalProperties.getProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION), globalProperties.getProperty(Constants.GOOGLE_CALLBACK_URI), globalProperties.getProperty(Constants.GOOGLE_OAUTH_SCOPES));			
 		}
+		
+		if(null == elasticSearchProvider){
+			elasticSearchProvider = new ElasticSearchProvider("elasticsearch", new InetSocketTransportAddress("localhost", 9300));
+		}
 	}
 
 	@Override
 	protected void configure() {
-		// Setup different persistence bindings
-
 		try {
+			// Properties loader
 			bind(PropertiesLoader.class).toInstance(globalProperties);
 
-			// MongoDB
-			bind(DB.class).toInstance(Mongo.getDB());
-
-			// GitDb			
-			bind(GitDb.class).toInstance(new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties.getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties.getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
-
-			//bind(IContentManager.class).to(MongoContentManager.class); //Allows Mongo take over Content Management
-			bind(IContentManager.class).to(GitContentManager.class); //Allows GitDb take over Content Management
+			this.configureDataPersistence();
+			
+			this.configureSegueSearch();
+			
+			this.configureApplicationManagers();
 
 		} catch (IOException e) {
 			e.printStackTrace();
 			log.error("IOException during setup process.");
 		}
 
+		this.configureSecurity();
+	}
+	
+	private void configureDataPersistence() throws IOException{
+		// Setup different persistence bindings
+		// MongoDb
+		bind(DB.class).toInstance(Mongo.getDB());
+
+		// GitDb			
+		bind(GitDb.class).toInstance(new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties.getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties.getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
+	}
+	
+	private void configureSegueSearch(){
+		bind(ElasticSearchProvider.class).toInstance(elasticSearchProvider);
+		bind(ISearchProvider.class).to(ElasticSearchProvider.class);
+	}
+	
+	/**
+	 * Deals with application data managers
+	 */
+	private void configureApplicationManagers(){
+		//bind(IContentManager.class).to(MongoContentManager.class); //Allows Mongo take over Content Management
+		bind(IContentManager.class).to(GitContentManager.class); //Allows GitDb take over Content Management
+		
 		bind(ILogManager.class).to(LogManager.class);
+		
 		bind(IUserDataManager.class).to(UserDataManager.class);
 
 		// bind to single instances mainly because caches are used
 		bind(ContentMapper.class).toInstance(mapper);
-		bind(GoogleAuthenticator.class).toInstance(googleAuthenticator);
-
 	}
-
+	
+	private void configureSecurity(){
+		bind(GoogleAuthenticator.class).toInstance(googleAuthenticator);
+	}
+	
 	/**
 	 * This method will return you a populated Map which enables mapping to and from content objects.
 	 * 

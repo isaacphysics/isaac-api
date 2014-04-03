@@ -30,6 +30,15 @@ public interface IContentManager {
 	public List<Content> findAllByType(String type, String version, Integer limit);
 	
 	/**
+	 * Allows fullText search using the internal search provider.
+	 * 
+	 * @param version
+	 * @param searchString
+	 * @return list of results ordered by relevance.
+	 */
+	public List<Content> searchForContent(String version, String searchString);
+	
+	/**
 	 * Search for content by providing a set of tags
 	 * 
 	 * @param version

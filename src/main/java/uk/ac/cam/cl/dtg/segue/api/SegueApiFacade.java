@@ -424,6 +424,22 @@ public class SegueApiFacade {
 		return Response.ok(newVersion).build();
 	}
 
+	/**
+	 * Search the content manager for some search string
+	 * 
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("search/{searchString}")
+	public Response search(@PathParam("searchString") String searchString){			
+		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
+		IContentManager contentManager = injector.getInstance(IContentManager.class);
+		
+		List<Content> searchResults = contentManager.searchForContent(liveVersion, searchString);
+
+		return Response.ok(searchResults).build();
+	}
+		
 	public Date dateOfVersionChange(){
 		return dateOfVersionChange;
 	}

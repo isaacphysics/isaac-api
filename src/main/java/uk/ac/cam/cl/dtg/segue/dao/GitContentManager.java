@@ -18,16 +18,19 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
  * Implementation that specifically works with Content objects
@@ -38,17 +41,22 @@ public class GitContentManager implements IContentManager {
 	private final ContentMapper mapper;
 	
 	private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
+	private static final String CONTENT_TYPE = "CONTENT";
 
 	// TODO: should we make this a weak cache?
 	private static Map<String, Map<String,Content>> gitCache = new HashMap<String,Map<String,Content>>();
 	
 	private static Map<String, Map<String, Set<Content>>> gitTagCache = new HashMap<String, Map<String, Set<Content>>>();
 	
+	//TODO: keep search class in here as well as gitCache
+	private ISearchProvider searchProvider = null;
+	
 	@Inject
-	public GitContentManager(GitDb database) {
+	public GitContentManager(GitDb database, ISearchProvider searchProvider) {
 		this.database = database;
 		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		this.mapper = injector.getInstance(ContentMapper.class);
+		this.searchProvider = searchProvider;
 	}	
 	
 	@Override
@@ -69,7 +77,31 @@ public class GitContentManager implements IContentManager {
 			log.error("Unable to access Content with ID "+ id + " from git commit: " + version + " from cache.");
 			return null;
 		}
-		
+	}
+
+	@Override
+	public List<Content> searchForContent(String version, String searchString){
+		List<String> searchHits = searchProvider.search(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
+	    
+		// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    objectMapper.registerModule(getContentDeserializerModule());
+	    List<Content> searchResults = new ArrayList<Content>();
+	    for(String hit : searchHits){
+	    	try {
+				searchResults.add((Content) objectMapper.readValue(hit, ContentBase.class));
+			} catch (JsonParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JsonMappingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    }
+		return searchResults;
 	}
 	
 	@Override
@@ -115,14 +147,21 @@ public class GitContentManager implements IContentManager {
 	public void clearCache() {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
+		gitTagCache.clear();
+		
+		searchProvider.expungeEntireSearchCache();
 	}	
 
 	@Override
 	public Set<Content> getContentByTags(String version, Set<String> tags){
+		// TODO: Change to use new search provider.
+		
 		if(this.ensureCache(version)){
+			
 			if(null == tags || !gitTagCache.containsKey(version)){
 				return null;
 			}
+			
 			Map<String, Set<Content>> tagMap = gitTagCache.get(version);
 			
 			Set<Content> result = new HashSet<Content>();
@@ -136,10 +175,17 @@ public class GitContentManager implements IContentManager {
 
 			return result;
 		}
-		
+		else{
+			log.error("Cache not found. Failed to build cache with version: " + version);			
+		}
 		return null;
 	}
 	
+	/**
+	 * @deprecated
+	 * @param version
+	 * @param content
+	 */
 	private void cacheContentByTags(String version, Content content){
 		Map<String, Set<Content>> tagMap = null;
 		if(gitTagCache.containsKey(version)){
@@ -221,10 +267,15 @@ public class GitContentManager implements IContentManager {
 			    	    
 			    	    Content content = null;
 			    	    try{
-				    	    content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
+				    	    String rawJson = out.toString();
+			    	    	content = (Content) objectMapper.readValue(rawJson, ContentBase.class);
 				    	    content = this.augmentChildContent(content, treeWalk.getPathString());
 				    	    
 				    	    if (null != content){
+				    	    	// Add content to search provider
+				    	    	searchProvider.indexObject(sha, CONTENT_TYPE, objectMapper.writeValueAsString(content), content.getId());
+				    	    	// TODO: this will probably be removed when search is implemented properly
+				    	    	
 				    	    	// add children (and parent) from flattened Set to cache if they have ids
 					    	    for(Content flattenedContent : this.flattenContentObjects(content)){
 					    	    	if(flattenedContent.getId() != null){
