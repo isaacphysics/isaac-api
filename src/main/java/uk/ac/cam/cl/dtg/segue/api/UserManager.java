@@ -49,6 +49,9 @@ public class UserManager{
 	
 	@Inject
 	public UserManager(IUserDataManager database, @Named(Constants.HMAC_SALT) String hmacSalt, Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister){
+		Validate.notNull(database);
+		Validate.notNull(hmacSalt);
+		Validate.notNull(providersToRegister);
 		this.database = database;
 		this.hmacSalt = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;

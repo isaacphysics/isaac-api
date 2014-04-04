@@ -103,7 +103,6 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 	}
 	
 	private void configureSegueSearch(){
-
 		bind(ISearchProvider.class).to(ElasticSearchProvider.class);
 	}
 	

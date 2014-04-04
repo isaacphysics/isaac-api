@@ -176,13 +176,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 		InputStreamReader isr = new InputStreamReader(inputStream);
 
 		clientSecret = GoogleClientSecrets.load(jsonFactory, isr);
-//		Preconditions
-//		.checkArgument(
-//				!clientSecret.getDetails().getClientId().startsWith("[[")
-//				&& !clientSecret.getDetails().getClientSecret()
-//				.startsWith("[["),
-//				"Please enter your client ID and secret from the Google APIs Console in %s from the "
-//						+ "root samples directory", clientSecretLocation);
+		
 		return clientSecret;
 	}
 }
