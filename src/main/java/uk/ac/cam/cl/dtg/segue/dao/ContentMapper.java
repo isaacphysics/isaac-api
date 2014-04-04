@@ -1,9 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.Validate;
 import org.mongojack.internal.MongoJackModule;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
@@ -17,20 +18,31 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.mongodb.DBObject;
 
 /**
- * High level Class responsible for mapping Content objects (or contentBase objects) to their respective subclass. 
+ * Class responsible for mapping Content objects (or contentBase objects) to their respective subclass. 
  *
  */
 public class ContentMapper {
-	// Used for serialization into the correct POJO as well as deserialization. Currently depends on the string key being the same text value as the type field.
-	private Map<String, Class<? extends Content>> jsonTypes = new HashMap<String, Class<? extends Content>>();
 	
-	public void registerJsonType(Class<? extends Content> cls) {
-		JsonType jt = cls.getAnnotation(JsonType.class);
-		if (jt != null)
-			jsonTypes.put(jt.value(), cls);
+	// Used for serialization into the correct POJO as well as deserialization. Currently depends on the string key being the same text value as the type field.
+	private final Map<String, Class<? extends Content>> jsonTypes;
+	
+	/**
+	 * Creates a new content mapper
+	 * 
+	 */
+	public ContentMapper() {
+		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
 	}
 	
+	/**
+	 * Creates a new content mapper initialized with a set of types. 
+	 * 
+	 * @param additionalTypes
+	 */
 	public ContentMapper(Map<String, Class<? extends Content>> additionalTypes) {
+		this();
+		
+		Validate.notNull(additionalTypes);
 		jsonTypes.putAll(additionalTypes);
 	}
 
@@ -63,9 +75,7 @@ public class ContentMapper {
 	 * @throws IllegalArgumentException if the database item retrieved fails to map into a content object.
 	 */
 	public Content mapDBOjectToContentDTO(DBObject obj) throws IllegalArgumentException {
-		if(null == obj){
-			return null;
-		}
+		Validate.notNull(obj);
 		
 		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
 		ObjectMapper contentMapper = MongoJackModule.configure(new ObjectMapper());
@@ -89,11 +99,39 @@ public class ContentMapper {
 	}
 	
 	/**
-	 * This is a utility method that will return the HashMap that contains all possible type name to class mappings that we know about. 
-	 * @return
+	 * Register a new content type with the content mapper
+	 * 
+	 * @param type - String that should match the type field of the content object.
+	 * @param cls - Class implementing the deserialized DTO.
 	 */
-	public Map<String, Class<? extends Content>> getJsonTypes(){
-		return jsonTypes;
+	public synchronized void registerJsonType(String type, Class<? extends Content> cls) {
+		Validate.notEmpty(type, "Invalid type string entered. It cannot be empty.");
+		Validate.notNull(cls, "Class cannot be null.");
+		
+		jsonTypes.put(type, cls);
+	}
+	
+	/**
+	 * Works the same as {@link #registerJsonType(String, Class)}
+	 * @see #registerJsonType(String, Class)
+	 * @param newTypes
+	 */
+	public synchronized void registerJsonTypes(Map<String, Class<? extends Content>> newTypes){
+		Validate.notNull(newTypes, "New types map cannot be null");
+		
+		jsonTypes.putAll(newTypes);
+	}
+	
+	public synchronized void registerJsonType(Class<? extends Content> cls) {
+		Validate.notNull(cls, "Class cannot be null.");
+		
+		JsonType jt = cls.getAnnotation(JsonType.class);
+		if (jt != null)
+			jsonTypes.put(jt.value(), cls);
+	}
+	
+	public Class<? extends Content> getClassByType(String type){
+		return jsonTypes.get(type);
 	}
 	
 	/**
@@ -102,7 +140,7 @@ public class ContentMapper {
 	 */
 	public ObjectMapper getContentObjectMapper(){ 
 	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
-	    contentDeserializer.registerTypeMap(getJsonTypes());
+	    contentDeserializer.registerTypeMap(jsonTypes);
 	    		
 	    SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
 	    contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);

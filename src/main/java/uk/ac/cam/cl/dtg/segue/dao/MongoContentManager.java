@@ -6,21 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.bson.types.ObjectId;
-import org.mongojack.DBQuery;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
-import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
 /**
@@ -33,10 +28,9 @@ public class MongoContentManager implements IContentManager {
 	private final ContentMapper mapper;
 	
 	@Inject
-	public MongoContentManager(DB database) {
+	public MongoContentManager(DB database, ContentMapper mapper) {
 		this.database = database;
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		this.mapper = injector.getInstance(ContentMapper.class);
+		this.mapper = mapper;
 	}
 
 	@Override
@@ -98,23 +92,6 @@ public class MongoContentManager implements IContentManager {
 		
 		throw new IllegalArgumentException("object is not a subtype of Content");
 	}
-	
-	/**
-	 * Wrapper method that converts a list of string representations of object ids into a list of objectids
-	 * 
-	 * This is needed for querying mongodb
-	 * @deprecated not using mongo
-	 * @param List of string object Ids
-	 * @return List of object ids 
-	 */
-	private List<ObjectId> wrapObjectIds(List<String> stringIds){
-		List<ObjectId> newList = new ArrayList<ObjectId>();
-		for(String objectString : stringIds){
-			newList.add(new ObjectId(objectString));
-		}
-		
-		return newList;
-	}
 
 	@Override
 	public ByteArrayOutputStream getFileBytes(String version, String filename)
@@ -139,7 +116,6 @@ public class MongoContentManager implements IContentManager {
 
 	@Override
 	public List<Content> searchForContent(String version, String searchString) {
-		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 }

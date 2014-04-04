@@ -42,7 +42,6 @@ import com.google.common.io.Files;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-
 @Path("/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
@@ -74,7 +73,7 @@ public class SegueApiFacade {
 		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 
 		ContentMapper mapper = injector.getInstance(ContentMapper.class);
-		mapper.getJsonTypes().putAll(segueConfigurationModule.getContentDataTransferObjectMap());
+		mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
 
 		// Check if we want to get the latest from git each time a request is made from segue. - Could add overhead
 		if(injector.getInstance(PropertiesLoader.class).getProperty(Constants.FOLLOW_GIT_VERSION).toLowerCase().equals("true")){
