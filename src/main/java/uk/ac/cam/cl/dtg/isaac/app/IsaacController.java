@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.app;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -425,16 +427,22 @@ public class IsaacController {
 		if (null == content)
 			return null;
 		
-		// TODO fix url parameter to be less horrid
+		// TODO fix this stuff to be less horrid
 		ContentInfo contentInfo = null;
-		if(content.getType().equals("image")){
-			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + content.getId());
+		try{
+			if(content.getType().equals("image")){
+				contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
+			}
+			else if(content.getType().toLowerCase().contains("question")){
+				contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + "questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
+			}
+			else{
+				contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + URLEncoder.encode(content.getId(), "UTF-8"));
+			}			
 		}
-		else if(content.getType().toLowerCase().contains("question")){
-			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + "questions/" + content.getId());
-		}
-		else{
-			contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + content.getId());
+		catch(UnsupportedEncodingException e){
+			log.error("Unable to encode URL.");
+			e.printStackTrace();
 		}
 		return contentInfo;
 	}
