@@ -68,6 +68,23 @@ public class Constants {
 	 */
 	public static final String HMAC_SALT = "HMAC_SALT";
 	
+	// Search stuff
+	
+	/**
+	 * Constant representing the key for the ClusterName - used for Search providers. 
+	 */
+	public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_NAME";
+
+	/**
+	 * Constant representing the key for the address of the Search Cluster - used for Search providers. 
+	 */
+	public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
+	
+	/**
+	 * Constant representing the key for the port of the Search Cluster - used for Search providers. 
+	 */
+	public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
+	
 	// Federated Authentication Stuff
 	
 	/**
