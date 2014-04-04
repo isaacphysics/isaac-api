@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
@@ -27,6 +29,11 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Provides;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.mongodb.DB;
 
 /**
@@ -37,44 +44,37 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 
 	private static final Logger log = LoggerFactory.getLogger(SeguePersistenceConfigurationModule.class);
 
-	private static PropertiesLoader globalProperties;
-
+	// TODO: These are effectively singletons... 
 	// we only ever want there to be one instance of each of these.
-	private static ContentMapper mapper;
-	private static GoogleAuthenticator googleAuthenticator;
-	private static ElasticSearchProvider elasticSearchProvider;
+	private static PropertiesLoader globalProperties = null;
+	private static ContentMapper mapper = null;
+	private static Client elasticSearchClient = null;
 
-	// TODO: These are all singletons... Maybe we should change this if possible?
+
 	public SeguePersistenceConfigurationModule(){
 		try {
 			globalProperties = new PropertiesLoader("/config/segue-config.properties");
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			log.error("Error loading properties file.");
 			e.printStackTrace();
 		}
 		
 		if(null == mapper){
 			mapper = new ContentMapper(buildDefaultJsonTypeMap());
 		}
-
-		if(null == googleAuthenticator){
-			googleAuthenticator = new GoogleAuthenticator(globalProperties.getProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION), globalProperties.getProperty(Constants.GOOGLE_CALLBACK_URI), globalProperties.getProperty(Constants.GOOGLE_OAUTH_SCOPES));			
-		}
-		
-		if(null == elasticSearchProvider){
-			elasticSearchProvider = new ElasticSearchProvider("elasticsearch", new InetSocketTransportAddress("localhost", 9300));
-		}
 	}
 
 	@Override
 	protected void configure() {
 		try {
-			// Properties loader
-			bind(PropertiesLoader.class).toInstance(globalProperties);
-
+			this.configureProperties();
+			
 			this.configureDataPersistence();
 			
 			this.configureSegueSearch();
+			
+			this.configureSecurity();
 			
 			this.configureApplicationManagers();
 
@@ -82,8 +82,15 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 			e.printStackTrace();
 			log.error("IOException during setup process.");
 		}
-
-		this.configureSecurity();
+	}
+	
+	private void configureProperties(){
+		// Properties loader
+		bind(PropertiesLoader.class).toInstance(globalProperties);
+	
+		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
+		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
+		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT, globalProperties);
 	}
 	
 	private void configureDataPersistence() throws IOException{
@@ -96,8 +103,21 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 	}
 	
 	private void configureSegueSearch(){
-		bind(ElasticSearchProvider.class).toInstance(elasticSearchProvider);
+
 		bind(ISearchProvider.class).to(ElasticSearchProvider.class);
+	}
+	
+	private void configureSecurity(){
+		this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
+
+		// Configure security providers
+		this.bindConstantToProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION, globalProperties);
+		this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI, globalProperties);
+		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES, globalProperties);
+		
+		// Register a map of security providers 
+		MapBinder<AuthenticationProvider,IFederatedAuthenticator> mapBinder = MapBinder.newMapBinder(binder(), AuthenticationProvider.class, IFederatedAuthenticator.class);
+		mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
 	}
 	
 	/**
@@ -115,8 +135,24 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 		bind(ContentMapper.class).toInstance(mapper);
 	}
 	
-	private void configureSecurity(){
-		bind(GoogleAuthenticator.class).toInstance(googleAuthenticator);
+	/**
+	 * This provides a singleton of the elasticSearch client that can be used by Guice.
+	 * 
+	 * The client is threadsafe so we don't need to keep creating new ones.
+	 * 
+	 * @param clusterName
+	 * @param address
+	 * @param port
+	 * @return Client to be injected into ElasticSearch Provider.
+	 */
+	@Inject
+	@Provides
+	private static Client getSearchConnectionInformation(@Named(Constants.SEARCH_CLUSTER_NAME) String clusterName, @Named(Constants.SEARCH_CLUSTER_ADDRESS) String address, @Named(Constants.SEARCH_CLUSTER_PORT) int port){
+		if(null == elasticSearchClient){
+			elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
+		}
+		
+		return elasticSearchClient;
 	}
 	
 	/**
@@ -124,18 +160,28 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 	 * 
 	 * It requires that the class definition has the JsonType("XYZ") annotation
 	 * 
-	 * @return 
+	 * @return initial segue type map.
 	 */
 	private Map<String, Class<? extends Content>> buildDefaultJsonTypeMap() {
 		HashMap<String, Class<? extends Content>> map = new HashMap<String, Class<? extends Content>>();
 
-		// We need to pre-register different content objects here for the automapping to work
+		// We need to pre-register different content objects here for the auto-mapping to work
 		map.put("choice", Choice.class);
 		map.put("question", Question.class);
 		map.put("choiceQuestion", ChoiceQuestion.class);
 		map.put("image", Figure.class);
 		map.put("figure", Figure.class);
 		return map;
-	}	
+	}
+	
+	/**
+	 * Utility method to make the syntax of property bindings clearer.
+	 * 
+	 * @param propertyLabel
+	 * @param propertyLoader
+	 */
+	private void bindConstantToProperty(String propertyLabel, PropertiesLoader propertyLoader){
+		bindConstant().annotatedWith(Names.named(propertyLabel)).to(propertyLoader.getProperty(propertyLabel));
+	}
 
 }

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
@@ -18,22 +19,20 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+
 public class ElasticSearchProvider implements ISearchProvider {
 
-	private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
-	private String clusterName;
-	private InetSocketTransportAddress address;
+	private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);	
 	
-	private Client client = null;
-
-	public ElasticSearchProvider(String clusterName, InetSocketTransportAddress address){
-		this.clusterName = clusterName;
-		this.address = address;
-		this.client = this.getTransportClient();
+	private final Client client;
+	
+	@Inject
+	public ElasticSearchProvider(Client searchClient){
+		this.client = searchClient;
 	}
 	
 	@Override
@@ -57,49 +56,25 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 	@Override
 	public List<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields) {
-		QueryBuilder query = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
-		SearchResponse response = client.prepareSearch(index)
-		        .setTypes(indexType)
-		        .setQuery(query)
-		        .execute()
-		        .actionGet();
-		
-		log.debug("Query: " + query);
-		
-		SearchHits results = response.getHits();
-		
-		List<SearchHit> hitAsList = Arrays.asList(results.getHits());
-		log.info("Search for: "+ searchString +" TOTAL SEARCH HITS " + results.getTotalHits());
-		
-		List<String> resultList = new ArrayList<String>();
-		
-		for(SearchHit item : hitAsList){
-			resultList.add(item.getSourceAsString());
+		if(null == index || null == indexType || null == searchString || null == fields){
+			log.warn("A required field is missing. Unable to execute search.");
+			return null;
 		}
+		
+		QueryBuilder query = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
+		List<String> resultList = this.executeQuery(index, indexType, query);
 		return resultList; 
 	}
 	
 	@Override
 	public List<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field){
-		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
-		SearchResponse response = client.prepareSearch(index)
-		        .setTypes(indexType)
-		        .setQuery(query)
-		        .execute()
-		        .actionGet();
-		
-		log.debug("Query: " + query);
-		
-		SearchHits results = response.getHits();
-		
-		List<SearchHit> hitAsList = Arrays.asList(results.getHits());
-		log.info("Search for: "+ searchTerms +" TOTAL SEARCH HITS " + results.getTotalHits());
-		
-		List<String> resultList = new ArrayList<String>();
-		
-		for(SearchHit item : hitAsList){
-			resultList.add(item.getSourceAsString());
+		if(null == index || null == indexType || null == searchTerms || null == field){
+			log.warn("A required field is missing. Unable to execute search.");
+			return null;
 		}
+		
+		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
+		List<String> resultList = this.executeQuery(index, indexType, query);
 		return resultList; 
 	}
 
@@ -110,10 +85,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	
 	@Override
 	public boolean expungeIndexFromSearchCache(final String index) {
-		//if they don't provide an index assume we are deleting every index.
-		if(null == index){
-			return false;
-		}
+		Validate.notBlank(index);
 		
 		try{
 			log.info("Sending delete request to ElasticSearch for search index: " + index);
@@ -126,16 +98,47 @@ public class ElasticSearchProvider implements ISearchProvider {
 		
 		return true;
 	}
-	
-	private Client getTransportClient(){		
+
+	/**
+	 * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
+	 *  
+	 * @param clusterName
+	 * @param address
+	 * @param port
+	 * @return Defaults to http client creation.
+	 */
+	public static Client getTransportClient(String clusterName, String address, int port){		
 		Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName).build();
 		TransportClient transportClient = new TransportClient(settings);
-		transportClient = transportClient.addTransportAddress(address);
+		InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(address, port);
+		transportClient = transportClient.addTransportAddress(transportAddress);
 		return transportClient;
 	}
 
 	@Override
 	public boolean hasIndex(final String index) {
+		Validate.notNull(index);
 		return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
+	}
+	
+	private List<String> executeQuery(final String index, final String indexType, final QueryBuilder query){		
+		log.debug("Executing Query: " + query);
+		
+		SearchResponse response = client.prepareSearch(index)
+		        .setTypes(indexType)
+		        .setQuery(query)
+		        .execute()
+		        .actionGet();
+		
+		List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
+		List<String> resultList = new ArrayList<String>();
+		
+		log.info("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
+		
+		for(SearchHit item : hitAsList){
+			resultList.add(item.getSourceAsString());
+		}
+		
+		return resultList; 
 	}
 }

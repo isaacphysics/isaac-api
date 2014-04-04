@@ -2,9 +2,12 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -13,40 +16,42 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.Validate;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
+import com.google.inject.name.Named;
 
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.User;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
- *  This class is responsible for all low level user management actions e.g. authentication and registration.
+ * This class is responsible for all low level user management actions e.g. authentication and registration.
  * TODO: Split authentication functionality into another class and let this one focus on maintaining our segue user state.
  */
 public class UserManager{
-
-	public enum AuthenticationProvider {GOOGLE, FACEBOOK, RAVEN;};
-	
-	private IUserDataManager database;
 	private static final Logger log = LoggerFactory.getLogger(UserManager.class);
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
 	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
+	public enum AuthenticationProvider {GOOGLE, FACEBOOK, RAVEN;};
+	
+	private final IUserDataManager database;
+	private final String hmacSalt;
+	private final Map<AuthenticationProvider, IFederatedAuthenticator> registeredAuthProviders;
 	
 	@Inject
-	public UserManager(IUserDataManager database){
+	public UserManager(IUserDataManager database, @Named(Constants.HMAC_SALT) String hmacSalt, Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister){
 		this.database = database;
+		this.hmacSalt = hmacSalt;
+		this.registeredAuthProviders = providersToRegister;
 	}
 	
 	/**
@@ -72,19 +77,35 @@ public class UserManager{
 			return Response.serverError().entity("Failed to identify authenticator.").build();
 		}
 
-		// if we are an OAuthProvider redirect to the provider authorization url.	
+		// if we are an OAuth2Provider redirect to the provider authorization url.	
 		if(federatedAuthenticator instanceof IOAuth2Authenticator){
 			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
 			try {
-				// to deal with cross site request forgery
-				request.getSession().setAttribute("state", oauthProvider.getAntiForgeryStateToken());
 				URI redirectLink = URI.create(oauthProvider.getAuthorizationUrl());
+				List<NameValuePair> urlParams = URLEncodedUtils.parse(redirectLink.toString(), Charset.defaultCharset());
+
+				// to deal with cross site request forgery (Provider should embed a state param in the uri returned in the redirectLink)
+				String antiForgeryTokenFromProvider =  null;
+				
+				for(NameValuePair param : urlParams){
+					if(param.getName().equals("state")){
+						antiForgeryTokenFromProvider = param.getValue();
+					}
+				}
+				
+				if(null == antiForgeryTokenFromProvider){
+					log.error("Unable to extract antiForgeryToken from Authentication provider");
+					return Response.noContent().build();
+				}
+
+				// Store antiForgeryToken in the users session.
+				request.getSession().setAttribute("state", antiForgeryTokenFromProvider);
+				
 				return Response.temporaryRedirect(redirectLink).entity(redirectLink).build();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 				log.error("IOException when trying to redirect to OAuth provider");
+				e.printStackTrace();
 			}
 		}
 	
@@ -94,6 +115,8 @@ public class UserManager{
 	/**
 	 * Authenticate Callback will receive the authentication information from the different provider types. 
 	 * (e.g. OAuth 2.0 (IOAuth2Authenticator) or bespoke)
+	 * 
+	 * TODO: Refactor this to be a bit more sensible.
 	 * 
 	 * @param request
 	 * @param response
@@ -115,7 +138,7 @@ public class UserManager{
 			return Response.serverError().entity("Unable to identify authenticator").build();
 		}
 
-		// if we are an OAuthProvider complete next steps of oauth
+		// if we are an OAuth2Provider complete next steps of oauth
 		if(federatedAuthenticator instanceof IOAuth2Authenticator){
 			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
@@ -134,13 +157,13 @@ public class UserManager{
 				if (authCode == null) {
 					log.info("User denied access to our app.");
 					return Response.status(401).entity("Provider failed to give us an authorization code.").build();
-				} else {	      
+				} else {   
 					log.debug("User granted access to our app");
 
 					String internalReference = oauthProvider.exchangeCode(authCode);
 
 					// get user info from provider
-					// note the userid field in this object will contain the providers user id.
+					// note the userid field in this object will contain the providers user id not ours.
 					User userFromProvider = federatedAuthenticator.getUserInfo(internalReference);
 					
 					if(null == userFromProvider)
@@ -148,7 +171,7 @@ public class UserManager{
 
 					log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
 
-					// this is the providers unique id for the user
+					// this is the providers unique id for the user we should store it for now
 					String providerId = userFromProvider.getDbId();
 					
 					// clear user object id so that it is ready to receive our local one.
@@ -181,13 +204,10 @@ public class UserManager{
 				}				
 			}
 			catch(IOException e){
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (NoUserIdException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (CodeExchangeException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -204,18 +224,14 @@ public class UserManager{
 
 	/**
 	 * Get the details of the currently logged in user
-	 * TODO: test me
 	 * 
 	 * @return Returns the current user DTO if we can get it or null if user is not currently logged in
 	 */
 	public User getCurrentUser(HttpServletRequest request){
-		//Injector injector = Guice.createInjector(new PersistenceConfigurationModule());
-
 		// get the current user based on their session id information.
 		String currentUserId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
 
 		// check if the users session is validated using our credentials.
-		
 		if(!this.validateUsersSession(request)){
 			log.debug("User session is null or failed validation. Assume they are not logged in.");
 			return null;
@@ -227,7 +243,6 @@ public class UserManager{
 		}
 
 		// retrieve the user from database.
-		
 		return database.getById(currentUserId);
 	}
 
@@ -246,13 +261,10 @@ public class UserManager{
 	 * @param request
 	 * @param userId
 	 */
-	public void createSession(HttpServletRequest request, String userId){
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		String HMAC_KEY = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HMAC_SALT);
-		
+	public void createSession(HttpServletRequest request, String userId){		
 		String currentDate = new SimpleDateFormat(DATE_FORMAT).format(new Date());
 		String sessionId =  request.getSession().getId();
-		String sessionHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
+		String sessionHMAC = this.calculateHMAC(hmacSalt+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
 		request.getSession().setAttribute(Constants.SESSION_USER_ID, userId);
 		request.getSession().setAttribute(Constants.SESSION_ID, sessionId);
@@ -267,16 +279,13 @@ public class UserManager{
 	 * @param request
 	 * @return True if we are happy, false if we are not.
 	 */
-	public boolean validateUsersSession(HttpServletRequest request){
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		String HMAC_KEY = injector.getInstance(PropertiesLoader.class).getProperty(Constants.HMAC_SALT);
-		
+	public boolean validateUsersSession(HttpServletRequest request){		
 		String userId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
 		String currentDate = (String) request.getSession().getAttribute(Constants.DATE_SIGNED);
 		String sessionId = (String) request.getSession().getAttribute(Constants.SESSION_ID);
 		String sessionHMAC = (String) request.getSession().getAttribute(Constants.HMAC);
 		
-		String ourHMAC = this.calculateHMAC(HMAC_KEY+userId + sessionId + currentDate, userId + sessionId + currentDate);
+		String ourHMAC = this.calculateHMAC(hmacSalt+userId + sessionId + currentDate, userId + sessionId + currentDate);
 		
 		if(null == userId){
 			log.debug("No session set so not validating user identity.");
@@ -296,6 +305,9 @@ public class UserManager{
 	}
 	
 	private String calculateHMAC(String key, String dataToSign){
+		Validate.notEmpty(key, "Signing key cannot be blank.");
+		Validate.notEmpty(dataToSign, "Data to sign cannot be blank.");
+		
 		try {
 			SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA_ALGORITHM);
 			Mac mac = Mac.getInstance(HMAC_SHA_ALGORITHM);
@@ -312,16 +324,23 @@ public class UserManager{
 	}
 
 	private IFederatedAuthenticator mapToProvider(String provider){
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		IFederatedAuthenticator federatedAuthenticator = null;
-		
-		log.debug("Mapping provider: " + provider + " to " + AuthenticationProvider.GOOGLE.name());
-		
-		if(AuthenticationProvider.GOOGLE.name().equals(provider.toUpperCase())){
-			federatedAuthenticator = injector.getInstance(GoogleAuthenticator.class);
+		AuthenticationProvider enumProvider = null;
+		try{
+			enumProvider = AuthenticationProvider.valueOf(provider.toUpperCase());
 		}
-
-		return federatedAuthenticator;
+		catch(IllegalArgumentException e){
+			log.error("The provider requested is invalid and not a known AuthenticationProvider: " + provider);
+			throw new IllegalArgumentException();
+		}
+		
+		if(!registeredAuthProviders.containsKey(enumProvider)){
+			log.error("This authentication provider has not been registered / implemented yet: " + provider);
+			throw new IllegalArgumentException();
+		}
+		
+		log.debug("Mapping provider: " + provider + " to " + enumProvider);
+		
+		return this.registeredAuthProviders.get(enumProvider);
 	}
 	
 	/**

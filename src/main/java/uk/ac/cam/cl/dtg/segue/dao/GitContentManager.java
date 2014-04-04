@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jgit.lib.ObjectId;
@@ -22,13 +23,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.Figure;
@@ -39,30 +36,26 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
  *
  */
 public class GitContentManager implements IContentManager {
-	private final GitDb database;
-	private final ContentMapper mapper;
-	
 	private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
+	
 	private static final String CONTENT_TYPE = "CONTENT";
 
-	// TODO: should we make this a weak cache?
-	private static Map<String, Map<String,Content>> gitCache = new HashMap<String,Map<String,Content>>();
-	private static Map<String, Map<String, Set<Content>>> gitTagCache = new HashMap<String, Map<String, Set<Content>>>();
+	private static final Map<String, Map<String,Content>> gitCache = new ConcurrentHashMap<String,Map<String,Content>>();
 	
-	// TODO: keep search class in here as well as gitCache
-	private ISearchProvider searchProvider = null;
+	private final GitDb database;
+	private final ContentMapper mapper;
+	private final ISearchProvider searchProvider;
 	
 	@Inject
-	public GitContentManager(GitDb database, ISearchProvider searchProvider) {
+	public GitContentManager(GitDb database, ISearchProvider searchProvider, ContentMapper contentMapper) {
 		this.database = database;
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		this.mapper = injector.getInstance(ContentMapper.class);
+		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
 	}	
 	
 	@Override
 	public <T extends Content> String save(T objectToSave) throws IllegalArgumentException {
-		throw new UnsupportedOperationException("This method is not implemented yet.");
+		throw new UnsupportedOperationException("This method is not implemented yet - Git is a readonly data store at the moment.");
 	}
 
 	@Override
@@ -152,8 +145,6 @@ public class GitContentManager implements IContentManager {
 	public void clearCache() {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
-		gitTagCache.clear();
-		
 		searchProvider.expungeEntireSearchCache();
 	}	
 
@@ -163,7 +154,6 @@ public class GitContentManager implements IContentManager {
 			return null;
 		}
 		
-		// TODO: Change to use new search provider.		
 		if(this.ensureCache(version)){
 			List<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE, tags, "tags");
 			
@@ -175,13 +165,10 @@ public class GitContentManager implements IContentManager {
     	    	try {
 					contentResults.add((Content) objectMapper.readValue(content, ContentBase.class));
 				} catch (JsonParseException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (JsonMappingException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
     	    }
@@ -189,9 +176,9 @@ public class GitContentManager implements IContentManager {
 			return contentResults;
 		}
 		else{
-			log.error("Cache not found. Failed to build cache with version: " + version);			
+			log.error("Cache not found. Failed to build cache with version: " + version);
+			return null;
 		}
-		return null;
 	}
 	
 	/**
@@ -240,13 +227,13 @@ public class GitContentManager implements IContentManager {
 		
 		log.info("Building search index for: " + sha);
 		for(Content content : gitCache.get(sha).values()){
-    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+    	    // setup object mapper to use pre-configured deserializer module. Required to deal with type polymorphism
     	    ObjectMapper objectMapper = mapper.getContentObjectMapper();
 			
 			try {
 				this.searchProvider.indexObject(sha, CONTENT_TYPE, objectMapper.writeValueAsString(content), content.getId());
 			} catch (JsonProcessingException e) {
-				// TODO Auto-generated catch block
+				log.error("Unable to serialize content object for indexing with the search provider." );
 				e.printStackTrace();
 			}
 		}
@@ -345,6 +332,8 @@ public class GitContentManager implements IContentManager {
 	/**
 	 * Augments all child objects recursively to include additional information.
 	 * 
+	 * This should be done before saving to the local gitCache in memory storage.
+	 * 
 	 * @param content
 	 * @param canonicalSourceFile
 	 * @return Content object with new reference
@@ -378,8 +367,10 @@ public class GitContentManager implements IContentManager {
 	
 	/**
 	 * This method will attempt to traverse the cache to ensure that all content references are valid.
+	 * TODO: Make this more efficient or only call it on demand?
+	 * 
 	 * @param versionToCheck
-	 * @return
+	 * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
 	 */
 	private boolean validateReferentialIntegrity(String versionToCheck){
 		Set<Content> allObjectsSeen = new HashSet<Content>();
@@ -431,15 +422,15 @@ public class GitContentManager implements IContentManager {
 	/**
 	 * Unpack the content objects into one big set. Useful for validation but could produce a very large set
 	 * 
-	 * @param c
-	 * @return
+	 * @param content content object to flatten
+	 * @return Set of content objects comprised of all children and the parent.
 	 */
-	private Set<Content> flattenContentObjects(Content c){
+	private Set<Content> flattenContentObjects(Content content){
 		Set<Content> setOfContentObjects = new HashSet<Content>();
 		
-		if(!c.getChildren().isEmpty()){
+		if(!content.getChildren().isEmpty()){
 
-			List<ContentBase> children = c.getChildren();
+			List<ContentBase> children = content.getChildren();
 			
 			for(ContentBase child : children){
 				setOfContentObjects.add((Content) child);
@@ -447,7 +438,7 @@ public class GitContentManager implements IContentManager {
 			}
 		}
 
-		setOfContentObjects.add(c);
+		setOfContentObjects.add(content);
 		
 		return setOfContentObjects;
 	}

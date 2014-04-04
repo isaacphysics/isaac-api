@@ -11,9 +11,11 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
@@ -27,50 +29,44 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.repackaged.com.google.common.base.Preconditions;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Authenticator  {
 
 	private static final Logger log = LoggerFactory.getLogger(GoogleAuthenticator.class);
-
-	private String AUTH_RESOURCE_LOC;	// location of json file in resource path that contains the client id / secret
-	private String CALLBACK_URI;
-	private Collection<String> SCOPE;
 	
-	private final JsonFactory JSON_FACTORY = new JacksonFactory();
-	private final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+	private final JsonFactory jsonFactory;
+	private final HttpTransport httpTransport;
 	
-	private WeakHashMap<String, Credential> credentialStore;
-	private GoogleClientSecrets clientSecrets = null;
-	private GoogleAuthorizationCodeFlow flow;
+	private final GoogleClientSecrets clientSecrets;
 
-	private String antiForgeryStateToken;
+	private final String callbackUri;
+	private final Collection<String> requestedScopes;
 
-	public GoogleAuthenticator(String clientSecretLocation, String callBackURI, String requestedScopes){
+	// weak cache for mapping userInformation to credentials
+	private static WeakHashMap<String, Credential> credentialStore;
+
+	@Inject
+	public GoogleAuthenticator(@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) String clientSecretLocation, @Named(Constants.GOOGLE_CALLBACK_URI)String callbackUri, @Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes) throws IOException{
 		try {
-			AUTH_RESOURCE_LOC = clientSecretLocation;
-			SCOPE =  Arrays.asList(requestedScopes.split(";"));
-			CALLBACK_URI = callBackURI;
+			this.jsonFactory = new JacksonFactory();
+			this.httpTransport = new NetHttpTransport();
 			
-			getClientCredential();
-			flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT,
-					JSON_FACTORY, 
-					clientSecrets.getDetails().getClientId(), 
-					clientSecrets.getDetails().getClientSecret(), SCOPE)
-					.setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance())
-					.build();
-			if(credentialStore == null)
+			this.clientSecrets = getClientCredential(clientSecretLocation);
+			this.requestedScopes =  Arrays.asList(requestedScopes.split(";"));
+			this.callbackUri = callbackUri;
+
+			if(null == credentialStore)
 				credentialStore = new WeakHashMap<String, Credential>();
 			
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException exception) {
 			log.error("IOException occurred while trying to initialise the Google Authenticator.");
+			throw exception;
 		}
-
-		generateAntiForgeryStateToken();
 	}
 
 	@Override
@@ -82,20 +78,18 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	public String getAuthorizationUrl(String emailAddress) throws IOException {
 		GoogleAuthorizationCodeRequestUrl urlBuilder = null;
 		urlBuilder = new GoogleAuthorizationCodeRequestUrl(
-				getClientCredential().getDetails().getClientId(),
-				CALLBACK_URI,
-				SCOPE);
-		//.setAccessType("online")
-		//.setApprovalPrompt("force");
+				clientSecrets.getDetails().getClientId(),
+				callbackUri,
+				requestedScopes);
+//		.setAccessType("online")
+//		.setApprovalPrompt("force");
 
-		urlBuilder.set("state", this.antiForgeryStateToken);
+		urlBuilder.set("state", getAntiForgeryStateToken());
 
 		if (emailAddress != null) {
 			urlBuilder.set("user_id", emailAddress);
 		}
 
-		// generatedNewAntiForgery Token for the next person.
-		generateAntiForgeryStateToken();
 		return urlBuilder.build();
 	}
 
@@ -103,62 +97,47 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	public String extractAuthCode(String url) throws IOException {
 		AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url.toString());
 
-		if (authResponse.getError() != null) {
-			log.info("User denied access to our app.");
-		} else {
+		if (authResponse.getError() == null) {
 			log.info("User granted access to our app.");
+		} else {
+			log.info("User denied access to our app.");
 		}
 
 		return authResponse.getCode();
 	}
 
 	@Override
-	public String exchangeCode(String authorizationCode) throws IOException, CodeExchangeException {
+	public synchronized String exchangeCode(String authorizationCode) throws IOException, CodeExchangeException {
 		try {
 			GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
-					HTTP_TRANSPORT, JSON_FACTORY, getClientCredential().getDetails().getClientId(), getClientCredential().getDetails().getClientSecret(),
-					authorizationCode, CALLBACK_URI).execute();
+					httpTransport, jsonFactory, clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(),
+					authorizationCode, callbackUri).execute();
+
+			// I don't really want to use the flow storage but it seems to be easier to get credentials this way.
+			GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport,
+					jsonFactory, 
+					clientSecrets.getDetails().getClientId(), 
+					clientSecrets.getDetails().getClientSecret(), requestedScopes)
+					.setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance())
+					.build();
 			
-			//Credential credential = new Credential(BearerToken.authorizationHeaderAccessMethod()).setFromTokenResponse(response);
 			Credential credential = flow.createAndStoreCredential(response, authorizationCode);
 			
 			String internalReferenceToken = UUID.randomUUID().toString();
 			
 			credentialStore.put(internalReferenceToken, credential);
 			
-			// I don't really want to use the flow storage.
 			flow.getCredentialDataStore().clear();
 			
 			return internalReferenceToken;
 		} catch (IOException e) {
-			System.err.println("An error occurred: " + e);
+			System.err.println("An error occurred during code exchange: " + e);
 			throw new CodeExchangeException();
 		}
 	}
 
-	private GoogleClientSecrets getClientCredential() throws IOException {
-		if (clientSecrets == null) {
-			// load up the client secrets from the file system.
-			InputStream inputStream = new FileInputStream(AUTH_RESOURCE_LOC); 
-			
-			Preconditions.checkNotNull(inputStream, "missing resource %s", AUTH_RESOURCE_LOC);
-
-			InputStreamReader isr = new InputStreamReader(inputStream);
-
-			clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, isr);
-			Preconditions
-			.checkArgument(
-					!clientSecrets.getDetails().getClientId().startsWith("[[")
-					&& !clientSecrets.getDetails().getClientSecret()
-					.startsWith("[["),
-					"Please enter your client ID and secret from the Google APIs Console in %s from the "
-							+ "root samples directory", AUTH_RESOURCE_LOC);
-		}
-		return clientSecrets;
-	}
-
 	@Override
-	public User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException {
+	public synchronized User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		
 		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).build();
@@ -180,13 +159,30 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 	@Override
 	public String getAntiForgeryStateToken(){
+		String antiForgerySalt = new BigInteger(130, new SecureRandom()).toString(32);
+
+		String antiForgeryStateToken = "google"+antiForgerySalt;
+		
 		return antiForgeryStateToken;
 	}
 	
-	private void generateAntiForgeryStateToken(){
-		String antiForgerySalt = new BigInteger(130, new SecureRandom()).toString(32);
+	private GoogleClientSecrets getClientCredential(String clientSecretLocation) throws IOException {
+		Validate.notNull(clientSecretLocation, "Missing resource %s", clientSecretLocation);
 
-		antiForgeryStateToken = "google"+antiForgerySalt;
+		GoogleClientSecrets clientSecret = null;
+		
+		// load up the client secrets from the file system.
+		InputStream inputStream = new FileInputStream(clientSecretLocation); 
+		InputStreamReader isr = new InputStreamReader(inputStream);
+
+		clientSecret = GoogleClientSecrets.load(jsonFactory, isr);
+//		Preconditions
+//		.checkArgument(
+//				!clientSecret.getDetails().getClientId().startsWith("[[")
+//				&& !clientSecret.getDetails().getClientSecret()
+//				.startsWith("[["),
+//				"Please enter your client ID and secret from the Google APIs Console in %s from the "
+//						+ "root samples directory", clientSecretLocation);
+		return clientSecret;
 	}
-
 }

@@ -8,6 +8,11 @@ import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Figure DTO
+ * To be used anywhere that a figure should be displayed in the CMS.
+ *
+ */
 @JsonType("figure")
 public class Figure extends Content {
 	
