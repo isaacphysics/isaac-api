@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.CanceledException;
 import org.eclipse.jgit.api.errors.DetachedHeadException;
@@ -49,7 +50,6 @@ import com.jcraft.jsch.JSchException;
 public class GitDb { 
 	private static final Logger log = LoggerFactory.getLogger(GitDb.class);
 
-	private final String localRepositoryLocation;
 	private final String privateKey;
 	private final String sshFetchUrl;
 	
@@ -65,12 +65,14 @@ public class GitDb {
 	 */
 	@Inject
 	public GitDb(String repoLocation) throws IOException{
+		
+		Validate.notBlank(repoLocation);
+		
 		// unused for this constructor
 		this.privateKey = null;
 		this.sshFetchUrl = null;
 		
-		this.localRepositoryLocation = repoLocation;
-		gitHandle = Git.open(new File(this.localRepositoryLocation));
+		gitHandle = Git.open(new File(repoLocation));
 	}
 	
 	/**
@@ -87,12 +89,29 @@ public class GitDb {
 	 */
 	@Inject
 	public GitDb(String repoLocation, String sshFetchUrl, String privateKeyFileLocation) throws IOException{
-		this.localRepositoryLocation = repoLocation;
+		Validate.notBlank(repoLocation);
+		
 		this.sshFetchUrl = sshFetchUrl;
 		this.privateKey = privateKeyFileLocation;
 		
-		gitHandle = Git.open(new File(this.localRepositoryLocation));
+		gitHandle = Git.open(new File(repoLocation));
 	}	
+	
+	/**
+	 * Create a new instance of a GitDb object.
+	 * 
+	 * This is meant to be used for unit testing, allowing injection of a mocked Git object.
+	 * 
+	 * @param gitHandle - The (probably mocked) Git object to use.
+	 */
+	public GitDb(Git gitHandle) {
+		Validate.notNull(gitHandle);
+		
+		this.privateKey = null;
+		this.sshFetchUrl = null;
+		
+		this.gitHandle = gitHandle;
+	}
 
 	/**
 	 * getFileByCommitSHA
@@ -135,10 +154,9 @@ public class GitDb {
 	 * @throws UnsupportedOperationException
 	 */
 	public TreeWalk getTreeWalk(String sha, String searchString) throws IOException, UnsupportedOperationException{
-		if(null == sha || null == searchString){
-			return null;
-		}
-
+		Validate.notBlank(sha);
+		Validate.notNull(searchString);
+		
 		ObjectId commitId = gitHandle.getRepository().resolve(sha);
 		if(null == commitId){
 			log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
