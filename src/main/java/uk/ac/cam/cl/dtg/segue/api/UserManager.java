@@ -73,9 +73,12 @@ public class UserManager{
 		}
 
 		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.
-		IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
-
-		if(null == federatedAuthenticator){
+		IFederatedAuthenticator federatedAuthenticator = null;
+		
+		try{
+			federatedAuthenticator = mapToProvider(provider);
+		}
+		catch(IllegalArgumentException e){
 			log.error("Unable to map to an authenticator. The provider: " + provider + " is unknown");
 			return Response.serverError().entity("Failed to identify authenticator.").build();
 		}
@@ -111,8 +114,10 @@ public class UserManager{
 				e.printStackTrace();
 			}
 		}
-	
-		return Response.serverError().entity("We should never see this if a correct provider has been given").build();
+		
+		// We should never see this if a correct provider has been given
+		log.error("Unknown type of authentication provider... Failing to authenticate");
+		return Response.serverError().build();			
 	}
 
 	/**
@@ -134,11 +139,15 @@ public class UserManager{
 			return Response.ok().entity(currentUser).build();
 		}
 
-		IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
-
-		if(null == federatedAuthenticator){
-			log.error("Unable to identify authenticator");
-			return Response.serverError().entity("Unable to identify authenticator").build();
+		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.
+		IFederatedAuthenticator federatedAuthenticator = null;
+		
+		try{
+			federatedAuthenticator = mapToProvider(provider);
+		}
+		catch(IllegalArgumentException e){
+			log.error("Unable to map to an authenticator. The provider: " + provider + " is unknown");
+			return Response.serverError().entity("Failed to identify authenticator.").build();
 		}
 
 		// if we are an OAuth2Provider complete next steps of oauth
@@ -146,7 +155,7 @@ public class UserManager{
 			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
 			// verify there is no cross site request forgery going on.
-			if(!ensureNoCSRF(request) || request.getQueryString() == null)
+			if(request.getQueryString() == null || !ensureNoCSRF(request))
 				return Response.status(401).entity("CSRF check failed.").build();
 
 			// this will have our authorization code within it.
@@ -183,10 +192,10 @@ public class UserManager{
 					AuthenticationProvider providerReference = AuthenticationProvider.valueOf(provider.toUpperCase());					
 					User localUserInformation = this.getUserFromLinkedAccount(providerReference, providerId);
 
-					//decide if we need to register a new user or link to an existing account
+					// decide if we need to register a new user or link to an existing account
 					if(null == localUserInformation){
 						log.info("New registration - User does not already exist.");
-						//register user
+						// register user
 						String localUserId = registerUser(userFromProvider, providerReference, providerId);
 						localUserInformation = this.database.getById(localUserId);
 						
@@ -217,7 +226,17 @@ public class UserManager{
 		return Response.ok().build();
 	}
 	
+	/**
+	 * This method will attempt to find a segue user using a 3rd party provider and a unique id that identifies the user to the provider. 
+	 * 
+	 * @param provider - the provider that we originally validated with
+	 * @param providerId - the unique ID of the user as given to us from the provider.
+	 * @return A user object or null if we were unable to find the user with the information provided.
+	 */
 	public User getUserFromLinkedAccount(AuthenticationProvider provider, String providerId){
+		Validate.notNull(provider);
+		Validate.notBlank(providerId);
+		
 		User user = database.getByLinkedAccount(provider, providerId);
 		if(null == user){
 			log.info("Unable to locate user based on provider information provided.");			
@@ -231,6 +250,8 @@ public class UserManager{
 	 * @return Returns the current user DTO if we can get it or null if user is not currently logged in
 	 */
 	public User getCurrentUser(HttpServletRequest request){
+		Validate.notNull(request);
+		
 		// get the current user based on their session id information.
 		String currentUserId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
 		
@@ -255,7 +276,13 @@ public class UserManager{
 	 * @param request - from the current user
 	 */
 	public void logUserOut(HttpServletRequest request){
-		request.getSession().invalidate();
+		Validate.notNull(request);
+		try{
+			request.getSession().invalidate();			
+		}
+		catch(IllegalStateException e){
+			log.info("The session has already been invalidated. Unable to logout again...");
+		}
 	}
 	
 	/**
@@ -265,6 +292,9 @@ public class UserManager{
 	 * @param userId
 	 */
 	public void createSession(HttpServletRequest request, String userId){		
+		Validate.notNull(request);
+		Validate.notBlank(userId);
+		
 		String currentDate = new SimpleDateFormat(DATE_FORMAT).format(new Date());
 		String sessionId =  request.getSession().getId();
 		String sessionHMAC = this.calculateHMAC(hmacSalt+userId + sessionId + currentDate, userId + sessionId + currentDate);
@@ -282,7 +312,9 @@ public class UserManager{
 	 * @param request
 	 * @return True if we are happy, false if we are not.
 	 */
-	public boolean validateUsersSession(HttpServletRequest request){		
+	public boolean validateUsersSession(HttpServletRequest request){
+		Validate.notNull(request);
+		
 		String userId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
 		String currentDate = (String) request.getSession().getAttribute(Constants.DATE_SIGNED);
 		String sessionId = (String) request.getSession().getAttribute(Constants.SESSION_ID);
@@ -326,6 +358,8 @@ public class UserManager{
 	}
 
 	private IFederatedAuthenticator mapToProvider(String provider){
+		Validate.notEmpty(provider, "Provider name must not be empty or null if we are going to map it to an implementation.");
+		
 		AuthenticationProvider enumProvider = null;
 		try{
 			enumProvider = AuthenticationProvider.valueOf(provider.toUpperCase());
@@ -352,6 +386,8 @@ public class UserManager{
 	 * @return True if we are satisfied that they match and false if we think there is a problem.
 	 */
 	private boolean ensureNoCSRF(HttpServletRequest request){
+		Validate.notNull(request);
+		
 		// to deal with cross site request forgery
 		String csrfTokenFromUser = (String) request.getSession().getAttribute("state");
 		String csrfTokenFromProvider = request.getParameter("state");
@@ -378,5 +414,5 @@ public class UserManager{
 	private String registerUser(User user, AuthenticationProvider provider, String providerId){
 		String userId = database.register(user, provider, providerId);
 		return userId;
-	}	
+	}
 }
