@@ -140,7 +140,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	public synchronized User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		
-		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).build();
+		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).setApplicationName("Segue").build();
 		Userinfoplus userInfo = null;
 
 		try {
