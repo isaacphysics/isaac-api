@@ -7,7 +7,6 @@ import java.io.IOException;
 import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -29,7 +28,7 @@ public class GitDbTest {
 		PowerMock.replay(Git.class);
 		
 		try {
-			GitDb gitDb = new GitDb("");
+			new GitDb("");
 			fail("GitDb constructor was given an empty string, but didn't throw an exception");
 		} catch (IllegalArgumentException e) { 
 			// Exception correctly thrown.
@@ -38,7 +37,7 @@ public class GitDbTest {
 		}
 		
 		try {
-			GitDb gitDb = new GitDb((String)null);
+			new GitDb((String)null);
 			fail("GitDb constructor was given null, but didn't throw an exception");
 		} catch (NullPointerException e) { 
 			// Exception correctly thrown.
