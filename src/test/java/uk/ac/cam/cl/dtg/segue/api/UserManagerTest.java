@@ -9,9 +9,12 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
@@ -21,6 +24,7 @@ import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
+@PowerMockIgnore({"javax.ws.*"})
 public class UserManagerTest {
 
 	private IUserDataManager dummyDatabase;
@@ -129,29 +133,29 @@ public class UserManagerTest {
 	// Not logged in
 	@Test
 	public void testAuthenticateWithNonNullBadProvider() {
-//		// Object Setup		
-//		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
-//		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-//		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-//
-//		// Setup object under test
-//		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
-//
-//		// method param setup for method under test
-//		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-//		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-//		
-//		EasyMock.expect(request.getSession()).andReturn(dummySession);
-//		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
-//		
-//		EasyMock.replay(dummySession);
-//		EasyMock.replay(request);
-//		EasyMock.replay(dummyDatabase);
-//		
-//		Response r = userManager.authenticate(request, "BAD_PROVIDER!!");
-//		
-//		assertTrue(r.getStatus() == 500);
-//		EasyMock.verify(dummyDatabase, dummySession, request);
+		// Object Setup		
+		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
+		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+
+		// Setup object under test
+		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
+
+		// method param setup for method under test
+		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
+		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+		
+		EasyMock.expect(request.getSession()).andReturn(dummySession);
+		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+		
+		EasyMock.replay(dummySession);
+		EasyMock.replay(request);
+		EasyMock.replay(dummyDatabase);
+		
+		Response r = userManager.authenticate(request, "BAD_PROVIDER!!");
+		
+		assertTrue(r.getStatus() == 500);
+		EasyMock.verify(dummyDatabase, dummySession, request);
 	}
 	
 	// Test things work...
