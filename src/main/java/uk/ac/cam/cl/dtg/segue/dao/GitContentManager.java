@@ -369,10 +369,10 @@ public class GitContentManager implements IContentManager {
 	 * This method will attempt to traverse the cache to ensure that all content references are valid.
 	 * TODO: Make this more efficient or only call it on demand?
 	 * 
-	 * @param versionToCheck
+	 * @param sha
 	 * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
 	 */
-	private boolean validateReferentialIntegrity(String versionToCheck){
+	private boolean validateReferentialIntegrity(String sha){
 		Set<Content> allObjectsSeen = new HashSet<Content>();
 		
 		Set<String> expectedIds = new HashSet<String>();
@@ -380,7 +380,7 @@ public class GitContentManager implements IContentManager {
 		Set<String> missingContent = new HashSet<String>();
 		
 		// Build up a set of all content (and content fragments for validation)
-		for(Content c : gitCache.get(versionToCheck).values()){			
+		for(Content c : gitCache.get(sha).values()){			
 			allObjectsSeen.addAll(this.flattenContentObjects(c));
 		}
 		
@@ -398,7 +398,7 @@ public class GitContentManager implements IContentManager {
 			if(c.getType().equals("image")){
 				Figure f = (Figure) c;
 				
-				if(f.getSrc() != null && !f.getSrc().startsWith("http") && !database.verifyGitObject(versionToCheck, f.getSrc())){
+				if(f.getSrc() != null && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())){
 					log.warn("Unable to find Image: " + f.getSrc() + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
 					missingContent.add("Image: " + f.getSrc());
 				}					
