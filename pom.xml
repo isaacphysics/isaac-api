@@ -167,6 +167,19 @@
 				<artifactId>maven-war-plugin</artifactId>
 				<version>2.4</version>
 			</plugin>
+			<plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-surefire-plugin</artifactId>
+			    <version>2.17</version>
+			    <configuration>
+			    	<forkMode>pertest</forkMode> 
+			        <forkCount>3</forkCount>
+			        <reuseForks>false</reuseForks>
+			        <configuration>
+			          <useSystemClassLoader>true</useSystemClassLoader>
+			        </configuration>			        
+			    </configuration>
+			  </plugin>			
 		</plugins>
 		<resources>
 		</resources>
