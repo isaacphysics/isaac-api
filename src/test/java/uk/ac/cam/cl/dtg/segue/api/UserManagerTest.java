@@ -11,10 +11,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 
-import org.easymock.EasyMock;
+import static org.easymock.EasyMock.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
@@ -24,7 +23,6 @@ import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 
-@PowerMockIgnore({"javax.ws.*"})
 public class UserManagerTest {
 
 	private IUserDataManager dummyDatabase;
@@ -34,7 +32,7 @@ public class UserManagerTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		this.dummyDatabase = EasyMock.createMock(IUserDataManager.class);
+		this.dummyDatabase = createMock(IUserDataManager.class);
 		this.dummyHMACSalt = "BOB";
 		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 	}
@@ -68,7 +66,7 @@ public class UserManagerTest {
 	@Test
 	public void testGetCurrentUserNotLoggedIn() {
 		// Object Setup		
-		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 
@@ -76,18 +74,18 @@ public class UserManagerTest {
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
-		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-		EasyMock.expect(request.getSession()).andReturn(dummySession);
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null);
+		HttpSession dummySession = createMock(HttpSession.class);
+		HttpServletRequest request = createMock(HttpServletRequest.class);
+		expect(request.getSession()).andReturn(dummySession);
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null);
 		
-		EasyMock.replay(dummySession);
-		EasyMock.replay(request);
-		EasyMock.replay(dummyDatabase);
+		replay(dummySession);
+		replay(request);
+		replay(dummyDatabase);
 		
 		// test method returns null when we can't find a session variable set for the user.
 		assertTrue(userManager.getCurrentUser(request) == null);
-		EasyMock.verify(dummyDatabase, dummySession, request);
+		verify(dummyDatabase, dummySession, request);
 	}
 	
 	/**
@@ -98,7 +96,7 @@ public class UserManagerTest {
 	@Test
 	public void testGetCurrentUserIsAuthenticatedValidHMAC() {
 		// Object Setup		
-		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 
@@ -106,35 +104,35 @@ public class UserManagerTest {
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
-		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+		HttpSession dummySession = createMock(HttpSession.class);
+		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
-		EasyMock.expect(request.getSession()).andReturn(dummySession).times(5);
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.HMAC)).andReturn("UEwiXcJvKskSf3jyuQCnNPrXwBU=").atLeastOnce();
+		expect(request.getSession()).andReturn(dummySession).times(5);
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.HMAC)).andReturn("UEwiXcJvKskSf3jyuQCnNPrXwBU=").atLeastOnce();
 		
-		EasyMock.replay(dummySession);
-		EasyMock.replay(request);
+		replay(dummySession);
+		replay(request);
 		
 		User returnUser = new User("533ee66842f639e95ce35e29", "Test", "Test", "", "", "", "", false, new Date());
 		
-		EasyMock.expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(returnUser);
-		EasyMock.replay(dummyDatabase);
+		expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(returnUser);
+		replay(dummyDatabase);
 
 		User returnedUser = null;
 		returnedUser = userManager.getCurrentUser(request);
 		
 		assertTrue(null != returnedUser);
-		EasyMock.verify(dummyDatabase, dummySession, request);
+		verify(dummyDatabase, dummySession, request);
 	}
 	
 	// Not logged in
 	@Test
 	public void testAuthenticateWithNonNullBadProvider() {
-		// Object Setup		
-		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+//		// Object Setup		
+		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 
@@ -142,27 +140,27 @@ public class UserManagerTest {
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
-		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+		HttpSession dummySession = createMock(HttpSession.class);
+		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
-		EasyMock.expect(request.getSession()).andReturn(dummySession);
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+		expect(request.getSession()).andReturn(dummySession);
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 		
-		EasyMock.replay(dummySession);
-		EasyMock.replay(request);
-		EasyMock.replay(dummyDatabase);
+		replay(dummySession);
+		replay(request);
+		replay(dummyDatabase);
 		
 		Response r = userManager.authenticate(request, "BAD_PROVIDER!!");
 		
 		assertTrue(r.getStatus() == 500);
-		EasyMock.verify(dummyDatabase, dummySession, request);
+		verify(dummyDatabase, dummySession, request);
 	}
 	
 	// Test things work...
 	@Test
 	public void testAuthenticateWithOAuthProvider() throws IOException {
 //		// Object Setup		
-//		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+//		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 //		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 //		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 //
@@ -170,25 +168,25 @@ public class UserManagerTest {
 //		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 //
 //		// method param setup for method under test
-//		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-//		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+//		HttpSession dummySession = createMock(HttpSession.class);
+//		HttpServletRequest request = createMock(HttpServletRequest.class);
 //		
-//		EasyMock.expect(request.getSession()).andReturn(dummySession).times(2);
-//		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+//		expect(request.getSession()).andReturn(dummySession).times(2);
+//		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 //		
-//		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
-//		EasyMock.expectLastCall().once();
+//		dummySession.setAttribute(<String>anyObject(), <String>anyObject());
+//		expectLastCall().once();
 //		
-//		EasyMock.replay(dummySession);
-//		EasyMock.replay(request);
-//		EasyMock.replay(dummyDatabase);
+//		replay(dummySession);
+//		replay(request);
+//		replay(dummyDatabase);
 //		
-//		EasyMock.expect(dummyGoogleAuth.getAuthorizationUrl()).andReturn("https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms");
-//		EasyMock.replay(dummyGoogleAuth);
+//		expect(dummyGoogleAuth.getAuthorizationUrl()).andReturn("https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms");
+//		replay(dummyGoogleAuth);
 //		
 //		Response r = userManager.authenticate(request, "google");
 //		assertTrue(r.getStatus() == 307);
-//		EasyMock.verify(dummyDatabase, dummySession, request);
+//		verify(dummyDatabase, dummySession, request);
 	}
 
 	@Test
@@ -196,7 +194,7 @@ public class UserManagerTest {
 //		StringBuffer sb = new StringBuffer("http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
 //		// TODO refactor to make it readable
 //		
-//		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+//		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 //		
 //		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 //		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
@@ -205,60 +203,60 @@ public class UserManagerTest {
 //		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 //
 //		// method param setup for method under test
-//		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-//		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-//		HttpServletResponse response = EasyMock.createMock(HttpServletResponse.class);
+//		HttpSession dummySession = createMock(HttpSession.class);
+//		HttpServletRequest request = createMock(HttpServletRequest.class);
+//		HttpServletResponse response = createMock(HttpServletResponse.class);
 //		
-//		EasyMock.expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-//		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+//		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
+//		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 //
 //		// Mock CSRF checks
-//		EasyMock.expect(dummySession.getAttribute("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
-//		EasyMock.expect(request.getParameter("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
+//		expect(dummySession.getAttribute("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
+//		expect(request.getParameter("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
 //
 //		// Mock URL params extract stuff
-//		EasyMock.expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
+//		expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
 //
-//		EasyMock.expect(request.getRequestURL()).andReturn(sb);
+//		expect(request.getRequestURL()).andReturn(sb);
 //		
 //		// Mock extract auth code call
-//		EasyMock.expect(dummyGoogleAuth.extractAuthCode("http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms"))
+//		expect(dummyGoogleAuth.extractAuthCode("http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms"))
 //		.andReturn("4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
 //
 //		// Mock exchange code for token call
-//		EasyMock.expect(dummyGoogleAuth.exchangeCode("4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI")).andReturn("MYPROVIDERREF");
+//		expect(dummyGoogleAuth.exchangeCode("4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI")).andReturn("MYPROVIDERREF");
 //
 //		// User object back from provider
 //		User providerUser = new User("MYPROVIDERREF","Test","test","","","","", false, new Date());
 //		
 //		// Mock get User Information from provider call
-//		EasyMock.expect(dummyGoogleAuth.getUserInfo("MYPROVIDERREF")).andReturn(providerUser);
+//		expect(dummyGoogleAuth.getUserInfo("MYPROVIDERREF")).andReturn(providerUser);
 //		
 //		// Expect this to be a new user and to register them
-//		EasyMock.expect(dummyDatabase.getByLinkedAccount(AuthenticationProvider.GOOGLE, "MYPROVIDERREF")).andReturn(null);
+//		expect(dummyDatabase.getByLinkedAccount(AuthenticationProvider.GOOGLE, "MYPROVIDERREF")).andReturn(null);
 //
 //		// A main part of the test is to check the below call happens
-//		EasyMock.expect(dummyDatabase.register(providerUser, AuthenticationProvider.GOOGLE, "MYPROVIDERREF")).andReturn("New User").atLeastOnce();
-//		EasyMock.expect(dummyDatabase.getById("New User")).andReturn(new User("LocalRef","Test","test","","","","", false, new Date()));
+//		expect(dummyDatabase.register(providerUser, AuthenticationProvider.GOOGLE, "MYPROVIDERREF")).andReturn("New User").atLeastOnce();
+//		expect(dummyDatabase.getById("New User")).andReturn(new User("LocalRef","Test","test","","","","", false, new Date()));
 //		
 //		// Expect a session to be created
-//		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
-//		EasyMock.expectLastCall().atLeastOnce();
-//		EasyMock.expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
+//		dummySession.setAttribute(<String>anyObject(), <String>anyObject());
+//		expectLastCall().atLeastOnce();
+//		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
 //
-//		EasyMock.replay(dummySession);
-//		EasyMock.replay(request);
-//		EasyMock.replay(dummyGoogleAuth);
-//		EasyMock.replay(dummyDatabase);
+//		replay(dummySession);
+//		replay(request);
+//		replay(dummyGoogleAuth);
+//		replay(dummyDatabase);
 //		
 //		Response r = userManager.authenticateCallback(request, response, "google");
 //		assertTrue(r.getEntity() instanceof User);
-//		EasyMock.verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+//		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
 	}
 	
 	@Test
 	public void testAuthenticateCallbackBadCSRF() throws IOException, CodeExchangeException, NoUserIdException {
-//		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+//		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 //		
 //		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 //		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
@@ -267,33 +265,33 @@ public class UserManagerTest {
 //		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 //
 //		// method param setup for method under test
-//		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-//		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-//		HttpServletResponse response = EasyMock.createMock(HttpServletResponse.class);
+//		HttpSession dummySession = createMock(HttpSession.class);
+//		HttpServletRequest request = createMock(HttpServletRequest.class);
+//		HttpServletResponse response = createMock(HttpServletResponse.class);
 //		
-//		EasyMock.expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-//		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+//		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
+//		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 //
 //		// Mock URL params extract stuff
-//		EasyMock.expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
+//		expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
 //
 //		// Mock CSRF checks
-//		EasyMock.expect(dummySession.getAttribute("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
-//		EasyMock.expect(request.getParameter("state")).andReturn("FRAUDHASHAPPENED").atLeastOnce();
+//		expect(dummySession.getAttribute("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
+//		expect(request.getParameter("state")).andReturn("FRAUDHASHAPPENED").atLeastOnce();
 //		
-//		EasyMock.replay(dummySession);
-//		EasyMock.replay(request);
-//		EasyMock.replay(dummyGoogleAuth);
-//		EasyMock.replay(dummyDatabase);
+//		replay(dummySession);
+//		replay(request);
+//		replay(dummyGoogleAuth);
+//		replay(dummyDatabase);
 //		
 //		Response r = userManager.authenticateCallback(request, response, "google");
 //		assertTrue(r.getStatus() == 401);
-//		EasyMock.verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+//		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
 	}
 	
 	@Test
 	public void testAuthenticateCallbackNoCSRF() throws IOException, CodeExchangeException, NoUserIdException {
-//		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+//		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 //		
 //		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 //		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
@@ -302,34 +300,34 @@ public class UserManagerTest {
 //		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 //
 //		// method param setup for method under test
-//		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-//		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-//		HttpServletResponse response = EasyMock.createMock(HttpServletResponse.class);
+//		HttpSession dummySession = createMock(HttpSession.class);
+//		HttpServletRequest request = createMock(HttpServletRequest.class);
+//		HttpServletResponse response = createMock(HttpServletResponse.class);
 //		
-//		EasyMock.expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-//		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+//		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
+//		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 //
 //		// Mock URL params extract stuff
-//		EasyMock.expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
+//		expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
 //
 //		// Mock CSRF checks
-//		EasyMock.expect(dummySession.getAttribute("state")).andReturn(null).atLeastOnce();
-//		EasyMock.expect(request.getParameter("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
+//		expect(dummySession.getAttribute("state")).andReturn(null).atLeastOnce();
+//		expect(request.getParameter("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
 //		
-//		EasyMock.replay(dummySession);
-//		EasyMock.replay(request);
-//		EasyMock.replay(dummyGoogleAuth);
-//		EasyMock.replay(dummyDatabase);
+//		replay(dummySession);
+//		replay(request);
+//		replay(dummyGoogleAuth);
+//		replay(dummyDatabase);
 //		
 //		Response r = userManager.authenticateCallback(request, response, "google");
 //		assertTrue(r.getStatus() == 401);
-//		EasyMock.verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+//		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
 	}
 
 	@Test
 	public void testValidateUsersSessionSuccess() {
 		// Object Setup		
-		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 
@@ -337,30 +335,30 @@ public class UserManagerTest {
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
-		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+		HttpSession dummySession = createMock(HttpSession.class);
+		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
-		EasyMock.expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.HMAC)).andReturn("UEwiXcJvKskSf3jyuQCnNPrXwBU=").atLeastOnce();
+		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.HMAC)).andReturn("UEwiXcJvKskSf3jyuQCnNPrXwBU=").atLeastOnce();
 		
-		EasyMock.replay(dummySession);
-		EasyMock.replay(request);
-		EasyMock.replay(dummyDatabase);
+		replay(dummySession);
+		replay(request);
+		replay(dummyDatabase);
 
 		boolean valid = userManager.validateUsersSession(request);
 
 		// this should be a valid hmac
 		assertTrue(valid);
-		EasyMock.verify(dummyDatabase, dummySession, request);
+		verify(dummyDatabase, dummySession, request);
 	}
 	
 	@Test
 	public void testValidateBadUsersSessionFail() {
 		// Object Setup		
-		GoogleAuthenticator dummyGoogleAuth = EasyMock.createMock(GoogleAuthenticator.class);
+		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 
@@ -368,24 +366,24 @@ public class UserManagerTest {
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
-		HttpSession dummySession = EasyMock.createMock(HttpSession.class);
-		HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+		HttpSession dummySession = createMock(HttpSession.class);
+		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
-		EasyMock.expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
-		EasyMock.expect(dummySession.getAttribute(Constants.HMAC)).andReturn("BAD HMAC").atLeastOnce();
+		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.HMAC)).andReturn("BAD HMAC").atLeastOnce();
 		
-		EasyMock.replay(dummySession);
-		EasyMock.replay(request);
-		EasyMock.replay(dummyDatabase);
+		replay(dummySession);
+		replay(request);
+		replay(dummyDatabase);
 
 		// test
 		boolean valid = userManager.validateUsersSession(request);
 
 		// this should be a bad hmac. 
 		assertTrue(!valid);
-		EasyMock.verify(dummyDatabase, dummySession, request);
+		verify(dummyDatabase, dummySession, request);
 	}
 }
