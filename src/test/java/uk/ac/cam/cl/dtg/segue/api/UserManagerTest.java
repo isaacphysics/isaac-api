@@ -17,11 +17,11 @@ import static org.easymock.EasyMock.*;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dto.User;
@@ -41,7 +41,7 @@ public class UserManagerTest {
 	}
 	
 	@Test
-	public void testConstructorForBadInput(){
+	public void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown(){
 		try{
 			new UserManager(null, this.dummyHMACSalt, this.dummyProvidersMap);
 			fail("Expected a null pointer exception immediately");
@@ -67,16 +67,14 @@ public class UserManagerTest {
 	
 	// Not logged in
 	@Test
-	public void testGetCurrentUserNotLoggedIn() {
-		// Object Setup		
+	public void getCurrentUser_isNotLoggedIn_noUserObjectReturned() {
+		// Arrange	
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
 
-		// Setup object under test
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
-		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		expect(request.getSession()).andReturn(dummySession);
@@ -86,65 +84,66 @@ public class UserManagerTest {
 		replay(request);
 		replay(dummyDatabase);
 		
-		// test method returns null when we can't find a session variable set for the user.
-		assertTrue(userManager.getCurrentUser(request) == null);
+		// Act
+		User u = userManager.getCurrentUser(request);
+
+		// Assert
+		assertTrue(null == u);
 		verify(dummyDatabase, dummySession, request);
 	}
 	
-	/**
-	 * 
-	 * NOTE: if this unit test breaks it could be due to the HMAC SALT being changed on the local settings.
-	 * 
-	 */
+
 	@Test
-	public void testGetCurrentUserIsAuthenticatedValidHMAC() {
-		// Object Setup		
+	public void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() {
+		// Arrange		
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
+		
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
-		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
+		String validUserId = "533ee66842f639e95ce35e29";
+		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
+		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
+		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
+		User returnUser = new User(validUserId, "TestFirstName", "TestLastName", "", "", "", "", false, new Date());
+		
 		expect(request.getSession()).andReturn(dummySession).times(5);
-		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.HMAC)).andReturn("UEwiXcJvKskSf3jyuQCnNPrXwBU=").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(validUserId).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn(validDateString).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn(validSessionId).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.HMAC)).andReturn(validHMAC).atLeastOnce();
 		
 		replay(dummySession);
 		replay(request);
 		
-		User returnUser = new User("533ee66842f639e95ce35e29", "Test", "Test", "", "", "", "", false, new Date());
-		
 		expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(returnUser);
 		replay(dummyDatabase);
-
+		
+		// Act
 		User returnedUser = null;
 		returnedUser = userManager.getCurrentUser(request);
 		
-		assertTrue(null != returnedUser);
+		// Assert
 		verify(dummyDatabase, dummySession, request);
+		assertTrue(null != returnedUser && returnedUser instanceof User);
 	}
 	
-	// Not logged in
+
 	@Test
-	public void testAuthenticateWithNonNullBadProvider() {
-//		// Object Setup		
+	public void authenticate_badProviderGiven_givesServerErrorResponse() {
+		// Arrange
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
-
-		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
+		String someInvalidProvider = "BAD_PROVIDER!!";
+		int expectedResponseCode = 500;
 		
 		expect(request.getSession()).andReturn(dummySession);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
@@ -153,26 +152,27 @@ public class UserManagerTest {
 		replay(request);
 		replay(dummyDatabase);
 		
-		Response r = userManager.authenticate(request, "BAD_PROVIDER!!");
-		
-		assertTrue(r.getStatus() == 500);
+		// Act
+		Response r = userManager.authenticate(request, someInvalidProvider);
+
+		// Assert
+		assertTrue(r.getStatus() == expectedResponseCode);
 		verify(dummyDatabase, dummySession, request);
 	}
 	
-	// Test things work...
 	@Test
-	public void testAuthenticateWithOAuthProvider() throws IOException {
-//		// Object Setup		
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+	public void authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization() throws IOException {
+		// Arrange	
+		IOAuth2Authenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
+		providerMap.put(AuthenticationProvider.GOOGLE, (IFederatedAuthenticator) dummyGoogleAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
-		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
+		String exampleRedirectUrl = "https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
+		String someValidProviderString = "google";
+		int expectedResponseCode = 307;
 		
 		expect(request.getSession()).andReturn(dummySession).times(2);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
@@ -184,32 +184,38 @@ public class UserManagerTest {
 		replay(request);
 		replay(dummyDatabase);
 		
-		expect(dummyGoogleAuth.getAuthorizationUrl()).andReturn("https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms");
+		expect(dummyGoogleAuth.getAuthorizationUrl()).andReturn(exampleRedirectUrl);
 		replay(dummyGoogleAuth);
 		
-		Response r = userManager.authenticate(request, "google");
-		assertTrue(r.getStatus() == 307);
+		// Act
+		Response r = userManager.authenticate(request, someValidProviderString);
+
+		// Assert
 		verify(dummyDatabase, dummySession, request);
+		assertTrue(r.getStatus() == expectedResponseCode);
 	}
 
 	@Test
-	public void testAuthenticateCallbackRegisterNewUser() throws IOException, CodeExchangeException, NoUserIdException {
-		StringBuffer sb = new StringBuffer("http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
-		// TODO refactor to make it readable
-		
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
-		
+	public void authenticateCallback_checkNewUserIsAuthenticated_registerUserWithSegue() throws IOException, CodeExchangeException, NoUserIdException {
+		// Arrange
+		IOAuth2Authenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
+		providerMap.put(AuthenticationProvider.GOOGLE, (IFederatedAuthenticator)dummyGoogleAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		HttpServletResponse response = createMock(HttpServletResponse.class);
-		
+		StringBuffer sb = new StringBuffer("http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
+		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
+		String fullResponseUrlFromProvider = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
+		String authorizationCodeFromProviderUrl = "4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI";
+		String someProviderGeneratedLookupValue = "MYPROVIDERREF"; 
+		String someProviderUniqueUserId = "GOOGLEUSER-1";
+		String someSegueUserId = "533ee66842f639e95ce35e29";
+		String validOAuthProvider = "google";
+
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 
@@ -218,29 +224,28 @@ public class UserManagerTest {
 		expect(request.getParameter("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
 
 		// Mock URL params extract stuff
-		expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
+		expect(request.getQueryString()).andReturn(validQueryStringFromProvider).atLeastOnce();
 
 		expect(request.getRequestURL()).andReturn(sb);
 		
 		// Mock extract auth code call
-		expect(dummyGoogleAuth.extractAuthCode("http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms"))
-		.andReturn("4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
+		expect(dummyGoogleAuth.extractAuthCode(fullResponseUrlFromProvider)).andReturn(authorizationCodeFromProviderUrl);
 
 		// Mock exchange code for token call
-		expect(dummyGoogleAuth.exchangeCode("4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI")).andReturn("MYPROVIDERREF");
+		expect(dummyGoogleAuth.exchangeCode(authorizationCodeFromProviderUrl)).andReturn(someProviderGeneratedLookupValue);
 
 		// User object back from provider
-		User providerUser = new User("MYPROVIDERREF","Test","test","","","","", false, new Date());
+		User providerUser = new User(someProviderUniqueUserId,"TestFirstName","testLastName","","","","", false, new Date());
 		
 		// Mock get User Information from provider call
-		expect(dummyGoogleAuth.getUserInfo("MYPROVIDERREF")).andReturn(providerUser);
+		expect(((IFederatedAuthenticator)dummyGoogleAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(providerUser);
 		
-		// Expect this to be a new user and to register them
-		expect(dummyDatabase.getByLinkedAccount(AuthenticationProvider.GOOGLE, "MYPROVIDERREF")).andReturn(null);
+		// Expect this to be a new user and to register them (i.e. return null from database)
+		expect(dummyDatabase.getByLinkedAccount(AuthenticationProvider.GOOGLE, someProviderUniqueUserId)).andReturn(null);
 
 		// A main part of the test is to check the below call happens
-		expect(dummyDatabase.register(providerUser, AuthenticationProvider.GOOGLE, "MYPROVIDERREF")).andReturn("New User").atLeastOnce();
-		expect(dummyDatabase.getById("New User")).andReturn(new User("LocalRef","Test","test","","","","", false, new Date()));
+		expect(dummyDatabase.register(providerUser, AuthenticationProvider.GOOGLE, someProviderUniqueUserId)).andReturn(someSegueUserId).atLeastOnce();
+		expect(dummyDatabase.getById(someSegueUserId)).andReturn(new User(someSegueUserId,"TestFirstName","testLastName","","","","", false, new Date()));
 		
 		// Expect a session to be created
 		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
@@ -252,48 +257,57 @@ public class UserManagerTest {
 		replay(dummyGoogleAuth);
 		replay(dummyDatabase);
 		
-		Response r = userManager.authenticateCallback(request, response, "google");
-		assertTrue(r.getEntity() instanceof User);
+		// Act
+		Response r = userManager.authenticateCallback(request, response, validOAuthProvider);
+		
+		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+		assertTrue(r.getEntity() instanceof User);
+		assertTrue(r.getEntity() != null);
 	}
 	
 	@Test
-	public void testAuthenticateCallbackBadCSRF() throws IOException, CodeExchangeException, NoUserIdException {
+	public void authenticateCallback_checkInvalidCSRF_returnsUnauthorizedResponse() throws IOException, CodeExchangeException, NoUserIdException {
+		// Arrange
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
-		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		HttpServletResponse response = createMock(HttpServletResponse.class);
+		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
+		String someInvalidCSRFValue = "FRAUDHASHAPPENED";
+		String validOAuthProvider = "google";
+		int expectedResponseCode = 401;
 		
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 
 		// Mock URL params extract stuff
-		expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
+		expect(request.getQueryString()).andReturn(validQueryStringFromProvider).atLeastOnce();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
-		expect(request.getParameter("state")).andReturn("FRAUDHASHAPPENED").atLeastOnce();
+		expect(request.getParameter("state")).andReturn(someInvalidCSRFValue).atLeastOnce();
 		
 		replay(dummySession);
 		replay(request);
 		replay(dummyGoogleAuth);
 		replay(dummyDatabase);
-		
-		Response r = userManager.authenticateCallback(request, response, "google");
-		assertTrue(r.getStatus() == 401);
+
+		// Act
+		Response r = userManager.authenticateCallback(request, response, validOAuthProvider);
+
+		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+		assertTrue(r.getStatus() == expectedResponseCode);
 	}
 	
 	@Test
-	public void testAuthenticateCallbackNoCSRF() throws IOException, CodeExchangeException, NoUserIdException {
+	public void authenticateCallback_checkWhenNoCSRFProvided_respondWithUnauthorized() throws IOException, CodeExchangeException, NoUserIdException {
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
@@ -306,12 +320,16 @@ public class UserManagerTest {
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		HttpServletResponse response = createMock(HttpServletResponse.class);
+		String queryStringFromProviderWithCSRFToken = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
+		String validOAuthProvider = "google";
+		int expectedResponseCode = 401;
+		
 		
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
 
 		// Mock URL params extract stuff
-		expect(request.getQueryString()).andReturn("client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms").atLeastOnce();
+		expect(request.getQueryString()).andReturn(queryStringFromProviderWithCSRFToken).atLeastOnce();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute("state")).andReturn(null).atLeastOnce();
@@ -322,71 +340,81 @@ public class UserManagerTest {
 		replay(dummyGoogleAuth);
 		replay(dummyDatabase);
 		
-		Response r = userManager.authenticateCallback(request, response, "google");
-		assertTrue(r.getStatus() == 401);
+		// Act
+		Response r = userManager.authenticateCallback(request, response, validOAuthProvider);
+
+		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+		assertTrue(r.getStatus() == expectedResponseCode);
 	}
 
 	@Test
-	public void testValidateUsersSessionSuccess() {
-		// Object Setup		
+	public void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
+		// Arrange		
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
+		String validUserId = "533ee66842f639e95ce35e29";
+		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
+		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
+		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
+		
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.HMAC)).andReturn("UEwiXcJvKskSf3jyuQCnNPrXwBU=").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(validUserId).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn(validDateString).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn(validSessionId).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.HMAC)).andReturn(validHMAC).atLeastOnce();
 		
 		replay(dummySession);
 		replay(request);
 		replay(dummyDatabase);
-
+		
+		// Act
 		boolean valid = userManager.validateUsersSession(request);
 
-		// this should be a valid hmac
-		assertTrue(valid);
+		// Assert
 		verify(dummyDatabase, dummySession, request);
+		assertTrue(valid);
 	}
 	
 	@Test
-	public void testValidateBadUsersSessionFail() {
-		// Object Setup		
+	public void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
+		// Arrange
 		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
-
-		// Setup object under test
 		UserManager userManager = new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		
+		String validUserId = "533ee66842f639e95ce35e29";
+		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
+		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
+		String someInvalidHMAC = "BAD HMAC";		
+		
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
-		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn("533ee66842f639e95ce35e29").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn("Mon, 7 Apr 2014 11:21:13 BST").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn("5AC7F3523043FB791DFF97DA81350D22").atLeastOnce();
-		expect(dummySession.getAttribute(Constants.HMAC)).andReturn("BAD HMAC").atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(validUserId).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.DATE_SIGNED)).andReturn(validDateString).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.SESSION_ID)).andReturn(validSessionId).atLeastOnce();
+		expect(dummySession.getAttribute(Constants.HMAC)).andReturn(someInvalidHMAC).atLeastOnce();
 		
 		replay(dummySession);
 		replay(request);
 		replay(dummyDatabase);
 
-		// test
+		// Act
 		boolean valid = userManager.validateUsersSession(request);
 
-		// this should be a bad hmac. 
-		assertTrue(!valid);
+		// Assert 
 		verify(dummyDatabase, dummySession, request);
+		assertTrue(!valid);
 	}
 }

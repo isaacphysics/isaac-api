@@ -2,12 +2,10 @@ package uk.ac.cam.cl.dtg.segue.database;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.easymock.EasyMock;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.Test;
@@ -23,7 +21,7 @@ import org.powermock.modules.junit4.legacy.PowerMockRunner;
 public class GitDbTest {
 
 	@Test
-	public void testGitDbString() throws IOException {
+	public void gitDb_checkForBadParameters_exceptionsShouldBeThrown() throws IOException {
 		PowerMock.mockStatic(Git.class);
 		
 		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called. 
@@ -50,13 +48,13 @@ public class GitDbTest {
 	}
 
 	@Test
-	public void testGitDbStringStringString() {
+	public void gitDbOtherConstructor_checkForBadParameters_exceptionsShouldBeThrown() {
 		// Test that if you provide an empty string or null, an IllegalArgumentException gets thrown and git.open never gets called. 
 		
 		PowerMock.replay(Git.class);
 		
 		try {
-			GitDb gitDb = new GitDb("", null, null);
+			new GitDb("", null, null);
 			fail("GitDb constructor was given an empty string, but didn't throw an exception");
 		} catch (IllegalArgumentException e) { 
 			// Exception correctly thrown.
@@ -65,7 +63,7 @@ public class GitDbTest {
 		}
 		
 		try {
-			GitDb gitDb = new GitDb(null, null, null);
+			new GitDb(null, null, null);
 			fail("GitDb constructor was given null, but didn't throw an exception");
 		} catch (NullPointerException e) { 
 			// Exception correctly thrown.
@@ -81,15 +79,14 @@ public class GitDbTest {
 	}
 
 	@Test
-	public void testGetTreeWalk() throws IOException {
+	public void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
 		
 		Git git = EasyMock.createMock(Git.class);
 		
 		GitDb db = new GitDb(git);
-		TreeWalk tw;
 		
 		try {
-			tw = db.getTreeWalk("", "");
+			db.getTreeWalk("", "");
 			fail("Failed to throw required exception on blank sha.");
 		} catch (IllegalArgumentException e) {
 			// Exception correctly thrown.
@@ -98,7 +95,7 @@ public class GitDbTest {
 		}		
 		
 		try {
-			tw = db.getTreeWalk(null, "");
+			db.getTreeWalk(null, "");
 			fail("Failed to throw required exception on null sha.");
 		} catch (NullPointerException e) {
 			// Exception correctly thrown.
@@ -107,7 +104,7 @@ public class GitDbTest {
 		}
 		
 		try {
-			tw = db.getTreeWalk("sha", null);
+			db.getTreeWalk("sha", null);
 			fail("Failed to throw required exception on null path.");
 		} catch (NullPointerException e) {
 			// Exception correctly thrown.
