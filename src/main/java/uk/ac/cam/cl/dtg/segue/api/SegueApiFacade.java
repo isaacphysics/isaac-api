@@ -220,7 +220,7 @@ public class SegueApiFacade {
 		}
 
 		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
-		GitContentManager gcm = injector.getInstance(GitContentManager.class);
+		IContentManager gcm = injector.getInstance(IContentManager.class);
 
 		ByteArrayOutputStream fileContent = null;
 		String mimeType = MediaType.WILDCARD; 
@@ -408,22 +408,25 @@ public class SegueApiFacade {
 	@POST
 	@Produces("application/json")
 	@Path("admin/synchroniseDatastores")	
-	public Response synchroniseDataStores(){
+	public synchronized Response synchroniseDataStores(){
 		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-
-		log.info("Notified of content change - Synchronizing with Git.");
-
+		
 		String newVersion = contentPersistenceManager.getLatestVersionId();
-
-		if(newVersion != liveVersion){
+		
+		log.debug("Checking for content change - Synchronizing with Git.");
+		
+		if(!newVersion.equals(liveVersion)){
+			log.info("Changing live version to be " + newVersion + " from " + liveVersion);
 			liveVersion = newVersion;
 			dateOfVersionChange = new Date();
 			// TODO come up with a better cache eviction strategy.
 			contentPersistenceManager.clearCache();
 		}
-
-		log.info("Changing live version to be " + liveVersion);
+		else
+		{
+			log.debug("No change to live version required.");
+		}
 
 		return Response.ok(newVersion).build();
 	}
@@ -445,8 +448,7 @@ public class SegueApiFacade {
 		return Response.ok(searchResults).build();
 	}
 		
-	public Date dateOfVersionChange(){
+	public Date dateOfLastSegueVersionUpdate(){
 		return dateOfVersionChange;
 	}
-
 }
