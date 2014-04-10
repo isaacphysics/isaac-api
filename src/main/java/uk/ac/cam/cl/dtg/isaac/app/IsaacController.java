@@ -359,7 +359,7 @@ public class IsaacController {
 			globalMap.put("usersFirstname", "");
 		
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/M/yyyy");
-		String date = sdf.format(api.dateOfVersionChange());
+		String date = sdf.format(api.dateOfLastSegueVersionUpdate());
 		globalMap.put("dateOfVersionChange", date); //This actually represents the last time we checked and updated the live version number.
 		
 		return globalMap.build();
