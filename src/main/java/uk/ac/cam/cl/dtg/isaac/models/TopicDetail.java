@@ -14,6 +14,10 @@ import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @deprecated
+ *
+ */
 public class TopicDetail implements Comparable<TopicDetail> {
 
 	private static final Logger log = LoggerFactory
@@ -35,7 +39,7 @@ public class TopicDetail implements Comparable<TopicDetail> {
 		InputStream is = ContentDetail.class.getClassLoader()
 				.getResourceAsStream("topics.json");
 		if (is == null) {
-			log.error("Failed to find topics.json from context path");
+			log.debug("Failed to find topics.json from context path");
 		} else {
 			ObjectMapper objectMapper = new ObjectMapper();
 			try {

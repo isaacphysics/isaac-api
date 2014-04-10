@@ -69,7 +69,7 @@ public class ContentDetail implements Comparable<ContentDetail> {
 		InputStream is = ContentDetail.class.getClassLoader().getResourceAsStream(
 				"resources.json");
 		if (is == null) {
-			log.error("Failed to find resources.json from context path");
+			log.debug("Failed to find resources.json from context path");
 		} else {
 			ObjectMapper objectMapper = new ObjectMapper();
 			try {

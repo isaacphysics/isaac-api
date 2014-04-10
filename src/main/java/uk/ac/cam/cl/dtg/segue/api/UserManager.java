@@ -256,13 +256,13 @@ public class UserManager{
 		String currentUserId = (String) request.getSession().getAttribute(Constants.SESSION_USER_ID);
 		
 		if(null == currentUserId){
-			log.error("Current userID is null. Assume they are not logged in.");
+			log.debug("Current userID is null. Assume they are not logged in.");
 			return null;
 		}
 
 		// check if the users session is validated using our credentials.
 		if(!this.validateUsersSession(request)){
-			log.debug("User session has failed validation. Assume they are not logged in.");
+			log.info("User session has failed validation. Assume they are not logged in.");
 			return null;
 		}
 
