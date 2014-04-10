@@ -303,7 +303,7 @@ public class GitDb {
 			
 			log.debug("Fetched the following advertised Refs." + r.getAdvertisedRefs().toString());
 
-			log.info("Fetched latest from git result: " + this.getHeadSha() );
+			log.debug("Fetched latest from git result: " + this.getHeadSha() );
 		} catch (WrongRepositoryStateException e) {
 			e.printStackTrace();
 		} catch (InvalidConfigurationException e) {

@@ -118,7 +118,7 @@ public class ContentMapper {
 	 */
 	public synchronized void registerJsonTypes(Map<String, Class<? extends Content>> newTypes){
 		Validate.notNull(newTypes, "New types map cannot be null");
-		
+		log.info("Adding new content Types to Segue: " +  newTypes.keySet().toString());
 		jsonTypes.putAll(newTypes);
 	}
 	
