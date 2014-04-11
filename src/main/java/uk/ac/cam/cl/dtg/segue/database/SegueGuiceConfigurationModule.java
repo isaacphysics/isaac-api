@@ -40,9 +40,9 @@ import com.mongodb.DB;
  * This class is responsible for injecting configuration values for persistence related classes
  *
  */
-public class SeguePersistenceConfigurationModule extends AbstractModule {
+public class SegueGuiceConfigurationModule extends AbstractModule {
 
-	private static final Logger log = LoggerFactory.getLogger(SeguePersistenceConfigurationModule.class);
+	private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
 	// TODO: These are effectively singletons... 
 	// we only ever want there to be one instance of each of these.
@@ -51,7 +51,7 @@ public class SeguePersistenceConfigurationModule extends AbstractModule {
 	private static Client elasticSearchClient = null;
 
 
-	public SeguePersistenceConfigurationModule(){
+	public SegueGuiceConfigurationModule(){
 		try {
 			globalProperties = new PropertiesLoader("/config/segue-config.properties");
 			

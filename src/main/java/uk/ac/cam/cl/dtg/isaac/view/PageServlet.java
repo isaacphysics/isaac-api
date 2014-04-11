@@ -18,9 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
-import uk.ac.cam.cl.dtg.isaac.models.IndexPage;
-
+import uk.ac.cam.cl.dtg.isaac.app.IsaacGuiceConfigurationModule;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.google.template.soy.tofu.SoyTofuException;
 import com.papercut.silken.SilkenServlet;
 import com.papercut.silken.TemplateRenderer;
@@ -56,13 +57,15 @@ public class PageServlet extends HttpServlet {
 		res.setCharacterEncoding("UTF-8");
 		
 		TemplateRenderer renderer = SilkenServlet.getTemplateRenderer();
-
+		
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
+		IsaacController rc = injector.getInstance(IsaacController.class);
+		
 		String cContent = "";
 		try {
-			ImmutableMap<String,String> ij = IsaacController.getSoyGlobalMap(req);
+
+			ImmutableMap<String,String> ij = rc.getSoyGlobalMap(req);
 			String uri = req.getRequestURI().substring(((String)ij.get("contextPath")).length());
-			IsaacController rc = new IsaacController();
-			
 			if (uri.startsWith("/learn"))
 			{
 				Response restEasyResponse = rc.getTopics(req);
@@ -111,7 +114,7 @@ public class PageServlet extends HttpServlet {
 		
 		String cLayout = "";
 		try {
-			cLayout = renderer.render("rutherford.main", ImmutableMap.of("content", cContent), IsaacController.getSoyGlobalMap(req), Locale.ENGLISH);
+			cLayout = renderer.render("rutherford.main", ImmutableMap.of("content", cContent), rc.getSoyGlobalMap(req), Locale.ENGLISH);
 		} catch (SoyTofuException e) {
 			cLayout = "<i>No content available.</i>";
 			log.error("Error applying soy template", e);

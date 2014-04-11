@@ -30,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.models.ContentDetail;
 import uk.ac.cam.cl.dtg.isaac.models.ContentInfo;
 import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
@@ -39,7 +38,7 @@ import uk.ac.cam.cl.dtg.isaac.models.TopicDetail;
 import uk.ac.cam.cl.dtg.isaac.models.TopicPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.database.SeguePersistenceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.database.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Figure;
 import uk.ac.cam.cl.dtg.segue.dto.User;
@@ -61,17 +60,26 @@ import com.papercut.silken.TemplateRenderer;
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to the Segue api for use only on the Rutherford site.
  * 
  */
-@Path("/")
+@Path("api/")
 public class IsaacController {
 	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
-	private static SegueApiFacade api = new SegueApiFacade(new SegueConfigurationModule());
+	private static SegueApiFacade api;
 
 	// Map of contentID to detail
 	private Map<String, ContentDetail> contentDetails = ContentDetail.load();
 	
 	// Map of topicPath to detail
 	private Map<String, TopicDetail> topicDetails = TopicDetail.load();
+
+	public IsaacController(){
+		// Get an instance of the segue api so that we can service requests directly from it 
+		// without using the rest endpoints.
+		if(null == api){
+			Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+			api = injector.getInstance(SegueApiFacade.class);
+		}
+	}
 	
 	/**
 	 * Temporary solution to show all content of different types in no particular order. (For dev test)
@@ -246,7 +254,7 @@ public class IsaacController {
 		// TODO split last name and firstname.
 		User newUser = new User(null, name, null, email, role, school, year, feedback, new Date());
 		
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IUserDataManager registrationManager = injector.getInstance(IUserDataManager.class);
 
 		//boolean success = registrationManager.register(newUser) != null;
@@ -271,7 +279,7 @@ public class IsaacController {
 			@FormParam("message-text") String messageText,
 			@Context HttpServletRequest request){
 
-		Injector injector = Guice.createInjector(new SeguePersistenceConfigurationModule());
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
 		// construct a new instance of the mailer object
@@ -318,8 +326,8 @@ public class IsaacController {
 		return ImmutableMap.of("result", "success");
 	}
 	
-	public static ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
-		Injector injector = Guice.createInjector(new IsaacPersistenceConfigurationModule());
+	public ImmutableMap<String, String> getSoyGlobalMap(HttpServletRequest req) {
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);

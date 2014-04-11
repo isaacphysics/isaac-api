@@ -6,11 +6,14 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+
 public class PropertiesLoader {
 	private static final Logger log = LoggerFactory.getLogger(PropertiesLoader.class);
 	private final Properties loadedProperties;
 	private final String propertiesFile;
 	
+	@Inject
 	public PropertiesLoader(String propertiesFile) throws IOException{
 		this.loadedProperties = new Properties();
 		this.propertiesFile = propertiesFile;

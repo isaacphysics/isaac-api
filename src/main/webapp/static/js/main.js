@@ -7,7 +7,7 @@ function log(event) {
 	
 	if (continueLogging) {
 		
-		$.post(ij.proxyPath + "/segue/api/log", {sessionId: sessionStorage.sessionId,
+		$.post(ij.proxyPath + "/isaac/segue/api/log", {sessionId: sessionStorage.sessionId,
 			                               cookieId: docCookies.getItem("rutherfordUserId"),
 			                               event: JSON.stringify(event)})
 		 .success(function(e) {

@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.Validate;
 import org.mongojack.internal.MongoJackModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
@@ -22,6 +24,7 @@ import com.mongodb.DBObject;
  *
  */
 public class ContentMapper {
+	private static final Logger log = LoggerFactory.getLogger(ContentMapper.class);
 	
 	// Used for serialization into the correct POJO as well as deserialization. Currently depends on the string key being the same text value as the type field.
 	private final Map<String, Class<? extends Content>> jsonTypes;

@@ -12,7 +12,7 @@
 		// do nothing 
 	/* Base case we just spit out the literal content */
 	{elseif $contentObject.type == 'image' or $contentObject.type == 'figure'}
-		<img src="{$ij.proxyPath}/segue/api/content/getFileContent/{$ij.liveVersion}/{$contentObject.src}"/>
+		<img src="{$ij.proxyPath}/isaac/segue/api/content/getFileContent/{$ij.liveVersion}/{$contentObject.src}"/>
 		<figcaption>{$contentObject.value |noAutoescape}</figcaption>
 	{elseif isNonnull($contentObject.value)}
 		{$contentObject.value |noAutoescape}
