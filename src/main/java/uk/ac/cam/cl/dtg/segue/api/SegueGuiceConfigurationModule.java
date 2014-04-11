@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.database;
+package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -8,7 +8,6 @@ import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -19,6 +18,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManager;
 import uk.ac.cam.cl.dtg.segue.dao.UserDataManager;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.database.Mongo;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Figure;

@@ -31,7 +31,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.database.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -62,7 +61,7 @@ public class SegueApiFacade {
 	 * @param segueConfigurationModule
 	 */
 	@Inject
-	public SegueApiFacade(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueConfigurationModule segueConfigurationModule){
+	public SegueApiFacade(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule){
 		this.properties = properties;
 		
 		// we want to make sure we have set a default liveVersion number
@@ -86,7 +85,6 @@ public class SegueApiFacade {
 		if(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION).toLowerCase().equals("true")){
 			this.synchroniseDataStores();
 		}
-		log.info("NEW INSTANCE OF SEGUE FACADE CREATED!");
 	}
 
 	@POST

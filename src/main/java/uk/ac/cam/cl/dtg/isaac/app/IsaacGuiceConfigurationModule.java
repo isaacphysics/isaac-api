@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.api.ISegueConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -46,7 +46,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		// Currently all properties are being provided by the segue properties file.
 		//bind(PropertiesLoader.class).toInstance(globalProperties);
 		
-		bind(ISegueConfigurationModule.class).toInstance(new SegueConfigurationModule());
+		bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
 	}
 	
 	/**
@@ -57,7 +57,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 */
 	@Inject
 	@Provides
-	private static SegueApiFacade getSegueFacadeSingleton(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueConfigurationModule segueConfigurationModule){
+	private static SegueApiFacade getSegueFacadeSingleton(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule){
 		if(null == segueApi){
 			segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule);
 		}

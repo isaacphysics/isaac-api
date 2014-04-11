@@ -4,7 +4,7 @@ import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
-public interface ISegueConfigurationModule {
+public interface ISegueDTOConfigurationModule {
 	
 	/**
 	 * This method should provide a map of 'type' identifiers to Classes which extend the Segue Content DTO.

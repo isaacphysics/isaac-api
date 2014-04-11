@@ -8,10 +8,10 @@ import uk.ac.cam.cl.dtg.isaac.models.content.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.pages.IsaacQuestionPage;
-import uk.ac.cam.cl.dtg.segue.api.ISegueConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 
-public class SegueConfigurationModule implements ISegueConfigurationModule {
+public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 
 	@Override
 	public Map<String, Class<? extends Content>> getContentDataTransferObjectMap() {

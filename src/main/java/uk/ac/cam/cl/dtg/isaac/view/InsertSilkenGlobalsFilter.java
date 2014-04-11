@@ -16,7 +16,7 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.app.IsaacGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.database.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 
 @WebFilter("/*")
 public class InsertSilkenGlobalsFilter implements Filter {

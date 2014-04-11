@@ -9,7 +9,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.database.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is
