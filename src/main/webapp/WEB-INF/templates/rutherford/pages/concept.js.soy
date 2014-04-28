@@ -61,6 +61,7 @@
  * @param sidebarContentItems a list of contentInfo objects
  */
 {template .conceptList}
+{if $sidebarContentItems != null}
 <ul>
 {foreach $detail in $sidebarContentItems}
 	{if $detail}
@@ -73,4 +74,5 @@
 	<li><i>None</i></li> // TODO: This doesn't work - only if there are no ids. We need no *filtered* ids.
 {/foreach}
 </ul>
+{/if}
 {/template} 
