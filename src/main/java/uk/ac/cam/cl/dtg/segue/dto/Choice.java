@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Choice extends Content {
 
 	protected boolean correct;
-	protected String explanation;
+	protected ContentBase explanation;
 	
 	@JsonCreator
 	public Choice(@JsonProperty("_id") String _id,
@@ -35,7 +35,7 @@ public class Choice extends Content {
 				   @JsonProperty("published") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
 				   @JsonProperty("correct") boolean correct,
-				   @JsonProperty("explanation") String explanation) {
+				   @JsonProperty("explanation") ContentBase explanation) {
 		super(_id, 
 		      id, 
 		      title, 
@@ -67,11 +67,11 @@ public class Choice extends Content {
 		this.correct = correct;
 	}
 
-	public String getExplanation() {
+	public ContentBase getExplanation() {
 		return explanation;
 	}
 
-	public void setExplanation(String explanation) {
+	public void setExplanation(ContentBase explanation) {
 		this.explanation = explanation;
 	}
 
