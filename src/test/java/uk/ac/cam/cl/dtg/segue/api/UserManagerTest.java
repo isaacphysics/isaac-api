@@ -17,7 +17,9 @@ import static org.easymock.EasyMock.*;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -196,7 +198,7 @@ public class UserManagerTest {
 	}
 
 	@Test
-	public void authenticateCallback_checkNewUserIsAuthenticated_registerUserWithSegue() throws IOException, CodeExchangeException, NoUserIdException {
+	public void authenticateCallback_checkNewUserIsAuthenticated_registerUserWithSegue() throws IOException, CodeExchangeException, NoUserIdException, AuthenticatorSecurityException {
 		// Arrange
 		IOAuth2Authenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();

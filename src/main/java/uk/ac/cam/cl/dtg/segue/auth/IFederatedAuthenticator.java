@@ -22,7 +22,8 @@ public interface IFederatedAuthenticator {
 	 * @return User's information contained in a User DTO.
 	 * @throws NoUserIdException
 	 * @throws IOException 
+	 * @throws AuthenticatorSecurityException 
 	 */
-	public User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException;
+	public User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException, AuthenticatorSecurityException;
 	
 }

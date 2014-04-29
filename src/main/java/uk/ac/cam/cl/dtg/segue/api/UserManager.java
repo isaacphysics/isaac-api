@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
@@ -220,6 +221,8 @@ public class UserManager{
 			} catch (NoUserIdException e) {
 				e.printStackTrace();
 			} catch (CodeExchangeException e) {
+				e.printStackTrace();
+			} catch (AuthenticatorSecurityException e) {
 				e.printStackTrace();
 			}
 		}

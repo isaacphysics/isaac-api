@@ -24,6 +24,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -31,6 +32,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.api.services.oauth2.Oauth2;
+import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -49,7 +51,11 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
-
+	private static GoogleIdTokenVerifier tokenVerifier;
+		
+	// TODO move to property?
+	private static final String APPLICATION_NAME = "Segue"; 
+	
 	@Inject
 	public GoogleAuthenticator(@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) String clientSecretLocation, @Named(Constants.GOOGLE_CALLBACK_URI)String callbackUri, @Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes) throws IOException{
 		try {
@@ -62,6 +68,9 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 			if(null == credentialStore)
 				credentialStore = new WeakHashMap<String, Credential>();
+			
+			if(null == tokenVerifier)
+				tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
 			
 		} catch (IOException exception) {
 			log.error("IOException occurred while trying to initialise the Google Authenticator.");
@@ -122,25 +131,29 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 					.build();
 			
 			Credential credential = flow.createAndStoreCredential(response, authorizationCode);
-			
 			String internalReferenceToken = UUID.randomUUID().toString();
-			
 			credentialStore.put(internalReferenceToken, credential);
-			
 			flow.getCredentialDataStore().clear();
 			
 			return internalReferenceToken;
 		} catch (IOException e) {
-			System.err.println("An error occurred during code exchange: " + e);
+			log.error("An error occurred during code exchange: " + e);
 			throw new CodeExchangeException();
 		}
 	}
 
 	@Override
-	public synchronized User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException {
+	public synchronized User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException, AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
-		
-		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).setApplicationName("Segue").build();
+		if(verifyAccessTokenIsValid(credentials)){
+			log.debug("Successful Verification of access token with provider.");
+		}
+		else
+		{
+			log.error("Unable to verify access token - it could be an indication of fraud.");
+			throw new AuthenticatorSecurityException("Access token is invalid - the client id returned by the identity provider does not match ours.");
+		}
+		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).setApplicationName(APPLICATION_NAME).build();
 		Userinfoplus userInfo = null;
 
 		try {
@@ -178,5 +191,32 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 		clientSecret = GoogleClientSecrets.load(jsonFactory, isr);
 		
 		return clientSecret;
+	}
+
+	/**
+	 * This method will contact the identity provider to verify that the token is valid for our application.
+	 * 
+	 * This check is intended to mitigate against the confused deputy problem; although I suspect the google client might already do this.
+	 * 
+	 * TODO: Verify that the google server client library doesn't already do this check internally - if it does then we can remove this additional check.
+	 *  
+	 * @param credentials
+	 * @return true if the token passes our validation false if not.
+	 */
+	private boolean verifyAccessTokenIsValid(Credential credentials){
+		Validate.notNull(credentials, "Credentials cannot be null");
+		
+		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credentials).setApplicationName(APPLICATION_NAME).build();
+	    try {
+			Tokeninfo tokeninfo = oauth2.tokeninfo().setAccessToken(credentials.getAccessToken()).execute();
+
+	        if (tokeninfo.getAudience().equals(clientSecrets.getDetails().getClientId())){
+	        	return true;
+	        }
+	    } catch (IOException e) {
+	    	log.error("IO error while trying to validate oauth2 security token.");
+	    	e.printStackTrace();
+	    }
+	    return false;
 	}
 }
