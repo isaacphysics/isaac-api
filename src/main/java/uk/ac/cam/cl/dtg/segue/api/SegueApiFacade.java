@@ -106,7 +106,8 @@ public class SegueApiFacade {
 
 	/**
 	 * This method specifically uses mongodb to save content objects
-	 * @deprecated
+	 * 
+	 * @deprecated content objects are no longer saved in mongodb
 	 * @param docJson
 	 * @return
 	 */
@@ -153,7 +154,7 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("content/get/{id}")
+	@Path("content/{id}")
 	public Response getContentById(@PathParam("id") String id) {		
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
