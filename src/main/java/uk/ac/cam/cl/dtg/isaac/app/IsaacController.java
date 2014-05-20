@@ -179,11 +179,7 @@ public class IsaacController {
 	@Produces("application/json")
 	public ContentPage getConcept(@Context HttpServletRequest req,
 			@PathParam("concept") String concept) {
-		
-		Content c = (Content) api.getContentById(concept).getEntity();
-		
-		ContentPage cp = new ContentPage(c.getId(), c ,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));			
-		return cp;
+		return getContentPage(req, concept);
 	}
 
 	@GET
@@ -191,7 +187,16 @@ public class IsaacController {
 	@Produces("application/json")
 	public ContentPage getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
-		Content c = (Content) api.getContentById(question).getEntity();
+		
+		return getContentPage(req, question);
+	}
+	
+	@GET
+	@Path("contentPages/{contentPage}")
+	@Produces("application/json")
+	public ContentPage getContentPage(@Context HttpServletRequest req,
+			@PathParam("contentPage") String contentPage) {
+		Content c = (Content) api.getContentById(contentPage).getEntity();
 		
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(getSoyGlobalMap(req).get("proxyPath"), c));		
 		return cp;
