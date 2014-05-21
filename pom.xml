@@ -111,9 +111,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.papercut.silken</groupId>
-			<artifactId>silken</artifactId>
-			<version>2013-03-05</version>
+			<groupId>com.google.inject.extensions</groupId>
+			<artifactId>guice-multibindings</artifactId>
+			<version>3.0</version>
 		</dependency>
 
 		<dependency>
