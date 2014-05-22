@@ -43,7 +43,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
-@Path("segue/api/")
+@Path("api/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
@@ -323,7 +323,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("admin/getLiveVersion")
-	public Response getLiveVersion(){			
+	public Response getLiveVersion(){
 		return Response.ok().entity(liveVersion).build();
 	}	
 
