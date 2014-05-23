@@ -19,6 +19,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -82,7 +83,7 @@ public class SegueApiFacade {
 		}
 
 		// Check if we want to get the latest from git each time a request is made from segue. - Will add overhead
-		if(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION).toLowerCase().equals("true")){
+		if(Boolean.parseBoolean(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION))){
 			this.synchroniseDataStores();
 		}
 	}
@@ -149,16 +150,20 @@ public class SegueApiFacade {
 	 * 
 	 * Currently this method will return a single Json Object containing all of the fields available to the object retrieved from the database.
 	 * 
+	 * @param version - the version of the datastore to query
 	 * @param id - our id not the dbid
 	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("content/{id}")
-	public Response getContentById(@PathParam("id") String id) {		
+	@Path("content/{version}/{id}")
+	public Response getContentById(@PathParam("version") String version, @PathParam("id") String id) {		
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-
+		
+		if(null == version)
+			version = SegueApiFacade.liveVersion;
+		
 		Content c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists. 
@@ -187,10 +192,8 @@ public class SegueApiFacade {
 	 * @param id - our id not the dbid
 	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
 	 */
-	@GET
-	@Produces("application/json")
-	@Path("content/getByTags/{version}/{tags}")
-	public Response getContentByTags(@PathParam("version") String version, @PathParam("tags") String tags){
+	public Response getContentByTags(@PathParam("version") String version, @QueryParam("tags") String tags){
+		// TODO: make this work with get content list endpoint.
 		if(null == version || null == tags){
 			log.info("Bad input to api call.");
 			return Response.noContent().build();
@@ -217,7 +220,7 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Produces("*/*")
-	@Path("content/getFileContent/{version}/{path:.*}")
+	@Path("content/file_content/{version}/{path:.*}")
 	@Cache
 	public Response getFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
 		// TODO check if the content being requested is valid for this api call. e.g. only images?
@@ -295,7 +298,7 @@ public class SegueApiFacade {
 	 */
 	@PUT
 	@Produces("application/json")
-	@Path("admin/changeLiveVersion/{version}")
+	@Path("info/content_version/{version}")
 	public synchronized Response changeLiveVersion(@PathParam("version") String version){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
@@ -316,16 +319,28 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method will get the version id of the site that is currently set to be used as the live one.  
+	 * This method return a json response containing version related information
 	 * 
-	 * @return a version id
+	 * @return a version info as json response
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("admin/getLiveVersion")
-	public Response getLiveVersion(){
-		return Response.ok().entity(liveVersion).build();
-	}	
+	@Path("info/content_version")
+	public Response getLiveVersionInfo(){
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		ImmutableMap<String, String> result = new ImmutableMap.Builder<String,String>()
+				.put("live_version",liveVersion)
+				.put("latest_known_version", contentPersistenceManager.getLatestVersionId())
+				.build();
+		
+		return Response.ok().entity(result).build();
+	}
+	
+	public String getLiveVersion(){
+		return liveVersion;
+	}
 
 	/**
 	 * Get the details of the currently logged in user
@@ -409,12 +424,12 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method will try to bring the live version that segue is using to host content up-to-date with the latest in the git remote.
+	 * This method will try to bring the live version that Segue is using to host content up-to-date with the latest in the git remote.
 	 * @return
 	 */
 	@POST
 	@Produces("application/json")
-	@Path("admin/synchroniseDatastores")	
+	@Path("admin/synchronise_datastores")
 	public synchronized Response synchroniseDataStores(){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);

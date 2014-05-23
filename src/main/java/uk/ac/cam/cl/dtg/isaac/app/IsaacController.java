@@ -86,7 +86,7 @@ public class IsaacController {
 	public ContentPage getContentPage(@Context HttpServletRequest req,
 			@PathParam("page") String page) {
 
-		Content c = (Content) api.getContentById(page).getEntity();
+		Content c = (Content) api.getContentById(api.getLiveVersion(), page).getEntity();
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
@@ -102,7 +102,7 @@ public class IsaacController {
 			@PathParam("imageId") String imageId) {
 		log.info("test");
 
-		return api.getFileContent(api.getLiveVersion().getEntity().toString(), ((Figure)api.getContentById(imageId).getEntity()).getSrc());
+		return api.getFileContent(api.getLiveVersion(), ((Figure)api.getContentById(api.getLiveVersion(), imageId).getEntity()).getSrc());
 	}
 	
 	@POST
@@ -202,7 +202,7 @@ public class IsaacController {
 		
 		for(String id : content.getRelatedContent()){
 			try{
-				Content relatedContent = (Content) api.getContentById(id).getEntity();
+				Content relatedContent = (Content) api.getContentById(api.getLiveVersion(), id).getEntity();
 				
 				if(relatedContent == null){
 					log.warn("Related content (" + id + ") does not exist in the data store.");
