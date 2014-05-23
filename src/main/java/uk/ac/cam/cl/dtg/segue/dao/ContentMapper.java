@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -152,5 +154,31 @@ public class ContentMapper {
 	    objectMapper.registerModule(contentDeserializerModule);
 
 	    return objectMapper;
+	}
+	
+	/**
+	 * Map a list of String to a List of Content
+	 * 
+	 * @param stringList
+	 * @return Content List
+	 */
+	public List<Content> mapFromStringListToContentList(List<String> stringList){
+		// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+	    ObjectMapper objectMapper = this.getContentObjectMapper();
+	    
+	    List<Content> contentList = new ArrayList<Content>();
+	    
+	    for(String item : stringList){
+	    	try {
+				contentList.add((Content) objectMapper.readValue(item, ContentBase.class));
+			} catch (JsonParseException e) {
+				e.printStackTrace();
+			} catch (JsonMappingException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	    }
+		return contentList;
 	}
 }

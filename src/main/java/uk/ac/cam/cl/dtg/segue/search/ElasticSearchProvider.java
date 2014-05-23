@@ -1,26 +1,36 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 
 import com.google.inject.Inject;
 
@@ -29,6 +39,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 	private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);	
 	
 	private final Client client;
+	
+	private boolean mappingCorrect = false;
 	
 	@Inject
 	public ElasticSearchProvider(Client searchClient){
@@ -43,8 +55,16 @@ public class ElasticSearchProvider implements ISearchProvider {
 	@Override
 	public boolean indexObject(String index, final String indexType, String content, String uniqueId) {
 		try{		
+			//TODO: We need to improve how this happens and check what happens when indices are deleted during the lifetime of this object.
+			if(!mappingCorrect){
+				this.sendMappingCorrections(index, indexType);
+				mappingCorrect = true;
+			}
+				
+			
 			IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content).execute().actionGet(); 
 			log.info("Document: " + indexResponse.getId() + " indexed.");
+			
 			return true;
     	}
     	catch(ElasticsearchException e){
@@ -55,6 +75,32 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
+	public List<String> paginatedMatchSearch(final String index, final String indexType, final String fieldName, final String fieldValue, final int startIndex, final int size, final Map<String, Constants.SortOrder> sortInstructions){		
+		//TODO: This method needs refactoring
+		QueryBuilder query = QueryBuilders.matchQuery(fieldName, fieldValue);
+		
+		SearchRequestBuilder searchRequest = client.prepareSearch(index)
+		        .setTypes(indexType)
+		        .setQuery(query)
+		        .setSize(size)
+		        .setFrom(startIndex);
+		        
+		// deal with sorting of results
+		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
+		    String sortField = entry.getKey();
+		    Constants.SortOrder sortOrder = entry.getValue();
+		    
+		    if(sortOrder == Constants.SortOrder.ASC)
+		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
+		    	
+		    else
+		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
+		}
+		log.error(searchRequest.toString());
+		return this.executeQuery(searchRequest);
+	}
+	
+	@Override
 	public List<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields) {
 		if(null == index || null == indexType || null == searchString || null == fields){
 			log.warn("A required field is missing. Unable to execute search.");
@@ -62,7 +108,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		}
 		
 		QueryBuilder query = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
-		List<String> resultList = this.executeQuery(index, indexType, query);
+		List<String> resultList = this.executeBasicQuery(index, indexType, query);
 		return resultList; 
 	}
 	
@@ -74,7 +120,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		}
 		
 		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
-		List<String> resultList = this.executeQuery(index, indexType, query);
+		List<String> resultList = this.executeBasicQuery(index, indexType, query);
 		return resultList; 
 	}
 
@@ -121,14 +167,35 @@ public class ElasticSearchProvider implements ISearchProvider {
 		return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
 	}
 	
-	private List<String> executeQuery(final String index, final String indexType, final QueryBuilder query){		
-		log.debug("Executing Query: " + query);
+	/**
+	 * Provides default search execution using the fields specified.
+	 * 
+	 * This method does not provide any way of controlling sort order or limiting information returned. It is most useful for doing simple searches with fewer results e.g. by id.
+	 * 
+	 * @param index
+	 * @param indexType
+	 * @param query
+	 * 
+	 * @return list of the search results
+	 */
+	private List<String> executeBasicQuery(final String index, final String indexType, final QueryBuilder query){		
+		log.debug("Building Query: " + query);
 		
-		SearchResponse response = client.prepareSearch(index)
+		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index)
 		        .setTypes(indexType)
-		        .setQuery(query)
-		        .execute()
-		        .actionGet();
+		        .setQuery(query);
+		        
+		return executeQuery(configuredSearchRequestBuilder);
+	}
+	
+	/**
+	 * A general method for getting the results of a search
+	 * 
+	 * @param configuredSearchRequestBuilder
+	 * @return List of the search results.
+	 */
+	private List<String> executeQuery(SearchRequestBuilder configuredSearchRequestBuilder){
+		SearchResponse response = configuredSearchRequestBuilder.execute().actionGet();
 		
 		List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
 		List<String> resultList = new ArrayList<String>();
@@ -139,6 +206,27 @@ public class ElasticSearchProvider implements ISearchProvider {
 			resultList.add(item.getSourceAsString());
 		}
 		
-		return resultList; 
+		return resultList;
+	}
+	
+	private void sendMappingCorrections(final String index, final String indexType){
+		try {
+			CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
+			// TODO: This needs to turn into a generic function so that we can make other fields searchable. 
+			final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
+					.startObject("properties").startObject("title").field("type","string")
+					.field("index","analyzed").startObject("fields").startObject("raw")
+					.field("type","string").field("index","not_analyzed").endObject()
+					.endObject().endObject().endObject().endObject().endObject();
+			log.error(mappingBuilder.string());
+			indexBuilder.addMapping(indexType, mappingBuilder);
+			
+	        // MAPPING DONE
+			indexBuilder.execute().actionGet();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

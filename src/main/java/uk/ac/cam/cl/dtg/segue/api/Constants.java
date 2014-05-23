@@ -85,6 +85,9 @@ public class Constants {
 	 */
 	public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
 	
+	// Enum to represent sort orders
+	public enum SortOrder {ASC, DESC};
+	
 	// Federated Authentication Stuff
 	
 	/**

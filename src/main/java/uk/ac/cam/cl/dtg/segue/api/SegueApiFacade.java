@@ -144,7 +144,60 @@ public class SegueApiFacade {
 		else
 			return Response.serverError().entity(ImmutableMap.of("error", "No new Id was assigned by the database")).build();
 	}
+	
+	/**
+	 * GetContentById from the database
+	 * 
+	 * Routing endpoint: this method will either return results from one of the following:
+	 * getContentByTags
+	 * getContentByType
+	 * 
+	 * @param version
+	 * @return Response object containing the list of content objects.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/{version}")
+	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, @QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit){
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		if(null == version)
+			version = SegueApiFacade.liveVersion;
+		
+		if(null != tags){
+			// TODO: setup tag search
+		}
 
+		if(null != type){
+			// TODO: setup types search
+		}
+
+		if(null==limit){
+			limit = "50";
+		}
+		
+		if(null == startIndex){
+			startIndex = "0";
+		}
+		
+		// ok then just get all by type
+		List<Content> c = null;
+
+		// Deserialize object into POJO of specified type, providing one exists. 
+		try{
+			log.info("Finding all content from the api with type: " + type);
+			c = contentPersistenceManager.findAllByType(SegueApiFacade.liveVersion, type, Integer.parseInt(startIndex) , Integer.parseInt(limit));
+		}
+		catch(IllegalArgumentException e){
+			log.error("Unable to map content object.", e);
+			return Response.serverError().entity(e).build();
+		}
+
+		return Response.ok().entity(c).build();
+	
+	}
+	
 	/**
 	 * GetContentById from the database
 	 * 
@@ -257,37 +310,6 @@ public class SegueApiFacade {
 
 		return Response.ok().type(mimeType).entity(fileContent.toByteArray()).build();
 	}	
-
-	/**
-	 * Developer method that will return all content of a given type.
-	 * 
-	 * Useful for retrieving all content of a specific type from the cache.
-	 *  
-	 * @param type
-	 * @param limit
-	 * @return
-	 */
-	@GET
-	@Produces("application/json")
-	@Path("content/getAllContentByType/{type}")
-	public Response getAllContentByType(String type, Integer limit){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-
-		List<Content> c = null;
-
-		// Deserialize object into POJO of specified type, providing one exists. 
-		try{
-			log.info("Finding all content from the api with type: " + type);
-			c = contentPersistenceManager.findAllByType(type, SegueApiFacade.liveVersion, limit);
-		}
-		catch(IllegalArgumentException e){
-			log.error("Unable to map content object.", e);
-			return Response.serverError().entity(e).build();
-		}
-
-		return Response.ok().entity(c).build();
-	}
 
 	/**
 	 * This method will allow the live version served by the site to be changed 

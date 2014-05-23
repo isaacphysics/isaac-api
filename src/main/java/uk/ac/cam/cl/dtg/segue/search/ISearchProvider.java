@@ -2,6 +2,9 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 
 public interface ISearchProvider {
 	
@@ -33,6 +36,20 @@ public interface ISearchProvider {
 	 * @return true if the index exists false if not.
 	 */
 	public boolean hasIndex(final String index);
+	
+	/**
+	 * Paginated Match search for one field
+	 * 
+	 * @param index - ElasticSearch index
+	 * @param indexType - Index type
+	 * @param fieldName - the field name to use
+	 * @param fieldValue - the field name search term
+	 * @param startIndex - e.g. 0 for the first set of results
+	 * @param limit - e.g. 10 for 10 results per page
+	 * @param sortInstructions - the map of how to sort each field of interest.
+	 * @return Results
+	 */
+	public List<String> paginatedMatchSearch(final String index, final String indexType, final String fieldName, final String fieldValue, final int startIndex, final int limit, final Map<String, Constants.SortOrder> searchInstructions);
 	
 	/**
 	 * Executes a fuzzy search on an array of fields.

@@ -58,7 +58,7 @@ public class MongoContentManager implements IContentManager {
 	}
 	
 	@Override
-	public List<Content> findAllByType(String type, String version, Integer limit){
+	public List<Content> findAllByType(String type, String version, Integer startIndex, Integer limit){
 		if(null == limit)
 			limit = 0;
 

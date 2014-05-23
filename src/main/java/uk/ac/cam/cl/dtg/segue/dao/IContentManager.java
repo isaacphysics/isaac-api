@@ -27,7 +27,7 @@ public interface IContentManager {
 	 * @param limit - limit the number of results returned - if null or 0 is provided no limit will be applied. 
 	 * @return List of Content Objects or an empty list if none are found
 	 */
-	public List<Content> findAllByType(String type, String version, Integer limit);
+	public List<Content> findAllByType(String type, String version, Integer startIndex, Integer limit);
 	
 	/**
 	 * Allows fullText search using the internal search provider.

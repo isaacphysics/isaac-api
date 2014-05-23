@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
@@ -38,7 +39,7 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 public class GitContentManager implements IContentManager {
 	private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
 	
-	private static final String CONTENT_TYPE = "CONTENT";
+	private static final String CONTENT_TYPE = "content";
 
 	private static final Map<String, Map<String,Content>> gitCache = new ConcurrentHashMap<String,Map<String,Content>>();
 	
@@ -103,17 +104,17 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
-	public List<Content> findAllByType(String type, String version, Integer limit){
-		ArrayList<Content> result = new ArrayList<Content>();
+	public List<Content> findAllByType(String version, String type, Integer startIndex, Integer limit){
+		List<Content> result = new ArrayList<Content>();
 		if(this.ensureCache(version)){
-			for(Content c : gitCache.get(version).values()){
-				if(result.size() == limit && limit > 0)
-					break;
-				
-				if(c.getType().equals(type)){
-					result.add(c);
-				}
-			}			
+
+			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
+			sortInstructions.put("title.raw", Constants.SortOrder.ASC);
+			
+			List<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, "type", type, startIndex, limit, sortInstructions);
+
+			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+			result = mapper.mapFromStringListToContentList(searchHits);
 		}
 		
 		return result;
@@ -157,21 +158,7 @@ public class GitContentManager implements IContentManager {
 		if(this.ensureCache(version)){
 			List<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE, tags, "tags");
 			
-    	    ObjectMapper objectMapper = mapper.getContentObjectMapper();
-    	    
-    	    List<Content> contentResults = new ArrayList<Content>();
-    	    
-    	    for(String content : searchResults){
-    	    	try {
-					contentResults.add((Content) objectMapper.readValue(content, ContentBase.class));
-				} catch (JsonParseException e) {
-					e.printStackTrace();
-				} catch (JsonMappingException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-    	    }
+			List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults);
 
 			return contentResults;
 		}
@@ -195,7 +182,7 @@ public class GitContentManager implements IContentManager {
 				buildSearchIndexFromLocalGitIndex(version);
 				validateReferentialIntegrity(version);
 			}else{
-				log.warn("Unable find the commit in git to ensure the cache");
+				log.warn("Unable find the commit (" + version + ") in git to ensure the cache");
 				return false;
 			}
 		}
