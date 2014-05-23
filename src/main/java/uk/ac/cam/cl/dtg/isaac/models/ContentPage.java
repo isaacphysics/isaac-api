@@ -1,11 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.models;
 
 import java.util.List;
-import java.util.Map;
-
 import uk.ac.cam.cl.dtg.segue.dto.Content;
-
-import com.google.common.collect.ImmutableMap;
 
 public class ContentPage {
 
