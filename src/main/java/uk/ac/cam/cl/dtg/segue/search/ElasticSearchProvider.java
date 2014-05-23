@@ -96,7 +96,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		    else
 		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
 		}
-		log.error(searchRequest.toString());
+
 		return this.executeQuery(searchRequest);
 	}
 	
