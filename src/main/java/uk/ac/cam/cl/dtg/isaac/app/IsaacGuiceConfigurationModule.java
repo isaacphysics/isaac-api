@@ -20,7 +20,6 @@ import com.google.inject.Provides;
 /**
  * This class is responsible for injecting configuration values using GUICE
  *
- * TODO: We should probably make an isaac specific property file?
  */
 public class IsaacGuiceConfigurationModule extends AbstractModule {
 
@@ -33,7 +32,9 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	public IsaacGuiceConfigurationModule(){
 		try {
 			if(null == globalProperties){
-				globalProperties = new PropertiesLoader("/config/segue-config.properties");
+				final String propertiesFileLocation = "/config/segue-config.properties";
+				globalProperties = new PropertiesLoader(propertiesFileLocation);
+				log.info("Loading properties file from " + propertiesFileLocation);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

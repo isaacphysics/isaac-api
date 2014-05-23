@@ -23,6 +23,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
@@ -289,10 +290,10 @@ public class SegueApiFacade {
 		String mimeType = MediaType.WILDCARD; 
 
 		switch(Files.getFileExtension(path).toLowerCase()){
-		case "svg":{
-			mimeType = "image/svg+xml";
-			break;
-		}
+			case "svg":{
+				mimeType = "image/svg+xml";
+				break;
+			}
 		}
 
 		try {
@@ -305,7 +306,8 @@ public class SegueApiFacade {
 		}
 
 		if (null == fileContent){
-			return Response.noContent().entity(null).build();
+			log.info("Unable to locate the file " + path);
+			return Response.status(Status.NOT_FOUND).build();
 		}
 
 		return Response.ok().type(mimeType).entity(fileContent.toByteArray()).build();

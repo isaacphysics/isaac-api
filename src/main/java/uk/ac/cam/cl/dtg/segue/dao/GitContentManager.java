@@ -61,15 +61,21 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public Content getById(String id, String version) throws IllegalArgumentException{
-		if(null == id)
+		if(null == id){
 			return null;
-		
+		}
+			
 		if(this.ensureCache(version)){
-			log.info("Loading content from cache: " + id);
-			return gitCache.get(version).get(id);			
+			Content result = gitCache.get(version).get(id);
+			if(null == result){
+				log.info("Failed to locate the content "+ id + " in the cache for version " + version);
+			}
+			else{
+				log.info("Loading content from cache: " + id);
+			}
+			return result;			
 		}
 		else{
-			log.error("Unable to access Content with ID "+ id + " from git commit: " + version + " from cache.");
 			return null;
 		}
 	}

@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -66,7 +68,7 @@ public class IsaacController {
 	@GET
 	@Path("concepts/{concept}")
 	@Produces("application/json")
-	public ContentPage getConcept(@Context HttpServletRequest req,
+	public Response getConcept(@Context HttpServletRequest req,
 			@PathParam("concept") String concept) {
 		return getContentPage(req, concept);
 	}
@@ -74,25 +76,28 @@ public class IsaacController {
 	@GET
 	@Path("questions/{question}")
 	@Produces("application/json")
-	public ContentPage getQuestion(@Context HttpServletRequest req,
+	public Response getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
-		
 		return getContentPage(req, question);
 	}
 	
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
-	public ContentPage getContentPage(@Context HttpServletRequest req,
+	public Response getContentPage(@Context HttpServletRequest req,
 			@PathParam("page") String page) {
-
 		Content c = (Content) api.getContentById(api.getLiveVersion(), page).getEntity();
+
+		if(null == c){
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
-		
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
-		return cp;
+		
+		return Response.ok(cp).build();
 	}
 	
 	@GET
@@ -109,19 +114,20 @@ public class IsaacController {
 	@Consumes({"application/x-www-form-urlencoded"})
 	@Path("search/full-site/")
 	@Produces("application/json")
-	public List<ContentInfo> search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
+	public Response search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
 
 		Response searchResponse = api.search(searchString);
+		
 		List<ContentInfo> summaryOfSearchResults = null;
 		if(searchResponse.getEntity() instanceof List<?>){
 			summaryOfSearchResults = this.extractContentInfo((List<Content>) searchResponse.getEntity(), proxyPath);
 		}
 		
-		return summaryOfSearchResults;
+		return Response.ok(summaryOfSearchResults).build();
 	}	
 	
 	@POST
