@@ -105,7 +105,6 @@ public class IsaacController {
 	@Produces("*/*")
 	public Response getImages(@Context HttpServletRequest req,
 			@PathParam("imageId") String imageId) {
-		log.info("test");
 
 		return api.getFileContent(api.getLiveVersion(), ((Figure)api.getContentById(api.getLiveVersion(), imageId).getEntity()).getSrc());
 	}
