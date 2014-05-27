@@ -45,7 +45,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
-@Path("api/")
+@Path("/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
@@ -116,6 +116,7 @@ public class SegueApiFacade {
 	@POST
 	@Produces("application/json")
 	@Path("content/save")
+	@Deprecated
 	public Response contentSave(@FormParam("doc") String docJson) {
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);

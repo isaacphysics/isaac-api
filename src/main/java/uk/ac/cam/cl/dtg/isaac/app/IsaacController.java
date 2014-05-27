@@ -44,7 +44,7 @@ import com.google.inject.Injector;
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to the Segue api for use only on the Rutherford site.
  * 
  */
-@Path("api/")
+@Path("/")
 public class IsaacController {
 	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
@@ -131,6 +131,7 @@ public class IsaacController {
 	@Consumes({"application/x-www-form-urlencoded"})
 	@Path("search/full-site/")
 	@Produces("application/json")
+	@Deprecated
 	public Response search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
