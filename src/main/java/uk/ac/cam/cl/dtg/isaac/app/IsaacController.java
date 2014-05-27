@@ -21,6 +21,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,12 +120,11 @@ public class IsaacController {
 	}
 	
 	@GET
-	@Path("images/{imageId}")
 	@Produces("*/*")
-	public Response getImages(@Context HttpServletRequest req,
-			@PathParam("imageId") String imageId) {
-
-		return api.getFileContent(api.getLiveVersion(), ((Figure)api.getContentById(api.getLiveVersion(), imageId).getEntity()).getSrc());
+	@Path("images/{path:.*}")
+	@Cache
+	public Response getImageByPath(@PathParam("path") String path) {	
+		return api.getImageFileContent(api.getLiveVersion(), path);
 	}
 	
 	@POST

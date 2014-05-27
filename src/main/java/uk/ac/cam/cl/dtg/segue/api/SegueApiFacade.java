@@ -276,7 +276,7 @@ public class SegueApiFacade {
 	@Produces("*/*")
 	@Path("content/file_content/{version}/{path:.*}")
 	@Cache
-	public Response getFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
+	public Response getImageFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
 		// TODO check if the content being requested is valid for this api call. e.g. only images?
 		if(null == version || null == path || Files.getFileExtension(path).isEmpty()){
 			log.info("Bad input to api call. Returning null");
