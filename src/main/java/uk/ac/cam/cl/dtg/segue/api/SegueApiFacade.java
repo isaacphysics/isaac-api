@@ -333,7 +333,7 @@ public class SegueApiFacade {
 			liveVersion = availableVersions.get(0);
 
 		if(!availableVersions.contains(version))
-			return Response.ok().entity("Invalid version selected").build();
+			return Response.status(Status.NOT_FOUND).entity("Invalid version selected").build();
 		else{
 			liveVersion = version;
 			log.info("Live version of the site changed to: " + version);
