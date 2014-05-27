@@ -15,6 +15,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -64,6 +65,23 @@ public class IsaacController {
 //		else
 //			log.info("User Logged in: " + user.getEmail());
 	}
+	
+	
+	@GET
+	@Path("concepts")
+	@Produces("application/json")
+	public Response getConceptList(@Context HttpServletRequest req,
+			@QueryParam("tags") String tags, @QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit) {		
+		
+		List<Content> c = (List<Content>) api.getContentList(api.getLiveVersion(), tags, type, startIndex, limit).getEntity();
+
+		if(null == c){
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		
+		return Response.ok(c).build();
+	}
+	
 	
 	@GET
 	@Path("concepts/{concept}")
