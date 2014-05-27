@@ -364,6 +364,10 @@ public class SegueApiFacade {
 	}
 	
 	public String getLiveVersion(){
+		// Check if we want to get the latest from git each time a request is made from segue. - Will add overhead
+		if(Boolean.parseBoolean(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION))){
+			this.synchroniseDataStores();
+		}
 		return liveVersion;
 	}
 

@@ -6,4 +6,11 @@ public class Constants {
 	public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
 	public static final String PROXY_PATH = "PROXY_PATH";
 	public static final String ANALYTICS_TRACKING_ID = "ANALYTICS_TRACKING_ID";
+	
+	
+	/**
+	 * Subject specific constants
+	 */
+	
+	public static final String CONCEPT_TYPE = "isaacConceptPage";
 }

@@ -72,9 +72,9 @@ public class IsaacController {
 	@Path("concepts")
 	@Produces("application/json")
 	public Response getConceptList(@Context HttpServletRequest req,
-			@QueryParam("tags") String tags, @QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit) {		
+			@QueryParam("tags") String tags, @QueryParam("start-index") String startIndex, @QueryParam("limit") String limit) {		
 		
-		List<Content> c = (List<Content>) api.getContentList(api.getLiveVersion(), tags, type, startIndex, limit).getEntity();
+		List<Content> c = (List<Content>) api.getContentList(api.getLiveVersion(), tags, Constants.CONCEPT_TYPE, startIndex, limit).getEntity();
 
 		if(null == c){
 			return Response.status(Status.NOT_FOUND).build();
