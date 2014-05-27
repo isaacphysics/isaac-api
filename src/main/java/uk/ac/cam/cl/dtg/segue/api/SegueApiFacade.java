@@ -175,7 +175,7 @@ public class SegueApiFacade {
 		}
 
 		if(null==limit){
-			limit = "50";
+			limit = Constants.DEFAULT_SEARCH_LIMIT;
 		}
 		
 		if(null == startIndex){

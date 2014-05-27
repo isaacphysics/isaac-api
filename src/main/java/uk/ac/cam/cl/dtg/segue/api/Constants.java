@@ -105,4 +105,11 @@ public class Constants {
 	 */
 	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";	
 	
+	
+	/**
+	 * Default values
+	 */
+	
+	public static final String DEFAULT_SEARCH_LIMIT = "10";
+	
 }
