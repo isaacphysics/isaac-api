@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
@@ -166,10 +167,10 @@ public class SegueApiFacade {
 	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, 
 			@QueryParam("type") String type, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit){
 
-		Map<String,String> fieldsToMatch = Maps.newHashMap();
+		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
-		fieldsToMatch.put("type", type);
-		fieldsToMatch.put("tags", tags);
+		fieldsToMatch.put("type", Arrays.asList(type));
+		fieldsToMatch.put("tags", Arrays.asList(tags));
 		
 		List<Content> c = (List<Content>) this.findMatchingContent(version, fieldsToMatch, startIndex, limit).getEntity();
 		
@@ -185,12 +186,9 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public Response findMatchingContent(String version, Map<String,String> fieldsToMatch, String startIndex, String limit){
+	public Response findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-		
-		if(null == version)
-			version = SegueApiFacade.liveVersion;
 		//TODO: fix tag search
 //		if(fieldsToMatch.containsKey("tags")){
 //			List<String> tagList = Arrays.asList(fieldsToMatch.get("tags").split(","));
@@ -201,6 +199,8 @@ public class SegueApiFacade {
 //				fieldsToMatch.put("tags", item.trim());
 //			}
 //		}
+		if(null == version)
+			version = SegueApiFacade.liveVersion;
 		
 		if(null==limit){
 			limit = Constants.DEFAULT_SEARCH_LIMIT;

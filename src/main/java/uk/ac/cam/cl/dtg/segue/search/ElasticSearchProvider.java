@@ -76,15 +76,36 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public List<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,String> fieldsToMatch, 
+	public List<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions){		
 
 		// build up the query from the fieldsToMatch map
 		BoolQueryBuilder query = QueryBuilders.boolQuery();
-		
-		for(Map.Entry<String, String> pair : fieldsToMatch.entrySet()){
-			query.must(QueryBuilders.matchQuery(pair.getKey(), pair.getValue()));
+
+		// TODO: refactor this. 
+		for(Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()){
+			if(pair.getValue() != null){
+				// If it is a list of only one thing just put it in the query.
+				if(pair.getValue().size() == 1){
+					query.must(QueryBuilders.matchQuery(pair.getKey(), pair.getValue().get(0)));	
+				}
+				// If not it is an AND query and should be split into separate constraints.
+				else if(pair.getValue().size() > 1)
+				{
+					for(String queryItem : pair.getValue()){
+						query.must(QueryBuilders.matchQuery(pair.getKey(), queryItem));
+					}
+				}
+				else{
+					// this shouldn't happen unless we are given an empty list in which case we can skip it
+				}				
+			}
+			else{
+				log.info("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
+			}
 		}
+		
+		log.debug("Query to be sent to elasticsearch is : " + query);
 		
 		SearchRequestBuilder searchRequest = client.prepareSearch(index)
 		        .setTypes(indexType)

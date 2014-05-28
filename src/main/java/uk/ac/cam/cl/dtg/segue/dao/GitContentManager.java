@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -110,12 +111,18 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
-	public List<Content> findByFieldNames(String version, final Map<String,String> fieldsToMatch, Integer startIndex, Integer limit){
+	public List<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
 		List<Content> result = new ArrayList<Content>();
 		if(this.ensureCache(version)){
 
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 			sortInstructions.put("title.raw", Constants.SortOrder.ASC);
+			
+			//TODO: fix tag search
+			if(fieldsToMatch.containsKey("tags")){
+				List<String> tagList = Arrays.asList(fieldsToMatch.get("tags").get(0).split(","));
+				fieldsToMatch.put("tags", tagList);
+			}
 			
 			List<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, sortInstructions);
 

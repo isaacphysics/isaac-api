@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.app;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -76,12 +77,12 @@ public class IsaacController {
 	public Response getConceptList(@Context HttpServletRequest req,
 			@QueryParam("tags") String tags, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
-		Map<String,String> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Constants.CONCEPT_TYPE);
+		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put("type", Arrays.asList(Constants.CONCEPT_TYPE));
 		
 		// options
 		if(null != tags)
-			fieldsToMatch.put("tags", tags);
+			fieldsToMatch.put("tags", Arrays.asList(tags));
 		
 		List<Content> c = (List<Content>) api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit).getEntity();
 
@@ -107,14 +108,14 @@ public class IsaacController {
 	public Response getQuestionList(@Context HttpServletRequest req,
 			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
-		Map<String,String> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Constants.QUESTION_TYPE);
+		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put("type", Arrays.asList(Constants.QUESTION_TYPE));
 
 		// options
 		if(null != tags)
-			fieldsToMatch.put("tags", tags);
+			fieldsToMatch.put("tags", Arrays.asList(tags));
 		if(null != level)
-			fieldsToMatch.put("level", level);
+			fieldsToMatch.put("level", Arrays.asList(level));
 		
 		List<Content> c = (List<Content>) api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit).getEntity();
 
