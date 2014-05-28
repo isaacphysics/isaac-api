@@ -22,6 +22,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -75,14 +76,20 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public List<String> paginatedMatchSearch(final String index, final String indexType, final String fieldName, final String fieldValue, final int startIndex, final int size, final Map<String, Constants.SortOrder> sortInstructions){		
-		//TODO: This method needs refactoring
-		QueryBuilder query = QueryBuilders.matchQuery(fieldName, fieldValue);
+	public List<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,String> fieldsToMatch, 
+			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions){		
+
+		// build up the query from the fieldsToMatch map
+		BoolQueryBuilder query = QueryBuilders.boolQuery();
+		
+		for(Map.Entry<String, String> pair : fieldsToMatch.entrySet()){
+			query.must(QueryBuilders.matchQuery(pair.getKey(), pair.getValue()));
+		}
 		
 		SearchRequestBuilder searchRequest = client.prepareSearch(index)
 		        .setTypes(indexType)
 		        .setQuery(query)
-		        .setSize(size)
+		        .setSize(limit)
 		        .setFrom(startIndex);
 		        
 		// deal with sorting of results

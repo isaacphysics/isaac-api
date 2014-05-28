@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -160,19 +162,25 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/{version}")
-	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, @QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit){
+	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, 
+			@QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
+		Map<String,String> fieldsToMatch = new HashMap<String,String>();
 		if(null == version)
 			version = SegueApiFacade.liveVersion;
 		
 		if(null != tags){
-			// TODO: setup tag search
+			List<String> tagList = Arrays.asList(tags.split(","));
+			
+			for(String item : tagList){
+				fieldsToMatch.put("tags", item.trim());
+			}
 		}
 
 		if(null != type){
-			// TODO: setup types search
+			fieldsToMatch.put("type", type);
 		}
 
 		if(null==limit){
@@ -189,7 +197,8 @@ public class SegueApiFacade {
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("Finding all content from the api with type: " + type);
-			c = contentPersistenceManager.findAllByType(SegueApiFacade.liveVersion, type, Integer.parseInt(startIndex) , Integer.parseInt(limit));
+			
+			c = contentPersistenceManager.findByFieldNames(SegueApiFacade.liveVersion, fieldsToMatch, Integer.parseInt(startIndex), Integer.parseInt(limit));
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
@@ -237,29 +246,6 @@ public class SegueApiFacade {
 		}
 
 		return Response.ok().entity(c).build();
-	}
-
-	/**
-	 * Get content that matches the tags provided
-	 * 
-	 * Currently this method will return a set of content objects.
-	 * 
-	 * @param id - our id not the dbid
-	 * @return Response object containing the serialized content object. (with no levels of recursion into the content)
-	 */
-	public Response getContentByTags(@PathParam("version") String version, @QueryParam("tags") String tags){
-		// TODO: make this work with get content list endpoint.
-		if(null == version || null == tags){
-			log.info("Bad input to api call.");
-			return Response.noContent().build();
-		}
-		
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentManager = injector.getInstance(GitContentManager.class);
-		
-		Set<String> tagSet = new HashSet<String>(Arrays.asList(tags.split(",")));
-		
-		return Response.ok(contentManager.getContentByTags(version, tagSet)).build();
 	}
 
 	/**

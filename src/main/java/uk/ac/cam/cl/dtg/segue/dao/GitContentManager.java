@@ -110,14 +110,14 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
-	public List<Content> findAllByType(String version, String type, Integer startIndex, Integer limit){
+	public List<Content> findByFieldNames(String version, final Map<String,String> fieldsToMatch, Integer startIndex, Integer limit){
 		List<Content> result = new ArrayList<Content>();
 		if(this.ensureCache(version)){
 
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 			sortInstructions.put("title.raw", Constants.SortOrder.ASC);
 			
-			List<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, "type", type, startIndex, limit, sortInstructions);
+			List<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, sortInstructions);
 
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
 			result = mapper.mapFromStringListToContentList(searchHits);

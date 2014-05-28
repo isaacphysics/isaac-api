@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
@@ -27,7 +28,7 @@ public interface IContentManager {
 	 * @param limit - limit the number of results returned - if null or 0 is provided no limit will be applied. 
 	 * @return List of Content Objects or an empty list if none are found
 	 */
-	public List<Content> findAllByType(String type, String version, Integer startIndex, Integer limit);
+	public List<Content> findByFieldNames(String version, final Map<String,String> fieldsToMatch, Integer startIndex, Integer limit);
 	
 	/**
 	 * Allows fullText search using the internal search provider.

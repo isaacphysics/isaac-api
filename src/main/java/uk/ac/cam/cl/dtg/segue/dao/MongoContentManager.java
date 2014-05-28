@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.mongojack.JacksonDBCollection;
@@ -58,25 +59,8 @@ public class MongoContentManager implements IContentManager {
 	}
 	
 	@Override
-	public List<Content> findAllByType(String type, String version, Integer startIndex, Integer limit){
-		if(null == limit)
-			limit = 0;
-
-		DBCollection dbCollection = database.getCollection("content");
-		
-		BasicDBObject query = new BasicDBObject("type", type);
-		
-		// Do database query using plain mongodb so we only have to read from the database once.
-		DBCursor cursor = dbCollection.find(query).limit(limit);
-		
-		List<Content> listOfContent = new ArrayList<Content>();
-		
-		for(DBObject node : cursor){
-			Content c =  mapper.mapDBOjectToContentDTO(node);
-			listOfContent.add(c);
-		}		
-		
-		return listOfContent;
+	public List<Content> findByFieldNames(String version, final Map<String,String> fieldsToMatch, Integer startIndex, Integer limit){
+		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 	
 	@Override
