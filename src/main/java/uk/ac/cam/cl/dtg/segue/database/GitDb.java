@@ -63,7 +63,6 @@ public class GitDb {
 	 * @param repoLocation - location of the local git repository
 	 * @throws IOException
 	 */
-	@Inject
 	public GitDb(String repoLocation) throws IOException{
 		
 		Validate.notBlank(repoLocation);
