@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -34,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dto.Figure;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -74,7 +76,14 @@ public class IsaacController {
 	public Response getConceptList(@Context HttpServletRequest req,
 			@QueryParam("tags") String tags, @QueryParam("start-index") String startIndex, @QueryParam("limit") String limit) {		
 		
-		List<Content> c = (List<Content>) api.getContentList(api.getLiveVersion(), tags, Constants.CONCEPT_TYPE, startIndex, limit).getEntity();
+		Map<String,String> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put("type", Constants.CONCEPT_TYPE);
+		
+		// options
+		if(null != tags)
+			fieldsToMatch.put("tags", tags);
+		
+		List<Content> c = (List<Content>) api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit).getEntity();
 
 		if(null == c){
 			return Response.status(Status.NOT_FOUND).build();
@@ -89,26 +98,52 @@ public class IsaacController {
 	@Produces("application/json")
 	public Response getConcept(@Context HttpServletRequest req,
 			@PathParam("concept") String concept) {
-		return getContentPage(req, concept);
+		return getPage(req, concept);
 	}
 
+	@GET
+	@Path("questions")
+	@Produces("application/json")
+	public Response getQuestionList(@Context HttpServletRequest req,
+			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start-index") String startIndex, @QueryParam("limit") String limit) {		
+		
+		Map<String,String> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put("type", Constants.QUESTION_TYPE);
+
+		// options
+		if(null != tags)
+			fieldsToMatch.put("tags", tags);
+		if(null != level)
+			fieldsToMatch.put("level", level);
+		
+		List<Content> c = (List<Content>) api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit).getEntity();
+
+		if(null == c){
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		
+		return Response.ok(c).build();
+	}	
+	
 	@GET
 	@Path("questions/{question}")
 	@Produces("application/json")
 	public Response getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String question) {
-		return getContentPage(req, question);
+		return getPage(req, question);
 	}
 	
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
-	public Response getContentPage(@Context HttpServletRequest req,
+	public Response getPage(@Context HttpServletRequest req,
 			@PathParam("page") String page) {
 		Content c = (Content) api.getContentById(api.getLiveVersion(), page).getEntity();
 
 		if(null == c){
-			return Response.status(Status.NOT_FOUND).build();
+			ImmutableMap<String,String> responseBody = 
+					new ImmutableMap.Builder<String,String>().put("status", Status.NOT_FOUND.toString()).put("message","Unable to locate the content requested.").build();		
+			return Response.status(Status.NOT_FOUND).entity(responseBody).build();
 		}
 		
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
@@ -293,5 +328,5 @@ public class IsaacController {
 				listOfContentInfo.add(contentInfo);
 		}		
 		return listOfContentInfo;
-	}
+	}	
 }

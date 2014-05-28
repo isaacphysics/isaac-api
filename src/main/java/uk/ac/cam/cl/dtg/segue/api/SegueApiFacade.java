@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Guice;
@@ -164,25 +165,43 @@ public class SegueApiFacade {
 	@Path("content/{version}")
 	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, 
 			@QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit){
+
+		Map<String,String> fieldsToMatch = Maps.newHashMap();
+		
+		fieldsToMatch.put("type", type);
+		fieldsToMatch.put("tags", tags);
+		
+		List<Content> c = (List<Content>) this.findMatchingContent(version, fieldsToMatch, startIndex, limit).getEntity();
+		
+		return Response.ok().entity(c).build();
+	}
+
+	/**
+	 * This method will return a List<Content> based on the parameters supplied. 
+	 *  
+	 * @param version
+	 * @param fieldsToMatch - Map representing fieldName -> field value mappings to search for. Note: tags is a special field name and the list will be split by commas.
+	 * @param startIndex
+	 * @param limit
+	 * @return Response containing a list of content or a Response containing null if none found. 
+	 */
+	public Response findMatchingContent(String version, Map<String,String> fieldsToMatch, String startIndex, String limit){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
-		Map<String,String> fieldsToMatch = new HashMap<String,String>();
 		if(null == version)
 			version = SegueApiFacade.liveVersion;
+		//TODO: fix tag search
+//		if(fieldsToMatch.containsKey("tags")){
+//			List<String> tagList = Arrays.asList(fieldsToMatch.get("tags").split(","));
+//			fieldsToMatch.
+//			fieldsToMatch.remove("tags");
+//			
+//			for(String item : tagList){
+//				fieldsToMatch.put("tags", item.trim());
+//			}
+//		}
 		
-		if(null != tags){
-			List<String> tagList = Arrays.asList(tags.split(","));
-			
-			for(String item : tagList){
-				fieldsToMatch.put("tags", item.trim());
-			}
-		}
-
-		if(null != type){
-			fieldsToMatch.put("type", type);
-		}
-
 		if(null==limit){
 			limit = Constants.DEFAULT_SEARCH_LIMIT;
 		}
@@ -190,23 +209,22 @@ public class SegueApiFacade {
 		if(null == startIndex){
 			startIndex = "0";
 		}
-		
-		// ok then just get all by type
+
 		List<Content> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
-			log.info("Finding all content from the api with type: " + type);
+			log.info("Finding all content from the api with fields: " + fieldsToMatch);
 			
-			c = contentPersistenceManager.findByFieldNames(SegueApiFacade.liveVersion, fieldsToMatch, Integer.parseInt(startIndex), Integer.parseInt(limit));
+			c = contentPersistenceManager.findByFieldNames(version, fieldsToMatch, Integer.parseInt(startIndex), Integer.parseInt(limit));
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
 			return Response.serverError().entity(e).build();
 		}
+		
 
 		return Response.ok().entity(c).build();
-	
 	}
 	
 	/**

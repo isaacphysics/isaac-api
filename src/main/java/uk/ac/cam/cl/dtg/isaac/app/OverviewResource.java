@@ -210,6 +210,7 @@ public class OverviewResource {
     @Cache
     public Response getAvailableEndpointsHtml(@Context Dispatcher dispatcher) {
         // TODO Yeah, yeah, HTML per StringBuilder. I can't be bovvered to make a JSP :D
+        log.info("Requesting endpoint list from api using HTML view.");
         StringBuilder sb = new StringBuilder();
         ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher.getRegistry();
         List<ResourceDescription> descriptions = ResourceDescription.fromBoundResourceInvokers(registry.getBounded().entrySet());
@@ -251,7 +252,7 @@ public class OverviewResource {
             sb.append("</ul>");
         }
 
-        log.info("Requesting endpoint list from api using HTML view.");
+
         
         return Response.ok(sb.toString()).build();
 
