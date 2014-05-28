@@ -218,7 +218,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 					.field("index","analyzed").startObject("fields").startObject("raw")
 					.field("type","string").field("index","not_analyzed").endObject()
 					.endObject().endObject().endObject().endObject().endObject();
-			log.error(mappingBuilder.string());
+
 			indexBuilder.addMapping(indexType, mappingBuilder);
 			
 	        // MAPPING DONE
