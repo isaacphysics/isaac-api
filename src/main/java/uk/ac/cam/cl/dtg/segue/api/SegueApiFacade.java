@@ -164,7 +164,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/{version}")
 	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, 
-			@QueryParam("type") String type, @QueryParam("startIndex") String startIndex, @QueryParam("limit") String limit){
+			@QueryParam("type") String type, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit){
 
 		Map<String,String> fieldsToMatch = Maps.newHashMap();
 		

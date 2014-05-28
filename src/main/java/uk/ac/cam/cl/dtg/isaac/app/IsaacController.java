@@ -74,7 +74,7 @@ public class IsaacController {
 	@Path("concepts")
 	@Produces("application/json")
 	public Response getConceptList(@Context HttpServletRequest req,
-			@QueryParam("tags") String tags, @QueryParam("start-index") String startIndex, @QueryParam("limit") String limit) {		
+			@QueryParam("tags") String tags, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
 		Map<String,String> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put("type", Constants.CONCEPT_TYPE);
@@ -105,7 +105,7 @@ public class IsaacController {
 	@Path("questions")
 	@Produces("application/json")
 	public Response getQuestionList(@Context HttpServletRequest req,
-			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start-index") String startIndex, @QueryParam("limit") String limit) {		
+			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
 		Map<String,String> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put("type", Constants.QUESTION_TYPE);
