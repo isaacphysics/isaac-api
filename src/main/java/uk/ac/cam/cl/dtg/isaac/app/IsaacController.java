@@ -10,10 +10,8 @@ import java.util.Map;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -32,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.Figure;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -163,11 +160,11 @@ public class IsaacController {
 		return api.getImageFileContent(api.getLiveVersion(), path);
 	}
 	
-	@POST
-	@Consumes({"application/x-www-form-urlencoded"})
-	@Path("search/full-site/")
-	@Produces("application/json")
-	@Deprecated
+//	@POST
+//	@Consumes({"application/x-www-form-urlencoded"})
+//	@Path("search/full-site/")
+//	@Produces("application/json")
+//	@Deprecated
 	public Response search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
@@ -184,9 +181,9 @@ public class IsaacController {
 		return Response.ok(summaryOfSearchResults).build();
 	}	
 	
-	@POST
-	@Consumes({"application/x-www-form-urlencoded"})
-	@Path("contact-us/sendContactUsMessage")
+//	@POST
+//	@Consumes({"application/x-www-form-urlencoded"})
+//	@Path("contact-us/sendContactUsMessage")
 	public ImmutableMap<String,String> postContactUsMessage(
 			@FormParam("full-name") String fullName,
 			@FormParam("email") String email,
