@@ -114,10 +114,10 @@ public class SegueApiFacade {
 	 * @param docJson
 	 * @return
 	 */
-	@POST
-	@Produces("application/json")
-	@Path("content/save")
-	@Deprecated
+//	@POST
+//	@Produces("application/json")
+//	@Path("content/save")
+//	@Deprecated
 	public Response contentSave(@FormParam("doc") String docJson) {
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
@@ -332,7 +332,7 @@ public class SegueApiFacade {
 	 */
 	@PUT
 	@Produces("application/json")
-	@Path("info/content_version/{version}")
+	@Path("admin/live_version/{version}")
 	public synchronized Response changeLiveVersion(@PathParam("version") String version){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
