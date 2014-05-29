@@ -547,21 +547,16 @@ public class SegueApiFacade {
 			log.info("Changing live version to be " + newVersion + " from " + liveVersion);
 			liveVersion = newVersion;
 			dateOfVersionChange = new Date();
-
-			List<String> cachedVersions = Lists.newArrayList();
-			cachedVersions.addAll(contentPersistenceManager.getCachedVersionList());
 			
 			// TODO: come up with a better cache eviction strategy without random magic numbers.
-			if(cachedVersions.size() > 10){
+			if(contentPersistenceManager.getCachedVersionList().size() > 10){
 				List<String> allVersions = contentPersistenceManager.listAvailableVersions();
 				log.info("Cache full finding and deleting old versions");
 				// got through all versions in reverse until you find the oldest one that is also in the cached versions list and then remove it.
-				for(int i = allVersions.size()-1; cachedVersions.size() > 10; i--){
-					if(cachedVersions.contains(allVersions.get(i))){
+				for(int i = allVersions.size()-1; contentPersistenceManager.getCachedVersionList().size() > 10; i--){
+					if(contentPersistenceManager.getCachedVersionList().contains(allVersions.get(i))){
 						log.info("Requesting to delete the content at version " + allVersions.get(i) + " from the cache.");
 						contentPersistenceManager.clearCache(allVersions.get(i));
-						cachedVersions = Lists.newArrayList();
-						cachedVersions.addAll(contentPersistenceManager.getCachedVersionList());
 					}
 				}
 			}
