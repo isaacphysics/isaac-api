@@ -77,4 +77,19 @@ public interface IContentManager {
 	 * A utility method to instruct the content manager to evict all of its cached data.
 	 */
 	public void clearCache();
+
+	/**
+	 * A method that will return an unordered set of tags registered for a particular version of the content 
+	 *  
+	 * @param version
+	 * @return A set of tags that have been already used in a particular version of the content
+	 */
+	public Set<String> getTagsList(String version);
+
+	/**
+	 * Provides a Set of currently indexed and cached versions. 
+	 * 
+	 * @return A set of all of the version id's which are currently available without reindexing.
+	 */
+	public Set<String> getCachedVersionList();
 }

@@ -8,10 +8,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
@@ -24,6 +26,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -43,6 +46,7 @@ public class GitContentManager implements IContentManager {
 	private static final String CONTENT_TYPE = "content";
 
 	private static final Map<String, Map<String,Content>> gitCache = new ConcurrentHashMap<String,Map<String,Content>>();
+	private static final Map<String, Set<String>> tagsList = new ConcurrentHashMap<String,Set<String>>();
 	
 	private final GitDb database;
 	private final ContentMapper mapper;
@@ -156,6 +160,11 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
+	public Set<String> getCachedVersionList(){		
+		return gitCache.keySet();
+	}
+
+	@Override
 	public void clearCache() {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
@@ -179,6 +188,20 @@ public class GitContentManager implements IContentManager {
 			log.error("Cache not found. Failed to build cache with version: " + version);
 			return null;
 		}
+	}
+	
+	@Override
+	public Set<String> getTagsList(String version){
+		Validate.notBlank(version);
+		
+		this.ensureCache(version);
+		
+		if(!tagsList.containsKey(version)){
+			log.warn("The version requested does not exist in the tag list.");
+			return null;
+		}
+
+		return tagsList.get(version);
 	}
 	
 	/**
@@ -303,6 +326,7 @@ public class GitContentManager implements IContentManager {
 						    	    else{
 						    	    	log.debug("Loading into cache: " + flattenedContent.getId() + "(" +flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
 						    	    	shaCache.put(flattenedContent.getId(), flattenedContent);
+						    	    	registerTagsWithVersion(sha, flattenedContent.getTags());
 						    	    }
 				    	    	}
 				    	    }
@@ -318,7 +342,7 @@ public class GitContentManager implements IContentManager {
 			    // add all of the work we have done to the git cache.
 			    gitCache.put(sha, shaCache);
 			    repository.close();
-			    
+			    log.info("Tags available " + tagsList);
 				log.info("Git content cache population for " + sha + " completed!");
 				
 			}
@@ -441,5 +465,26 @@ public class GitContentManager implements IContentManager {
 		setOfContentObjects.add(content);
 		
 		return setOfContentObjects;
+	}
+	
+	private void registerTagsWithVersion(String version, Set<String> tags){
+		Validate.notBlank(version);
+		
+		if(null == tags || tags.isEmpty()){
+			// don't do anything.
+			return;
+		}
+		
+		if(!tagsList.containsKey(version)){
+			tagsList.put(version, new HashSet<String>());
+		}
+		Set<String> newTagSet = Sets.newHashSet();
+		
+		// sanity check that tags are trimmed.
+		for(String tag : tags){
+			newTagSet.add(tag.trim());
+		}
+		
+		tagsList.get(version).addAll(newTagSet);
 	}
 }

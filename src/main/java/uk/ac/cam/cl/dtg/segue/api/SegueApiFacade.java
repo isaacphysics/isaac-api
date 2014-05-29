@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -189,16 +190,7 @@ public class SegueApiFacade {
 	public Response findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
-		//TODO: fix tag search
-//		if(fieldsToMatch.containsKey("tags")){
-//			List<String> tagList = Arrays.asList(fieldsToMatch.get("tags").split(","));
-//			fieldsToMatch.
-//			fieldsToMatch.remove("tags");
-//			
-//			for(String item : tagList){
-//				fieldsToMatch.put("tags", item.trim());
-//			}
-//		}
+
 		if(null == version)
 			version = SegueApiFacade.liveVersion;
 		
@@ -265,6 +257,23 @@ public class SegueApiFacade {
 
 		return Response.ok().entity(c).build();
 	}
+	
+	/**
+	 * This method provides a set of all tags for a given version of the content.
+	 * 
+	 * @return a version info as json response
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/tags/{version}")
+	public Response getTagList(@PathParam("version") String version){
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		Set<String> tags = contentPersistenceManager.getTagsList(version);
+		
+		return Response.ok().entity(tags).build();
+	}		
 
 	/**
 	 * getFileContent from the file store
@@ -362,6 +371,25 @@ public class SegueApiFacade {
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String,String>()
 				.put("live_version",liveVersion)
 				.put("latest_known_version", contentPersistenceManager.getLatestVersionId())
+				.build();
+		
+		return Response.ok().entity(result).build();
+	}
+	
+	/**
+	 * This method return a json response containing version related information
+	 * 
+	 * @return a version info as json response
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("info/content_version/cached")
+	public Response getCachedVersions(){
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String,Collection<String>>()
+				.put("cached_versions", contentPersistenceManager.getCachedVersionList())
 				.build();
 		
 		return Response.ok().entity(result).build();
@@ -475,8 +503,11 @@ public class SegueApiFacade {
 			log.info("Changing live version to be " + newVersion + " from " + liveVersion);
 			liveVersion = newVersion;
 			dateOfVersionChange = new Date();
-			// TODO come up with a better cache eviction strategy.
-			contentPersistenceManager.clearCache();
+
+			// TODO: come up with a better cache eviction strategy without random magic numbers.
+			if(contentPersistenceManager.getCachedVersionList().size() > 5){
+				contentPersistenceManager.clearCache();	
+			}
 		}
 		else
 		{
