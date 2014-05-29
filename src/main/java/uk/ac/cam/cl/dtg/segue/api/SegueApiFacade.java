@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -353,19 +354,39 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method return a json response containing version related information
+	 * This method returns all versions as an immutablemap version_list: []
 	 * 
-	 * @return a version info as json response
+	 * @param This parameter if not null will set the limit of the number entries to return the default is the latest 10 (indices starting at 0).
+	 * 
+	 * @return a Response containing an immutablemap version_list: [x..y..]
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions")
-	public Response getAllVersionsList(){
+	public Response getAllVersionsList(@QueryParam("limit") String limit){
+		if(null == limit){
+			limit = "9";
+		}
+		
+		// try to parse the integer
+		Integer limitAsInt = null;
+		
+		try{
+			limitAsInt = Integer.parseInt(limit);
+		}
+		catch(NumberFormatException e){
+			// ignore the parameter
+			limitAsInt = 9;
+		}
+		
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
+		List<String> allVersions = contentPersistenceManager.listAvailableVersions();
+		List<String> limitedVersions = new ArrayList<String>(allVersions.subList(0, limitAsInt));
+		
 		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String,Collection<String>>()
-				.put("version_list", contentPersistenceManager.listAvailableVersions())
+				.put("version_list", limitedVersions)
 				.build();
 		
 		return Response.ok().entity(result).build();
