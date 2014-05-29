@@ -359,7 +359,26 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("info/content_version")
+	@Path("info/content_versions")
+	public Response getAllVersionsList(){
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String,Collection<String>>()
+				.put("version_list", contentPersistenceManager.listAvailableVersions())
+				.build();
+		
+		return Response.ok().entity(result).build();
+	}
+	
+	/**
+	 * This method return a json response containing version related information
+	 * 
+	 * @return a version info as json response
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("info/content_versions/live_version")
 	public Response getLiveVersionInfo(){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
@@ -379,7 +398,7 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("info/content_version/cached")
+	@Path("info/content_versions/cached")
 	public Response getCachedVersions(){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
