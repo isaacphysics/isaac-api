@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.isaac.app;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -220,8 +222,19 @@ public class OverviewResource {
         for (ResourceDescription resource : descriptions) {
             sb.append("<h2>").append(resource.getBasePath()).append("</h2>");
             sb.append("<ul>");
+            List<MethodDescription> methodsList = resource.getCalls();
 
-            for (MethodDescription method : resource.getCalls()) {          	
+            // sort the list to make it easier for me to find things
+            Collections.sort(methodsList, new Comparator<MethodDescription>(){
+
+				@Override
+				public int compare(MethodDescription o1, MethodDescription o2) {
+					return o1.getFullPath().compareTo(o2.getFullPath());
+				}
+            	
+            });
+            
+            for (MethodDescription method : methodsList) {          	
 
             	sb.append("<li> ");
             	if(method.isDeprecated()){
