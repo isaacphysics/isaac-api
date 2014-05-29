@@ -363,7 +363,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions")
-	public Response getAllVersionsList(@QueryParam("limit") String limit){
+	public Response getVersionsList(@QueryParam("limit") String limit){
 		if(null == limit){
 			limit = "9";
 		}
@@ -383,7 +383,14 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
 		List<String> allVersions = contentPersistenceManager.listAvailableVersions();
-		List<String> limitedVersions = new ArrayList<String>(allVersions.subList(0, limitAsInt));
+		List<String> limitedVersions = null;
+		try{
+			limitedVersions = new ArrayList<String>(allVersions.subList(0, limitAsInt));
+		}
+		// they have requested a stupid limit so just give them what we have got.
+		catch(IndexOutOfBoundsException e){
+			limitedVersions = allVersions;
+		}
 		
 		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String,Collection<String>>()
 				.put("version_list", limitedVersions)
