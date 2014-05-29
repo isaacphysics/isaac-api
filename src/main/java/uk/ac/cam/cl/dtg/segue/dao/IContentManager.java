@@ -74,9 +74,19 @@ public interface IContentManager {
 	public String getLatestVersionId() throws UnsupportedOperationException;
 	
 	/**
-	 * A utility method to instruct the content manager to evict all of its cached data.
+	 * A utility method to instruct the content manager to evict ALL of its cached data including data held within its search providers.
+	 * 
+	 * WARNING: this is a nuclear method. Re-indexing will definitely have to occur if you do this.
+	 * 
 	 */
 	public void clearCache();
+	
+	/**
+	 * A utility method to instruct a content manager to evict a particular version of the content from its caches. This includes data held within its search providers.
+	 * 
+	 * @param version
+	 */
+	public void clearCache(String version);
 
 	/**
 	 * A method that will return an unordered set of tags registered for a particular version of the content 

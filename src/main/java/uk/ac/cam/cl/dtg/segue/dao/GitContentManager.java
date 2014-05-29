@@ -168,7 +168,17 @@ public class GitContentManager implements IContentManager {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
 		searchProvider.expungeEntireSearchCache();
-	}	
+	}
+
+	@Override
+	public void clearCache(String version){
+		Validate.notBlank(version);
+		
+		if(gitCache.containsKey(version)){
+			gitCache.remove(version);
+			searchProvider.expungeIndexFromSearchCache(version);	
+		}
+	}
 
 	@Override
 	public List<Content> getContentByTags(String version, Set<String> tags){
