@@ -21,7 +21,7 @@ public class IsaacQuestionPage extends Content {
 	public IsaacQuestionPage(@JsonProperty("_id") String _id,
 		       @JsonProperty("id") String id, 
 			   @JsonProperty("title") String title,
-			   @JsonProperty("title") String subtitle, 
+			   @JsonProperty("subtitle") String subtitle, 
 			   @JsonProperty("type") String type, 
 			   @JsonProperty("author") String author,
 			   @JsonProperty("encoding") String encoding,
