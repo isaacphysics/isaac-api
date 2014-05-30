@@ -23,6 +23,7 @@ public class Question extends Content {
 	public Question(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
 				   @JsonProperty("title") String title, 
+				   @JsonProperty("subtitle") String subtitle,
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
@@ -38,7 +39,8 @@ public class Question extends Content {
 				   @JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, 
 		      id, 
-		      title, 
+		      title,
+		      subtitle,
 		      type, 
 		      author, 
 		      encoding, 

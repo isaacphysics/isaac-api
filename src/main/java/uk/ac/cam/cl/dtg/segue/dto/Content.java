@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonType("content")
 public class Content extends ContentBase{
 	protected String title;
+	protected String subtitle;
 	protected String author;
 	protected String encoding;
 	protected String layout;
@@ -34,7 +35,8 @@ public class Content extends ContentBase{
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
-				   @JsonProperty("title") String title, 
+				   @JsonProperty("title") String title,
+				   @JsonProperty("subtitle") String subtitle,
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
@@ -49,6 +51,7 @@ public class Content extends ContentBase{
 		this._id = _id;
 		this.id = id;
 		this.title = title;
+		this.subtitle = subtitle;
 		this.type = type != null ? type : "string";
 		this.author = author;
 		this.encoding = encoding;
@@ -85,6 +88,14 @@ public class Content extends ContentBase{
 
 	public void setTitle(String title) {
 		this.title = title;
+	}
+
+	public String getSubtitle() {
+		return subtitle;
+	}
+
+	public void setSubtitle(String subtitle) {
+		this.subtitle = subtitle;
 	}
 
 	public String getAuthor() {

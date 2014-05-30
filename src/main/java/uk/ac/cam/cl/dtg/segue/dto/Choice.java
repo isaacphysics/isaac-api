@@ -22,7 +22,8 @@ public class Choice extends Content {
 	@JsonCreator
 	public Choice(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
-				   @JsonProperty("title") String title, 
+				   @JsonProperty("title") String title,
+				   @JsonProperty("subtitle") String subtitle,
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
@@ -40,6 +41,7 @@ public class Choice extends Content {
 		      id, 
 		      title, 
 		      type, 
+		      subtitle,
 		      author, 
 		      encoding, 
 		      canonicalSourceFile,

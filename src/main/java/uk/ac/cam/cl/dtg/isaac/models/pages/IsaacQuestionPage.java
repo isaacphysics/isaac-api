@@ -20,7 +20,8 @@ public class IsaacQuestionPage extends Content {
 	@JsonCreator
 	public IsaacQuestionPage(@JsonProperty("_id") String _id,
 		       @JsonProperty("id") String id, 
-			   @JsonProperty("title") String title, 
+			   @JsonProperty("title") String title,
+			   @JsonProperty("title") String subtitle, 
 			   @JsonProperty("type") String type, 
 			   @JsonProperty("author") String author,
 			   @JsonProperty("encoding") String encoding,
@@ -37,6 +38,7 @@ public class IsaacQuestionPage extends Content {
 		super(_id, 
 			      id, 
 			      title, 
+			      subtitle,
 			      type, 
 			      author, 
 			      encoding, 
