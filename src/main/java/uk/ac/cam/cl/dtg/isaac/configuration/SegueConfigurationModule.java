@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.configuration;
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.cam.cl.dtg.isaac.models.content.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacMultiChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestion;
@@ -22,6 +23,7 @@ public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 		supplementaryContentDTOs.put("isaacNumericQuestion", IsaacNumericQuestion.class);
 		supplementaryContentDTOs.put("isaacSymbolicQuestion", IsaacSymbolicQuestion.class);
 		supplementaryContentDTOs.put("isaacQuestionPage", IsaacQuestionPage.class);
+		supplementaryContentDTOs.put("isaacFeaturedProfile", IsaacFeaturedProfile.class);
 		
 		return supplementaryContentDTOs;
 	}
