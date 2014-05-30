@@ -10,7 +10,7 @@ public class Constants {
 	public static final String HOST_NAME = "HOST_NAME"; 
 	
 	/**
-	 * Constant representing the key for the HOST_NAME property - Used for establishing the Base URL for fully qualified urls.
+	 * Constant representing the key for the DEFAULT_LANDING_URL_SUFFIX property - Used for a default location of where authentication provider callbacks should land..
 	 */
 	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX"; 	
 	
