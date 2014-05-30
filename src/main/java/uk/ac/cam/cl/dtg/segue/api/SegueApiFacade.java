@@ -572,6 +572,27 @@ public class SegueApiFacade {
 
 		return Response.ok(newVersion).build();
 	}
+	
+	/**
+	 * This method will try to bring the live version that Segue is using to host content up-to-date with the latest in the git remote.
+	 * @return
+	 */
+	@POST
+	@Produces("application/json")
+	@Path("admin/clear_caches")
+	public synchronized Response clearCaches(){
+		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		
+		String newVersion = contentPersistenceManager.getLatestVersionId();
+		
+		log.info("Clearing all caches...");
+		
+		contentPersistenceManager.clearCache();
+
+		return Response.ok(newVersion).build();
+	}
+	
 
 	/**
 	 * Search the content manager for some search string
