@@ -40,7 +40,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
@@ -256,6 +255,19 @@ public class SegueApiFacade {
 		return Response.ok().entity(c).build();
 	}
 	
+
+	/**
+	 * This method provides a set of all tags for a given version of the content.
+	 * 
+	 * @return a version info as json response
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/tags")
+	public Response getTagListByLiveVersion(){
+		return this.getTagListByVersion(liveVersion);
+	}		
+	
 	/**
 	 * This method provides a set of all tags for a given version of the content.
 	 * 
@@ -264,7 +276,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags/{version}")
-	public Response getTagList(@PathParam("version") String version){
+	public Response getTagListByVersion(@PathParam("version") String version){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
