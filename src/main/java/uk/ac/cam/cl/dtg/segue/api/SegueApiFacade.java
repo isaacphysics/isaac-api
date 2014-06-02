@@ -6,7 +6,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +52,6 @@ public class SegueApiFacade {
 
 	// TODO Perhaps stored in Mongo? Should this be an app setting or API one?
 	private volatile static String liveVersion;
-	private volatile static Date dateOfVersionChange;
 	
 	private static ContentMapper mapper;
 	
@@ -72,7 +70,6 @@ public class SegueApiFacade {
 		if(null == liveVersion){
 			log.info("Setting live version of the site from properties file to " + Constants.INITIAL_LIVE_VERSION);
 			liveVersion = this.properties.getProperty(Constants.INITIAL_LIVE_VERSION);		
-			dateOfVersionChange = new Date();
 		}
 		
 		// We only want to do this if the mapper needs to be changed - I expect the same instance to be injected from Guice each time.
@@ -270,7 +267,7 @@ public class SegueApiFacade {
 	
 	/**
 	 * This method provides a set of all tags for a given version of the content.
-	 * 
+	 * @param version of the site to provide the tag list from.
 	 * @return a version info as json response
 	 */
 	@GET
@@ -558,7 +555,6 @@ public class SegueApiFacade {
 		if(!newVersion.equals(liveVersion)){
 			log.info("Changing live version to be " + newVersion + " from " + liveVersion);
 			liveVersion = newVersion;
-			dateOfVersionChange = new Date();
 			
 			// TODO: come up with a better cache eviction strategy without random magic numbers.
 			if(contentPersistenceManager.getCachedVersionList().size() > 9){
@@ -621,9 +617,5 @@ public class SegueApiFacade {
 		//TODO: we probably only want to return summaries of content objects?
 		
 		return Response.ok(searchResults).build();
-	}
-		
-	public Date dateOfLastSegueVersionUpdate(){
-		return dateOfVersionChange;
 	}
 }
