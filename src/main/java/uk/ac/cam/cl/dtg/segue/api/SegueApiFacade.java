@@ -181,8 +181,7 @@ public class SegueApiFacade {
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
 	public Response findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
 			version = contentVersionController.getLiveVersion();
@@ -225,8 +224,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/{version}/{id}")
 	public Response getContentById(@PathParam("version") String version, @PathParam("id") String id) {		
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
 		if(null == version)
 			version = contentVersionController.getLiveVersion();
@@ -273,8 +271,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/tags/{version}")
 	public Response getTagListByVersion(@PathParam("version") String version){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
 		Set<String> tags = contentPersistenceManager.getTagsList(version);
 		
@@ -303,8 +300,7 @@ public class SegueApiFacade {
 			return Response.serverError().entity(null).build();
 		}
 
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager gcm = injector.getInstance(IContentManager.class);
+		IContentManager gcm = contentVersionController.getContentManager();
 
 		ByteArrayOutputStream fileContent = null;
 		String mimeType = MediaType.WILDCARD; 
@@ -344,8 +340,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/live_version/{version}")
 	public synchronized Response changeLiveVersion(@PathParam("version") String version){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
 
@@ -417,8 +412,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("info/content_versions/live_version")
 	public Response getLiveVersionInfo(){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String,String>()
 				.put("live_version",contentVersionController.getLiveVersion())
@@ -437,8 +431,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("info/content_versions/cached")
 	public Response getCachedVersions(){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
 		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String,Collection<String>>()
 				.put("cached_versions", contentPersistenceManager.getCachedVersionList())
@@ -545,8 +538,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/synchronise_datastores")
 	public synchronized Response synchroniseDataStores(){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
 		String newVersion = contentPersistenceManager.getLatestVersionId();
 		
@@ -590,8 +582,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/clear_caches")
 	public synchronized Response clearCaches(){
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
 		String newVersion = contentPersistenceManager.getLatestVersionId();
 		
@@ -611,10 +602,9 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("search/{searchString}")
 	public Response search(@PathParam("searchString") String searchString){			
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentManager = injector.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
-		List<Content> searchResults = contentManager.searchForContent(contentVersionController.getLiveVersion(), searchString);
+		List<Content> searchResults = contentPersistenceManager.searchForContent(contentVersionController.getLiveVersion(), searchString);
 		//TODO: we probably only want to return summaries of content objects?
 		
 		return Response.ok(searchResults).build();
