@@ -50,10 +50,9 @@ import com.google.inject.Injector;
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
-	// TODO Perhaps stored in Mongo? Should this be an app setting or API one?
-	private volatile static String liveVersion;
-	
 	private static ContentMapper mapper;
+	
+	private static ContentVersionController contentVersionController;
 	
 	private PropertiesLoader properties;
 
@@ -63,14 +62,10 @@ public class SegueApiFacade {
 	 * @param segueConfigurationModule
 	 */
 	@Inject
-	public SegueApiFacade(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule){
-		this.properties = properties;
+	public SegueApiFacade(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule, 
+			ContentVersionController contentVersionController){
 		
-		// we want to make sure we have set a default liveVersion number
-		if(null == liveVersion){
-			log.info("Setting live version of the site from properties file to " + Constants.INITIAL_LIVE_VERSION);
-			liveVersion = this.properties.getProperty(Constants.INITIAL_LIVE_VERSION);		
-		}
+		this.properties = properties;
 		
 		// We only want to do this if the mapper needs to be changed - I expect the same instance to be injected from Guice each time.
 		if(SegueApiFacade.mapper != mapper){
@@ -80,6 +75,10 @@ public class SegueApiFacade {
 			if(null != segueConfigurationModule){
 				SegueApiFacade.mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
 			}
+		}
+		
+		if(null == SegueApiFacade.contentVersionController){
+			SegueApiFacade.contentVersionController = contentVersionController;
 		}
 
 		// Check if we want to get the latest from git each time a request is made from segue. - Will add overhead
@@ -186,7 +185,7 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 
 		if(null == version)
-			version = SegueApiFacade.liveVersion;
+			version = contentVersionController.getLiveVersion();
 		
 		if(null==limit){
 			limit = Constants.DEFAULT_SEARCH_LIMIT;
@@ -230,13 +229,13 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
 		if(null == version)
-			version = SegueApiFacade.liveVersion;
+			version = contentVersionController.getLiveVersion();
 		
 		Content c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
-			c = contentPersistenceManager.getById(id, SegueApiFacade.liveVersion);
+			c = contentPersistenceManager.getById(id, contentVersionController.getLiveVersion());
 
 			if (null == c){
 				log.debug("No content found with id: " + id);
@@ -262,7 +261,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/tags")
 	public Response getTagListByLiveVersion(){
-		return this.getTagListByVersion(liveVersion);
+		return this.getTagListByVersion(contentVersionController.getLiveVersion());
 	}		
 	
 	/**
@@ -350,13 +349,13 @@ public class SegueApiFacade {
 
 		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
 
-		if(null == liveVersion || liveVersion.equals(""))
-			liveVersion = availableVersions.get(0);
+		if(null == contentVersionController.getLiveVersion() || contentVersionController.getLiveVersion().equals(""))
+			contentVersionController.setLiveVersion(availableVersions.get(0));
 
 		if(!availableVersions.contains(version))
 			return Response.status(Status.NOT_FOUND).entity("Invalid version selected").build();
 		else{
-			liveVersion = version;
+			contentVersionController.setLiveVersion(version);
 			log.info("Live version of the site changed to: " + version);
 		}
 
@@ -422,7 +421,7 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
 		
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String,String>()
-				.put("live_version",liveVersion)
+				.put("live_version",contentVersionController.getLiveVersion())
 				.put("latest_known_version", contentPersistenceManager.getLatestVersionId())
 				.build();
 		
@@ -449,11 +448,12 @@ public class SegueApiFacade {
 	}
 	
 	public String getLiveVersion(){
+		// TODO this probably needs changing now
 		// Check if we want to get the latest from git each time a request is made from segue. - Will add overhead
 		if(Boolean.parseBoolean(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION))){
 			this.synchroniseDataStores();
 		}
-		return liveVersion;
+		return contentVersionController.getLiveVersion();
 	}
 
 	/**
@@ -552,9 +552,10 @@ public class SegueApiFacade {
 		
 		log.debug("Checking for content change - Synchronizing with Git.");
 		
-		if(!newVersion.equals(liveVersion)){
-			log.info("Changing live version to be " + newVersion + " from " + liveVersion);
-			liveVersion = newVersion;
+		if(!newVersion.equals(contentVersionController.getLiveVersion())){
+
+			log.info("Changing live version to be " + newVersion + " from " + contentVersionController.getLiveVersion());
+			contentVersionController.setLiveVersion(newVersion);
 			
 			// TODO: come up with a better cache eviction strategy without random magic numbers.
 			if(contentPersistenceManager.getCachedVersionList().size() > 9){
@@ -613,7 +614,7 @@ public class SegueApiFacade {
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentManager = injector.getInstance(IContentManager.class);
 		
-		List<Content> searchResults = contentManager.searchForContent(liveVersion, searchString);
+		List<Content> searchResults = contentManager.searchForContent(contentVersionController.getLiveVersion(), searchString);
 		//TODO: we probably only want to return summaries of content objects?
 		
 		return Response.ok(searchResults).build();

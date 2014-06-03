@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
@@ -58,9 +59,9 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 */
 	@Inject
 	@Provides
-	private static SegueApiFacade getSegueFacadeSingleton(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule){
+	private static SegueApiFacade getSegueFacadeSingleton(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule, ContentVersionController versionController){
 		if(null == segueApi){
-			segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule);
+			segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule, versionController);
 		}
 		
 		return segueApi;
