@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.NotFoundException;
+
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.CanceledException;
@@ -213,7 +215,6 @@ public class GitDb {
 			return false;
 		}
 			
-		
 		try {
 			Iterable<RevCommit> logs = gitHandle.log().all().call();
 
@@ -234,6 +235,38 @@ public class GitDb {
 		}
 		log.warn("Commit " + sha + " does not exist");
 		return false;
+	}
+	
+	/**
+	 * Get the time of the commit specified
+	 * 
+	 * @param sha - to search for.
+	 * @return integer value representing time since epoch. 
+	 */
+	public int getCommitTime(String sha) throws NotFoundException{
+		Validate.notBlank(sha);
+			
+		try {
+			Iterable<RevCommit> logs = gitHandle.log().all().call();
+
+			for(RevCommit rev : logs){
+				if(rev.getName().equals(sha))
+					return rev.getCommitTime();
+			}
+
+		} catch (NoHeadException e) {
+			log.error("Git returned a no head exception. Unable to list all commits.");
+			e.printStackTrace();
+		} catch (GitAPIException e) {
+			log.error("Git returned an API exception. Unable to list all commits.");
+			e.printStackTrace();
+		} catch (IOException e) {
+			log.error("Git returned an IO exception. Unable to list all commits.");
+			e.printStackTrace();
+		}
+		
+		log.warn("Commit " + sha + " does not exist");
+		throw new NotFoundException("Commit " + sha + " does not exist");
 	}
 
 	/**
