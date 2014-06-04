@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -83,6 +85,7 @@ public class SegueApiFacade {
 
 		// Check if we want to get the latest from git each time a request is made from segue. - Will add overhead
 		if(Boolean.parseBoolean(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION))){
+			log.info("Segue just initialized - Sending content index request so that we can service some content requests.");
 			this.synchroniseDataStores();
 		}
 	}
@@ -344,17 +347,24 @@ public class SegueApiFacade {
 
 		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
 
-		if(null == contentVersionController.getLiveVersion() || contentVersionController.getLiveVersion().equals(""))
-			contentVersionController.setLiveVersion(availableVersions.get(0));
-
 		if(!availableVersions.contains(version))
 			return Response.status(Status.NOT_FOUND).entity("Invalid version selected").build();
 		else{
-			contentVersionController.setLiveVersion(version);
-			log.info("Live version of the site changed to: " + version);
+			Future<String> newVersion = contentVersionController.triggerSyncJob(version);
+			
+			try {
+				contentVersionController.setLiveVersion(newVersion.get());
+				log.info("Live version of the site changed to: " + newVersion.get());
+				return Response.ok().entity("live Version changed to " + version).build();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-
-		return Response.ok().entity("live Version changed to " + version).build();
+		return Response.serverError().entity("Error trying to change live version").build();
 	}
 
 	/**
@@ -441,11 +451,6 @@ public class SegueApiFacade {
 	}
 	
 	public String getLiveVersion(){
-		// TODO this probably needs changing now
-		// Check if we want to get the latest from git each time a request is made from segue. - Will add overhead
-		if(Boolean.parseBoolean(this.properties.getProperty(Constants.FOLLOW_GIT_VERSION))){
-			this.synchroniseDataStores();
-		}
 		return contentVersionController.getLiveVersion();
 	}
 
@@ -458,6 +463,7 @@ public class SegueApiFacade {
 	public User getCurrentUser(HttpServletRequest request){
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
+
 		//TODO: Make the underlying code more efficient?
 		return userManager.getCurrentUser(request);
 	}
@@ -532,53 +538,37 @@ public class SegueApiFacade {
 
 	/**
 	 * This method will try to bring the live version that Segue is using to host content up-to-date with the latest in the git remote.
+	 * 
 	 * @return
 	 */
 	@POST
 	@Produces("application/json")
 	@Path("admin/synchronise_datastores")
-	public synchronized Response synchroniseDataStores(){
-		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-		
-		String newVersion = contentPersistenceManager.getLatestVersionId();
-		
-		log.debug("Checking for content change - Synchronizing with Git.");
-		
-		if(!newVersion.equals(contentVersionController.getLiveVersion())){
-
-			log.info("Changing live version to be " + newVersion + " from " + contentVersionController.getLiveVersion());
-			contentVersionController.setLiveVersion(newVersion);
-			
-			// TODO: come up with a better cache eviction strategy without random magic numbers.
-			if(contentPersistenceManager.getCachedVersionList().size() > 9){
-				List<String> allVersions = contentPersistenceManager.listAvailableVersions();
-				log.info("Cache full finding and deleting old versions");
-				// got through all versions in reverse until you find the oldest one that is also in the cached versions list and then remove it.
-				for(int i = allVersions.size()-1; contentPersistenceManager.getCachedVersionList().size() > 9; i--){
-					if(contentPersistenceManager.getCachedVersionList().contains(allVersions.get(i))){
-						log.info("Requesting to delete the content at version " + allVersions.get(i) + " from the cache.");
-						contentPersistenceManager.clearCache(allVersions.get(i));
-					}
-				}
-			}
-			else
-			{
-				log.info("Not evicting cache as we have enough space.");
-			}
+	public synchronized Response synchroniseDataStores(){		
+		log.info("Informed of content change; so triggering new synchronisation job.");
+		String newVersion = null;
+		try {
+			// this method will block until the sync job is complete.
+			newVersion = contentVersionController.triggerSyncJob().get();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
 		}
-		else
-		{
-			log.debug("No change to live version required.");
+		
+		if(null == newVersion){
+			return Response.serverError().entity("Error in the synchronisation process... ").build();
 		}
 
 		return Response.ok(newVersion).build();
 	}
 	
 	/**
-	 * This method will try to bring the live version that Segue is using to host content up-to-date with the latest in the git remote.
-	 * @return
+	 * This method will delete all cached data from the CMS and any search indices.
+	 * 
+	 * @return the latest version id that will be cached if content is requested.
 	 */
-	@POST
+	@PUT
 	@Produces("application/json")
 	@Path("admin/clear_caches")
 	public synchronized Response clearCaches(){
@@ -589,7 +579,7 @@ public class SegueApiFacade {
 		log.info("Clearing all caches...");
 		
 		contentPersistenceManager.clearCache();
-
+		//TODO: remove version that is returned as it doesn't make sense.
 		return Response.ok(newVersion).build();
 	}
 	
