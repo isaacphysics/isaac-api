@@ -118,10 +118,10 @@ public class GitContentManager implements IContentManager {
 		List<Content> result = new ArrayList<Content>();
 		if(this.ensureCache(version)){
 
+			// TODO: Fix Elastic search sort order of raw fields to make it more generic.
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 			
-			//TODO: fix tag search
 			if(fieldsToMatch.containsKey(Constants.TAGS_FIELDNAME)){
 				List<String> tagList = Arrays.asList(fieldsToMatch.get(Constants.TAGS_FIELDNAME).get(0).split(","));
 				fieldsToMatch.put(Constants.TAGS_FIELDNAME, tagList);

@@ -137,7 +137,7 @@ public class ContentVersionController {
 	 * @return true if it is being used, false if not.
 	 */
 	public boolean isVersionInUse(String version){
-		// TODO: this method will be used to indicate if a version is currently being used in A/B testing in the future. For now it is just checking if it is the live one.
+		// This method will be used to indicate if a version is currently being used in A/B testing in the future. For now it is just checking if it is the live one.
 		return getLiveVersion().equals(version);
 	}
 	
@@ -149,7 +149,7 @@ public class ContentVersionController {
 		
 		// first check if our cache is bigger than we want it to be
 		if(contentManager.getCachedVersionList().size() > max_cache_size){
-			log.info("Cache is full (" + contentManager.getCachedVersionList().size() + ") finding and deleting old versions");
+			log.info("Cache is too full (" + contentManager.getCachedVersionList().size() + ") finding and deleting old versions");
 			// Now we want to decide which versions we can safely get rid of.
 			List<String> allVersions = contentManager.listAvailableVersions();
 			
@@ -173,15 +173,15 @@ public class ContentVersionController {
 		}
 		else
 		{
-			log.info("Not evicting cache as we have enough space.");
+			log.info("Not evicting cache as we have enough space: current cache size is" + contentManager.getCachedVersionList().size() + ".");
 		}
 	}
 
 	/**
-	 *  
+	 *  Instructs all content Managers to dump all cache information and any associated search indices
 	 */
 	public synchronized void deleteAllCacheData(){	
-		log.info("Clearing all caches...");
+		log.info("Clearing all caches and search indices.");
 		contentManager.clearCache();
 	}
 }
