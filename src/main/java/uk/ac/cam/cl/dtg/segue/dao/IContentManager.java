@@ -102,4 +102,32 @@ public interface IContentManager {
 	 * @return A set of all of the version id's which are currently available without reindexing.
 	 */
 	public Set<String> getCachedVersionList();
+	
+	/**
+	 * Utility method that will check whether a version number supplied validates.
+	 * 
+	 * @param version
+	 * @return true if the version specified is valid and can potentially be indexed, false if it cannot.
+	 */
+	public boolean isValidVersion(String version);
+	
+	/**
+	 * Will build the cache and search index, if necessary
+	 * 
+	 * Note: it is the responsibility of the caller to manage the cache size.
+	 * 
+	 * @param version - version
+	 * @return True if version exists in cache, false if not
+	 */
+	public boolean ensureCache(String version);
+
+	/**
+	 * This method will compare two versions to determine which is the newer.
+	 * 
+	 * @param version1
+	 * @param version2
+	 * 
+	 * @return a positive number if version1 is newer, zero if they are the same, and a negative number if version 2 is newer.
+	 */
+	public int compareTo(String version1, String version2);
 }

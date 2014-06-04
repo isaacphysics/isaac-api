@@ -154,6 +154,26 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
+	public boolean isValidVersion(String version){
+		if(null == version || version.isEmpty()){
+			return false;
+		}
+			
+		return this.database.verifyCommitExists(version);
+	}
+	
+	@Override
+	public int compareTo(String version1, String version2){
+		Validate.notBlank(version1);
+		Validate.notBlank(version2);
+		
+		int version1Epoch = this.database.getCommitTime(version1);
+		int version2Epoch = this.database.getCommitTime(version2);
+		
+		return version1Epoch - version2Epoch;
+	}
+	
+	@Override
 	public String getLatestVersionId() throws UnsupportedOperationException {
 		return database.pullLatestFromRemote();
 	}
@@ -213,13 +233,9 @@ public class GitContentManager implements IContentManager {
 		return tagsList.get(version);
 	}
 	
-	/**
-	 * Will build cache if necessary. 
-	 * 
-	 * @param version - version
-	 * @return True if version exists in cache, false if not
-	 */
-	private boolean ensureCache(String version){
+
+	@Override
+	public boolean ensureCache(String version){
 		if(!gitCache.containsKey(version)){
 			if(database.verifyCommitExists(version)){
 				log.info("Rebuilding cache as sha does not exist in hashmap");
@@ -233,6 +249,7 @@ public class GitContentManager implements IContentManager {
 		}
 		
 		boolean searchIndexed = searchProvider.hasIndex(version);
+		
 		if(!searchIndexed){
 			log.warn("Search does not have a valid index for the "+ version + " version of the content");
 			this.buildSearchIndexFromLocalGitIndex(version);
