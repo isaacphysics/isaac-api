@@ -19,11 +19,6 @@ public class Constants {
 	 */
 	public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
 	
-	/**
-	 * Constant representing the key for the frequency (in seconds) of our polling strategy
-	 */
-	public static final String GIT_POLL_FREQUENCY = "GIT_POLL_FREQUENCY";
-	
 	// GIT stuff
 	
 	/**
