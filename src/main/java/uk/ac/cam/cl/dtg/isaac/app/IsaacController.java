@@ -144,7 +144,7 @@ public class IsaacController {
 			return Response.status(Status.NOT_FOUND).entity(responseBody).build();
 		}
 		
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
@@ -166,7 +166,7 @@ public class IsaacController {
 //	@Produces("application/json")
 //	@Deprecated
 	public Response search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule());
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
@@ -191,7 +191,7 @@ public class IsaacController {
 			@FormParam("message-text") String messageText,
 			@Context HttpServletRequest request){
 
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		
 		// construct a new instance of the mailer object
