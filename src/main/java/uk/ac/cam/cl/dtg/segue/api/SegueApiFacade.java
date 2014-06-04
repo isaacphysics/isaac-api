@@ -356,22 +356,18 @@ public class SegueApiFacade {
 
 		if(!availableVersions.contains(version))
 			return Response.status(Status.NOT_FOUND).entity("Invalid version selected").build();
-		else{
-			Future<String> newVersion = contentVersionController.triggerSyncJob(version);
-			
-			try {
-				contentVersionController.setLiveVersion(newVersion.get());
-				log.info("Live version of the site changed to: " + newVersion.get());
-				return Response.ok().entity("live Version changed to " + version).build();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
+		Future<String> newVersion = contentVersionController.triggerSyncJob(version);
+		
+		try {
+			contentVersionController.setLiveVersion(newVersion.get());
+			log.info("Live version of the site changed to: " + newVersion.get());
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Error while trying to change live version. ", e);
+			return Response.serverError().entity("Error trying to change live version").build();
 		}
-		return Response.serverError().entity("Error trying to change live version").build();
+
+		return Response.ok().entity("live Version changed to " + version).build();
 	}
 
 	/**
