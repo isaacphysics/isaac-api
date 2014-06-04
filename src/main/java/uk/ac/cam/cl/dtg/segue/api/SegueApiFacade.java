@@ -166,8 +166,8 @@ public class SegueApiFacade {
 
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
-		fieldsToMatch.put("type", Arrays.asList(type));
-		fieldsToMatch.put("tags", Arrays.asList(tags));
+		fieldsToMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(type));
+		fieldsToMatch.put(Constants.TAGS_FIELDNAME, Arrays.asList(tags));
 		
 		List<Content> c = (List<Content>) this.findMatchingContent(version, fieldsToMatch, startIndex, limit).getEntity();
 		

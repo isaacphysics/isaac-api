@@ -90,6 +90,11 @@ public class Constants {
 	 */
 	public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
 	
+	/**
+	 * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any processing on (e.g. no stemming)
+	 */
+	public static final String UNPROCESSED_SEARCH_FIELD_SUFFIX = "raw";
+	
 	// Enum to represent sort orders
 	public enum SortOrder {ASC, DESC};
 	
@@ -115,4 +120,12 @@ public class Constants {
 	 */
 	public static final String DEFAULT_SEARCH_LIMIT = "10";
 	
+	// Content model specific stuff
+	public static final String ID_FIELDNAME = "id";
+	public static final String TITLE_FIELDNAME = "title";
+	public static final String TYPE_FIELDNAME = "type";
+	public static final String TAGS_FIELDNAME = "tags";
+	public static final String VALUE_FIELDNAME = "value";
+	public static final String CHILDREN_FIELDNAME = "children";
+
 }

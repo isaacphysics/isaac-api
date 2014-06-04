@@ -87,7 +87,7 @@ public class GitContentManager implements IContentManager {
 	@Override
 	public List<Content> searchForContent(String version, String searchString){
 		if(this.ensureCache(version)){
-			List<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, "id","title","tags","value","children");
+			List<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
 		    
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
 		    ObjectMapper objectMapper = mapper.getContentObjectMapper();
@@ -119,12 +119,12 @@ public class GitContentManager implements IContentManager {
 		if(this.ensureCache(version)){
 
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
-			sortInstructions.put("title.raw", Constants.SortOrder.ASC);
+			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 			
 			//TODO: fix tag search
-			if(fieldsToMatch.containsKey("tags")){
-				List<String> tagList = Arrays.asList(fieldsToMatch.get("tags").get(0).split(","));
-				fieldsToMatch.put("tags", tagList);
+			if(fieldsToMatch.containsKey(Constants.TAGS_FIELDNAME)){
+				List<String> tagList = Arrays.asList(fieldsToMatch.get(Constants.TAGS_FIELDNAME).get(0).split(","));
+				fieldsToMatch.put(Constants.TAGS_FIELDNAME, tagList);
 			}
 			
 			List<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, sortInstructions);

@@ -240,8 +240,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 			CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
 			// TODO: This needs to turn into a generic function so that we can make other fields searchable. 
 			final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
-					.startObject("properties").startObject("title").field("type","string")
-					.field("index","analyzed").startObject("fields").startObject("raw")
+					.startObject("properties").startObject(Constants.TITLE_FIELDNAME).field("type","string")
+					.field("index","analyzed").startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
 					.field("type","string").field("index","not_analyzed").endObject()
 					.endObject().endObject().endObject().endObject().endObject();
 
