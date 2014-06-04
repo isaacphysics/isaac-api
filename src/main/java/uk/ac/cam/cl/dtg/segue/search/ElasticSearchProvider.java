@@ -41,8 +41,6 @@ public class ElasticSearchProvider implements ISearchProvider {
 	
 	private final Client client;
 	
-	private boolean mappingCorrect = false;
-	
 	@Inject
 	public ElasticSearchProvider(Client searchClient){
 		this.client = searchClient;
@@ -55,14 +53,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 	
 	@Override
 	public boolean indexObject(String index, final String indexType, String content, String uniqueId) {
-		try{		
-			//TODO: We need to improve how this happens and check what happens when indices are deleted during the lifetime of this object.
-			if(!mappingCorrect){
-				this.sendMappingCorrections(index, indexType);
-				mappingCorrect = true;
-			}
-				
-			
+		// check index already exists if not execute any initialisation steps.
+		if(!this.hasIndex(index)){
+			this.sendMappingCorrections(index, indexType);
+		}
+		
+		try{						
 			IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content).execute().actionGet(); 
 			log.info("Document: " + indexResponse.getId() + " indexed.");
 			
