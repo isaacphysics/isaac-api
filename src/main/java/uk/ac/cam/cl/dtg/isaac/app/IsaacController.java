@@ -81,7 +81,7 @@ public class IsaacController {
 		if(null != tags)
 			fieldsToMatch.put("tags", Arrays.asList(tags));
 		
-		List<Content> c = (List<Content>) api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit).getEntity();
+		List<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
 
 		if(null == c){
 			return Response.status(Status.NOT_FOUND).build();
@@ -114,7 +114,7 @@ public class IsaacController {
 		if(null != level)
 			fieldsToMatch.put("level", Arrays.asList(level));
 		
-		List<Content> c = (List<Content>) api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit).getEntity();
+		List<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
 
 		if(null == c){
 			return Response.status(Status.NOT_FOUND).build();

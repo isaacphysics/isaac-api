@@ -169,7 +169,7 @@ public class SegueApiFacade {
 		fieldsToMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(type));
 		fieldsToMatch.put(Constants.TAGS_FIELDNAME, Arrays.asList(tags));
 		
-		List<Content> c = (List<Content>) this.findMatchingContent(version, fieldsToMatch, startIndex, limit).getEntity();
+		List<Content> c = (List<Content>) this.findMatchingContent(version, fieldsToMatch, startIndex, limit);
 		
 		return Response.ok().entity(c).build();
 	}
@@ -183,7 +183,7 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public Response findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
+	public List<Content> findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
@@ -207,11 +207,11 @@ public class SegueApiFacade {
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
-			return Response.serverError().entity(e).build();
+			throw e;
 		}
 		
 
-		return Response.ok().entity(c).build();
+		return c;
 	}
 	
 	/**
