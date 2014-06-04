@@ -297,7 +297,6 @@ public class SegueApiFacade {
 	@Path("content/file_content/{version}/{path:.*}")
 	@Cache
 	public Response getImageFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
-		// TODO check if the content being requested is valid for this api call. e.g. only images?
 		if(null == version || null == path || Files.getFileExtension(path).isEmpty()){
 			log.info("Bad input to api call. Returning null");
 			return Response.serverError().entity(null).build();
@@ -312,6 +311,14 @@ public class SegueApiFacade {
 			case "svg":{
 				mimeType = "image/svg+xml";
 				break;
+			}
+			case "jpg":{
+				mimeType = "image/jpeg";
+				break;
+			}
+			default:{
+				// if it is an unknown type return an error as they shouldn't be using this endpoint.
+				return Response.status(Status.BAD_REQUEST).entity("Invalid file extension requested").build();
 			}
 		}
 
