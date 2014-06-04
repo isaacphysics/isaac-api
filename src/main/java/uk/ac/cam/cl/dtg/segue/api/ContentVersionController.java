@@ -98,7 +98,7 @@ public class ContentVersionController {
 					this.setLiveVersion(version);
 				}
 				else{
-					log.info("Not changing live version as the version indexed is older than the new one.");
+					log.info("Not changing live version as the version indexed is older than (or the same as) the new one.");
 				}
 			}
 		}

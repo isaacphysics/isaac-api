@@ -239,6 +239,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 	
 	private void sendMappingCorrections(final String index, final String indexType){
 		try {
+			log.info("Sending mapping correction for title.raw");
+			
 			CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
 			// TODO: This needs to turn into a generic function so that we can make other fields searchable. 
 			final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
