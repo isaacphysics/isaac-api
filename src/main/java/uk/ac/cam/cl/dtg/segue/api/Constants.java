@@ -14,6 +14,11 @@ public class Constants {
 	 */
 	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX"; 	
 	
+	/**
+	 * Constant representing the key for the maximum number of versions to cache. 
+	 */
+	public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
+	
 	// GIT stuff
 	
 	/**
@@ -105,11 +110,9 @@ public class Constants {
 	 */
 	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";	
 	
-	
 	/**
 	 * Default values
 	 */
-	
 	public static final String DEFAULT_SEARCH_LIMIT = "10";
 	
 }
