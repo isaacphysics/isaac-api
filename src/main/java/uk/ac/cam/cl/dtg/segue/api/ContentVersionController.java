@@ -174,7 +174,7 @@ public class ContentVersionController {
 		}
 		else
 		{
-			log.info("Not evicting cache as we have enough space: current cache size is" + contentManager.getCachedVersionList().size() + ".");
+			log.info("Not evicting cache as we have enough space: current cache size is " + contentManager.getCachedVersionList().size() + ".");
 		}
 	}
 
