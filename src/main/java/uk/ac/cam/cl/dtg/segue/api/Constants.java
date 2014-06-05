@@ -1,7 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 public class Constants {
-
+	/**
+	 * Name to use to describe the application to external services, e.g. 3rd party authenticators.
+	 */
+	public static final String APPLICATION_NAME = "Segue";
 	
 	// General Configuration stuff
 	/**
@@ -127,5 +130,4 @@ public class Constants {
 	public static final String TAGS_FIELDNAME = "tags";
 	public static final String VALUE_FIELDNAME = "value";
 	public static final String CHILDREN_FIELDNAME = "children";
-
 }

@@ -53,9 +53,6 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
 		
-	// TODO move to property?
-	private static final String APPLICATION_NAME = "Segue"; 
-	
 	@Inject
 	public GoogleAuthenticator(@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) String clientSecretLocation, @Named(Constants.GOOGLE_CALLBACK_URI)String callbackUri, @Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes) throws IOException{
 		try {
@@ -153,7 +150,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 			log.error("Unable to verify access token - it could be an indication of fraud.");
 			throw new AuthenticatorSecurityException("Access token is invalid - the client id returned by the identity provider does not match ours.");
 		}
-		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).setApplicationName(APPLICATION_NAME).build();
+		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).setApplicationName(Constants.APPLICATION_NAME).build();
 		Userinfoplus userInfo = null;
 
 		try {
@@ -206,7 +203,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	private boolean verifyAccessTokenIsValid(Credential credentials){
 		Validate.notNull(credentials, "Credentials cannot be null");
 		
-		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credentials).setApplicationName(APPLICATION_NAME).build();
+		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credentials).setApplicationName(Constants.APPLICATION_NAME).build();
 	    try {
 			Tokeninfo tokeninfo = oauth2.tokeninfo().setAccessToken(credentials.getAccessToken()).execute();
 
