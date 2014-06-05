@@ -34,7 +34,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dto.Figure;
+import uk.ac.cam.cl.dtg.segue.dto.Media;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
@@ -412,7 +412,7 @@ public class GitContentManager implements IContentManager {
 
 		// TODO Improve Hack to convert image source into something that the api can use to locate the specific image in the repository.
 		if(content.getType().equals("image") || content.getType().equals("figure")){
-			Figure figure = (Figure) content;
+			Media figure = (Media) content;
 			
 			String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + figure.getSrc(),true);
 			figure.setSrc(newPath);
@@ -456,8 +456,8 @@ public class GitContentManager implements IContentManager {
 				expectedIds.addAll(c.getRelatedContent());
 			
 			// content type specific checks
-			if(c.getType().equals("image")){
-				Figure f = (Figure) c;
+			if(c instanceof Media){
+				Media f = (Media) c;
 				
 				if(f.getSrc() != null && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())){
 					log.warn("Unable to find Image: " + f.getSrc() + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());

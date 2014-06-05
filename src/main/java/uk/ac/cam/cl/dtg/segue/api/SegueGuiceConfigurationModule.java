@@ -23,8 +23,10 @@ import uk.ac.cam.cl.dtg.segue.database.Mongo;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Figure;
+import uk.ac.cam.cl.dtg.segue.dto.Image;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dto.Video;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -168,8 +170,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		map.put("choice", Choice.class);
 		map.put("question", Question.class);
 		map.put("choiceQuestion", ChoiceQuestion.class);
-		map.put("image", Figure.class);
+		map.put("image", Image.class);
 		map.put("figure", Figure.class);
+		map.put("video", Video.class);
 		return map;
 	}
 	
