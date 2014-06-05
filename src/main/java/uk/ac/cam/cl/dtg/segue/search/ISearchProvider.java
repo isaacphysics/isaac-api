@@ -89,5 +89,12 @@ public interface ISearchProvider {
 	 * @param index
 	 * @return true if successful false if not.
 	 */
-	public boolean expungeEntireSearchCache();	
+	public boolean expungeEntireSearchCache();
+
+	/**
+	 * Register the names of fields that should have clones created (which are not affected by the search processor e.g. stemming and ignoring punctuation)
+	 * 
+	 * @param fieldNames to create raw fields of 
+	 */
+	public void registerRawStringFields(List<String> fieldNames);	
 }

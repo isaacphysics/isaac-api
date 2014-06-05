@@ -40,10 +40,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 	private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);	
 	
 	private final Client client;
+	private final List<String> rawFieldsList;
 	
 	@Inject
 	public ElasticSearchProvider(Client searchClient){
 		this.client = searchClient;
+		rawFieldsList = new ArrayList<String>();
 	}
 	
 	@Override
@@ -180,6 +182,11 @@ public class ElasticSearchProvider implements ISearchProvider {
 		return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
 	}
 	
+	@Override
+	public void registerRawStringFields(List<String> fieldNames){
+		this.rawFieldsList.addAll(fieldNames);
+	}
+	
 	private SearchRequestBuilder addSortInstructions(SearchRequestBuilder searchRequest, Map<String, Constants.SortOrder> sortInstructions){
 		// deal with sorting of results
 		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
@@ -238,23 +245,36 @@ public class ElasticSearchProvider implements ISearchProvider {
 		return resultList;
 	}
 	
+	/**
+	 * This function will allow top level fields to  have their contents cloned into an unanalysed field with the name {FieldName}.{raw}
+	 * 
+	 * This is useful if we want to query the original data without ElasticSearch having messed with it.
+	 * 
+	 * @param index
+	 * @param indexType
+	 */
 	private void sendMappingCorrections(final String index, final String indexType){
 		try {
-			log.info("Sending mapping correction for title.raw");
-			
 			CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
-			// TODO: This needs to turn into a generic function so that we can make other fields searchable. 
+			
 			final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
-					.startObject("properties").startObject(Constants.TITLE_FIELDNAME).field("type","string")
-					.field("index","analyzed").startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-					.field("type","string").field("index","not_analyzed").endObject()
-					.endObject().endObject().endObject().endObject().endObject();
-
+					.startObject("properties");
+			
+			for(String fieldName : this.rawFieldsList){
+				log.info("Sending raw mapping correction for " + fieldName + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+				
+				mappingBuilder.startObject(fieldName).field("type","string")
+						.field("index","analyzed").startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
+						.field("type","string").field("index","not_analyzed")
+						.endObject().endObject().endObject();
+			}
+	        // close off json structure
+			mappingBuilder.endObject().endObject().endObject();
 			indexBuilder.addMapping(indexType, mappingBuilder);
 			
-	        // MAPPING DONE
+			// Send Mapping information
 			indexBuilder.execute().actionGet();
-			
+
 		} catch (IOException e) {
 			log.error("Error while sending mapping correction instructions to the ElasticSearch Server", e);
 		}
