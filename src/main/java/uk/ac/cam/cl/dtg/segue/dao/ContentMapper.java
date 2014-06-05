@@ -126,7 +126,12 @@ public class ContentMapper {
 		log.info("Adding new content Types to Segue: " +  newTypes.keySet().toString());
 		jsonTypes.putAll(newTypes);
 	}
-	
+
+	/**
+	 * Registers JsonTypes using class annotation.
+	 *  
+	 * @param cls
+	 */
 	public synchronized void registerJsonType(Class<? extends Content> cls) {
 		Validate.notNull(cls, "Class cannot be null.");
 		
@@ -140,7 +145,7 @@ public class ContentMapper {
 	}
 	
 	/**
-	 * Provides a preconfigured module that can be added to an object mapper so that contentBase objects can be deseerialized using the custom deserializer.
+	 * Provides a pre-configured module that can be added to an object mapper so that contentBase objects can be deseerialized using the custom deserializer.
 	 * @return
 	 */
 	public ObjectMapper getContentObjectMapper(){ 

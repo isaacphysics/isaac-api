@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
@@ -325,7 +327,7 @@ public class GitContentManager implements IContentManager {
 		    	    Content content = null;
 		    	    try{
 		    	    	content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
-			    	    content = this.augmentChildContent(content, treeWalk.getPathString());
+			    	    content = this.augmentChildContent(content, treeWalk.getPathString(), null);
 			    	    
 			    	    if (null != content){				    	    	
 			    	    	// add children (and parent) from flattened Set to cache if they have ids
@@ -376,20 +378,32 @@ public class GitContentManager implements IContentManager {
 	 * 
 	 * This should be done before saving to the local gitCache in memory storage.
 	 * 
+	 * This method will also attempt to reconstruct object id's of nested content such that they are unique to the page by default.
+	 * 
 	 * @param content
 	 * @param canonicalSourceFile
 	 * @return Content object with new reference
 	 */
-	private Content augmentChildContent(Content content, String canonicalSourceFile){
+	private Content augmentChildContent(Content content, String canonicalSourceFile, @Nullable String parentId){
 		if(null == content){
 			return null;
 		}
 		
-		if(!content.getChildren().isEmpty()){
+		// Try to figure out the parent ids.
+		String newParentId = null;
+		if(null == parentId){
+			if(content.getId() != null)
+				newParentId = content.getId();
+		}else{
+			newParentId = parentId + '.' + content.getId();
+		}
+		
+		if(!content.getChildren().isEmpty()){		
 			for(ContentBase cb : content.getChildren()){
 				if(cb instanceof Content){
 					Content c = (Content) cb;
-					this.augmentChildContent(c, canonicalSourceFile);
+					
+					this.augmentChildContent(c, canonicalSourceFile, newParentId);
 				} 
 			}
 		}
@@ -403,7 +417,12 @@ public class GitContentManager implements IContentManager {
 			String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + figure.getSrc(),true);
 			figure.setSrc(newPath);
 		}
-
+		
+		// Concatenate the parentId with our id to get a fully qualified identifier.
+		if(content.getId() != null && parentId != null){
+			content.setId(parentId + '.' + content.getId());
+		}
+		
 		return content;		
 	}
 	
