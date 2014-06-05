@@ -21,7 +21,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -94,14 +93,10 @@ public class GitContentManager implements IContentManager {
 		    
 		    List<Content> searchResults = new ArrayList<Content>();
 		    for(String hit : searchHits){
-		    	try {
+				try {
 					searchResults.add((Content) objectMapper.readValue(hit, ContentBase.class));
-				} catch (JsonParseException e) {
-					e.printStackTrace();
-				} catch (JsonMappingException e) {
-					e.printStackTrace();
 				} catch (IOException e) {
-					e.printStackTrace();
+					log.error("Error while trying to search for " + searchString + " in version " + version, e);
 				}
 		    }
 			return searchResults;
@@ -118,7 +113,7 @@ public class GitContentManager implements IContentManager {
 		List<Content> result = new ArrayList<Content>();
 		if(this.ensureCache(version)){
 
-			// TODO: Fix Elastic search sort order of raw fields to make it more generic.
+			// TODO: Fix to allow sort order to be changed, currently it is hard coded to sort ASC by title..
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 			
@@ -290,7 +285,7 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	/**
-	 * This method will populate the gitCache based on the content object files found for a given SHA.
+	 * This method will populate the internal gitCache based on the content object files found for a given SHA.
 	 * 
 	 * Currently it only looks for json files in the repository.
 	 * 
@@ -317,10 +312,8 @@ public class GitContentManager implements IContentManager {
 				
 			    // Traverse the git repository looking for the .json files
 			    while(treeWalk.next()){
-		    		ObjectId objectId = treeWalk.getObjectId(0);
-		    	    ObjectLoader loader = repository.open(objectId);
-		    		 
 		    	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+			    	ObjectLoader loader = repository.open(treeWalk.getObjectId(0));
 		    	    loader.copyTo(out);
 
 		    	    // setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism		    	    
@@ -328,8 +321,7 @@ public class GitContentManager implements IContentManager {
 		    	    
 		    	    Content content = null;
 		    	    try{
-			    	    String rawJson = out.toString();
-		    	    	content = (Content) objectMapper.readValue(rawJson, ContentBase.class);
+		    	    	content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 			    	    content = this.augmentChildContent(content, treeWalk.getPathString());
 			    	    
 			    	    if (null != content){				    	    	
@@ -360,8 +352,7 @@ public class GitContentManager implements IContentManager {
 			    	    }		    	    
 		    	    }
 		    	    catch(JsonMappingException e){
-		    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...");
-		    	    	e.printStackTrace();
+		    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...", e);
 		    	    }
 			    }
 
@@ -370,11 +361,9 @@ public class GitContentManager implements IContentManager {
 			    repository.close();
 			    log.info("Tags available " + tagsList);
 				log.info("Git content cache population for " + sha + " completed!");
-				
 			}
-			catch(IOException exception){
-				log.error("IOException while trying to access git repository. " + exception.getMessage());
-				exception.printStackTrace();
+			catch(IOException e){
+				log.error("IOException while trying to access git repository. ", e);
 			}
 		}
 	}
