@@ -1,11 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
-import java.util.concurrent.Callable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ContentSynchronisationWorker implements Callable<String>{
+public class ContentSynchronisationWorker implements Runnable{
 	private static final Logger log = LoggerFactory.getLogger(ContentSynchronisationWorker.class);
 	
 	private ContentVersionController contentVersionController;
@@ -21,7 +19,7 @@ public class ContentSynchronisationWorker implements Callable<String>{
 	}
 	
 	@Override
-	public String call() throws Exception {		
+	public void run() {		
 		// Verify with Content manager that we can sync to the version requested / get the latest one
 		log.info("Starting asynchronous data synchronisation task for the content repository.");
 		
@@ -40,7 +38,7 @@ public class ContentSynchronisationWorker implements Callable<String>{
 				contentVersionController.syncJobCompleteCallback(version, true);
 				
 				log.info("Content synchronisation job complete");
-				return version;
+				return;
 			}
 		}
 
@@ -48,7 +46,7 @@ public class ContentSynchronisationWorker implements Callable<String>{
 		// call the content controller to tell them we failed to sync the version requested
 		contentVersionController.syncJobCompleteCallback(version, false);
 		
-		return null;
+		return;
 	}
 	
 }

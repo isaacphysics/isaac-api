@@ -1,10 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +11,11 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 // TODO: convert this class into a singleton instead of using static fields.
 public class ContentVersionController {
-	
 	private static final Logger log = LoggerFactory.getLogger(ContentVersionController.class);
 	
 	private static volatile String liveVersion;
 	
-	private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
-	
 	private PropertiesLoader properties;
-	
 	private IContentManager contentManager;
 	
 	@Inject
@@ -54,28 +46,35 @@ public class ContentVersionController {
 	/**
 	 * Trigger a sync job that will request a sync and subsequent index of the latest version of the content available 
 	 * 
-	 * @return a future containing a string representation of the version that is available.
+	 * Currently this is not asynchronous as it is expected that notifiers will cope with blocking.
+	 * 
+	 * @return a string representation of the version that is available.
 	 */
-	public Future<String> triggerSyncJob(){
+	public synchronized String triggerSyncJob(){
 		return this.triggerSyncJob(null);
 	}
 	
 	/**
 	 * Trigger a sync job that will request a sync and subsequent index of a specific version of the content.
 	 * 
+	 * Currently this is not asynchronous as it is expected that notifiers will cope with blocking.
+	 * 
 	 * @param version to sync
-	 * @return a future containing a string representation of the version that is available.
+	 * @return a string representation of the version that is available.
 	 */
-	public Future<String> triggerSyncJob(String version){
-		// I decided to do this so that we can queue up index jobs and allow them to be processed sequentially. We may not need this but I have left it for now.
-		return executorService.submit(new ContentSynchronisationWorker(this, version));
+	public synchronized String triggerSyncJob(String version){
+		ContentSynchronisationWorker worker = new ContentSynchronisationWorker(this, version);
+
+		// We can convert this to be a thread if we wish later; at the moment blocking isn't a problem as github makes the sync requests.
+		worker.run();
+		return version;
 	}
 
 	/**
 	 * This method is intended to be used by Synchronisation jobs to inform the controller that they have completed their work.
 	 * @param the version that has just been indexed. 
 	 */
-	public synchronized void syncJobCompleteCallback(String version, boolean success){
+	public synchronized void syncJobCompleteCallback(String version, boolean success){		
 		// for use by ContentSynchronisationWorkers to alert the controller that they have finished
 		if(!success){
 			log.error("ContentSynchronisationWorker reported a failure to synchronise");
@@ -99,7 +98,7 @@ public class ContentVersionController {
 					this.setLiveVersion(version);
 				}
 				else{
-					log.info("Not changing live version as the version indexed is older than (or the same as) the new one.");
+					log.info("Not changing live version as part of sync job as the version indexed is older than (or the same as) the new one.");
 				}
 			}
 		}
@@ -121,10 +120,18 @@ public class ContentVersionController {
 	 * @param newLiveVersion
 	 */
 	public void setLiveVersion(String newLiveVersion){
+		
+		if(!contentManager.getCachedVersionList().contains(newLiveVersion)){
+			log.warn("New version hasn't been synced yet. Requesting sync job.");
+			
+			// trigger sync job
+			this.triggerSyncJob(newLiveVersion);
+		}
+		
 		synchronized(liveVersion){
 			log.info("Changing live version from " + this.getLiveVersion() + " to " + newLiveVersion);
 			liveVersion = newLiveVersion;	
-		}
+		}	
 	}
 	
 	public IContentManager getContentManager(){

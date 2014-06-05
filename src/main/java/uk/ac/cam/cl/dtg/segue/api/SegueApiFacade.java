@@ -9,9 +9,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -357,15 +354,10 @@ public class SegueApiFacade {
 		if(!availableVersions.contains(version))
 			return Response.status(Status.NOT_FOUND).entity("Invalid version selected").build();
 
-		Future<String> newVersion = contentVersionController.triggerSyncJob(version);
+		String newVersion = contentVersionController.triggerSyncJob(version);
 		
-		try {
-			contentVersionController.setLiveVersion(newVersion.get());
-			log.info("Live version of the site changed to: " + newVersion.get());
-		} catch (InterruptedException | ExecutionException e) {
-			log.error("Error while trying to change live version. ", e);
-			return Response.serverError().entity("Error trying to change live version").build();
-		}
+		contentVersionController.setLiveVersion(newVersion);
+		log.info("Live version of the site changed to: " + newVersion);
 
 		return Response.ok().entity("live Version changed to " + version).build();
 	}
@@ -548,12 +540,7 @@ public class SegueApiFacade {
 	public synchronized Response synchroniseDataStores(){		
 		log.info("Informed of content change; so triggering new synchronisation job.");
 		String newVersion = null;
-		// this method will block until the sync job is complete.
-		try {
-			newVersion = contentVersionController.triggerSyncJob().get();
-		} catch (InterruptedException | ExecutionException e) {
-			log.error("Error while trying to trigger data sync job: ", e);
-		}
+		newVersion = contentVersionController.triggerSyncJob();
 
 		if(null == newVersion){
 			return Response.serverError().entity("Error in the synchronisation process... ").build();
