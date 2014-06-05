@@ -567,7 +567,7 @@ public class SegueApiFacade {
 	 * 
 	 * @return the latest version id that will be cached if content is requested.
 	 */
-	@PUT
+	@POST
 	@Produces("application/json")
 	@Path("admin/clear_caches")
 	public synchronized Response clearCaches(){
