@@ -90,7 +90,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 				clientSecrets.getDetails().getClientId(),
 				callbackUri,
 				requestedScopes);
-//		.setAccessType("online")
+//		.setAccessType("online") // these can be used to force approval each time the user logs in if we wish.
 //		.setApprovalPrompt("force");
 
 		urlBuilder.set("state", getAntiForgeryStateToken());

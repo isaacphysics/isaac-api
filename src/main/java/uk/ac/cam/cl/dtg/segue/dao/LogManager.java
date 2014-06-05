@@ -8,6 +8,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
+// TODO: We probably want to revamp this class to log more interesting things eventually.
 public class LogManager implements ILogManager {
 
 	private final DB database;
@@ -16,6 +17,7 @@ public class LogManager implements ILogManager {
 	public LogManager(DB database) {
 		this.database = database;
 	}
+	
 	public boolean log(String sessionId, String cookieId, String eventJSON) {
 		
 		DBCollection log = database.getCollection("log");
@@ -27,7 +29,7 @@ public class LogManager implements ILogManager {
 		
 		log.insert(dbo);
 
-		// TODO: Return something useful here. True on success.
+
 		return true;
 	}
 }

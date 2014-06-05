@@ -78,7 +78,6 @@ public class ElasticSearchProvider implements ISearchProvider {
 		// build up the query from the fieldsToMatch map
 		BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-		// TODO: refactor this. 
 		for(Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()){
 			if(pair.getValue() != null){
 				// If it is a list of only one thing just put it in the query.
@@ -97,7 +96,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 				}				
 			}
 			else{
-				log.info("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
+				log.warn("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
 			}
 		}
 		
@@ -109,17 +108,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		        .setSize(limit)
 		        .setFrom(startIndex);
 		        
-		// deal with sorting of results
-		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
-		    String sortField = entry.getKey();
-		    Constants.SortOrder sortOrder = entry.getValue();
-		    
-		    if(sortOrder == Constants.SortOrder.ASC)
-		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
-		    	
-		    else
-		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
-		}
+		searchRequest = addSortInstructions(searchRequest, sortInstructions);
 
 		return this.executeQuery(searchRequest);
 	}
@@ -191,6 +180,22 @@ public class ElasticSearchProvider implements ISearchProvider {
 		return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
 	}
 	
+	private SearchRequestBuilder addSortInstructions(SearchRequestBuilder searchRequest, Map<String, Constants.SortOrder> sortInstructions){
+		// deal with sorting of results
+		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
+		    String sortField = entry.getKey();
+		    Constants.SortOrder sortOrder = entry.getValue();
+		    
+		    if(sortOrder == Constants.SortOrder.ASC)
+		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
+		    	
+		    else
+		    	searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC).missing("_last"));
+		}
+		
+		return searchRequest;
+	}
+	
 	/**
 	 * Provides default search execution using the fields specified.
 	 * 
@@ -251,8 +256,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 			indexBuilder.execute().actionGet();
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error("Error while sending mapping correction instructions to the ElasticSearch Server", e);
 		}
 	}
 }

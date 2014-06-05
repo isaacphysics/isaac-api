@@ -217,13 +217,13 @@ public class UserManager{
 				}				
 			}
 			catch(IOException e){
-				e.printStackTrace();
+				log.error("Exception while trying to authenticate a user - during callback step", e);
 			} catch (NoUserIdException e) {
-				e.printStackTrace();
+				log.error("No userID exception received. Unable to locate user.", e);
 			} catch (CodeExchangeException e) {
-				e.printStackTrace();
+				log.error("Unable to verify security code.", e);
 			} catch (AuthenticatorSecurityException e) {
-				e.printStackTrace();
+				log.error("Exception during security checks.", e);
 			}
 		}
 		return Response.ok().build();

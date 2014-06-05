@@ -459,7 +459,6 @@ public class SegueApiFacade {
 
 	/**
 	 * Get the details of the currently logged in user
-	 * TODO: test me
 	 * 
 	 * @return Returns the current user DTO if we can get it or null if we can't
 	 */
@@ -467,7 +466,6 @@ public class SegueApiFacade {
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
-		//TODO: Make the underlying code more efficient?
 		return userManager.getCurrentUser(request);
 	}
 
@@ -514,7 +512,7 @@ public class SegueApiFacade {
 
 		String returnUrl = this.properties.getProperty(Constants.HOST_NAME) + this.properties.getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
 		
-		//TODO: make less hacky
+		//TODO: work out where the user was and send them there instead? Or allow front end to manage this?
 		return Response.temporaryRedirect(URI.create(returnUrl)).build();
 	}
 
@@ -523,7 +521,7 @@ public class SegueApiFacade {
 	 * 
 	 * @param request
 	 * @param response
-	 * @return TODO ? do we return to homepage.
+	 * @return a temporary redirect to the default landing suffix found in the config file.
 	 */
 	@GET
 	@Produces("application/json")
@@ -535,7 +533,7 @@ public class SegueApiFacade {
 		userManager.logUserOut(request);
 		
 		String returnUrl = this.properties.getProperty(Constants.HOST_NAME) + this.properties.getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
-		// TODO: make less hacky
+
 		return Response.temporaryRedirect(URI.create(returnUrl)).build();
 	}
 
@@ -550,15 +548,13 @@ public class SegueApiFacade {
 	public synchronized Response synchroniseDataStores(){		
 		log.info("Informed of content change; so triggering new synchronisation job.");
 		String newVersion = null;
+		// this method will block until the sync job is complete.
 		try {
-			// this method will block until the sync job is complete.
 			newVersion = contentVersionController.triggerSyncJob().get();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Error while trying to trigger data sync job: ", e);
 		}
-		
+
 		if(null == newVersion){
 			return Response.serverError().entity("Error in the synchronisation process... ").build();
 		}
@@ -577,13 +573,14 @@ public class SegueApiFacade {
 	public synchronized Response clearCaches(){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
-		String newVersion = contentPersistenceManager.getLatestVersionId();
-		
 		log.info("Clearing all caches...");
-		
 		contentPersistenceManager.clearCache();
-		//TODO: remove version that is returned as it doesn't make sense.
-		return Response.ok(newVersion).build();
+		
+		ImmutableMap<String,String> response = new ImmutableMap.Builder<String,String>()
+		.put("result","success")
+		.build();
+		
+		return Response.ok(response).build();
 	}
 	
 

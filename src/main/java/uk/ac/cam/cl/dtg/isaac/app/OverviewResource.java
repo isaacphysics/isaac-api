@@ -30,12 +30,11 @@ import com.google.common.collect.Maps;
 /**
  * A resource that displays a list of available endpoints (which is helpful to see for debugging purposes).
  * 
- * @author Patrick Stegmann https://gist.github.com/wonderb0lt/10731371#file-overviewresource-java
- * @author Stephen Cummins - modified to work slightly better with new version of resteasy 27/05/2014
+ * @author Patrick Stegmann https://gist.github.com/wonderb0lt/10731371#file-overviewresource-java Retrieved 27/05/2014
+ * @author Stephen Cummins - modified to work with new version of resteasy 27/05/2014
  */
 @Path("/")
 public class OverviewResource {
-	
 	private static final Logger log = LoggerFactory.getLogger(OverviewResource.class);
 
 	/**
@@ -211,8 +210,8 @@ public class OverviewResource {
     @Produces(MediaType.TEXT_HTML)
     @Cache
     public Response getAvailableEndpointsHtml(@Context Dispatcher dispatcher) {
-        // TODO Yeah, yeah, HTML per StringBuilder. I can't be bovvered to make a JSP :D
         log.info("Requesting endpoint list from api using HTML view.");
+        
         StringBuilder sb = new StringBuilder();
         ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher.getRegistry();
         List<ResourceDescription> descriptions = ResourceDescription.fromBoundResourceInvokers(registry.getBounded().entrySet());

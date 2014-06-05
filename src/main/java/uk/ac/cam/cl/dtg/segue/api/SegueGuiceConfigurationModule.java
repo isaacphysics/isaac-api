@@ -47,18 +47,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	// TODO: These are effectively singletons... 
 	// we only ever want there to be one instance of each of these.
-	private static PropertiesLoader globalProperties = null;
 	private static ContentMapper mapper = null;
 	private static Client elasticSearchClient = null;
 
+	private PropertiesLoader globalProperties = null;
 
 	public SegueGuiceConfigurationModule(){
 		try {
 			globalProperties = new PropertiesLoader("/config/segue-config.properties");
 			
 		} catch (IOException e) {
-			log.error("Error loading properties file.");
-			e.printStackTrace();
+			log.error("Error loading properties file.", e);
 		}
 		
 		if(null == mapper){

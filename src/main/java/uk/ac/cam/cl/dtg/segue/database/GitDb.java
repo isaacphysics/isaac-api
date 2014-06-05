@@ -10,15 +10,8 @@ import javax.ws.rs.NotFoundException;
 
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.CanceledException;
-import org.eclipse.jgit.api.errors.DetachedHeadException;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidConfigurationException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoHeadException;
-import org.eclipse.jgit.api.errors.RefNotFoundException;
-import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
@@ -66,7 +59,6 @@ public class GitDb {
 	 * @throws IOException
 	 */
 	public GitDb(String repoLocation) throws IOException{
-		
 		Validate.notBlank(repoLocation);
 		
 		// unused for this constructor
@@ -233,7 +225,8 @@ public class GitDb {
 			log.error("Git returned an IO exception. Unable to list all commits.");
 			e.printStackTrace();
 		}
-		log.warn("Commit " + sha + " does not exist");
+		
+		log.debug("Commit " + sha + " does not exist");
 		return false;
 	}
 	
@@ -270,9 +263,9 @@ public class GitDb {
 	}
 
 	/**
-	 * gets a complete list of commits with the most recent commit first.
+	 * Gets a complete list of commits with the most recent commit first.
 	 * 
-	 * TODO: test that this list includes fetched commits that are not applied to working copy.
+	 * Will return null if there is a problem and will write a log to the configured logger with the stack trace.
 	 * 
 	 * @return List of the commit shas we have found in the git repository.
 	 */
@@ -286,17 +279,12 @@ public class GitDb {
 				logList.add(rev);
 			}
 
-		} catch (NoHeadException e) {
-			log.error("Git returned a no head exception. Unable to list all commits.");
 		} catch (GitAPIException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			log.error("Git returned an API exception. Unable to list all commits.");			
+			log.error("Git returned an API exception. While trying to to list all commits.", e);		
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			log.error("Git returned an IO exception. Unable to list all commits.");
-		}	
+			log.error("Git returned an IO exception. While trying to to list all commits.", e);
+		}
+		
 		return logList;
 	}
 
@@ -310,7 +298,6 @@ public class GitDb {
 			SshSessionFactory factory = new JschConfigSessionFactory() {
 				@Override
 				public void configure(Host hc, com.jcraft.jsch.Session session) {
-
 					session.setConfig("StrictHostKeyChecking", "no");
 				}
 
@@ -334,26 +321,10 @@ public class GitDb {
 			FetchResult r = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 			
 			log.debug("Fetched the following advertised Refs." + r.getAdvertisedRefs().toString());
-
 			log.debug("Fetched latest from git result: " + this.getHeadSha() );
-		} catch (WrongRepositoryStateException e) {
-			e.printStackTrace();
-		} catch (InvalidConfigurationException e) {
-			e.printStackTrace();
-		} catch (DetachedHeadException e) {
-			e.printStackTrace();
-		} catch (InvalidRemoteException e) {
-			e.printStackTrace();
-		} catch (CanceledException e) {
-			e.printStackTrace();
-		} catch (RefNotFoundException e) {
-			e.printStackTrace();
-		} catch (NoHeadException e) {
-			e.printStackTrace();
-		} catch (TransportException e) {
-			e.printStackTrace();
+		
 		} catch (GitAPIException e) {
-			e.printStackTrace();
+			log.error("Error while trying to pull the latest from the remote repository.", e);
 		} 
 		return this.getHeadSha();
 	}
