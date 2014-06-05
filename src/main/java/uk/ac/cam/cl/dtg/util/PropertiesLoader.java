@@ -36,7 +36,7 @@ public class PropertiesLoader {
     		else
     		{
     			loadedProperties.load(getClass().getClassLoader().getResourceAsStream(this.propertiesFile));
-    			log.info("Properties file read successfully " + propertiesFile);
+    			log.debug("Properties file read successfully " + propertiesFile);
     		}
 	}
 	
