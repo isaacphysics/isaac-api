@@ -67,6 +67,7 @@ public class ContentVersionController {
 	 * @return a future containing a string representation of the version that is available.
 	 */
 	public Future<String> triggerSyncJob(String version){
+		// I decided to do this so that we can queue up index jobs and allow them to be processed sequentially. We may not need this but I have left it for now.
 		return executorService.submit(new ContentSynchronisationWorker(this, version));
 	}
 
