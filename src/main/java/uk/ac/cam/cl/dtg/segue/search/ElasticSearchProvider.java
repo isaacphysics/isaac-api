@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 import com.google.inject.Inject;
 
@@ -74,7 +75,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public List<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
+	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions){		
 
 		// build up the query from the fieldsToMatch map
@@ -116,26 +117,26 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 	
 	@Override
-	public List<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields) {
+	public ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields) {
 		if(null == index || null == indexType || null == searchString || null == fields){
 			log.warn("A required field is missing. Unable to execute search.");
 			return null;
 		}
 		
 		QueryBuilder query = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
-		List<String> resultList = this.executeBasicQuery(index, indexType, query);
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query);
 		return resultList; 
 	}
 	
 	@Override
-	public List<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field){
+	public ResultsWrapper<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field){
 		if(null == index || null == indexType || null == searchTerms || null == field){
 			log.warn("A required field is missing. Unable to execute search.");
 			return null;
 		}
 		
 		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
-		List<String> resultList = this.executeBasicQuery(index, indexType, query);
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query);
 		return resultList; 
 	}
 
@@ -214,7 +215,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * 
 	 * @return list of the search results
 	 */
-	private List<String> executeBasicQuery(final String index, final String indexType, final QueryBuilder query){		
+	private ResultsWrapper<String> executeBasicQuery(final String index, final String indexType, final QueryBuilder query){		
 		log.debug("Building Query: " + query);
 		
 		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index)
@@ -230,7 +231,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * @param configuredSearchRequestBuilder
 	 * @return List of the search results.
 	 */
-	private List<String> executeQuery(SearchRequestBuilder configuredSearchRequestBuilder){
+	private ResultsWrapper<String> executeQuery(SearchRequestBuilder configuredSearchRequestBuilder){
 		SearchResponse response = configuredSearchRequestBuilder.execute().actionGet();
 		
 		List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
@@ -242,7 +243,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 			resultList.add(item.getSourceAsString());
 		}
 		
-		return resultList;
+		return new ResultsWrapper<String>(resultList, response.getHits().getTotalHits());
 	}
 	
 	/**

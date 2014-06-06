@@ -25,11 +25,13 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.models.ContentInfo;
 import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
+import uk.ac.cam.cl.dtg.segue.dto.Image;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -49,6 +51,7 @@ public class IsaacController {
 	private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 	
 	private static SegueApiFacade api;
+	private static PropertiesLoader propertiesLoader;
 
 	public IsaacController(){
 		// Get an instance of the segue api so that we can service requests directly from it 
@@ -56,6 +59,7 @@ public class IsaacController {
 		if(null == api){
 			Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 			api = injector.getInstance(SegueApiFacade.class);
+			propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		}
 		
 //		test of user registration - this is just a snippet for future reference as I didn't know where else to put it.
@@ -81,13 +85,15 @@ public class IsaacController {
 		if(null != tags)
 			fieldsToMatch.put("tags", Arrays.asList(tags));
 		
-		List<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
-
+		ResultsWrapper<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
+		
 		if(null == c){
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		
-		return Response.ok(c).build();
+		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(Constants.PROXY_PATH)), c.getTotalResults());
+		
+		return Response.ok(summarizedContent).build();
 	}
 	
 	
@@ -114,7 +120,7 @@ public class IsaacController {
 		if(null != level)
 			fieldsToMatch.put("level", Arrays.asList(level));
 		
-		List<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
+		ResultsWrapper<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
 
 		if(null == c){
 			return Response.status(Status.NOT_FOUND).build();
@@ -144,8 +150,6 @@ public class IsaacController {
 			return Response.status(Status.NOT_FOUND).entity(responseBody).build();
 		}
 		
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
 		
@@ -162,27 +166,6 @@ public class IsaacController {
 	
 //	@POST
 //	@Consumes({"application/x-www-form-urlencoded"})
-//	@Path("search/full-site/")
-//	@Produces("application/json")
-//	@Deprecated
-	public Response search(@Context HttpServletRequest req, @FormParam("searchString") String searchString) {
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
-		
-		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
-
-		Response searchResponse = api.search(searchString);
-		
-		List<ContentInfo> summaryOfSearchResults = null;
-		if(searchResponse.getEntity() instanceof List<?>){
-			summaryOfSearchResults = this.extractContentInfo((List<Content>) searchResponse.getEntity(), proxyPath);
-		}
-		
-		return Response.ok(summaryOfSearchResults).build();
-	}	
-	
-//	@POST
-//	@Consumes({"application/x-www-form-urlencoded"})
 //	@Path("contact-us/sendContactUsMessage")
 	public ImmutableMap<String,String> postContactUsMessage(
 			@FormParam("full-name") String fullName,
@@ -191,8 +174,7 @@ public class IsaacController {
 			@FormParam("message-text") String messageText,
 			@Context HttpServletRequest request){
 
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-		PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
+
 		
 		// construct a new instance of the mailer object
 		Mailer contactUsMailer = new Mailer(propertiesLoader.getProperty(Constants.MAILER_SMTP_SERVER), propertiesLoader.getProperty(Constants.MAIL_FROM_ADDRESS));
@@ -248,14 +230,14 @@ public class IsaacController {
 	 * @param content - the content object which contains related content
 	 * @return
 	 */
-	private List<ContentInfo> buildMetaContentmap(String proxyPath, Content content){
+	private List<ContentSummary> buildMetaContentmap(String proxyPath, Content content){
 		if(null == content){
 			return null;
 		}else if(content.getRelatedContent() == null || content.getRelatedContent().isEmpty()){
 			return null;
 		}
 		
-		List<ContentInfo> contentInfoList = new ArrayList<ContentInfo>();
+		List<ContentSummary> contentInfoList = new ArrayList<ContentSummary>();
 		
 		for(String id : content.getRelatedContent()){
 			try{
@@ -264,7 +246,7 @@ public class IsaacController {
 				if(relatedContent == null){
 					log.warn("Related content (" + id + ") does not exist in the data store.");
 				} else {
-					ContentInfo contentInfo = extractContentInfo(relatedContent, proxyPath);
+					ContentSummary contentInfo = extractContentInfo(relatedContent, proxyPath);
 					contentInfoList.add(contentInfo);
 				}
 			}
@@ -279,26 +261,26 @@ public class IsaacController {
 	/**
 	 * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to the client instead.
 	 * 
-	 * TODO: we should use an automapper to do this in a nicer way.
+	 * TODO: we should use an auto mapper to do this in a nicer way.
 	 * @param content
 	 * @param proxyPath
 	 * @return
 	 */
-	private ContentInfo extractContentInfo(Content content, String proxyPath){
+	private ContentSummary extractContentInfo(Content content, String proxyPath){
 		if (null == content)
 			return null;
 		
-		// TODO fix this stuff to be less horrid
-		ContentInfo contentInfo = null;
+		ContentSummary contentInfo = null;
 		try{
-			if(content.getType().equals("image")){
-				contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
+			if(content instanceof Image){
+				contentInfo = new ContentSummary(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}
+			// TODO fix this stuff to be less horrid
 			else if(content.getType().toLowerCase().contains("question")){
-				contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + "questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo = new ContentSummary(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + "questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}
 			else{
-				contentInfo = new ContentInfo(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo = new ContentSummary(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}			
 		}
 		catch(UnsupportedEncodingException e){
@@ -309,19 +291,20 @@ public class IsaacController {
 	}
 
 	/**
-	 * Utility method to convert a list of content objects into a list of ContentInfo Objects 
+	 * Utility method to convert a list of content objects into a list of ContentInfo Objects
+	 *  
 	 * @param contentList
 	 * @param proxyPath
-	 * @return
+	 * @return list of shorter contentInfo objects.
 	 */
-	private List<ContentInfo> extractContentInfo(List<Content> contentList, String proxyPath){
+	private List<ContentSummary> extractContentInfo(List<Content> contentList, String proxyPath){
 		if (null == contentList)
 			return null;
 		
-		List<ContentInfo> listOfContentInfo = new ArrayList<ContentInfo>();
+		List<ContentSummary> listOfContentInfo = new ArrayList<ContentSummary>();
 		
 		for(Content content : contentList){
-			ContentInfo contentInfo = extractContentInfo(content,proxyPath); 
+			ContentSummary contentInfo = extractContentInfo(content,proxyPath); 
 			if(null != contentInfo)
 				listOfContentInfo.add(contentInfo);
 		}		

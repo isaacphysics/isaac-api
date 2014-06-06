@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.models;
+package uk.ac.cam.cl.dtg.segue.dto;
 
 /**
  * DTO represents high level information about a piece of content
@@ -6,8 +6,7 @@ package uk.ac.cam.cl.dtg.isaac.models;
  * This should be a light weight object used for presenting search results etc.
  *
  */
-public class ContentInfo {
-
+public class ContentSummary{
 	private String id;
 
 	private String title;
@@ -16,8 +15,7 @@ public class ContentInfo {
 
 	private String url;
 
-	public ContentInfo(String id, String title, String type, String url) {
-		super();
+	public ContentSummary(String id, String title, String type, String url) {
 		this.id = id;
 		this.type = type;
 		this.title = title;

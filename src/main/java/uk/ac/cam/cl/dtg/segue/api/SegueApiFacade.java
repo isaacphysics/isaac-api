@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,6 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -166,7 +168,7 @@ public class SegueApiFacade {
 		fieldsToMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(type));
 		fieldsToMatch.put(Constants.TAGS_FIELDNAME, Arrays.asList(tags));
 		
-		List<Content> c = (List<Content>) this.findMatchingContent(version, fieldsToMatch, startIndex, limit);
+		ResultsWrapper<Content> c = this.findMatchingContent(version, fieldsToMatch, startIndex, limit);
 		
 		return Response.ok().entity(c).build();
 	}
@@ -180,7 +182,7 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public List<Content> findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
+	public ResultsWrapper<Content> findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
@@ -194,7 +196,7 @@ public class SegueApiFacade {
 			startIndex = "0";
 		}
 
-		List<Content> c = null;
+		ResultsWrapper<Content> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
@@ -363,11 +365,11 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method returns all versions as an immutablemap version_list: []
+	 * This method returns all versions as an immutable map version_list: []
 	 * 
 	 * @param This parameter if not null will set the limit of the number entries to return the default is the latest 10 (indices starting at 0).
 	 * 
-	 * @return a Response containing an immutablemap version_list: [x..y..]
+	 * @return a Response containing an immutable map version_list: [x..y..]
 	 */
 	@GET
 	@Produces("application/json")
@@ -581,7 +583,7 @@ public class SegueApiFacade {
 	public Response search(@PathParam("searchString") String searchString){			
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 		
-		List<Content> searchResults = contentPersistenceManager.searchForContent(contentVersionController.getLiveVersion(), searchString);
+		ResultsWrapper<Content> searchResults = contentPersistenceManager.searchForContent(contentVersionController.getLiveVersion(), searchString);
 		//TODO: we probably only want to return summaries of content objects?
 		
 		return Response.ok(searchResults).build();

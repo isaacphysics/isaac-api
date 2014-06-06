@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.Media;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
@@ -89,22 +90,22 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public List<Content> searchForContent(String version, String searchString){
+	public ResultsWrapper<Content> searchForContent(String version, String searchString){
 		if(this.ensureCache(version)){
-			List<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
+			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
 		    
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
 		    ObjectMapper objectMapper = mapper.getContentObjectMapper();
 		    
 		    List<Content> searchResults = new ArrayList<Content>();
-		    for(String hit : searchHits){
+		    for(String hit : searchHits.getResults()){
 				try {
 					searchResults.add((Content) objectMapper.readValue(hit, ContentBase.class));
 				} catch (IOException e) {
 					log.error("Error while trying to search for " + searchString + " in version " + version, e);
 				}
 		    }
-			return searchResults;
+			return new ResultsWrapper<Content>(searchResults, searchHits.getTotalResults());
 		}
 		else{
 			log.error("Unable to ensure cache for requested version" + version);
@@ -114,10 +115,10 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
-	public List<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
-		List<Content> result = new ArrayList<Content>();
-		if(this.ensureCache(version)){
+	public ResultsWrapper<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
+		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
 
+		if(this.ensureCache(version)){			
 			// TODO: Fix to allow sort order to be changed, currently it is hard coded to sort ASC by title..
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
@@ -127,13 +128,14 @@ public class GitContentManager implements IContentManager {
 				fieldsToMatch.put(Constants.TAGS_FIELDNAME, tagList);
 			}
 			
-			List<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, sortInstructions);
+			ResultsWrapper<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, sortInstructions);
 
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
-			result = mapper.mapFromStringListToContentList(searchHits);
+			List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
+			finalResults = new ResultsWrapper<Content>(result, searchHits.getTotalResults());
 		}
 		
-		return result;
+		return finalResults;
 	}
 
 	@Override
@@ -201,17 +203,17 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public List<Content> getContentByTags(String version, Set<String> tags){
+	public ResultsWrapper<Content> getContentByTags(String version, Set<String> tags){
 		if(null==version || null == tags){
 			return null;
 		}
 		
 		if(this.ensureCache(version)){
-			List<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE, tags, "tags");
+			ResultsWrapper<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE, tags, "tags");
 			
-			List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults);
+			List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults.getResults());
 
-			return contentResults;
+			return new ResultsWrapper<Content>(contentResults,searchResults.getTotalResults());
 		}
 		else{
 			log.error("Cache not found. Failed to build cache with version: " + version);

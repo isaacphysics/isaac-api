@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 public interface ISearchProvider {
 	
@@ -49,7 +50,7 @@ public interface ISearchProvider {
 	 * @param sortInstructions - the map of how to sort each field of interest.
 	 * @return Results
 	 */
-	public List<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions);
+	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions);
 	
 	/**
 	 * Executes a fuzzy search on an array of fields.
@@ -60,7 +61,7 @@ public interface ISearchProvider {
 	 * @param fields - array (var args) of fields to match against 
 	 * @return results
 	 */
-	public List<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields);
+	public ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString, final String... fields);
 
 	/**
 	 * Executes a terms search using an array of terms on a single field.
@@ -73,7 +74,7 @@ public interface ISearchProvider {
 	 * @param field - to match against 
 	 * @return results
 	 */	
-	public List<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field);
+	public ResultsWrapper<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field);
 	
 	/**
 	 * Clear a specific index from the search providers cache.

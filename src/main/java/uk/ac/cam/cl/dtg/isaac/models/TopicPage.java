@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.models;
 
+import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -9,14 +11,14 @@ public class TopicPage {
 	private String level;
 	private ImmutableList<String> conceptIds;
 	private ImmutableList<String> questionIds;
-	private ImmutableMap<String, ContentInfo> environment;
+	private ImmutableMap<String, ContentSummary> environment;
 	private String topicPdf;
 	private String topicId;
 
 	public TopicPage(String topicId, String topicTitle, String level,
 			ImmutableList<String> conceptIds,
 			ImmutableList<String> questionIds,
-			ImmutableMap<String, ContentInfo> environment,
+			ImmutableMap<String, ContentSummary> environment,
 			String topicPdf) {
 		super();
 		this.topicTitle = topicTitle;
@@ -44,7 +46,7 @@ public class TopicPage {
 		return questionIds;
 	}
 
-	public ImmutableMap<String, ContentInfo> getEnvironment() {
+	public ImmutableMap<String, ContentSummary> getEnvironment() {
 		return environment;
 	}
 	

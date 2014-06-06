@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 public interface IContentManager {
 
@@ -28,7 +29,7 @@ public interface IContentManager {
 	 * @param limit - limit the number of results returned - if null or 0 is provided no limit will be applied. 
 	 * @return List of Content Objects or an empty list if none are found
 	 */
-	public List<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit);
+	public ResultsWrapper<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit);
 	
 	/**
 	 * Allows fullText search using the internal search provider.
@@ -37,7 +38,7 @@ public interface IContentManager {
 	 * @param searchString
 	 * @return list of results ordered by relevance.
 	 */
-	public List<Content> searchForContent(String version, String searchString);
+	public ResultsWrapper<Content> searchForContent(String version, String searchString);
 	
 	/**
 	 * Search for content by providing a set of tags
@@ -46,7 +47,7 @@ public interface IContentManager {
 	 * @param tags
 	 * @return Content objects that are associated with any of the tags specified.
 	 */
-	public List<Content> getContentByTags(String version, Set<String> tags);
+	public ResultsWrapper<Content> getContentByTags(String version, Set<String> tags);
 	
 	/**
 	 * Method allows raw output to be retrieved for given files in the git repository. This is mainly so we can retrieve image files.

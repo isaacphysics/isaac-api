@@ -2,12 +2,14 @@ package uk.ac.cam.cl.dtg.isaac.models;
 
 import java.util.List;
 
+import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
+
 import com.google.common.collect.ImmutableList;
 
 public class IndexPage {
 
 	private ImmutableList<IndexPageItem> items;
-	private List<ContentInfo> concepts;
+	private List<ContentSummary> concepts;
 
 	public static class IndexPageItem {
 		private String title;
@@ -52,7 +54,7 @@ public class IndexPage {
 		this.items = items;
 	}
 
-	public IndexPage(List<ContentInfo> concepts) {
+	public IndexPage(List<ContentSummary> concepts) {
 		this.concepts = concepts;
 	}
 	
@@ -60,7 +62,7 @@ public class IndexPage {
 		return items;
 	}
 	
-	public List<ContentInfo> getConcepts(){
+	public List<ContentSummary> getConcepts(){
 		return concepts;
 	}
 
