@@ -126,7 +126,9 @@ public class IsaacController {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		
-		return Response.ok(c).build();
+		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(Constants.PROXY_PATH)), c.getTotalResults());
+				
+		return Response.ok(summarizedContent).build();
 	}	
 	
 	@GET
