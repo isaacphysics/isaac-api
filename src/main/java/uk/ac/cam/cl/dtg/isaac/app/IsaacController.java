@@ -101,8 +101,15 @@ public class IsaacController {
 	@Path("concepts/{concept}")
 	@Produces("application/json")
 	public Response getConcept(@Context HttpServletRequest req,
-			@PathParam("concept") String concept) {
-		return getPage(req, concept);
+			@PathParam("concept") String conceptId) {
+		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put("type", Arrays.asList(Constants.CONCEPT_TYPE));
+
+		// options
+		if(null != conceptId)
+			fieldsToMatch.put(uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME + "." + uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
+		
+		return this.findSingleResult(fieldsToMatch);
 	}
 
 	@GET
@@ -135,8 +142,15 @@ public class IsaacController {
 	@Path("questions/{question}")
 	@Produces("application/json")
 	public Response getQuestion(@Context HttpServletRequest req,
-			@PathParam("question") String question) {
-		return getPage(req, question);
+			@PathParam("question") String questionId) {
+		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put("type", Arrays.asList(Constants.QUESTION_TYPE));
+
+		// options
+		if(null != questionId)
+			fieldsToMatch.put(uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME + "." + uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
+		
+		return this.findSingleResult(fieldsToMatch);
 	}
 	
 	@GET
@@ -144,7 +158,7 @@ public class IsaacController {
 	@Produces("application/json")
 	public Response getPage(@Context HttpServletRequest req,
 			@PathParam("page") String page) {
-		Content c = (Content) api.getContentById(api.getLiveVersion(), page).getEntity();
+		Content c = (Content) api.getContentById(api.getLiveVersion(), page).getEntity(); // this endpoint can be used to get any content object
 
 		if(null == c){
 			ImmutableMap<String,String> responseBody = 
@@ -311,5 +325,30 @@ public class IsaacController {
 				listOfContentInfo.add(contentInfo);
 		}		
 		return listOfContentInfo;
-	}	
+	}
+	
+	/**
+	 * For use when we expect to only find a single result.
+	 * 
+	 * @param req
+	 * @param fieldsToMatch
+	 * @return A Response containing a single conceptList or an error.
+	 */
+	private Response findSingleResult(Map<String,List<String>> fieldsToMatch){
+		//Content c = (Content) api.getContentById(api.getLiveVersion(), conceptId).getEntity(); // no type checking using hashMap approach
+		
+		ResultsWrapper<Content> conceptList = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, null, null); // includes type checking.
+		Content c = null;
+		if(conceptList.getResults().size() > 1){
+			return Response.status(Status.BAD_REQUEST).entity("Multiple results returned error." + conceptList.getResults().size()).build();
+		}
+		else if(conceptList.getResults().isEmpty()){
+			return Response.status(Status.NOT_FOUND).entity("No content found that matches the type requested").build();
+		}
+		else{
+			c = conceptList.getResults().get(0);
+		}
+		
+		return Response.ok(c).build();		
+	}
 }
