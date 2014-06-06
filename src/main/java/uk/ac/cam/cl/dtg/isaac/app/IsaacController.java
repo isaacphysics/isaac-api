@@ -332,7 +332,7 @@ public class IsaacController {
 	 * 
 	 * @param req
 	 * @param fieldsToMatch
-	 * @return A Response containing a single conceptList or an error.
+	 * @return A Response containing a single conceptPage or an error.
 	 */
 	private Response findSingleResult(Map<String,List<String>> fieldsToMatch){
 		//Content c = (Content) api.getContentById(api.getLiveVersion(), conceptId).getEntity(); // no type checking using hashMap approach
@@ -349,6 +349,9 @@ public class IsaacController {
 			c = conceptList.getResults().get(0);
 		}
 		
-		return Response.ok(c).build();		
+		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
+		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
+		
+		return Response.ok(cp).build();		
 	}
 }
