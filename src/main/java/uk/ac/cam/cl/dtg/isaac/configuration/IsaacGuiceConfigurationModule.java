@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.configuration;
 
 import java.io.IOException;
 
@@ -9,7 +9,6 @@ import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
