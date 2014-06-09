@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.configuration;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,7 +8,8 @@ import javax.ws.rs.core.Application;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
+import uk.ac.cam.cl.dtg.isaac.app.OverviewResource;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 
