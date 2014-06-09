@@ -9,11 +9,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dto.Image;
 
 @JsonType("isaacFeaturedProfile")
 public class IsaacFeaturedProfile extends Content{
 
 	protected String emailAddress;
+	protected Image image;
 
 	@JsonCreator
 	public IsaacFeaturedProfile(@JsonProperty("_id") String _id,
@@ -33,7 +35,8 @@ public class IsaacFeaturedProfile extends Content{
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("src") String src,
 			@JsonProperty("altText") String altText,
-			@JsonProperty("emailAddress") String emailAddress) {
+			@JsonProperty("emailAddress") String emailAddress,
+			@JsonProperty("image") Image image) {
 		super(_id, 
 				id, 
 				title, 
@@ -51,6 +54,7 @@ public class IsaacFeaturedProfile extends Content{
 				tags);
 
 		this.emailAddress = emailAddress;
+		this.image = image;
 	}
 
 	/** 
@@ -66,5 +70,13 @@ public class IsaacFeaturedProfile extends Content{
 
 	public void setEmailAddress(String emailAddress) {
 		this.emailAddress = emailAddress;
+	}
+
+	public Image getImage() {
+		return image;
+	}
+
+	public void setImage(Image image) {
+		this.image = image;
 	}
 }
