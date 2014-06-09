@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
 import uk.ac.cam.cl.dtg.segue.dto.Image;
@@ -35,6 +36,8 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -286,17 +289,22 @@ public class IsaacController {
 		if (null == content)
 			return null;
 		
-		ContentSummary contentInfo = null;
+		// try to use jackson to orchestrate mapping
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+		ObjectMapper myMapper = injector.getInstance(ContentMapper.class).getContentObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+		ContentSummary contentInfo = myMapper.convertValue(content, ContentSummary.class);
+
 		try{
 			if(content instanceof Image){
-				contentInfo = new ContentSummary(content.getId(), content.getTitle(), content.getType(), proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo.setUrl(proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}
 			// TODO fix this stuff to be less horrid
 			else if(content.getType().toLowerCase().contains("question")){
-				contentInfo = new ContentSummary(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + "questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo.setUrl(proxyPath + '/' + "questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}
 			else{
-				contentInfo = new ContentSummary(content.getId(), content.getTitle(), content.getType(), proxyPath + '/' + content.getType().toLowerCase() + "s/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo.setUrl(proxyPath + '/' + content.getType().toLowerCase() + "s/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}			
 		}
 		catch(UnsupportedEncodingException e){
