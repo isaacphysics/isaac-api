@@ -34,8 +34,8 @@ import com.google.common.collect.Maps;
  * @author Stephen Cummins - modified to work with new version of resteasy 27/05/2014
  */
 @Path("/")
-public class OverviewResource {
-	private static final Logger log = LoggerFactory.getLogger(OverviewResource.class);
+public class APIOverviewResource {
+	private static final Logger log = LoggerFactory.getLogger(APIOverviewResource.class);
 
 	/**
      * POJO to represent Method information collected using reflection and rest easy registry

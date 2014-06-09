@@ -9,7 +9,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
-import uk.ac.cam.cl.dtg.isaac.app.OverviewResource;
+import uk.ac.cam.cl.dtg.isaac.app.APIOverviewResource;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 
@@ -38,7 +38,7 @@ public class IsaacApplicationRegister extends Application {
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> result = new HashSet<Class<?>>();
 		result.add(IsaacController.class);
-		result.add(OverviewResource.class);
+		result.add(APIOverviewResource.class);
 		return result;
 	}	
 }
