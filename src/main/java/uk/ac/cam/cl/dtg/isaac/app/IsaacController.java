@@ -21,8 +21,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
-import org.dozer.DozerBeanMapper;
-import org.dozer.DozerBeanMapperSingletonWrapper;
 import org.dozer.Mapper;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
@@ -31,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.models.ContentPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
 import uk.ac.cam.cl.dtg.segue.dto.Image;
@@ -39,8 +36,6 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -292,8 +287,10 @@ public class IsaacController {
 		if (null == content)
 			return null;
 
-		// try automapping with
-		Mapper mapper = DozerBeanMapperSingletonWrapper.getInstance();
+		// try automapping with dozer
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+		Mapper mapper = injector.getInstance(Mapper.class);
+		
 		ContentSummary contentInfo = mapper.map(content, ContentSummary.class);
 		
 		try{

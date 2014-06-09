@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import javax.annotation.Nullable;
 
+import org.dozer.DozerBeanMapper;
+import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +19,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 /**
  * This class is responsible for injecting configuration values using GUICE
@@ -29,7 +32,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	private static PropertiesLoader globalProperties;
 	
 	private static SegueApiFacade segueApi = null;
-
+	private static Mapper dozerDOToDTOMapper = null;
+	
 	public IsaacGuiceConfigurationModule(){
 		try {
 			if(null == globalProperties){
@@ -66,4 +70,14 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		
 		return segueApi;
 	}
+	
+	@Provides @Singleton
+	private static Mapper getDozerDOtoDTOMapper(){
+		if(null == dozerDOToDTOMapper){
+			dozerDOToDTOMapper = new DozerBeanMapper();
+		}
+		
+		return dozerDOToDTOMapper;
+	}
+	
 }
