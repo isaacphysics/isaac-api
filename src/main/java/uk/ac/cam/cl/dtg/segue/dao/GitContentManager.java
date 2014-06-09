@@ -415,9 +415,10 @@ public class GitContentManager implements IContentManager {
 		// TODO Improve Hack to convert image source into something that the api can use to locate the specific image in the repository.
 		if(content.getType().equals("image") || content.getType().equals("figure")){
 			Media figure = (Media) content;
-			
-			String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + figure.getSrc(),true);
-			figure.setSrc(newPath);
+			if(figure.getSrc() != null && !figure.getSrc().startsWith("http")){
+				String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + figure.getSrc(),true);
+				figure.setSrc(newPath);	
+			}
 		}
 		
 		// Concatenate the parentId with our id to get a fully qualified identifier.
