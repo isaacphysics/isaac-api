@@ -11,7 +11,8 @@ public class IsaacQuestionInfo {
 	private String title;
 	private String description;
 	private String level;
-	private String url;
+	private String uri;
+	private String state;
 	
 	public String getId() {
 		return id;
@@ -37,14 +38,17 @@ public class IsaacQuestionInfo {
 	public void setLevel(String level) {
 		this.level = level;
 	}
-	public String getUrl() {
-		return url;
+	public String getUri() {
+		return uri;
 	}
-	public void setUrl(String url) {
-		this.url = url;
+	public void setUri(String url) {
+		this.uri = url;
 	}
-	
-	
-	
+	public String getState() {
+		return state;
+	}
+	public void setState(String state) {
+		this.state = state;
+	}
 	
 }
