@@ -296,14 +296,17 @@ public class IsaacController {
 		
 		try{
 			if(content instanceof Image){
-				contentInfo.setUrl(proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo.setUrl(proxyPath + "/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}
 			// TODO fix this stuff to be less horrid
 			else if(content.getType().toLowerCase().contains("question")){
-				contentInfo.setUrl(proxyPath + '/' + "questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo.setUrl(proxyPath + "/questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
+			}
+			else if(content.getType().toLowerCase().contains("concept")){
+				contentInfo.setUrl(proxyPath + "/concepts/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}
 			else{
-				contentInfo.setUrl(proxyPath + '/' + content.getType().toLowerCase() + "s/" + URLEncoder.encode(content.getId(), "UTF-8"));
+				contentInfo.setUrl(proxyPath + "/pages/" + URLEncoder.encode(content.getId(), "UTF-8"));
 			}			
 		}
 		catch(UnsupportedEncodingException e){
