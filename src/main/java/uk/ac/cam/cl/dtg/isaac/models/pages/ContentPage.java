@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.models;
+package uk.ac.cam.cl.dtg.isaac.models.pages;
 
 import java.util.List;
 
