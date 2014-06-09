@@ -6,8 +6,6 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import uk.ac.cam.cl.dtg.isaac.models.JsonType;
-
 @JsonType("image")
 public class Image extends Media {
 

@@ -3,8 +3,6 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.cam.cl.dtg.isaac.models.JsonType;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

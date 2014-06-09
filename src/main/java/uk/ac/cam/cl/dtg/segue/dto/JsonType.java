@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.models;
+package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.lang.annotation.*;
 

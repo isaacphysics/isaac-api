@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.cam.cl.dtg.isaac.models.JsonType;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
