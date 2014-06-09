@@ -21,6 +21,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
+import org.dozer.DozerBeanMapper;
+import org.dozer.DozerBeanMapperSingletonWrapper;
+import org.dozer.Mapper;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -288,13 +291,11 @@ public class IsaacController {
 	private ContentSummary extractContentInfo(Content content, String proxyPath){
 		if (null == content)
 			return null;
+
+		// try automapping with
+		Mapper mapper = DozerBeanMapperSingletonWrapper.getInstance();
+		ContentSummary contentInfo = mapper.map(content, ContentSummary.class);
 		
-		// try to use jackson to orchestrate mapping
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-		ObjectMapper myMapper = injector.getInstance(ContentMapper.class).getContentObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-		ContentSummary contentInfo = myMapper.convertValue(content, ContentSummary.class);
-
 		try{
 			if(content instanceof Image){
 				contentInfo.setUrl(proxyPath + "/isaac/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));

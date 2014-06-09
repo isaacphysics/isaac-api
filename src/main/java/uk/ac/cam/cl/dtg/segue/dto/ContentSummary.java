@@ -1,8 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * DTO represents high level information about a piece of content
  * 
@@ -18,12 +15,16 @@ public class ContentSummary{
 
 	private String url;
 	
-	@JsonCreator
+	// Private constructor required for Dozer
+	private ContentSummary(){
+		
+	}
+	
 	public ContentSummary(
-			@JsonProperty("id") String id, 
-			@JsonProperty("title") String title, 
-			@JsonProperty("type") String type, 
-			@JsonProperty("url") String url) {
+			String id, 
+			String title, 
+			String type, 
+			String url) {
 		this.id = id;
 		this.type = type;
 		this.title = title;
@@ -34,12 +35,24 @@ public class ContentSummary{
 		return id;
 	}
 
-	public String getType() {
-		return type;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public String getTitle() {
 		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 	public String getUrl() {
