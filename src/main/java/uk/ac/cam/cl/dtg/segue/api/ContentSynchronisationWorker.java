@@ -21,7 +21,7 @@ public class ContentSynchronisationWorker implements Runnable{
 	@Override
 	public void run() {		
 		// Verify with Content manager that we can sync to the version requested / get the latest one
-		log.info("Starting asynchronous data synchronisation task for the content repository.");
+		log.info("Starting synchronisation task for the content repository.");
 		
 		if(null == version){
 			// assume we are just trying to get the latest version when we have a null version field.

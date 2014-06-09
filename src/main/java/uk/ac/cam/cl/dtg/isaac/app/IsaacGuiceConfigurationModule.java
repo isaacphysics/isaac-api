@@ -75,6 +75,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	private static Mapper getDozerDOtoDTOMapper(){
 		if(null == dozerDOToDTOMapper){
 			dozerDOToDTOMapper = new DozerBeanMapper();
+			log.info("Creating singleton for Dozer mapper");
 		}
 		
 		return dozerDOToDTOMapper;

@@ -6,7 +6,6 @@ import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
 
 public class ContentPage {
-
 	private String id;
 	private Content contentObject;
 	private List<ContentSummary> sidebarContent;
