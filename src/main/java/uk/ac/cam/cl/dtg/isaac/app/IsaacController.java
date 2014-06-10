@@ -57,6 +57,8 @@ public class IsaacController {
 	
 	private static SegueApiFacade api;
 	private static PropertiesLoader propertiesLoader;
+	
+	private static GameManager gameManager;
 
 	public IsaacController(){
 		// Get an instance of the segue api so that we can service requests directly from it 
@@ -65,6 +67,7 @@ public class IsaacController {
 			Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 			api = injector.getInstance(SegueApiFacade.class);
 			propertiesLoader = injector.getInstance(PropertiesLoader.class);
+			gameManager = new GameManager(api);
 		}
 		
 //		test of user registration - this is just a snippet for future reference as I didn't know where else to put it.
@@ -156,6 +159,14 @@ public class IsaacController {
 			fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		
 		return this.findSingleResult(fieldsToMatch);
+	}
+
+	@GET
+	@Path("gameboards")
+	@Produces("application/json")	
+	public Response generateGameboard(@Context HttpServletRequest req,
+			@QueryParam("tags") String tags, @QueryParam("level") String level){
+		return Response.ok(gameManager.generateRandomGameboard(level, tags)).build();
 	}
 	
 	@GET
