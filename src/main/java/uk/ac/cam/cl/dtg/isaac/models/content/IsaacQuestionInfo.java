@@ -1,4 +1,6 @@
-package uk.ac.cam.cl.dtg.isaac.models.pages;
+package uk.ac.cam.cl.dtg.isaac.models.content;
+
+import org.dozer.Mapping;
 
 /**
  * DTO that provides high level information for Isaac Questions
@@ -9,6 +11,7 @@ public class IsaacQuestionInfo {
 	
 	private String id;
 	private String title;
+	@Mapping("subtitle")
 	private String description;
 	private String level;
 	private String uri;
