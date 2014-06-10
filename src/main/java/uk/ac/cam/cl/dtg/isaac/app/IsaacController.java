@@ -42,6 +42,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.isaac.app.Constants.*;
+
 /**
  * Rutherford Controller
  * 
@@ -81,11 +84,11 @@ public class IsaacController {
 			@QueryParam("tags") String tags, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Arrays.asList(Constants.CONCEPT_TYPE));
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 		
 		// options
 		if(null != tags)
-			fieldsToMatch.put("tags", Arrays.asList(tags));
+			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags));
 		
 		ResultsWrapper<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
 		
@@ -105,11 +108,11 @@ public class IsaacController {
 	public Response getConcept(@Context HttpServletRequest req,
 			@PathParam("concept") String conceptId) {
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Arrays.asList(Constants.CONCEPT_TYPE));
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
 		// options
 		if(null != conceptId)
-			fieldsToMatch.put(uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME + "." + uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
+			fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
 		
 		return this.findSingleResult(fieldsToMatch);
 	}
@@ -121,13 +124,13 @@ public class IsaacController {
 			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Arrays.asList(Constants.QUESTION_TYPE));
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 
 		// options
 		if(null != tags)
-			fieldsToMatch.put("tags", Arrays.asList(tags));
+			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags));
 		if(null != level)
-			fieldsToMatch.put("level", Arrays.asList(level));
+			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level));
 		
 		ResultsWrapper<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
 
@@ -146,11 +149,11 @@ public class IsaacController {
 	public Response getQuestion(@Context HttpServletRequest req,
 			@PathParam("question") String questionId) {
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Arrays.asList(Constants.QUESTION_TYPE));
+		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE));
 
 		// options
 		if(null != questionId)
-			fieldsToMatch.put(uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME + "." + uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
+			fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		
 		return this.findSingleResult(fieldsToMatch);
 	}
@@ -191,8 +194,6 @@ public class IsaacController {
 			@FormParam("subject") String subject,
 			@FormParam("message-text") String messageText,
 			@Context HttpServletRequest request){
-
-
 		
 		// construct a new instance of the mailer object
 		Mailer contactUsMailer = new Mailer(propertiesLoader.getProperty(Constants.MAILER_SMTP_SERVER), propertiesLoader.getProperty(Constants.MAIL_FROM_ADDRESS));
