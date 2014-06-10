@@ -77,6 +77,20 @@ public interface ISearchProvider {
 	public ResultsWrapper<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms, final String field);
 	
 	/**
+	 * RandomisedPaginatedMatchSearch
+	 * The same as paginatedMatchSearch but the results are returned in a random order
+	 * 
+	 * @see paginatedMatchSearch
+	 * @param index
+	 * @param indexType
+	 * @param fieldsToMatch
+	 * @param startIndex
+	 * @param limit
+	 * @return
+	 */
+	public ResultsWrapper<String> randomisedPaginatedMatchSearch(String index, String indexType, Map<String, List<String>> fieldsToMatch, int startIndex, int limit);	
+	
+	/**
 	 * Clear a specific index from the search providers cache.
 	 * 
 	 * @param index

@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
@@ -25,6 +26,7 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -43,10 +45,13 @@ public class ElasticSearchProvider implements ISearchProvider {
 	private final Client client;
 	private final List<String> rawFieldsList;
 	
+	private final Random randomNumberGenerator;
+	
 	@Inject
 	public ElasticSearchProvider(Client searchClient){
 		this.client = searchClient;
 		rawFieldsList = new ArrayList<String>();
+		this.randomNumberGenerator = new Random();
 	}
 	
 	@Override
@@ -91,6 +96,27 @@ public class ElasticSearchProvider implements ISearchProvider {
 		        
 		searchRequest = addSortInstructions(searchRequest, sortInstructions);
 
+		return this.executeQuery(searchRequest);
+	}
+	
+	
+	@Override
+	public ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
+			final int startIndex, final int limit){
+		// build up the query from the fieldsToMatch map
+		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+		Long seed = this.randomNumberGenerator.nextLong();
+		
+		log.debug("Randomised Query, with seed: "+ seed + ", to be sent to elasticsearch is : " + query);
+		
+		query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction(seed));
+		
+		SearchRequestBuilder searchRequest = client.prepareSearch(index)
+		        .setTypes(indexType)
+		        .setQuery(query)
+		        .setSize(limit)
+		        .setFrom(startIndex);
+		
 		return this.executeQuery(searchRequest);
 	}
 	
