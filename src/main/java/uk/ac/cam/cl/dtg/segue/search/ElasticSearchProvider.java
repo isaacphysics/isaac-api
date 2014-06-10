@@ -79,29 +79,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions){		
 
 		// build up the query from the fieldsToMatch map
-		BoolQueryBuilder query = QueryBuilders.boolQuery();
-
-		for(Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()){
-			if(pair.getValue() != null){
-				// If it is a list of only one thing just put it in the query.
-				if(pair.getValue().size() == 1){
-					query.must(QueryBuilders.matchQuery(pair.getKey(), pair.getValue().get(0)));	
-				}
-				// If not it is an AND query and should be split into separate constraints.
-				else if(pair.getValue().size() > 1)
-				{
-					for(String queryItem : pair.getValue()){
-						query.must(QueryBuilders.matchQuery(pair.getKey(), queryItem));
-					}
-				}
-				else{
-					// this shouldn't happen unless we are given an empty list in which case we can skip it
-				}				
-			}
-			else{
-				log.warn("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
-			}
-		}
+		BoolQueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
 		
 		log.debug("Query to be sent to elasticsearch is : " + query);
 		
@@ -202,6 +180,33 @@ public class ElasticSearchProvider implements ISearchProvider {
 		}
 		
 		return searchRequest;
+	}
+	
+	private BoolQueryBuilder generateBoolMatchQuery(Map<String,List<String>> fieldsToMatch){
+		BoolQueryBuilder query = QueryBuilders.boolQuery();
+
+		for(Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()){
+			if(pair.getValue() != null){
+				// If it is a list of only one thing just put it in the query.
+				if(pair.getValue().size() == 1){
+					query.must(QueryBuilders.matchQuery(pair.getKey(), pair.getValue().get(0)));	
+				}
+				// If not it is an AND query and should be split into separate constraints.
+				else if(pair.getValue().size() > 1)
+				{
+					for(String queryItem : pair.getValue()){
+						query.must(QueryBuilders.matchQuery(pair.getKey(), queryItem));
+					}
+				}
+				else{
+					// this shouldn't happen unless we are given an empty list in which case we can skip it
+				}				
+			}
+			else{
+				log.warn("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
+			}
+		}
+		return query;
 	}
 	
 	/**
