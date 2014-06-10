@@ -277,10 +277,37 @@ public class IsaacController {
 		return contentInfoList;
 	}
 
+	
+	public static String generateApiUrl(Content content){		
+		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+		String proxyPath = injector.getInstance(PropertiesLoader.class).getProperty(Constants.PROXY_PATH);
+		
+		String resourceUrl = null;
+		try{
+			if(content instanceof Image){
+				resourceUrl = proxyPath + "/api/images/" + URLEncoder.encode(content.getId(), "UTF-8");
+			}
+			// TODO fix this stuff to be less horrid
+			else if(content.getType().toLowerCase().contains("question")){
+				resourceUrl = proxyPath + "/api/questions/" + URLEncoder.encode(content.getId(), "UTF-8");
+			}
+			else if(content.getType().toLowerCase().contains("concept")){
+				resourceUrl = proxyPath + "/api/concepts/" + URLEncoder.encode(content.getId(), "UTF-8");
+			}
+			else{
+				resourceUrl = proxyPath + "/api/pages/" + URLEncoder.encode(content.getId(), "UTF-8");
+			}	
+		}
+		catch(UnsupportedEncodingException e){
+			log.error("Url generation for resource id " + content.getId() + " failed. ", e);
+		}
+		
+		return resourceUrl;
+	}
+	
 	/**
 	 * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to the client instead.
 	 * 
-	 * TODO: we should use an auto mapper to do this in a nicer way.
 	 * @param content
 	 * @param proxyPath
 	 * @return
@@ -294,26 +321,8 @@ public class IsaacController {
 		Mapper mapper = injector.getInstance(Mapper.class);
 		
 		ContentSummary contentInfo = mapper.map(content, ContentSummary.class);
+		contentInfo.setUrl(generateApiUrl(content));
 		
-		try{
-			if(content instanceof Image){
-				contentInfo.setUrl(proxyPath + "/api/images/" + URLEncoder.encode(content.getId(), "UTF-8"));
-			}
-			// TODO fix this stuff to be less horrid
-			else if(content.getType().toLowerCase().contains("question")){
-				contentInfo.setUrl(proxyPath + "/api/questions/" + URLEncoder.encode(content.getId(), "UTF-8"));
-			}
-			else if(content.getType().toLowerCase().contains("concept")){
-				contentInfo.setUrl(proxyPath + "/api/concepts/" + URLEncoder.encode(content.getId(), "UTF-8"));
-			}
-			else{
-				contentInfo.setUrl(proxyPath + "/api/pages/" + URLEncoder.encode(content.getId(), "UTF-8"));
-			}			
-		}
-		catch(UnsupportedEncodingException e){
-			log.error("Unable to encode URL.");
-			e.printStackTrace();
-		}
 		return contentInfo;
 	}
 
