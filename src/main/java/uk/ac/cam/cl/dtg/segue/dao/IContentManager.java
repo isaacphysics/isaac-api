@@ -32,6 +32,18 @@ public interface IContentManager {
 	public ResultsWrapper<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit);
 	
 	/**
+	 * The same as findByFieldNames but the results list is returned in a randomised order.
+	 * 
+	 * @see findByFieldNames
+	 * @param version
+	 * @param fieldsToMatch
+	 * @param startIndex
+	 * @param limit
+	 * @return Results wrapper containing the results or an empty list.
+	 */
+	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,	Map<String, List<String>> fieldsToMatch, Integer startIndex, Integer limit);
+	
+	/**
 	 * Allows fullText search using the internal search provider.
 	 * 
 	 * @param version

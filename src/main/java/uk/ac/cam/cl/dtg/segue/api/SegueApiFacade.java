@@ -53,7 +53,7 @@ public class SegueApiFacade {
 
 	private static ContentMapper mapper;
 	
-	private static ContentVersionController contentVersionController;
+	private static ContentVersionController contentVersionController; //TODO: this should be converted into an instance variable really.
 	
 	private PropertiesLoader properties;
 
@@ -209,7 +209,45 @@ public class SegueApiFacade {
 			throw e;
 		}
 		
+		return c;
+	}
+	
+	/**
+	 * This method will return a List<Content> based on the parameters supplied. Providing the results in a randomised order.
+	 *  
+	 * @param version
+	 * @param fieldsToMatch - Map representing fieldName -> field value mappings to search for. Note: tags is a special field name and the list will be split by commas.
+	 * @param startIndex
+	 * @param limit
+	 * @return Response containing a list of content or a Response containing null if none found. 
+	 */
+	public ResultsWrapper<Content> findMatchingContentRandomOrder(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
+		if(null == version)
+			version = contentVersionController.getLiveVersion();
+		
+		if(null==limit){
+			limit = Constants.DEFAULT_SEARCH_LIMIT;
+		}
+		
+		if(null == startIndex){
+			startIndex = "0";
+		}
+
+		ResultsWrapper<Content> c = null;
+
+		// Deserialize object into POJO of specified type, providing one exists. 
+		try{
+			log.info("Finding all content from the api with fields: " + fieldsToMatch);
+			
+			c = contentPersistenceManager.findByFieldNamesRandomOrder(version, fieldsToMatch, Integer.parseInt(startIndex), Integer.parseInt(limit));
+		}
+		catch(IllegalArgumentException e){
+			log.error("Unable to map content object.", e);
+			throw e;
+		}
+		
 		return c;
 	}
 	

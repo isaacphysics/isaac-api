@@ -139,6 +139,26 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
+	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
+		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
+
+		if(this.ensureCache(version)){						
+			if(fieldsToMatch.containsKey(Constants.TAGS_FIELDNAME)){
+				List<String> tagList = Arrays.asList(fieldsToMatch.get(Constants.TAGS_FIELDNAME).get(0).split(","));
+				fieldsToMatch.put(Constants.TAGS_FIELDNAME, tagList);
+			}
+			
+			ResultsWrapper<String> searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit);
+
+			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism
+			List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
+			finalResults = new ResultsWrapper<Content>(result, searchHits.getTotalResults());
+		}
+		
+		return finalResults;
+	}
+
+	@Override
 	public ByteArrayOutputStream getFileBytes(String version, String filename) throws IOException{
 		return database.getFileByCommitSHA(version, filename);
 	}

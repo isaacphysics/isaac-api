@@ -131,4 +131,11 @@ public class MongoContentManager implements IContentManager {
 	public int compareTo(String version1, String version2) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
+
+	@Override
+	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,
+			Map<String, List<String>> fieldsToMatch, Integer startIndex,
+			Integer limit) {
+		throw new UnsupportedOperationException("This method is not implemented yet.");
+	}
 }
