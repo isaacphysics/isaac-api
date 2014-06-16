@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.Media;
+import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
@@ -409,6 +410,14 @@ public class GitContentManager implements IContentManager {
 	private Content augmentChildContent(Content content, String canonicalSourceFile, @Nullable String parentId){
 		if(null == content){
 			return null;
+		}
+		
+		// If this object is of type question then we need to give it a random id if it doesn't have one.
+		if(content instanceof Question && content.getId() == null){
+			log.info("Found question without id " + content.getTitle());
+			String randomGUID = java.util.UUID.randomUUID().toString();
+			log.info("generating guid" + randomGUID);
+			content.setId(randomGUID);
 		}
 		
 		// Try to figure out the parent ids.
