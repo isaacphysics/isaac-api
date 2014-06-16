@@ -76,8 +76,8 @@ public class GameManager {
 				questionInfo.setUri(IsaacController.generateApiUrl(c));
 				gameboardReadyQuestions.add(questionInfo);
 			}
-			
-			log.info("" + gameboardReadyQuestions);
+
+			log.debug("Created gameboard " + uuid);
 			return new Gameboard(uuid, gameboardReadyQuestions, new Date());			
 		}
 		else{
