@@ -13,6 +13,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -33,7 +34,9 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -55,6 +58,8 @@ public class SegueApiFacade {
 	
 	private static ContentVersionController contentVersionController; //TODO: this should be converted into an instance variable really.
 	
+	private QuestionManager questionManager;
+	
 	private PropertiesLoader properties;
 
 	/**
@@ -67,6 +72,7 @@ public class SegueApiFacade {
 			ContentVersionController contentVersionController){
 		
 		this.properties = properties;
+		this.questionManager = new QuestionManager();
 		
 		// We only want to do this if the mapper needs to be changed - I expect the same instance to be injected from Guice each time.
 		if(SegueApiFacade.mapper != mapper){
@@ -114,7 +120,7 @@ public class SegueApiFacade {
 	 * @return
 	 */
 //	@POST
-//	@Produces("application/json")
+//	@Produces("application/json") 
 //	@Path("content/save")
 //	@Deprecated
 	public Response contentSave(@FormParam("doc") String docJson) {
@@ -625,5 +631,39 @@ public class SegueApiFacade {
 		//TODO: we probably only want to return summaries of content objects?
 		
 		return Response.ok(searchResults).build();
+	}
+	
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces("application/json")
+	@Path("questions/{question_id}/answer")
+	public Response answerQuestion(@PathParam("question_id") String questionId, String jsonAnswer){
+		
+		Content contentBasedOnId = contentVersionController.getContentManager().getById(questionId, contentVersionController.getLiveVersion());
+		
+		Question question = null;
+		if(contentBasedOnId instanceof Question){
+			question = (Question) contentBasedOnId;
+		}
+		else
+		{
+			return Response.status(Status.NOT_FOUND).entity("No question found for given id " + contentBasedOnId.getTitle()).build();
+		}
+
+		// try to parse the answer from the client into a choice as this is our agreed approach for receiving answers.
+		Choice answerFromClient;
+		try {
+			answerFromClient = (Choice) mapper.load(jsonAnswer);
+			
+			if(contentBasedOnId instanceof Question){
+				return this.questionManager.validateAnswer(question, answerFromClient.getValue());
+			}			
+		} catch (IOException e) {
+			log.error("Unable to map client response to a Choice object so failing with an error");
+			
+		}
+		
+		return Response.status(500).build();
 	}
 }

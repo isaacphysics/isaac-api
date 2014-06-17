@@ -159,7 +159,7 @@ public class IsaacController {
 			fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		
 		return this.findSingleResult(fieldsToMatch);
-	}
+	}	
 
 	@GET
 	@Path("gameboards")

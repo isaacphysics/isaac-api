@@ -3,6 +3,9 @@ package uk.ac.cam.cl.dtg.segue.dto;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -12,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 @JsonType("choiceQuestion")
+@ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestion extends Question {
 	
 	protected List<Choice> choices;
