@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummary;
 import uk.ac.cam.cl.dtg.segue.dto.content.Image;
@@ -93,15 +94,7 @@ public class IsaacController {
 		if(null != tags)
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags));
 		
-		ResultsWrapper<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
-		
-		if(null == c){
-			return Response.status(Status.NOT_FOUND).build();
-		}
-		
-		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(Constants.PROXY_PATH)), c.getTotalResults());
-		
-		return Response.ok(summarizedContent).build();
+		return listContentObjects(fieldsToMatch, startIndex, limit);
 	}
 	
 	
@@ -135,15 +128,7 @@ public class IsaacController {
 		if(null != level)
 			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level));
 		
-		ResultsWrapper<Content> c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndex, limit);
-
-		if(null == c){
-			return Response.status(Status.NOT_FOUND).build();
-		}
-		
-		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(Constants.PROXY_PATH)), c.getTotalResults());
-				
-		return Response.ok(summarizedContent).build();
+		return listContentObjects(fieldsToMatch, startIndex, limit);
 	}	
 	
 	@GET
@@ -164,8 +149,7 @@ public class IsaacController {
 	@GET
 	@Path("gameboards")
 	@Produces("application/json")	
-	public Response generateGameboard(@Context HttpServletRequest req,
-			@QueryParam("tags") String tags, @QueryParam("level") String level){
+	public Response generateGameboard(@Context HttpServletRequest req, @QueryParam("tags") String tags, @QueryParam("level") String level){
 		return Response.ok(gameManager.generateRandomGameboard(level, tags)).build();
 	}
 	
@@ -177,9 +161,7 @@ public class IsaacController {
 		Content c = (Content) api.getContentById(api.getLiveVersion(), page).getEntity(); // this endpoint can be used to get any content object
 
 		if(null == c){
-			ImmutableMap<String,String> responseBody = 
-					new ImmutableMap.Builder<String,String>().put("status", Status.NOT_FOUND.toString()).put("message","Unable to locate the content requested.").build();		
-			return Response.status(Status.NOT_FOUND).entity(responseBody).build();
+			return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the content requested.").toResponse();
 		}
 		
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
@@ -365,16 +347,14 @@ public class IsaacController {
 	 * @param fieldsToMatch
 	 * @return A Response containing a single conceptPage or an error.
 	 */
-	private Response findSingleResult(Map<String,List<String>> fieldsToMatch){
-		//Content c = (Content) api.getContentById(api.getLiveVersion(), conceptId).getEntity(); // no type checking using hashMap approach
-		
+	private Response findSingleResult(Map<String,List<String>> fieldsToMatch){		
 		ResultsWrapper<Content> conceptList = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, null, null); // includes type checking.
 		Content c = null;
 		if(conceptList.getResults().size() > 1){
-			return Response.status(Status.BAD_REQUEST).entity("Multiple results returned error." + conceptList.getResults().size()).build();
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results (" + conceptList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values()).toResponse();
 		}
 		else if(conceptList.getResults().isEmpty()){
-			return Response.status(Status.NOT_FOUND).entity("No content found that matches the type requested").build();
+			return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: " + fieldsToMatch.values()).toResponse();
 		}
 		else{
 			c = conceptList.getResults().get(0);
@@ -384,5 +364,31 @@ public class IsaacController {
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
 
 		return Response.ok(cp).build();		
+	}
+	
+	private Response listContentObjects(Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
+		ResultsWrapper<Content> c;
+		try {
+			Integer resultsLimit = null;
+			Integer startIndexOfResults = null;
+			
+			if(null != limit){
+				resultsLimit = Integer.parseInt(limit);
+			}
+			
+			if(null != startIndex)
+			{
+				startIndexOfResults = Integer.parseInt(startIndex);
+			}
+			
+	        c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndexOfResults, resultsLimit);
+	        
+		} catch(NumberFormatException e) { 
+	    	return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to convert one of the integer parameters provided into numbers (null is ok). Params provided were: limit " + limit + " and startIndex " + startIndex, e).toResponse();
+	    }
+		
+		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(Constants.PROXY_PATH)), c.getTotalResults());		
+		
+		return Response.ok(summarizedContent).build();
 	}
 }

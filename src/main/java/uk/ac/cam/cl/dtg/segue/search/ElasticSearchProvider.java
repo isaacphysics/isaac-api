@@ -81,7 +81,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 	@Override
 	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
-			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions){		
+			final int startIndex, int limit, Map<String, Constants.SortOrder> sortInstructions){		
 
 		// build up the query from the fieldsToMatch map
 		BoolQueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
@@ -91,9 +91,19 @@ public class ElasticSearchProvider implements ISearchProvider {
 		SearchRequestBuilder searchRequest = client.prepareSearch(index)
 		        .setTypes(indexType)
 		        .setQuery(query)
-		        .setSize(limit)
 		        .setFrom(startIndex);
-		        
+		
+		if(limit > 0){
+			searchRequest.setSize(limit);
+		}
+		else{
+			// if the limit is less than 0 then we want to show all - although in order to do this we have to execute a search and then get the total hits back.
+			// this is a restriction on elastic search.
+			log.info("Setting limit to be the size of the result set... Unlimited search may cause performance issues");
+			limit = this.executeQuery(searchRequest).getTotalResults().intValue();
+			searchRequest.setSize(limit);
+		}
+
 		searchRequest = addSortInstructions(searchRequest, sortInstructions);
 
 		return this.executeQuery(searchRequest);

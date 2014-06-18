@@ -52,7 +52,7 @@ public class GameManager {
 		}
 
 		// Search for questions that match the fields to map variable.
-		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(api.getLiveVersion(), fieldsToMap, "0", "20");
+		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(api.getLiveVersion(), fieldsToMap, 0, 20); //TODO: fix magic numbers
 		
 		if(!results.getResults().isEmpty()){
 			String uuid = UUID.randomUUID().toString();

@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
@@ -175,9 +176,27 @@ public class SegueApiFacade {
 		fieldsToMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(type));
 		fieldsToMatch.put(Constants.TAGS_FIELDNAME, Arrays.asList(tags));
 		
-		ResultsWrapper<Content> c = this.findMatchingContent(version, fieldsToMatch, startIndex, limit);
-		
-		return Response.ok().entity(c).build();
+		ResultsWrapper<Content> c;
+
+		try {
+			Integer resultsLimit = null;
+			Integer startIndexOfResults = null;
+			
+			if(null != limit){
+				resultsLimit = Integer.parseInt(limit);
+			}
+			
+			if(null != startIndex)
+			{
+				startIndexOfResults = Integer.parseInt(startIndex);
+			}
+			
+	        c = this.findMatchingContent(version, fieldsToMatch, startIndexOfResults, resultsLimit);
+	        
+	        return Response.ok().entity(c).build();
+		} catch(NumberFormatException e) { 
+	    	return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to convert one of the integer parameters provided into numbers. Params provided were: limit" + limit + " and startIndex " + startIndex, e).toResponse();
+	    }
 	}
 
 	/**
@@ -189,7 +208,7 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public ResultsWrapper<Content> findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
+	public ResultsWrapper<Content> findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, @Nullable Integer startIndex, @Nullable Integer limit){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
@@ -200,16 +219,16 @@ public class SegueApiFacade {
 		}
 		
 		if(null == startIndex){
-			startIndex = "0";
+			startIndex = 0;
 		}
-
+		
 		ResultsWrapper<Content> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists. 
 		try{
 			log.info("Finding all content from the api with fields: " + fieldsToMatch);
 			
-			c = contentPersistenceManager.findByFieldNames(version, fieldsToMatch, Integer.parseInt(startIndex), Integer.parseInt(limit));
+			c = contentPersistenceManager.findByFieldNames(version, fieldsToMatch, startIndex, limit);
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
@@ -228,7 +247,7 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public ResultsWrapper<Content> findMatchingContentRandomOrder(String version, Map<String,List<String>> fieldsToMatch, String startIndex, String limit){
+	public ResultsWrapper<Content> findMatchingContentRandomOrder(String version, Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
@@ -239,7 +258,7 @@ public class SegueApiFacade {
 		}
 		
 		if(null == startIndex){
-			startIndex = "0";
+			startIndex = 0;
 		}
 
 		ResultsWrapper<Content> c = null;
@@ -248,7 +267,7 @@ public class SegueApiFacade {
 		try{
 			log.info("Finding all content from the api with fields: " + fieldsToMatch);
 			
-			c = contentPersistenceManager.findByFieldNamesRandomOrder(version, fieldsToMatch, Integer.parseInt(startIndex), Integer.parseInt(limit));
+			c = contentPersistenceManager.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit);
 		}
 		catch(IllegalArgumentException e){
 			log.error("Unable to map content object.", e);
