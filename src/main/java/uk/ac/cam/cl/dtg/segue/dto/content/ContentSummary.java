@@ -1,5 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * DTO represents high level information about a piece of content
  * 
@@ -12,21 +15,25 @@ public class ContentSummary{
 	private String title;
 	
 	private String type;
+	
+	private List<String> tags;
 
 	private String url;
 	
 	// Private constructor required for Dozer
 	private ContentSummary(){
-		
+		tags = new ArrayList<String>();
 	}
 	
 	public ContentSummary(
 			String id, 
 			String title, 
-			String type, 
+			String type,
+			List<String> tags,
 			String url) {
 		this.id = id;
 		this.type = type;
+		this.tags = tags;
 		this.title = title;
 		this.url = url;
 	}
@@ -53,6 +60,14 @@ public class ContentSummary{
 
 	public void setType(String type) {
 		this.type = type;
+	}
+	
+	public List<String> getTags(){
+		return tags;
+	}
+	
+	public void setTags(List<String> tags){
+		this.tags = tags;
 	}
 
 	public String getUrl() {
