@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.User;
@@ -654,13 +655,13 @@ public class SegueApiFacade {
 		// try to parse the answer from the client into a choice as this is our agreed approach for receiving answers.
 		Choice answerFromClient;
 		try {
-			answerFromClient = (Choice) mapper.load(jsonAnswer);
+			answerFromClient = (Choice) mapper.getContentObjectMapper().readValue(jsonAnswer, ContentBase.class);
 			
 			if(contentBasedOnId instanceof Question){
 				return this.questionManager.validateAnswer(question, answerFromClient.getValue());
 			}			
 		} catch (IOException e) {
-			log.error("Unable to map client response to a Choice object so failing with an error");
+			log.error("Unable to map client response to a Choice object so failing with an error",e);
 			
 		}
 		

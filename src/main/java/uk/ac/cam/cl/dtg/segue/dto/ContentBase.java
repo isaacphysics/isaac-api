@@ -26,13 +26,13 @@ public abstract class ContentBase {
 
 	@JsonProperty("_id")
 	@ObjectId
-	public String getDbId() {
+	public String get_id() {
 		return _id;
 	}
 	
 	@JsonProperty("_id")
 	@ObjectId
-	public void setDbId(String _id) {
+	public void set_id(String _id) {
 		this._id = _id;
 	}	
 	
