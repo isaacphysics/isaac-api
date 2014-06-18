@@ -22,6 +22,7 @@ public abstract class ContentBase {
 	protected String type;
 	protected Set<String> tags;
 	protected String canonicalSourceFile;
+	protected String version;
 
 	@JsonProperty("_id")
 	@ObjectId
@@ -66,5 +67,13 @@ public abstract class ContentBase {
 
 	public void setTags(Set<String> tags) {
 		this.tags = tags;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
 	}
 }
