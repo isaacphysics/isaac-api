@@ -146,11 +146,11 @@ public class Content extends ContentBase{
 		this.relatedContent = relatedContent;
 	}
 
-	public boolean getVersion() {
+	public boolean getPublished() {
 		return published;
 	}
 
-	public void setVersion(boolean published) {
+	public void setPublished(boolean published) {
 		this.published = published;
 	}
 	
