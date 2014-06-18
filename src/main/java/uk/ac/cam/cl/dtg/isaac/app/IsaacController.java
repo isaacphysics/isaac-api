@@ -270,7 +270,12 @@ public class IsaacController {
 		return contentInfoList;
 	}
 
-	
+	/**
+	 * Generate a URI that will enable us to find an object again.
+	 * 
+	 * @param content
+	 * @returns null if we are unable to generate the URL or a string that represents the url combined with any proxypath information required.
+	 */
 	public static String generateApiUrl(Content content){		
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 		String proxyPath = injector.getInstance(PropertiesLoader.class).getProperty(Constants.PROXY_PATH);

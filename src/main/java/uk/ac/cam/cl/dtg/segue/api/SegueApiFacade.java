@@ -302,14 +302,16 @@ public class SegueApiFacade {
 			c = contentPersistenceManager.getById(id, contentVersionController.getLiveVersion());
 
 			if (null == c){
-				log.debug("No content found with id: " + id);
-				return Response.noContent().entity(null).build();
+				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No content found with id: " + id);
+				log.debug(error.getErrorMessage());
+				return error.toResponse();
 			}
 
 		}
 		catch(IllegalArgumentException e){
-			log.error("Unable to map content object.", e);
-			return Response.serverError().entity(e).build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while trying to map to a content object.", e);	
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		}
 
 		return Response.ok().entity(c).build();
@@ -361,8 +363,9 @@ public class SegueApiFacade {
 	@Cache
 	public Response getImageFileContent(@PathParam("version") String version, @PathParam("path") String path) {				
 		if(null == version || null == path || Files.getFileExtension(path).isEmpty()){
-			log.info("Bad input to api call. Returning null");
-			return Response.serverError().entity(null).build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Bad input to api call. Required parameter not provided.");
+			log.debug(error.getErrorMessage());
+			return error.toResponse();
 		}
 
 		IContentManager gcm = contentVersionController.getContentManager();
@@ -381,22 +384,28 @@ public class SegueApiFacade {
 			}
 			default:{
 				// if it is an unknown type return an error as they shouldn't be using this endpoint.
-				return Response.status(Status.BAD_REQUEST).entity("Invalid file extension requested").build();
+				SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file extension requested");
+				log.debug(error.getErrorMessage());
+				return error.toResponse();
 			}
 		}
 
 		try {
 			fileContent = gcm.getFileBytes(version, path);
-		} catch (IOException e) {
-			log.error("Error reading from file repository");
-			e.printStackTrace();
+		} catch (IOException e) {			
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading from file repository", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		} catch (UnsupportedOperationException e){
-			log.error("Multiple files match the search path provided. Returning null as the result.");
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the search path provided.", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		}
 
 		if (null == fileContent){
-			log.info("Unable to locate the file " + path);
-			return Response.status(Status.NOT_FOUND).build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
+			log.error(error.getErrorMessage());
+			return error.toResponse();
 		}
 
 		return Response.ok().type(mimeType).entity(fileContent.toByteArray()).build();
@@ -417,8 +426,11 @@ public class SegueApiFacade {
 
 		List<String> availableVersions = contentPersistenceManager.listAvailableVersions();
 
-		if(!availableVersions.contains(version))
-			return Response.status(Status.NOT_FOUND).entity("Invalid version selected").build();
+		if(!availableVersions.contains(version)){
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid version selected: " + version);
+			log.warn(error.getErrorMessage());
+			return error.toResponse();
+		}
 
 		String newVersion = contentVersionController.triggerSyncJob(version);
 		
@@ -439,19 +451,22 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("info/content_versions")
 	public Response getVersionsList(@QueryParam("limit") String limit){
-		if(null == limit){
-			limit = "9";
-		}
-		
 		// try to parse the integer
 		Integer limitAsInt = null;
 		
 		try{
-			limitAsInt = Integer.parseInt(limit);
+			if(null == limit){
+				limitAsInt = 10;
+			}
+			else
+			{
+				limitAsInt = Integer.parseInt(limit);	
+			}
 		}
 		catch(NumberFormatException e){
-			// ignore the parameter
-			limitAsInt = 9;
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "The limit requested is not a valid number.");
+			log.debug(error.getErrorMessage());
+			return error.toResponse();
 		}
 		
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
@@ -465,6 +480,12 @@ public class SegueApiFacade {
 		// they have requested a stupid limit so just give them what we have got.
 		catch(IndexOutOfBoundsException e){
 			limitedVersions = allVersions;
+			log.debug("Bad index requested for version number. Using maximum index instead.");
+		}
+		catch(IllegalArgumentException e){
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid limit specified: " + limit, e);
+			log.debug(error.getErrorMessage(), e);
+			return error.toResponse();			
 		}
 		
 		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String,Collection<String>>()
@@ -609,7 +630,9 @@ public class SegueApiFacade {
 		newVersion = contentVersionController.triggerSyncJob();
 
 		if(null == newVersion){
-			return Response.serverError().entity("Error in the synchronisation process... ").build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error in the synchronisation process... Failed to get new version number. ");
+			log.error(error.getErrorMessage());
+			return error.toResponse();			
 		}
 
 		return Response.ok(newVersion).build();
@@ -668,22 +691,21 @@ public class SegueApiFacade {
 		}
 		else
 		{
-			return Response.status(Status.NOT_FOUND).entity("No question found for given id " + contentBasedOnId.getTitle()).build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No question object found for given id: "+ questionId);
+			log.warn(error.getErrorMessage());
+			return error.toResponse();		
 		}
 
 		// try to parse the answer from the client into a choice as this is our agreed approach for receiving answers.
 		Choice answerFromClient;
 		try {
 			answerFromClient = (Choice) mapper.getContentObjectMapper().readValue(jsonAnswer, ContentBase.class);
+			return this.questionManager.validateAnswer(question, answerFromClient.getValue());
 			
-			if(contentBasedOnId instanceof Question){
-				return this.questionManager.validateAnswer(question, answerFromClient.getValue());
-			}			
 		} catch (IOException e) {
-			log.error("Unable to map client response to a Choice object so failing with an error",e);
-			
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();		
 		}
-		
-		return Response.status(500).build();
 	}
 }

@@ -14,6 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
@@ -31,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 /**
@@ -80,8 +82,9 @@ public class UserManager{
 			federatedAuthenticator = mapToProvider(provider);
 		}
 		catch(IllegalArgumentException e){
-			log.error("Unable to map to an authenticator. The provider: " + provider + " is unknown");
-			return Response.serverError().entity("Failed to identify authenticator.").build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		}
 
 		// if we are an OAuth2Provider redirect to the provider authorization url.	
@@ -102,8 +105,9 @@ public class UserManager{
 				}
 				
 				if(null == antiForgeryTokenFromProvider){
+					SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Anti forgery authenitication error. Please contact server admin.");
 					log.error("Unable to extract antiForgeryToken from Authentication provider");
-					return Response.noContent().build();
+					return error.toResponse();					
 				}
 
 				// Store antiForgeryToken in the users session.
@@ -111,14 +115,18 @@ public class UserManager{
 				
 				return Response.temporaryRedirect(redirectLink).entity(redirectLink).build();
 			} catch (IOException e) {
-				log.error("IOException when trying to redirect to OAuth provider");
-				e.printStackTrace();
+				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "IOException when trying to redirect to OAuth provider", e);
+				log.error(error.getErrorMessage(), e);
+				return error.toResponse();
 			}
 		}
-		
-		// We should never see this if a correct provider has been given
-		log.error("Unknown type of authentication provider... Failing to authenticate");
-		return Response.serverError().build();			
+		else
+		{
+			// We should never see this if a correct provider has been given
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+			log.error(error.getErrorMessage());
+			return error.toResponse();
+		}
 	}
 
 	/**
@@ -147,8 +155,9 @@ public class UserManager{
 			federatedAuthenticator = mapToProvider(provider);
 		}
 		catch(IllegalArgumentException e){
-			log.error("Unable to map to an authenticator. The provider: " + provider + " is unknown");
-			return Response.serverError().entity("Failed to identify authenticator.").build();
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+			log.warn(error.getErrorMessage());
+			return error.toResponse();
 		}
 
 		// if we are an OAuth2Provider complete next steps of oauth
@@ -156,8 +165,11 @@ public class UserManager{
 			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
 			// verify there is no cross site request forgery going on.
-			if(request.getQueryString() == null || !ensureNoCSRF(request))
-				return Response.status(401).entity("CSRF check failed.").build();
+			if(request.getQueryString() == null || !ensureNoCSRF(request)){
+				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "CSRF check failed.");
+				log.error(error.getErrorMessage());
+				return error.toResponse();
+			}
 
 			// this will have our authorization code within it.
 			StringBuffer fullUrlBuf = request.getRequestURL();
@@ -168,8 +180,9 @@ public class UserManager{
 				String authCode = oauthProvider.extractAuthCode(fullUrlBuf.toString());
 
 				if (authCode == null) {
-					log.info("User denied access to our app.");
-					return Response.status(401).entity("Provider failed to give us an authorization code.").build();
+					SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "User denied access to our app.");
+					log.info("Provider failed to give us an authorization code.");
+					return error.toResponse();					
 				} else {   
 					log.debug("User granted access to our app");
 
@@ -217,16 +230,29 @@ public class UserManager{
 				}				
 			}
 			catch(IOException e){
-				log.error("Exception while trying to authenticate a user - during callback step", e);
+				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Exception while trying to authenticate a user - during callback step", e);
+				log.error(error.getErrorMessage(), e);
+				return error.toResponse();				
 			} catch (NoUserIdException e) {
+				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Unable to locate user information.");
 				log.error("No userID exception received. Unable to locate user.", e);
+				return error.toResponse();						
 			} catch (CodeExchangeException e) {
+				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Security code exchange failed.");
 				log.error("Unable to verify security code.", e);
+				return error.toResponse();
 			} catch (AuthenticatorSecurityException e) {
-				log.error("Exception during security checks.", e);
+				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Error during security checks.");
+				log.error(error.getErrorMessage(), e);
+				return error.toResponse();
 			}
 		}
-		return Response.ok().build();
+		else{
+			// We should never see this if a correct provider has been given
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+			log.error(error.getErrorMessage());
+			return error.toResponse();	
+		}
 	}
 	
 	/**
