@@ -37,8 +37,6 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -83,7 +81,7 @@ public class IsaacController {
 	
 	
 	@GET
-	@Path("concepts")
+	@Path("pages/concepts")
 	@Produces("application/json")
 	public Response getConceptList(@Context HttpServletRequest req,
 			@QueryParam("tags") String tags, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
@@ -108,10 +106,10 @@ public class IsaacController {
 	
 	
 	@GET
-	@Path("concepts/{concept}")
+	@Path("pages/concepts/{concept_page_id}")
 	@Produces("application/json")
 	public Response getConcept(@Context HttpServletRequest req,
-			@PathParam("concept") String conceptId) {
+			@PathParam("concept_page_id") String conceptId) {
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
@@ -123,7 +121,7 @@ public class IsaacController {
 	}
 
 	@GET
-	@Path("questions")
+	@Path("pages/questions")
 	@Produces("application/json")
 	public Response getQuestionList(@Context HttpServletRequest req,
 			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
@@ -149,10 +147,10 @@ public class IsaacController {
 	}	
 	
 	@GET
-	@Path("questions/{question}")
+	@Path("pages/questions/{question_page_id}")
 	@Produces("application/json")
 	public Response getQuestion(@Context HttpServletRequest req,
-			@PathParam("question") String questionId) {
+			@PathParam("question_page_id") String questionId) {
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE));
 
