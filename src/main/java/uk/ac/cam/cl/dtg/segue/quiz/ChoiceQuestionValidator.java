@@ -7,6 +7,7 @@ import uk.ac.cam.cl.dtg.segue.dto.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.Question;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 
 public class ChoiceQuestionValidator implements Validator {
 	
