@@ -159,19 +159,8 @@ public class IsaacController {
 		// options
 		if(null != questionId)
 			fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-		
-		Response x = this.findSingleResult(fieldsToMatch); 
-		
-		ObjectMapper mapper = new ObjectMapper();
-		
-		try {
-			log.info("Server response: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(x));
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return x;
+
+		return this.findSingleResult(fieldsToMatch);
 	}	
 
 	@GET
