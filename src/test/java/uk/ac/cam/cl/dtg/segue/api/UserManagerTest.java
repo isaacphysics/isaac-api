@@ -145,7 +145,7 @@ public class UserManagerTest {
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		String someInvalidProvider = "BAD_PROVIDER!!";
-		int expectedResponseCode = 500;
+		int expectedResponseCode = 400;
 		
 		expect(request.getSession()).andReturn(dummySession);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
