@@ -130,7 +130,7 @@ public class UserManager{
 	 * Authenticate Callback will receive the authentication information from the different provider types. 
 	 * (e.g. OAuth 2.0 (IOAuth2Authenticator) or bespoke)
 	 * 
-	 * TODO: Refactor this to be a bit more sensible.
+	 * TODO: Refactor this to be a bit more sensible - i.e. move oauth logic somewhere else.
 	 * 
 	 * @param request
 	 * @param response
@@ -150,29 +150,21 @@ public class UserManager{
 		
 		try{
 			federatedAuthenticator = mapToProvider(provider);
-		}
-		catch(IllegalArgumentException e){
-			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
-			log.warn(error.getErrorMessage());
-			return error.toResponse();
-		}
+			// if we are an OAuth2Provider complete next steps of oauth
+			if(federatedAuthenticator instanceof IOAuth2Authenticator){
+				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
-		// if we are an OAuth2Provider complete next steps of oauth
-		if(federatedAuthenticator instanceof IOAuth2Authenticator){
-			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
+				// verify there is no cross site request forgery going on.
+				if(request.getQueryString() == null || !ensureNoCSRF(request)){
+					SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "CSRF check failed.");
+					log.error(error.getErrorMessage());
+					return error.toResponse();
+				}
 
-			// verify there is no cross site request forgery going on.
-			if(request.getQueryString() == null || !ensureNoCSRF(request)){
-				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "CSRF check failed.");
-				log.error(error.getErrorMessage());
-				return error.toResponse();
-			}
+				// this will have our authorization code within it.
+				StringBuffer fullUrlBuf = request.getRequestURL();
+				fullUrlBuf.append('?').append(request.getQueryString());
 
-			// this will have our authorization code within it.
-			StringBuffer fullUrlBuf = request.getRequestURL();
-			fullUrlBuf.append('?').append(request.getQueryString());
-
-			try{
 				// extract auth code from string buffer
 				String authCode = oauthProvider.extractAuthCode(fullUrlBuf.toString());
 
@@ -182,15 +174,17 @@ public class UserManager{
 					return error.toResponse();					
 				} else {   
 					log.debug("User granted access to our app");
-
 					String internalReference = oauthProvider.exchangeCode(authCode);
 
 					// get user info from provider
 					// note the userid field in this object will contain the providers user id not ours.
 					User userFromProvider = federatedAuthenticator.getUserInfo(internalReference);
 					
-					if(null == userFromProvider)
-						return Response.noContent().entity("Can't create user").build();
+					if(null == userFromProvider){
+						SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to create user.");
+						log.warn(error.getErrorMessage());
+						return error.toResponse();
+					}
 
 					log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
 
@@ -222,33 +216,37 @@ public class UserManager{
 					
 					// create a signed session for this user so that we don't need to do this again for a while.
 					this.createSession(request, localUserInformation.getDbId());
-					
 					return Response.ok(localUserInformation).build();
-				}				
+				}			
 			}
-			catch(IOException e){
-				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Exception while trying to authenticate a user - during callback step", e);
-				log.error(error.getErrorMessage(), e);
-				return error.toResponse();				
-			} catch (NoUserIdException e) {
-				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Unable to locate user information.");
-				log.error("No userID exception received. Unable to locate user.", e);
-				return error.toResponse();						
-			} catch (CodeExchangeException e) {
-				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Security code exchange failed.");
-				log.error("Unable to verify security code.", e);
-				return error.toResponse();
-			} catch (AuthenticatorSecurityException e) {
-				SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Error during security checks.");
-				log.error(error.getErrorMessage(), e);
-				return error.toResponse();
-			}
+			else{
+				// We should never see this if a correct provider has been given
+				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+				log.error(error.getErrorMessage());
+				return error.toResponse();	
+			}			
 		}
-		else{
-			// We should never see this if a correct provider has been given
-			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
-			log.error(error.getErrorMessage());
-			return error.toResponse();	
+		catch(IllegalArgumentException e){
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+			log.warn(error.getErrorMessage());
+			return error.toResponse();
+		}
+		catch(IOException e){
+			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Exception while trying to authenticate a user - during callback step", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();				
+		} catch (NoUserIdException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Unable to locate user information.");
+			log.error("No userID exception received. Unable to locate user.", e);
+			return error.toResponse();						
+		} catch (CodeExchangeException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Security code exchange failed.");
+			log.error("Unable to verify security code.", e);
+			return error.toResponse();
+		} catch (AuthenticatorSecurityException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Error during security checks.");
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		}
 	}
 	
