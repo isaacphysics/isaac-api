@@ -415,9 +415,6 @@ public class GitContentManager implements IContentManager {
 		// If this object is of type question then we need to give it a random id if it doesn't have one.
 		if(content instanceof Question && content.getId() == null){
 			log.warn("Found question without id " + content.getTitle() + " " + canonicalSourceFile);
-			// TODO: establish if this should get a random UUID or not.
-			String randomGUID = java.util.UUID.randomUUID().toString();
-			content.setId(randomGUID);
 		}
 		
 		// Try to figure out the parent ids.
