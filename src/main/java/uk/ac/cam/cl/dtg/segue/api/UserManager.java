@@ -70,7 +70,6 @@ public class UserManager{
 	public Response authenticate(HttpServletRequest request, String provider){
 		// get the current user based on their session id information.
 		User currentUser = getCurrentUser(request);
-
 		if(null != currentUser){
 			return Response.ok().entity(currentUser).build();
 		}
@@ -80,18 +79,11 @@ public class UserManager{
 		
 		try{
 			federatedAuthenticator = mapToProvider(provider);
-		}
-		catch(IllegalArgumentException e){
-			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
-			log.error(error.getErrorMessage(), e);
-			return error.toResponse();
-		}
+			
+			// if we are an OAuth2Provider redirect to the provider authorization url.	
+			if(federatedAuthenticator instanceof IOAuth2Authenticator){
+				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
-		// if we are an OAuth2Provider redirect to the provider authorization url.	
-		if(federatedAuthenticator instanceof IOAuth2Authenticator){
-			IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
-
-			try {
 				URI redirectLink = URI.create(oauthProvider.getAuthorizationUrl());
 				List<NameValuePair> urlParams = URLEncodedUtils.parse(redirectLink.toString(), Charset.defaultCharset());
 
@@ -106,7 +98,7 @@ public class UserManager{
 				
 				if(null == antiForgeryTokenFromProvider){
 					SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Anti forgery authenitication error. Please contact server admin.");
-					log.error("Unable to extract antiForgeryToken from Authentication provider");
+					log.error("Unable to extract Anti Forgery Token from Authentication provider");
 					return error.toResponse();					
 				}
 
@@ -114,17 +106,22 @@ public class UserManager{
 				request.getSession().setAttribute("state", antiForgeryTokenFromProvider);
 				
 				return Response.temporaryRedirect(redirectLink).entity(redirectLink).build();
-			} catch (IOException e) {
-				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "IOException when trying to redirect to OAuth provider", e);
-				log.error(error.getErrorMessage(), e);
+			}
+			else
+			{
+				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+				log.error(error.getErrorMessage());
 				return error.toResponse();
 			}
 		}
-		else
-		{
-			// We should never see this if a correct provider has been given
-			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
-			log.error(error.getErrorMessage());
+		catch(IllegalArgumentException e){
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Error mapping to a known authenticator. The provider: " + provider + " is unknown");
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		}
+		catch (IOException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "IOException when trying to redirect to OAuth provider", e);
+			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
 	}
