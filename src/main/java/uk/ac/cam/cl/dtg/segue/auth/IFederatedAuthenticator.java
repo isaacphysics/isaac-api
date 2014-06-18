@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 
 import java.io.IOException;
 
-import uk.ac.cam.cl.dtg.segue.dto.User;
+import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 /**
  * Classes that implement this interface must provide some way (via another interface) of 

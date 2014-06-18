@@ -5,7 +5,7 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.dto.Question;
+import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.Validator;
 

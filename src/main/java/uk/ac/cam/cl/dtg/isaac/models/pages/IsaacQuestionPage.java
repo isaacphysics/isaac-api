@@ -6,8 +6,8 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
 
 public class IsaacQuestionPage extends Content {
 

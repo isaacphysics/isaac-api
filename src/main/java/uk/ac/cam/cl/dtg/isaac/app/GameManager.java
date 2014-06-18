@@ -22,8 +22,8 @@ import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestionInfo;
 import uk.ac.cam.cl.dtg.isaac.models.content.Wildcard;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dto.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.app.Constants.*;
 

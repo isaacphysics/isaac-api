@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.ArrayList;
 import java.util.HashSet;

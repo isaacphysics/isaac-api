@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import org.mongojack.ObjectId;
 

@@ -30,10 +30,10 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
-import uk.ac.cam.cl.dtg.segue.dto.Image;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummary;
+import uk.ac.cam.cl.dtg.segue.dto.content.Image;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 

@@ -3,8 +3,8 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.Validator;
 
 public class IsaacNumericValidator implements Validator {

@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 /**
  * DTO represents high level information about a piece of content

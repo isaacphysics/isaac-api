@@ -1,36 +1,44 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonType("image")
-public class Image extends Media {
-
-	public Image(){
-		
-	}
+/**
+ * Choice object
+ * The choice object is a specialised form of content and allows the storage of data relating to possible answers to questions. 
+ *
+ */
+@JsonType("choiceQuestion")
+@ValidatesWith(ChoiceQuestionValidator.class)
+public class ChoiceQuestion extends Question {
+	
+	protected List<Choice> choices;
 	
 	@JsonCreator
-	public Image(@JsonProperty("_id") String _id,
+	public ChoiceQuestion(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
 				   @JsonProperty("title") String title, 
 				   @JsonProperty("subtitle") String subtitle,
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
-				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,				   
 				   @JsonProperty("layout") String layout,
 				   @JsonProperty("contentReferenced") List<ContentBase> children,
 				   @JsonProperty("value") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("version") boolean published,
+				   @JsonProperty("published") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
-				   @JsonProperty("src") String src,
-				   @JsonProperty("altText") String altText) {
+				   @JsonProperty("answer") ContentBase answer,
+				   @JsonProperty("hints") List<ContentBase> hints,
+				   @JsonProperty("choices") List<Choice> choices) {
 		super(_id, 
 		      id, 
 		      title, 
@@ -46,7 +54,17 @@ public class Image extends Media {
 		      relatedContent, 
 		      published,
 		      tags,
-		      src,
-		      altText);
+		      answer,
+		      hints);
+		
+		this.choices = choices;
+	}
+
+	public ChoiceQuestion(){
+		super();
+	}
+
+	public List<Choice> getChoices() {
+		return choices;
 	}
 }

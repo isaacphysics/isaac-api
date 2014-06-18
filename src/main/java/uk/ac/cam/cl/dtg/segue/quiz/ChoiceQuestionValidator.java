@@ -3,11 +3,11 @@ package uk.ac.cam.cl.dtg.segue.quiz;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.dto.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 
 public class ChoiceQuestionValidator implements Validator {
 	

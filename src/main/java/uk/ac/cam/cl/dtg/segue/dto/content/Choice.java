@@ -1,34 +1,31 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.List;
 import java.util.Set;
-
-import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Choice object
- * The choice object is a specialised form of content and allows the storage of data relating to possible answers to questions. 
+ * The choice object is a specialized form of content and allows the storage of data relating to possible answers to questions. 
  *
  */
-@JsonType("choiceQuestion")
-@ValidatesWith(ChoiceQuestionValidator.class)
-public class ChoiceQuestion extends Question {
-	
-	protected List<Choice> choices;
+@JsonType("choice")
+public class Choice extends Content {
+
+	protected boolean correct;
+	protected ContentBase explanation;
 	
 	@JsonCreator
-	public ChoiceQuestion(@JsonProperty("_id") String _id,
+	public Choice(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
-				   @JsonProperty("title") String title, 
+				   @JsonProperty("title") String title,
 				   @JsonProperty("subtitle") String subtitle,
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
 				   @JsonProperty("encoding") String encoding,
-				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,				   
+				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
 				   @JsonProperty("contentReferenced") List<ContentBase> children,
 				   @JsonProperty("value") String value,
@@ -36,14 +33,13 @@ public class ChoiceQuestion extends Question {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("published") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
-				   @JsonProperty("answer") ContentBase answer,
-				   @JsonProperty("hints") List<ContentBase> hints,
-				   @JsonProperty("choices") List<Choice> choices) {
+				   @JsonProperty("correct") boolean correct,
+				   @JsonProperty("explanation") ContentBase explanation) {
 		super(_id, 
 		      id, 
 		      title, 
-		      subtitle,
-		      type, 
+		      subtitle, 
+		      type,
 		      author, 
 		      encoding, 
 		      canonicalSourceFile,
@@ -53,18 +49,30 @@ public class ChoiceQuestion extends Question {
 		      attribution, 
 		      relatedContent, 
 		      published,
-		      tags,
-		      answer,
-		      hints);
+		      tags);
 		
-		this.choices = choices;
+		this.correct = correct;
+		this.explanation = explanation;
 	}
 
-	public ChoiceQuestion(){
+	public Choice(){
 		super();
 	}
-
-	public List<Choice> getChoices() {
-		return choices;
+	
+	public boolean isCorrect() {
+		return correct;
 	}
+
+	public void setCorrect(boolean correct) {
+		this.correct = correct;
+	}
+
+	public ContentBase getExplanation() {
+		return explanation;
+	}
+
+	public void setExplanation(ContentBase explanation) {
+		this.explanation = explanation;
+	}
+
 }

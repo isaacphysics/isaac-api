@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.List;
 import java.util.Set;
@@ -7,20 +7,24 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Choice object
- * The choice object is a specialized form of content and allows the storage of data relating to possible answers to questions. 
+ * Figure DTO
+ * To be used anywhere that a figure should be displayed in the CMS.
  *
  */
-@JsonType("choice")
-public class Choice extends Content {
-
-	protected boolean correct;
-	protected ContentBase explanation;
+@JsonType("media")
+public abstract class Media extends Content {
+	
+	protected String src;
+	protected String altText;
+	
+	public Media(){
+		
+	}
 	
 	@JsonCreator
-	public Choice(@JsonProperty("_id") String _id,
+	public Media(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
-				   @JsonProperty("title") String title,
+				   @JsonProperty("title") String title, 
 				   @JsonProperty("subtitle") String subtitle,
 				   @JsonProperty("type") String type, 
 				   @JsonProperty("author") String author,
@@ -31,15 +35,15 @@ public class Choice extends Content {
 				   @JsonProperty("value") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("published") boolean published,
+				   @JsonProperty("version") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
-				   @JsonProperty("correct") boolean correct,
-				   @JsonProperty("explanation") ContentBase explanation) {
+				   @JsonProperty("src") String src,
+				   @JsonProperty("altText") String altText) {
 		super(_id, 
 		      id, 
 		      title, 
-		      subtitle, 
-		      type,
+		      subtitle,
+		      type, 
 		      author, 
 		      encoding, 
 		      canonicalSourceFile,
@@ -50,29 +54,23 @@ public class Choice extends Content {
 		      relatedContent, 
 		      published,
 		      tags);
-		
-		this.correct = correct;
-		this.explanation = explanation;
-	}
-
-	public Choice(){
-		super();
+		this.src = src;
+		this.altText = altText;
 	}
 	
-	public boolean isCorrect() {
-		return correct;
+	public String getSrc() {
+		return src;
 	}
 
-	public void setCorrect(boolean correct) {
-		this.correct = correct;
+	public void setSrc(String src) {
+		this.src = src;
 	}
 
-	public ContentBase getExplanation() {
-		return explanation;
+	public String getAltText() {
+		return altText;
 	}
 
-	public void setExplanation(ContentBase explanation) {
-		this.explanation = explanation;
+	public void setAltText(String altText) {
+		this.altText = altText;
 	}
-
 }

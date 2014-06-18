@@ -6,10 +6,10 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dto.Image;
-import uk.ac.cam.cl.dtg.segue.dto.JsonType;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dto.content.Image;
+import uk.ac.cam.cl.dtg.segue.dto.content.JsonType;
 
 @JsonType("isaacFeaturedProfile")
 public class IsaacFeaturedProfile extends Content{

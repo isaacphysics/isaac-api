@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.Map;
 
-import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
 public interface ISegueDTOConfigurationModule {
 	

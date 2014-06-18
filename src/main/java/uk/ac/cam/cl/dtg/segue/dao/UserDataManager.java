@@ -9,8 +9,8 @@ import com.google.inject.Inject;
 import com.mongodb.DB;
 
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dto.LinkedAccount;
-import uk.ac.cam.cl.dtg.segue.dto.User;
+import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
+import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 public class UserDataManager implements IUserDataManager {
 

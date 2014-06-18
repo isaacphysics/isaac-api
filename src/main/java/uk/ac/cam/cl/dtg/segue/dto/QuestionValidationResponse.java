@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+
 
 public class QuestionValidationResponse {
 	private String questionId;

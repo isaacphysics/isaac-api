@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dto.User;
+import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 public interface IUserDataManager {
 

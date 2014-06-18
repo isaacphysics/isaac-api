@@ -10,7 +10,7 @@ import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.isaac.models.pages.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dto.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
 public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 

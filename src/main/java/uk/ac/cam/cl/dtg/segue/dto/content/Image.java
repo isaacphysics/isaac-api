@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.List;
 import java.util.Set;
@@ -6,19 +6,15 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Choice object
- * The choice object is a specialized form of content and allows the storage of data relating to possible answers to questions. 
- *
- */
-@JsonType("question")
-public class Question extends Content {
+@JsonType("image")
+public class Image extends Media {
 
-	protected ContentBase answer;
-	protected List<ContentBase> hints;
+	public Image(){
+		
+	}
 	
 	@JsonCreator
-	public Question(@JsonProperty("_id") String _id,
+	public Image(@JsonProperty("_id") String _id,
 			       @JsonProperty("id") String id, 
 				   @JsonProperty("title") String title, 
 				   @JsonProperty("subtitle") String subtitle,
@@ -33,11 +29,11 @@ public class Question extends Content {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
-				   @JsonProperty("answer") ContentBase answer,
-				   @JsonProperty("hints") List<ContentBase> hints) {
+				   @JsonProperty("src") String src,
+				   @JsonProperty("altText") String altText) {
 		super(_id, 
 		      id, 
-		      title,
+		      title, 
 		      subtitle,
 		      type, 
 		      author, 
@@ -49,22 +45,8 @@ public class Question extends Content {
 		      attribution, 
 		      relatedContent, 
 		      published,
-		      tags);
-		
-		this.answer = answer;
-		this.hints = hints;
+		      tags,
+		      src,
+		      altText);
 	}
-
-	public Question(){
-		super();
-	}
-	
-	public ContentBase getAnswer() {
-		return answer;
-	}
-
-	public List<ContentBase> getHints() {
-		return hints;
-	}
-
 }

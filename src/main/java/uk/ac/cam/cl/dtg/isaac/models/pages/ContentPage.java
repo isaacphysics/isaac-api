@@ -2,8 +2,8 @@ package uk.ac.cam.cl.dtg.isaac.models.pages;
 
 import java.util.List;
 
-import uk.ac.cam.cl.dtg.segue.dto.Content;
-import uk.ac.cam.cl.dtg.segue.dto.ContentSummary;
+import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummary;
 
 public class ContentPage {
 	private String id;
