@@ -37,6 +37,8 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -158,7 +160,18 @@ public class IsaacController {
 		if(null != questionId)
 			fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		
-		return this.findSingleResult(fieldsToMatch);
+		Response x = this.findSingleResult(fieldsToMatch); 
+		
+		ObjectMapper mapper = new ObjectMapper();
+		
+		try {
+			log.info("Server response: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(x));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return x;
 	}	
 
 	@GET
@@ -382,7 +395,7 @@ public class IsaacController {
 		
 		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
-		
+
 		return Response.ok(cp).build();		
 	}
 }
