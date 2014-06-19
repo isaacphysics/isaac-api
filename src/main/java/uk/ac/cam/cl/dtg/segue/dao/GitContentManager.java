@@ -426,6 +426,8 @@ public class GitContentManager implements IContentManager {
 			newParentId = parentId + '.' + content.getId();
 		}
 		
+		content.setCanonicalSourceFile(canonicalSourceFile);
+		
 		if(!content.getChildren().isEmpty()){		
 			for(ContentBase cb : content.getChildren()){
 				if(cb instanceof Content){
@@ -435,9 +437,18 @@ public class GitContentManager implements IContentManager {
 				} 
 			}
 		}
-		
-		content.setCanonicalSourceFile(canonicalSourceFile);
 
+		// TODO: hack to get hints to apply as children
+		if(content instanceof Question){
+			Question question = (Question) content;
+			if(question.getHints() != null){
+				for(ContentBase cb : question.getHints()){
+					Content c = (Content) cb;
+					this.augmentChildContent(c, canonicalSourceFile, newParentId);
+				}					
+			}
+		}
+		
 		// TODO Improve Hack to convert image source into something that the api can use to locate the specific image in the repository.
 		if(content instanceof Media){
 			Media media = (Media) content;
