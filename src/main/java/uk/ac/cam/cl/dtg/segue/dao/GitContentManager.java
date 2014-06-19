@@ -439,11 +439,11 @@ public class GitContentManager implements IContentManager {
 		content.setCanonicalSourceFile(canonicalSourceFile);
 
 		// TODO Improve Hack to convert image source into something that the api can use to locate the specific image in the repository.
-		if(content.getType().equals("image") || content.getType().equals("figure")){
-			Media figure = (Media) content;
-			if(figure.getSrc() != null && !figure.getSrc().startsWith("http")){
-				String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + figure.getSrc(),true);
-				figure.setSrc(newPath);	
+		if(content instanceof Media){
+			Media media = (Media) content;
+			if(media.getSrc() != null && !media.getSrc().startsWith("http")){
+				String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + media.getSrc(),true);
+				media.setSrc(newPath);
 			}
 		}
 		
