@@ -33,6 +33,7 @@ public class Choice extends Content {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("published") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
+				   @JsonProperty("level") String level,
 				   @JsonProperty("correct") boolean correct,
 				   @JsonProperty("explanation") ContentBase explanation) {
 		super(_id, 
@@ -49,7 +50,8 @@ public class Choice extends Content {
 		      attribution, 
 		      relatedContent, 
 		      published,
-		      tags);
+		      tags,
+		      level);
 		
 		this.correct = correct;
 		this.explanation = explanation;

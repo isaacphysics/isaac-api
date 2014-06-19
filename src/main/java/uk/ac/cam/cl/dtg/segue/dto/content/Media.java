@@ -37,6 +37,7 @@ public abstract class Media extends Content {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
+				   @JsonProperty("level") String level,
 				   @JsonProperty("src") String src,
 				   @JsonProperty("altText") String altText) {
 		super(_id, 
@@ -53,7 +54,8 @@ public abstract class Media extends Content {
 		      attribution, 
 		      relatedContent, 
 		      published,
-		      tags);
+		      tags,
+		      level);
 		this.src = src;
 		this.altText = altText;
 	}

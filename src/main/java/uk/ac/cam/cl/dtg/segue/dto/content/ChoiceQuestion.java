@@ -36,6 +36,7 @@ public class ChoiceQuestion extends Question {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("published") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
+				   @JsonProperty("level") String level,
 				   @JsonProperty("answer") ContentBase answer,
 				   @JsonProperty("hints") List<ContentBase> hints,
 				   @JsonProperty("choices") List<Choice> choices) {
@@ -54,6 +55,7 @@ public class ChoiceQuestion extends Question {
 		      relatedContent, 
 		      published,
 		      tags,
+		      level,
 		      answer,
 		      hints);
 		

@@ -30,6 +30,7 @@ public class Content extends ContentBase{
 	protected String attribution;
 	protected List<String> relatedContent;
 	protected boolean published;
+	private String level;
 	
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
@@ -46,7 +47,8 @@ public class Content extends ContentBase{
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("published") boolean published,
-				   @JsonProperty("tags") Set<String> tags) {
+				   @JsonProperty("tags") Set<String> tags,
+				   @JsonProperty("level") String level) {
 		this._id = _id;
 		this.id = id;
 		this.title = title;
@@ -62,6 +64,7 @@ public class Content extends ContentBase{
 		this.published = published;
 		this.children = children;
 		this.tags = tags;
+		this.level = level;
 		
 		// useful for when we want to augment this POJO
 		if(null == this.children)
@@ -157,6 +160,14 @@ public class Content extends ContentBase{
 		return this.children;
 	}
 	
+	public String getLevel() {
+		return level;
+	}
+
+	public void setLevel(String level) {
+		this.level = level;
+	}
+
 	@Override
 	public boolean equals(Object o){
 		if(null == o || !(o instanceof Content))

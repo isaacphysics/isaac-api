@@ -29,6 +29,7 @@ public class Image extends Media {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
+				   @JsonProperty("level") String level,
 				   @JsonProperty("src") String src,
 				   @JsonProperty("altText") String altText) {
 		super(_id, 
@@ -46,6 +47,7 @@ public class Image extends Media {
 		      relatedContent, 
 		      published,
 		      tags,
+		      level,
 		      src,
 		      altText);
 	}

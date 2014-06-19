@@ -33,6 +33,7 @@ public class Question extends Content {
 				   @JsonProperty("relatedContent") List<String> relatedContent,
 				   @JsonProperty("version") boolean published,
 				   @JsonProperty("tags") Set<String> tags,
+				   @JsonProperty("level") String level,
 				   @JsonProperty("answer") ContentBase answer,
 				   @JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, 
@@ -49,7 +50,8 @@ public class Question extends Content {
 		      attribution, 
 		      relatedContent, 
 		      published,
-		      tags);
+		      tags,
+		      level);
 		
 		this.answer = answer;
 		this.hints = hints;
