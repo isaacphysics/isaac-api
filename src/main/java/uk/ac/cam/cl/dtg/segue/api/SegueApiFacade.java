@@ -626,16 +626,8 @@ public class SegueApiFacade {
 	@Path("admin/synchronise_datastores")
 	public synchronized Response synchroniseDataStores(){		
 		log.info("Informed of content change; so triggering new synchronisation job.");
-		String newVersion = null;
-		newVersion = contentVersionController.triggerSyncJob();
-
-		if(null == newVersion){
-			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error in the synchronisation process... Failed to get new version number. ");
-			log.error(error.getErrorMessage());
-			return error.toResponse();			
-		}
-
-		return Response.ok(newVersion).build();
+		contentVersionController.triggerSyncJob();
+		return Response.ok("success - job started").build();
 	}
 	
 	/**
