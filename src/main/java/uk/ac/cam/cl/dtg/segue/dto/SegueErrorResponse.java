@@ -65,7 +65,7 @@ public class SegueErrorResponse implements Serializable{
 	}
 	
 	public Response toResponse(){
-		return Response.status(responseCode).entity(this).build();
+		return Response.status(responseCode).entity(this).type("application/json").build();
 	}
 	
 	@Override
