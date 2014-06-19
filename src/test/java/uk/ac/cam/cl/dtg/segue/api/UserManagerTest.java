@@ -18,7 +18,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -235,6 +235,8 @@ public class UserManagerTest {
 
 		// Mock exchange code for token call
 		expect(dummyGoogleAuth.exchangeCode(authorizationCodeFromProviderUrl)).andReturn(someProviderGeneratedLookupValue);
+		
+		expect(((IFederatedAuthenticator)dummyGoogleAuth).getAuthenticationProvider()).andReturn(AuthenticationProvider.GOOGLE).atLeastOnce();
 
 		// User object back from provider
 		User providerUser = new User(someProviderUniqueUserId,"TestFirstName","testLastName","","","","", false, new Date());

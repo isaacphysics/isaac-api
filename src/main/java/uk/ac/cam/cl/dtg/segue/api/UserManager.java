@@ -26,8 +26,11 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
@@ -44,8 +47,7 @@ public class UserManager{
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
 	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
-	public enum AuthenticationProvider {GOOGLE, FACEBOOK, RAVEN;};
-	
+
 	private final IUserDataManager database;
 	private final String hmacSalt;
 	private final Map<AuthenticationProvider, IFederatedAuthenticator> registeredAuthProviders;
@@ -128,8 +130,6 @@ public class UserManager{
 	 * Authenticate Callback will receive the authentication information from the different provider types. 
 	 * (e.g. OAuth 2.0 (IOAuth2Authenticator) or bespoke)
 	 * 
-	 * TODO: Refactor this to be a bit more sensible - i.e. move oauth logic somewhere else.
-	 * 
 	 * @param request
 	 * @param response
 	 * @param provider
@@ -147,80 +147,28 @@ public class UserManager{
 		try{
 			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
 			
+			String providerSpecificUserLookupReference = null;
+			
 			// if we are an OAuth2Provider complete next steps of oauth
 			if(federatedAuthenticator instanceof IOAuth2Authenticator){
 				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
-				// verify there is no cross site request forgery going on.
-				if(request.getQueryString() == null || !ensureNoCSRF(request)){
-					SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "CSRF check failed.");
-					log.error(error.getErrorMessage());
-					return error.toResponse();
-				}
-
-				// this will have our authorization code within it.
-				StringBuffer fullUrlBuf = request.getRequestURL();
-				fullUrlBuf.append('?').append(request.getQueryString());
-
-				// extract auth code from string buffer
-				String authCode = oauthProvider.extractAuthCode(fullUrlBuf.toString());
-
-				if (authCode == null) {
-					SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "User denied access to our app.");
-					log.info("Provider failed to give us an authorization code.");
-					return error.toResponse();					
-				} else {   
-					String internalReference = oauthProvider.exchangeCode(authCode);
-
-					// get user info from provider
-					// note the userid field in this object will contain the providers user id not ours.
-					User userFromProvider = federatedAuthenticator.getUserInfo(internalReference);
-					
-					if(null == userFromProvider){
-						SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to create user.");
-						log.warn(error.getErrorMessage());
-						return error.toResponse();
-					}
-
-					log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
-
-					// this is the providers unique id for the user we should store it for now
-					String providerId = userFromProvider.getDbId();
-					
-					// clear user object id so that it is ready to receive our local one.
-					userFromProvider.setDbId(null);
-
-					AuthenticationProvider providerReference = AuthenticationProvider.valueOf(provider.toUpperCase());					
-					User localUserInformation = this.getUserFromLinkedAccount(providerReference, providerId);
-
-					// decide if we need to register a new user or link to an existing account
-					if(null == localUserInformation){
-						log.info("New registration - User does not already exist.");
-						// register user
-						String localUserId = registerUser(userFromProvider, providerReference, providerId);
-						localUserInformation = this.database.getById(localUserId);
-						
-						if(null == localUserInformation){
-							// we just put it in so something has gone very wrong.
-							log.error("Failed to retreive user even though we just put it in the database.");
-							throw new NoUserIdException();
-						}
-					}
-					else{
-						log.debug("Returning user detected" + localUserInformation.getEmail());
-					}
-					
-					// create a signed session for this user so that we don't need to do this again for a while.
-					this.createSession(request, localUserInformation.getDbId());
-					return Response.ok(localUserInformation).build();
-				}			
+				providerSpecificUserLookupReference = this.getOauth2InternalRefCode(oauthProvider, request);							
 			}
 			else{
-				// We should never see this if a correct provider has been given
+				// This should catch any invalid providers
 				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
 				log.error(error.getErrorMessage());
 				return error.toResponse();	
 			}
+
+			// Retrieve the local user object which will be retrieved / generated.
+			User localUserInformation = this.getUserFromFederatedProvider(federatedAuthenticator, providerSpecificUserLookupReference);
+			
+			// create a signed session for this user so that we don't need to do this again for a while.
+			this.createSession(request, localUserInformation.getDbId());
+			
+			return Response.ok(localUserInformation).build();
 		}
 		catch(IllegalArgumentException e){
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
@@ -243,8 +191,17 @@ public class UserManager{
 			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Error during security checks.");
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
+		} catch (AuthenticationCodeException e){
+			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
+			log.info(e.getMessage(),e);
+			return error.toResponse();	
+		} catch (CrossSiteRequestForgeryException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		}
 	}
+	
 
 	/**
 	 * Get the details of the currently logged in user
@@ -277,6 +234,12 @@ public class UserManager{
 	 * 
 	 * @param request - from the current user
 	 */
+	
+	/**
+	 * Destroy a session attached to the request.
+	 * 
+	 * @param request containing the session to destroy
+	 */
 	public void logUserOut(HttpServletRequest request){
 		Validate.notNull(request);
 		try{
@@ -292,6 +255,13 @@ public class UserManager{
 	 * 
 	 * @param request
 	 * @param userId
+	 */
+	
+	/**
+	 * Create a session and attach it to the request provided.
+	 * 
+	 * @param request to store the session
+	 * @param userId to associate the session with
 	 */
 	public void createSession(HttpServletRequest request, String userId){		
 		Validate.notNull(request);
@@ -313,6 +283,15 @@ public class UserManager{
 	 * 
 	 * @param request
 	 * @return True if we are happy, false if we are not.
+	 */
+
+	/**
+	 * Executes checks on the users sessions to ensure it is valid
+	 * 
+	 * Checks include verifying the HMAC and the session creation date.
+	 * 
+	 * @param request
+	 * @return true if it is still valid, false if not.
 	 */
 	public boolean validateUsersSession(HttpServletRequest request){
 		Validate.notNull(request);
@@ -339,7 +318,13 @@ public class UserManager{
 			return false;
 		}
 	}
-	
+
+	/**
+	 * Generate an HMAC using a key and the data to sign. 
+	 * @param key
+	 * @param dataToSign
+	 * @return HMAC
+	 */
 	private String calculateHMAC(String key, String dataToSign){
 		Validate.notEmpty(key, "Signing key cannot be blank.");
 		Validate.notEmpty(dataToSign, "Data to sign cannot be blank.");
@@ -358,8 +343,14 @@ public class UserManager{
 			throw new IllegalArgumentException();
 		}		
 	}
-
-	private IFederatedAuthenticator mapToProvider(String provider){
+	
+	/**
+	 * Attempts to map a string to a known provider.
+	 * 
+	 * @param provider
+	 * @return the FederatedAuthenticator object which can be used to get a user.
+	 */
+	private IFederatedAuthenticator mapToProvider(String provider) throws IllegalArgumentException{
 		Validate.notEmpty(provider, "Provider name must not be empty or null if we are going to map it to an implementation.");
 		
 		AuthenticationProvider enumProvider = null;
@@ -387,6 +378,13 @@ public class UserManager{
 	 * @param request
 	 * @return True if we are satisfied that they match and false if we think there is a problem.
 	 */
+	
+	/**
+	 * Verify with the request that there is no CSRF violation
+	 * 
+	 * @param request
+	 * @return true if we are happy , false if we think a violation has occurred.
+	 */
 	private boolean ensureNoCSRF(HttpServletRequest request){
 		Validate.notNull(request);
 		
@@ -404,6 +402,7 @@ public class UserManager{
 			return true;
 		}
 	}
+	
 
 	/**
 	 * This method should handle the situation where we haven't seen a user before.
@@ -417,6 +416,7 @@ public class UserManager{
 		String userId = database.register(user, provider, providerId);
 		return userId;
 	}
+	
 	
 	/**
 	 * This method will attempt to find a segue user using a 3rd party provider and a unique id that identifies the user to the provider. 
@@ -434,5 +434,89 @@ public class UserManager{
 			log.info("Unable to locate user based on provider information provided.");			
 		}
 		return user;
-	}	
+	}
+	
+	/**
+	 * This method should use the provider specific reference to either register a new user or retrieve an existing user.
+	 *  
+	 * @param federatedAuthenticator the federatedAuthenticator we are using for authentication
+	 * @param providerSpecificUserLookupReference - the look up reference provided by the authenticator after any authenticator specific actions have been completed.
+	 * @return a user object that exists in the segue system.
+	 * @throws AuthenticatorSecurityException
+	 * @throws NoUserIdException - If we are unable to locate the user id based on the lookup reference provided.
+	 * @throws IOException
+	 */
+	private User getUserFromFederatedProvider(IFederatedAuthenticator federatedAuthenticator, String providerSpecificUserLookupReference) throws AuthenticatorSecurityException, NoUserIdException, IOException{
+		// get user info from federated provider
+		// note the userid field in this object will contain the providers user id not ours so we should change this or use auto-mapping between different DOs.
+		User userFromProvider = federatedAuthenticator.getUserInfo(providerSpecificUserLookupReference);
+		
+		if(null == userFromProvider){
+			log.warn("Unable to create user for the provider " + federatedAuthenticator.getAuthenticationProvider().name());
+			throw new NoUserIdException();
+		}
+
+		log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
+
+		// this is the providers unique id for the user we should store it for now
+		String providerId = userFromProvider.getDbId();
+		
+		// clear user object id so that it is ready to receive our local one.
+		userFromProvider.setDbId(null);
+		
+		User localUserInformation = this.getUserFromLinkedAccount(federatedAuthenticator.getAuthenticationProvider(), providerId);
+
+		// decide if we need to register a new user or link to an existing account
+		if(null == localUserInformation){
+			log.info("New registration - User does not already exist.");
+			// register user
+			String localUserId = registerUser(userFromProvider, federatedAuthenticator.getAuthenticationProvider(), providerId);
+			localUserInformation = this.database.getById(localUserId);
+			
+			if(null == localUserInformation){
+				// we just put it in so something has gone very wrong.
+				log.error("Failed to retreive user even though we just put it in the database.");
+				throw new NoUserIdException();
+			}
+		}
+		else{
+			log.debug("Returning user detected" + localUserInformation.getDbId());
+		}
+		
+		return localUserInformation;
+	}
+	
+	/**
+	 * This method is an oauth2 specific method which will ultimately provide an internal reference number that the oauth2 provider can use to lookup the information
+	 * of the user who has just authenticated.
+	 * 
+	 * @param oauthProvider
+	 * @param request
+	 * @return
+	 * @throws AuthenticationCodeException
+	 * @throws IOException
+	 * @throws CodeExchangeException
+	 * @throws NoUserIdException
+	 * @throws CrossSiteRequestForgeryException
+	 */
+	private String getOauth2InternalRefCode(IOAuth2Authenticator oauthProvider, HttpServletRequest request) throws AuthenticationCodeException, IOException, CodeExchangeException, NoUserIdException, CrossSiteRequestForgeryException{
+		// verify there is no cross site request forgery going on.
+		if(request.getQueryString() == null || !ensureNoCSRF(request)){
+			throw new CrossSiteRequestForgeryException("CRSF check failed");
+		}
+		
+		// this will have our authorization code within it.
+		StringBuffer fullUrlBuf = request.getRequestURL();
+		fullUrlBuf.append('?').append(request.getQueryString());
+		
+		// extract auth code from string buffer
+		String authCode = oauthProvider.extractAuthCode(fullUrlBuf.toString());
+
+		if (authCode != null) {
+			String internalReference = oauthProvider.exchangeCode(authCode);
+			return internalReference;
+		} else {   
+			throw new AuthenticationCodeException("User denied access to our app.");
+		}
+	}
 }

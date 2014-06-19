@@ -216,4 +216,9 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	    }
 	    return false;
 	}
+
+	@Override
+	public AuthenticationProvider getAuthenticationProvider() {
+		return AuthenticationProvider.GOOGLE;
+	}
 }

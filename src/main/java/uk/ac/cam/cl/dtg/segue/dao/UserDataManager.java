@@ -8,7 +8,7 @@ import org.mongojack.WriteResult;
 import com.google.inject.Inject;
 import com.mongodb.DB;
 
-import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
 

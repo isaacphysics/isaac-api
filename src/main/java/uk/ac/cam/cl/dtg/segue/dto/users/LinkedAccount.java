@@ -2,10 +2,10 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import org.mongojack.ObjectId;
 
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import uk.ac.cam.cl.dtg.segue.api.UserManager.AuthenticationProvider;
 
 public class LinkedAccount {
 	

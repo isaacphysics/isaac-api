@@ -26,4 +26,11 @@ public interface IFederatedAuthenticator {
 	 */
 	public User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException, AuthenticatorSecurityException;
 	
+	/**
+	 * Returns a string representation of the providers name
+	 * 
+	 * @return AuthenticationProvider
+	 */
+	public AuthenticationProvider getAuthenticationProvider();
+	
 }
