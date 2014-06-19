@@ -74,11 +74,9 @@ public class UserManager{
 			return Response.ok().entity(currentUser).build();
 		}
 
-		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.
-		IFederatedAuthenticator federatedAuthenticator = null;
-		
+		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.		
 		try{
-			federatedAuthenticator = mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
 			
 			// if we are an OAuth2Provider redirect to the provider authorization url.	
 			if(federatedAuthenticator instanceof IOAuth2Authenticator){
@@ -141,15 +139,14 @@ public class UserManager{
 		User currentUser = getCurrentUser(request);
 
 		if(null != currentUser){
-			log.warn("We already have a cookie set with a valid user. We won't proceed with authentication callback logic.");
+			log.info("We already have a cookie set with a valid user. We won't proceed with authentication callback logic.");
 			return Response.ok().entity(currentUser).build();
 		}
 
-		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.
-		IFederatedAuthenticator federatedAuthenticator = null;
-		
+		// Ok we don't have a current user so now we have to go ahead and try and authenticate them.		
 		try{
-			federatedAuthenticator = mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
+			
 			// if we are an OAuth2Provider complete next steps of oauth
 			if(federatedAuthenticator instanceof IOAuth2Authenticator){
 				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
@@ -173,7 +170,6 @@ public class UserManager{
 					log.info("Provider failed to give us an authorization code.");
 					return error.toResponse();					
 				} else {   
-					log.debug("User granted access to our app");
 					String internalReference = oauthProvider.exchangeCode(authCode);
 
 					// get user info from provider
@@ -224,7 +220,7 @@ public class UserManager{
 				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
 				log.error(error.getErrorMessage());
 				return error.toResponse();	
-			}			
+			}
 		}
 		catch(IllegalArgumentException e){
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
@@ -248,24 +244,6 @@ public class UserManager{
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
-	}
-	
-	/**
-	 * This method will attempt to find a segue user using a 3rd party provider and a unique id that identifies the user to the provider. 
-	 * 
-	 * @param provider - the provider that we originally validated with
-	 * @param providerId - the unique ID of the user as given to us from the provider.
-	 * @return A user object or null if we were unable to find the user with the information provided.
-	 */
-	public User getUserFromLinkedAccount(AuthenticationProvider provider, String providerId){
-		Validate.notNull(provider);
-		Validate.notBlank(providerId);
-		
-		User user = database.getByLinkedAccount(provider, providerId);
-		if(null == user){
-			log.info("Unable to locate user based on provider information provided.");			
-		}
-		return user;
 	}
 
 	/**
@@ -439,4 +417,22 @@ public class UserManager{
 		String userId = database.register(user, provider, providerId);
 		return userId;
 	}
+	
+	/**
+	 * This method will attempt to find a segue user using a 3rd party provider and a unique id that identifies the user to the provider. 
+	 * 
+	 * @param provider - the provider that we originally validated with
+	 * @param providerId - the unique ID of the user as given to us from the provider.
+	 * @return A user object or null if we were unable to find the user with the information provided.
+	 */
+	private User getUserFromLinkedAccount(AuthenticationProvider provider, String providerId){
+		Validate.notNull(provider);
+		Validate.notBlank(providerId);
+		
+		User user = database.getByLinkedAccount(provider, providerId);
+		if(null == user){
+			log.info("Unable to locate user based on provider information provided.");			
+		}
+		return user;
+	}	
 }
