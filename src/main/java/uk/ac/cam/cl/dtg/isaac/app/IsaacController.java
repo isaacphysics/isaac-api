@@ -263,7 +263,8 @@ public class IsaacController {
 				}
 			}
 			catch(ClassCastException exception){
-				exception.printStackTrace();
+				log.error("Error whilst trying to cast one object to another.",exception);
+				// TODO: fix how SegueErrorResponse exception objects are handled - they clearly cannot be cast as content objects here.
 			}
 		}
 		
