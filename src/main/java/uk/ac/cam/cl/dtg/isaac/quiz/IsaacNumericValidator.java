@@ -16,7 +16,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 /**
- * Validator that only provides functionality to validate Multifield Validators
+ * Validator that only provides functionality to validate Numeric questions.
  * 
  *
  */
