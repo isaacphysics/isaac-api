@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -13,8 +14,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonType("choice")
 public class Choice extends Content {
-
+	@JsonIgnore
 	protected boolean correct;
+	@JsonIgnore
 	protected ContentBase explanation;
 	
 	@JsonCreator
@@ -61,18 +63,19 @@ public class Choice extends Content {
 		super();
 	}
 	
+	@JsonIgnore
 	public boolean isCorrect() {
 		return correct;
 	}
-
+	@JsonIgnore
 	public void setCorrect(boolean correct) {
 		this.correct = correct;
 	}
-
+	@JsonIgnore
 	public ContentBase getExplanation() {
 		return explanation;
 	}
-
+	@JsonIgnore
 	public void setExplanation(ContentBase explanation) {
 		this.explanation = explanation;
 	}
