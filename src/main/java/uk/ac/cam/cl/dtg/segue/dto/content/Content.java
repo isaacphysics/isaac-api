@@ -75,6 +75,15 @@ public class Content extends ContentBase{
 		
 	}
 	
+	/**
+	 * Basic constructor to allow communication of a simple value.
+	 * @param value
+	 */
+	public Content(String value){
+		this.value = value;
+		this.type = "content";
+	}
+	
 	/** 
 	 * Default constructor required for Jackson
 	 */

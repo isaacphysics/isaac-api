@@ -1,13 +1,19 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.util.List;
+
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.content.Question;
+import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-import uk.ac.cam.cl.dtg.segue.quiz.Validator;
+import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to Questions.
@@ -26,15 +32,30 @@ public class QuestionManager {
 	 * @param answer as a string used for comparison purposes.
 	 * @return A response containing a QuestionValidationResponse object
 	 */
-	public Response validateAnswer(Question question, String answer){		
-		Validator validator = this.locateValidator(question.getClass());
+	public Response validateAnswer(Question question, List<Choice> answers){		
+		IValidator validator = locateValidator(question.getClass());
 		
 		if(null == validator){
 			log.error("Unable to locate a valid validator for this question " + question.getId());
 			return Response.serverError().entity("Unable to detect question validator for this object. Unable to verify answer").build();
 		}
 		
-		return Response.ok(validator.validateQuestionResponse(question, answer)).build();
+		if(validator instanceof IMultiFieldValidator){
+			IMultiFieldValidator multiFieldValidator = (IMultiFieldValidator) validator;
+			// we need to call the multifield validator instead.
+			return Response.ok(multiFieldValidator.validateMultiFieldQuestionResponses(question, answers)).build();
+		}
+		else // use the standard IValidator
+		{
+			// ok so we are expecting there just to be one choice?
+			if(answers.isEmpty() || answers.size() > 1){
+				log.debug("We only expected one answer for this question...");
+				SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "We only expected one answer for this question (id " + question.getId() + ") and we were given a list.");
+				return error.toResponse();
+			}
+			
+			return Response.ok(validator.validateQuestionResponse(question, answers.get(0))).build();	
+		}
 	}
 	
 	/**
@@ -44,7 +65,7 @@ public class QuestionManager {
 	 * @return a Validator
 	 */
 	@SuppressWarnings("unchecked")
-	private Validator locateValidator(Class<? extends Question> questionType){
+	public static IValidator locateValidator(Class<? extends Question> questionType){
 		// check we haven't gone too high up the superclass tree
 		if(!Question.class.isAssignableFrom(questionType)){
 			return null;

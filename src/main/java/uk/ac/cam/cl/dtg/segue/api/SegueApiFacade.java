@@ -27,6 +27,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
@@ -674,7 +676,6 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("questions/{question_id}/answer")
 	public Response answerQuestion(@PathParam("question_id") String questionId, String jsonAnswer){
-		
 		Content contentBasedOnId = contentVersionController.getContentManager().getById(questionId, contentVersionController.getLiveVersion());
 		
 		Question question = null;
@@ -687,17 +688,32 @@ public class SegueApiFacade {
 			log.warn(error.getErrorMessage());
 			return error.toResponse();		
 		}
-
-		// try to parse the answer from the client into a choice as this is our agreed approach for receiving answers.
-		Choice answerFromClient;
-		try {
-			answerFromClient = (Choice) mapper.getContentObjectMapper().readValue(jsonAnswer, ContentBase.class);
-			return this.questionManager.validateAnswer(question, answerFromClient.getValue());
-			
+		
+		// decide if we have been given a list or an object and put it in a list either way
+		List<Choice> answersFromClient = Lists.newArrayList();
+		
+		try{
+			// convert single object into a list.
+			Choice answerFromClient = (Choice) mapper.getContentObjectMapper().readValue(jsonAnswer, Choice.class);
+			answersFromClient.add(answerFromClient);
+		}
+		catch(JsonMappingException | JsonParseException e){
+			log.info("Unable to map as as single choice object attempting as a list of choices");
+			// Maybe it is a list... Attempt to parse that.
+			try{
+				answersFromClient = mapper.getContentObjectMapper().readValue(jsonAnswer, new TypeReference<List<Choice>>(){});
+			}
+			catch(IOException exception){
+				log.info("Failed to map to any expected input...");
+				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
+				return error.toResponse();		
+			}
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();		
 		}
+			
+		return this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
 	}
 }

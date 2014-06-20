@@ -8,6 +8,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidatesWith {
-	Class<? extends Validator> value();
+	Class<? extends IValidator> value();
 }
 
