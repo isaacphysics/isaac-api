@@ -76,4 +76,15 @@ public abstract class ContentBase {
 	public void setVersion(String version) {
 		this.version = version;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("Content Object ID: " + this.id);
+		sb.append(" Type: " + this.type);
+		sb.append(" Source File: " + this.canonicalSourceFile);
+		
+		return sb.toString();
+	}
 }

@@ -194,6 +194,9 @@ public class Content extends ContentBase{
 		if(this.value != null){
 			result = result && this.value.equals(c.getValue());
 		}
+		if(this.canonicalSourceFile != null){
+			result = result && this.canonicalSourceFile.equals(c.getCanonicalSourceFile());
+		}
 			
 		return result;
 	}
@@ -212,6 +215,11 @@ public class Content extends ContentBase{
 			hashCode = hashCode + this.value.hashCode();
 		
 		return hashCode;
+	}
+	
+	@Override 
+	public String toString(){
+		return super.toString() + " Title: " + this.title;
 	}
 	
 }
