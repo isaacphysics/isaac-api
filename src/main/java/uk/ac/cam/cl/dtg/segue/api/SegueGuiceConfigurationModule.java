@@ -25,8 +25,8 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.Figure;
 import uk.ac.cam.cl.dtg.segue.dto.content.Image;
+import uk.ac.cam.cl.dtg.segue.dto.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dto.content.Question;
-import uk.ac.cam.cl.dtg.segue.dto.content.TextInputQuestion;
 import uk.ac.cam.cl.dtg.segue.dto.content.Video;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -169,9 +169,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		// We need to pre-register different content objects here for the auto-mapping to work
 		map.put("choice", Choice.class);
+		map.put("quantity", Quantity.class);		
 		map.put("question", Question.class);
 		map.put("choiceQuestion", ChoiceQuestion.class);
-		map.put("textInputQuestion", TextInputQuestion.class);
 		map.put("image", Image.class);
 		map.put("figure", Figure.class);
 		map.put("video", Video.class);

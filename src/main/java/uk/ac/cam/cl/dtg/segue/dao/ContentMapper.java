@@ -11,6 +11,7 @@ import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.content.JsonType;
@@ -151,9 +152,11 @@ public class ContentMapper {
 	public ObjectMapper getContentObjectMapper(){ 
 	    ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
 	    contentDeserializer.registerTypeMap(jsonTypes);
+	    ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer);
 	    		
 	    SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
 	    contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+	    contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
 	    
 	    ObjectMapper objectMapper = new ObjectMapper();
 	    objectMapper.registerModule(contentDeserializerModule);
