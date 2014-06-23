@@ -44,7 +44,6 @@ import uk.ac.cam.cl.dtg.segue.dto.users.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
@@ -697,16 +696,9 @@ public class SegueApiFacade {
 			answersFromClient.add(answerFromClient);
 		}
 		catch(JsonMappingException | JsonParseException e){
-			log.info("Unable to map as as single choice object attempting as a list of choices");
-			// Maybe it is a list... Attempt to parse that.
-			try{
-				answersFromClient = mapper.getContentObjectMapper().readValue(jsonAnswer, new TypeReference<List<Choice>>(){});
-			}
-			catch(IOException exception){
-				log.info("Failed to map to any expected input...");
-				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
-				return error.toResponse();		
-			}
+			log.info("Failed to map to any expected input...");
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
+			return error.toResponse();
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
 			log.error(error.getErrorMessage(), e);

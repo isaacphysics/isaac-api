@@ -34,7 +34,6 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 	public Choice deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
 			throws IOException, JsonProcessingException, JsonMappingException{
 	    
-		
 	    SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
 	    contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
 	    
