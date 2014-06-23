@@ -39,6 +39,7 @@ public class IsaacApplicationRegister extends Application {
 		Set<Class<?>> result = new HashSet<Class<?>>();
 		result.add(IsaacController.class);
 		result.add(APIOverviewResource.class);
+		result.add(RestEasyJacksonConfiguration.class);
 		return result;
 	}	
 }
