@@ -26,7 +26,6 @@ public class IsaacNumericValidator implements IValidator{
 			IsaacNumericQuestion choiceQuestion = (IsaacNumericQuestion) question;
 			
 			if(answer instanceof Quantity){
-				
 				Quantity answerFromUser = (Quantity) answer;
 				
 				for(Choice c : choiceQuestion.getChoices()){
@@ -34,7 +33,10 @@ public class IsaacNumericValidator implements IValidator{
 						Quantity quantityChoice = (Quantity) c;
 						if(answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnit().equals(quantityChoice.getUnit())){
 							return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnit(), quantityChoice.isCorrect(), (Content) quantityChoice.getExplanation());
-						}					
+						}
+						else if(answerFromUser.getValue().equals(quantityChoice.getValue()) && !answerFromUser.getUnit().equals(quantityChoice.getUnit())){
+							return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnit(), false, new Content("Check your units."));
+						}
 					}
 				}
 

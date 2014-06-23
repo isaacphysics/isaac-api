@@ -16,12 +16,11 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.content.Quantity;
 
 /**
- * Choice deserializer will try and use the map built up in the ContentMapper class to determine what subtype of content needs to be created.
+ * Choice deserializer
  * 
- * Currently this is dependent on the register map key being the exact same text as the json 'type' property value stored in the database.
+ * This class requires the primary content bas deserializer as a constructor arguement.
  * 
- * All content objects MUST have a type property set for this to work - the default behaviour is to try and create a plan content object if we are in doubt.
- * 
+ * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 	private ContentBaseDeserializer contentDeserializer;
