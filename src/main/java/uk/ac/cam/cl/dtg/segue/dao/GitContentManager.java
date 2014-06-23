@@ -49,6 +49,7 @@ public class GitContentManager implements IContentManager {
 	private static final String CONTENT_TYPE = "content";
 
 	private static final Map<String, Map<String,Content>> gitCache = new ConcurrentHashMap<String,Map<String,Content>>();
+	private static final Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 	private static final Map<String, Set<String>> tagsList = new ConcurrentHashMap<String,Set<String>>();
 	
 	private final GitDb database;
@@ -211,6 +212,7 @@ public class GitContentManager implements IContentManager {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
 		searchProvider.expungeEntireSearchCache();
+		indexProblemCache.clear();
 	}
 
 	@Override
@@ -219,7 +221,8 @@ public class GitContentManager implements IContentManager {
 		
 		if(gitCache.containsKey(version)){
 			gitCache.remove(version);
-			searchProvider.expungeIndexFromSearchCache(version);	
+			searchProvider.expungeIndexFromSearchCache(version);
+			indexProblemCache.remove(version);
 		}
 	}
 
@@ -281,6 +284,11 @@ public class GitContentManager implements IContentManager {
 		return gitCache.containsKey(version) && searchIndexed;
 	}
 	
+	@Override
+	public Map<Content,List<String>> getProblemMap(String version){
+		return indexProblemCache.get(version);
+	}
+	
 	/**
 	 * This method will send off the information in the git cache to the search provider for indexing.
 	 * 
@@ -335,6 +343,7 @@ public class GitContentManager implements IContentManager {
 				}
 				
 			    Map<String,Content> shaCache = new HashMap<String,Content>();
+			    
 				TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
 				log.info("Populating git content cache based on sha " + sha + " ...");
 				
@@ -361,7 +370,8 @@ public class GitContentManager implements IContentManager {
 				    	    			// if the key is the same but the content is different then something has gone wrong - log an error
 				    	    			if(!shaCache.get(flattenedContent.getId()).equals(flattenedContent)){
 							    	    	// log an error if we find that there are duplicate ids and the content is different.
-							    	    	log.warn("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+				    	    				log.warn("Resource with duplicate ID (" + content.getId() +") detected in cache. Skipping " + treeWalk.getPathString());
+				    	    				this.registerContentProblem(sha, flattenedContent, "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and " + shaCache.get(flattenedContent.getId()).getCanonicalSourceFile());				    	    				
 						    	    	}
 				    	    			// if the content is the same then it is just reuse of a content object so that is fine.
 				    	    			else{
@@ -381,6 +391,9 @@ public class GitContentManager implements IContentManager {
 		    	    }
 		    	    catch(JsonMappingException e){
 		    	    	log.warn("Unable to parse the json file found " + treeWalk.getPathString() +" as a content object. Skipping file...", e);
+		    	    	Content dummyContent = new Content();
+		    	    	dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
+		    	    	this.registerContentProblem(sha, dummyContent, "Index failure - Unable to parse json file found - " + treeWalk.getPathString() + ". The following error occurred: " + e.getMessage());
 		    	    }
 			    }
 
@@ -468,7 +481,7 @@ public class GitContentManager implements IContentManager {
 	
 	/**
 	 * This method will attempt to traverse the cache to ensure that all content references are valid.
-	 * TODO: Make this more efficient or only call it on demand?
+	 * TODO: Convert this into a more useful method. Currently it is a hack to flag bad references.
 	 * 
 	 * @param sha
 	 * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
@@ -479,6 +492,8 @@ public class GitContentManager implements IContentManager {
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
 		Set<String> missingContent = new HashSet<String>();
+		
+		Map<String, Content> whoAmI = new HashMap<String, Content>(); 
 		
 		// Build up a set of all content (and content fragments for validation)
 		for(Content c : gitCache.get(sha).values()){			
@@ -492,16 +507,21 @@ public class GitContentManager implements IContentManager {
 				definedIds.add(c.getId());
 
 			// add the ids to the list of expected ids if we see a list of referenced content  
-			if(c.getRelatedContent() != null)
+			if(c.getRelatedContent() != null){
 				expectedIds.addAll(c.getRelatedContent());
-			
+				// record which content object was referencing which ID
+				for(String id : c.getRelatedContent()){
+					whoAmI.put(id, c);
+				}
+			}
+
 			// content type specific checks
 			if(c instanceof Media){
 				Media f = (Media) c;
 				
 				if(f.getSrc() != null && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())){
 					log.warn("Unable to find Image: " + f.getSrc() + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
-					missingContent.add("Image: " + f.getSrc());
+					this.registerContentProblem(sha, c, "Unable to find Image: " + f.getSrc() + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
 				}					
 				else
 					log.debug("Verified image " + f.getSrc() + " exists in git.");
@@ -515,6 +535,11 @@ public class GitContentManager implements IContentManager {
 		{
 			expectedIds.removeAll(definedIds);
 			missingContent.addAll(expectedIds);
+			
+			for(String id : missingContent){
+				this.registerContentProblem(sha, whoAmI.get(id), "This id was referenced by " + whoAmI.get(id).getCanonicalSourceFile() + " but the content with that ID cannot be found.");
+			}
+			
 			log.error("Referential integrity broken for (" + expectedIds.size() + ") related Content items. The following ids are referenced but do not exist: " + expectedIds.toString());
 			return false;
 		}
@@ -563,5 +588,18 @@ public class GitContentManager implements IContentManager {
 		}
 		
 		tagsList.get(version).addAll(newTagSet);
+	}
+	
+	private void registerContentProblem(String version, Content c, String message){
+
+		if(!indexProblemCache.containsKey(version)){
+			indexProblemCache.put(version, new HashMap<Content, List<String>>());
+		}
+			
+		if(!indexProblemCache.get(version).containsKey(c)){
+			indexProblemCache.get(version).put(c, new ArrayList<String>());
+		}
+
+		indexProblemCache.get(version).get(c).add(message);				
 	}
 }

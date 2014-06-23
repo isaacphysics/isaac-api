@@ -138,4 +138,9 @@ public class MongoContentManager implements IContentManager {
 			Integer limit) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
+
+	@Override
+	public Map<Content, List<String>> getProblemMap(String version) {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
 }

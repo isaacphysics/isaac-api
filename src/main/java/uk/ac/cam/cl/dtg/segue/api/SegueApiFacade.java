@@ -715,4 +715,12 @@ public class SegueApiFacade {
 			
 		return this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
 	}
+	
+	
+	@GET
+	@Produces("application/json")
+	@Path("admin/content_problems")	
+	public Response getContentProblems(){
+		return Response.ok(contentVersionController.getContentManager().getProblemMap(contentVersionController.getLiveVersion())).build();
+	}
 }

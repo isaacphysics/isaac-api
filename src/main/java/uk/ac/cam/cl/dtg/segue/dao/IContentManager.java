@@ -143,4 +143,12 @@ public interface IContentManager {
 	 * @return a positive number if version1 is newer, zero if they are the same, and a negative number if version 2 is newer.
 	 */
 	public int compareTo(String version1, String version2);
+
+	/**
+	 * Get the problem map for a particular version 
+	 * 
+	 * @param version
+	 * @return the map containing the content objects with problems and associated list of problem messages. Or null if there is no problem index.
+	 */
+	public Map<Content, List<String>> getProblemMap(String version);
 }
