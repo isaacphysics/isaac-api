@@ -42,7 +42,7 @@ public class Content extends ContentBase{
 				   @JsonProperty("encoding") String encoding,
 				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
 				   @JsonProperty("layout") String layout,
-				   @JsonProperty("contentReferenced") List<ContentBase> children,
+				   @JsonProperty("children") List<ContentBase> children,
 				   @JsonProperty("value") String value,
 				   @JsonProperty("attribution") String attribution,
 				   @JsonProperty("relatedContent") List<String> relatedContent,
