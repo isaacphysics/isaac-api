@@ -8,6 +8,7 @@ import java.util.Set;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -156,7 +157,8 @@ public class Content extends ContentBase{
 	public void setRelatedContent(List<String> relatedContent) {
 		this.relatedContent = relatedContent;
 	}
-
+	
+	@JsonIgnore
 	public boolean getPublished() {
 		return published;
 	}
