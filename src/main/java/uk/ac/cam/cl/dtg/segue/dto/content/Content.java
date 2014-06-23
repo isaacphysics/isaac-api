@@ -31,7 +31,7 @@ public class Content extends ContentBase{
 	protected String attribution;
 	protected List<String> relatedContent;
 	protected boolean published;
-	private String level;
+	protected String level;
 	
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
