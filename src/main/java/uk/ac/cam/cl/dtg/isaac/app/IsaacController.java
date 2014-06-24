@@ -288,10 +288,10 @@ public class IsaacController {
 			}
 			// TODO fix this stuff to be less horrid
 			else if(content.getType().toLowerCase().contains("question")){
-				resourceUrl = proxyPath + "/api/questions/" + URLEncoder.encode(content.getId(), "UTF-8");
+				resourceUrl = proxyPath + "/api/pages/questions/" + URLEncoder.encode(content.getId(), "UTF-8");
 			}
 			else if(content.getType().toLowerCase().contains("concept")){
-				resourceUrl = proxyPath + "/api/concepts/" + URLEncoder.encode(content.getId(), "UTF-8");
+				resourceUrl = proxyPath + "/api/pages/concepts/" + URLEncoder.encode(content.getId(), "UTF-8");
 			}
 			else{
 				resourceUrl = proxyPath + "/api/pages/" + URLEncoder.encode(content.getId(), "UTF-8");
