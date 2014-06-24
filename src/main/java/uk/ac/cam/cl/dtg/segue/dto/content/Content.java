@@ -83,6 +83,7 @@ public class Content extends ContentBase{
 	public Content(String value){
 		this.value = value;
 		this.type = "content";
+		this.encoding = "markdown";
 	}
 	
 	/** 
