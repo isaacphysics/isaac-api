@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.models.content;
 
+import java.util.List;
+
 import org.dozer.Mapping;
 
 public abstract class GameboardItem {
@@ -8,6 +10,7 @@ public abstract class GameboardItem {
 	@Mapping("subtitle")
 	protected String description;
 	protected String uri;
+	protected List<String> tags;
 	
 	public String getId() {
 		return id;
@@ -32,5 +35,12 @@ public abstract class GameboardItem {
 	}
 	public void setUri(String url) {
 		this.uri = url;
+	}
+	
+	public List<String> getTags() {
+		return tags;
+	}
+	public void setTags(List<String> tags) {
+		this.tags = tags;
 	}
 }
