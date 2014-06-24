@@ -696,11 +696,11 @@ public class SegueApiFacade {
 			answersFromClient.add(answerFromClient);
 		}
 		catch(JsonMappingException | JsonParseException e){
-			log.info("Failed to map to any expected input...");
-			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
+			log.info("Failed to map to any expected input...", e);
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a Choice object so failing with an error", e);
 			return error.toResponse();
 		} catch (IOException e) {
-			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map client response to a Choice object so failing with an error", e);
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to map response to a Choice object so failing with an error", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();		
 		}

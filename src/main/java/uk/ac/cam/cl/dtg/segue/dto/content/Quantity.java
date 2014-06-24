@@ -8,8 +8,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonType("quantity")
 public class Quantity extends Choice {
-	protected String unit;
-	protected boolean requireUnitMatch;
+	protected String units;
+	protected boolean requireUnitsMatch;
 	
 	public Quantity(){
 		
@@ -34,8 +34,8 @@ public class Quantity extends Choice {
 				   @JsonProperty("level") String level,
 				   @JsonProperty("correct") boolean correct,
 				   @JsonProperty("explanation") ContentBase explanation,
-				   @JsonProperty("units") String unit,
-				   @JsonProperty("requiredUnitMatch") boolean requiredUnitMatch) {
+				   @JsonProperty("units") String units,
+				   @JsonProperty("requiredUnitMatch") boolean requiredUnitsMatch) {
 		super(_id, 
 		      id, 
 		      title, 
@@ -55,24 +55,24 @@ public class Quantity extends Choice {
 		      correct,
 		      explanation);
 		
-		this.unit = unit;
-		this.requireUnitMatch = requiredUnitMatch;
+		this.units = units;
+		this.requireUnitsMatch = requiredUnitsMatch;
 	}
 
-	public String getUnit() {
-		return unit;
+	public String getUnits() {
+		return units;
 	}
 
-	public void setUnit(String unit) {
-		this.unit = unit;
+	public void setUnits(String unit) {
+		this.units = unit;
 	}
 
-	public boolean isRequireUnitMatch() {
-		return requireUnitMatch;
+	public boolean isRequireUnitsMatch() {
+		return requireUnitsMatch;
 	}
 
-	public void setRequireUnitMatch(boolean requireUnitMatch) {
-		this.requireUnitMatch = requireUnitMatch;
+	public void setRequireUnitsMatch(boolean requireUnitsMatch) {
+		this.requireUnitsMatch = requireUnitsMatch;
 	}
 	
 }

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
@@ -27,21 +28,32 @@ public class IsaacNumericValidator implements IValidator{
 			
 			if(answer instanceof Quantity){
 				Quantity answerFromUser = (Quantity) answer;
-				
+				QuantityValidationResponse bestResponse = null;
 				for(Choice c : choiceQuestion.getChoices()){
 					if(c instanceof Quantity){
 						Quantity quantityChoice = (Quantity) c;
-						if(answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnit().equals(quantityChoice.getUnit())){
-							return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnit(), quantityChoice.isCorrect(), (Content) quantityChoice.getExplanation());
+
+						// match known choices
+						if(answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnits().equals(quantityChoice.getUnits())){
+							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), quantityChoice.isCorrect(), (Content) quantityChoice.getExplanation(), true, true);
 						}
-						else if(answerFromUser.getValue().equals(quantityChoice.getValue()) && !answerFromUser.getUnit().equals(quantityChoice.getUnit())){
-							return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnit(), false, new Content("Check your units."));
+						else if(answerFromUser.getValue().equals(quantityChoice.getValue()) && !answerFromUser.getUnits().equals(quantityChoice.getUnits())){
+							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your units."), true, false);
+						}
+						else if(!answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnits().equals(quantityChoice.getUnits())){
+							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your working?"), false, true);
 						}
 					}
 				}
-
-				// tell them they got it wrong but we cannot find an explanation for why.
-				return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnit(), false, null);
+				
+				if(null == bestResponse){
+					// tell them they got it wrong but we cannot find an feedback for them.
+					return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, null);	
+				}
+				else
+				{
+					return bestResponse;
+				}
 			}
 			else
 			{
