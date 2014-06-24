@@ -41,7 +41,7 @@ public class IsaacNumericValidator implements IValidator{
 							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your units."), true, false);
 						}
 						else if(!answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnits().equals(quantityChoice.getUnits())){
-							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your working?"), false, true);
+							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your working."), false, true);
 						}
 					}
 				}
