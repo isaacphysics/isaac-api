@@ -101,6 +101,8 @@ public class Constants {
 	// Enum to represent sort orders
 	public enum SortOrder {ASC, DESC};
 	
+	public enum BooleanOperator {AND, OR};
+	
 	// Federated Authentication Stuff
 	
 	/**
