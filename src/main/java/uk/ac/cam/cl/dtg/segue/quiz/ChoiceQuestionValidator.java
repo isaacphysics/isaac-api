@@ -11,33 +11,41 @@ import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 
 public class ChoiceQuestionValidator implements IValidator {
-	
-	private static final Logger log = LoggerFactory.getLogger(ChoiceQuestionValidator.class);
-	
+
+	private static final Logger log = LoggerFactory
+			.getLogger(ChoiceQuestionValidator.class);
+
 	@Override
 	public QuestionValidationResponse validateQuestionResponse(
 			Question question, Choice answer) {
 		Validate.notNull(question);
 		Validate.notNull(answer);
-		
+
 		// check that the question is of type ChoiceQuestion before we go ahead
 		ChoiceQuestion choiceQuestion = null;
-		if(question instanceof ChoiceQuestion){
+		if (question instanceof ChoiceQuestion) {
 			choiceQuestion = (ChoiceQuestion) question;
-			
-			for(Choice choice : choiceQuestion.getChoices()){
-				if(choice.getValue().equals(answer.getValue())){
-					return new QuestionValidationResponse(question.getId(), answer.getValue(), choice.isCorrect(), (Content) choice.getExplanation());
+
+			for (Choice choice : choiceQuestion.getChoices()) {
+				if (choice.getValue().equals(answer.getValue())) {
+					return new QuestionValidationResponse(question.getId(),
+							answer.getValue(), choice.isCorrect(),
+							(Content) choice.getExplanation());
 				}
 			}
-			
-			log.info("Unable to find choice for question ( " + question.getId() + " ) matching the answer supplied (" + answer + "). Returning that it is incorrect with out an explanation.");
-			
-			return new QuestionValidationResponse(question.getId(), answer.getValue(), false, null);
-		}
-		else{
+
+			log.info("Unable to find choice for question ( "
+					+ question.getId()
+					+ " ) matching the answer supplied ("
+					+ answer
+					+ "). Returning that it is incorrect with out an explanation.");
+
+			return new QuestionValidationResponse(question.getId(),
+					answer.getValue(), false, null);
+		} else {
 			log.error("Expected to be able to cast the question as a ChoiceQuestion but this cast failed.");
-			throw new ClassCastException("Incorrect type of question received. Unable to validate.");
-		}		
+			throw new ClassCastException(
+					"Incorrect type of question received. Unable to validate.");
+		}
 	}
 }

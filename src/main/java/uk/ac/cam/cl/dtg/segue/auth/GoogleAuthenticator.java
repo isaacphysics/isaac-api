@@ -37,13 +37,15 @@ import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Authenticator  {
+public class GoogleAuthenticator implements IFederatedAuthenticator,
+		IOAuth2Authenticator {
 
-	private static final Logger log = LoggerFactory.getLogger(GoogleAuthenticator.class);
-	
+	private static final Logger log = LoggerFactory
+			.getLogger(GoogleAuthenticator.class);
+
 	private final JsonFactory jsonFactory;
 	private final HttpTransport httpTransport;
-	
+
 	private final GoogleClientSecrets clientSecrets;
 
 	private final String callbackUri;
@@ -52,23 +54,28 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
-		
+
 	@Inject
-	public GoogleAuthenticator(@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) String clientSecretLocation, @Named(Constants.GOOGLE_CALLBACK_URI)String callbackUri, @Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes) throws IOException{
+	public GoogleAuthenticator(
+			@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) String clientSecretLocation,
+			@Named(Constants.GOOGLE_CALLBACK_URI) String callbackUri,
+			@Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes)
+			throws IOException {
 		try {
 			this.jsonFactory = new JacksonFactory();
 			this.httpTransport = new NetHttpTransport();
-			
+
 			this.clientSecrets = getClientCredential(clientSecretLocation);
-			this.requestedScopes =  Arrays.asList(requestedScopes.split(";"));
+			this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
 			this.callbackUri = callbackUri;
 
-			if(null == credentialStore)
+			if (null == credentialStore)
 				credentialStore = new WeakHashMap<String, Credential>();
-			
-			if(null == tokenVerifier)
-				tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
-			
+
+			if (null == tokenVerifier)
+				tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
+						jsonFactory);
+
 		} catch (IOException exception) {
 			log.error("IOException occurred while trying to initialise the Google Authenticator.");
 			throw exception;
@@ -83,12 +90,11 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	@Override
 	public String getAuthorizationUrl(String emailAddress) throws IOException {
 		GoogleAuthorizationCodeRequestUrl urlBuilder = null;
-		urlBuilder = new GoogleAuthorizationCodeRequestUrl(
-				clientSecrets.getDetails().getClientId(),
-				callbackUri,
-				requestedScopes);
-//		.setAccessType("online") // these can be used to force approval each time the user logs in if we wish.
-//		.setApprovalPrompt("force");
+		urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets
+				.getDetails().getClientId(), callbackUri, requestedScopes);
+		// .setAccessType("online") // these can be used to force approval each
+		// time the user logs in if we wish.
+		// .setApprovalPrompt("force");
 
 		urlBuilder.set("state", getAntiForgeryStateToken());
 
@@ -101,7 +107,8 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 
 	@Override
 	public String extractAuthCode(String url) throws IOException {
-		AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url.toString());
+		AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(
+				url.toString());
 
 		if (authResponse.getError() == null) {
 			log.info("User granted access to our app.");
@@ -113,25 +120,31 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	}
 
 	@Override
-	public synchronized String exchangeCode(String authorizationCode) throws IOException, CodeExchangeException {
+	public synchronized String exchangeCode(String authorizationCode)
+			throws IOException, CodeExchangeException {
 		try {
 			GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
-					httpTransport, jsonFactory, clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(),
-					authorizationCode, callbackUri).execute();
+					httpTransport, jsonFactory, clientSecrets.getDetails()
+							.getClientId(), clientSecrets.getDetails()
+							.getClientSecret(), authorizationCode, callbackUri)
+					.execute();
 
-			// I don't really want to use the flow storage but it seems to be easier to get credentials this way.
-			GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport,
-					jsonFactory, 
-					clientSecrets.getDetails().getClientId(), 
-					clientSecrets.getDetails().getClientSecret(), requestedScopes)
-					.setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance())
+			// I don't really want to use the flow storage but it seems to be
+			// easier to get credentials this way.
+			GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+					httpTransport, jsonFactory, clientSecrets.getDetails()
+							.getClientId(), clientSecrets.getDetails()
+							.getClientSecret(), requestedScopes)
+					.setDataStoreFactory(
+							MemoryDataStoreFactory.getDefaultInstance())
 					.build();
-			
-			Credential credential = flow.createAndStoreCredential(response, authorizationCode);
+
+			Credential credential = flow.createAndStoreCredential(response,
+					authorizationCode);
 			String internalReferenceToken = UUID.randomUUID().toString();
 			credentialStore.put(internalReferenceToken, credential);
 			flow.getCredentialDataStore().clear();
-			
+
 			return internalReferenceToken;
 		} catch (IOException e) {
 			log.error("An error occurred during code exchange: " + e);
@@ -140,81 +153,99 @@ public class GoogleAuthenticator implements IFederatedAuthenticator, IOAuth2Auth
 	}
 
 	@Override
-	public synchronized User getUserInfo(String internalProviderReference) throws NoUserIdException, IOException, AuthenticatorSecurityException {
+	public synchronized User getUserInfo(String internalProviderReference)
+			throws NoUserIdException, IOException,
+			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
-		if(verifyAccessTokenIsValid(credentials)){
+		if (verifyAccessTokenIsValid(credentials)) {
 			log.debug("Successful Verification of access token with provider.");
-		}
-		else
-		{
+		} else {
 			log.error("Unable to verify access token - it could be an indication of fraud.");
-			throw new AuthenticatorSecurityException("Access token is invalid - the client id returned by the identity provider does not match ours.");
+			throw new AuthenticatorSecurityException(
+					"Access token is invalid - the client id returned by the identity provider does not match ours.");
 		}
-		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials).setApplicationName(Constants.APPLICATION_NAME).build();
+		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(),
+				new JacksonFactory(), credentials).setApplicationName(
+				Constants.APPLICATION_NAME).build();
 		Userinfoplus userInfo = null;
 
 		try {
 			userInfo = userInfoService.userinfo().get().execute();
-			log.debug("Retrieved User info from google: " + userInfo.toPrettyString());
+			log.debug("Retrieved User info from google: "
+					+ userInfo.toPrettyString());
 		} catch (IOException e) {
-			log.error("An IO error occurred while trying to retrieve user information: " + e);
+			log.error("An IO error occurred while trying to retrieve user information: "
+					+ e);
 		}
 		if (userInfo != null && userInfo.getId() != null) {
 
-			return new User(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),userInfo.getEmail(),null, null,null,null,null);
+			return new User(userInfo.getId(), userInfo.getGivenName(),
+					userInfo.getFamilyName(), userInfo.getEmail(), null, null,
+					null, null, null);
 		} else {
 			throw new NoUserIdException();
 		}
 	}
 
 	@Override
-	public String getAntiForgeryStateToken(){
-		String antiForgerySalt = new BigInteger(130, new SecureRandom()).toString(32);
+	public String getAntiForgeryStateToken() {
+		String antiForgerySalt = new BigInteger(130, new SecureRandom())
+				.toString(32);
 
-		String antiForgeryStateToken = "google"+antiForgerySalt;
-		
+		String antiForgeryStateToken = "google" + antiForgerySalt;
+
 		return antiForgeryStateToken;
 	}
-	
-	private GoogleClientSecrets getClientCredential(String clientSecretLocation) throws IOException {
-		Validate.notNull(clientSecretLocation, "Missing resource %s", clientSecretLocation);
+
+	private GoogleClientSecrets getClientCredential(String clientSecretLocation)
+			throws IOException {
+		Validate.notNull(clientSecretLocation, "Missing resource %s",
+				clientSecretLocation);
 
 		GoogleClientSecrets clientSecret = null;
-		
+
 		// load up the client secrets from the file system.
-		InputStream inputStream = new FileInputStream(clientSecretLocation); 
+		InputStream inputStream = new FileInputStream(clientSecretLocation);
 		InputStreamReader isr = new InputStreamReader(inputStream);
 
 		clientSecret = GoogleClientSecrets.load(jsonFactory, isr);
-		
+
 		return clientSecret;
 	}
 
 	/**
-	 * This method will contact the identity provider to verify that the token is valid for our application.
+	 * This method will contact the identity provider to verify that the token
+	 * is valid for our application.
 	 * 
-	 * This check is intended to mitigate against the confused deputy problem; although I suspect the google client might already do this.
+	 * This check is intended to mitigate against the confused deputy problem;
+	 * although I suspect the google client might already do this.
 	 * 
-	 * TODO: Verify that the google server client library doesn't already do this check internally - if it does then we can remove this additional check.
-	 *  
+	 * TODO: Verify that the google server client library doesn't already do
+	 * this check internally - if it does then we can remove this additional
+	 * check.
+	 * 
 	 * @param credentials
 	 * @return true if the token passes our validation false if not.
 	 */
-	private boolean verifyAccessTokenIsValid(Credential credentials){
+	private boolean verifyAccessTokenIsValid(Credential credentials) {
 		Validate.notNull(credentials, "Credentials cannot be null");
-		
-		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credentials).setApplicationName(Constants.APPLICATION_NAME).build();
-	    try {
-			Tokeninfo tokeninfo = oauth2.tokeninfo().setAccessToken(credentials.getAccessToken()).execute();
 
-	        if (tokeninfo.getAudience().equals(clientSecrets.getDetails().getClientId())){
-	        	return true;
-	        }
-	    } catch (IOException e) {
-	    	log.error("IO error while trying to validate oauth2 security token.");
-	    	e.printStackTrace();
-	    }
-	    return false;
+		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory,
+				credentials).setApplicationName(Constants.APPLICATION_NAME)
+				.build();
+		try {
+			Tokeninfo tokeninfo = oauth2.tokeninfo()
+					.setAccessToken(credentials.getAccessToken()).execute();
+
+			if (tokeninfo.getAudience().equals(
+					clientSecrets.getDetails().getClientId())) {
+				return true;
+			}
+		} catch (IOException e) {
+			log.error("IO error while trying to validate oauth2 security token.");
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	@Override

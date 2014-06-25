@@ -6,12 +6,14 @@ public class QuantityValidationResponse extends QuestionValidationResponse {
 
 	protected boolean correctValue;
 	protected boolean correctUnits;
-	
-	public QuantityValidationResponse(){
-		
+
+	public QuantityValidationResponse() {
+
 	}
-	
-	public QuantityValidationResponse(String questionId, String answer, boolean correct, Content explanation, boolean correctValue, boolean correctUnits){
+
+	public QuantityValidationResponse(String questionId, String answer,
+			boolean correct, Content explanation, boolean correctValue,
+			boolean correctUnits) {
 		super(questionId, answer, correct, explanation);
 		this.correctValue = correctValue;
 		this.correctUnits = correctUnits;

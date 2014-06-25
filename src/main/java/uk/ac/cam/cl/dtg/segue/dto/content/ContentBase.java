@@ -11,8 +11,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Represents any content related data that can be stored by the api
- *
- * This class is required mainly due to the relatively complex polymorphic type hierarchy that gets serialized and deserialized using a custom serializer (ContentBaseDeserializer). 
+ * 
+ * This class is required mainly due to the relatively complex polymorphic type
+ * hierarchy that gets serialized and deserialized using a custom serializer
+ * (ContentBaseDeserializer).
  */
 public abstract class ContentBase {
 
@@ -29,22 +31,22 @@ public abstract class ContentBase {
 	public String get_id() {
 		return _id;
 	}
-	
+
 	@JsonProperty("_id")
 	@ObjectId
 	public void set_id(String _id) {
 		this._id = _id;
-	}	
-	
+	}
+
 	public String getId() {
 		return id;
 	}
-	
-	@JsonDeserialize(using=TrimWhitespaceDeserializer.class)
+
+	@JsonDeserialize(using = TrimWhitespaceDeserializer.class)
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public String getType() {
 		return type;
 	}
@@ -52,7 +54,7 @@ public abstract class ContentBase {
 	public void setType(String type) {
 		this.type = type;
 	}
-	
+
 	public String getCanonicalSourceFile() {
 		return canonicalSourceFile;
 	}
@@ -78,13 +80,13 @@ public abstract class ContentBase {
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		
+
 		sb.append("Content Object ID: " + this.id);
 		sb.append(" Type: " + this.type);
 		sb.append(" Source File: " + this.canonicalSourceFile);
-		
+
 		return sb.toString();
 	}
 }

@@ -12,17 +12,16 @@ import uk.ac.cam.cl.dtg.segue.dto.content.Image;
 import uk.ac.cam.cl.dtg.segue.dto.content.JsonType;
 
 @JsonType("isaacFeaturedProfile")
-public class IsaacFeaturedProfile extends Content{
+public class IsaacFeaturedProfile extends Content {
 
 	protected String emailAddress;
 	protected Image image;
 
 	@JsonCreator
 	public IsaacFeaturedProfile(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, 
-			@JsonProperty("title") String title, 
+			@JsonProperty("id") String id, @JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type, 
+			@JsonProperty("type") String type,
 			@JsonProperty("author") String author,
 			@JsonProperty("encoding") String encoding,
 			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -38,31 +37,18 @@ public class IsaacFeaturedProfile extends Content{
 			@JsonProperty("altText") String altText,
 			@JsonProperty("emailAddress") String emailAddress,
 			@JsonProperty("image") Image image) {
-		super(_id, 
-				id, 
-				title, 
-				subtitle,
-				type, 
-				author, 
-				encoding, 
-				canonicalSourceFile,
-				layout, 
-				children, 
-				value, 
-				attribution, 
-				relatedContent, 
-				published,
-				tags,
-				level);
+		super(_id, id, title, subtitle, type, author, encoding,
+				canonicalSourceFile, layout, children, value, attribution,
+				relatedContent, published, tags, level);
 
 		this.emailAddress = emailAddress;
 		this.image = image;
 	}
 
-	/** 
+	/**
 	 * Default constructor required for Jackson
 	 */
-	public IsaacFeaturedProfile(){
+	public IsaacFeaturedProfile() {
 
 	}
 

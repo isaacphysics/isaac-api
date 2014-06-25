@@ -22,18 +22,21 @@ import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
  */
 public class IsaacApplicationRegister extends Application {
 	private Set<Object> singletons;
-	
-	public IsaacApplicationRegister(){
+
+	public IsaacApplicationRegister() {
 		singletons = new HashSet<Object>();
 	}
 
 	@Override
 	public Set<Object> getSingletons() {
 		// Registers segue singleton endpoints as /isaac/segue/api
-		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-		this.singletons.add((injector.getInstance(SegueApiFacade.class)));		
+		Injector injector = Guice.createInjector(
+				new IsaacGuiceConfigurationModule(),
+				new SegueGuiceConfigurationModule());
+		this.singletons.add((injector.getInstance(SegueApiFacade.class)));
 		return this.singletons;
 	}
+
 	@Override
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> result = new HashSet<Class<?>>();
@@ -41,5 +44,5 @@ public class IsaacApplicationRegister extends Application {
 		result.add(APIOverviewResource.class);
 		result.add(RestEasyJacksonConfiguration.class);
 		return result;
-	}	
+	}
 }

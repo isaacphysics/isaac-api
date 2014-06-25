@@ -10,8 +10,7 @@ public class ContentPage {
 	private Content contentObject;
 	private List<ContentSummary> sidebarContent;
 
-	public ContentPage(String id, 
-			Content contentObject,
+	public ContentPage(String id, Content contentObject,
 			List<ContentSummary> sidebarContent) {
 		super();
 		this.id = id;

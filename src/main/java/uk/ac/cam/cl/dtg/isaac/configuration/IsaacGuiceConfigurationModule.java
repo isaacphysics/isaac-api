@@ -22,23 +22,25 @@ import com.google.inject.Singleton;
 
 /**
  * This class is responsible for injecting configuration values using GUICE
- *
+ * 
  */
 public class IsaacGuiceConfigurationModule extends AbstractModule {
 
-	private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(IsaacGuiceConfigurationModule.class);
 
 	private static PropertiesLoader globalProperties;
-	
+
 	private static SegueApiFacade segueApi = null;
 	private static Mapper dozerDOToDTOMapper = null;
-	
-	public IsaacGuiceConfigurationModule(){
+
+	public IsaacGuiceConfigurationModule() {
 		try {
-			if(null == globalProperties){
+			if (null == globalProperties) {
 				final String propertiesFileLocation = "/config/segue-config.properties";
 				globalProperties = new PropertiesLoader(propertiesFileLocation);
-				log.info("Loading properties file from " + propertiesFileLocation);
+				log.info("Loading properties file from "
+						+ propertiesFileLocation);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -48,36 +50,45 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		// Setup different persistence bindings
-		// Currently all properties are being provided by the segue properties file.
-		//bind(PropertiesLoader.class).toInstance(globalProperties);
-		
-		bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
+		// Currently all properties are being provided by the segue properties
+		// file.
+		// bind(PropertiesLoader.class).toInstance(globalProperties);
+
+		bind(ISegueDTOConfigurationModule.class).toInstance(
+				new SegueConfigurationModule());
 	}
-	
+
 	/**
-	 * This provides a singleton of the segue api facade that can be used
-	 * by isaac to serve api requests as a library or register the endpoints with resteasy.
+	 * This provides a singleton of the segue api facade that can be used by
+	 * isaac to serve api requests as a library or register the endpoints with
+	 * resteasy.
 	 * 
-	 * Note: A lot of the dependencies are injected from the segue project itself.
+	 * Note: A lot of the dependencies are injected from the segue project
+	 * itself.
 	 */
 	@Inject
 	@Provides
-	private static SegueApiFacade getSegueFacadeSingleton(PropertiesLoader properties, ContentMapper mapper, @Nullable ISegueDTOConfigurationModule segueConfigurationModule, ContentVersionController versionController){
-		if(null == segueApi){
-			segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule, versionController);
+	private static SegueApiFacade getSegueFacadeSingleton(
+			PropertiesLoader properties, ContentMapper mapper,
+			@Nullable ISegueDTOConfigurationModule segueConfigurationModule,
+			ContentVersionController versionController) {
+		if (null == segueApi) {
+			segueApi = new SegueApiFacade(properties, mapper,
+					segueConfigurationModule, versionController);
 		}
-		
+
 		return segueApi;
 	}
-	
-	@Provides @Singleton
-	private static Mapper getDozerDOtoDTOMapper(){
-		if(null == dozerDOToDTOMapper){
+
+	@Provides
+	@Singleton
+	private static Mapper getDozerDOtoDTOMapper() {
+		if (null == dozerDOToDTOMapper) {
 			dozerDOToDTOMapper = new DozerBeanMapper();
 			log.info("Creating singleton for Dozer mapper");
 		}
-		
+
 		return dozerDOToDTOMapper;
 	}
-	
+
 }

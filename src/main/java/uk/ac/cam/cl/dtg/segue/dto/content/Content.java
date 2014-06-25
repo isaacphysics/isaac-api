@@ -13,13 +13,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * Content Class (Data Transfer Object)
- * This class represents a majority of content types within the Content Management system. It is generalised to encourage reuse as much as is appropriate.
- * This object should be kept as being easily serializable to enable it to be exposed via web views.
+ * Content Class (Data Transfer Object) This class represents a majority of
+ * content types within the Content Management system. It is generalised to
+ * encourage reuse as much as is appropriate. This object should be kept as
+ * being easily serializable to enable it to be exposed via web views.
  * 
  */
 @JsonType("content")
-public class Content extends ContentBase{
+public class Content extends ContentBase {
 	protected String title;
 	protected String subtitle;
 	protected String author;
@@ -32,24 +33,23 @@ public class Content extends ContentBase{
 	protected List<String> relatedContent;
 	protected boolean published;
 	protected String level;
-	
+
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
-			       @JsonProperty("id") String id, 
-				   @JsonProperty("title") String title,
-				   @JsonProperty("subtitle") String subtitle,
-				   @JsonProperty("type") String type, 
-				   @JsonProperty("author") String author,
-				   @JsonProperty("encoding") String encoding,
-				   @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-				   @JsonProperty("layout") String layout,
-				   @JsonProperty("children") List<ContentBase> children,
-				   @JsonProperty("value") String value,
-				   @JsonProperty("attribution") String attribution,
-				   @JsonProperty("relatedContent") List<String> relatedContent,
-				   @JsonProperty("published") boolean published,
-				   @JsonProperty("tags") Set<String> tags,
-				   @JsonProperty("level") String level) {
+			@JsonProperty("id") String id, @JsonProperty("title") String title,
+			@JsonProperty("subtitle") String subtitle,
+			@JsonProperty("type") String type,
+			@JsonProperty("author") String author,
+			@JsonProperty("encoding") String encoding,
+			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+			@JsonProperty("layout") String layout,
+			@JsonProperty("children") List<ContentBase> children,
+			@JsonProperty("value") String value,
+			@JsonProperty("attribution") String attribution,
+			@JsonProperty("relatedContent") List<String> relatedContent,
+			@JsonProperty("published") boolean published,
+			@JsonProperty("tags") Set<String> tags,
+			@JsonProperty("level") String level) {
 		this._id = _id;
 		this.id = id;
 		this.title = title;
@@ -66,30 +66,31 @@ public class Content extends ContentBase{
 		this.children = children;
 		this.tags = tags;
 		this.level = level;
-		
+
 		// useful for when we want to augment this POJO
-		if(null == this.children)
+		if (null == this.children)
 			this.children = new ArrayList<ContentBase>();
-		
-		if(null == this.tags)
+
+		if (null == this.tags)
 			this.tags = new HashSet<String>();
-		
+
 	}
-	
+
 	/**
 	 * Basic constructor to allow communication of a simple value.
+	 * 
 	 * @param value
 	 */
-	public Content(String value){
+	public Content(String value) {
 		this.value = value;
 		this.type = "content";
 		this.encoding = "markdown";
 	}
-	
-	/** 
+
+	/**
 	 * Default constructor required for Jackson
 	 */
-	public Content(){
+	public Content() {
 		// useful for when we want to augment this POJO
 		this.children = new ArrayList<ContentBase>();
 	}
@@ -154,11 +155,11 @@ public class Content extends ContentBase{
 		return relatedContent;
 	}
 
-	@JsonDeserialize(using=TrimWhitespaceListDeserializer.class)
+	@JsonDeserialize(using = TrimWhitespaceListDeserializer.class)
 	public void setRelatedContent(List<String> relatedContent) {
 		this.relatedContent = relatedContent;
 	}
-	
+
 	@JsonIgnore
 	public boolean getPublished() {
 		return published;
@@ -167,11 +168,11 @@ public class Content extends ContentBase{
 	public void setPublished(boolean published) {
 		this.published = published;
 	}
-	
-	public List<ContentBase> getChildren(){
+
+	public List<ContentBase> getChildren() {
 		return this.children;
 	}
-	
+
 	public String getLevel() {
 		return level;
 	}
@@ -181,48 +182,50 @@ public class Content extends ContentBase{
 	}
 
 	@Override
-	public boolean equals(Object o){
-		if(null == o || !(o instanceof Content))
+	public boolean equals(Object o) {
+		if (null == o || !(o instanceof Content))
 			return false;
-		
+
 		Content c = (Content) o;
 		boolean result = true;
-		
-		if(this.id != null){
+
+		if (this.id != null) {
 			result = result && this.id.equals(c.getId());
 		}
-		if(this.title != null){
+		if (this.title != null) {
 			result = result && this.title.equals(c.getTitle());
 		}
-		if(this.value != null){
+		if (this.value != null) {
 			result = result && this.value.equals(c.getValue());
 		}
-		if(this.canonicalSourceFile != null){
-			result = result && this.canonicalSourceFile.equals(c.getCanonicalSourceFile());
+		if (this.canonicalSourceFile != null) {
+			result = result
+					&& this.canonicalSourceFile.equals(c
+							.getCanonicalSourceFile());
 		}
-			
+
 		return result;
 	}
-	
+
 	@Override
-	public int hashCode(){
+	public int hashCode() {
 		int hashCode = 0;
-		
-		if(this.id != null)
+
+		if (this.id != null)
 			hashCode = hashCode + this.id.hashCode();
-		
-		if(this.title != null)
+
+		if (this.title != null)
 			hashCode = hashCode + this.title.hashCode();
 
-		if(this.value != null)
+		if (this.value != null)
 			hashCode = hashCode + this.value.hashCode();
-		
+
 		return hashCode;
 	}
-	
-	@Override 
-	public String toString(){
+
+	@Override
+	public String toString() {
 		return super.toString() + " Title: " + this.title;
 	}
-	
+
 }

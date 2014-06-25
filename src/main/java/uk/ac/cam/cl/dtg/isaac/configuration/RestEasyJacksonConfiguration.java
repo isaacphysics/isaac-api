@@ -12,9 +12,9 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 @Produces(MediaType.APPLICATION_JSON)
 public class RestEasyJacksonConfiguration extends JacksonJaxbJsonProvider {
 
-    public RestEasyJacksonConfiguration() {
-          ObjectMapper mapper = new ObjectMapper();
-          mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-          super.setMapper(mapper);
-    }
+	public RestEasyJacksonConfiguration() {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		super.setMapper(mapper);
+	}
 }

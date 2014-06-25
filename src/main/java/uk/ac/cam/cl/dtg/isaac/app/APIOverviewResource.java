@@ -26,41 +26,47 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-
 /**
- * A resource that displays a list of available endpoints (which is helpful to see for debugging purposes).
+ * A resource that displays a list of available endpoints (which is helpful to
+ * see for debugging purposes).
  * 
- * @author Patrick Stegmann https://gist.github.com/wonderb0lt/10731371#file-overviewresource-java Retrieved 27/05/2014
- * @author Stephen Cummins - modified to work with new version of resteasy 27/05/2014
+ * @author Patrick Stegmann
+ *         https://gist.github.com/wonderb0lt/10731371#file-overviewresource
+ *         -java Retrieved 27/05/2014
+ * @author Stephen Cummins - modified to work with new version of resteasy
+ *         27/05/2014
  */
 @Path("/")
 public class APIOverviewResource {
-	private static final Logger log = LoggerFactory.getLogger(APIOverviewResource.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(APIOverviewResource.class);
 
 	/**
-     * POJO to represent Method information collected using reflection and rest easy registry
-     *
-     */
+	 * POJO to represent Method information collected using reflection and rest
+	 * easy registry
+	 * 
+	 */
 	public static final class MethodDescription implements Serializable {
 		private static final long serialVersionUID = 4395400223398707629L;
 		private String method;
-        private String fullPath;
-        private String produces;
-        private String consumes;
-        private boolean deprecated;
+		private String fullPath;
+		private String produces;
+		private String consumes;
+		private boolean deprecated;
 
-        public MethodDescription(){
-        	
-        }
-        
-        public MethodDescription(String method, String fullPath, String produces, String consumes, boolean deprecated) {
-            super();
-            this.method = method;
-            this.fullPath = fullPath;
-            this.produces = produces;
-            this.consumes = consumes;
-            this.deprecated = deprecated;
-        }
+		public MethodDescription() {
+
+		}
+
+		public MethodDescription(String method, String fullPath,
+				String produces, String consumes, boolean deprecated) {
+			super();
+			this.method = method;
+			this.fullPath = fullPath;
+			this.produces = produces;
+			this.consumes = consumes;
+			this.deprecated = deprecated;
+		}
 
 		public String getMethod() {
 			return method;
@@ -102,67 +108,76 @@ public class APIOverviewResource {
 			this.deprecated = deprecated;
 		}
 
-    }
-	
+	}
+
 	/**
-     * POJO to represent Resource information collected using reflection and rest easy registry
-     *
-     */
-    public static final class ResourceDescription implements Serializable {
+	 * POJO to represent Resource information collected using reflection and
+	 * rest easy registry
+	 * 
+	 */
+	public static final class ResourceDescription implements Serializable {
 		private static final long serialVersionUID = 4692040940508432363L;
 		private String basePath;
 		private List<MethodDescription> calls;
-    	
-		public ResourceDescription(){
-			
+
+		public ResourceDescription() {
+
 		}
-		
-        public ResourceDescription(String basePath) {
-            this.basePath = basePath;
-            this.calls = Lists.newArrayList();
-        }
 
-        public void addMethod(String path, ResourceInvoker resourceInvoker) {
-            if(resourceInvoker instanceof ResourceMethodInvoker){
-            	ResourceMethodInvoker method = (ResourceMethodInvoker) resourceInvoker;
-            	
-            	String produces = mostPreferredOrNull(Arrays.asList(method.getProduces()));
-                String consumes = mostPreferredOrNull(Arrays.asList(method.getConsumes()));
+		public ResourceDescription(String basePath) {
+			this.basePath = basePath;
+			this.calls = Lists.newArrayList();
+		}
 
-                for (String verb : method.getHttpMethods()) {
-                    calls.add(new MethodDescription(verb, path, produces, consumes, method.getMethod().isAnnotationPresent(Deprecated.class)));
-                }
-            }
-        }
+		public void addMethod(String path, ResourceInvoker resourceInvoker) {
+			if (resourceInvoker instanceof ResourceMethodInvoker) {
+				ResourceMethodInvoker method = (ResourceMethodInvoker) resourceInvoker;
 
-        private static String mostPreferredOrNull(List<MediaType> preferred) {
-            if (preferred.isEmpty()) {
-                return null;
-            }
-            else {
-                return preferred.get(0).toString();
-            }
-        }
+				String produces = mostPreferredOrNull(Arrays.asList(method
+						.getProduces()));
+				String consumes = mostPreferredOrNull(Arrays.asList(method
+						.getConsumes()));
 
-        public static List<ResourceDescription> fromBoundResourceInvokers(Set<Map.Entry<String, List<ResourceInvoker>>> bound) {
-            Map<String, ResourceDescription> descriptions = Maps.newHashMap();
+				for (String verb : method.getHttpMethods()) {
+					calls.add(new MethodDescription(verb, path, produces,
+							consumes, method.getMethod().isAnnotationPresent(
+									Deprecated.class)));
+				}
+			}
+		}
 
-            for (Map.Entry<String, List<ResourceInvoker>> entry : bound) {
-            	ResourceInvoker aMethod = entry.getValue().get(0);
-                String basePath = aMethod.getMethod().getDeclaringClass().getAnnotation(Path.class).value();
-                String methodEndpoint = aMethod.getMethod().getAnnotation(Path.class).value();
+		private static String mostPreferredOrNull(List<MediaType> preferred) {
+			if (preferred.isEmpty()) {
+				return null;
+			} else {
+				return preferred.get(0).toString();
+			}
+		}
 
-                if (!descriptions.containsKey(basePath)) {
-                    descriptions.put(basePath, new ResourceDescription(basePath));
-                }
+		public static List<ResourceDescription> fromBoundResourceInvokers(
+				Set<Map.Entry<String, List<ResourceInvoker>>> bound) {
+			Map<String, ResourceDescription> descriptions = Maps.newHashMap();
 
-                for (ResourceInvoker invoker : entry.getValue()) {
-                    descriptions.get(basePath).addMethod(basePath + methodEndpoint, invoker);
-                }
-            }
+			for (Map.Entry<String, List<ResourceInvoker>> entry : bound) {
+				ResourceInvoker aMethod = entry.getValue().get(0);
+				String basePath = aMethod.getMethod().getDeclaringClass()
+						.getAnnotation(Path.class).value();
+				String methodEndpoint = aMethod.getMethod()
+						.getAnnotation(Path.class).value();
 
-            return Lists.newArrayList(descriptions.values());
-        }
+				if (!descriptions.containsKey(basePath)) {
+					descriptions.put(basePath,
+							new ResourceDescription(basePath));
+				}
+
+				for (ResourceInvoker invoker : entry.getValue()) {
+					descriptions.get(basePath).addMethod(
+							basePath + methodEndpoint, invoker);
+				}
+			}
+
+			return Lists.newArrayList(descriptions.values());
+		}
 
 		public String getBasePath() {
 			return basePath;
@@ -179,94 +194,100 @@ public class APIOverviewResource {
 		public void setCalls(List<MethodDescription> calls) {
 			this.calls = calls;
 		}
-    }
+	}
 
-    /**
-     * List all available end points
-     * 
-     * @param dispatcher
-     * @return JSON response for all available endpoints
-     */
-    @GET
-    @Path("/")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Cache
-    public List<ResourceDescription> getAvailableEndpoints(@Context Dispatcher dispatcher) {
-        ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher.getRegistry();
-        
-        List<ResourceDescription> descriptions = ResourceDescription.fromBoundResourceInvokers(registry.getBounded().entrySet());
-        log.info("Requesting endpoint list from api using json view.");
-        return descriptions;
-    }
+	/**
+	 * List all available end points
+	 * 
+	 * @param dispatcher
+	 * @return JSON response for all available endpoints
+	 */
+	@GET
+	@Path("/")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Cache
+	public List<ResourceDescription> getAvailableEndpoints(
+			@Context Dispatcher dispatcher) {
+		ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher
+				.getRegistry();
 
-    /**
-     * List all available endpoints as HTML
-     * 
-     * @param dispatcher
-     * @return a page listing the available endpoints.
-     */
-    @GET
-    @Path("/")
-    @Produces(MediaType.TEXT_HTML)
-    @Cache
-    public Response getAvailableEndpointsHtml(@Context Dispatcher dispatcher) {
-        log.info("Requesting endpoint list from api using HTML view.");
-        
-        StringBuilder sb = new StringBuilder();
-        ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher.getRegistry();
-        List<ResourceDescription> descriptions = ResourceDescription.fromBoundResourceInvokers(registry.getBounded().entrySet());
+		List<ResourceDescription> descriptions = ResourceDescription
+				.fromBoundResourceInvokers(registry.getBounded().entrySet());
+		log.info("Requesting endpoint list from api using json view.");
+		return descriptions;
+	}
 
-        sb.append("<h1>").append("REST interface overview").append("</h1>");
+	/**
+	 * List all available endpoints as HTML
+	 * 
+	 * @param dispatcher
+	 * @return a page listing the available endpoints.
+	 */
+	@GET
+	@Path("/")
+	@Produces(MediaType.TEXT_HTML)
+	@Cache
+	public Response getAvailableEndpointsHtml(@Context Dispatcher dispatcher) {
+		log.info("Requesting endpoint list from api using HTML view.");
 
-        for (ResourceDescription resource : descriptions) {
-            sb.append("<h2>").append(resource.getBasePath()).append("</h2>");
-            sb.append("<ul>");
-            List<MethodDescription> methodsList = resource.getCalls();
+		StringBuilder sb = new StringBuilder();
+		ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher
+				.getRegistry();
+		List<ResourceDescription> descriptions = ResourceDescription
+				.fromBoundResourceInvokers(registry.getBounded().entrySet());
 
-            // sort the list to make it easier for me to find things
-            Collections.sort(methodsList, new Comparator<MethodDescription>(){
+		sb.append("<h1>").append("REST interface overview").append("</h1>");
+
+		for (ResourceDescription resource : descriptions) {
+			sb.append("<h2>").append(resource.getBasePath()).append("</h2>");
+			sb.append("<ul>");
+			List<MethodDescription> methodsList = resource.getCalls();
+
+			// sort the list to make it easier for me to find things
+			Collections.sort(methodsList, new Comparator<MethodDescription>() {
 
 				@Override
 				public int compare(MethodDescription o1, MethodDescription o2) {
 					return o1.getFullPath().compareTo(o2.getFullPath());
 				}
-            	
-            });
-            
-            for (MethodDescription method : methodsList) {          	
 
-            	sb.append("<li> ");
-            	if(method.isDeprecated()){
-            		sb.append(" Deprecated ");
-            		sb.append("<del>");
-            	}
-            	sb.append(method.getMethod()).append(" ");
-            	
-                sb.append("<strong>").append(method.getFullPath()).append("</strong>");
+			});
 
-                sb.append("<ul>");
+			for (MethodDescription method : methodsList) {
 
-                if (method.getConsumes() != null) {
-                    sb.append("<li>").append("Consumes: ").append(method.getConsumes()).append("</li>");
-                }
+				sb.append("<li> ");
+				if (method.isDeprecated()) {
+					sb.append(" Deprecated ");
+					sb.append("<del>");
+				}
+				sb.append(method.getMethod()).append(" ");
 
-                if (method.getProduces() != null) {
-                    sb.append("<li>").append("Produces: ").append(method.getProduces()).append("</li>");
-                }
+				sb.append("<strong>").append(method.getFullPath())
+						.append("</strong>");
 
-            	if(method.isDeprecated()){
-            		sb.append("</del>");
-            	}
-                sb.append("</li>");
-                sb.append("</ul>");
-            }
+				sb.append("<ul>");
 
-            sb.append("</ul>");
-        }
+				if (method.getConsumes() != null) {
+					sb.append("<li>").append("Consumes: ")
+							.append(method.getConsumes()).append("</li>");
+				}
 
+				if (method.getProduces() != null) {
+					sb.append("<li>").append("Produces: ")
+							.append(method.getProduces()).append("</li>");
+				}
 
-        
-        return Response.ok(sb.toString()).build();
+				if (method.isDeprecated()) {
+					sb.append("</del>");
+				}
+				sb.append("</li>");
+				sb.append("</ul>");
+			}
 
-    }
+			sb.append("</ul>");
+		}
+
+		return Response.ok(sb.toString()).build();
+
+	}
 }

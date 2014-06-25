@@ -6,17 +6,17 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 public class ResultsWrapper<T> {
-	
+
 	private final List<T> results;
 	private Long totalResultsAvailable;
-	
-	public ResultsWrapper(){
+
+	public ResultsWrapper() {
 		this.results = new ArrayList<T>();
 		totalResultsAvailable = 0L;
 	}
 
 	@JsonCreator
-	public ResultsWrapper(List<T> results, Long totalResults){
+	public ResultsWrapper(List<T> results, Long totalResults) {
 		this.results = results;
 		this.totalResultsAvailable = totalResults;
 	}

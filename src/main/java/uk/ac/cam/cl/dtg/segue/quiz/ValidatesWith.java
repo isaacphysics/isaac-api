@@ -10,4 +10,3 @@ import java.lang.annotation.Target;
 public @interface ValidatesWith {
 	Class<? extends IValidator> value();
 }
-

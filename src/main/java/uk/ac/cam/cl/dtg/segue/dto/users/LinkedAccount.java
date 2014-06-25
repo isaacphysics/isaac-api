@@ -8,21 +8,21 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class LinkedAccount {
-	
+
 	private String _id;
 	private String localUserId;
 	private AuthenticationProvider provider;
 	private String providerId;
 
-	public LinkedAccount(){
-		
+	public LinkedAccount() {
+
 	}
-	
+
 	@JsonCreator
-	public LinkedAccount(@JsonProperty("_id")String _id,
-			@JsonProperty("localUserId")String localUserId, 
-			@JsonProperty("provider") AuthenticationProvider provider, 
-			@JsonProperty("providerId") String providerId){
+	public LinkedAccount(@JsonProperty("_id") String _id,
+			@JsonProperty("localUserId") String localUserId,
+			@JsonProperty("provider") AuthenticationProvider provider,
+			@JsonProperty("providerId") String providerId) {
 		this._id = _id;
 		this.localUserId = localUserId;
 		this.provider = provider;
@@ -40,7 +40,7 @@ public class LinkedAccount {
 	public void set_id(String _id) {
 		this._id = _id;
 	}
-	
+
 	public AuthenticationProvider getProvider() {
 		return provider;
 	}
@@ -49,16 +49,13 @@ public class LinkedAccount {
 		this.provider = provider;
 	}
 
-
 	public String getProviderId() {
 		return providerId;
 	}
 
-
 	public void setProviderID(String providerId) {
 		this.providerId = providerId;
 	}
-
 
 	public String getLocalUserId() {
 		return localUserId;
@@ -66,5 +63,5 @@ public class LinkedAccount {
 
 	public void setLocalUserId(String localUserId) {
 		this.localUserId = localUserId;
-	}	
+	}
 }

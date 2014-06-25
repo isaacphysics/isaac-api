@@ -13,27 +13,28 @@ import uk.ac.cam.cl.dtg.isaac.app.Constants;
 
 public class Gameboard {
 	private static final Logger log = LoggerFactory.getLogger(Gameboard.class);
-	
+
 	private String id;
 	private List<GameboardItem> gameboardItems;
 	private Date creationDate;
 
 	@JsonIgnore
 	private Wildcard wildCard;
-	
-	public Gameboard(){
+
+	public Gameboard() {
 		this.gameboardItems = new ArrayList<GameboardItem>();
 	}
-	
-	public Gameboard(String id, List<GameboardItem> questions, Date creationDate) throws IllegalArgumentException{
+
+	public Gameboard(String id, List<GameboardItem> questions, Date creationDate)
+			throws IllegalArgumentException {
 		this.id = id;
 		this.gameboardItems = questions;
 		this.creationDate = creationDate;
-		
-		if(questions.size() > Constants.GAME_BOARD_SIZE){
-			throw new IllegalArgumentException("Too many questions added to gameboard");	
-		}
-		else if(questions.size() < Constants.GAME_BOARD_SIZE){
+
+		if (questions.size() > Constants.GAME_BOARD_SIZE) {
+			throw new IllegalArgumentException(
+					"Too many questions added to gameboard");
+		} else if (questions.size() < Constants.GAME_BOARD_SIZE) {
 			log.warn("Gameboard created without enough questions.");
 		}
 	}
@@ -65,5 +66,5 @@ public class Gameboard {
 	public void setWildCard(Wildcard wildCard) {
 		this.wildCard = wildCard;
 	}
-	
+
 }

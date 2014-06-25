@@ -6,6 +6,6 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 @JsonType("isaacNumericQuestion")
 @ValidatesWith(IsaacNumericValidator.class)
-public class IsaacNumericQuestion extends IsaacQuestion{
-	
+public class IsaacNumericQuestion extends IsaacQuestion {
+
 }

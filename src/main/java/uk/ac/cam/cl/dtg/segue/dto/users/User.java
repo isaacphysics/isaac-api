@@ -16,18 +16,17 @@ public class User {
 	protected String year;
 	protected Boolean feedbackAgreement;
 	protected Date registrationTime;
-	
+
 	@JsonCreator
 	public User(@JsonProperty("_id") String _id,
-				@JsonProperty("givenName") String givenName,
-				@JsonProperty("familyName") String familyName,
-				@JsonProperty("email") String email,
-				@JsonProperty("role") String role,
-				@JsonProperty("school") String school,
-				@JsonProperty("year") String year,
-				@JsonProperty("feedbackAgreement") Boolean feedbackAgreement,
-				@JsonProperty("registrationTime") Date registrationTime
-				) {
+			@JsonProperty("givenName") String givenName,
+			@JsonProperty("familyName") String familyName,
+			@JsonProperty("email") String email,
+			@JsonProperty("role") String role,
+			@JsonProperty("school") String school,
+			@JsonProperty("year") String year,
+			@JsonProperty("feedbackAgreement") Boolean feedbackAgreement,
+			@JsonProperty("registrationTime") Date registrationTime) {
 		this._id = _id;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -38,39 +37,55 @@ public class User {
 		this.feedbackAgreement = feedbackAgreement;
 		this.registrationTime = registrationTime;
 	}
-	
-	/** 
+
+	/**
 	 * Default constructor required for Jackson
 	 */
 	public User() {
 
 	}
-	
+
 	@JsonProperty("_id")
 	@ObjectId
 	public String getDbId() {
 		return _id;
 	}
-	
+
 	@JsonProperty("_id")
 	@ObjectId
 	public void setDbId(String _id) {
 		this._id = _id;
 	}
 
-	public String getFamilyName() { return familyName; }
-	
-	public String getGivenName() { return givenName; }
-	
-	public String getEmail() { return email; }
-	
-	public String getRole() { return role; }
-	
-	public String getSchool() { return school; }
-	
-	public String getYear() { return year; }
-	
-	public Boolean getFeedbackAgreement() { return feedbackAgreement; }
+	public String getFamilyName() {
+		return familyName;
+	}
 
-	public Date getRegistrationTime() { return registrationTime; }
+	public String getGivenName() {
+		return givenName;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public String getSchool() {
+		return school;
+	}
+
+	public String getYear() {
+		return year;
+	}
+
+	public Boolean getFeedbackAgreement() {
+		return feedbackAgreement;
+	}
+
+	public Date getRegistrationTime() {
+		return registrationTime;
+	}
 }

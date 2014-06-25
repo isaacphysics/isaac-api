@@ -9,13 +9,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonLoader {
 	private static ObjectMapper mapper = new ObjectMapper();
-	
-	public static <T> T load(String json, Class<T> c, boolean ignoreUnknown) throws JsonParseException, JsonMappingException, IOException {
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknown);
+
+	public static <T> T load(String json, Class<T> c, boolean ignoreUnknown)
+			throws JsonParseException, JsonMappingException, IOException {
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+				!ignoreUnknown);
 		return mapper.readValue(json, c);
 	}
-	
-	public static <T> T load(String json, Class<T> c) throws JsonParseException, JsonMappingException, IOException {
+
+	public static <T> T load(String json, Class<T> c)
+			throws JsonParseException, JsonMappingException, IOException {
 		return load(json, c, false);
 	}
 }

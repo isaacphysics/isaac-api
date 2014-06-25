@@ -7,30 +7,26 @@ import java.util.List;
  * DTO represents high level information about a piece of content
  * 
  * This should be a light weight object used for presenting search results etc.
- *
+ * 
  */
-public class ContentSummary{
+public class ContentSummary {
 	private String id;
 
 	private String title;
-	
+
 	private String type;
-	
+
 	private List<String> tags;
 
 	private String url;
-	
+
 	// Private constructor required for Dozer
-	private ContentSummary(){
+	private ContentSummary() {
 		tags = new ArrayList<String>();
 	}
-	
-	public ContentSummary(
-			String id, 
-			String title, 
-			String type,
-			List<String> tags,
-			String url) {
+
+	public ContentSummary(String id, String title, String type,
+			List<String> tags, String url) {
 		this.id = id;
 		this.type = type;
 		this.tags = tags;
@@ -61,12 +57,12 @@ public class ContentSummary{
 	public void setType(String type) {
 		this.type = type;
 	}
-	
-	public List<String> getTags(){
+
+	public List<String> getTags() {
 		return tags;
 	}
-	
-	public void setTags(List<String> tags){
+
+	public void setTags(List<String> tags) {
 		this.tags = tags;
 	}
 

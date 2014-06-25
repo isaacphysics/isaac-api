@@ -17,14 +17,19 @@ public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 	@Override
 	public Map<String, Class<? extends Content>> getContentDataTransferObjectMap() {
 		Map<String, Class<? extends Content>> supplementaryContentDTOs = new HashMap<String, Class<? extends Content>>();
-		
+
 		supplementaryContentDTOs.put("isaacQuestion", IsaacQuestion.class);
-		supplementaryContentDTOs.put("isaacMultiChoiceQuestion", IsaacMultiChoiceQuestion.class);
-		supplementaryContentDTOs.put("isaacNumericQuestion", IsaacNumericQuestion.class);
-		supplementaryContentDTOs.put("isaacSymbolicQuestion", IsaacSymbolicQuestion.class);
-		supplementaryContentDTOs.put("isaacQuestionPage", IsaacQuestionPage.class);
-		supplementaryContentDTOs.put("isaacFeaturedProfile", IsaacFeaturedProfile.class);
-		
+		supplementaryContentDTOs.put("isaacMultiChoiceQuestion",
+				IsaacMultiChoiceQuestion.class);
+		supplementaryContentDTOs.put("isaacNumericQuestion",
+				IsaacNumericQuestion.class);
+		supplementaryContentDTOs.put("isaacSymbolicQuestion",
+				IsaacSymbolicQuestion.class);
+		supplementaryContentDTOs.put("isaacQuestionPage",
+				IsaacQuestionPage.class);
+		supplementaryContentDTOs.put("isaacFeaturedProfile",
+				IsaacFeaturedProfile.class);
+
 		return supplementaryContentDTOs;
 	}
 

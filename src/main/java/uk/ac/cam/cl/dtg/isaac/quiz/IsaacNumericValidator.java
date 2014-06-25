@@ -15,56 +15,79 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 /**
  * Validator that only provides functionality to validate Numeric questions.
  * 
- *
+ * 
  */
-public class IsaacNumericValidator implements IValidator{
-	private static final Logger log = LoggerFactory.getLogger(IsaacNumericValidator.class);
-	
+public class IsaacNumericValidator implements IValidator {
+	private static final Logger log = LoggerFactory
+			.getLogger(IsaacNumericValidator.class);
+
 	@Override
-	public QuestionValidationResponse validateQuestionResponse(Question question, Choice answer) {
-		if (question instanceof IsaacNumericQuestion){
-			
+	public QuestionValidationResponse validateQuestionResponse(
+			Question question, Choice answer) {
+		if (question instanceof IsaacNumericQuestion) {
+
 			IsaacNumericQuestion choiceQuestion = (IsaacNumericQuestion) question;
-			
-			if(answer instanceof Quantity){
+
+			if (answer instanceof Quantity) {
 				Quantity answerFromUser = (Quantity) answer;
 				QuantityValidationResponse bestResponse = null;
-				for(Choice c : choiceQuestion.getChoices()){
-					if(c instanceof Quantity){
+				for (Choice c : choiceQuestion.getChoices()) {
+					if (c instanceof Quantity) {
 						Quantity quantityChoice = (Quantity) c;
 
 						// match known choices
-						if(answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnits().equals(quantityChoice.getUnits())){
-							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), quantityChoice.isCorrect(), (Content) quantityChoice.getExplanation(), true, true);
-						}
-						else if(answerFromUser.getValue().equals(quantityChoice.getValue()) && !answerFromUser.getUnits().equals(quantityChoice.getUnits())){
-							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your units."), true, false);
-						}
-						else if(!answerFromUser.getValue().equals(quantityChoice.getValue()) && answerFromUser.getUnits().equals(quantityChoice.getUnits())){
-							bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, new Content("Check your working."), false, true);
+						if (answerFromUser.getValue().equals(
+								quantityChoice.getValue())
+								&& answerFromUser.getUnits().equals(
+										quantityChoice.getUnits())) {
+							bestResponse = new QuantityValidationResponse(
+									question.getId(), answerFromUser.getValue()
+											+ " " + answerFromUser.getUnits(),
+									quantityChoice.isCorrect(),
+									(Content) quantityChoice.getExplanation(),
+									true, true);
+						} else if (answerFromUser.getValue().equals(
+								quantityChoice.getValue())
+								&& !answerFromUser.getUnits().equals(
+										quantityChoice.getUnits())) {
+							bestResponse = new QuantityValidationResponse(
+									question.getId(), answerFromUser.getValue()
+											+ " " + answerFromUser.getUnits(),
+									false, new Content("Check your units."),
+									true, false);
+						} else if (!answerFromUser.getValue().equals(
+								quantityChoice.getValue())
+								&& answerFromUser.getUnits().equals(
+										quantityChoice.getUnits())) {
+							bestResponse = new QuantityValidationResponse(
+									question.getId(), answerFromUser.getValue()
+											+ " " + answerFromUser.getUnits(),
+									false, new Content("Check your working."),
+									false, true);
 						}
 					}
 				}
-				
-				if(null == bestResponse){
-					// tell them they got it wrong but we cannot find an feedback for them.
-					return new QuestionValidationResponse(question.getId(), answerFromUser.getValue() + " " + answerFromUser.getUnits(), false, null);	
-				}
-				else
-				{
+
+				if (null == bestResponse) {
+					// tell them they got it wrong but we cannot find an
+					// feedback for them.
+					return new QuestionValidationResponse(question.getId(),
+							answerFromUser.getValue() + " "
+									+ answerFromUser.getUnits(), false, null);
+				} else {
 					return bestResponse;
 				}
+			} else {
+				log.error("Incorrect answer type received. Expected Quantity. Received: "
+						+ answer.getClass());
+				throw new IllegalArgumentException(
+						"This type of question requires a quantity object instead of a choice");
 			}
-			else
-			{
-				log.error("Incorrect answer type received. Expected Quantity. Received: " + answer.getClass());
-				throw new IllegalArgumentException("This type of question requires a quantity object instead of a choice");			
-			}			
-		}
-		else
-		{
-			log.error("Incorrect validator used for question: " + question.getId());
-			throw new IllegalArgumentException("This validator only works with Isaac Numeric Questions...");
+		} else {
+			log.error("Incorrect validator used for question: "
+					+ question.getId());
+			throw new IllegalArgumentException(
+					"This validator only works with Isaac Numeric Questions...");
 		}
 	}
 }
