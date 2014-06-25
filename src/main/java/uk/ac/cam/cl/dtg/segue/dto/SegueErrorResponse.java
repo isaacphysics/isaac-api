@@ -17,7 +17,6 @@ public class SegueErrorResponse implements Serializable{
 	@JsonIgnore
 	private Exception exception;
 	
-	@JsonIgnore
 	private Status responseCode;
 	
 	private String errorMessage;

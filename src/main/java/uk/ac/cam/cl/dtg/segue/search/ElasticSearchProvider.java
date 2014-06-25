@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
@@ -36,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
+import com.google.api.client.util.Maps;
+import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 
 public class ElasticSearchProvider implements ISearchProvider {
@@ -221,6 +224,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 	private BoolQueryBuilder generateBoolMatchQuery(Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch){
 		BoolQueryBuilder query = QueryBuilders.boolQuery();
 
+		// This Set will allow us to calculate the minimum should match value - it is assumed that for each or'd field there should be a match
+		Set<String> shouldMatchSet = Sets.newHashSet(); 
 		for(Map.Entry<Map.Entry<Constants.BooleanOperator,String>, List<String>> pair : fieldsToMatch.entrySet()){
 			// extract the MapEntry which contains a key value pair of the operator and the list of operands to match against.
 			Constants.BooleanOperator operatorForThisField = pair.getKey().getKey();
@@ -229,7 +234,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 			if(pair.getValue() != null){
 				for(String queryItem : pair.getValue()){
 					if(operatorForThisField.equals(Constants.BooleanOperator.OR)){
-						query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
+						shouldMatchSet.add(pair.getKey().getValue());
+						query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem)).minimumNumberShouldMatch(shouldMatchSet.size());
 					}
 					else{
 						query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));

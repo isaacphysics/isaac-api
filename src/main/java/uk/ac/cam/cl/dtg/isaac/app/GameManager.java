@@ -12,6 +12,8 @@ import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -50,14 +52,13 @@ public class GameManager {
 	 * @param conceptsList
 	 * @return a gameboard if possible that satisifies the conditions provided by the parameters.
 	 */
-	public Gameboard generateRandomGameboard(List<String> subjectsList, List<String> fieldsList, List<String> topicsList, List<String> levelsList, List<String> conceptsList){
-		
+	public Gameboard generateRandomGameboard(List<String> subjectsList, List<String> fieldsList, List<String> topicsList, List<String> levelsList, List<String> conceptsList) throws IllegalArgumentException{		
 		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator,String>, List<String>>();
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE));
 		
-		fieldsToMap.putAll(IsaacController.generateFieldToMatchForQuestionFilter(subjectsList, fieldsList, topicsList, levelsList, conceptsList));
+		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(subjectsList, fieldsList, topicsList, levelsList, conceptsList));
 		
-		// Search for questions that match the fields to map variable.//TODO: fix magic numbers
+		// Search for questions that match the fields to map variable. //TODO: fix magic numbers
 		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(api.getLiveVersion(), fieldsToMap, 0, 20); 
 		
 		if(!results.getResults().isEmpty()){
@@ -98,4 +99,133 @@ public class GameManager {
 	public Wildcard getRandomWildcardTile(){
 		return null;
 	}
+	
+	/**
+	 * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
+	 * 
+	 * This method will decide what should be AND and what should be OR based on the field names used.
+	 * 
+	 * @param fieldsToMatch
+	 * @return A map ready to be passed to a content provider
+	 */
+	public static Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> generateFieldToMatchForQuestionFilter(List<String> subjects, List<String> fields, List<String> topics, List<String> levels, List<String> concepts) throws IllegalArgumentException{
+		// Validate that the field sizes are as we expect for tags
+		// Check that the query provided adheres to the rules we expect
+		if(!validateFilterQuery(subjects, fields, topics, levels, concepts)){
+			throw new IllegalArgumentException("Error validating filter query.");
+		}
+		
+		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
+		
+		// Deal with tags which represent subjects, fields and topics 
+		List<String> ands = Lists.newArrayList();
+		List<String> ors = Lists.newArrayList();
+		
+		if(null != subjects){
+			if(subjects.size() > 1){
+				ors.addAll(subjects);
+			}
+			else{ // should be exactly 1
+				ands.addAll(subjects);
+				
+				// ok now we are allowed to look at the fields
+				if(null != fields){
+					if(fields.size() > 1){
+						ors.addAll(fields);
+					}
+					else{ // should be exactly 1
+						ands.addAll(fields);
+						
+						if(null != topics){			
+							if(topics.size() > 1){
+								ors.addAll(topics);
+							}
+							else{
+								ands.addAll(topics);
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// deal with adding overloaded tags field for subjects, fields and topics
+		if(ands.size() > 0){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, Constants.TAGS_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, ands);
+		}
+		if(ors.size() > 0){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.TAGS_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, ors);
+		}
+		
+		// now deal with levels
+		if(null != levels){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.LEVEL_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, levels);
+		}
+		
+		if(null != concepts){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, concepts);
+		}
+		
+		return fieldsToMatchOutput;
+	}
+
+	/**
+	 * Currently only validates subjects, fields and topics 
+	 * @param subjects - multiple subjects are only ok if there are not any fields or topics
+	 * @param fields - multiple fields are only ok if there are not any topics.
+	 * @param topics - You can have multiple fields only if there is precisely one subject and field.
+	 * @param levels - currently not used for validation
+	 * @param concepts - currently not used for validation
+	 * @return true if the query adheres to the rules specified, false if not.
+	 */
+	private static boolean validateFilterQuery(final List<String> subjects, final List<String> fields, final List<String> topics, final List<String> levels, final List<String> concepts){
+		if(null == subjects && null == fields && null == topics){
+			return true;
+		}
+		else if(null == subjects && (null != fields || null != topics)){
+			log.warn("Error validating query: You cannot have a null subject and still specify fields or topics.");
+			return false;
+		}
+		else if(null != subjects && null == fields && null != topics){
+			log.warn("Error validating query: You cannot have a null field and still specify subject and topics.");
+			return false;
+		}
+		
+		// this variable indicates whether we have found a multiple term query already.
+		boolean foundMultipleTerms = false;
+
+		// Now check that the subjects are of the correct size
+		if(null != subjects){
+			if(subjects.size() > 1){
+				foundMultipleTerms = true;
+			}
+		}
+		
+		if(null != fields){
+			if(foundMultipleTerms){
+				log.warn("Error validating query: multiple subjects and fields specified.");
+				return false;
+			}
+			
+			if(fields.size() > 1){
+				foundMultipleTerms = true;
+			}
+		}
+		
+		if(null != topics){
+			if(foundMultipleTerms){
+				log.warn("Error validating query: multiple fields and topics specified.");
+				return false;
+			}
+			
+			if(topics.size() > 1){
+				foundMultipleTerms = true;
+			}
+		}
+		return true;
+	}	
 }

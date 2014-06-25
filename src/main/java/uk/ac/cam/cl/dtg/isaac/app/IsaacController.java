@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -39,7 +38,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.Image;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -160,31 +158,32 @@ public class IsaacController {
 		List<String> levelsList = null;
 		List<String> conceptsList = null;
 
-		if(null != subjects){
+		if(null != subjects && !subjects.isEmpty()){
 			subjectsList = Arrays.asList(subjects.split(","));
 		}
 
-		if(null != fields){
+		if(null != fields && !fields.isEmpty()){
 			fieldsList = Arrays.asList(fields.split(","));
 		}
 		
-		if(null != topics){
+		if(null != topics && !topics.isEmpty()){
 			topicsList = Arrays.asList(topics.split(","));
 		}
 		
-		if(null != levels){
+		if(null != levels && !levels.isEmpty()){
 			levelsList = Arrays.asList(levels.split(","));
 		}
 		
-		if(null != concepts){
+		if(null != concepts && !concepts.isEmpty()){
 			conceptsList = Arrays.asList(concepts.split(","));
 		}
 		
-		if(!validateFilterQuery(subjectsList, fieldsList, topicsList, levelsList, conceptsList)){
+		try{
+			return Response.ok(gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList, conceptsList)).build();			
+		}
+		catch(IllegalArgumentException e){
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.").toResponse();
 		}
-		
-		return Response.ok(gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList, conceptsList)).build();
 	}
 	
 	@GET
@@ -432,103 +431,5 @@ public class IsaacController {
 		return Response.ok(summarizedContent).build();
 	}
 	
-	/**
-	 * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
-	 * 
-	 * This method will decide what should be AND and what should be OR based on the field names used.
-	 * 
-	 * @param fieldsToMatch
-	 * @return A map ready to be passed to a content provider
-	 */
-	public static Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> generateFieldToMatchForQuestionFilter(List<String> subjects, List<String> fields, List<String> topics, List<String> levels, List<String> concepts){
-		// Validate that the field sizes are as we expect for tags		
-		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
-		
-		// Deal with tags which represent subjects, fields and topics 
-		List<String> ands = Lists.newArrayList();
-		List<String> ors = Lists.newArrayList();
-		
-		if(null != subjects){
-			if(subjects.size() > 1){
-				ors.addAll(subjects);
-			}
-			else{ // should be exactly 1
-				ands.addAll(subjects);
-				
-				// ok now we are allowed to look at the fields
-				if(null != fields){
-					if(fields.size() > 1){
-						ors.addAll(fields);
-					}
-					else{
-						ands.addAll(fields);
-						
-						if(null != topics){			
-							if(topics.size() > 1){
-								ors.addAll(topics);
-							}
-							else{
-								ands.addAll(topics);
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		// deal with adding overloaded tags field for subjects, fields and topics
-		if(ands.size() > 0){
-			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, Constants.TAGS_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, ands);
-		}
-		if(ors.size() > 0){
-			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.TAGS_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, ors);
-		}
-		
-		// now deal with levels
-		if(null != levels){
-			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.LEVEL_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, levels);
-		}
-		
-		if(null != concepts){
-			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, concepts);
-		}
-		
-		return fieldsToMatchOutput;
-	}
-	
-	private boolean validateFilterQuery(List<String> subjects, List<String> fields, List<String> topics, List<String> levels, List<String> concepts){
-		// this variable indicates whether we have found a multiple term query already.
-		boolean foundMultipleTerms = false;
-		
-		if(null != subjects){
-			if(subjects.size() > 1){
-				foundMultipleTerms = true;
-			}
-		}
-		
-		if(null != fields){
-			if(foundMultipleTerms){
-				return false;
-			}
-			
-			if(fields.size() > 1){
-				foundMultipleTerms = true;
-			}
-		}
-		
-		if(null != topics){
-			if(foundMultipleTerms){
-				return false;
-			}
-			
-			if(topics.size() > 1){
-				foundMultipleTerms = true;
-			}
-		}
-		return true;
-	}
+
 }
