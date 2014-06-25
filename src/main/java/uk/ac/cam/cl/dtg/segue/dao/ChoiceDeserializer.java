@@ -47,11 +47,11 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 		String contentType = root.get("type").textValue();
 
 		if(contentType.equals("quantity")){
-			return (Quantity) mapper.readValue(root.toString(), Quantity.class);
+			return mapper.readValue(root.toString(), Quantity.class);
 		}
 		else
 		{
-			return (Choice) mapper.readValue(root.toString(), Choice.class);
+			return mapper.readValue(root.toString(), Choice.class);
 		}
 	}
 }

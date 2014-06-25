@@ -18,6 +18,7 @@ public class LogManager implements ILogManager {
 		this.database = database;
 	}
 	
+	@Override
 	public boolean log(String sessionId, String cookieId, String eventJSON) {
 		
 		DBCollection log = database.getCollection("log");

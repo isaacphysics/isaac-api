@@ -23,6 +23,7 @@ public class UserDataManager implements IUserDataManager {
 		this.database = database;
 	}
 	
+	@Override
 	public String register(User user, AuthenticationProvider provider, String providerId) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(database.getCollection(USER_COLLECTION_NAME), User.class, String.class);
 
@@ -39,6 +40,7 @@ public class UserDataManager implements IUserDataManager {
 		return localUserId;
 	}
 	
+	@Override
 	public User getById(String id) throws IllegalArgumentException{
 		if(null == id){
 			return null;

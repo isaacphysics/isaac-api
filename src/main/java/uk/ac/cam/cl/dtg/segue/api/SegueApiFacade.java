@@ -125,6 +125,7 @@ public class SegueApiFacade {
 //	@Produces("application/json") 
 //	@Path("content/save")
 //	@Deprecated
+	@Deprecated
 	public Response contentSave(@FormParam("doc") String docJson) {
 		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
 		IContentManager contentPersistenceManager = injector.getInstance(IContentManager.class);
@@ -696,7 +697,7 @@ public class SegueApiFacade {
 		
 		try{
 			// convert single object into a list.
-			Choice answerFromClient = (Choice) mapper.getContentObjectMapper().readValue(jsonAnswer, Choice.class);
+			Choice answerFromClient = mapper.getContentObjectMapper().readValue(jsonAnswer, Choice.class);
 			answersFromClient.add(answerFromClient);
 		}
 		catch(JsonMappingException | JsonParseException e){
