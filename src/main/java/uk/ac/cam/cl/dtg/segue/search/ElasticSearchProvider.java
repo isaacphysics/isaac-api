@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
-import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 
