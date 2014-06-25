@@ -493,7 +493,7 @@ public class IsaacController {
 		}
 		
 		if(null != concepts){
-			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, RELATED_CONTENT_FIELDNAME);
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
 			fieldsToMatchOutput.put(newEntry, concepts);
 		}
 		
