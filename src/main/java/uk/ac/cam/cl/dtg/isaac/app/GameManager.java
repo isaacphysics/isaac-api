@@ -51,8 +51,8 @@ public class GameManager {
 			fieldsToMap.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		}
 
-		// Search for questions that match the fields to map variable.
-		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(api.getLiveVersion(), fieldsToMap, 0, 20); //TODO: fix magic numbers
+		// Search for questions that match the fields to map variable.//TODO: fix magic numbers
+		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(api.getLiveVersion(), fieldsToMap, 0, 20); 
 		
 		if(!results.getResults().isEmpty()){
 			String uuid = UUID.randomUUID().toString();

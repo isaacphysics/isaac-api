@@ -14,10 +14,7 @@ public class Constants {
 	
 	public static final String CONCEPT_TYPE = "isaacConceptPage";
 	public static final String QUESTION_TYPE = "isaacQuestionPage";
-	
-	public static final String LEVEL_FIELDNAME = "level";
-	
-	
+		
 	/**
 	 * Game specific variables
 	 */
