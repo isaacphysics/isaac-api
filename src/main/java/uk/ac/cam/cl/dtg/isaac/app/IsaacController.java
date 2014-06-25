@@ -435,7 +435,7 @@ public class IsaacController {
 	/**
 	 * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
 	 * 
-	 * This method will decide what should be and and what should be or based on the field names used
+	 * This method will decide what should be AND and what should be OR based on the field names used.
 	 * 
 	 * @param fieldsToMatch
 	 * @return A map ready to be passed to a content provider
