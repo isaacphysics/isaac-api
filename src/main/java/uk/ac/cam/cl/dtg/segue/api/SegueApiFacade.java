@@ -171,10 +171,14 @@ public class SegueApiFacade {
 	public Response getContentList(@PathParam("version") String version, @QueryParam("tags") String tags, 
 			@QueryParam("type") String type, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit){
 
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch = Maps.newHashMap();
 		
-		fieldsToMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(type));
-		fieldsToMatch.put(Constants.TAGS_FIELDNAME, Arrays.asList(tags));
+		if(null != type){
+			fieldsToMatch.put(com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, Constants.TYPE_FIELDNAME), Arrays.asList(type.split(",")));	
+		}
+		if(null != tags){
+			fieldsToMatch.put(com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, Constants.TAGS_FIELDNAME), Arrays.asList(tags.split(",")));
+		}
 		
 		ResultsWrapper<Content> c;
 
@@ -208,7 +212,7 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public ResultsWrapper<Content> findMatchingContent(String version, Map<String,List<String>> fieldsToMatch, @Nullable Integer startIndex, @Nullable Integer limit){
+	public ResultsWrapper<Content> findMatchingContent(String version, Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, @Nullable Integer startIndex, @Nullable Integer limit){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
@@ -247,7 +251,7 @@ public class SegueApiFacade {
 	 * @param limit
 	 * @return Response containing a list of content or a Response containing null if none found. 
 	 */
-	public ResultsWrapper<Content> findMatchingContentRandomOrder(String version, Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
+	public ResultsWrapper<Content> findMatchingContentRandomOrder(String version, Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit){
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		if(null == version)
@@ -714,5 +718,25 @@ public class SegueApiFacade {
 	@Path("admin/content_problems")	
 	public Response getContentProblems(){
 		return Response.ok(contentVersionController.getContentManager().getProblemMap(contentVersionController.getLiveVersion())).build();
+	}
+	
+	/**
+	 * Helper method to generate field to match requirements for search queries
+	 * 
+	 * Assumes that everything is AND queries
+	 * 
+	 * @param fieldsToMatch
+	 * @return A map ready to be passed to a content provider
+	 */
+	public static Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> generateDefaultFieldToMatch(Map<String, List<String>> fieldsToMatch){
+		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
+		
+		for(Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()){
+			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, pair.getKey());
+			
+			fieldsToMatchOutput.put(newEntry, pair.getValue());
+		}
+		
+		return fieldsToMatchOutput;
 	}
 }

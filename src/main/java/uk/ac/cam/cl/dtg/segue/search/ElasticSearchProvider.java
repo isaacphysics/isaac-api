@@ -80,7 +80,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
+	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, 
 			final int startIndex, int limit, Map<String, Constants.SortOrder> sortInstructions){		
 
 		// build up the query from the fieldsToMatch map
@@ -111,7 +111,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	
 	
 	@Override
-	public ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, 
+	public ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index, final String indexType, final Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, 
 			final int startIndex, final int limit){
 		// build up the query from the fieldsToMatch map
 		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
@@ -218,25 +218,24 @@ public class ElasticSearchProvider implements ISearchProvider {
 		return searchRequest;
 	}
 	
-	private BoolQueryBuilder generateBoolMatchQuery(Map<String,List<String>> fieldsToMatch){
+	private BoolQueryBuilder generateBoolMatchQuery(Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch){
 		BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-		for(Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()){
+		for(Map.Entry<Map.Entry<Constants.BooleanOperator,String>, List<String>> pair : fieldsToMatch.entrySet()){
+			// extract the MapEntry which contains a key value pair of the operator and the list of operands to match against.
+			Constants.BooleanOperator operatorForThisField = pair.getKey().getKey();
+
+			// go through each operand and add it to the query
 			if(pair.getValue() != null){
-				// If it is a list of only one thing just put it in the query.
-				if(pair.getValue().size() == 1){
-					query.must(QueryBuilders.matchQuery(pair.getKey(), pair.getValue().get(0)));	
-				}
-				// If not it is an AND query and should be split into separate constraints.
-				else if(pair.getValue().size() > 1)
-				{
-					for(String queryItem : pair.getValue()){
-						query.must(QueryBuilders.matchQuery(pair.getKey(), queryItem));
+				for(String queryItem : pair.getValue()){
+					if(operatorForThisField.equals(Constants.BooleanOperator.OR)){
+						query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
+					}
+					else{
+						query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
 					}
 				}
-				else{
-					// this shouldn't happen unless we are given an empty list in which case we can skip it
-				}				
+				
 			}
 			else{
 				log.warn("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
@@ -279,7 +278,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		List<String> resultList = new ArrayList<String>();
 		
 		log.info("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
-		
+		log.debug("Search Request: " + configuredSearchRequestBuilder);
 		for(SearchHit item : hitAsList){
 			resultList.add(item.getSourceAsString());
 		}

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -38,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.Image;
 import uk.ac.cam.cl.dtg.util.Mailer;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -92,7 +94,7 @@ public class IsaacController {
 		
 		// options
 		if(null != tags)
-			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags));
+			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		
 		return listContentObjects(fieldsToMatch, startIndex, limit);
 	}
@@ -117,16 +119,16 @@ public class IsaacController {
 	@Path("pages/questions")
 	@Produces("application/json")
 	public Response getQuestionList(@Context HttpServletRequest req,
-			@QueryParam("tags") String tags, @QueryParam("level") String level, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
+			@QueryParam("tags") String tags, @QueryParam("levels") String level, @QueryParam("start_index") String startIndex, @QueryParam("limit") String limit) {		
 		
 		Map<String,List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 
 		// options
 		if(null != tags)
-			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags));
+			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		if(null != level)
-			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level));
+			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
 		
 		return listContentObjects(fieldsToMatch, startIndex, limit);
 	}	
@@ -149,8 +151,40 @@ public class IsaacController {
 	@GET
 	@Path("gameboards")
 	@Produces("application/json")	
-	public Response generateGameboard(@Context HttpServletRequest req, @QueryParam("tags") String tags, @QueryParam("level") String level){
-		return Response.ok(gameManager.generateRandomGameboard(level, tags)).build();
+	public Response generateGameboard(@Context HttpServletRequest req, @QueryParam("subjects") String subjects, @QueryParam("fields") String fields, @QueryParam("topics") String topics,  @QueryParam("levels") String levels, @QueryParam("concepts") String concepts){
+		// tags are and relationships except for subject
+		List<String> subjectsList = null;
+		List<String> fieldsList = null;
+		List<String> topicsList = null;
+		
+		List<String> levelsList = null;
+		List<String> conceptsList = null;
+
+		if(null != subjects){
+			subjectsList = Arrays.asList(subjects.split(","));
+		}
+
+		if(null != fields){
+			fieldsList = Arrays.asList(fields.split(","));
+		}
+		
+		if(null != topics){
+			topicsList = Arrays.asList(topics.split(","));
+		}
+		
+		if(null != levels){
+			levelsList = Arrays.asList(levels.split(","));
+		}
+		
+		if(null != concepts){
+			conceptsList = Arrays.asList(concepts.split(","));
+		}
+		
+		if(!validateFilterQuery(subjectsList, fieldsList, topicsList, levelsList, conceptsList)){
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.").toResponse();
+		}
+		
+		return Response.ok(gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList, conceptsList)).build();
 	}
 	
 	@GET
@@ -164,7 +198,7 @@ public class IsaacController {
 			return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the content requested.").toResponse();
 		}
 		
-		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
+		String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
 		
 		return Response.ok(cp).build();
@@ -189,7 +223,7 @@ public class IsaacController {
 			@Context HttpServletRequest request){
 		
 		// construct a new instance of the mailer object
-		Mailer contactUsMailer = new Mailer(propertiesLoader.getProperty(Constants.MAILER_SMTP_SERVER), propertiesLoader.getProperty(Constants.MAIL_FROM_ADDRESS));
+		Mailer contactUsMailer = new Mailer(propertiesLoader.getProperty(MAILER_SMTP_SERVER), propertiesLoader.getProperty(MAIL_FROM_ADDRESS));
 		
 		if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email) && StringUtils.isBlank(subject) && StringUtils.isBlank(messageText)){
 			log.debug("Contact us required field validation error ");
@@ -215,8 +249,8 @@ public class IsaacController {
 		
 		try {
 			// attempt to send the message via the smtp server
-			contactUsMailer.sendMail(propertiesLoader.getProperty(Constants.MAIL_RECEIVERS).split(","), email, subject, message.toString());
-			log.info("Contact Us - E-mail sent to " + propertiesLoader.getProperty(Constants.MAIL_RECEIVERS) + " " + email + " " + subject + " " + message.toString());
+			contactUsMailer.sendMail(propertiesLoader.getProperty(MAIL_RECEIVERS).split(","), email, subject, message.toString());
+			log.info("Contact Us - E-mail sent to " + propertiesLoader.getProperty(MAIL_RECEIVERS) + " " + email + " " + subject + " " + message.toString());
 			
 		} catch (AddressException e) {				
 			log.warn("E-mail Address validation error " + e.toString());
@@ -279,7 +313,7 @@ public class IsaacController {
 	 */
 	public static String generateApiUrl(Content content){		
 		Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-		String proxyPath = injector.getInstance(PropertiesLoader.class).getProperty(Constants.PROXY_PATH);
+		String proxyPath = injector.getInstance(PropertiesLoader.class).getProperty(PROXY_PATH);
 		
 		String resourceUrl = null;
 		try{
@@ -354,7 +388,7 @@ public class IsaacController {
 	 * @return A Response containing a single conceptPage or an error.
 	 */
 	private Response findSingleResult(Map<String,List<String>> fieldsToMatch){		
-		ResultsWrapper<Content> conceptList = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, null, null); // includes type checking.
+		ResultsWrapper<Content> conceptList = api.findMatchingContent(api.getLiveVersion(), SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes type checking.
 		Content c = null;
 		if(conceptList.getResults().size() > 1){
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results (" + conceptList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values()).toResponse();
@@ -366,7 +400,7 @@ public class IsaacController {
 			c = conceptList.getResults().get(0);
 		}
 		
-		String proxyPath = propertiesLoader.getProperty(Constants.PROXY_PATH);
+		String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
 		ContentPage cp = new ContentPage(c.getId(),c,this.buildMetaContentmap(proxyPath, c));		
 
 		return Response.ok(cp).build();		
@@ -387,14 +421,114 @@ public class IsaacController {
 				startIndexOfResults = Integer.parseInt(startIndex);
 			}
 			
-	        c = api.findMatchingContent(api.getLiveVersion(), fieldsToMatch, startIndexOfResults, resultsLimit);
+	        c = api.findMatchingContent(api.getLiveVersion(), SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndexOfResults, resultsLimit);
 	        
 		} catch(NumberFormatException e) { 
 	    	return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to convert one of the integer parameters provided into numbers (null is ok). Params provided were: limit " + limit + " and startIndex " + startIndex, e).toResponse();
 	    }
 		
-		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(Constants.PROXY_PATH)), c.getTotalResults());		
+		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(this.extractContentInfo(c.getResults(), propertiesLoader.getProperty(PROXY_PATH)), c.getTotalResults());		
 		
 		return Response.ok(summarizedContent).build();
+	}
+	
+	/**
+	 * Helper method to generate field to match requirements for search queries (specialised for isaac-filtering rules)
+	 * 
+	 * This method will decide what should be and and what should be or based on the field names used
+	 * 
+	 * @param fieldsToMatch
+	 * @return A map ready to be passed to a content provider
+	 */
+	public static Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> generateFieldToMatchForQuestionFilter(List<String> subjects, List<String> fields, List<String> topics, List<String> levels, List<String> concepts){
+		// Validate that the field sizes are as we expect for tags		
+		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
+		
+		// Deal with tags which represent subjects, fields and topics 
+		List<String> ands = Lists.newArrayList();
+		List<String> ors = Lists.newArrayList();
+		
+		if(null != subjects){
+			if(subjects.size() > 1){
+				ors.addAll(subjects);
+			}
+			else{ // should be exactly 1
+				ands.addAll(subjects);
+				
+				// ok now we are allowed to look at the fields
+				if(null != fields){
+					if(fields.size() > 1){
+						ors.addAll(fields);
+					}
+					else{
+						ands.addAll(fields);
+						
+						if(null != topics){			
+							if(topics.size() > 1){
+								ors.addAll(topics);
+							}
+							else{
+								ands.addAll(topics);
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// deal with adding overloaded tags field for subjects, fields and topics
+		if(ands.size() > 0){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, Constants.TAGS_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, ands);
+		}
+		if(ors.size() > 0){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.TAGS_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, ors);
+		}
+		
+		// now deal with levels
+		if(null != levels){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.LEVEL_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, levels);
+		}
+		
+		if(null != concepts){
+			Map.Entry<Constants.BooleanOperator,String> newEntry = com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.OR, RELATED_CONTENT_FIELDNAME);
+			fieldsToMatchOutput.put(newEntry, concepts);
+		}
+		
+		return fieldsToMatchOutput;
+	}
+	
+	private boolean validateFilterQuery(List<String> subjects, List<String> fields, List<String> topics, List<String> levels, List<String> concepts){
+		// this variable indicates whether we have found a multiple term query already.
+		boolean foundMultipleTerms = false;
+		
+		if(null != subjects){
+			if(subjects.size() > 1){
+				foundMultipleTerms = true;
+			}
+		}
+		
+		if(null != fields){
+			if(foundMultipleTerms){
+				return false;
+			}
+			
+			if(fields.size() > 1){
+				foundMultipleTerms = true;
+			}
+		}
+		
+		if(null != topics){
+			if(foundMultipleTerms){
+				return false;
+			}
+			
+			if(topics.size() > 1){
+				foundMultipleTerms = true;
+			}
+		}
+		return true;
 	}
 }

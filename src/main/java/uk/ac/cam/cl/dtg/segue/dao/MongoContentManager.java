@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.mongojack.JacksonDBCollection;
@@ -15,6 +16,7 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
@@ -57,10 +59,6 @@ public class MongoContentManager implements IContentManager {
 		return c;
 	}
 	
-	@Override
-	public ResultsWrapper<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
-		throw new UnsupportedOperationException("This method is not implemented yet.");
-	}
 	
 	@Override
 	public List<String> listAvailableVersions()
@@ -133,14 +131,21 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,
-			Map<String, List<String>> fieldsToMatch, Integer startIndex,
-			Integer limit) {
-		throw new UnsupportedOperationException("This method is not implemented yet.");
+	public Map<Content, List<String>> getProblemMap(String version) {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 
 	@Override
-	public Map<Content, List<String>> getProblemMap(String version) {
+	public ResultsWrapper<Content> findByFieldNames(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
+			Integer startIndex, Integer limit) {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
+
+	@Override
+	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
+			Integer startIndex, Integer limit) {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 }

@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -117,18 +116,13 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
-	public ResultsWrapper<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
+	public ResultsWrapper<Content> findByFieldNames(String version, final Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit){
 		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
 
 		if(this.ensureCache(version)){			
 			// TODO: Fix to allow sort order to be changed, currently it is hard coded to sort ASC by title..
 			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
-			
-			if(fieldsToMatch.containsKey(Constants.TAGS_FIELDNAME)){
-				List<String> tagList = Arrays.asList(fieldsToMatch.get(Constants.TAGS_FIELDNAME).get(0).split(","));
-				fieldsToMatch.put(Constants.TAGS_FIELDNAME, tagList);
-			}
 			
 			ResultsWrapper<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit, sortInstructions);
 
@@ -141,15 +135,10 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit){
+	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version, final Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit){
 		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
 
-		if(this.ensureCache(version)){						
-			if(fieldsToMatch.containsKey(Constants.TAGS_FIELDNAME)){
-				List<String> tagList = Arrays.asList(fieldsToMatch.get(Constants.TAGS_FIELDNAME).get(0).split(","));
-				fieldsToMatch.put(Constants.TAGS_FIELDNAME, tagList);
-			}
-			
+		if(this.ensureCache(version)){			
 			ResultsWrapper<String> searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch, startIndex, limit);
 
 			// setup object mapper to use preconfigured deserializer module. Required to deal with type polymorphism

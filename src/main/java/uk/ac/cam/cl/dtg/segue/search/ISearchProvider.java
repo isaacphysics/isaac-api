@@ -50,7 +50,7 @@ public interface ISearchProvider {
 	 * @param sortInstructions - the map of how to sort each field of interest.
 	 * @return Results
 	 */
-	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<String,List<String>> fieldsToMatch, final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions);
+	public ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType, final Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions);
 	
 	/**
 	 * Executes a fuzzy search on an array of fields.
@@ -88,7 +88,7 @@ public interface ISearchProvider {
 	 * @param limit
 	 * @return
 	 */
-	public ResultsWrapper<String> randomisedPaginatedMatchSearch(String index, String indexType, Map<String, List<String>> fieldsToMatch, int startIndex, int limit);	
+	public ResultsWrapper<String> randomisedPaginatedMatchSearch(String index, String indexType, Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, int startIndex, int limit);	
 	
 	/**
 	 * Clear a specific index from the search providers cache.

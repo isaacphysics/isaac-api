@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
@@ -29,7 +30,7 @@ public interface IContentManager {
 	 * @param limit - limit the number of results returned - if null or 0 is provided no limit will be applied. 
 	 * @return List of Content Objects or an empty list if none are found
 	 */
-	public ResultsWrapper<Content> findByFieldNames(String version, final Map<String,List<String>> fieldsToMatch, Integer startIndex, Integer limit);
+	public ResultsWrapper<Content> findByFieldNames(String version, final Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit);
 	
 	/**
 	 * The same as findByFieldNames but the results list is returned in a randomised order.
@@ -41,7 +42,7 @@ public interface IContentManager {
 	 * @param limit
 	 * @return Results wrapper containing the results or an empty list.
 	 */
-	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,	Map<String, List<String>> fieldsToMatch, Integer startIndex, Integer limit);
+	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,	Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMatch, Integer startIndex, Integer limit);
 	
 	/**
 	 * Allows fullText search using the internal search provider.

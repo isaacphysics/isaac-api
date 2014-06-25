@@ -20,6 +20,7 @@ import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
 import uk.ac.cam.cl.dtg.isaac.models.content.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestionInfo;
 import uk.ac.cam.cl.dtg.isaac.models.content.Wildcard;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -36,21 +37,26 @@ public class GameManager {
 	}
 	
 	public Gameboard generateRandomGameboard(){
-		return this.generateRandomGameboard(null, null);
+		return this.generateRandomGameboard(null, null, null, null, null);
 	}
 
-	public Gameboard generateRandomGameboard(String levels, String tags){
-		Map<String,List<String>> fieldsToMap = new HashMap<String,List<String>>();
-		fieldsToMap.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
+	/**
+	 * This method expects only one of its 3 subject tag filter parameters to have more than one element due to restrictions on the question filter interface.
+	 * 
+	 * @param subjectsList
+	 * @param fieldsList
+	 * @param topicsList
+	 * @param levelsList
+	 * @param conceptsList
+	 * @return a gameboard if possible that satisifies the conditions provided by the parameters.
+	 */
+	public Gameboard generateRandomGameboard(List<String> subjectsList, List<String> fieldsList, List<String> topicsList, List<String> levelsList, List<String> conceptsList){
 		
-		if(null != levels){
-			fieldsToMap.put(LEVEL_FIELDNAME, Arrays.asList(levels.split(",")));
-		}
-
-		if(null != tags){
-			fieldsToMap.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-		}
-
+		Map<Map.Entry<Constants.BooleanOperator,String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator,String>, List<String>>();
+		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE));
+		
+		fieldsToMap.putAll(IsaacController.generateFieldToMatchForQuestionFilter(subjectsList, fieldsList, topicsList, levelsList, conceptsList));
+		
 		// Search for questions that match the fields to map variable.//TODO: fix magic numbers
 		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(api.getLiveVersion(), fieldsToMap, 0, 20); 
 		
