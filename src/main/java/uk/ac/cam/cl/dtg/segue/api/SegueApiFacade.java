@@ -709,7 +709,8 @@ public class SegueApiFacade {
 
 		userManager.authenticateCallback(request, response, signinProvider);
 
-		String returnUrl = this.properties.getProperty(Constants.HOST_NAME)
+		String returnUrl = "http://" 
+				+ this.properties.getProperty(Constants.HOST_NAME)
 				+ this.properties
 						.getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
 
