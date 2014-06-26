@@ -59,16 +59,7 @@ public class SegueApiFacade {
 
 	private static ContentMapper mapper;
 
-	private static ContentVersionController contentVersionController; // TODO:
-																		// this
-																		// should
-																		// be
-																		// converted
-																		// into
-																		// an
-																		// instance
-																		// variable
-																		// really.
+	private static ContentVersionController contentVersionController; 
 
 	private QuestionManager questionManager;
 
@@ -425,7 +416,7 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * getFileContent from the file store
+	 * getFileContent from the file store.
 	 * 
 	 * This method will return a byte array of the contents of a single file for
 	 * the given path.
@@ -435,17 +426,18 @@ public class SegueApiFacade {
 	 * 
 	 * @param version
 	 *            number - e.g. a sha
+	 * @param path
+	 *            - path of the image file
 	 * @return Response object containing the serialized content object. (with
 	 *         no levels of recursion into the content)
-	 * @throws java.lang.UnsupportedOperationException
-	 *             if multiple files match the search input
 	 */
 	@GET
 	@Produces("*/*")
 	@Path("content/file_content/{version}/{path:.*}")
 	@Cache
-	public Response getImageFileContent(@PathParam("version") String version,
-			@PathParam("path") String path) {
+	public final Response getImageFileContent(
+			@PathParam("version") final String version,
+			@PathParam("path") final String path) {
 		if (null == version || null == path
 				|| Files.getFileExtension(path).isEmpty()) {
 			SegueErrorResponse error = new SegueErrorResponse(
@@ -517,7 +509,7 @@ public class SegueApiFacade {
 	@PUT
 	@Produces("application/json")
 	@Path("admin/live_version/{version}")
-	public synchronized Response changeLiveVersion(
+	public final synchronized Response changeLiveVersion(
 			@PathParam("version") String version) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
@@ -554,7 +546,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions")
-	public Response getVersionsList(@QueryParam("limit") String limit) {
+	public final Response getVersionsList(@QueryParam("limit") String limit) {
 		// try to parse the integer
 		Integer limitAsInt = null;
 
@@ -583,12 +575,12 @@ public class SegueApiFacade {
 		try {
 			limitedVersions = new ArrayList<String>(allVersions.subList(0,
 					limitAsInt));
-		}
-		// they have requested a stupid limit so just give them what we have
-		// got.
-		catch (IndexOutOfBoundsException e) {
+		} catch (IndexOutOfBoundsException e) {
+			// they have requested a stupid limit so just give them what we have
+			// got.
 			limitedVersions = allVersions;
-			log.debug("Bad index requested for version number. Using maximum index instead.");
+			log.debug("Bad index requested for version number."
+					+ " Using maximum index instead.");
 		} catch (IllegalArgumentException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST, "Invalid limit specified: " + limit, e);
@@ -603,14 +595,15 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method return a json response containing version related information
+	 * This method return a json response containing version related
+	 * information.
 	 * 
 	 * @return a version info as json response
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions/live_version")
-	public Response getLiveVersionInfo() {
+	public final Response getLiveVersionInfo() {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -630,7 +623,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions/cached")
-	public Response getCachedVersions() {
+	public final Response getCachedVersions() {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -642,16 +635,23 @@ public class SegueApiFacade {
 		return Response.ok().entity(result).build();
 	}
 
-	public String getLiveVersion() {
+	/**
+	 * get the live version of the content hosted by the api.
+	 * 
+	 * @return a string representing the live version.
+	 */
+	public final String getLiveVersion() {
 		return contentVersionController.getLiveVersion();
 	}
 
 	/**
-	 * Get the details of the currently logged in user
+	 * Get the details of the currently logged in user.
 	 * 
+	 * @param request
+	 *            - the request which may contain session information.
 	 * @return Returns the current user DTO if we can get it or null if we can't
 	 */
-	public User getCurrentUser(HttpServletRequest request) {
+	public final User getCurrentUser(final HttpServletRequest request) {
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
@@ -662,7 +662,8 @@ public class SegueApiFacade {
 	/**
 	 * This is the initial step of the authentication process.
 	 * 
-	 * @param request - the http request of the user wishing to authenticate
+	 * @param request
+	 *            - the http request of the user wishing to authenticate
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
@@ -692,9 +693,12 @@ public class SegueApiFacade {
 	 * This is the callback url that auth providers should use to send us
 	 * information about users.
 	 * 
-	 * @param request - http request from user
-	 * @param response - http response from server
-	 * @param signinProvider - requested signing provider string
+	 * @param request
+	 *            - http request from user
+	 * @param response
+	 *            - http response from server
+	 * @param signinProvider
+	 *            - requested signing provider string
 	 * @return Redirect response to send the user to the home page.
 	 */
 	@GET
@@ -723,7 +727,8 @@ public class SegueApiFacade {
 	/**
 	 * End point that allows the user to logout - i.e. destroy our cookie.
 	 * 
-	 * @param request so that we can destroy the associated session
+	 * @param request
+	 *            so that we can destroy the associated session
 	 * @return successful response.
 	 */
 	@GET
@@ -741,15 +746,16 @@ public class SegueApiFacade {
 
 	/**
 	 * This method will try to bring the live version that Segue is using to
-	 * host content up-to-date with the latest in the git remote.
+	 * host content up-to-date with the latest in the database.
 	 * 
-	 * @return
+	 * @return a response to indicate the synchronise job has triggered.
 	 */
 	@POST
 	@Produces("application/json")
 	@Path("admin/synchronise_datastores")
-	public synchronized Response synchroniseDataStores() {
-		log.info("Informed of content change; so triggering new synchronisation job.");
+	public final synchronized Response synchroniseDataStores() {
+		log.info("Informed of content change; "
+				+ "so triggering new synchronisation job.");
 		contentVersionController.triggerSyncJob();
 		return Response.ok("success - job started").build();
 	}
@@ -764,7 +770,7 @@ public class SegueApiFacade {
 	@POST
 	@Produces("application/json")
 	@Path("admin/clear_caches")
-	public synchronized Response clearCaches() {
+	public final synchronized Response clearCaches() {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -778,13 +784,18 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * Search the content manager for some search string
+	 * Rest end point that searches the content manager for some search string.
 	 * 
+	 * @param searchString
+	 *            - to pass to the search engine.
+	 * @return a response containing the search results (results wrapper) or an
+	 *         empty list.
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("search/{searchString}")
-	public Response search(@PathParam("searchString") String searchString) {
+	public final Response search(
+			@PathParam("searchString") final String searchString) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -828,13 +839,15 @@ public class SegueApiFacade {
 			log.info("Failed to map to any expected input...", e);
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.NOT_FOUND,
-					"Unable to map response to a Choice object so failing with an error",
+					"Unable to map response to a "
+					+ "Choice object so failing with an error",
 					e);
 			return error.toResponse();
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.NOT_FOUND,
-					"Unable to map response to a Choice object so failing with an error",
+					"Unable to map response to a "
+					+ "Choice object so failing with an error",
 					e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();

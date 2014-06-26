@@ -39,7 +39,12 @@ public class GameManager {
 		this.api = api;
 	}
 
-	public Gameboard generateRandomGameboard() {
+	/**
+	 * Generate a random gameboard without any filter conditions specified.
+	 * @see generateRandomGambeoard
+	 * @return gameboard containing random problems.
+	 */
+	public final Gameboard generateRandomGameboard() {
 		return this.generateRandomGameboard(null, null, null, null, null);
 	}
 
@@ -49,17 +54,23 @@ public class GameManager {
 	 * interface.
 	 * 
 	 * @param subjectsList
+	 *            list of subjects to include in filtered results
 	 * @param fieldsList
+	 *            list of fields to include in filtered results
 	 * @param topicsList
+	 *            list of topics to include in filtered results
 	 * @param levelsList
+	 *            list of levels to include in filtered results
 	 * @param conceptsList
+	 *            list of concepts (relatedContent) to include in filtered
+	 *            results
 	 * @return a gameboard if possible that satisifies the conditions provided
 	 *         by the parameters.
 	 */
-	public Gameboard generateRandomGameboard(List<String> subjectsList,
-			List<String> fieldsList, List<String> topicsList,
-			List<String> levelsList, List<String> conceptsList)
-			throws IllegalArgumentException {
+	public final Gameboard generateRandomGameboard(
+			final List<String> subjectsList, final List<String> fieldsList,
+			final List<String> topicsList, final List<String> levelsList,
+			final List<String> conceptsList) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
 				Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays
@@ -91,7 +102,8 @@ public class GameManager {
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
 			Mapper mapper = injector.getInstance(Mapper.class);
-			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
+			List<GameboardItem> gameboardReadyQuestions 
+				= new ArrayList<GameboardItem>();
 
 			// Map each Content object into an IsaacQuestionInfo object
 			for (Content c : questionsForGameboard) {
@@ -108,11 +120,14 @@ public class GameManager {
 		}
 	}
 
-	public boolean storeGameboard(Gameboard gameboardToStore) {
+	
+	public boolean storeGameboard(final Gameboard gameboardToStore) {
+		// TODO: stub
 		return false;
 	}
 
 	public Wildcard getRandomWildcardTile() {
+		// TODO: stub
 		return null;
 	}
 
