@@ -882,7 +882,9 @@ public class SegueApiFacade {
 			brokenFiles++;
 			
 			for (String s : pair.getValue()) {
-				child.getChildren().add(new Content(s));
+				Content erroredContentObject = new Content(s);
+				erroredContentObject.setId(pair.getKey().getId() + "_error_" + errors);
+				child.getChildren().add(erroredContentObject);
 				errors++;
 			}
 			c.getChildren().add(child);
