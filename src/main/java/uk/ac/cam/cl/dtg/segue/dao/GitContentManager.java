@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -644,17 +645,16 @@ public class GitContentManager implements IContentManager {
 			missingContent.addAll(expectedIds);
 
 			for (String id : missingContent) {
-				this.registerContentProblem(
-						sha,
-						whoAmI.get(id),
+				this.registerContentProblem(sha, whoAmI.get(id),
 						"This id was referenced by "
 								+ whoAmI.get(id).getCanonicalSourceFile()
-								+ " but the content with that ID cannot be found.");
+								+ " but the content with that "
+								+ "ID cannot be found.");
 			}
 
-			log.error("Referential integrity broken for ("
-					+ expectedIds.size()
-					+ ") related Content items. The following ids are referenced but do not exist: "
+			log.error("Referential integrity broken for (" + expectedIds.size()
+					+ ") related Content items. "
+					+ "The following ids are referenced but do not exist: "
 					+ expectedIds.toString());
 			return false;
 		}
@@ -668,7 +668,7 @@ public class GitContentManager implements IContentManager {
 	 *            content object to flatten
 	 * @return Set of content objects comprised of all children and the parent.
 	 */
-	private Set<Content> flattenContentObjects(Content content) {
+	private Set<Content> flattenContentObjects(final Content content) {
 		Set<Content> setOfContentObjects = new HashSet<Content>();
 
 		if (!content.getChildren().isEmpty()) {
@@ -687,7 +687,16 @@ public class GitContentManager implements IContentManager {
 		return setOfContentObjects;
 	}
 
-	private void registerTagsWithVersion(String version, Set<String> tags) {
+	/**
+	 * Helper function to build up a set of used tags for each version.
+	 * 
+	 * @param version
+	 *            - version to register the tag for.
+	 * @param tags
+	 *            - set of tags to register.
+	 */
+	private void registerTagsWithVersion(final String version,
+			final Set<String> tags) {
 		Validate.notBlank(version);
 
 		if (null == tags || tags.isEmpty()) {
@@ -708,8 +717,26 @@ public class GitContentManager implements IContentManager {
 		tagsList.get(version).addAll(newTagSet);
 	}
 
-	private void registerContentProblem(String version, Content c,
-			String message) {
+	/**
+	 * Helper method to register problems with content objects.
+	 * 
+	 * @param version
+	 *            - to which the problem relates
+	 * @param c
+	 *            - Partial content object to represent the object that has
+	 *            problems.
+	 * @param message
+	 *            - Error message to associate with the problem file / content.
+	 */
+	private void registerContentProblem(final String version, final Content c,
+			final String message) {
+		Validate.notNull(c);
+
+		// try and make sure each dummy content object has a title
+		if (c.getTitle() == null) {
+			c.setTitle(Paths.get(c.getCanonicalSourceFile()).getFileName()
+					.toString());
+		}
 
 		if (!indexProblemCache.containsKey(version)) {
 			indexProblemCache

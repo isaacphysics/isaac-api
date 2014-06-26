@@ -878,7 +878,7 @@ public class SegueApiFacade {
 		c.setId("dyanmic_problem_report");
 		for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
 			Content child = new Content();
-			child.setCanonicalSourceFile(pair.getKey().getTitle());
+			child.setTitle(pair.getKey().getTitle());
 			child.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
 			brokenFiles++;
 
