@@ -849,31 +849,74 @@ public class SegueApiFacade {
 				Lists.newArrayList(answersFromClient));
 	}
 
+	/**
+	 * Rest end point to allow content editors to see the content which failed
+	 * to import into segue.
+	 * 
+	 * @return a content object, such that the content object has children. The
+	 *         children represent each source file in error and the grand
+	 *         children represent each error.
+	 */
 	@GET
 	@Produces("application/json")
 	@Path("admin/content_problems")
-	public Response getContentProblems() {
-		return Response.ok(
-				contentVersionController.getContentManager().getProblemMap(
-						contentVersionController.getLiveVersion())).build();
+	public final Response getContentProblems() {
+
+		Map<Content, List<String>> problemMap = contentVersionController
+				.getContentManager().getProblemMap(
+						contentVersionController.getLiveVersion());
+
+		if (null == problemMap) {
+			return Response.ok(new Content("No problems found.")).build();
+		}
+
+		// build up a content object to return.
+		int brokenFiles = 0;
+		int errors = 0;
+		
+		Content c = new Content();
+		c.setId("dyanmic_problem_report");
+		for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
+			Content child = new Content();
+			child.setTitle(pair.getKey().getCanonicalSourceFile());
+			brokenFiles++;
+			
+			for (String s : pair.getValue()) {
+				child.getChildren().add(new Content(s));
+				errors++;
+			}
+			c.getChildren().add(child);
+			child.setId(pair.getKey().getId() + "_problem_report");
+		}
+		
+		c.setSubtitle("Total Broken files: " + brokenFiles + " Total errors : "
+				+ errors);
+
+		return Response.ok(c).build();
 	}
 
 	/**
-	 * Helper method to generate field to match requirements for search queries
+	 * Helper method to generate field to match requirements for search queries.
 	 * 
 	 * Assumes that everything is AND queries
 	 * 
 	 * @param fieldsToMatch
+	 *            - expects a map of the form fieldname -> list of queries to
+	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
-			Map<String, List<String>> fieldsToMatch) {
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, 
+			List<String>> generateDefaultFieldToMatch(
+			final Map<String, List<String>> fieldsToMatch) {
+		
+		Map<Map.Entry<Constants.BooleanOperator, String>,
+				List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
 
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
-					.immutableEntry(Constants.BooleanOperator.AND,
+			Map.Entry<Constants.BooleanOperator, String> newEntry = 
+					com.google.common.collect.Maps
+						.immutableEntry(Constants.BooleanOperator.AND,
 							pair.getKey());
 
 			fieldsToMatchOutput.put(newEntry, pair.getValue());
