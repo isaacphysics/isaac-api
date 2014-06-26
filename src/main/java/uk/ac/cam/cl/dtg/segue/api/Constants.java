@@ -1,6 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
-public class Constants {
+/**
+ * Utility class to provide common isaac-specific constants.
+ *
+ */
+public final class Constants {
 	/**
 	 * Name to use to describe the application to external services, e.g. 3rd
 	 * party authenticators.
@@ -19,7 +23,8 @@ public class Constants {
 	 * - Used for a default location of where authentication provider callbacks
 	 * should land..
 	 */
-	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX";
+	public static final String DEFAULT_LANDING_URL_SUFFIX 
+		= "DEFAULT_LANDING_URL_SUFFIX";
 
 	/**
 	 * Constant representing the key for the maximum number of versions to
@@ -30,15 +35,17 @@ public class Constants {
 	// GIT stuff
 
 	/**
-	 * Constant representing the key for the path to Local GIT instance
+	 * Constant representing the key for the path to Local GIT instance.
 	 */
-	public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
+	public static final String LOCAL_GIT_DB 
+		= "LOCAL_GIT_DB";
 
 	/**
 	 * Constant representing the key for the path to the ssh private key for
-	 * remote git repository
+	 * remote git repository.
 	 */
-	public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
+	public static final String REMOTE_GIT_SSH_KEY_PATH 
+		= "REMOTE_GIT_SSH_KEY_PATH";
 
 	/**
 	 * Constant representing the key for the URL to remote git repository for
@@ -117,11 +124,18 @@ public class Constants {
 	 */
 	public static final String UNPROCESSED_SEARCH_FIELD_SUFFIX = "raw";
 
-	// Enum to represent sort orders
+	/**
+	 * Enum to represent sort orders.
+	 * 
+	 */
 	public enum SortOrder {
 		ASC, DESC
 	};
 
+	/**
+	 * Enum to represent search boolean operators.
+	 * 
+	 */
 	public enum BooleanOperator {
 		AND, OR
 	};
@@ -131,7 +145,8 @@ public class Constants {
 	/**
 	 * Constant representing the key for the GOOGLE client secret location.
 	 */
-	public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
+	public static final String GOOGLE_CLIENT_SECRET_LOCATION 
+		= "GOOGLE_CLIENT_SECRET_LOCATION";
 
 	/**
 	 * Constant representing the key for the GOOGLE OAUTH callback uri.
@@ -144,8 +159,8 @@ public class Constants {
 	 */
 	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
 
-	/**
-	 * Default values
+	/*
+	 * Default values.
 	 */
 	public static final Integer DEFAULT_SEARCH_LIMIT = 10;
 
@@ -157,4 +172,11 @@ public class Constants {
 	public static final String VALUE_FIELDNAME = "value";
 	public static final String CHILDREN_FIELDNAME = "children";
 	public static final String LEVEL_FIELDNAME = "level";
+
+	/**
+	 * Private constructor to prevent this class being created.
+	 */
+	private Constants() {
+		// not allowed to create one of these as it wouldn't make sense.
+	}
 }
