@@ -5,9 +5,8 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: sac92-default-checkstyle
-    Description: 
-Slightly modified version of Sun Checks that better matches the default code formatter setting of Eclipse.
+    Checkstyle-Configuration: Segue Check style configuration
+    Description: none
 -->
 <module name="Checker">
   <property name="severity" value="warning"/>
@@ -65,7 +64,6 @@ Slightly modified version of Sun Checks that better matches the default code for
     <module name="AvoidInlineConditionals"/>
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>
-    <module name="HiddenField"/>
     <module name="IllegalInstantiation"/>
     <module name="InnerAssignment"/>
     <module name="MagicNumber"/>
@@ -92,6 +90,9 @@ Slightly modified version of Sun Checks that better matches the default code for
     <module name="PackageAnnotation"/>
     <module name="PackageDeclaration"/>
     <module name="Indentation"/>
+    <module name="StringLiteralEquality"/>
+    <module name="UnnecessaryParentheses"/>
+    <module name="OneStatementPerLine"/>
   </module>
   <module name="JavadocPackage">
     <property name="severity" value="ignore"/>

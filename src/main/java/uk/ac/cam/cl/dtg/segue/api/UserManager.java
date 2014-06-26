@@ -53,16 +53,26 @@ public class UserManager {
 
 	private final IUserDataManager database;
 	private final String hmacSalt;
-	private final Map<AuthenticationProvider, IFederatedAuthenticator> registeredAuthProviders;
+	private final Map<AuthenticationProvider, IFederatedAuthenticator> 
+	registeredAuthProviders;
 
+	/**
+	 * Create an instance of the user manager class.
+	 * 
+	 * @param database - an IUserDataManager that will support persistence.
+	 * @param hmacSalt - A random / unique HMAC salt for session authentication. 
+	 * @param providersToRegister - A map of known authentication providers.
+	 */
 	@Inject
 	public UserManager(
-			IUserDataManager database,
-			@Named(Constants.HMAC_SALT) String hmacSalt,
-			Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister) {
+			final IUserDataManager database,
+			@Named(Constants.HMAC_SALT) final String hmacSalt,
+			final Map<AuthenticationProvider, 
+			IFederatedAuthenticator> providersToRegister) {
 		Validate.notNull(database);
 		Validate.notNull(hmacSalt);
 		Validate.notNull(providersToRegister);
+		
 		this.database = database;
 		this.hmacSalt = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;
@@ -73,11 +83,14 @@ public class UserManager {
 	 * object back to the caller.
 	 * 
 	 * @param request
+	 *            - http request that we can attach the session to.
 	 * @param provider
+	 *            - the provider the user wishes to authenticate with.
 	 * @return A response containing a user object or a redirect URI to the
 	 *         authentication provider if authorization / login is required.
 	 */
-	public Response authenticate(HttpServletRequest request, String provider) {
+	public final Response authenticate(final HttpServletRequest request,
+			final String provider) {
 		// get the current user based on their session id information.
 		User currentUser = getCurrentUser(request);
 		if (null != currentUser) {
@@ -87,12 +100,14 @@ public class UserManager {
 		// Ok we don't have a current user so now we have to go ahead and try
 		// and authenticate them.
 		try {
-			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator = 
+					mapToProvider(provider);
 
 			// if we are an OAuth2Provider redirect to the provider
 			// authorization url.
 			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
+				IOAuth2Authenticator oauthProvider = 
+						(IOAuth2Authenticator) federatedAuthenticator;
 
 				URI redirectLink = URI.create(oauthProvider
 						.getAuthorizationUrl());
@@ -112,8 +127,10 @@ public class UserManager {
 				if (null == antiForgeryTokenFromProvider) {
 					SegueErrorResponse error = new SegueErrorResponse(
 							Status.INTERNAL_SERVER_ERROR,
-							"Anti forgery authenitication error. Please contact server admin.");
-					log.error("Unable to extract Anti Forgery Token from Authentication provider");
+							"Anti forgery authenitication error."
+									+ " Please contact server admin.");
+					log.error("Unable to extract Anti Forgery Token "
+							+ "from Authentication provider");
 					return error.toResponse();
 				}
 
@@ -153,29 +170,36 @@ public class UserManager {
 	 * bespoke)
 	 * 
 	 * @param request
+	 *            - http request from the user.
 	 * @param response
+	 *            - http response for the user.
 	 * @param provider
+	 *            - the provider who has just authenticated the user.
 	 * @return Response containing the populated user DTO.
 	 */
-	public Response authenticateCallback(HttpServletRequest request,
-			HttpServletResponse response, String provider) {
+	public final Response authenticateCallback(
+			final HttpServletRequest request,
+			final HttpServletResponse response, final String provider) {
 		User currentUser = getCurrentUser(request);
 
 		if (null != currentUser) {
-			log.info("We already have a cookie set with a valid user. We won't proceed with authentication callback logic.");
+			log.info("We already have a cookie set with a valid user. "
+					+ "We won't proceed with authentication callback logic.");
 			return Response.ok().entity(currentUser).build();
 		}
 
 		// Ok we don't have a current user so now we have to go ahead and try
 		// and authenticate them.
 		try {
-			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator = 
+					mapToProvider(provider);
 
 			String providerSpecificUserLookupReference = null;
 
 			// if we are an OAuth2Provider complete next steps of oauth
 			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
+				IOAuth2Authenticator oauthProvider = 
+						(IOAuth2Authenticator) federatedAuthenticator;
 
 				providerSpecificUserLookupReference = this
 						.getOauth2InternalRefCode(oauthProvider, request);
@@ -210,8 +234,8 @@ public class UserManager {
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.UNAUTHORIZED,
-					"Exception while trying to authenticate a user - during callback step",
-					e);
+					"Exception while trying to authenticate a user"
+							+ " - during callback step", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		} catch (NoUserIdException e) {
@@ -243,12 +267,14 @@ public class UserManager {
 	}
 
 	/**
-	 * Get the details of the currently logged in user
+	 * Get the details of the currently logged in user.
 	 * 
+	 * @param request
+	 *            - to retrieve session information from
 	 * @return Returns the current user DTO if we can get it or null if user is
 	 *         not currently logged in
 	 */
-	public User getCurrentUser(HttpServletRequest request) {
+	public final User getCurrentUser(final HttpServletRequest request) {
 		Validate.notNull(request);
 
 		// get the current user based on their session id information.
@@ -262,7 +288,8 @@ public class UserManager {
 
 		// check if the users session is validated using our credentials.
 		if (!this.validateUsersSession(request)) {
-			log.info("User session has failed validation. Assume they are not logged in.");
+			log.info("User session has failed validation. "
+					+ "Assume they are not logged in.");
 			return null;
 		}
 
@@ -284,12 +311,13 @@ public class UserManager {
 	 * @param request
 	 *            containing the session to destroy
 	 */
-	public void logUserOut(HttpServletRequest request) {
+	public final void logUserOut(final HttpServletRequest request) {
 		Validate.notNull(request);
 		try {
 			request.getSession().invalidate();
 		} catch (IllegalStateException e) {
-			log.info("The session has already been invalidated. Unable to logout again...");
+			log.info("The session has already been invalidated. "
+					+ "Unable to logout again...", e);
 		}
 	}
 
@@ -309,7 +337,8 @@ public class UserManager {
 	 * @param userId
 	 *            to associate the session with
 	 */
-	public void createSession(HttpServletRequest request, String userId) {
+	public final void createSession(final HttpServletRequest request,
+			final String userId) {
 		Validate.notNull(request);
 		Validate.notBlank(userId);
 
@@ -326,22 +355,15 @@ public class UserManager {
 	}
 
 	/**
-	 * Verifies that the signed session is valid Currently only confirms the
-	 * signature.
-	 * 
-	 * @param request
-	 * @return True if we are happy, false if we are not.
-	 */
-
-	/**
 	 * Executes checks on the users sessions to ensure it is valid
 	 * 
 	 * Checks include verifying the HMAC and the session creation date.
 	 * 
 	 * @param request
+	 *            - request containing session information
 	 * @return true if it is still valid, false if not.
 	 */
-	public boolean validateUsersSession(HttpServletRequest request) {
+	public final boolean validateUsersSession(final HttpServletRequest request) {
 		Validate.notNull(request);
 
 		String userId = (String) request.getSession().getAttribute(
@@ -374,10 +396,12 @@ public class UserManager {
 	 * Generate an HMAC using a key and the data to sign.
 	 * 
 	 * @param key
+	 *            - HMAC key for signing
 	 * @param dataToSign
-	 * @return HMAC
+	 *            - data to be signed
+	 * @return HMAC - Unique HMAC.
 	 */
-	private String calculateHMAC(String key, String dataToSign) {
+	private String calculateHMAC(final String key, final String dataToSign) {
 		Validate.notEmpty(key, "Signing key cannot be blank.");
 		Validate.notEmpty(dataToSign, "Data to sign cannot be blank.");
 
@@ -402,29 +426,28 @@ public class UserManager {
 	 * Attempts to map a string to a known provider.
 	 * 
 	 * @param provider
+	 *            - String representation of the provider requested
 	 * @return the FederatedAuthenticator object which can be used to get a
 	 *         user.
 	 */
-	private IFederatedAuthenticator mapToProvider(String provider)
-			throws IllegalArgumentException {
-		Validate.notEmpty(
-				provider,
-				"Provider name must not be empty or null if we are going to map it to an implementation.");
+	private IFederatedAuthenticator mapToProvider(final String provider) {
+		Validate.notEmpty(provider,
+				"Provider name must not be empty or null if we are going "
+						+ "to map it to an implementation.");
 
 		AuthenticationProvider enumProvider = null;
 		try {
 			enumProvider = AuthenticationProvider.valueOf(provider
 					.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			log.error("The provider requested is invalid and not a known AuthenticationProvider: "
+			throw new IllegalArgumentException("The provider requested is "
+					+ "invalid and not a known AuthenticationProvider: "
 					+ provider);
-			throw new IllegalArgumentException();
 		}
 
 		if (!registeredAuthProviders.containsKey(enumProvider)) {
-			log.error("This authentication provider has not been registered / implemented yet: "
-					+ provider);
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("This authentication provider"
+					+ " has not been registered / implemented yet: " + provider);
 		}
 
 		log.debug("Mapping provider: " + provider + " to " + enumProvider);
@@ -442,13 +465,14 @@ public class UserManager {
 	 */
 
 	/**
-	 * Verify with the request that there is no CSRF violation
+	 * Verify with the request that there is no CSRF violation.
 	 * 
 	 * @param request
+	 *            - http request to verify there is no CSRF
 	 * @return true if we are happy , false if we think a violation has
 	 *         occurred.
 	 */
-	private boolean ensureNoCSRF(HttpServletRequest request) {
+	private boolean ensureNoCSRF(final HttpServletRequest request) {
 		Validate.notNull(request);
 
 		// to deal with cross site request forgery
@@ -478,12 +502,13 @@ public class UserManager {
 	 *            from authentication provider
 	 * @param provider
 	 *            information
-	 * @param unique
-	 *            reference for this user held by the authentication provider.
+	 * @param providerId
+	 *            - unique id of provider.
 	 * @return The localUser account user id of the user after registration.
 	 */
-	private String registerUser(User user, AuthenticationProvider provider,
-			String providerId) {
+	private String registerUser(final User user,
+			final AuthenticationProvider provider, final String providerId) {
+		// TODO: do we really need a providerID too?
 		String userId = database.register(user, provider, providerId);
 		return userId;
 	}
@@ -499,14 +524,15 @@ public class UserManager {
 	 * @return A user object or null if we were unable to find the user with the
 	 *         information provided.
 	 */
-	private User getUserFromLinkedAccount(AuthenticationProvider provider,
-			String providerId) {
+	private User getUserFromLinkedAccount(
+			final AuthenticationProvider provider, final String providerId) {
 		Validate.notNull(provider);
 		Validate.notBlank(providerId);
 
 		User user = database.getByLinkedAccount(provider, providerId);
 		if (null == user) {
-			log.info("Unable to locate user based on provider information provided.");
+			log.info("Unable to locate user based on provider "
+					+ "information provided.");
 		}
 		return user;
 	}
@@ -522,15 +548,17 @@ public class UserManager {
 	 *            any authenticator specific actions have been completed.
 	 * @return a user object that exists in the segue system.
 	 * @throws AuthenticatorSecurityException
+	 *             - error with authenticator.
 	 * @throws NoUserIdException
 	 *             - If we are unable to locate the user id based on the lookup
 	 *             reference provided.
 	 * @throws IOException
+	 *             - if there is an io error.
 	 */
 	private User getUserFromFederatedProvider(
-			IFederatedAuthenticator federatedAuthenticator,
-			String providerSpecificUserLookupReference)
-			throws AuthenticatorSecurityException, NoUserIdException,
+			final IFederatedAuthenticator federatedAuthenticator,
+			final String providerSpecificUserLookupReference)
+		throws AuthenticatorSecurityException, NoUserIdException,
 			IOException {
 		// get user info from federated provider
 		// note the userid field in this object will contain the providers user
@@ -570,7 +598,8 @@ public class UserManager {
 
 			if (null == localUserInformation) {
 				// we just put it in so something has gone very wrong.
-				log.error("Failed to retreive user even though we just put it in the database.");
+				log.error("Failed to retreive user even though we "
+						+ "just put it in the database.");
 				throw new NoUserIdException();
 			}
 		} else {
@@ -586,17 +615,20 @@ public class UserManager {
 	 * internal reference number that the oauth2 provider can use to lookup the
 	 * information of the user who has just authenticated.
 	 * 
-	 * @param oauthProvider
-	 * @param request
-	 * @return
-	 * @throws AuthenticationCodeException
-	 * @throws IOException
-	 * @throws CodeExchangeException
-	 * @throws NoUserIdException
-	 * @throws CrossSiteRequestForgeryException
+	 * @param oauthProvider - The provider to authenticate against.
+	 * @param request - The request that will contain session information.
+	 * @return an internal reference number that will allow retrieval of the
+	 *         users information from the provider.
+	 * @throws AuthenticationCodeException - possible authentication code issues.
+	 * @throws IOException - error reading from client key?
+	 * @throws CodeExchangeException - exception whilst exchanging codes
+	 * @throws NoUserIdException - cannot find the user requested
+	 * @throws CrossSiteRequestForgeryException - Unable to guarantee no CSRF
 	 */
-	private String getOauth2InternalRefCode(IOAuth2Authenticator oauthProvider,
-			HttpServletRequest request) throws AuthenticationCodeException,
+	private String getOauth2InternalRefCode(
+			final IOAuth2Authenticator oauthProvider,
+			final HttpServletRequest request) 
+		throws AuthenticationCodeException,
 			IOException, CodeExchangeException, NoUserIdException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.

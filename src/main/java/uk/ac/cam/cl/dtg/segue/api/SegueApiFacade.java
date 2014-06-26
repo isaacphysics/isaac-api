@@ -662,7 +662,7 @@ public class SegueApiFacade {
 	/**
 	 * This is the initial step of the authentication process.
 	 * 
-	 * @param request
+	 * @param request - the http request of the user wishing to authenticate
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
@@ -671,9 +671,9 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("auth/{provider}/authenticate")
-	public Response authenticationInitialisation(
-			@Context HttpServletRequest request,
-			@PathParam("provider") String signinProvider) {
+	public final Response authenticationInitialisation(
+			@Context final HttpServletRequest request,
+			@PathParam("provider") final String signinProvider) {
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
@@ -692,24 +692,25 @@ public class SegueApiFacade {
 	 * This is the callback url that auth providers should use to send us
 	 * information about users.
 	 * 
-	 * @param request
-	 * @param response
-	 * @param signinProvider
-	 * @return Redirect?
+	 * @param request - http request from user
+	 * @param response - http response from server
+	 * @param signinProvider - requested signing provider string
+	 * @return Redirect response to send the user to the home page.
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("auth/{provider}/callback")
-	public Response authenticationCallback(@Context HttpServletRequest request,
-			@Context HttpServletResponse response,
-			@PathParam("provider") String signinProvider) {
+	public final Response authenticationCallback(
+			@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@PathParam("provider") final String signinProvider) {
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
 		userManager.authenticateCallback(request, response, signinProvider);
 
-		String returnUrl = "http://" 
+		String returnUrl = "http://"
 				+ this.properties.getProperty(Constants.HOST_NAME)
 				+ this.properties
 						.getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
@@ -722,27 +723,20 @@ public class SegueApiFacade {
 	/**
 	 * End point that allows the user to logout - i.e. destroy our cookie.
 	 * 
-	 * @param request
-	 * @param response
-	 * @return a temporary redirect to the default landing suffix found in the
-	 *         config file.
+	 * @param request so that we can destroy the associated session
+	 * @return successful response.
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("auth/logout")
-	public Response userLogout(@Context HttpServletRequest request,
-			@Context HttpServletResponse response) {
+	public final Response userLogout(@Context final HttpServletRequest request) {
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
 		userManager.logUserOut(request);
 
-		String returnUrl = this.properties.getProperty(Constants.HOST_NAME)
-				+ this.properties
-						.getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
-
-		return Response.temporaryRedirect(URI.create(returnUrl)).build();
+		return Response.ok("success").build();
 	}
 
 	/**
@@ -885,12 +879,12 @@ public class SegueApiFacade {
 
 			for (String s : pair.getValue()) {
 				Content erroredContentObject = new Content(s);
-				
+
 				erroredContentObject.setId(pair.getKey().getId() + "_error_"
 						+ errors);
-				
+
 				child.getChildren().add(erroredContentObject);
-				
+
 				errors++;
 			}
 			c.getChildren().add(child);
