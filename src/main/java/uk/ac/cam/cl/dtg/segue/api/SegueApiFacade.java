@@ -873,24 +873,29 @@ public class SegueApiFacade {
 		// build up a content object to return.
 		int brokenFiles = 0;
 		int errors = 0;
-		
+
 		Content c = new Content();
 		c.setId("dyanmic_problem_report");
 		for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
 			Content child = new Content();
-			child.setTitle(pair.getKey().getCanonicalSourceFile());
+			child.setCanonicalSourceFile(pair.getKey().getTitle());
+			child.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
 			brokenFiles++;
-			
+
 			for (String s : pair.getValue()) {
 				Content erroredContentObject = new Content(s);
-				erroredContentObject.setId(pair.getKey().getId() + "_error_" + errors);
+				
+				erroredContentObject.setId(pair.getKey().getId() + "_error_"
+						+ errors);
+				
 				child.getChildren().add(erroredContentObject);
+				
 				errors++;
 			}
 			c.getChildren().add(child);
-			child.setId(pair.getKey().getId() + "_problem_report");
+			child.setId(pair.getKey().getId() + "_problem_report_" + errors);
 		}
-		
+
 		c.setSubtitle("Total Broken files: " + brokenFiles + " Total errors : "
 				+ errors);
 
@@ -907,18 +912,15 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, 
-			List<String>> generateDefaultFieldToMatch(
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
-		
-		Map<Map.Entry<Constants.BooleanOperator, String>,
-				List<String>> fieldsToMatchOutput = Maps
+
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
 
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = 
-					com.google.common.collect.Maps
-						.immutableEntry(Constants.BooleanOperator.AND,
+			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
+					.immutableEntry(Constants.BooleanOperator.AND,
 							pair.getKey());
 
 			fieldsToMatchOutput.put(newEntry, pair.getValue());
