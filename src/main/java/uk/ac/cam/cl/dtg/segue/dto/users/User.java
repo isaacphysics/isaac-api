@@ -1,16 +1,20 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.mongojack.ObjectId;
 
+import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Data Object to represent a user of the system. This object will be persisted in the database.
- *
+ * Data Object to represent a user of the system. This object will be persisted
+ * in the database.
+ * 
  */
 public class User {
 	@JsonProperty("_id")
@@ -18,36 +22,56 @@ public class User {
 	private String givenName;
 	private String familyName;
 	private String email;
-	private String role;
+	private Role role;
 	private String school;
 	private Date dateOfBirth;
+	private Gender gender;
 	private Date registrationDate;
-	
-	private List<LinkedAccount> linkedAccounts;
+	private String schoolId;
 
+	private List<QuestionAttempt> questionAttempts;
+	// TODO: move out of segue DTO into isaac one.
+	private List<Gameboard> gameBoards;
+	
 	/**
 	 * Full constructor for the User object.
 	 * 
-	 * @param databaseId - Our database Unique ID
-	 * @param givenName - Equivalent to firstname
-	 * @param familyName - Equivalent to second name
-	 * @param email - primary e-mail address
-	 * @param role - role description
-	 * @param school - unique school identifier.
-	 * @param dateOfBirth - date of birth to help with monitoring
-	 * @param registrationTime - date of registration
-	 * @param linkedAccounts - the list of linked authentication provider accounts.
+	 * @param databaseId
+	 *            - Our database Unique ID
+	 * @param givenName
+	 *            - Equivalent to firstname
+	 * @param familyName
+	 *            - Equivalent to second name
+	 * @param email
+	 *            - primary e-mail address
+	 * @param role
+	 *            - role description
+	 * @param school
+	 *            - unique school identifier.
+	 * @param dateOfBirth
+	 *            - date of birth to help with monitoring
+	 * @param gender
+	 *            - gender of the user
+	 * @param registrationTime
+	 *            - date of registration
+	 * @param schoolId
+	 *            - the list of linked authentication provider accounts.
+	 * @param questionAttempts
+	 *            - the list of question attempts made by the user.
 	 */
 	@JsonCreator
-	public User(@JsonProperty("_id") final String databaseId,
+	public User(
+			@JsonProperty("_id") final String databaseId,
 			@JsonProperty("givenName") final String givenName,
 			@JsonProperty("familyName") final String familyName,
 			@JsonProperty("email") final String email,
-			@JsonProperty("role") final String role,
+			@JsonProperty("role") final Role role,
 			@JsonProperty("school") final String school,
 			@JsonProperty("dateOfBirth") final Date dateOfBirth,
+			@JsonProperty("gender") final Gender gender,
 			@JsonProperty("registrationTime") final Date registrationTime,
-			@JsonProperty("linkedAccounts") final List<LinkedAccount> linkedAccounts) {
+			@JsonProperty("schoolId") final String schoolId,
+			@JsonProperty("questionAttempts") final List<QuestionAttempt> questionAttempts) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -56,18 +80,22 @@ public class User {
 		this.school = school;
 		this.dateOfBirth = dateOfBirth;
 		this.registrationDate = registrationTime;
-		this.linkedAccounts = linkedAccounts;
+		this.schoolId = schoolId;
+		this.questionAttempts = questionAttempts;
 	}
+
 
 	/**
 	 * Default constructor required for Jackson.
 	 */
 	public User() {
-
+		this.questionAttempts = new ArrayList<QuestionAttempt>();
+		this.gameBoards = new ArrayList<Gameboard>();
 	}
 
 	/**
 	 * Gets the database id for the user object.
+	 * 
 	 * @return database id as a string.
 	 */
 	@JsonProperty("_id")
@@ -78,7 +106,9 @@ public class User {
 
 	/**
 	 * Sets the database id for the user object.
-	 * @param id the db id for the user.
+	 * 
+	 * @param id
+	 *            the db id for the user.
 	 */
 	@JsonProperty("_id")
 	@ObjectId
@@ -95,7 +125,6 @@ public class User {
 		return familyName;
 	}
 
-	
 	/**
 	 * Gets the given name / firstname of the user.
 	 * 
@@ -119,7 +148,7 @@ public class User {
 	 * 
 	 * @return the role of the user.
 	 */
-	public final String getRole() {
+	public final Role getRole() {
 		return role;
 	}
 
@@ -140,20 +169,58 @@ public class User {
 	public final Date getDateOfBirth() {
 		return dateOfBirth;
 	}
+	
+	/**
+	 * Get Gender for this user.
+	 * 
+	 * @return the gender
+	 */
+	public final Gender getGender() {
+		return gender;
+	}
 
 	/**
 	 * Gets the date of when the user first registered with us.
+	 * 
 	 * @return the date in which the user registered.
 	 */
 	public final Date getRegistrationTime() {
 		return registrationDate;
 	}
+
+	/**
+	 * Gets the list of SchoolId for this user.
+	 * 
+	 * @return the schoolId that the user is a member of.
+	 */
+	public final String getSchoolId() {
+		return schoolId;
+	}
+
+	/**
+	 * Get Question attempts for this user.
+	 * 
+	 * @return list of attempts
+	 */
+	public final List<QuestionAttempt> getQuestionAttempts() {
+		return questionAttempts;
+	}
+
+	/**
+	 * Gets the gameBoards.
+	 * @return the gameBoards
+	 */
+	public final List<Gameboard> getGameBoards() {
+		return gameBoards;
+	}
 	
 	/**
-	 * Gets the list of linked accounts for this user.
-	 * @return list of linked accounts.
+	 * Sets the gameBoards.
+	 * @param gameBoards the gameBoards to set
 	 */
-	public final List<LinkedAccount> getLinkedAccounts() {
-		return linkedAccounts;
+	public final void setGameBoards(final List<Gameboard> gameBoards) {
+		this.gameBoards = gameBoards;
 	}
+
+
 }

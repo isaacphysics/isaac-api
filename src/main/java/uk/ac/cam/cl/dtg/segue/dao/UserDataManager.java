@@ -13,7 +13,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 /**
  * This class is responsible for managing and persisting user data.
- *
+ * @author Stephen Cummins
  */
 public class UserDataManager implements IUserDataManager {
 
@@ -21,14 +21,18 @@ public class UserDataManager implements IUserDataManager {
 	private static final String USER_COLLECTION_NAME = "users";
 	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
 
+	/**
+	 * Creates a new user data maanger object.
+	 * @param database - the database reference used for persistence.
+	 */
 	@Inject
-	public UserDataManager(DB database) {
+	public UserDataManager(final DB database) {
 		this.database = database;
 	}
 
 	@Override
-	public String register(User user, AuthenticationProvider provider,
-			String providerId) {
+	public final String register(final User user, final AuthenticationProvider provider,
+			final String providerId) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
@@ -48,7 +52,7 @@ public class UserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public User getById(String id) throws IllegalArgumentException {
+	public final User getById(final String id) {
 		if (null == id) {
 			return null;
 		}
@@ -64,16 +68,9 @@ public class UserDataManager implements IUserDataManager {
 		return user;
 	}
 
-	/**
-	 * This method expects the linked account object to not have a local user id
-	 * set but to have a provider and provider id.
-	 * 
-	 * @param account
-	 * @return the local user details for the user specified. Or null if we don't know about them. 
-	 */
 	@Override
-	public User getByLinkedAccount(AuthenticationProvider provider,
-			String providerUserId) {
+	public final User getByLinkedAccount(final AuthenticationProvider provider,
+			final String providerUserId) {
 		if (null == provider || null == providerUserId) {
 			return null;
 		}
@@ -93,20 +90,25 @@ public class UserDataManager implements IUserDataManager {
 		return this.getById(linkAccount.getLocalUserId());
 	}
 
-	public boolean linkAuthProviderToAccount(User user,
-			AuthenticationProvider provider, String providerId) {
+	/**
+	 * Creates a link record, connecting a local user to an external provider
+	 * for authentication purposes.
+	 * 
+	 * @param user - the local user object
+	 * @param provider - the provider that authenticated the user.
+	 * @param providerUserId - the providers unique id for the user.
+	 * @return true if success false if failure.
+	 */
+	private boolean linkAuthProviderToAccount(final User user,
+			final AuthenticationProvider provider, final String providerUserId) {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 
 		WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null,
-				user.getDbId(), provider, providerId));
+				user.getDbId(), provider, providerUserId));
 
-		if (r.getError() == null) {
-			return true;
-		} else {
-			return false;
-		}
+		return null == r.getError();
 	}
 
 }

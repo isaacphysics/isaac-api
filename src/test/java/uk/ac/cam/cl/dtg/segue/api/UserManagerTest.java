@@ -26,6 +26,8 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dto.users.Gender;
+import uk.ac.cam.cl.dtg.segue.dto.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 public class UserManagerTest {
@@ -111,7 +113,7 @@ public class UserManagerTest {
 		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
 		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
 		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
-		User returnUser = new User(validUserId, "TestFirstName", "TestLastName", "", "", "", new Date(), new Date(),null);
+		User returnUser = new User(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT, "", new Date(), Gender.MALE, new Date(),null, null);
 		
 		expect(request.getSession()).andReturn(dummySession).times(5);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(validUserId).atLeastOnce();
@@ -239,7 +241,7 @@ public class UserManagerTest {
 		expect(((IFederatedAuthenticator)dummyGoogleAuth).getAuthenticationProvider()).andReturn(AuthenticationProvider.GOOGLE).atLeastOnce();
 
 		// User object back from provider
-		User providerUser = new User(someProviderUniqueUserId,"TestFirstName","testLastName","","","",new Date(), new Date(), null);
+		User providerUser = new User(someProviderUniqueUserId,"TestFirstName","testLastName","",Role.STUDENT,"",new Date(), Gender.MALE, new Date(), null, null);
 		
 		// Mock get User Information from provider call
 		expect(((IFederatedAuthenticator)dummyGoogleAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(providerUser);
@@ -249,7 +251,7 @@ public class UserManagerTest {
 
 		// A main part of the test is to check the below call happens
 		expect(dummyDatabase.register(providerUser, AuthenticationProvider.GOOGLE, someProviderUniqueUserId)).andReturn(someSegueUserId).atLeastOnce();
-		expect(dummyDatabase.getById(someSegueUserId)).andReturn(new User(someSegueUserId,"TestFirstName","testLastName","","","",new Date(), new Date(), null));
+		expect(dummyDatabase.getById(someSegueUserId)).andReturn(new User(someSegueUserId,"TestFirstName","testLastName","",Role.STUDENT,"",new Date(), Gender.MALE, new Date(), null, null));
 		
 		// Expect a session to be created
 		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
