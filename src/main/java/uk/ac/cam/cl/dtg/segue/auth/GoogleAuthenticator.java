@@ -181,7 +181,7 @@ public class GoogleAuthenticator implements IFederatedAuthenticator,
 
 			return new User(userInfo.getId(), userInfo.getGivenName(),
 					userInfo.getFamilyName(), userInfo.getEmail(), null, null,
-					null, null, null);
+					null, null);
 		} else {
 			throw new NoUserIdException();
 		}

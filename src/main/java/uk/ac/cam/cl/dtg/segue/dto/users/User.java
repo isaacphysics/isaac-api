@@ -6,86 +6,139 @@ import org.mongojack.ObjectId;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Data Object to represent a user of the system. This object will be persisted in the database.
+ *
+ */
 public class User {
-	protected String _id;
-	protected String givenName;
-	protected String familyName;
-	protected String email;
-	protected String role;
-	protected String school;
-	protected String year;
-	protected Boolean feedbackAgreement;
-	protected Date registrationTime;
+	@JsonProperty("_id")
+	private String databaseId;
+	private String givenName;
+	private String familyName;
+	private String email;
+	private String role;
+	private String school;
+	private Date dateOfBirth;
+	private Date registrationDate;
 
+	/**
+	 * Full constructor for the User object.
+	 * 
+	 * @param databaseId - Our database Unique ID
+	 * @param givenName - Equivalent to firstname
+	 * @param familyName - Equivalent to second name
+	 * @param email - primary e-mail address
+	 * @param role - role description
+	 * @param school - unique school identifier.
+	 * @param dateOfBirth - date of birth to help with monitoring
+	 * @param registrationTime - date of registration
+	 */
 	@JsonCreator
-	public User(@JsonProperty("_id") String _id,
-			@JsonProperty("givenName") String givenName,
-			@JsonProperty("familyName") String familyName,
-			@JsonProperty("email") String email,
-			@JsonProperty("role") String role,
-			@JsonProperty("school") String school,
-			@JsonProperty("year") String year,
-			@JsonProperty("feedbackAgreement") Boolean feedbackAgreement,
-			@JsonProperty("registrationTime") Date registrationTime) {
-		this._id = _id;
+	public User(@JsonProperty("_id") final String databaseId,
+			@JsonProperty("givenName") final String givenName,
+			@JsonProperty("familyName") final String familyName,
+			@JsonProperty("email") final String email,
+			@JsonProperty("role") final String role,
+			@JsonProperty("school") final String school,
+			@JsonProperty("dateOfBirth") final Date dateOfBirth,
+			@JsonProperty("registrationTime") final Date registrationTime) {
+		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
 		this.email = email;
 		this.role = role;
 		this.school = school;
-		this.year = year;
-		this.feedbackAgreement = feedbackAgreement;
-		this.registrationTime = registrationTime;
+		this.dateOfBirth = dateOfBirth;
+		this.registrationDate = registrationTime;
 	}
 
 	/**
-	 * Default constructor required for Jackson
+	 * Default constructor required for Jackson.
 	 */
 	public User() {
 
 	}
 
+	/**
+	 * Gets the database id for the user object.
+	 * @return database id as a string.
+	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public String getDbId() {
-		return _id;
+	public final String getDbId() {
+		return databaseId;
 	}
 
+	/**
+	 * Sets the database id for the user object.
+	 * @param id the db id for the user.
+	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public void setDbId(String _id) {
-		this._id = _id;
+	public final void setDbId(final String id) {
+		this.databaseId = id;
 	}
 
-	public String getFamilyName() {
+	/**
+	 * Gets the family name for the user.
+	 * 
+	 * @return familyName.
+	 */
+	public final String getFamilyName() {
 		return familyName;
 	}
 
-	public String getGivenName() {
+	
+	/**
+	 * Gets the given name / firstname of the user.
+	 * 
+	 * @return users given name.
+	 */
+	public final String getGivenName() {
 		return givenName;
 	}
 
-	public String getEmail() {
+	/**
+	 * Gets the users e-mail address.
+	 * 
+	 * @return users email address
+	 */
+	public final String getEmail() {
 		return email;
 	}
 
-	public String getRole() {
+	/**
+	 * Gets the users role information.
+	 * 
+	 * @return the role of the user.
+	 */
+	public final String getRole() {
 		return role;
 	}
 
-	public String getSchool() {
+	/**
+	 * Gets the unique id of the school the user should belong to.
+	 * 
+	 * @return school id.
+	 */
+	public final String getSchool() {
 		return school;
 	}
 
-	public String getYear() {
-		return year;
+	/**
+	 * Gets the date of birth for the given user.
+	 * 
+	 * @return date of birth
+	 */
+	public final Date getDateOfBirth() {
+		return dateOfBirth;
 	}
 
-	public Boolean getFeedbackAgreement() {
-		return feedbackAgreement;
-	}
-
-	public Date getRegistrationTime() {
-		return registrationTime;
+	/**
+	 * Gets the date of when the user first registered with us.
+	 * @return the date in which the user registered.
+	 */
+	public final Date getRegistrationTime() {
+		return registrationDate;
 	}
 }

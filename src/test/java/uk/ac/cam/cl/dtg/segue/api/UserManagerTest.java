@@ -111,7 +111,7 @@ public class UserManagerTest {
 		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
 		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
 		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
-		User returnUser = new User(validUserId, "TestFirstName", "TestLastName", "", "", "", "", false, new Date());
+		User returnUser = new User(validUserId, "TestFirstName", "TestLastName", "", "", "", new Date(), new Date());
 		
 		expect(request.getSession()).andReturn(dummySession).times(5);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(validUserId).atLeastOnce();
@@ -239,7 +239,7 @@ public class UserManagerTest {
 		expect(((IFederatedAuthenticator)dummyGoogleAuth).getAuthenticationProvider()).andReturn(AuthenticationProvider.GOOGLE).atLeastOnce();
 
 		// User object back from provider
-		User providerUser = new User(someProviderUniqueUserId,"TestFirstName","testLastName","","","","", false, new Date());
+		User providerUser = new User(someProviderUniqueUserId,"TestFirstName","testLastName","","","",new Date(), new Date());
 		
 		// Mock get User Information from provider call
 		expect(((IFederatedAuthenticator)dummyGoogleAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(providerUser);
@@ -249,7 +249,7 @@ public class UserManagerTest {
 
 		// A main part of the test is to check the below call happens
 		expect(dummyDatabase.register(providerUser, AuthenticationProvider.GOOGLE, someProviderUniqueUserId)).andReturn(someSegueUserId).atLeastOnce();
-		expect(dummyDatabase.getById(someSegueUserId)).andReturn(new User(someSegueUserId,"TestFirstName","testLastName","","","","", false, new Date()));
+		expect(dummyDatabase.getById(someSegueUserId)).andReturn(new User(someSegueUserId,"TestFirstName","testLastName","","","",new Date(), new Date()));
 		
 		// Expect a session to be created
 		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
