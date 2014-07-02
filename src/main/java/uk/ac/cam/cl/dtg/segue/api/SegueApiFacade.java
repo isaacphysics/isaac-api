@@ -14,7 +14,6 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -34,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
@@ -52,6 +50,14 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
+/**
+ * Segue Api Facade
+ * 
+ * This class specifically caters for the Rutherford physics server and is
+ * expected to provide extended functionality to the Segue api for use only on
+ * the Rutherford site.
+ * 
+ */
 @Path("/")
 public class SegueApiFacade {
 	private static final Logger log = LoggerFactory
@@ -59,7 +65,7 @@ public class SegueApiFacade {
 
 	private static ContentMapper mapper;
 
-	private static ContentVersionController contentVersionController; 
+	private static ContentVersionController contentVersionController;
 
 	private QuestionManager questionManager;
 
@@ -68,12 +74,22 @@ public class SegueApiFacade {
 	/**
 	 * Constructor that allows pre-configuration of the segue api.
 	 * 
+	 * @param properties
+	 *            - the fully configured properties loader for the api.
+	 * @param mapper
+	 *            - The Content mapper object used for polymorphic mapping of
+	 *            content objects.
 	 * @param segueConfigurationModule
+	 *            - The Guice DI configuration module.
+	 * @param contentVersionController
+	 *            - The content version controller used by the api.
 	 */
 	@Inject
-	public SegueApiFacade(PropertiesLoader properties, ContentMapper mapper,
-			@Nullable ISegueDTOConfigurationModule segueConfigurationModule,
-			ContentVersionController contentVersionController) {
+	public SegueApiFacade(
+			final PropertiesLoader properties,
+			final ContentMapper mapper,
+			@Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
+			final ContentVersionController contentVersionController) {
 
 		this.properties = properties;
 		this.questionManager = new QuestionManager();
@@ -99,7 +115,8 @@ public class SegueApiFacade {
 		// made from segue. - Will add overhead
 		if (Boolean.parseBoolean(this.properties
 				.getProperty(Constants.FOLLOW_GIT_VERSION))) {
-			log.info("Segue just initialized - Sending content index request so that we can service some content requests.");
+			log.info("Segue just initialized - Sending content index request "
+					+ "so that we can service some content requests.");
 			this.synchroniseDataStores();
 		}
 	}
@@ -107,92 +124,51 @@ public class SegueApiFacade {
 	// @POST
 	// @Path("log")
 	// @Produces("application/json")
-	public ImmutableMap<String, Boolean> postLog(
-			@Context HttpServletRequest req,
-			@FormParam("sessionId") String sessionId,
-			@FormParam("cookieId") String cookieId,
-			@FormParam("event") String eventJSON) {
-
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		ILogManager logPersistenceManager = injector
-				.getInstance(ILogManager.class);
-
-		boolean success = logPersistenceManager.log(sessionId, cookieId,
-				eventJSON);
-
-		return ImmutableMap.of("success", success);
-	}
-
-	/**
-	 * This method specifically uses mongodb to save content objects
-	 * 
-	 * @deprecated content objects are no longer saved in mongodb
-	 * @param docJson
-	 * @return
-	 */
-	// @POST
-	// @Produces("application/json")
-	// @Path("content/save")
-	// @Deprecated
-	@Deprecated
-	public Response contentSave(@FormParam("doc") String docJson) {
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector
-				.getInstance(IContentManager.class);
-
-		ContentMapper mapper = injector.getInstance(ContentMapper.class);
-
-		log.info("INSERTING DOC: " + docJson);
-
-		String newId = null;
-		try {
-			Content cnt = mapper.load(docJson);
-
-			newId = contentPersistenceManager.save(cnt);
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-			return Response.serverError()
-					.entity(ImmutableMap.of("error", e.toString())).build();
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-			return Response.serverError()
-					.entity(ImmutableMap.of("error", e.toString())).build();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return Response.serverError()
-					.entity(ImmutableMap.of("error", e.toString())).build();
-		}
-
-		if (newId != null)
-			return Response
-					.ok()
-					.entity(ImmutableMap
-							.of("result", "success", "newId", newId)).build();
-		else
-			return Response
-					.serverError()
-					.entity(ImmutableMap.of("error",
-							"No new Id was assigned by the database")).build();
-	}
+	// public ImmutableMap<String, Boolean> postLog(
+	// @Context final HttpServletRequest req,
+	// @FormParam("sessionId") final String sessionId,
+	// @FormParam("cookieId") final String cookieId,
+	// @FormParam("event") final String eventJSON) {
+	//
+	// Injector injector = Guice
+	// .createInjector(new SegueGuiceConfigurationModule());
+	// ILogManager logPersistenceManager = injector
+	// .getInstance(ILogManager.class);
+	//
+	// boolean success = logPersistenceManager.log(sessionId, cookieId,
+	// eventJSON);
+	//
+	// return ImmutableMap.of("success", success);
+	// }
 
 	/**
-	 * GetContentById from the database
+	 * GetContentById from the database.
 	 * 
 	 * Routing endpoint: this method will either return results from one of the
 	 * following: getContentByTags getContentByType
 	 * 
 	 * @param version
-	 * @return Response object containing the list of content objects.
+	 *            - version of the content to use.
+	 * @param tags
+	 *            - Optional parameter for tags to search for.
+	 * @param type
+	 *            - Optional type parameter.
+	 * @param startIndex
+	 *            - Start index for results set.
+	 * @param limit
+	 *            - integer representing the maximum number of results to
+	 *            return.
+	 * @return Response object containing a ResultsWrapper
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("content/{version}")
-	public Response getContentList(@PathParam("version") String version,
-			@QueryParam("tags") String tags, @QueryParam("type") String type,
-			@QueryParam("start_index") String startIndex,
-			@QueryParam("limit") String limit) {
+	public final Response getContentList(
+			@PathParam("version") final String version,
+			@QueryParam("tags") final String tags,
+			@QueryParam("type") final String type,
+			@QueryParam("start_index") final String startIndex,
+			@QueryParam("limit") final String limit) {
 
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch = Maps
 				.newHashMap();
@@ -227,11 +203,10 @@ public class SegueApiFacade {
 
 			return Response.ok().entity(c).build();
 		} catch (NumberFormatException e) {
-			return new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"Unable to convert one of the integer parameters provided into numbers. Params provided were: limit"
-							+ limit + " and startIndex " + startIndex, e)
-					.toResponse();
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Unable to convert one of the integer parameters provided into numbers. "
+							+ "Params provided were: limit" + limit
+							+ " and startIndex " + startIndex, e).toResponse();
 		}
 	}
 
@@ -248,15 +223,16 @@ public class SegueApiFacade {
 	 * @return Response containing a list of content or a Response containing
 	 *         null if none found.
 	 */
-	public ResultsWrapper<Content> findMatchingContent(
+	public final ResultsWrapper<Content> findMatchingContent(
 			String version,
-			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			@Nullable Integer startIndex, @Nullable Integer limit) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		if (null == version)
+		if (null == version) {
 			version = contentVersionController.getLiveVersion();
+		}
 
 		if (null == limit) {
 			limit = Constants.DEFAULT_SEARCH_LIMIT;
@@ -297,7 +273,7 @@ public class SegueApiFacade {
 	 * @return Response containing a list of content or a Response containing
 	 *         null if none found.
 	 */
-	public ResultsWrapper<Content> findMatchingContentRandomOrder(
+	public final ResultsWrapper<Content> findMatchingContentRandomOrder(
 			String version,
 			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) {
@@ -333,7 +309,7 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * GetContentById from the database
+	 * GetContentById from the database.
 	 * 
 	 * Currently this method will return a single Json Object containing all of
 	 * the fields available to the object retrieved from the database.
@@ -348,7 +324,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/{version}/{id}")
-	public Response getContentById(@PathParam("version") String version,
+	public final Response getContentById(@PathParam("version") String version,
 			@PathParam("id") String id) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
@@ -390,7 +366,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags")
-	public Response getTagListByLiveVersion() {
+	public final Response getTagListByLiveVersion() {
 		return this.getTagListByVersion(contentVersionController
 				.getLiveVersion());
 	}
@@ -406,7 +382,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags/{version}")
-	public Response getTagListByVersion(@PathParam("version") String version) {
+	public final Response getTagListByVersion(@PathParam("version") final String version) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -453,22 +429,22 @@ public class SegueApiFacade {
 		String mimeType = MediaType.WILDCARD;
 
 		switch (Files.getFileExtension(path).toLowerCase()) {
-		case "svg": {
-			mimeType = "image/svg+xml";
-			break;
-		}
-		case "jpg": {
-			mimeType = "image/jpeg";
-			break;
-		}
-		default: {
-			// if it is an unknown type return an error as they shouldn't be
-			// using this endpoint.
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.BAD_REQUEST, "Invalid file extension requested");
-			log.debug(error.getErrorMessage());
-			return error.toResponse();
-		}
+			case "svg": {
+				mimeType = "image/svg+xml";
+				break;
+			}
+			case "jpg": {
+				mimeType = "image/jpeg";
+				break;
+			}
+			default: {
+				// if it is an unknown type return an error as they shouldn't be
+				// using this endpoint.
+				SegueErrorResponse error = new SegueErrorResponse(
+						Status.BAD_REQUEST, "Invalid file extension requested");
+				log.debug(error.getErrorMessage());
+				return error.toResponse();
+			}
 		}
 
 		try {
@@ -502,7 +478,7 @@ public class SegueApiFacade {
 	 * This method will allow the live version served by the site to be changed
 	 * TODO: Maybe some security???!
 	 * 
-	 * @param version
+	 * @param version - version to use as updated version of content store.
 	 * @return Success shown by returning the new liveSHA or failed message
 	 *         "Invalid version selected".
 	 */
@@ -510,7 +486,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/live_version/{version}")
 	public final synchronized Response changeLiveVersion(
-			@PathParam("version") String version) {
+			@PathParam("version") final String version) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -534,9 +510,9 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method returns all versions as an immutable map version_list: []
+	 * This method returns all versions as an immutable map version_list. 
 	 * 
-	 * @param This
+	 * @param limit
 	 *            parameter if not null will set the limit of the number entries
 	 *            to return the default is the latest 10 (indices starting at
 	 *            0).
@@ -546,7 +522,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions")
-	public final Response getVersionsList(@QueryParam("limit") String limit) {
+	public final Response getVersionsList(@QueryParam("limit") final String limit) {
 		// try to parse the integer
 		Integer limitAsInt = null;
 
@@ -588,7 +564,8 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result 
+			= new ImmutableMap.Builder<String, Collection<String>>()
 				.put("version_list", limitedVersions).build();
 
 		return Response.ok().entity(result).build();
@@ -616,7 +593,7 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method return a json response containing version related information
+	 * This method return a json response containing version related information.
 	 * 
 	 * @return a version info as json response
 	 */
@@ -627,7 +604,8 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result 
+			= new ImmutableMap.Builder<String, Collection<String>>()
 				.put("cached_versions",
 						contentPersistenceManager.getCachedVersionList())
 				.build();
@@ -807,12 +785,19 @@ public class SegueApiFacade {
 		return Response.ok(searchResults).build();
 	}
 
+	/**
+	 * Answer a question.
+	 * 
+	 * @param questionId that you are attempting
+	 * @param jsonAnswer - answer body.
+	 * @return Response containing a QuestionValidationResponse object.
+	 */
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces("application/json")
 	@Path("questions/{question_id}/answer")
-	public Response answerQuestion(@PathParam("question_id") String questionId,
-			String jsonAnswer) {
+	public final Response answerQuestion(@PathParam("question_id") final String questionId,
+			final String jsonAnswer) {
 		Content contentBasedOnId = contentVersionController.getContentManager()
 				.getById(questionId, contentVersionController.getLiveVersion());
 
@@ -837,18 +822,14 @@ public class SegueApiFacade {
 			answersFromClient.add(answerFromClient);
 		} catch (JsonMappingException | JsonParseException e) {
 			log.info("Failed to map to any expected input...", e);
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.NOT_FOUND,
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Unable to map response to a "
-					+ "Choice object so failing with an error",
-					e);
+							+ "Choice object so failing with an error", e);
 			return error.toResponse();
 		} catch (IOException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.NOT_FOUND,
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Unable to map response to a "
-					+ "Choice object so failing with an error",
-					e);
+							+ "Choice object so failing with an error", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
@@ -920,7 +901,8 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps

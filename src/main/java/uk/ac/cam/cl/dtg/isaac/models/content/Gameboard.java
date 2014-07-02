@@ -7,8 +7,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import uk.ac.cam.cl.dtg.isaac.app.Constants;
 
 public class Gameboard {
@@ -16,10 +14,8 @@ public class Gameboard {
 
 	private String id;
 	private List<GameboardItem> gameboardItems;
-	private Date creationDate;
-
-	@JsonIgnore
 	private Wildcard wildCard;
+	private Date creationDate;
 
 	public Gameboard() {
 		this.gameboardItems = new ArrayList<GameboardItem>();
@@ -66,5 +62,4 @@ public class Gameboard {
 	public void setWildCard(Wildcard wildCard) {
 		this.wildCard = wildCard;
 	}
-
 }

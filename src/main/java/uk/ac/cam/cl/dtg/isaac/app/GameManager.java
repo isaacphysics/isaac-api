@@ -30,17 +30,28 @@ import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.app.Constants.*;
 
+/**
+ * This class will be responsible for generating and managing gameboards used by
+ * users.
+ * 
+ */
 public class GameManager {
-	private static final Logger log = LoggerFactory
-			.getLogger(GameManager.class);
+	private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 	private final SegueApiFacade api;
 
-	public GameManager(SegueApiFacade api) {
+	/**
+	 * Creates a game manager that operates using the provided api.
+	 * 
+	 * @param api
+	 *            - the api that the game manager can use.
+	 */
+	public GameManager(final SegueApiFacade api) {
 		this.api = api;
 	}
 
 	/**
 	 * Generate a random gameboard without any filter conditions specified.
+	 * 
 	 * @see generateRandomGambeoard
 	 * @return gameboard containing random problems.
 	 */
@@ -71,7 +82,9 @@ public class GameManager {
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<String> levelsList,
 			final List<String> conceptsList) {
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
+			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+		
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
 				Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays
 				.asList(QUESTION_TYPE));
@@ -102,8 +115,7 @@ public class GameManager {
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
 			Mapper mapper = injector.getInstance(Mapper.class);
-			List<GameboardItem> gameboardReadyQuestions 
-				= new ArrayList<GameboardItem>();
+			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
 			// Map each Content object into an IsaacQuestionInfo object
 			for (Content c : questionsForGameboard) {
@@ -120,7 +132,6 @@ public class GameManager {
 		}
 	}
 
-	
 	public boolean storeGameboard(final Gameboard gameboardToStore) {
 		// TODO: stub
 		return false;
@@ -130,7 +141,7 @@ public class GameManager {
 		// TODO: stub
 		return null;
 	}
-
+	
 	/**
 	 * Helper method to generate field to match requirements for search queries
 	 * (specialised for isaac-filtering rules)
@@ -138,13 +149,17 @@ public class GameManager {
 	 * This method will decide what should be AND and what should be OR based on
 	 * the field names used.
 	 * 
-	 * @param fieldsToMatch
+	 * @param subjects from filter
+	 * @param fields from filter
+	 * @param topics from filter
+	 * @param levels from filter
+	 * @param concepts from filter
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateFieldToMatchForQuestionFilter(
-			List<String> subjects, List<String> fields, List<String> topics,
-			List<String> levels, List<String> concepts)
-			throws IllegalArgumentException {
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	generateFieldToMatchForQuestionFilter(
+			final List<String> subjects, final List<String> fields, final List<String> topics,
+			final List<String> levels, final List<String> concepts) {
 		// Validate that the field sizes are as we expect for tags
 		// Check that the query provided adheres to the rules we expect
 		if (!validateFilterQuery(subjects, fields, topics, levels, concepts)) {
@@ -217,7 +232,7 @@ public class GameManager {
 	}
 
 	/**
-	 * Currently only validates subjects, fields and topics
+	 * Currently only validates subjects, fields and topics.
 	 * 
 	 * @param subjects
 	 *            - multiple subjects are only ok if there are not any fields or
@@ -239,10 +254,12 @@ public class GameManager {
 		if (null == subjects && null == fields && null == topics) {
 			return true;
 		} else if (null == subjects && (null != fields || null != topics)) {
-			log.warn("Error validating query: You cannot have a null subject and still specify fields or topics.");
+			log.warn("Error validating query: You cannot have a "
+					+ "null subject and still specify fields or topics.");
 			return false;
 		} else if (null != subjects && null == fields && null != topics) {
-			log.warn("Error validating query: You cannot have a null field and still specify subject and topics.");
+			log.warn("Error validating query: You cannot have a null field"
+					+ " and still specify subject and topics.");
 			return false;
 		}
 
