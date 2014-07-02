@@ -7,12 +7,17 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Data Object to represent a user has linked their local account to an external 
+ * authenticators account.
+ *
+ */
 public class LinkedAccount {
 
 	private String _id;
 	private String localUserId;
 	private AuthenticationProvider provider;
-	private String providerId;
+	private String providerUserId;
 
 	public LinkedAccount() {
 
@@ -22,22 +27,22 @@ public class LinkedAccount {
 	public LinkedAccount(@JsonProperty("_id") String _id,
 			@JsonProperty("localUserId") String localUserId,
 			@JsonProperty("provider") AuthenticationProvider provider,
-			@JsonProperty("providerId") String providerId) {
+			@JsonProperty("providerId") String providerUserId) {
 		this._id = _id;
 		this.localUserId = localUserId;
 		this.provider = provider;
-		this.providerId = providerId;
+		this.providerUserId = providerUserId;
 	}
 
 	@JsonProperty("_id")
 	@ObjectId
-	public String get_id() {
+	public String getId() {
 		return _id;
 	}
 
 	@JsonProperty("_id")
 	@ObjectId
-	public void set_id(String _id) {
+	public void setId(String _id) {
 		this._id = _id;
 	}
 
@@ -49,12 +54,12 @@ public class LinkedAccount {
 		this.provider = provider;
 	}
 
-	public String getProviderId() {
-		return providerId;
+	public String getProviderUserId() {
+		return providerUserId;
 	}
 
-	public void setProviderID(String providerId) {
-		this.providerId = providerId;
+	public void setProviderUserId(String providerUserId) {
+		this.providerUserId = providerUserId;
 	}
 
 	public String getLocalUserId() {

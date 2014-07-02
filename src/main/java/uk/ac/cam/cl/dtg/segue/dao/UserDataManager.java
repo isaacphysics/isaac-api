@@ -11,6 +11,10 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
+/**
+ * This class is responsible for managing and persisting user data.
+ *
+ */
 public class UserDataManager implements IUserDataManager {
 
 	private final DB database;
@@ -62,15 +66,15 @@ public class UserDataManager implements IUserDataManager {
 
 	/**
 	 * This method expects the linked account object to not have a local user id
-	 * set but to have a provider and provider id
+	 * set but to have a provider and provider id.
 	 * 
 	 * @param account
-	 * @return
+	 * @return the local user details for the user specified. Or null if we don't know about them. 
 	 */
 	@Override
 	public User getByLinkedAccount(AuthenticationProvider provider,
-			String providerId) {
-		if (null == provider || null == providerId) {
+			String providerUserId) {
+		if (null == provider || null == providerUserId) {
 			return null;
 		}
 
@@ -80,10 +84,11 @@ public class UserDataManager implements IUserDataManager {
 
 		LinkedAccount linkAccount = jc.findOne(DBQuery.and(
 				DBQuery.is("provider", provider),
-				DBQuery.is("providerId", providerId)));
+				DBQuery.is("providerUserId", providerUserId)));
 
-		if (null == linkAccount)
+		if (null == linkAccount) {
 			return null;
+		}
 
 		return this.getById(linkAccount.getLocalUserId());
 	}

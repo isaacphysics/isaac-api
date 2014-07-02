@@ -502,14 +502,13 @@ public class UserManager {
 	 *            from authentication provider
 	 * @param provider
 	 *            information
-	 * @param providerId
+	 * @param providerUserId
 	 *            - unique id of provider.
 	 * @return The localUser account user id of the user after registration.
 	 */
 	private String registerUser(final User user,
-			final AuthenticationProvider provider, final String providerId) {
-		// TODO: do we really need a providerID too?
-		String userId = database.register(user, provider, providerId);
+			final AuthenticationProvider provider, final String providerUserId) {
+		String userId = database.register(user, provider, providerUserId);
 		return userId;
 	}
 

@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import java.util.Date;
+import java.util.List;
+
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -20,6 +22,8 @@ public class User {
 	private String school;
 	private Date dateOfBirth;
 	private Date registrationDate;
+	
+	private List<LinkedAccount> linkedAccounts;
 
 	/**
 	 * Full constructor for the User object.
@@ -32,6 +36,7 @@ public class User {
 	 * @param school - unique school identifier.
 	 * @param dateOfBirth - date of birth to help with monitoring
 	 * @param registrationTime - date of registration
+	 * @param linkedAccounts - the list of linked authentication provider accounts.
 	 */
 	@JsonCreator
 	public User(@JsonProperty("_id") final String databaseId,
@@ -41,7 +46,8 @@ public class User {
 			@JsonProperty("role") final String role,
 			@JsonProperty("school") final String school,
 			@JsonProperty("dateOfBirth") final Date dateOfBirth,
-			@JsonProperty("registrationTime") final Date registrationTime) {
+			@JsonProperty("registrationTime") final Date registrationTime,
+			@JsonProperty("linkedAccounts") final List<LinkedAccount> linkedAccounts) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -50,6 +56,7 @@ public class User {
 		this.school = school;
 		this.dateOfBirth = dateOfBirth;
 		this.registrationDate = registrationTime;
+		this.linkedAccounts = linkedAccounts;
 	}
 
 	/**
@@ -140,5 +147,13 @@ public class User {
 	 */
 	public final Date getRegistrationTime() {
 		return registrationDate;
+	}
+	
+	/**
+	 * Gets the list of linked accounts for this user.
+	 * @return list of linked accounts.
+	 */
+	public final List<LinkedAccount> getLinkedAccounts() {
+		return linkedAccounts;
 	}
 }
