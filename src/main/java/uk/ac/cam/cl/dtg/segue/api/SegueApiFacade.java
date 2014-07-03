@@ -572,6 +572,22 @@ public class SegueApiFacade {
 	}
 
 	/**
+	 * Gets the current version of the segue application.
+	 *  
+	 * @return segue version as a string wrapped in a response.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("info/segue_version")	
+	public final Response getSegueAppVersion() {
+		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
+				.put("segueVersion", this.properties.getProperty(Constants.SEGUE_APP_VERSION))
+				.build();
+		
+		return Response.ok(result).build();
+	}
+	
+	/**
 	 * This method return a json response containing version related
 	 * information.
 	 * 
@@ -585,8 +601,8 @@ public class SegueApiFacade {
 				.getContentManager();
 
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
-				.put("live_version", contentVersionController.getLiveVersion())
-				.put("latest_known_version",
+				.put("liveVersion", contentVersionController.getLiveVersion())
+				.put("latestKnownVersion",
 						contentPersistenceManager.getLatestVersionId()).build();
 
 		return Response.ok().entity(result).build();
@@ -606,7 +622,7 @@ public class SegueApiFacade {
 
 		ImmutableMap<String, Collection<String>> result 
 			= new ImmutableMap.Builder<String, Collection<String>>()
-				.put("cached_versions",
+				.put("cachedVersions",
 						contentPersistenceManager.getCachedVersionList())
 				.build();
 
