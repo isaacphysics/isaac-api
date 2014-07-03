@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
@@ -86,15 +88,29 @@ public class UserManager {
 	 *            - http request that we can attach the session to.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @return A response containing a user object or a redirect URI to the
+	 * @param redirectUrl - optional redirect Url for when authentication has completed.           
+	 * @return A response redirecting the user to their redirect url or a redirect URI to the
 	 *         authentication provider if authorization / login is required.
 	 */
 	public final Response authenticate(final HttpServletRequest request,
-			final String provider) {
+			final String provider, @Nullable final String redirectUrl) {
+		// set redirect url as a session attribute so we can pick it up when call back happens.
+		if (redirectUrl != null) {
+			this.storeRedirectUrl(request, redirectUrl);
+		} else {
+			this.storeRedirectUrl(request, "/");
+		}
+		
 		// get the current user based on their session id information.
 		User currentUser = getCurrentUser(request);
 		if (null != currentUser) {
-			return Response.ok().entity(currentUser).build();
+			try {
+				return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+			} catch (URISyntaxException e) {
+				log.error("Redirect URL is not valid for provider " + provider, e);
+				return new SegueErrorResponse(Status.BAD_REQUEST, 
+						"Bad authentication redirect url received.", e).toResponse();
+			}
 		}
 
 		// Ok we don't have a current user so now we have to go ahead and try
@@ -175,7 +191,7 @@ public class UserManager {
 	 *            - http response for the user.
 	 * @param provider
 	 *            - the provider who has just authenticated the user.
-	 * @return Response containing the populated user DTO.
+	 * @return Response redirecting the user to their redirect url.
 	 */
 	public final Response authenticateCallback(
 			final HttpServletRequest request,
@@ -185,7 +201,13 @@ public class UserManager {
 		if (null != currentUser) {
 			log.info("We already have a cookie set with a valid user. "
 					+ "We won't proceed with authentication callback logic.");
-			return Response.ok().entity(currentUser).build();
+			try {
+				return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+			} catch (URISyntaxException e) {
+				log.error("Redirect URL is not valid for provider " + provider, e);
+				return new SegueErrorResponse(Status.BAD_REQUEST, 
+						"Bad authentication redirect url received.", e).toResponse();
+			}
 		}
 
 		// Ok we don't have a current user so now we have to go ahead and try
@@ -223,7 +245,8 @@ public class UserManager {
 			// this again for a while.
 			this.createSession(request, localUserInformation.getDbId());
 
-			return Response.ok(localUserInformation).build();
+			return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+
 		} catch (IllegalArgumentException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
@@ -263,6 +286,10 @@ public class UserManager {
 					Status.UNAUTHORIZED, e.getMessage());
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
+		} catch (URISyntaxException e) {
+			log.error("Redirect URL is not valid for provider " + provider, e);
+			return new SegueErrorResponse(Status.BAD_REQUEST, 
+					"Bad authentication redirect url received.", e).toResponse();
 		}
 	}
 
@@ -649,5 +676,32 @@ public class UserManager {
 			throw new AuthenticationCodeException(
 					"User denied access to our app.");
 		}
+	}
+	
+	/**
+	 * Helper method to store a redirect url for a user going through external authentication. 
+	 * @param request - the request to store the session variable in.
+	 * @param url - the url that the user wishes to be redirected to.
+	 */
+	private void storeRedirectUrl(final HttpServletRequest request, final String url) {
+		request.getSession().setAttribute("auth_redirect",
+				url);
+	}
+	
+	/**
+	 * Helper method to retrieve the users redirect url from their session.
+	 * 
+	 * @param request - the request where the redirect url is stored (session variable).
+	 * @return the URI containing the users desired uri.
+	 * @throws URISyntaxException - if the session retrieved is an invalid URI.
+	 */
+	private URI loadRedirectUrl(final HttpServletRequest request) throws URISyntaxException {
+		String url = (String) request.getSession().getAttribute("auth_redirect");
+		request.getSession().removeAttribute("auth_redirect");
+		if (null == url) {
+			return new URI("/");
+		}
+		
+		return new URI(url);
 	}
 }

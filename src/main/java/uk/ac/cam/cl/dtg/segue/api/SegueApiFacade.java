@@ -664,6 +664,7 @@ public class SegueApiFacade {
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
+	 * @param redirectUrl - optional redirect url after authentication has completed.            
 	 * @return Redirect response to the auth providers site.
 	 */
 	@GET
@@ -671,7 +672,9 @@ public class SegueApiFacade {
 	@Path("auth/{provider}/authenticate")
 	public final Response authenticationInitialisation(
 			@Context final HttpServletRequest request,
-			@PathParam("provider") final String signinProvider) {
+			@PathParam("provider") final String signinProvider,
+			@QueryParam("redirect") final String redirectUrl) {
+		
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
@@ -683,7 +686,7 @@ public class SegueApiFacade {
 		}
 
 		// ok we need to hand over to user manager
-		return userManager.authenticate(request, signinProvider);
+		return userManager.authenticate(request, signinProvider, redirectUrl);
 	}
 
 	/**
@@ -709,16 +712,7 @@ public class SegueApiFacade {
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
-		userManager.authenticateCallback(request, response, signinProvider);
-
-		String returnUrl = "http://"
-				+ this.properties.getProperty(Constants.HOST_NAME)
-				+ this.properties
-						.getProperty(Constants.DEFAULT_LANDING_URL_SUFFIX);
-
-		// TODO: work out where the user was and send them there instead? Or
-		// allow front end to manage this?
-		return Response.temporaryRedirect(URI.create(returnUrl)).build();
+		return userManager.authenticateCallback(request, response, signinProvider);
 	}
 
 	/**
