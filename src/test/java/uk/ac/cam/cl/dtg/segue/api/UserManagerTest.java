@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.*;
 
@@ -149,15 +150,17 @@ public class UserManagerTest {
 		String someInvalidProvider = "BAD_PROVIDER!!";
 		int expectedResponseCode = 400;
 		
-		expect(request.getSession()).andReturn(dummySession);
+		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
+		expectLastCall().atLeastOnce();
 		
 		replay(dummySession);
 		replay(request);
 		replay(dummyDatabase);
 		
 		// Act
-		Response r = userManager.authenticate(request, someInvalidProvider);
+		Response r = userManager.authenticate(request, someInvalidProvider, "/");
 
 		// Assert
 		assertTrue(r.getStatus() == expectedResponseCode);
@@ -178,11 +181,11 @@ public class UserManagerTest {
 		String someValidProviderString = "google";
 		int expectedResponseCode = 307;
 		
-		expect(request.getSession()).andReturn(dummySession).times(2);
+		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
-		
+
 		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
-		expectLastCall().once();
+		expectLastCall().atLeastOnce();
 		
 		replay(dummySession);
 		replay(request);
@@ -192,7 +195,7 @@ public class UserManagerTest {
 		replay(dummyGoogleAuth);
 		
 		// Act
-		Response r = userManager.authenticate(request, someValidProviderString);
+		Response r = userManager.authenticate(request, someValidProviderString,"/");
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
@@ -222,6 +225,7 @@ public class UserManagerTest {
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).atLeastOnce();
+		expect(dummySession.getAttribute("auth_redirect")).andReturn("/").atLeastOnce();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute("state")).andReturn(CSRF_Test_VALUE).atLeastOnce();
@@ -257,7 +261,8 @@ public class UserManagerTest {
 		dummySession.setAttribute(EasyMock.<String>anyObject(), EasyMock.<String>anyObject());
 		expectLastCall().atLeastOnce();
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
-
+		dummySession.removeAttribute(EasyMock.<String>anyObject());
+		
 		replay(dummySession);
 		replay(request);
 		replay(dummyGoogleAuth);
@@ -268,8 +273,7 @@ public class UserManagerTest {
 		
 		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
-		assertTrue(r.getEntity() instanceof User);
-		assertTrue(r.getEntity() != null);
+		assertTrue(r.getStatusInfo().equals(Status.TEMPORARY_REDIRECT));
 	}
 	
 	@Test
