@@ -684,9 +684,18 @@ public class SegueApiFacade {
 		if (null != currentUser) {
 			return Response.ok().entity(currentUser).build();
 		}
+		
+		String newRedirectUrl = null;
+		if (!redirectUrl.contains("http://")) {
+			// TODO: Make this redirection stuff less horrid.
+			newRedirectUrl = "http://" + this.properties.getProperty(Constants.HOST_NAME) 
+					+ redirectUrl;
+		} else {
+			newRedirectUrl = redirectUrl;
+		}
 
 		// ok we need to hand over to user manager
-		return userManager.authenticate(request, signinProvider, redirectUrl);
+		return userManager.authenticate(request, signinProvider, newRedirectUrl);
 	}
 
 	/**
