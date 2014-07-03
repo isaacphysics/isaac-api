@@ -645,7 +645,10 @@ public class SegueApiFacade {
 	 *            - the request which may contain session information.
 	 * @return Returns the current user DTO if we can get it or null if we can't
 	 */
-	public final User getCurrentUser(final HttpServletRequest request) {
+	@GET
+	@Produces("application/json")
+	@Path("users/current_user")
+	public final User getCurrentUser(@Context final HttpServletRequest request) {
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
