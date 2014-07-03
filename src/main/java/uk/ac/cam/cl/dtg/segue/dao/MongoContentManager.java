@@ -108,7 +108,7 @@ public class MongoContentManager implements IContentManager {
 
 	@Override
 	public ResultsWrapper<Content> searchForContent(String version,
-			String searchString) {
+			String searchString, Map<String, List<String>> typesToInclude) {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}

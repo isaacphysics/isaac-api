@@ -40,7 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
- * Implementation that specifically works with Content objects
+ * Implementation that specifically works with Content objects.
  * 
  */
 public class GitContentManager implements IContentManager {
@@ -49,17 +49,26 @@ public class GitContentManager implements IContentManager {
 
 	private static final String CONTENT_TYPE = "content";
 
-	private static final Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
-	private static final Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
-	private static final Map<String, Set<String>> tagsList = new ConcurrentHashMap<String, Set<String>>();
+	private static final Map<String, Map<String, Content>> gitCache 
+		= new ConcurrentHashMap<String, Map<String, Content>>();
+	private static final Map<String, Map<Content, List<String>>> indexProblemCache 
+		= new ConcurrentHashMap<String, Map<Content, List<String>>>();
+	private static final Map<String, Set<String>> tagsList 
+		= new ConcurrentHashMap<String, Set<String>>();
 
 	private final GitDb database;
 	private final ContentMapper mapper;
 	private final ISearchProvider searchProvider;
-
+	
+	/**
+	 * Constructor for instanciating a new Git Content Manager Object. 
+	 * @param database - that the content Manager manages.
+	 * @param searchProvider - search provider that the content manager manages and controls.
+	 * @param contentMapper - The utility class for mapping content objects.
+	 */
 	@Inject
-	public GitContentManager(GitDb database, ISearchProvider searchProvider,
-			ContentMapper contentMapper) {
+	public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
+			final ContentMapper contentMapper) {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
@@ -69,15 +78,13 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public <T extends Content> String save(T objectToSave)
-			throws IllegalArgumentException {
+	public final <T extends Content> String save(final T objectToSave) {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet - Git is a readonly data store at the moment.");
 	}
 
 	@Override
-	public Content getById(String id, String version)
-			throws IllegalArgumentException {
+	public final Content getById(final String id, final String version) {
 		if (null == id) {
 			return null;
 		}
@@ -97,11 +104,12 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> searchForContent(String version,
-			String searchString) {
+	public final ResultsWrapper<Content> searchForContent(final String version,
+			final String searchString,
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
 		if (this.ensureCache(version)) {
 			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
-					version, CONTENT_TYPE, searchString,
+					version, CONTENT_TYPE, searchString, fieldsThatMustMatch,
 					Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
 					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
 					Constants.CHILDREN_FIELDNAME);
@@ -130,16 +138,18 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> findByFieldNames(
-			String version,
+	public final ResultsWrapper<Content> findByFieldNames(
+			final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			Integer startIndex, Integer limit) {
+			final Integer startIndex, final Integer limit) {
 		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
 
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
 			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
+			Map<String, Constants.SortOrder> sortInstructions
+				= new HashMap<String, Constants.SortOrder>();
+
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "."
 					+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
 					Constants.SortOrder.ASC);
@@ -160,10 +170,10 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> findByFieldNamesRandomOrder(
-			String version,
+	public final ResultsWrapper<Content> findByFieldNamesRandomOrder(
+			final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			Integer startIndex, Integer limit) {
+			final Integer startIndex, final Integer limit) {
 		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
 
 		if (this.ensureCache(version)) {
@@ -183,14 +193,13 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ByteArrayOutputStream getFileBytes(String version, String filename)
-			throws IOException {
+	public final ByteArrayOutputStream getFileBytes(final String version,
+			final String filename) throws IOException {
 		return database.getFileByCommitSHA(version, filename);
 	}
 
 	@Override
-	public List<String> listAvailableVersions()
-			throws UnsupportedOperationException {
+	public final List<String> listAvailableVersions() {
 
 		List<String> result = new ArrayList<String>();
 		for (RevCommit rc : database.listCommits()) {
@@ -201,7 +210,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public boolean isValidVersion(String version) {
+	public final boolean isValidVersion(final String version) {
 		if (null == version || version.isEmpty()) {
 			return false;
 		}
@@ -210,7 +219,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public int compareTo(String version1, String version2) {
+	public final int compareTo(final String version1, final String version2) {
 		Validate.notBlank(version1);
 		Validate.notBlank(version2);
 
@@ -221,17 +230,17 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public String getLatestVersionId() throws UnsupportedOperationException {
+	public final String getLatestVersionId() {
 		return database.pullLatestFromRemote();
 	}
 
 	@Override
-	public Set<String> getCachedVersionList() {
+	public final Set<String> getCachedVersionList() {
 		return gitCache.keySet();
 	}
 
 	@Override
-	public void clearCache() {
+	public final void clearCache() {
 		log.info("Clearing Git content cache.");
 		gitCache.clear();
 		searchProvider.expungeEntireSearchCache();
@@ -239,7 +248,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public void clearCache(String version) {
+	public final void clearCache(final String version) {
 		Validate.notBlank(version);
 
 		if (gitCache.containsKey(version)) {
@@ -250,8 +259,8 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> getContentByTags(String version,
-			Set<String> tags) {
+	public final ResultsWrapper<Content> getContentByTags(final String version,
+			final Set<String> tags) {
 		if (null == version || null == tags) {
 			return null;
 		}
@@ -273,7 +282,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public Set<String> getTagsList(String version) {
+	public final Set<String> getTagsList(final String version) {
 		Validate.notBlank(version);
 
 		this.ensureCache(version);
@@ -287,7 +296,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public boolean ensureCache(String version) {
+	public final boolean ensureCache(final String version) {
 		if (!gitCache.containsKey(version)) {
 			if (database.verifyCommitExists(version)) {
 				log.info("Rebuilding cache as sha does not exist in hashmap");
@@ -313,7 +322,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public Map<Content, List<String>> getProblemMap(String version) {
+	public final Map<Content, List<String>> getProblemMap(final String version) {
 		return indexProblemCache.get(version);
 	}
 
@@ -324,14 +333,15 @@ public class GitContentManager implements IContentManager {
 	 * @param sha
 	 *            - the version in the git cache to send to the search provider.
 	 */
-	private synchronized void buildSearchIndexFromLocalGitIndex(String sha) {
+	private synchronized void buildSearchIndexFromLocalGitIndex(final String sha) {
 		if (!gitCache.containsKey(sha)) {
 			log.error("Unable to create search index as git cache does not exist locally");
 			return;
 		}
 
 		if (this.searchProvider.hasIndex(sha)) {
-			log.info("Search index has already been updated by another thread. No need to reindex. Aborting...");
+			log.info("Search index has already been updated by"
+					+ " another thread. No need to reindex. Aborting...");
 			return;
 		}
 
@@ -346,7 +356,8 @@ public class GitContentManager implements IContentManager {
 						objectMapper.writeValueAsString(content),
 						content.getId());
 			} catch (JsonProcessingException e) {
-				log.error("Unable to serialize content object for indexing with the search provider.");
+				log.error("Unable to serialize content object "
+						+ "for indexing with the search provider.");
 				e.printStackTrace();
 			}
 		}
@@ -360,8 +371,9 @@ public class GitContentManager implements IContentManager {
 	 * Currently it only looks for json files in the repository.
 	 * 
 	 * @param sha
+	 *            - the version to index.
 	 */
-	private synchronized void buildGitContentIndex(String sha) {
+	private synchronized void buildGitContentIndex(final String sha) {
 		// This set of code only needs to happen if we have to read from git
 		// again.
 		if (null != sha && gitCache.get(sha) == null) {
@@ -504,11 +516,15 @@ public class GitContentManager implements IContentManager {
 	 * content such that they are unique to the page by default.
 	 * 
 	 * @param content
+	 *            - content to augment
 	 * @param canonicalSourceFile
+	 *            - source file to add to child content
+	 * @param parentId
+	 *            - used to construct nested ids for child elements.
 	 * @return Content object with new reference
 	 */
-	private Content augmentChildContent(Content content,
-			String canonicalSourceFile, @Nullable String parentId) {
+	private Content augmentChildContent(final Content content,
+			final String canonicalSourceFile, @Nullable final String parentId) {
 		if (null == content) {
 			return null;
 		}
@@ -523,8 +539,9 @@ public class GitContentManager implements IContentManager {
 		// Try to figure out the parent ids.
 		String newParentId = null;
 		if (null == parentId) {
-			if (content.getId() != null)
+			if (content.getId() != null) {
 				newParentId = content.getId();
+			}
 		} else {
 			newParentId = parentId + '.' + content.getId();
 		}
@@ -580,11 +597,11 @@ public class GitContentManager implements IContentManager {
 	 * references are valid. TODO: Convert this into a more useful method.
 	 * Currently it is a hack to flag bad references.
 	 * 
-	 * @param sha
+	 * @param sha version to validate integrity of.
 	 * @return True if we are happy with the integrity of the git repository,
 	 *         False if there is something wrong.
 	 */
-	private boolean validateReferentialIntegrity(String sha) {
+	private boolean validateReferentialIntegrity(final String sha) {
 		Set<Content> allObjectsSeen = new HashSet<Content>();
 
 		Set<String> expectedIds = new HashSet<String>();
@@ -602,8 +619,9 @@ public class GitContentManager implements IContentManager {
 		for (Content c : allObjectsSeen) {
 			// add the id to the list of defined ids if one is set for this
 			// content object
-			if (c.getId() != null)
+			if (c.getId() != null) {
 				definedIds.add(c.getId());
+			}
 
 			// add the ids to the list of expected ids if we see a list of
 			// referenced content
@@ -632,9 +650,10 @@ public class GitContentManager implements IContentManager {
 									+ f.getSrc()
 									+ " in Git. Could the reference be incorrect? SourceFile is "
 									+ c.getCanonicalSourceFile());
-				} else
+				} else {
 					log.debug("Verified image " + f.getSrc()
 							+ " exists in git.");
+				}
 			}
 		}
 

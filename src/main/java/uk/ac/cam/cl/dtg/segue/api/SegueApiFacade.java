@@ -785,6 +785,8 @@ public class SegueApiFacade {
 	 * 
 	 * @param searchString
 	 *            - to pass to the search engine.
+	 * @param types
+	 *            - a comma separated list of types to include in the search.           
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -792,13 +794,23 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("search/{searchString}")
 	public final Response search(
-			@PathParam("searchString") final String searchString) {
+			@PathParam("searchString") final String searchString,
+			@QueryParam("types") final String types) {
+
+		Map<String, List<String>> typesThatMustMatch = null;
+		
+		if (null != types) {
+			typesThatMustMatch = Maps.newHashMap();
+			typesThatMustMatch.put(Constants.TYPE_FIELDNAME,
+					Arrays.asList(types.split(",")));
+		}
+		
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
 		ResultsWrapper<Content> searchResults = contentPersistenceManager
 				.searchForContent(contentVersionController.getLiveVersion(),
-						searchString);
+						searchString, typesThatMustMatch);
 		// TODO: we probably only want to return summaries of content objects?
 
 		return Response.ok(searchResults).build();

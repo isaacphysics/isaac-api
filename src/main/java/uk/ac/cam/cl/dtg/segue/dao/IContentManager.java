@@ -10,73 +10,87 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
+/**
+ * Shared interface for content managers. This is to allow them to be backed by
+ * different databases.
+ * 
+ * @author Stephen Cummins
+ */
 public interface IContentManager {
 
-	public <T extends Content> String save(T objectToSave);
+	/**
+	 * Save an object to the content manager.
+	 * 
+	 * @param <T>
+	 *            - the type of the object being saved.
+	 * @param objectToSave
+	 *            - the object to save to the content Manager.
+	 * @return the objects id.
+	 */
+	<T extends Content> String save(T objectToSave);
 
 	/**
 	 * Goes to the configured Database and attempts to find a content item with
-	 * the specified ID
+	 * the specified ID.
 	 * 
-	 * @param unique
-	 *            id to search for in preconfigured data source
+	 * @param id
+	 *            id to search for in preconfigured data source.
+	 * @param version
+	 *            - the version to attempt to retrieve.
+	 * 
 	 * @return Will return a Content object (or subclass of Content) or Null if
-	 *         no content object is found
-	 * @throws Throws
-	 *             IllegalArgumentException if a mapping error occurs
+	 *         no content object is found.
 	 */
-	public Content getById(String id, String version);
-
+	Content getById(String id, String version);
+	
 	/**
-	 * Method to allow bulk search of content based on the type field
+	 * Method to allow bulk search of content based on the type field.
 	 * 
-	 * @param type
-	 *            - should match whatever is stored in the database
-	 * @param limit
-	 *            - limit the number of results returned - if null or 0 is
-	 *            provided no limit will be applied.
-	 * @return List of Content Objects or an empty list if none are found
+	 * @param version - version of the content to search.
+	 * @param fieldsToMatch - Map which is used for field matching.
+	 * @param startIndex - the index of the first item to return.
+	 * @param limit - the maximum number of results to return.
+	 * @return Results Wrapper containing results of the search.
 	 */
-	public ResultsWrapper<Content> findByFieldNames(
+	ResultsWrapper<Content> findByFieldNames(
 			String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit);
-
+	
 	/**
 	 * The same as findByFieldNames but the results list is returned in a
 	 * randomised order.
 	 * 
-	 * @see findByFieldNames
-	 * @param version
-	 * @param fieldsToMatch
-	 * @param startIndex
-	 * @param limit
-	 * @return Results wrapper containing the results or an empty list.
+	 * @param version - version of the content to search.
+	 * @param fieldsToMatch - Map which is used for field matching.
+	 * @param startIndex - the index of the first item to return.
+	 * @param limit - the maximum number of results to return.
+	 * @return Results Wrapper containing results of the search.
 	 */
-	public ResultsWrapper<Content> findByFieldNamesRandomOrder(
+	ResultsWrapper<Content> findByFieldNamesRandomOrder(
 			String version,
 			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit);
 
 	/**
 	 * Allows fullText search using the internal search provider.
-	 * 
-	 * @param version
-	 * @param searchString
+	 * @param version - version of the content to search.
+	 * @param searchString - string to use as search term.
+	 * @param typesToInclude - list of types to include i.e. type field must match.
 	 * @return list of results ordered by relevance.
 	 */
-	public ResultsWrapper<Content> searchForContent(String version,
-			String searchString);
+	ResultsWrapper<Content> searchForContent(String version,
+			String searchString, Map<String, List<String>> typesToInclude);
 
 	/**
-	 * Search for content by providing a set of tags
+	 * Search for content by providing a set of tags.
 	 * 
-	 * @param version
-	 * @param tags
+	 * @param version - version of the content to search.
+	 * @param tags - set of tags that must match search results.
 	 * @return Content objects that are associated with any of the tags
 	 *         specified.
 	 */
-	public ResultsWrapper<Content> getContentByTags(String version,
+	ResultsWrapper<Content> getContentByTags(String version,
 			Set<String> tags);
 
 	/**
@@ -87,10 +101,11 @@ public interface IContentManager {
 	 *            - The version of the content to retrieve
 	 * @param filename
 	 *            - The full path of the file you wish to retrieve.
-	 * @return The outputstream of the file contents
+	 * @return The output stream of the file contents
+	 * @throws IOException if failed IO occurs.
 	 */
-	public ByteArrayOutputStream getFileBytes(String version, String filename)
-			throws IOException;
+	ByteArrayOutputStream getFileBytes(String version, String filename)
+		throws IOException;
 
 	/**
 	 * Provide a list of all possible versions from the underlying database
@@ -98,17 +113,16 @@ public interface IContentManager {
 	 * This method will only work on IContentManagers that store snapshots with
 	 * attached version numbers.
 	 * 
-	 * @return
+	 * @return the list of available versions
 	 */
-	public List<String> listAvailableVersions()
-			throws UnsupportedOperationException;
+	List<String> listAvailableVersions();
 
 	/**
-	 * Get the latest version id from the data source
+	 * Get the latest version id from the data source.
 	 * 
-	 * @return
+	 * @return the latest version id
 	 */
-	public String getLatestVersionId() throws UnsupportedOperationException;
+	String getLatestVersionId();
 
 	/**
 	 * A utility method to instruct the content manager to evict ALL of its
@@ -118,26 +132,26 @@ public interface IContentManager {
 	 * occur if you do this.
 	 * 
 	 */
-	public void clearCache();
+	void clearCache();
 
 	/**
 	 * A utility method to instruct a content manager to evict a particular
 	 * version of the content from its caches. This includes data held within
 	 * its search providers.
 	 * 
-	 * @param version
+	 * @param version - version to dump the cache of.
 	 */
-	public void clearCache(String version);
+	void clearCache(String version);
 
 	/**
 	 * A method that will return an unordered set of tags registered for a
-	 * particular version of the content
+	 * particular version of the content.
 	 * 
-	 * @param version
+	 * @param version - version to look up tag list for.
 	 * @return A set of tags that have been already used in a particular version
 	 *         of the content
 	 */
-	public Set<String> getTagsList(String version);
+	Set<String> getTagsList(String version);
 
 	/**
 	 * Provides a Set of currently indexed and cached versions.
@@ -145,17 +159,17 @@ public interface IContentManager {
 	 * @return A set of all of the version id's which are currently available
 	 *         without reindexing.
 	 */
-	public Set<String> getCachedVersionList();
+	Set<String> getCachedVersionList();
 
 	/**
 	 * Utility method that will check whether a version number supplied
 	 * validates.
 	 * 
-	 * @param version
+	 * @param version - version to validate.
 	 * @return true if the version specified is valid and can potentially be
 	 *         indexed, false if it cannot.
 	 */
-	public boolean isValidVersion(String version);
+	boolean isValidVersion(String version);
 
 	/**
 	 * Will build the cache and search index, if necessary
@@ -166,26 +180,26 @@ public interface IContentManager {
 	 *            - version
 	 * @return True if version exists in cache, false if not
 	 */
-	public boolean ensureCache(String version);
+	boolean ensureCache(String version);
 
 	/**
 	 * This method will compare two versions to determine which is the newer.
 	 * 
-	 * @param version1
-	 * @param version2
+	 * @param version1 - Version 1 to compare.
+	 * @param version2 - Version 2 to compare.
 	 * 
 	 * @return a positive number if version1 is newer, zero if they are the
 	 *         same, and a negative number if version 2 is newer.
 	 */
-	public int compareTo(String version1, String version2);
+	int compareTo(String version1, String version2);
 
 	/**
-	 * Get the problem map for a particular version
+	 * Get the problem map for a particular version.
 	 * 
-	 * @param version
+	 * @param version - version of the content to get problem map for.
 	 * @return the map containing the content objects with problems and
 	 *         associated list of problem messages. Or null if there is no
 	 *         problem index.
 	 */
-	public Map<Content, List<String>> getProblemMap(String version);
+	Map<Content, List<String>> getProblemMap(String version);
 }

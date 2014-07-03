@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
@@ -37,9 +39,14 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
+import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
-
+/**
+ * A class that works as an adapter for ElasticSearch. 
+ * @author Stephen Cummins
+ *
+ */
 public class ElasticSearchProvider implements ISearchProvider {
 
 	private static final Logger log = LoggerFactory
@@ -50,22 +57,28 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 	private final Random randomNumberGenerator;
 
+	/**
+	 * Constructor for creating an instance of the ElasticSearchProvider Object.
+	 * 
+	 * @param searchClient
+	 *            - the client that the provider should be using.
+	 */
 	@Inject
-	public ElasticSearchProvider(Client searchClient) {
+	public ElasticSearchProvider(final Client searchClient) {
 		this.client = searchClient;
 		rawFieldsList = new ArrayList<String>();
 		this.randomNumberGenerator = new Random();
 	}
 
 	@Override
-	public boolean indexObject(final String index, final String indexType,
-			final String content) {
+	public final boolean indexObject(final String index,
+			final String indexType, final String content) {
 		return indexObject(index, indexType, content, null);
 	}
 
 	@Override
-	public boolean indexObject(String index, final String indexType,
-			String content, String uniqueId) {
+	public final boolean indexObject(final String index, final String indexType,
+			final String content, final String uniqueId) {
 		// check index already exists if not execute any initialisation steps.
 		if (!this.hasIndex(index)) {
 			this.sendMappingCorrections(index, indexType);
@@ -86,12 +99,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public ResultsWrapper<String> paginatedMatchSearch(
+	public final ResultsWrapper<String> paginatedMatchSearch(
 			final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			final int startIndex, int limit,
-			Map<String, Constants.SortOrder> sortInstructions) {
+			final int startIndex, final int limit,
+			final Map<String, Constants.SortOrder> sortInstructions) {
 
 		// build up the query from the fieldsToMatch map
 		BoolQueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
@@ -108,10 +121,11 @@ public class ElasticSearchProvider implements ISearchProvider {
 			// in order to do this we have to execute a search and then get the
 			// total hits back.
 			// this is a restriction on elastic search.
-			log.info("Setting limit to be the size of the result set... Unlimited search may cause performance issues");
-			limit = this.executeQuery(searchRequest).getTotalResults()
+			log.warn("Setting limit to be the size of the result set... "
+					+ "Unlimited search may cause performance issues");
+			int largerlimit = this.executeQuery(searchRequest).getTotalResults()
 					.intValue();
-			searchRequest.setSize(limit);
+			searchRequest.setSize(largerlimit);
 		}
 
 		searchRequest = addSortInstructions(searchRequest, sortInstructions);
@@ -120,7 +134,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public ResultsWrapper<String> randomisedPaginatedMatchSearch(
+	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(
 			final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
@@ -143,8 +157,9 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public ResultsWrapper<String> fuzzySearch(final String index,
+	public final ResultsWrapper<String> fuzzySearch(final String index,
 			final String indexType, final String searchString,
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch,
 			final String... fields) {
 		if (null == index || null == indexType || null == searchString
 				|| null == fields) {
@@ -152,15 +167,26 @@ public class ElasticSearchProvider implements ISearchProvider {
 			return null;
 		}
 
-		QueryBuilder query = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(
-				searchString);
+		BoolQueryBuilder query;
+		if (null != fieldsThatMustMatch) {
+			query = this.generateBoolMatchQuery(this
+					.convertToBoolMap(fieldsThatMustMatch));
+		} else {
+			query = QueryBuilders.boolQuery();
+		}
+
+		QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields)
+				.likeText(searchString);
+		query.must(fuzzyQuery);
+
 		ResultsWrapper<String> resultList = this.executeBasicQuery(index,
 				indexType, query);
+
 		return resultList;
 	}
 
 	@Override
-	public ResultsWrapper<String> termSearch(final String index,
+	public final ResultsWrapper<String> termSearch(final String index,
 			final String indexType, final Collection<String> searchTerms,
 			final String field) {
 		if (null == index || null == indexType || null == searchTerms
@@ -177,12 +203,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public boolean expungeEntireSearchCache() {
+	public final boolean expungeEntireSearchCache() {
 		return this.expungeIndexFromSearchCache("_all");
 	}
 
 	@Override
-	public boolean expungeIndexFromSearchCache(final String index) {
+	public final boolean expungeIndexFromSearchCache(final String index) {
 		Validate.notBlank(index);
 
 		try {
@@ -203,12 +229,15 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * an Elastic Search cluster.
 	 * 
 	 * @param clusterName
+	 *            - the name of the cluster to connect to.
 	 * @param address
+	 *            - address of the cluster to connect to.
 	 * @param port
+	 *            - port that the cluster is running on.
 	 * @return Defaults to http client creation.
 	 */
-	public static Client getTransportClient(String clusterName, String address,
-			int port) {
+	public static Client getTransportClient(final String clusterName,
+			final String address, final int port) {
 		Settings settings = ImmutableSettings.settingsBuilder()
 				.put("cluster.name", clusterName).build();
 		TransportClient transportClient = new TransportClient(settings);
@@ -219,47 +248,66 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public boolean hasIndex(final String index) {
+	public final boolean hasIndex(final String index) {
 		Validate.notNull(index);
 		return client.admin().indices().exists(new IndicesExistsRequest(index))
 				.actionGet().isExists();
 	}
 
 	@Override
-	public void registerRawStringFields(List<String> fieldNames) {
+	public final void registerRawStringFields(final List<String> fieldNames) {
 		this.rawFieldsList.addAll(fieldNames);
 	}
 
+	/**
+	 * Utility method to convert sort instructions form external classes into
+	 * something Elastic search can use.
+	 * 
+	 * @param searchRequest
+	 *            - the request to be augmented.
+	 * @param sortInstructions
+	 *            - the instructions to augment.
+	 * @return the augmented search request with sort instructions included.
+	 */
 	private SearchRequestBuilder addSortInstructions(
-			SearchRequestBuilder searchRequest,
-			Map<String, Constants.SortOrder> sortInstructions) {
+			final SearchRequestBuilder searchRequest,
+			final Map<String, Constants.SortOrder> sortInstructions) {
 		// deal with sorting of results
 		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions
 				.entrySet()) {
 			String sortField = entry.getKey();
 			Constants.SortOrder sortOrder = entry.getValue();
 
-			if (sortOrder == Constants.SortOrder.ASC)
+			if (sortOrder == Constants.SortOrder.ASC) {
 				searchRequest.addSort(SortBuilders.fieldSort(sortField)
 						.order(SortOrder.ASC).missing("_last"));
 
-			else
+			} else {
 				searchRequest.addSort(SortBuilders.fieldSort(sortField)
 						.order(SortOrder.DESC).missing("_last"));
+			}
 		}
 
 		return searchRequest;
 	}
 
+	/**
+	 * Utility method to generate a BoolMatchQuery based on the parameters
+	 * provided.
+	 * 
+	 * @param fieldsToMatch
+	 *            - the fields that the bool query should match.
+	 * @return a bool query configured to match the fields to match.
+	 */
 	private BoolQueryBuilder generateBoolMatchQuery(
-			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch) {
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch) {
 		BoolQueryBuilder query = QueryBuilders.boolQuery();
 
 		// This Set will allow us to calculate the minimum should match value -
 		// it is assumed that for each or'd field there should be a match
 		Set<String> shouldMatchSet = Sets.newHashSet();
-		for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> pair : fieldsToMatch
-				.entrySet()) {
+		for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> pair 
+				: fieldsToMatch.entrySet()) {
 			// extract the MapEntry which contains a key value pair of the
 			// operator and the list of operands to match against.
 			Constants.BooleanOperator operatorForThisField = pair.getKey()
@@ -282,7 +330,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 				}
 
 			} else {
-				log.warn("Null argument received in paginated match search... This is not usually expected. Ignoring it and continuing anyway.");
+				log.warn("Null argument received in paginated match search... "
+						+ "This is not usually expected. Ignoring it and continuing anyway.");
 			}
 		}
 		return query;
@@ -296,8 +345,11 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * searches with fewer results e.g. by id.
 	 * 
 	 * @param index
+	 *            - search index to execute the query against.
 	 * @param indexType
+	 *            - index type to execute the query against.
 	 * @param query
+	 *            - the query to run.
 	 * 
 	 * @return list of the search results
 	 */
@@ -312,13 +364,14 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	/**
-	 * A general method for getting the results of a search
+	 * A general method for getting the results of a search.
 	 * 
 	 * @param configuredSearchRequestBuilder
+	 *            - the search request to send to the cluster.
 	 * @return List of the search results.
 	 */
 	private ResultsWrapper<String> executeQuery(
-			SearchRequestBuilder configuredSearchRequestBuilder) {
+			final SearchRequestBuilder configuredSearchRequestBuilder) {
 		SearchResponse response = configuredSearchRequestBuilder.execute()
 				.actionGet();
 
@@ -343,7 +396,9 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * ElasticSearch having messed with it.
 	 * 
 	 * @param index
+	 *            - index to send the mapping corrections to.
 	 * @param indexType
+	 *            - type to send the mapping corrections to.
 	 */
 	private void sendMappingCorrections(final String index,
 			final String indexType) {
@@ -373,9 +428,37 @@ public class ElasticSearchProvider implements ISearchProvider {
 			indexBuilder.execute().actionGet();
 
 		} catch (IOException e) {
-			log.error(
-					"Error while sending mapping correction instructions to the ElasticSearch Server",
-					e);
+			log.error("Error while sending mapping correction "
+					+ "instructions to the ElasticSearch Server", e);
 		}
+	}
+
+	/**
+	 * Utility function to support conversion between simple field maps and bool
+	 * maps.
+	 * 
+	 * @param fieldsThatMustMatch
+	 *            - the map that should be converted into a suitable map for
+	 *            querying.
+	 * @return Map where each field is using the OR boolean operator.
+	 */
+	private Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> convertToBoolMap(
+			final Map<String, List<String>> fieldsThatMustMatch) {
+		if (null == fieldsThatMustMatch) {
+			return null;
+		}
+
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> result = Maps
+				.newHashMap();
+
+		for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch
+				.entrySet()) {
+			Map.Entry<Constants.BooleanOperator, String> mapEntry = com.google.common.collect.Maps
+					.immutableEntry(Constants.BooleanOperator.OR, pair.getKey());
+
+			result.put(mapEntry, pair.getValue());
+		}
+
+		return result;
 	}
 }
