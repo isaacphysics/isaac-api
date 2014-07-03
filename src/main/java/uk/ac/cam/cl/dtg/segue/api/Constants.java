@@ -65,6 +65,11 @@ public final class Constants {
 	 * repository.
 	 */
 	public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
+	
+	/**
+	 * Constant representing the segue application version. 
+	 */
+	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
 
 	// HMAC stuff
 

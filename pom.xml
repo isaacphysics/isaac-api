@@ -4,11 +4,12 @@
 	<groupId>uk.ac.cam.cl.dtg.teaching</groupId>
 	<artifactId>isaac-api</artifactId>
 	<packaging>war</packaging>
-	<version>0.1-SNAPSHOT</version>
+	<version>${segue.version}</version>
 	<name>Isaac on a Segue</name>
 	<url>http://isaacphysics.org/</url>
 
 	<properties>
+		<segue.version>0.1-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.6.Final</resteasy.version>
 		<log4j.version>1.2.17</log4j.version>
 		<slf4j.version>1.7.5</slf4j.version>
