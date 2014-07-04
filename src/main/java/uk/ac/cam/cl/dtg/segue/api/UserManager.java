@@ -135,7 +135,7 @@ public class UserManager {
 				String antiForgeryTokenFromProvider = null;
 
 				for (NameValuePair param : urlParams) {
-					if (param.getName().equals("state")) {
+					if (param.getName().equals(Constants.STATE_PARAM_NAME)) {
 						antiForgeryTokenFromProvider = param.getValue();
 					}
 				}
@@ -151,7 +151,7 @@ public class UserManager {
 				}
 
 				// Store antiForgeryToken in the users session.
-				request.getSession().setAttribute("state",
+				request.getSession().setAttribute(Constants.STATE_PARAM_NAME,
 						antiForgeryTokenFromProvider);
 
 				return Response.temporaryRedirect(redirectLink)
@@ -504,19 +504,19 @@ public class UserManager {
 
 		// to deal with cross site request forgery
 		String csrfTokenFromUser = (String) request.getSession().getAttribute(
-				"state");
-		String csrfTokenFromProvider = request.getParameter("state");
+				Constants.STATE_PARAM_NAME);
+		String csrfTokenFromProvider = request.getParameter(Constants.STATE_PARAM_NAME);
 
 		if (null == csrfTokenFromUser || null == csrfTokenFromProvider
 				|| !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
 			log.error("Invalid state parameter - Provider said: "
-					+ request.getParameter("state") + " Session said: "
-					+ request.getSession().getAttribute("state"));
+					+ request.getParameter(Constants.STATE_PARAM_NAME) + " Session said: "
+					+ request.getSession().getAttribute(Constants.STATE_PARAM_NAME));
 			return false;
 		} else {
 			log.debug("State parameter matches - Provider said: "
-					+ request.getParameter("state") + " Session said: "
-					+ request.getSession().getAttribute("state"));
+					+ request.getParameter(Constants.STATE_PARAM_NAME) + " Session said: "
+					+ request.getSession().getAttribute(Constants.STATE_PARAM_NAME));
 			return true;
 		}
 	}
@@ -684,7 +684,7 @@ public class UserManager {
 	 * @param url - the url that the user wishes to be redirected to.
 	 */
 	private void storeRedirectUrl(final HttpServletRequest request, final String url) {
-		request.getSession().setAttribute("auth_redirect",
+		request.getSession().setAttribute(Constants.REDIRECT_URL_PARAM_NAME,
 				url);
 	}
 	
@@ -692,12 +692,12 @@ public class UserManager {
 	 * Helper method to retrieve the users redirect url from their session.
 	 * 
 	 * @param request - the request where the redirect url is stored (session variable).
-	 * @return the URI containing the users desired uri.
+	 * @return the URI containing the users desired uri. If URL is null then returns /
 	 * @throws URISyntaxException - if the session retrieved is an invalid URI.
 	 */
 	private URI loadRedirectUrl(final HttpServletRequest request) throws URISyntaxException {
-		String url = (String) request.getSession().getAttribute("auth_redirect");
-		request.getSession().removeAttribute("auth_redirect");
+		String url = (String) request.getSession().getAttribute(Constants.REDIRECT_URL_PARAM_NAME);
+		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);
 		if (null == url) {
 			return new URI("/");
 		}

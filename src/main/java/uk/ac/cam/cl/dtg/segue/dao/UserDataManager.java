@@ -7,6 +7,7 @@ import org.mongojack.WriteResult;
 import com.google.inject.Inject;
 import com.mongodb.DB;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
@@ -32,7 +33,7 @@ public class UserDataManager implements IUserDataManager {
 
 	@Override
 	public final String register(final User user, final AuthenticationProvider provider,
-			final String providerId) {
+			final String providerUserId) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
@@ -46,7 +47,7 @@ public class UserDataManager implements IUserDataManager {
 		String localUserId = r.getDbObject().get("_id").toString();
 
 		// link the provider account to the newly created account.
-		this.linkAuthProviderToAccount(localUser, provider, providerId);
+		this.linkAuthProviderToAccount(localUser, provider, providerUserId);
 
 		return localUserId;
 	}
@@ -80,8 +81,8 @@ public class UserDataManager implements IUserDataManager {
 						LinkedAccount.class, String.class);
 
 		LinkedAccount linkAccount = jc.findOne(DBQuery.and(
-				DBQuery.is("provider", provider),
-				DBQuery.is("providerUserId", providerUserId)));
+				DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider),
+				DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, providerUserId)));
 
 		if (null == linkAccount) {
 			return null;

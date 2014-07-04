@@ -147,6 +147,13 @@ public final class Constants {
 
 	// Federated Authentication Stuff
 
+	public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
+	
+	/**
+	 * This constant is used for matching against url params to prevent CSRF.
+	 */
+	public static final String STATE_PARAM_NAME = "state";
+	
 	/**
 	 * Constant representing the key for the GOOGLE client secret location.
 	 */
@@ -163,7 +170,7 @@ public final class Constants {
 	 * requested.
 	 */
 	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
-
+	
 	/*
 	 * Default values.
 	 */
@@ -178,6 +185,10 @@ public final class Constants {
 	public static final String CHILDREN_FIELDNAME = "children";
 	public static final String LEVEL_FIELDNAME = "level";
 
+	// User persistence model stuff
+	public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
+	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
+	
 	/**
 	 * Private constructor to prevent this class being created.
 	 */
