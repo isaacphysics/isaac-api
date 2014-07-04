@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -657,8 +658,9 @@ public class GitContentManager implements IContentManager {
 							+ " exists in git.");
 				}
 			}
-			
-			if (c instanceof ChoiceQuestion) {
+
+			// TODO: remove reference to isaac specific type from here.
+			if (c instanceof ChoiceQuestion && !(c.getType().equals("isaacQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
 				if (question.getChoices() == null || question.getChoices().isEmpty()) {
 					log.warn("Choice question: " + question.getId() + " in " 
