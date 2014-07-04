@@ -315,20 +315,26 @@ public class IsaacController {
 	@Path("pages/{page}")
 	@Produces("application/json")
 	public final Response getPage(@PathParam("page") final String pageId) {
-		Content c = (Content) api.getContentById(api.getLiveVersion(), pageId)
-				.getEntity(); // this endpoint can be used to get any content
-								// object
+		Response apiResponse = api.getContentById(api.getLiveVersion(), pageId);
+		
+		Content c = null;
+		if (apiResponse.getEntity() instanceof Content) {
+			c = (Content) api.getContentById(api.getLiveVersion(), pageId)
+					.getEntity();
+			
+			if (null == c) {
+				return new SegueErrorResponse(Status.NOT_FOUND,
+						"Unable to locate the content requested.").toResponse();
+			}
 
-		if (null == c) {
-			return new SegueErrorResponse(Status.NOT_FOUND,
-					"Unable to locate the content requested.").toResponse();
+			String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
+			ContentPage cp = new ContentPage(c.getId(), c,
+					this.buildMetaContentmap(proxyPath, c));
+
+			return Response.ok(cp).build();
+		} else {
+			return apiResponse;
 		}
-
-		String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-		ContentPage cp = new ContentPage(c.getId(), c,
-				this.buildMetaContentmap(proxyPath, c));
-
-		return Response.ok(cp).build();
 	}
 
 	/**
