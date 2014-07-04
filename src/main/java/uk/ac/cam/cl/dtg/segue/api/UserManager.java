@@ -436,6 +436,7 @@ public class UserManager {
 				user, 
 				QUESTION_ATTEMPTS_FIELDNAME, 
 				Lists.newArrayList(questionAttempt));
+		log.info("Question information recorded for user: " + user.getDbId());
 	}
 	
 	/**
