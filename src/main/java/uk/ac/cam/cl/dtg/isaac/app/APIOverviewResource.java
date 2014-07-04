@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -227,7 +228,9 @@ public class APIOverviewResource {
 	@Path("/")
 	@Produces(MediaType.TEXT_HTML)
 	@Cache
-	public Response getAvailableEndpointsHtml(@Context Dispatcher dispatcher) {
+	public Response getAvailableEndpointsHtml(
+			@Context final HttpServletRequest request, 
+			@Context final Dispatcher dispatcher) {
 		log.info("Requesting endpoint list from api using HTML view.");
 
 		StringBuilder sb = new StringBuilder();
@@ -247,7 +250,7 @@ public class APIOverviewResource {
 			Collections.sort(methodsList, new Comparator<MethodDescription>() {
 
 				@Override
-				public int compare(MethodDescription o1, MethodDescription o2) {
+				public int compare(final MethodDescription o1, final MethodDescription o2) {
 					return o1.getFullPath().compareTo(o2.getFullPath());
 				}
 
@@ -262,8 +265,9 @@ public class APIOverviewResource {
 				}
 				sb.append(method.getMethod()).append(" ");
 
-				sb.append("<strong>").append(method.getFullPath())
-						.append("</strong>");
+				sb.append("<strong> <a href='" + request.getRequestURL() 
+						+ method.getFullPath().substring(1) + "'>").append(method.getFullPath())
+						.append("</a></strong>");
 
 				sb.append("<ul>");
 
