@@ -9,6 +9,10 @@ import javax.ws.rs.core.Response.Status;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * A wrapper object used to indicate an error has occurred to the client using the API.
+ * TODO: should this be converted into some kind of throwable?
+ */
 public class SegueErrorResponse implements Serializable {
 
 	@JsonIgnore
@@ -21,29 +25,57 @@ public class SegueErrorResponse implements Serializable {
 
 	private String errorMessage;
 
-	public SegueErrorResponse(Status errorCode, String msg) {
+	/**
+	 * Constructor for creating a response with just an error code and string message.
+	 * @param errorCode - for response.
+	 * @param msg - message to client.
+	 */
+	public SegueErrorResponse(final Status errorCode, final String msg) {
 		this.responseCode = errorCode;
 		this.errorMessage = msg;
 	}
 
-	public SegueErrorResponse(Status errorCode, String msg, Exception e) {
+	/**
+	 * Constructor for creating a response with just an error code and string message.
+	 * @param errorCode - for response.
+	 * @param msg - message to client.
+	 * @param e - exception to wrap.
+	 */
+	public SegueErrorResponse(final Status errorCode, final String msg, final Exception e) {
 		this(errorCode, msg);
 		this.responseCode = errorCode;
 	}
-
-	public Integer getResponseCode() {
+	
+	
+	/**
+	 * Get the error code of this object.
+	 * @return the error code as an integer.
+	 */
+	public final Integer getResponseCode() {
 		return responseCode.getStatusCode();
 	}
-
-	public String getResponseCodeType() {
+	
+	/**
+	 * Get the response code as a string for this object.
+	 * @return response code as a string.
+	 */
+	public final String getResponseCodeType() {
 		return responseCode.toString();
 	}
 
-	public String getErrorMessage() {
+	/**
+	 * Get the error message stored in this object.
+	 * @return the message as a string.
+	 */
+	public final String getErrorMessage() {
 		return errorMessage;
 	}
-
-	public String getAdditionalErrorInformation() {
+	
+	/**
+	 * Get additional error information from the wrapped exception. 
+	 * @return a single line of the exception stack trace.
+	 */
+	public final String getAdditionalErrorInformation() {
 		if (null == exception) {
 			return null;
 		}
@@ -62,14 +94,18 @@ public class SegueErrorResponse implements Serializable {
 			return null;
 		}
 	}
-
-	public Response toResponse() {
+	
+	/**
+	 * Convert this object into a Response object ready for the client.
+	 * @return Response object.
+	 */
+	public final Response toResponse() {
 		return Response.status(responseCode).entity(this)
 				.type("application/json").build();
 	}
 
 	@Override
-	public String toString() {
+	public final String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Error Code: " + responseCode.toString() + " ");
 		sb.append("Error Message: " + responseCode.toString() + " ");
