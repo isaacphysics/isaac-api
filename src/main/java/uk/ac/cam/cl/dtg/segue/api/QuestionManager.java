@@ -81,12 +81,12 @@ public class QuestionManager {
 	 * Reflection to try and determine the associated validator for the question
 	 * being answered.
 	 * 
-	 * @param questionType
+	 * @param questionType - the type of question being answered.
 	 * @return a Validator
 	 */
 	@SuppressWarnings("unchecked")
 	public static IValidator locateValidator(
-			Class<? extends Question> questionType) {
+			final Class<? extends Question> questionType) {
 		// check we haven't gone too high up the superclass tree
 		if (!Question.class.isAssignableFrom(questionType)) {
 			return null;

@@ -276,15 +276,10 @@ public class UserManager {
 					Status.UNAUTHORIZED, "Error during security checks.");
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
-		} catch (AuthenticationCodeException e) {
+		} catch (AuthenticationCodeException | CrossSiteRequestForgeryException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.UNAUTHORIZED, e.getMessage());
 			log.info(e.getMessage(), e);
-			return error.toResponse();
-		} catch (CrossSiteRequestForgeryException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, e.getMessage());
-			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		} catch (URISyntaxException e) {
 			log.error("Redirect URL is not valid for provider " + provider, e);
