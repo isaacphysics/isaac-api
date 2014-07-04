@@ -81,7 +81,7 @@ public class Gameboard {
 	 * 
 	 * @return the gameboardItems
 	 */
-	public final List<GameboardItem> getGameboardItems() {
+	public final List<GameboardItem> getQuestions() {
 		return gameboardItems;
 	}
 
@@ -91,7 +91,7 @@ public class Gameboard {
 	 * @param gameboardItems
 	 *            the gameboardItems to set
 	 */
-	public final void setGameboardItems(final List<GameboardItem> gameboardItems) {
+	public final void setQuestions(final List<GameboardItem> gameboardItems) {
 		this.gameboardItems = gameboardItems;
 	}
 
