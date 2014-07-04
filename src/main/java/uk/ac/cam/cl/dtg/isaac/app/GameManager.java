@@ -18,6 +18,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.isaac.models.content.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
 import uk.ac.cam.cl.dtg.isaac.models.content.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestionInfo;
@@ -36,7 +37,11 @@ import static uk.ac.cam.cl.dtg.isaac.app.Constants.*;
  * 
  */
 public class GameManager {
-	private static final Logger log = LoggerFactory.getLogger(GameManager.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(GameManager.class);
+	
+	private static final int MAX_QUESTIONS_TO_SEARCH = 20;
+	
 	private final SegueApiFacade api;
 
 	/**
@@ -84,18 +89,20 @@ public class GameManager {
 			final List<String> conceptsList) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
 			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
-		
+
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
 				Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays
 				.asList(QUESTION_TYPE));
 
-		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(subjectsList,
-				fieldsList, topicsList, levelsList, conceptsList));
+		GameFilter gameFilter = new GameFilter(subjectsList, fieldsList,
+				topicsList, levelsList, conceptsList);
+
+		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
 		// Search for questions that match the fields to map variable. //TODO:
 		// fix magic numbers
 		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(
-				api.getLiveVersion(), fieldsToMap, 0, 20);
+				api.getLiveVersion(), fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
 
 		if (!results.getResults().isEmpty()) {
 			String uuid = UUID.randomUUID().toString();
@@ -126,22 +133,33 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
-			return new Gameboard(uuid, gameboardReadyQuestions, new Date());
+			return new Gameboard(uuid, gameboardReadyQuestions, new Date(), gameFilter);
 		} else {
 			return new Gameboard();
 		}
 	}
-
-	public boolean storeGameboard(final Gameboard gameboardToStore) {
+	
+	/**
+	 * Store a gameboard in a public location.
+	 * 
+	 * @param gameboardToStore - Gameboard object to persist.
+	 * @return true for success false for failure.
+	 */
+	public final boolean storeGameboard(final Gameboard gameboardToStore) {
 		// TODO: stub
 		return false;
 	}
 
-	public Wildcard getRandomWildcardTile() {
+	/**
+	 * Find a wildcard object to add to a gameboard.
+	 * 
+	 * @return wildCard
+	 */
+	public final Wildcard getRandomWildcardTile() {
 		// TODO: stub
 		return null;
 	}
-	
+
 	/**
 	 * Helper method to generate field to match requirements for search queries
 	 * (specialised for isaac-filtering rules)
@@ -149,20 +167,17 @@ public class GameManager {
 	 * This method will decide what should be AND and what should be OR based on
 	 * the field names used.
 	 * 
-	 * @param subjects from filter
-	 * @param fields from filter
-	 * @param topics from filter
-	 * @param levels from filter
-	 * @param concepts from filter
+	 * @param gameFilter 
+	 * 		- filter object containing all the filter information used to make this board.
 	 * @return A map ready to be passed to a content provider
 	 */
 	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
 	generateFieldToMatchForQuestionFilter(
-			final List<String> subjects, final List<String> fields, final List<String> topics,
-			final List<String> levels, final List<String> concepts) {
+			final GameFilter gameFilter) {
+
 		// Validate that the field sizes are as we expect for tags
 		// Check that the query provided adheres to the rules we expect
-		if (!validateFilterQuery(subjects, fields, topics, levels, concepts)) {
+		if (!validateFilterQuery(gameFilter)) {
 			throw new IllegalArgumentException("Error validating filter query.");
 		}
 
@@ -173,24 +188,24 @@ public class GameManager {
 		List<String> ands = Lists.newArrayList();
 		List<String> ors = Lists.newArrayList();
 
-		if (null != subjects) {
-			if (subjects.size() > 1) {
-				ors.addAll(subjects);
+		if (null != gameFilter.getSubjects()) {
+			if (gameFilter.getSubjects().size() > 1) {
+				ors.addAll(gameFilter.getSubjects());
 			} else { // should be exactly 1
-				ands.addAll(subjects);
+				ands.addAll(gameFilter.getSubjects());
 
 				// ok now we are allowed to look at the fields
-				if (null != fields) {
-					if (fields.size() > 1) {
-						ors.addAll(fields);
+				if (null != gameFilter.getFields()) {
+					if (gameFilter.getFields().size() > 1) {
+						ors.addAll(gameFilter.getFields());
 					} else { // should be exactly 1
-						ands.addAll(fields);
+						ands.addAll(gameFilter.getFields());
 
-						if (null != topics) {
-							if (topics.size() > 1) {
-								ors.addAll(topics);
+						if (null != gameFilter.getTopics()) {
+							if (gameFilter.getTopics().size() > 1) {
+								ors.addAll(gameFilter.getTopics());
 							} else {
-								ands.addAll(topics);
+								ands.addAll(gameFilter.getTopics());
 							}
 						}
 					}
@@ -214,18 +229,18 @@ public class GameManager {
 		}
 
 		// now deal with levels
-		if (null != levels) {
+		if (null != gameFilter.getLevels()) {
 			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
 					.immutableEntry(Constants.BooleanOperator.OR,
 							Constants.LEVEL_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, levels);
+			fieldsToMatchOutput.put(newEntry, gameFilter.getLevels());
 		}
 
-		if (null != concepts) {
+		if (null != gameFilter.getConcepts()) {
 			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
 					.immutableEntry(Constants.BooleanOperator.AND,
 							RELATED_CONTENT_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, concepts);
+			fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
 		}
 
 		return fieldsToMatchOutput;
@@ -234,30 +249,29 @@ public class GameManager {
 	/**
 	 * Currently only validates subjects, fields and topics.
 	 * 
-	 * @param subjects
-	 *            - multiple subjects are only ok if there are not any fields or
-	 *            topics
-	 * @param fields
-	 *            - multiple fields are only ok if there are not any topics.
-	 * @param topics
-	 *            - You can have multiple fields only if there is precisely one
-	 *            subject and field.
-	 * @param levels
-	 *            - currently not used for validation
-	 * @param concepts
-	 *            - currently not used for validation
+	 * @param gameFilter
+	 *            containing the following data: (1) subjects - multiple subjects
+	 *            are only ok if there are not any fields or topics (2) fields -
+	 *            multiple fields are only ok if there are not any topics.
+	 *            (3) topics - You can have multiple fields only if there is
+	 *            precisely one subject and field. (4) levels - currently not used
+	 *            for validation (5) concepts - currently not used for validation
 	 * @return true if the query adheres to the rules specified, false if not.
 	 */
-	private static boolean validateFilterQuery(final List<String> subjects,
-			final List<String> fields, final List<String> topics,
-			final List<String> levels, final List<String> concepts) {
-		if (null == subjects && null == fields && null == topics) {
+	private static boolean validateFilterQuery(final GameFilter gameFilter) {
+		if (null == gameFilter.getSubjects()
+				&& null == gameFilter.getFields()
+				&& null == gameFilter.getTopics()) {
 			return true;
-		} else if (null == subjects && (null != fields || null != topics)) {
+		} else if (null == gameFilter.getSubjects()
+				&& (null != gameFilter.getFields() || null != gameFilter
+						.getTopics())) {
 			log.warn("Error validating query: You cannot have a "
 					+ "null subject and still specify fields or topics.");
 			return false;
-		} else if (null != subjects && null == fields && null != topics) {
+		} else if (null != gameFilter.getSubjects()
+				&& null == gameFilter.getFields()
+				&& null != gameFilter.getTopics()) {
 			log.warn("Error validating query: You cannot have a null field"
 					+ " and still specify subject and topics.");
 			return false;
@@ -268,30 +282,30 @@ public class GameManager {
 		boolean foundMultipleTerms = false;
 
 		// Now check that the subjects are of the correct size
-		if (null != subjects) {
-			if (subjects.size() > 1) {
+		if (null != gameFilter.getSubjects()) {
+			if (gameFilter.getSubjects().size() > 1) {
 				foundMultipleTerms = true;
 			}
 		}
 
-		if (null != fields) {
+		if (null != gameFilter.getFields()) {
 			if (foundMultipleTerms) {
 				log.warn("Error validating query: multiple subjects and fields specified.");
 				return false;
 			}
 
-			if (fields.size() > 1) {
+			if (gameFilter.getFields().size() > 1) {
 				foundMultipleTerms = true;
 			}
 		}
 
-		if (null != topics) {
+		if (null != gameFilter.getTopics()) {
 			if (foundMultipleTerms) {
 				log.warn("Error validating query: multiple fields and topics specified.");
 				return false;
 			}
 
-			if (topics.size() > 1) {
+			if (gameFilter.getTopics().size() > 1) {
 				foundMultipleTerms = true;
 			}
 		}
