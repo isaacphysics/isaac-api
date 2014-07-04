@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -206,6 +207,37 @@ public class IsaacController {
 
 		return this.findSingleResult(fieldsToMatch);
 	}
+	
+	/**
+	 * Rest end point that searches the api for some search string.
+	 * 
+	 * @param searchString
+	 *            - to pass to the search engine.
+	 * @param types
+	 *            - a comma separated list of types to include in the search.           
+	 * @return a response containing the search results (results wrapper) or an
+	 *         empty list.
+	 */
+	@SuppressWarnings("unchecked")
+	@GET
+	@Produces("application/json")
+	@Path("search/{searchString}")
+	public final Response search(
+			@PathParam("searchString") final String searchString,
+			@QueryParam("types") final String types) {
+		ResultsWrapper<Content> searchResults = null;
+		
+		Response unknownApiResult = api.search(searchString, api.getLiveVersion(), types);
+		if (unknownApiResult.getEntity() instanceof ResultsWrapper) {
+			searchResults = (ResultsWrapper<Content>) unknownApiResult.getEntity();
+		} else {
+			return unknownApiResult;
+		}
+		
+		return Response.ok(this.extractContentSummaryFromResultsWrapper(searchResults, 
+				propertiesLoader.getProperty(PROXY_PATH))).build();
+	}
+	
 
 	/**
 	 * REST end point to provide a gameboard containing a list of questions.
@@ -415,7 +447,7 @@ public class IsaacController {
 					log.warn("Related content (" + id
 							+ ") does not exist in the data store.");
 				} else {
-					ContentSummary contentInfo = extractContentInfo(
+					ContentSummary contentInfo = extractContentSummary(
 							relatedContent, proxyPath);
 					contentInfoList.add(contentInfo);
 				}
@@ -481,7 +513,7 @@ public class IsaacController {
 	 *            - the path prefix used for augmentation of urls
 	 * @return Content summary object.
 	 */
-	private ContentSummary extractContentInfo(final Content content,
+	private ContentSummary extractContentSummary(final Content content,
 			final String proxyPath) {
 		if (null == content) {
 			return null;
@@ -509,7 +541,7 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter contentInfo objects.
 	 */
-	private List<ContentSummary> extractContentInfo(
+	private List<ContentSummary> extractContentSummaryFromList(
 			final List<Content> contentList, final String proxyPath) {
 		if (null == contentList) {
 			return null;
@@ -518,12 +550,39 @@ public class IsaacController {
 		List<ContentSummary> listOfContentInfo = new ArrayList<ContentSummary>();
 
 		for (Content content : contentList) {
-			ContentSummary contentInfo = extractContentInfo(content, proxyPath);
+			ContentSummary contentInfo = extractContentSummary(content, proxyPath);
 			if (null != contentInfo) {
 				listOfContentInfo.add(contentInfo);
 			}
 		}
 		return listOfContentInfo;
+	}
+	
+	/**
+	 * Utility method to convert a ResultsWrapper of content
+	 *  objects into one with content Summary objects.
+	 * 
+	 * @param contentList
+	 *            - the list of content to summarise.
+	 * @param proxyPath
+	 *            - the path used for augmentation of urls.
+	 * @return list of shorter contentInfo objects.
+	 */
+	private ResultsWrapper<ContentSummary> extractContentSummaryFromResultsWrapper(
+			final ResultsWrapper<Content> contentList, final String proxyPath) {
+		if (null == contentList) {
+			return null;
+		}
+
+		ResultsWrapper<ContentSummary> contentSummaryResults = new ResultsWrapper<ContentSummary>();
+
+		for (Content content : contentList.getResults()) {
+			ContentSummary contentInfo = extractContentSummary(content, proxyPath);
+			if (null != contentInfo) {
+				contentSummaryResults.getResults().add(contentInfo);
+			}
+		}
+		return contentSummaryResults;
 	}
 
 	/**
@@ -602,7 +661,7 @@ public class IsaacController {
 
 		ResultsWrapper<ContentSummary> summarizedContent = 
 				new ResultsWrapper<ContentSummary>(
-					this.extractContentInfo(c.getResults(),
+					this.extractContentSummaryFromList(c.getResults(),
 							propertiesLoader.getProperty(PROXY_PATH)),
 					c.getTotalResults());
 

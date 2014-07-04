@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -355,6 +354,65 @@ public class SegueApiFacade {
 		}
 
 		return Response.ok().entity(c).build();
+	}
+	
+	/**
+	 * Rest end point that searches the content manager for some search string.
+	 * 
+	 * @param searchString
+	 *            - to pass to the search engine.
+	 * @param version
+	 *            - of the content to search.  
+	 * @param types
+	 *            - a comma separated list of types to include in the search.           
+	 * @return a response containing the search results (results wrapper) or an
+	 *         empty list.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/search/{version}/{searchString}")
+	public final Response search(
+			@PathParam("searchString") final String searchString,
+			@PathParam("version") final String version,
+			@QueryParam("types") final String types) {
+
+		Map<String, List<String>> typesThatMustMatch = null;
+		
+		if (null != types) {
+			typesThatMustMatch = Maps.newHashMap();
+			typesThatMustMatch.put(Constants.TYPE_FIELDNAME,
+					Arrays.asList(types.split(",")));
+		}
+		
+		IContentManager contentPersistenceManager = contentVersionController
+				.getContentManager();
+
+		ResultsWrapper<Content> searchResults = contentPersistenceManager
+				.searchForContent(contentVersionController.getLiveVersion(),
+						searchString, typesThatMustMatch);
+
+		return Response.ok(searchResults).build();
+	}
+	
+	/**
+	 * Rest end point that searches the content manager for some search string.
+	 * Using the live version of the content as the default.
+	 * 
+	 * @param searchString
+	 *            - to pass to the search engine.
+	 * @param types
+	 *            - a comma separated list of types to include in the search.           
+	 * @return a response containing the search results (results wrapper) or an
+	 *         empty list.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/search/{searchString}")
+	public final Response search(
+			@PathParam("searchString") final String searchString,
+			@QueryParam("types") final String types) {
+
+		return this.search(searchString, this.getLiveVersion(), types);
 	}
 
 	/**
@@ -781,42 +839,6 @@ public class SegueApiFacade {
 				.put("result", "success").build();
 
 		return Response.ok(response).build();
-	}
-
-	/**
-	 * Rest end point that searches the content manager for some search string.
-	 * 
-	 * @param searchString
-	 *            - to pass to the search engine.
-	 * @param types
-	 *            - a comma separated list of types to include in the search.           
-	 * @return a response containing the search results (results wrapper) or an
-	 *         empty list.
-	 */
-	@GET
-	@Produces("application/json")
-	@Path("search/{searchString}")
-	public final Response search(
-			@PathParam("searchString") final String searchString,
-			@QueryParam("types") final String types) {
-
-		Map<String, List<String>> typesThatMustMatch = null;
-		
-		if (null != types) {
-			typesThatMustMatch = Maps.newHashMap();
-			typesThatMustMatch.put(Constants.TYPE_FIELDNAME,
-					Arrays.asList(types.split(",")));
-		}
-		
-		IContentManager contentPersistenceManager = contentVersionController
-				.getContentManager();
-
-		ResultsWrapper<Content> searchResults = contentPersistenceManager
-				.searchForContent(contentVersionController.getLiveVersion(),
-						searchString, typesThatMustMatch);
-		// TODO: we probably only want to return summaries of content objects?
-
-		return Response.ok(searchResults).build();
 	}
 
 	/**
