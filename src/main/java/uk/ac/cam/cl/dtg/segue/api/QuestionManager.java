@@ -24,19 +24,22 @@ public class QuestionManager {
 	private static final Logger log = LoggerFactory
 			.getLogger(QuestionManager.class);
 
+	/**
+	 * Create a default Question manager object.
+	 */
 	public QuestionManager() {
 
 	}
 
 	/**
-	 * 
+	 * Validate client answer to recorded answer. 
 	 * @param question
 	 *            The question to which the answer must be validated against.
-	 * @param answer
-	 *            as a string used for comparison purposes.
+	 * @param answers
+	 *            as a list used for comparison purposes.
 	 * @return A response containing a QuestionValidationResponse object
 	 */
-	public Response validateAnswer(Question question, List<Choice> answers) {
+	public final Response validateAnswer(final Question question, final List<Choice> answers) {
 		IValidator validator = locateValidator(question.getClass());
 
 		if (null == validator) {
@@ -44,7 +47,8 @@ public class QuestionManager {
 					+ question.getId());
 			return Response
 					.serverError()
-					.entity("Unable to detect question validator for this object. Unable to verify answer")
+					.entity("Unable to detect question validator for "
+							+ "this object. Unable to verify answer")
 					.build();
 		}
 
@@ -54,8 +58,8 @@ public class QuestionManager {
 			return Response.ok(
 					multiFieldValidator.validateMultiFieldQuestionResponses(
 							question, answers)).build();
-		} else // use the standard IValidator
-		{
+		} else { // use the standard IValidator
+		
 			// ok so we are expecting there just to be one choice?
 			if (answers.isEmpty() || answers.size() > 1) {
 				log.debug("We only expected one answer for this question...");

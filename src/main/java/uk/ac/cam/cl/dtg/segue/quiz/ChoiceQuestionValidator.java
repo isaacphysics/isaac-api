@@ -10,14 +10,19 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 
+/**
+ * Default quiz validator for ChoiceQuestions.
+ * 
+ *
+ */
 public class ChoiceQuestionValidator implements IValidator {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(ChoiceQuestionValidator.class);
 
 	@Override
-	public QuestionValidationResponse validateQuestionResponse(
-			Question question, Choice answer) {
+	public final QuestionValidationResponse validateQuestionResponse(
+			final Question question, final Choice answer) {
 		Validate.notNull(question);
 		Validate.notNull(answer);
 
@@ -25,6 +30,15 @@ public class ChoiceQuestionValidator implements IValidator {
 		ChoiceQuestion choiceQuestion = null;
 		if (question instanceof ChoiceQuestion) {
 			choiceQuestion = (ChoiceQuestion) question;
+
+			if (null == choiceQuestion.getChoices()
+					|| choiceQuestion.getChoices().isEmpty()) {
+				log.warn("Question does not have any answers. "
+						+ question.getId() + " src: "
+						+ question.getCanonicalSourceFile());
+				return new QuestionValidationResponse(question.getId(),
+						answer.getValue(), false, null);
+			}
 
 			for (Choice choice : choiceQuestion.getChoices()) {
 				if (choice.getValue().equals(answer.getValue())) {
@@ -43,7 +57,8 @@ public class ChoiceQuestionValidator implements IValidator {
 			return new QuestionValidationResponse(question.getId(),
 					answer.getValue(), false, null);
 		} else {
-			log.error("Expected to be able to cast the question as a ChoiceQuestion but this cast failed.");
+			log.error("Expected to be able to cast the question as a ChoiceQuestion "
+					+ "but this cast failed.");
 			throw new ClassCastException(
 					"Incorrect type of question received. Unable to validate.");
 		}

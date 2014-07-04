@@ -22,12 +22,22 @@ public class IsaacNumericValidator implements IValidator {
 			.getLogger(IsaacNumericValidator.class);
 
 	@Override
-	public QuestionValidationResponse validateQuestionResponse(
-			Question question, Choice answer) {
+	public final QuestionValidationResponse validateQuestionResponse(
+			final Question question, final Choice answer) {
 		if (question instanceof IsaacNumericQuestion) {
 
 			IsaacNumericQuestion choiceQuestion = (IsaacNumericQuestion) question;
 
+			if (null == choiceQuestion.getChoices() || choiceQuestion.getChoices().isEmpty()) {
+				log.warn("Question does not have any answers. " 
+						+ question.getId() + " src: " + question.getCanonicalSourceFile());
+				
+				return new QuantityValidationResponse(
+						question.getId(), null,
+						false, new Content(""),
+						false, false);
+			}
+			
 			if (answer instanceof Quantity) {
 				Quantity answerFromUser = (Quantity) answer;
 				QuantityValidationResponse bestResponse = null;

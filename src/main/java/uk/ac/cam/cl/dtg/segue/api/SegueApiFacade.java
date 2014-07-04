@@ -867,7 +867,7 @@ public class SegueApiFacade {
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
-
+		
 		return this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
 	}

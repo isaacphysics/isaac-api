@@ -33,6 +33,8 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dto.content.Media;
@@ -653,6 +655,33 @@ public class GitContentManager implements IContentManager {
 				} else {
 					log.debug("Verified image " + f.getSrc()
 							+ " exists in git.");
+				}
+			}
+			
+			if (c instanceof ChoiceQuestion) {
+				ChoiceQuestion question = (ChoiceQuestion) c;
+				if (question.getChoices() == null || question.getChoices().isEmpty()) {
+					log.warn("Choice question: " + question.getId() + " in " 
+							+ question.getCanonicalSourceFile() + " found without any choices - "
+							+ "this will mean users will always get it wrong.");
+					this.registerContentProblem(sha, question, "Question: " + question.getId() 
+							+ " in " + question.getCanonicalSourceFile() 
+							+ " found without any choice metadata. "
+							+ "This question will always be automatically marked as incorrect");
+				} else {
+					boolean correctOptionFound = false;
+					for (Choice choice : question.getChoices()) {
+						if (choice.isCorrect()) {
+							correctOptionFound = true;
+						}
+					}
+					
+					if (!correctOptionFound) {
+						this.registerContentProblem(sha, question, "Question: " + question.getId() 
+								+ " in " + question.getCanonicalSourceFile() 
+								+ " found without a correct answer. "
+								+ "This question will always be automatically marked as incorrect");
+					}
 				}
 			}
 		}
