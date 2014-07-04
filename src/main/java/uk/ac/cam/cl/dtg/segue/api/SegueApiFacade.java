@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
@@ -843,7 +844,7 @@ public class SegueApiFacade {
 
 	/**
 	 * Answer a question.
-	 * 
+	 * @param request - the servlet request so we can find out if it is a known user. 
 	 * @param questionId that you are attempting
 	 * @param jsonAnswer - answer body.
 	 * @return Response containing a QuestionValidationResponse object.
@@ -852,7 +853,9 @@ public class SegueApiFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces("application/json")
 	@Path("questions/{question_id}/answer")
-	public final Response answerQuestion(@PathParam("question_id") final String questionId,
+	public final Response answerQuestion(
+			@Context HttpServletRequest request,
+			@PathParam("question_id") final String questionId,
 			final String jsonAnswer) {
 		Content contentBasedOnId = contentVersionController.getContentManager()
 				.getById(questionId, contentVersionController.getLiveVersion());
@@ -889,9 +892,20 @@ public class SegueApiFacade {
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
-		
-		return this.questionManager.validateAnswer(question,
+
+		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
+		
+		User user = this.getCurrentUser(request);
+		if (user != null && response.getEntity() instanceof QuestionValidationResponse) {
+			Injector injector = Guice
+					.createInjector(new SegueGuiceConfigurationModule());
+			UserManager userManager = injector.getInstance(UserManager.class);
+			userManager.recordUserQuestionInformation(user, 
+					(QuestionValidationResponse) response.getEntity());
+		}
+
+		return response;
 	}
 
 	/**

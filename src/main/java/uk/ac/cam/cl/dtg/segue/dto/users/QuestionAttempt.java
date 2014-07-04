@@ -10,7 +10,7 @@ import java.util.Date;
 public class QuestionAttempt {
 	private String questionId;
 	private Date dateAttempted;
-	private String result;
+	private boolean success;
 	private String detail;
 
 	/**
@@ -25,14 +25,14 @@ public class QuestionAttempt {
 	 * 
 	 * @param questionId - Question Id which has been attempted
 	 * @param dateAttempted - date/time that it was attempted.
-	 * @param result - result of attempt. e.g. correct, incorrect.
+	 * @param success - result of attempt. e.g. correct, incorrect.
 	 * @param detail - additional information e.g. which answer given.
 	 */
 	public QuestionAttempt(final String questionId, final Date dateAttempted,
-			final String result, final String detail) {
+			final boolean success, final String detail) {
 		this.questionId = questionId;
 		this.dateAttempted = dateAttempted;
-		this.result = result;
+		this.success = success;
 		this.detail = detail;
 	}
 
@@ -72,16 +72,16 @@ public class QuestionAttempt {
 	 * Gets the result.
 	 * @return the result
 	 */
-	public final String getResult() {
-		return result;
+	public final boolean isSuccess() {
+		return success;
 	}
 
 	/**
 	 * Sets the result.
-	 * @param result the result to set
+	 * @param success the result to set
 	 */
-	public final void setResult(final String result) {
-		this.result = result;
+	public final void setResult(final boolean success) {
+		this.success = success;
 	}
 
 	/**

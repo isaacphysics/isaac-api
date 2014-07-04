@@ -1,13 +1,20 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.List;
+
 import org.mongojack.DBQuery;
+import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.mongodb.DB;
+import com.mongodb.MongoException;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
@@ -18,6 +25,9 @@ import uk.ac.cam.cl.dtg.segue.dto.users.User;
  */
 public class UserDataManager implements IUserDataManager {
 
+	private static final Logger log = LoggerFactory
+			.getLogger(UserDataManager.class);
+	
 	private final DB database;
 	private static final String USER_COLLECTION_NAME = "users";
 	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
@@ -67,6 +77,32 @@ public class UserDataManager implements IUserDataManager {
 		User user = jc.findOneById(id);
 
 		return user;
+	}
+
+	@Override
+	public final void updateUser(final User user) {
+		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), User.class,
+				String.class);
+		
+		WriteResult<User, String> r = jc.save(user);
+
+		if (r.getError() != null) {
+			log.error("Error during database update " + r.getError());
+		}
+	}
+	
+	@Override
+	public final void addItemToUserField(final User user, final String key, final List value) {
+		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), User.class,
+				String.class);
+		
+		WriteResult<User, String> r = jc.updateById(user.getDbId(), DBUpdate.addToSet(key, value));
+
+		if (r.getError() != null) {
+			log.error("Error during database update " + r.getError());
+		}
 	}
 
 	@Override

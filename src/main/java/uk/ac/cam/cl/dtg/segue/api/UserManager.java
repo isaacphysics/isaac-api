@@ -22,6 +22,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,9 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 /**
@@ -52,6 +55,8 @@ public class UserManager {
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
 	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
+
+	private static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
 
 	private final IUserDataManager database;
 	private final String hmacSalt;
@@ -413,6 +418,34 @@ public class UserManager {
 			return false;
 		}
 	}
+	
+	/**
+	 * Record that a user has answered a question.
+	 * 
+	 * @param user - user who answered the question
+	 * @param questionResponse - question results.
+	 */
+	public final void recordUserQuestionInformation(final User user, 
+			final QuestionValidationResponse questionResponse) {
+		
+		QuestionAttempt questionAttempt 
+			= new QuestionAttempt(questionResponse.getQuestionId(), new Date(),
+					questionResponse.isCorrect(), questionResponse.getAnswer());
+		
+		this.database.addItemToUserField(
+				user, 
+				QUESTION_ATTEMPTS_FIELDNAME, 
+				Lists.newArrayList(questionAttempt));
+	}
+	
+	/**
+	 * Method to update a user object in our database.
+	 * 
+	 * @param user
+	 */
+	private void updateUserObject(final User user) {
+		this.database.updateUser(user);
+	}
 
 	/**
 	 * Generate an HMAC using a key and the data to sign.
@@ -476,15 +509,6 @@ public class UserManager {
 
 		return this.registeredAuthProviders.get(enumProvider);
 	}
-
-	/**
-	 * This method will compare the state in the users cookie with the response
-	 * from the provider.
-	 * 
-	 * @param request
-	 * @return True if we are satisfied that they match and false if we think
-	 *         there is a problem.
-	 */
 
 	/**
 	 * Verify with the request that there is no CSRF violation.
