@@ -695,7 +695,7 @@ public class GitContentManager implements IContentManager {
 
 			for (String id : missingContent) {
 				this.registerContentProblem(sha, whoAmI.get(id),
-						"This id was referenced by "
+						"This id (" + id + ") was referenced by "
 								+ whoAmI.get(id).getCanonicalSourceFile()
 								+ " but the content with that "
 								+ "ID cannot be found.");
