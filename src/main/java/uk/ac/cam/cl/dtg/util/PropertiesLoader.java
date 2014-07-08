@@ -30,7 +30,7 @@ public class PropertiesLoader {
 	 *             - if we cannot read the file for whatever reason.
 	 */
 	@Inject
-	public PropertiesLoader(String propertiesFile) throws IOException {
+	public PropertiesLoader(final String propertiesFile) throws IOException {
 		this.loadedProperties = new Properties();
 		this.propertiesFile = propertiesFile;
 
@@ -47,10 +47,10 @@ public class PropertiesLoader {
 	/**
 	 * Attempt to retrieve a property value from the registered propertiesFile.
 	 * 
-	 * @param key
+	 * @param key - that the property is listed under.
 	 * @return value as a String
 	 */
-	public String getProperty(String key) {
+	public final String getProperty(final String key) {
 		if (null == key) {
 			log.error("Property key requested cannot be null");
 			throw new NullPointerException();
@@ -58,8 +58,9 @@ public class PropertiesLoader {
 
 		String value = loadedProperties.getProperty(key);
 
-		if (null == value)
+		if (null == value) {
 			log.warn("Failed to resolve requested property with key: " + key);
+		}
 
 		return value;
 	}
