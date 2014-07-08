@@ -854,7 +854,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("questions/{question_id}/answer")
 	public final Response answerQuestion(
-			@Context HttpServletRequest request,
+			@Context final HttpServletRequest request,
 			@PathParam("question_id") final String questionId,
 			final String jsonAnswer) {
 		Content contentBasedOnId = contentVersionController.getContentManager()

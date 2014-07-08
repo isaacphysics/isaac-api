@@ -151,14 +151,4 @@ public class Gameboard {
 	public final void setGameFilter(final GameFilter gameFilter) {
 		this.gameFilter = gameFilter;
 	}
-
-	/**
-	 * Gets the log.
-	 * 
-	 * @return the log
-	 */
-	public static final Logger getLog() {
-		return log;
-	}
-
 }

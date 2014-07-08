@@ -21,8 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
 import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -301,6 +301,32 @@ public class IsaacController {
 					"Your gameboard filter request is invalid.").toResponse();
 		}
 	}
+	
+	
+	/**
+	 * REST end point to provide a gameboard containing a list of questions.
+	 * 
+	 * @param gameboardId
+	 *            - the unique id of the gameboard to be requested
+	 * @return a Response containing a gameboard object.
+	 */
+	@GET
+	@Path("gameboards/{gameboard_id}")
+	@Produces("application/json")
+	public final Response generateGameboard(
+			@PathParam("gameboard_id") final String gameboardId) {
+		// tags are and relationships except for subject
+		try {
+			Gameboard gameboard = gameManager.generateRandomGameboard();
+			
+			return Response.ok(gameboard)
+					.build();
+		} catch (IllegalArgumentException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Your gameboard filter request is invalid.").toResponse();
+		}
+	}	
+	
 
 	/**
 	 * Rest end point that gets a single page based on a given id.
