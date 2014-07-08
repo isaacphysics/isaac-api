@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.mongodb.DB;
+import com.mongodb.MongoException;
+
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
@@ -96,11 +98,15 @@ public class UserDataManager implements IUserDataManager {
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
 		
-		WriteResult<User, String> r = jc.updateById(user.getDbId(), 
-				DBUpdate.set(field + ".$." + mapKey, value));
+		try{
+			WriteResult<User, String> r = jc.updateById(user.getDbId(), 
+					DBUpdate.set(field + "." + mapKey, value));
 
-		if (r.getError() != null) {
-			log.error("Error during database update " + r.getError());
+			if (r.getError() != null) {
+				log.error("Error during database update " + r.getError());
+			}			
+		} catch (MongoException e) {
+			log.error("MongoDB Database Exception. ", e);
 		}
 	}
 	

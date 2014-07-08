@@ -31,10 +31,10 @@ public class User {
 	private Date registrationDate;
 	private String schoolId;
 
-	private Map<String, QuestionAttempt> questionAttempts;
+	private Map<String, Map<String, QuestionAttempt>> questionAttempts;
 	// TODO: move out of segue DTO into isaac one.
 	private List<Gameboard> gameBoards;
-	
+
 	/**
 	 * Full constructor for the User object.
 	 * 
@@ -73,7 +73,8 @@ public class User {
 			@JsonProperty("gender") final Gender gender,
 			@JsonProperty("registrationTime") final Date registrationTime,
 			@JsonProperty("schoolId") final String schoolId,
-			@JsonProperty("questionAttempts") final Map<String, QuestionAttempt> questionAttempts) {
+			@JsonProperty("questionAttempts") 
+			final Map<String, Map<String, QuestionAttempt>> questionAttempts) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -85,7 +86,6 @@ public class User {
 		this.schoolId = schoolId;
 		this.questionAttempts = questionAttempts;
 	}
-
 
 	/**
 	 * Default constructor required for Jackson.
@@ -171,7 +171,7 @@ public class User {
 	public final Date getDateOfBirth() {
 		return dateOfBirth;
 	}
-	
+
 	/**
 	 * Get Gender for this user.
 	 * 
@@ -204,25 +204,27 @@ public class User {
 	 * 
 	 * @return list of attempts
 	 */
-	public final Map<String, QuestionAttempt> getQuestionAttempts() {
+	public final Map<String, Map<String, QuestionAttempt>> getQuestionAttempts() {
 		return questionAttempts;
 	}
 
 	/**
 	 * Gets the gameBoards.
+	 * 
 	 * @return the gameBoards
 	 */
 	public final List<Gameboard> getGameBoards() {
 		return gameBoards;
 	}
-	
+
 	/**
 	 * Sets the gameBoards.
-	 * @param gameBoards the gameBoards to set
+	 * 
+	 * @param gameBoards
+	 *            the gameBoards to set
 	 */
 	public final void setGameBoards(final List<Gameboard> gameBoards) {
 		this.gameBoards = gameBoards;
 	}
-
 
 }
