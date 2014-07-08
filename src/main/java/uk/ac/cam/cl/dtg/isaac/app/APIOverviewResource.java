@@ -24,8 +24,15 @@ import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 /**
  * A resource that displays a list of available endpoints (which is helpful to
@@ -232,7 +239,11 @@ public class APIOverviewResource {
 			@Context final HttpServletRequest request, 
 			@Context final Dispatcher dispatcher) {
 		log.info("Requesting endpoint list from api using HTML view.");
-
+		
+		Injector injector = Guice.createInjector(
+				new SegueGuiceConfigurationModule());
+		PropertiesLoader properties = injector.getInstance(PropertiesLoader.class);
+		
 		StringBuilder sb = new StringBuilder();
 		ResourceMethodRegistry registry = (ResourceMethodRegistry) dispatcher
 				.getRegistry();
@@ -265,7 +276,9 @@ public class APIOverviewResource {
 				}
 				sb.append(method.getMethod()).append(" ");
 
-				sb.append("<strong> <a href='" + request.getRequestURL() 
+				sb.append("<strong> <a href='" + "http://" 
+						+ properties.getProperty(uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME) 
+						+ "/api/"
 						+ method.getFullPath().substring(1) + "'>").append(method.getFullPath())
 						.append("</a></strong>");
 
