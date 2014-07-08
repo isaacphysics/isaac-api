@@ -60,26 +60,27 @@ public class UserManager {
 
 	private final IUserDataManager database;
 	private final String hmacSalt;
-	private final Map<AuthenticationProvider, IFederatedAuthenticator> 
-	registeredAuthProviders;
+	private final Map<AuthenticationProvider, IFederatedAuthenticator> registeredAuthProviders;
 
 	/**
 	 * Create an instance of the user manager class.
 	 * 
-	 * @param database - an IUserDataManager that will support persistence.
-	 * @param hmacSalt - A random / unique HMAC salt for session authentication. 
-	 * @param providersToRegister - A map of known authentication providers.
+	 * @param database
+	 *            - an IUserDataManager that will support persistence.
+	 * @param hmacSalt
+	 *            - A random / unique HMAC salt for session authentication.
+	 * @param providersToRegister
+	 *            - A map of known authentication providers.
 	 */
 	@Inject
 	public UserManager(
 			final IUserDataManager database,
 			@Named(Constants.HMAC_SALT) final String hmacSalt,
-			final Map<AuthenticationProvider, 
-			IFederatedAuthenticator> providersToRegister) {
+			final Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister) {
 		Validate.notNull(database);
 		Validate.notNull(hmacSalt);
 		Validate.notNull(providersToRegister);
-		
+
 		this.database = database;
 		this.hmacSalt = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;
@@ -93,42 +94,47 @@ public class UserManager {
 	 *            - http request that we can attach the session to.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @param redirectUrl - optional redirect Url for when authentication has completed.           
-	 * @return A response redirecting the user to their redirect url or a redirect URI to the
-	 *         authentication provider if authorization / login is required.
+	 * @param redirectUrl
+	 *            - optional redirect Url for when authentication has completed.
+	 * @return A response redirecting the user to their redirect url or a
+	 *         redirect URI to the authentication provider if authorization /
+	 *         login is required.
 	 */
 	public final Response authenticate(final HttpServletRequest request,
 			final String provider, @Nullable final String redirectUrl) {
-		// set redirect url as a session attribute so we can pick it up when call back happens.
+		// set redirect url as a session attribute so we can pick it up when
+		// call back happens.
 		if (redirectUrl != null) {
 			this.storeRedirectUrl(request, redirectUrl);
 		} else {
 			this.storeRedirectUrl(request, "/");
 		}
-		
+
 		// get the current user based on their session id information.
 		User currentUser = getCurrentUser(request);
 		if (null != currentUser) {
 			try {
-				return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+				return Response
+						.temporaryRedirect(this.loadRedirectUrl(request))
+						.build();
 			} catch (URISyntaxException e) {
-				log.error("Redirect URL is not valid for provider " + provider, e);
-				return new SegueErrorResponse(Status.BAD_REQUEST, 
-						"Bad authentication redirect url received.", e).toResponse();
+				log.error("Redirect URL is not valid for provider " + provider,
+						e);
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"Bad authentication redirect url received.", e)
+						.toResponse();
 			}
 		}
 
 		// Ok we don't have a current user so now we have to go ahead and try
 		// and authenticate them.
 		try {
-			IFederatedAuthenticator federatedAuthenticator = 
-					mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
 
 			// if we are an OAuth2Provider redirect to the provider
 			// authorization url.
 			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauthProvider = 
-						(IOAuth2Authenticator) federatedAuthenticator;
+				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
 				URI redirectLink = URI.create(oauthProvider
 						.getAuthorizationUrl());
@@ -207,26 +213,28 @@ public class UserManager {
 			log.info("We already have a cookie set with a valid user. "
 					+ "We won't proceed with authentication callback logic.");
 			try {
-				return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+				return Response
+						.temporaryRedirect(this.loadRedirectUrl(request))
+						.build();
 			} catch (URISyntaxException e) {
-				log.error("Redirect URL is not valid for provider " + provider, e);
-				return new SegueErrorResponse(Status.BAD_REQUEST, 
-						"Bad authentication redirect url received.", e).toResponse();
+				log.error("Redirect URL is not valid for provider " + provider,
+						e);
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"Bad authentication redirect url received.", e)
+						.toResponse();
 			}
 		}
 
 		// Ok we don't have a current user so now we have to go ahead and try
 		// and authenticate them.
 		try {
-			IFederatedAuthenticator federatedAuthenticator = 
-					mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
 
 			String providerSpecificUserLookupReference = null;
 
 			// if we are an OAuth2Provider complete next steps of oauth
 			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauthProvider = 
-						(IOAuth2Authenticator) federatedAuthenticator;
+				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
 
 				providerSpecificUserLookupReference = this
 						.getOauth2InternalRefCode(oauthProvider, request);
@@ -250,7 +258,8 @@ public class UserManager {
 			// this again for a while.
 			this.createSession(request, localUserInformation.getDbId());
 
-			return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+			return Response.temporaryRedirect(this.loadRedirectUrl(request))
+					.build();
 
 		} catch (IllegalArgumentException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
@@ -288,8 +297,9 @@ public class UserManager {
 			return error.toResponse();
 		} catch (URISyntaxException e) {
 			log.error("Redirect URL is not valid for provider " + provider, e);
-			return new SegueErrorResponse(Status.BAD_REQUEST, 
-					"Bad authentication redirect url received.", e).toResponse();
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Bad authentication redirect url received.", e)
+					.toResponse();
 		}
 	}
 
@@ -418,27 +428,27 @@ public class UserManager {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Record that a user has answered a question.
 	 * 
-	 * @param user - user who answered the question
-	 * @param questionResponse - question results.
+	 * @param user
+	 *            - user who answered the question
+	 * @param questionResponse
+	 *            - question results.
 	 */
-	public final void recordUserQuestionInformation(final User user, 
+	public final void recordUserQuestionInformation(final User user,
 			final QuestionValidationResponse questionResponse) {
-		
-		QuestionAttempt questionAttempt 
-			= new QuestionAttempt(questionResponse.getQuestionId(), new Date(),
-					questionResponse.isCorrect(), questionResponse.getAnswer());
-		
-		this.database.addItemToUserField(
-				user, 
-				QUESTION_ATTEMPTS_FIELDNAME, 
-				Lists.newArrayList(questionAttempt));
+
+		QuestionAttempt questionAttempt = new QuestionAttempt(
+				questionResponse.getQuestionId(), new Date(),
+				questionResponse.isCorrect(), questionResponse.getAnswer());
+
+		this.database.addItemToMapField(user, QUESTION_ATTEMPTS_FIELDNAME,
+				questionAttempt.getQuestionId(), questionAttempt);
 		log.info("Question information recorded for user: " + user.getDbId());
 	}
-	
+
 	/**
 	 * Method to update a user object in our database.
 	 * 
@@ -525,18 +535,23 @@ public class UserManager {
 		// to deal with cross site request forgery
 		String csrfTokenFromUser = (String) request.getSession().getAttribute(
 				Constants.STATE_PARAM_NAME);
-		String csrfTokenFromProvider = request.getParameter(Constants.STATE_PARAM_NAME);
+		String csrfTokenFromProvider = request
+				.getParameter(Constants.STATE_PARAM_NAME);
 
 		if (null == csrfTokenFromUser || null == csrfTokenFromProvider
 				|| !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
 			log.error("Invalid state parameter - Provider said: "
-					+ request.getParameter(Constants.STATE_PARAM_NAME) + " Session said: "
-					+ request.getSession().getAttribute(Constants.STATE_PARAM_NAME));
+					+ request.getParameter(Constants.STATE_PARAM_NAME)
+					+ " Session said: "
+					+ request.getSession().getAttribute(
+							Constants.STATE_PARAM_NAME));
 			return false;
 		} else {
 			log.debug("State parameter matches - Provider said: "
-					+ request.getParameter(Constants.STATE_PARAM_NAME) + " Session said: "
-					+ request.getSession().getAttribute(Constants.STATE_PARAM_NAME));
+					+ request.getParameter(Constants.STATE_PARAM_NAME)
+					+ " Session said: "
+					+ request.getSession().getAttribute(
+							Constants.STATE_PARAM_NAME));
 			return true;
 		}
 	}
@@ -604,7 +619,7 @@ public class UserManager {
 	private User getUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
-		throws AuthenticatorSecurityException, NoUserIdException,
+			throws AuthenticatorSecurityException, NoUserIdException,
 			IOException {
 		// get user info from federated provider
 		// note the userid field in this object will contain the providers user
@@ -661,21 +676,28 @@ public class UserManager {
 	 * internal reference number that the oauth2 provider can use to lookup the
 	 * information of the user who has just authenticated.
 	 * 
-	 * @param oauthProvider - The provider to authenticate against.
-	 * @param request - The request that will contain session information.
+	 * @param oauthProvider
+	 *            - The provider to authenticate against.
+	 * @param request
+	 *            - The request that will contain session information.
 	 * @return an internal reference number that will allow retrieval of the
 	 *         users information from the provider.
-	 * @throws AuthenticationCodeException - possible authentication code issues.
-	 * @throws IOException - error reading from client key?
-	 * @throws CodeExchangeException - exception whilst exchanging codes
-	 * @throws NoUserIdException - cannot find the user requested
-	 * @throws CrossSiteRequestForgeryException - Unable to guarantee no CSRF
+	 * @throws AuthenticationCodeException
+	 *             - possible authentication code issues.
+	 * @throws IOException
+	 *             - error reading from client key?
+	 * @throws CodeExchangeException
+	 *             - exception whilst exchanging codes
+	 * @throws NoUserIdException
+	 *             - cannot find the user requested
+	 * @throws CrossSiteRequestForgeryException
+	 *             - Unable to guarantee no CSRF
 	 */
 	private String getOauth2InternalRefCode(
 			final IOAuth2Authenticator oauthProvider,
-			final HttpServletRequest request) 
-		throws AuthenticationCodeException,
-			IOException, CodeExchangeException, NoUserIdException,
+			final HttpServletRequest request)
+			throws AuthenticationCodeException, IOException,
+			CodeExchangeException, NoUserIdException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
 		if (request.getQueryString() == null || !ensureNoCSRF(request)) {
@@ -697,31 +719,42 @@ public class UserManager {
 					"User denied access to our app.");
 		}
 	}
-	
+
 	/**
-	 * Helper method to store a redirect url for a user going through external authentication. 
-	 * @param request - the request to store the session variable in.
-	 * @param url - the url that the user wishes to be redirected to.
+	 * Helper method to store a redirect url for a user going through external
+	 * authentication.
+	 * 
+	 * @param request
+	 *            - the request to store the session variable in.
+	 * @param url
+	 *            - the url that the user wishes to be redirected to.
 	 */
-	private void storeRedirectUrl(final HttpServletRequest request, final String url) {
+	private void storeRedirectUrl(final HttpServletRequest request,
+			final String url) {
 		request.getSession().setAttribute(Constants.REDIRECT_URL_PARAM_NAME,
 				url);
 	}
-	
+
 	/**
 	 * Helper method to retrieve the users redirect url from their session.
 	 * 
-	 * @param request - the request where the redirect url is stored (session variable).
-	 * @return the URI containing the users desired uri. If URL is null then returns /
-	 * @throws URISyntaxException - if the session retrieved is an invalid URI.
+	 * @param request
+	 *            - the request where the redirect url is stored (session
+	 *            variable).
+	 * @return the URI containing the users desired uri. If URL is null then
+	 *         returns /
+	 * @throws URISyntaxException
+	 *             - if the session retrieved is an invalid URI.
 	 */
-	private URI loadRedirectUrl(final HttpServletRequest request) throws URISyntaxException {
-		String url = (String) request.getSession().getAttribute(Constants.REDIRECT_URL_PARAM_NAME);
+	private URI loadRedirectUrl(final HttpServletRequest request)
+			throws URISyntaxException {
+		String url = (String) request.getSession().getAttribute(
+				Constants.REDIRECT_URL_PARAM_NAME);
 		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);
 		if (null == url) {
 			return new URI("/");
 		}
-		
+
 		return new URI(url);
 	}
 }

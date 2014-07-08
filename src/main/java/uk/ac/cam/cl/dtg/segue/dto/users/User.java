@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.mongojack.ObjectId;
 
@@ -10,6 +11,7 @@ import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.api.client.util.Maps;
 
 /**
  * Data Object to represent a user of the system. This object will be persisted
@@ -29,7 +31,7 @@ public class User {
 	private Date registrationDate;
 	private String schoolId;
 
-	private List<QuestionAttempt> questionAttempts;
+	private Map<String, QuestionAttempt> questionAttempts;
 	// TODO: move out of segue DTO into isaac one.
 	private List<Gameboard> gameBoards;
 	
@@ -71,7 +73,7 @@ public class User {
 			@JsonProperty("gender") final Gender gender,
 			@JsonProperty("registrationTime") final Date registrationTime,
 			@JsonProperty("schoolId") final String schoolId,
-			@JsonProperty("questionAttempts") final List<QuestionAttempt> questionAttempts) {
+			@JsonProperty("questionAttempts") final Map<String, QuestionAttempt> questionAttempts) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -89,7 +91,7 @@ public class User {
 	 * Default constructor required for Jackson.
 	 */
 	public User() {
-		this.questionAttempts = new ArrayList<QuestionAttempt>();
+		this.questionAttempts = Maps.newHashMap();
 		this.gameBoards = new ArrayList<Gameboard>();
 	}
 
@@ -202,7 +204,7 @@ public class User {
 	 * 
 	 * @return list of attempts
 	 */
-	public final List<QuestionAttempt> getQuestionAttempts() {
+	public final Map<String, QuestionAttempt> getQuestionAttempts() {
 		return questionAttempts;
 	}
 

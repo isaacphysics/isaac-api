@@ -62,5 +62,15 @@ public interface IUserDataManager {
 	 * @param key - field to update
 	 * @param value - value to replace field with.
 	 */
-	void addItemToUserField(User user, String key, List value);
+	void addItemToListField(User user, String key, List value);
+
+	/**
+	 * Update a particular field on a user object.
+	 * 
+	 * @param user - the user object containing the users local id.
+	 * @param field - the name of the field that we want to update.
+	 * @param mapKey - The key to add to the map.
+	 * @param value - the object to use as the value for the field. Must be serializable.
+	 */
+	void addItemToMapField(User user, String field, String mapKey, Object value);
 }

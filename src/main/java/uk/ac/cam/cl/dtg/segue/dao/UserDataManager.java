@@ -11,10 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.mongodb.DB;
-import com.mongodb.MongoException;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dto.users.User;
@@ -93,12 +90,30 @@ public class UserDataManager implements IUserDataManager {
 	}
 	
 	@Override
-	public final void addItemToUserField(final User user, final String key, final List value) {
+	public final void addItemToMapField(final User user, final String field, 
+			final String mapKey, final Object value) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
 		
-		WriteResult<User, String> r = jc.updateById(user.getDbId(), DBUpdate.addToSet(key, value));
+		WriteResult<User, String> r = jc.updateById(user.getDbId(), 
+				DBUpdate.set(field + ".$." + mapKey, value));
+
+		if (r.getError() != null) {
+			log.error("Error during database update " + r.getError());
+		}
+	}
+	
+	@Override
+	public final void addItemToListField(
+			final User user, 
+			final String fieldName, 
+			final List value) {
+		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), User.class,
+				String.class);
+		
+		WriteResult<User, String> r = jc.updateById(user.getDbId(), DBUpdate.addToSet(fieldName, value));
 
 		if (r.getError() != null) {
 			log.error("Error during database update " + r.getError());
