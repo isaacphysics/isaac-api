@@ -22,10 +22,10 @@ import uk.ac.cam.cl.dtg.segue.dto.users.User;
  * This class is responsible for managing and persisting user data.
  * @author Stephen Cummins
  */
-public class UserDataManager implements IUserDataManager {
+public class MongoUserDataManager implements IUserDataManager {
 
 	private static final Logger log = LoggerFactory
-			.getLogger(UserDataManager.class);
+			.getLogger(MongoUserDataManager.class);
 	
 	private final DB database;
 	private static final String USER_COLLECTION_NAME = "users";
@@ -36,7 +36,7 @@ public class UserDataManager implements IUserDataManager {
 	 * @param database - the database reference used for persistence.
 	 */
 	@Inject
-	public UserDataManager(final DB database) {
+	public MongoUserDataManager(final DB database) {
 		this.database = database;
 	}
 

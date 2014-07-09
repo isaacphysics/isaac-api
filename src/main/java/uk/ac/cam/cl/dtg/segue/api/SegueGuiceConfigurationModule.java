@@ -17,7 +17,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManager;
-import uk.ac.cam.cl.dtg.segue.dao.UserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.Mongo;
 import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
@@ -155,7 +155,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		bind(ILogManager.class).to(LogManager.class);
 
-		bind(IUserDataManager.class).to(UserDataManager.class);
+		bind(IUserDataManager.class).to(MongoUserDataManager.class);
 
 		// bind to single instances mainly because caches are used
 		bind(ContentMapper.class).toInstance(mapper);
