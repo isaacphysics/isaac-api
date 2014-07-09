@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.models.pages;
+package uk.ac.cam.cl.dtg.isaac.dto;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 

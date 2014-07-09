@@ -19,10 +19,10 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.models.content.GameFilter;
-import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
-import uk.ac.cam.cl.dtg.isaac.models.content.GameboardItem;
-import uk.ac.cam.cl.dtg.isaac.models.content.Wildcard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
+import uk.ac.cam.cl.dtg.isaac.dto.Gameboard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.Wildcard;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;

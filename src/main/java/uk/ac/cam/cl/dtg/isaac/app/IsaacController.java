@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
-import uk.ac.cam.cl.dtg.isaac.models.pages.ContentPage;
+import uk.ac.cam.cl.dtg.isaac.dto.ContentPage;
+import uk.ac.cam.cl.dtg.isaac.dto.Gameboard;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;

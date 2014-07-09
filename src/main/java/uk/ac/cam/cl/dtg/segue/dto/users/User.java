@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.mongojack.ObjectId;
 
-import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
+import uk.ac.cam.cl.dtg.isaac.dto.Gameboard;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

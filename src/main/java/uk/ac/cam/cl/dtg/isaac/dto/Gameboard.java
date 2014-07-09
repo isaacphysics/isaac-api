@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.models.content;
+package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.ArrayList;
 import java.util.Date;

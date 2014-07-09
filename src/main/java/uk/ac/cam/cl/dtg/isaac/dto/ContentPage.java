@@ -1,17 +1,28 @@
-package uk.ac.cam.cl.dtg.isaac.models.pages;
+package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummary;
 
+/**
+ * 
+ * @deprecated this is an old class for the rutherford prototype.
+ */
+@Deprecated
 public class ContentPage {
 	private String id;
 	private Content contentObject;
 	private List<ContentSummary> sidebarContent;
 
-	public ContentPage(String id, Content contentObject,
-			List<ContentSummary> sidebarContent) {
+	/**
+	 * Create a new content page.
+	 * @param id - 
+	 * @param contentObject - 
+	 * @param sidebarContent - 
+	 */
+	public ContentPage(final String id, final Content contentObject,
+			final List<ContentSummary> sidebarContent) {
 		super();
 		this.id = id;
 		this.contentObject = contentObject;
