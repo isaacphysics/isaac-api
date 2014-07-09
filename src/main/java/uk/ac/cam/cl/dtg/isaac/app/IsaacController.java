@@ -301,7 +301,7 @@ public class IsaacController {
 			
 			if (gameboard.getOwnerUserId() != null) {
 				// go ahead and persist the gameboard
-				gameManager.storeGameboard(gameboard);
+				gameManager.permanentlyStoreGameboard(gameboard);
 			}
 			
 			return Response.ok(gameboard)

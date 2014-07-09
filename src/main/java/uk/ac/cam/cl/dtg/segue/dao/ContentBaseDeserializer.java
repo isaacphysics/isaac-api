@@ -29,14 +29,20 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 
 	private Map<String, Class<? extends Content>> typeMap = null;
 
-	public void registerTypeMap(Map<String, Class<? extends Content>> jsonTypes) {
+	/**
+	 * Register the map of json types that this deserializer should be interested in.
+	 *  
+	 * @param jsonTypes - mapping a string type to a DO / DTO class.
+	 */
+	public final void registerTypeMap(
+			final Map<String, Class<? extends Content>> jsonTypes) {
 		this.typeMap = jsonTypes;
 	}
 
 	@Override
-	public Content deserialize(JsonParser jsonParser,
-			DeserializationContext deserializationContext) throws IOException,
-			JsonProcessingException, JsonMappingException {
+	public final Content deserialize(final JsonParser jsonParser,
+			final DeserializationContext deserializationContext) throws	JsonProcessingException, 
+			JsonMappingException, IOException {
 
 		if (null == typeMap) {
 			throw new IllegalStateException(
@@ -47,9 +53,11 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 		ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
 		Class<? extends Content> contentClass = null;
 
-		if (null == root.get("type"))
+		if (null == root.get("type")) {
 			throw new JsonMappingException(
-					"Error: unable to parse content as there is no type property within the json input.");
+					"Error: unable to parse content as there "
+					+ "is no type property within the json input.");			
+		}
 
 		String contentType = root.get("type").textValue();
 

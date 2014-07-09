@@ -44,8 +44,7 @@ public class GameManager {
 	private static final int MAX_QUESTIONS_TO_SEARCH = 20;
 	
 	private final SegueApiFacade api;
-	
-	private GameboardPersistenceManager gameboardPersistenceManager;
+	private final GameboardPersistenceManager gameboardPersistenceManager;
 
 	/**
 	 * Creates a game manager that operates using the provided api.
@@ -57,7 +56,7 @@ public class GameManager {
 		this.api = api;
 		this.gameboardPersistenceManager 
 			= new GameboardPersistenceManager(api.requestAppDataManager(
-					GAMEBOARD_COLLECTION_NAME, Gameboard.class));
+					GAMEBOARD_COLLECTION_NAME, uk.ac.cam.cl.dtg.isaac.dos.Gameboard.class), api);
 	}
 
 	/**
@@ -95,6 +94,11 @@ public class GameManager {
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<String> levelsList,
 			final List<String> conceptsList, final User boardOwner) {
+		String boardOwnerId = null;
+		if (boardOwner != null) {
+			boardOwnerId = boardOwner.getDbId();
+		}
+		
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
 			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
@@ -107,8 +111,7 @@ public class GameManager {
 
 		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
-		// Search for questions that match the fields to map variable. //TODO:
-		// fix magic numbers
+		// Search for questions that match the fields to map variable. 
 		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(
 				api.getLiveVersion(), fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
 
@@ -129,6 +132,7 @@ public class GameManager {
 			Injector injector = Guice.createInjector(
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
+			
 			Mapper mapper = injector.getInstance(Mapper.class);
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
@@ -141,8 +145,12 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
-			return new Gameboard(uuid, gameboardReadyQuestions, new Date(), gameFilter, 
-					boardOwner.getDbId());
+			Gameboard gameboard = 
+					new Gameboard(uuid, gameboardReadyQuestions, new Date(), gameFilter, 
+							boardOwnerId);
+			this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboard);
+			
+			return gameboard;
 		} else {
 			return new Gameboard();
 		}
@@ -153,8 +161,8 @@ public class GameManager {
 	 * 
 	 * @param gameboardToStore - Gameboard object to persist.
 	 */
-	public final void storeGameboard(final Gameboard gameboardToStore) {
-		this.gameboardPersistenceManager.saveGameboard(gameboardToStore);
+	public final void permanentlyStoreGameboard(final Gameboard gameboardToStore) {
+		this.gameboardPersistenceManager.saveGameboardToPermanentStorage(gameboardToStore);
 	}
 	
 	/**
@@ -187,7 +195,7 @@ public class GameManager {
 	 * 		- filter object containing all the filter information used to make this board.
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
 	generateFieldToMatchForQuestionFilter(
 			final GameFilter gameFilter) {
 

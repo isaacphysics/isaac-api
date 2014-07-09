@@ -96,4 +96,44 @@ public class GameFilter {
 	public final List<String> getConcepts() {
 		return concepts;
 	}
+
+	/**
+	 * Sets the subjects.
+	 * @param subjects the subjects to set
+	 */
+	public final void setSubjects(List<String> subjects) {
+		this.subjects = subjects;
+	}
+
+	/**
+	 * Sets the fields.
+	 * @param fields the fields to set
+	 */
+	public final void setFields(List<String> fields) {
+		this.fields = fields;
+	}
+
+	/**
+	 * Sets the topics.
+	 * @param topics the topics to set
+	 */
+	public final void setTopics(List<String> topics) {
+		this.topics = topics;
+	}
+
+	/**
+	 * Sets the levels.
+	 * @param levels the levels to set
+	 */
+	public final void setLevels(List<String> levels) {
+		this.levels = levels;
+	}
+
+	/**
+	 * Sets the concepts.
+	 * @param concepts the concepts to set
+	 */
+	public final void setConcepts(List<String> concepts) {
+		this.concepts = concepts;
+	}
 }

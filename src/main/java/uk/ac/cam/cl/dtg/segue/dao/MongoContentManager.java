@@ -21,7 +21,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
 /**
- * Implementation that specifically works with MongoDB Content objects
+ * Implementation that specifically works with MongoDB Content objects.
  * 
  */
 public class MongoContentManager implements IContentManager {
