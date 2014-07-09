@@ -16,8 +16,6 @@ public class GameboardPersistenceManager {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(GameboardPersistenceManager.class);
-	
-	//private static final String USER_COLLECTION_NAME = "users";
 
 	private final IAppDataManager<Gameboard> gameboardDataManager;
 
