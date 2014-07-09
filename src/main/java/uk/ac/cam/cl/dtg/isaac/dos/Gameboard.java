@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Gameboard {
 	@JsonProperty("_id")
 	private String id;
-	private List<String> gameboardItems;
+	private List<String> questions;
 	private Wildcard wildCard;
 	private Date creationDate;
 	private GameFilter gameFilter;
@@ -47,17 +47,17 @@ public class Gameboard {
 	 * @return the gameboardItems (ids)
 	 */
 	public final List<String> getQuestions() {
-		return gameboardItems;
+		return questions;
 	}
 
 	/**
 	 * Sets the gameboardItem ids.
 	 * 
-	 * @param gameboardItems
+	 * @param questions
 	 *            the gameboardItems ids to set
 	 */
-	public final void setQuestions(final List<String> gameboardItems) {
-		this.gameboardItems = gameboardItems;
+	public final void setQuestions(final List<String> questions) {
+		this.questions = questions;
 	}
 
 	/**
@@ -123,5 +123,13 @@ public class Gameboard {
 	 */
 	public final String getOwnerUserId() {
 		return ownerUserId;
+	}
+
+	/**
+	 * Sets the ownerUserId.
+	 * @param ownerUserId the ownerUserId to set
+	 */
+	public final void setOwnerUserId(final String ownerUserId) {
+		this.ownerUserId = ownerUserId;
 	}
 }

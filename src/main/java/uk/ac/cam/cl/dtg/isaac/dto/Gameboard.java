@@ -7,8 +7,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import uk.ac.cam.cl.dtg.isaac.app.Constants;
 
 /**
@@ -16,12 +14,10 @@ import uk.ac.cam.cl.dtg.isaac.app.Constants;
  *
  */
 public class Gameboard {
-	
 	private static final Logger log = LoggerFactory.getLogger(Gameboard.class);
 
-	@JsonProperty("_id")
 	private String id;
-	private List<GameboardItem> gameboardItems;
+	private List<GameboardItem> questions;
 	private Wildcard wildCard;
 	private Date creationDate;
 	private GameFilter gameFilter;
@@ -31,7 +27,7 @@ public class Gameboard {
 	 * Default Gameboard Constructor.
 	 */
 	public Gameboard() {
-		this.gameboardItems = new ArrayList<GameboardItem>();
+		this.questions = new ArrayList<GameboardItem>();
 	}
 
 	/**
@@ -53,7 +49,7 @@ public class Gameboard {
 	public Gameboard(final String id, final List<GameboardItem> questions,
 			final Date creationDate, final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
-		this.gameboardItems = questions;
+		this.questions = questions;
 		this.creationDate = creationDate;
 		this.gameFilter = gameFilter;
 		this.ownerUserId = ownerUserId;
@@ -91,17 +87,17 @@ public class Gameboard {
 	 * @return the gameboardItems
 	 */
 	public final List<GameboardItem> getQuestions() {
-		return gameboardItems;
+		return questions;
 	}
 
 	/**
 	 * Sets the gameboardItems.
 	 * 
-	 * @param gameboardItems
+	 * @param questions
 	 *            the gameboardItems to set
 	 */
-	public final void setQuestions(final List<GameboardItem> gameboardItems) {
-		this.gameboardItems = gameboardItems;
+	public final void setQuestions(final List<GameboardItem> questions) {
+		this.questions = questions;
 	}
 
 	/**
@@ -167,5 +163,13 @@ public class Gameboard {
 	 */
 	public final String getOwnerUserId() {
 		return ownerUserId;
+	}
+
+	/**
+	 * Sets the ownerUserId.
+	 * @param ownerUserId the ownerUserId to set
+	 */
+	public final void setOwnerUserId(final String ownerUserId) {
+		this.ownerUserId = ownerUserId;
 	}
 }
