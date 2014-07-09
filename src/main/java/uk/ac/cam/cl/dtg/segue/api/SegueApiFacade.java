@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -745,7 +746,7 @@ public class SegueApiFacade {
 		}
 		
 		String newRedirectUrl = null;
-		if (!redirectUrl.contains("http://")) {
+		if (null == redirectUrl || !redirectUrl.contains("http://")) {
 			// TODO: Make this redirection stuff less horrid.
 			newRedirectUrl = "http://" + this.properties.getProperty(Constants.HOST_NAME) 
 					+ redirectUrl;
@@ -987,5 +988,24 @@ public class SegueApiFacade {
 		}
 
 		return fieldsToMatchOutput;
+	}
+	
+	/**
+	 * Library method to allow applications to access a segue persistence manager.
+	 * This allows applications to save data using the segue database.
+	 * 
+	 * These objects should be used with care as it is possible to create managers for 
+	 * segue managed objects and get conflicts. e.g. requesting a manager that manages users
+	 * could give you an object equivalent to a low level segue object.
+	 * 
+	 * @param <T> - the type that the app data manager looks after.
+	 * @param databaseName - the databaseName / collection name / internal reference for 
+	 * objects of this type.
+	 * @param classType - the class of the type <T>.
+	 * @return IAppDataManager where <T> is the type the manager is responsible for. 
+	 */
+	public final <T> IAppDataManager<T> requestAppDataManager(final String databaseName, 
+			final Class<T> classType) {
+		return SegueGuiceConfigurationModule.getAppDataManager(databaseName, classType);
 	}
 }

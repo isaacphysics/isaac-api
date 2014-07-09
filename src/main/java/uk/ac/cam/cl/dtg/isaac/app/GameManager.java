@@ -18,10 +18,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.models.content.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.models.content.Gameboard;
 import uk.ac.cam.cl.dtg.isaac.models.content.GameboardItem;
-import uk.ac.cam.cl.dtg.isaac.models.content.IsaacQuestionInfo;
 import uk.ac.cam.cl.dtg.isaac.models.content.Wildcard;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
@@ -44,6 +44,8 @@ public class GameManager {
 	private static final int MAX_QUESTIONS_TO_SEARCH = 20;
 	
 	private final SegueApiFacade api;
+	
+	private GameboardPersistenceManager gameboardPersistenceManager;
 
 	/**
 	 * Creates a game manager that operates using the provided api.
@@ -53,6 +55,9 @@ public class GameManager {
 	 */
 	public GameManager(final SegueApiFacade api) {
 		this.api = api;
+		this.gameboardPersistenceManager 
+			= new GameboardPersistenceManager(api.requestAppDataManager(
+					GAMEBOARD_COLLECTION_NAME, Gameboard.class));
 	}
 
 	/**
@@ -129,8 +134,8 @@ public class GameManager {
 
 			// Map each Content object into an IsaacQuestionInfo object
 			for (Content c : questionsForGameboard) {
-				IsaacQuestionInfo questionInfo = mapper.map(c,
-						IsaacQuestionInfo.class);
+				GameboardItem questionInfo = mapper.map(c,
+						GameboardItem.class);
 				questionInfo.setUri(IsaacController.generateApiUrl(c));
 				gameboardReadyQuestions.add(questionInfo);
 			}
@@ -147,13 +152,20 @@ public class GameManager {
 	 * Store a gameboard in a public location.
 	 * 
 	 * @param gameboardToStore - Gameboard object to persist.
-	 * @return true for success false for failure.
 	 */
-	public final boolean storeGameboard(final Gameboard gameboardToStore) {
-		// TODO: stub
-		return false;
+	public final void storeGameboard(final Gameboard gameboardToStore) {
+		this.gameboardPersistenceManager.saveGameboard(gameboardToStore);
 	}
-
+	
+	/**
+	 * Get a gameboard by its id.
+	 * @param gameboardId - to look up.
+	 * @return the gameboard or null.
+	 */
+	public final Gameboard getGameboard(final String gameboardId) {
+		return this.gameboardPersistenceManager.getGameboardById(gameboardId);
+	}
+	
 	/**
 	 * Find a wildcard object to add to a gameboard.
 	 * 

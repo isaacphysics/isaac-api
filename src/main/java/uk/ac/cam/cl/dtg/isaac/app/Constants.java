@@ -19,6 +19,8 @@ public final class Constants {
 
 	public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
+	public static final String GAMEBOARD_COLLECTION_NAME = "gameboards";
+	
 	/**
 	 * Game specific variables.
 	 */

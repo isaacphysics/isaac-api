@@ -295,10 +295,16 @@ public class IsaacController {
 		}
 
 		try {
-			return Response.ok(
-					gameManager.generateRandomGameboard(subjectsList,
-							fieldsList, topicsList, levelsList, conceptsList, 
-							api.getCurrentUser(request)))
+			Gameboard gameboard = gameManager.generateRandomGameboard(subjectsList,
+					fieldsList, topicsList, levelsList, conceptsList, 
+					api.getCurrentUser(request));
+			
+			if (gameboard.getOwnerUserId() != null) {
+				// go ahead and persist the gameboard
+				gameManager.storeGameboard(gameboard);
+			}
+			
+			return Response.ok(gameboard)
 					.build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -317,11 +323,17 @@ public class IsaacController {
 	@GET
 	@Path("gameboards/{gameboard_id}")
 	@Produces("application/json")
-	public final Response generateGameboard(
+	public final Response getGameboard(
 			@PathParam("gameboard_id") final String gameboardId) {
+		
 		// tags are and relationships except for subject
 		try {
-			Gameboard gameboard = gameManager.generateRandomGameboard();
+			Gameboard gameboard = gameManager.getGameboard(gameboardId);
+			
+			if (null == gameboard) {
+				return new SegueErrorResponse(Status.NOT_FOUND, 
+						"No Gameboard found for the id specified.").toResponse();
+			}
 			
 			return Response.ok(gameboard)
 					.build();

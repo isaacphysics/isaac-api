@@ -3,52 +3,132 @@ package uk.ac.cam.cl.dtg.isaac.models.content;
 import java.util.List;
 
 import org.dozer.Mapping;
-
-public abstract class GameboardItem {
-	protected String id;
-	protected String title;
+/**
+ * DTO that provides high level information for Isaac Questions.
+ * 
+ * Used for gameboards to represent cut down versions of questions
+ */
+public class GameboardItem {
+	private String id;
+	private String title;
 	@Mapping("subtitle")
-	protected String description;
-	protected String uri;
-	protected List<String> tags;
-
-	public String getId() {
+	private String description;
+	private String uri;
+	private List<String> tags;
+	
+	private String level;
+	private String state;
+	
+	/**
+	 * Gets the id.
+	 * @return the id
+	 */
+	public final String getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	/**
+	 * Sets the id.
+	 * @param id the id to set
+	 */
+	public final void setId(final String id) {
 		this.id = id;
 	}
 
-	public String getTitle() {
+	/**
+	 * Gets the title.
+	 * @return the title
+	 */
+	public final String getTitle() {
 		return title;
 	}
 
-	public void setTitle(String title) {
+	/**
+	 * Sets the title.
+	 * @param title the title to set
+	 */
+	public final void setTitle(final String title) {
 		this.title = title;
 	}
 
-	public String getDescription() {
+	/**
+	 * Gets the description.
+	 * @return the description
+	 */
+	public final String getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	/**
+	 * Sets the description.
+	 * @param description the description to set
+	 */
+	public final void setDescription(final String description) {
 		this.description = description;
 	}
 
-	public String getUri() {
+	/**
+	 * Gets the uri.
+	 * @return the uri
+	 */
+	public final String getUri() {
 		return uri;
 	}
 
-	public void setUri(String url) {
-		this.uri = url;
+	/**
+	 * Sets the uri.
+	 * @param uri the uri to set
+	 */
+	public final void setUri(final String uri) {
+		this.uri = uri;
 	}
 
-	public List<String> getTags() {
+	/**
+	 * Gets the tags.
+	 * @return the tags
+	 */
+	public final List<String> getTags() {
 		return tags;
 	}
 
-	public void setTags(List<String> tags) {
+	/**
+	 * Sets the tags.
+	 * @param tags the tags to set
+	 */
+	public final void setTags(final List<String> tags) {
 		this.tags = tags;
 	}
+
+	/**
+	 * Gets the level.
+	 * @return the level
+	 */
+	public final String getLevel() {
+		return level;
+	}
+
+	/**
+	 * Sets the level.
+	 * @param level the level to set
+	 */
+	public final void setLevel(final String level) {
+		this.level = level;
+	}
+
+	/**
+	 * Gets the state.
+	 * @return the state
+	 */
+	public final String getState() {
+		return state;
+	}
+
+	/**
+	 * Sets the state.
+	 * @param state the state to set
+	 */
+	public final void setState(final String state) {
+		this.state = state;
+	}
+
 }

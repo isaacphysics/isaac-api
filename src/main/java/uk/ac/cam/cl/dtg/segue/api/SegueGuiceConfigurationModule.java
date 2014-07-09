@@ -13,10 +13,12 @@ import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.LogManager;
+import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.Mongo;
@@ -219,6 +221,20 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			PropertiesLoader propertyLoader) {
 		bindConstant().annotatedWith(Names.named(propertyLabel)).to(
 				propertyLoader.getProperty(propertyLabel));
+	}
+	
+	/**
+	 * Segue utility method for providing a new instance of an application manager.
+	 * 
+	 * @param databaseName - the database / table name - should be unique.
+	 * @param classType - the class type that represents what can be managed by this app manager.
+	 * @param <T> the type that can be managed by this App Manager. 
+	 * @return the application manager ready to use.
+	 */
+	public static <T> IAppDataManager<T> getAppDataManager(final String databaseName, 
+			final Class<T> classType) {
+		// for now this only returns mongodb typed objects.
+		return new MongoAppDataManager<T>(Mongo.getDB(), databaseName, classType);
 	}
 
 }
