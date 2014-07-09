@@ -20,6 +20,7 @@ public class Gameboard {
 	private Wildcard wildCard;
 	private Date creationDate;
 	private GameFilter gameFilter;
+	private String ownerUserId;
 
 	/**
 	 * Default Gameboard Constructor.
@@ -40,14 +41,17 @@ public class Gameboard {
 	 * @param gameFilter
 	 *            - simple DO that represents the filter criteria used to creat
 	 *            the gameboard.
+	 * @param ownerUserId
+	 *            - User id of the owner of the gameboard.            
 	 * @throws IllegalArgumentException
 	 */
 	public Gameboard(final String id, final List<GameboardItem> questions,
-			final Date creationDate, final GameFilter gameFilter) {
+			final Date creationDate, final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
 		this.gameboardItems = questions;
 		this.creationDate = creationDate;
 		this.gameFilter = gameFilter;
+		this.ownerUserId = ownerUserId;
 
 		if (questions.size() > Constants.GAME_BOARD_SIZE) {
 			throw new IllegalArgumentException(
@@ -150,5 +154,13 @@ public class Gameboard {
 	 */
 	public final void setGameFilter(final GameFilter gameFilter) {
 		this.gameFilter = gameFilter;
+	}
+
+	/**
+	 * Gets the userId.
+	 * @return the userId
+	 */
+	public final String getOwnerUserId() {
+		return ownerUserId;
 	}
 }

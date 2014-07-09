@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dto.users.User;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.app.Constants.*;
 
@@ -61,7 +62,7 @@ public class GameManager {
 	 * @return gameboard containing random problems.
 	 */
 	public final Gameboard generateRandomGameboard() {
-		return this.generateRandomGameboard(null, null, null, null, null);
+		return this.generateRandomGameboard(null, null, null, null, null, null);
 	}
 
 	/**
@@ -80,13 +81,15 @@ public class GameManager {
 	 * @param conceptsList
 	 *            list of concepts (relatedContent) to include in filtered
 	 *            results
+	 * @param boardOwner 
+	 *            The user that should be marked as the creator of the gameBoard.
 	 * @return a gameboard if possible that satisifies the conditions provided
 	 *         by the parameters.
 	 */
 	public final Gameboard generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<String> levelsList,
-			final List<String> conceptsList) {
+			final List<String> conceptsList, final User boardOwner) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
 			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
@@ -133,7 +136,8 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
-			return new Gameboard(uuid, gameboardReadyQuestions, new Date(), gameFilter);
+			return new Gameboard(uuid, gameboardReadyQuestions, new Date(), gameFilter, 
+					boardOwner.getDbId());
 		} else {
 			return new Gameboard();
 		}

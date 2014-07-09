@@ -30,7 +30,8 @@ public class User {
 	private Gender gender;
 	private Date registrationDate;
 	private String schoolId;
-
+	
+	// Map of questionPage id -> map of question id -> questionAttempt information
 	private Map<String, Map<String, QuestionAttempt>> questionAttempts;
 	// TODO: move out of segue DTO into isaac one.
 	private List<Gameboard> gameBoards;
