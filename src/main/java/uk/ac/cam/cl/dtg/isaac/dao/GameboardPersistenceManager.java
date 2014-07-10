@@ -124,6 +124,10 @@ public class GameboardPersistenceManager {
 		uk.ac.cam.cl.dtg.isaac.dos.Gameboard gameboardFromDb 
 			= gameboardDataManager.getById(gameboardId);
 		
+		if (null == gameboardFromDb) {
+			return null;
+		}
+		
 		Gameboard gameboardDTO = mapper.map(gameboardFromDb, Gameboard.class);
 		
 		// build query the db to get full question information

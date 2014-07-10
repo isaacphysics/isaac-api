@@ -205,19 +205,19 @@ public class IsaacController {
 		if (null != questionId) {
 			fieldsToMatch.put(ID_FIELDNAME + "."
 					+ UNPROCESSED_SEARCH_FIELD_SUFFIX,
-					Arrays.asList(questionId));			
+					Arrays.asList(questionId));
 		}
 
 		return this.findSingleResult(fieldsToMatch);
 	}
-	
+
 	/**
 	 * Rest end point that searches the api for some search string.
 	 * 
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param types
-	 *            - a comma separated list of types to include in the search.           
+	 *            - a comma separated list of types to include in the search.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -229,22 +229,27 @@ public class IsaacController {
 			@PathParam("searchString") final String searchString,
 			@QueryParam("types") final String types) {
 		ResultsWrapper<Content> searchResults = null;
-		
-		Response unknownApiResult = api.search(searchString, api.getLiveVersion(), types);
+
+		Response unknownApiResult = api.search(searchString,
+				api.getLiveVersion(), types);
 		if (unknownApiResult.getEntity() instanceof ResultsWrapper) {
-			searchResults = (ResultsWrapper<Content>) unknownApiResult.getEntity();
+			searchResults = (ResultsWrapper<Content>) unknownApiResult
+					.getEntity();
 		} else {
 			return unknownApiResult;
 		}
-		
-		return Response.ok(this.extractContentSummaryFromResultsWrapper(searchResults, 
-				propertiesLoader.getProperty(PROXY_PATH))).build();
+
+		return Response.ok(
+				this.extractContentSummaryFromResultsWrapper(searchResults,
+						propertiesLoader.getProperty(PROXY_PATH))).build();
 	}
-	
 
 	/**
 	 * REST end point to provide a gameboard containing a list of questions.
 	 * 
+	 * @param request
+	 *            - this allows us to check to see if a user is currently
+	 *            loggedin.
 	 * @param subjects
 	 *            - a comma separated list of subjects
 	 * @param fields
@@ -289,12 +294,17 @@ public class IsaacController {
 
 		if (null != levels && !levels.isEmpty()) {
 			String[] levelsAsString = levels.split(",");
-			
+
 			levelsList = Lists.newArrayList();
 			for (int i = 0; i < levelsAsString.length; i++) {
-				levelsList.add(Integer.parseInt(levelsAsString[i]));
+				try {
+					levelsList.add(Integer.parseInt(levelsAsString[i]));
+				} catch (NumberFormatException e) {
+					return new SegueErrorResponse(Status.BAD_REQUEST,
+							"Levels must be numbers if specified.", e)
+							.toResponse();
+				}
 			}
-			
 		}
 
 		if (null != concepts && !concepts.isEmpty()) {
@@ -302,24 +312,22 @@ public class IsaacController {
 		}
 
 		try {
-			Gameboard gameboard = gameManager.generateRandomGameboard(subjectsList,
-					fieldsList, topicsList, levelsList, conceptsList, 
-					api.getCurrentUser(request));
-			
+			Gameboard gameboard = gameManager.generateRandomGameboard(
+					subjectsList, fieldsList, topicsList, levelsList,
+					conceptsList, api.getCurrentUser(request));
+
 			if (gameboard.getOwnerUserId() != null) {
 				// go ahead and persist the gameboard
 				gameManager.permanentlyStoreGameboard(gameboard);
 			}
-			
-			return Response.ok(gameboard)
-					.build();
+
+			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Your gameboard filter request is invalid.").toResponse();
 		}
 	}
-	
-	
+
 	/**
 	 * REST end point to provide a gameboard containing a list of questions.
 	 * 
@@ -332,24 +340,23 @@ public class IsaacController {
 	@Produces("application/json")
 	public final Response getGameboard(
 			@PathParam("gameboard_id") final String gameboardId) {
-		
+
 		// tags are and relationships except for subject
 		try {
 			Gameboard gameboard = gameManager.getGameboard(gameboardId);
-			
+
 			if (null == gameboard) {
-				return new SegueErrorResponse(Status.NOT_FOUND, 
-						"No Gameboard found for the id specified.").toResponse();
+				return new SegueErrorResponse(Status.NOT_FOUND,
+						"No Gameboard found for the id specified.")
+						.toResponse();
 			}
-			
-			return Response.ok(gameboard)
-					.build();
+
+			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Your gameboard filter request is invalid.").toResponse();
 		}
-	}	
-	
+	}
 
 	/**
 	 * Rest end point that gets a single page based on a given id.
@@ -365,12 +372,12 @@ public class IsaacController {
 	@Produces("application/json")
 	public final Response getPage(@PathParam("page") final String pageId) {
 		Response apiResponse = api.getContentById(api.getLiveVersion(), pageId);
-		
+
 		Content c = null;
 		if (apiResponse.getEntity() instanceof Content) {
 			c = (Content) api.getContentById(api.getLiveVersion(), pageId)
 					.getEntity();
-			
+
 			if (null == c) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
 						"Unable to locate the content requested.").toResponse();
@@ -605,17 +612,18 @@ public class IsaacController {
 		List<ContentSummary> listOfContentInfo = new ArrayList<ContentSummary>();
 
 		for (Content content : contentList) {
-			ContentSummary contentInfo = extractContentSummary(content, proxyPath);
+			ContentSummary contentInfo = extractContentSummary(content,
+					proxyPath);
 			if (null != contentInfo) {
 				listOfContentInfo.add(contentInfo);
 			}
 		}
 		return listOfContentInfo;
 	}
-	
+
 	/**
-	 * Utility method to convert a ResultsWrapper of content
-	 *  objects into one with content Summary objects.
+	 * Utility method to convert a ResultsWrapper of content objects into one
+	 * with content Summary objects.
 	 * 
 	 * @param contentList
 	 *            - the list of content to summarise.
@@ -632,7 +640,8 @@ public class IsaacController {
 		ResultsWrapper<ContentSummary> contentSummaryResults = new ResultsWrapper<ContentSummary>();
 
 		for (Content content : contentList.getResults()) {
-			ContentSummary contentInfo = extractContentSummary(content, proxyPath);
+			ContentSummary contentInfo = extractContentSummary(content,
+					proxyPath);
 			if (null != contentInfo) {
 				contentSummaryResults.getResults().add(contentInfo);
 			}
@@ -681,8 +690,10 @@ public class IsaacController {
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
 	 *            match
-	 * @param startIndex - the initial index for the first result.
-	 * @param limit - the maximums number of results to return
+	 * @param startIndex
+	 *            - the initial index for the first result.
+	 * @param limit
+	 *            - the maximums number of results to return
 	 * @return Response containing a list of content summary objects
 	 */
 	private Response listContentObjects(
@@ -709,16 +720,15 @@ public class IsaacController {
 			return new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"Unable to convert one of the integer parameters provided "
-					+ "into numbers (null is ok). Params provided were: limit "
+							+ "into numbers (null is ok). Params provided were: limit "
 							+ limit + " and startIndex " + startIndex, e)
 					.toResponse();
 		}
 
-		ResultsWrapper<ContentSummary> summarizedContent = 
-				new ResultsWrapper<ContentSummary>(
-					this.extractContentSummaryFromList(c.getResults(),
-							propertiesLoader.getProperty(PROXY_PATH)),
-					c.getTotalResults());
+		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(
+				this.extractContentSummaryFromList(c.getResults(),
+						propertiesLoader.getProperty(PROXY_PATH)),
+				c.getTotalResults());
 
 		return Response.ok(summarizedContent).build();
 	}
