@@ -32,7 +32,7 @@ public class Question extends Content {
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("version") boolean published,
 			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") String level,
+			@JsonProperty("level") Integer level,
 			@JsonProperty("answer") ContentBase answer,
 			@JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, id, title, subtitle, type, author, encoding,

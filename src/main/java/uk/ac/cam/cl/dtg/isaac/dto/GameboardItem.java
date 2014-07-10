@@ -16,7 +16,7 @@ public class GameboardItem {
 	private String uri;
 	private List<String> tags;
 	
-	private String level;
+	private Integer level;
 	private String state;
 	
 	/**
@@ -103,7 +103,7 @@ public class GameboardItem {
 	 * Gets the level.
 	 * @return the level
 	 */
-	public final String getLevel() {
+	public final Integer getLevel() {
 		return level;
 	}
 
@@ -111,7 +111,7 @@ public class GameboardItem {
 	 * Sets the level.
 	 * @param level the level to set
 	 */
-	public final void setLevel(final String level) {
+	public final void setLevel(final Integer level) {
 		this.level = level;
 	}
 

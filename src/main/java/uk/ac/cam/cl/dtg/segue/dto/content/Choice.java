@@ -34,7 +34,7 @@ public class Choice extends Content {
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("published") boolean published,
 			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") String level,
+			@JsonProperty("level") Integer level,
 			@JsonProperty("correct") boolean correct,
 			@JsonProperty("explanation") ContentBase explanation) {
 		super(_id, id, title, subtitle, type, author, encoding,

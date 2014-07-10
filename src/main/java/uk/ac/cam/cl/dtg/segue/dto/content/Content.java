@@ -32,7 +32,7 @@ public class Content extends ContentBase {
 	protected String attribution;
 	protected List<String> relatedContent;
 	protected boolean published;
-	protected String level;
+	protected Integer level;
 
 	@JsonCreator
 	public Content(@JsonProperty("_id") String _id,
@@ -49,7 +49,7 @@ public class Content extends ContentBase {
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("published") boolean published,
 			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") String level) {
+			@JsonProperty("level") Integer level) {
 		this._id = _id;
 		this.id = id;
 		this.title = title;
@@ -173,11 +173,11 @@ public class Content extends ContentBase {
 		return this.children;
 	}
 
-	public String getLevel() {
+	public Integer getLevel() {
 		return level;
 	}
 
-	public void setLevel(String level) {
+	public void setLevel(Integer level) {
 		this.level = level;
 	}
 

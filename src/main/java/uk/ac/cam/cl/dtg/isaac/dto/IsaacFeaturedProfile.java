@@ -32,7 +32,7 @@ public class IsaacFeaturedProfile extends Content {
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("version") boolean published,
 			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") String level,
+			@JsonProperty("level") Integer level,
 			@JsonProperty("src") String src,
 			@JsonProperty("altText") String altText,
 			@JsonProperty("emailAddress") String emailAddress,
