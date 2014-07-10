@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummary;
 import uk.ac.cam.cl.dtg.segue.dto.content.Image;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -271,7 +272,7 @@ public class IsaacController {
 		List<String> fieldsList = null;
 		List<String> topicsList = null;
 
-		List<String> levelsList = null;
+		List<Integer> levelsList = null;
 		List<String> conceptsList = null;
 
 		if (null != subjects && !subjects.isEmpty()) {
@@ -287,7 +288,13 @@ public class IsaacController {
 		}
 
 		if (null != levels && !levels.isEmpty()) {
-			levelsList = Arrays.asList(levels.split(","));
+			String[] levelsAsString = levels.split(",");
+			
+			levelsList = Lists.newArrayList();
+			for (int i = 0; i < levelsAsString.length; i++) {
+				levelsList.add(Integer.parseInt(levelsAsString[i]));
+			}
+			
 		}
 
 		if (null != concepts && !concepts.isEmpty()) {

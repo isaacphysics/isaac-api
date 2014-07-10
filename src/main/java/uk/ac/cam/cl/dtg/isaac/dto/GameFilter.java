@@ -12,7 +12,7 @@ public class GameFilter {
 	private List<String> subjects;
 	private List<String> fields;
 	private List<String> topics;
-	private List<String> levels;
+	private List<Integer> levels;
 	private List<String> concepts;
 
 	/**
@@ -43,7 +43,7 @@ public class GameFilter {
 	 */
 	public GameFilter(final List<String> subjectsList,
 			final List<String> fieldsList, final List<String> topicsList,
-			final List<String> levelsList, final List<String> conceptsList) {
+			final List<Integer> levelsList, final List<String> conceptsList) {
 
 		this.subjects = subjectsList;
 		this.fields = fieldsList;
@@ -84,7 +84,7 @@ public class GameFilter {
 	 * 
 	 * @return the levelsList
 	 */
-	public final List<String> getLevels() {
+	public final List<Integer> getLevels() {
 		return levels;
 	}
 
@@ -125,7 +125,7 @@ public class GameFilter {
 	 * Sets the levels.
 	 * @param levels the levels to set
 	 */
-	public final void setLevels(List<String> levels) {
+	public final void setLevels(List<Integer> levels) {
 		this.levels = levels;
 	}
 

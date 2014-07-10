@@ -92,7 +92,7 @@ public class GameManager {
 	 */
 	public final Gameboard generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
-			final List<String> topicsList, final List<String> levelsList,
+			final List<String> topicsList, final List<Integer> levelsList,
 			final List<String> conceptsList, final User boardOwner) {
 		String boardOwnerId = null;
 		if (boardOwner != null) {
@@ -254,10 +254,15 @@ public class GameManager {
 
 		// now deal with levels
 		if (null != gameFilter.getLevels()) {
+			List<String> levelsAsString = Lists.newArrayList();
+			for (Integer levelInt : gameFilter.getLevels()) {
+				levelsAsString.add(levelInt.toString());
+			}
+			
 			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
 					.immutableEntry(Constants.BooleanOperator.OR,
 							Constants.LEVEL_FIELDNAME);
-			fieldsToMatchOutput.put(newEntry, gameFilter.getLevels());
+			fieldsToMatchOutput.put(newEntry, levelsAsString);
 		}
 
 		if (null != gameFilter.getConcepts()) {
