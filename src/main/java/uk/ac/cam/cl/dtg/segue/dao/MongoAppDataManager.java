@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import org.apache.commons.lang3.Validate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 
@@ -12,7 +13,6 @@ import com.mongodb.DB;
  * @param <T> the type that this App Data Manager looks after.
  */
 public class MongoAppDataManager<T> implements IAppDataManager<T> {
-
 	private final DB database;
 	private final String databaseName;
 	private final Class<T> typeParamaterClass;
@@ -47,9 +47,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 
 	@Override
 	public final T getById(final String id) {
-		if (null == id) {
-			return null;
-		}
+		Validate.notNull(id);
 
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(databaseName), typeParamaterClass,

@@ -276,13 +276,14 @@ public class SegueApiFacade {
 	 */
 	public final ResultsWrapper<Content> findMatchingContentRandomOrder(
 			String version,
-			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		if (null == version)
+		if (null == version) {
 			version = contentVersionController.getLiveVersion();
+		}
 
 		if (null == limit) {
 			limit = Constants.DEFAULT_SEARCH_LIMIT;
@@ -330,8 +331,9 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		if (null == version)
+		if (null == version) {
 			version = contentVersionController.getLiveVersion();
+		}
 
 		Content c = null;
 
@@ -357,16 +359,16 @@ public class SegueApiFacade {
 
 		return Response.ok().entity(c).build();
 	}
-	
+
 	/**
 	 * Rest end point that searches the content manager for some search string.
 	 * 
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param version
-	 *            - of the content to search.  
+	 *            - of the content to search.
 	 * @param types
-	 *            - a comma separated list of types to include in the search.           
+	 *            - a comma separated list of types to include in the search.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -379,13 +381,13 @@ public class SegueApiFacade {
 			@QueryParam("types") final String types) {
 
 		Map<String, List<String>> typesThatMustMatch = null;
-		
+
 		if (null != types) {
 			typesThatMustMatch = Maps.newHashMap();
 			typesThatMustMatch.put(Constants.TYPE_FIELDNAME,
 					Arrays.asList(types.split(",")));
 		}
-		
+
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -395,7 +397,7 @@ public class SegueApiFacade {
 
 		return Response.ok(searchResults).build();
 	}
-	
+
 	/**
 	 * Rest end point that searches the content manager for some search string.
 	 * Using the live version of the content as the default.
@@ -403,7 +405,7 @@ public class SegueApiFacade {
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param types
-	 *            - a comma separated list of types to include in the search.           
+	 *            - a comma separated list of types to include in the search.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -442,7 +444,8 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags/{version}")
-	public final Response getTagListByVersion(@PathParam("version") final String version) {
+	public final Response getTagListByVersion(
+			@PathParam("version") final String version) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -538,7 +541,8 @@ public class SegueApiFacade {
 	 * This method will allow the live version served by the site to be changed
 	 * TODO: Maybe some security???!
 	 * 
-	 * @param version - version to use as updated version of content store.
+	 * @param version
+	 *            - version to use as updated version of content store.
 	 * @return Success shown by returning the new liveSHA or failed message
 	 *         "Invalid version selected".
 	 */
@@ -570,7 +574,7 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method returns all versions as an immutable map version_list. 
+	 * This method returns all versions as an immutable map version_list.
 	 * 
 	 * @param limit
 	 *            parameter if not null will set the limit of the number entries
@@ -582,7 +586,8 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions")
-	public final Response getVersionsList(@QueryParam("limit") final String limit) {
+	public final Response getVersionsList(
+			@QueryParam("limit") final String limit) {
 		// try to parse the integer
 		Integer limitAsInt = null;
 
@@ -633,20 +638,22 @@ public class SegueApiFacade {
 
 	/**
 	 * Gets the current version of the segue application.
-	 *  
+	 * 
 	 * @return segue version as a string wrapped in a response.
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("info/segue_version")	
+	@Path("info/segue_version")
 	public final Response getSegueAppVersion() {
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
-				.put("segueVersion", this.properties.getProperty(Constants.SEGUE_APP_VERSION))
+				.put("segueVersion",
+						this.properties
+								.getProperty(Constants.SEGUE_APP_VERSION))
 				.build();
-		
+
 		return Response.ok(result).build();
 	}
-	
+
 	/**
 	 * This method return a json response containing version related
 	 * information.
@@ -669,7 +676,8 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method return a json response containing version related information.
+	 * This method return a json response containing version related
+	 * information.
 	 * 
 	 * @return a version info as json response
 	 */
@@ -703,7 +711,8 @@ public class SegueApiFacade {
 	 * 
 	 * @param request
 	 *            - the request which may contain session information.
-	 * @return Returns the current user DTO if we can get it or null if we can't
+	 * @return Returns the current user DTO if we can get it or null response if
+	 *         we can't. It will be a 204 No Content
 	 */
 	@GET
 	@Produces("application/json")
@@ -724,7 +733,8 @@ public class SegueApiFacade {
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
-	 * @param redirectUrl - optional redirect url after authentication has completed.            
+	 * @param redirectUrl
+	 *            - optional redirect url after authentication has completed.
 	 * @return Redirect response to the auth providers site.
 	 */
 	@GET
@@ -734,7 +744,7 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
 			@QueryParam("redirect") final String redirectUrl) {
-		
+
 		Injector injector = Guice
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
@@ -744,18 +754,20 @@ public class SegueApiFacade {
 		if (null != currentUser) {
 			return Response.ok().entity(currentUser).build();
 		}
-		
+
 		String newRedirectUrl = null;
 		if (null == redirectUrl || !redirectUrl.contains("http://")) {
 			// TODO: Make this redirection stuff less horrid.
-			newRedirectUrl = "http://" + this.properties.getProperty(Constants.HOST_NAME) 
+			newRedirectUrl = "http://"
+					+ this.properties.getProperty(Constants.HOST_NAME)
 					+ redirectUrl;
 		} else {
 			newRedirectUrl = redirectUrl;
 		}
 
 		// ok we need to hand over to user manager
-		return userManager.authenticate(request, signinProvider, newRedirectUrl);
+		return userManager
+				.authenticate(request, signinProvider, newRedirectUrl);
 	}
 
 	/**
@@ -781,7 +793,8 @@ public class SegueApiFacade {
 				.createInjector(new SegueGuiceConfigurationModule());
 		UserManager userManager = injector.getInstance(UserManager.class);
 
-		return userManager.authenticateCallback(request, response, signinProvider);
+		return userManager.authenticateCallback(request, response,
+				signinProvider);
 	}
 
 	/**
@@ -845,9 +858,14 @@ public class SegueApiFacade {
 
 	/**
 	 * Answer a question.
-	 * @param request - the servlet request so we can find out if it is a known user. 
-	 * @param questionId that you are attempting
-	 * @param jsonAnswer - answer body.
+	 * 
+	 * @param request
+	 *            - the servlet request so we can find out if it is a known
+	 *            user.
+	 * @param questionId
+	 *            that you are attempting
+	 * @param jsonAnswer
+	 *            - answer body.
 	 * @return Response containing a QuestionValidationResponse object.
 	 */
 	@POST
@@ -896,13 +914,14 @@ public class SegueApiFacade {
 
 		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
-		
+
 		User user = this.getCurrentUser(request);
-		if (user != null && response.getEntity() instanceof QuestionValidationResponse) {
+		if (user != null
+				&& response.getEntity() instanceof QuestionValidationResponse) {
 			Injector injector = Guice
 					.createInjector(new SegueGuiceConfigurationModule());
 			UserManager userManager = injector.getInstance(UserManager.class);
-			userManager.recordUserQuestionInformation(user, 
+			userManager.recordUserQuestionInformation(user,
 					(QuestionValidationResponse) response.getEntity());
 		}
 
@@ -972,8 +991,8 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
-	generateDefaultFieldToMatch(
+	public static 
+	Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
@@ -989,23 +1008,29 @@ public class SegueApiFacade {
 
 		return fieldsToMatchOutput;
 	}
-	
+
 	/**
-	 * Library method to allow applications to access a segue persistence manager.
-	 * This allows applications to save data using the segue database.
+	 * Library method to allow applications to access a segue persistence
+	 * manager. This allows applications to save data using the segue database.
 	 * 
-	 * These objects should be used with care as it is possible to create managers for 
-	 * segue managed objects and get conflicts. e.g. requesting a manager that manages users
-	 * could give you an object equivalent to a low level segue object.
+	 * These objects should be used with care as it is possible to create
+	 * managers for segue managed objects and get conflicts. e.g. requesting a
+	 * manager that manages users could give you an object equivalent to a low
+	 * level segue object.
 	 * 
-	 * @param <T> - the type that the app data manager looks after.
-	 * @param databaseName - the databaseName / collection name / internal reference for 
-	 * objects of this type.
-	 * @param classType - the class of the type <T>.
-	 * @return IAppDataManager where <T> is the type the manager is responsible for. 
+	 * @param <T>
+	 *            - the type that the app data manager looks after.
+	 * @param databaseName
+	 *            - the databaseName / collection name / internal reference for
+	 *            objects of this type.
+	 * @param classType
+	 *            - the class of the type <T>.
+	 * @return IAppDataManager where <T> is the type the manager is responsible
+	 *         for.
 	 */
-	public final <T> IAppDataManager<T> requestAppDataManager(final String databaseName, 
-			final Class<T> classType) {
-		return SegueGuiceConfigurationModule.getAppDataManager(databaseName, classType);
+	public final <T> IAppDataManager<T> requestAppDataManager(
+			final String databaseName, final Class<T> classType) {
+		return SegueGuiceConfigurationModule.getAppDataManager(databaseName,
+				classType);
 	}
 }
