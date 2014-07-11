@@ -89,7 +89,7 @@ public class GameManager {
 	 *            The user that should be marked as the creator of the
 	 *            gameBoard.
 	 * @return a gameboard if possible that satisifies the conditions provided
-	 *         by the parameters.
+	 *         by the parameters. Will return null if no questions can be provided.
 	 */
 	public final GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
@@ -153,7 +153,7 @@ public class GameManager {
 
 			return gameboard;
 		} else {
-			return new GameboardDTO();
+			return null;
 		}
 	}
 

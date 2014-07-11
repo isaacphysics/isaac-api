@@ -56,6 +56,7 @@ public class IsaacController {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacController.class);
 
+	// TODO: this probably don't need to be static if we make them GUICE singletons
 	private static SegueApiFacade api;
 	private static PropertiesLoader propertiesLoader;
 
@@ -297,7 +298,7 @@ public class IsaacController {
 	@Path("gameboards")
 	@Produces("application/json")
 	public final Response generateGameboard(
-			@Context HttpServletRequest request,
+			@Context final HttpServletRequest request,
 			@QueryParam("subjects") final String subjects,
 			@QueryParam("fields") final String fields,
 			@QueryParam("topics") final String topics,
@@ -347,6 +348,11 @@ public class IsaacController {
 					subjectsList, fieldsList, topicsList, levelsList,
 					conceptsList, api.getCurrentUser(request));
 
+			if (null == gameboard) {
+				return new SegueErrorResponse(Status.NO_CONTENT, 
+						"We cannot find any questions based on your filter criteria.").toResponse();
+			}
+			
 			if (gameboard.getOwnerUserId() != null) {
 				// go ahead and persist the gameboard
 				gameManager.permanentlyStoreGameboard(gameboard);
