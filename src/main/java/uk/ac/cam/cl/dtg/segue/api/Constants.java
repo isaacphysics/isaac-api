@@ -174,7 +174,7 @@ public final class Constants {
 	/*
 	 * Default values.
 	 */
-	public static final Integer DEFAULT_SEARCH_LIMIT = 10;
+	public static final Integer DEFAULT_RESULTS_LIMIT = 10;
 
 	// Content model specific stuff
 	public static final String ID_FIELDNAME = "id";

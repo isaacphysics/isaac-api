@@ -9,19 +9,31 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-// TODO: convert this class into a singleton instead of using static fields.
+/**
+ * ContentVersionController This Class is responsible for talking to the content
+ * manager and tracking what version of content should be issued to users.
+ * 
+ */
 public class ContentVersionController {
 	private static final Logger log = LoggerFactory
 			.getLogger(ContentVersionController.class);
 
 	private static volatile String liveVersion;
 
-	private PropertiesLoader properties;
-	private IContentManager contentManager;
+	private final PropertiesLoader properties;
+	private final IContentManager contentManager;
 
+	/**
+	 * Creates a content version controller. Usually you only need one.
+	 * 
+	 * @param properties
+	 *            - properties loader for segue.
+	 * @param contentManager
+	 *            - content manager that knows how to retrieve content.
+	 */
 	@Inject
-	public ContentVersionController(PropertiesLoader properties,
-			IContentManager contentManager) {
+	public ContentVersionController(final PropertiesLoader properties,
+			final IContentManager contentManager) {
 		this.properties = properties;
 		this.contentManager = contentManager;
 
@@ -72,12 +84,12 @@ public class ContentVersionController {
 	 *            to sync
 	 * @return a string representation of the version that is available.
 	 */
-	public synchronized String triggerSyncJob(String version) {
+	public synchronized String triggerSyncJob(final String version) {
 		ContentSynchronisationWorker worker = new ContentSynchronisationWorker(
 				this, version);
 
 		// We can convert this to be a thread if we wish later; at the moment
-		// blocking isn't a problem as github makes the sync requests.
+		// blocking isn't a problem as github makes the sync requests as separate threads.
 		worker.run();
 		return version;
 	}
@@ -86,11 +98,12 @@ public class ContentVersionController {
 	 * This method is intended to be used by Synchronisation jobs to inform the
 	 * controller that they have completed their work.
 	 * 
-	 * @param the
-	 *            version that has just been indexed.
+	 * @param version 
+	 *            the version that has just been indexed.
+	 * @param success - whether or not the job completed successfully.
 	 */
-	public synchronized void syncJobCompleteCallback(String version,
-			boolean success) {
+	public synchronized void syncJobCompleteCallback(final String version,
+			final boolean success) {
 		// for use by ContentSynchronisationWorkers to alert the controller that
 		// they have finished
 		if (!success) {
@@ -101,7 +114,9 @@ public class ContentVersionController {
 		// verify that the version is indeed cached
 		if (!contentManager.getCachedVersionList().contains(version)) {
 			// if not just return without doing anything.
-			log.error("Sync job informed version controller that a version was ready and it lied. The version is no longer cached. Terminating sync job.");
+			log.error("Sync job informed version controller "
+					+ "that a version was ready and it lied. The version is no longer cached. "
+					+ "Terminating sync job.");
 			return;
 		}
 
@@ -116,18 +131,22 @@ public class ContentVersionController {
 				if (contentManager.compareTo(version, this.getLiveVersion()) > 0) {
 					this.setLiveVersion(version);
 				} else {
-					log.info("Not changing live version as part of sync job as the version indexed is older than (or the same as) the new one.");
+					log.info("Not changing live version as part of sync job as the "
+							+ "version indexed is older than (or the same as) the new one.");
 				}
 			}
 		} else {
 			// we don't want to change the latest version until told to do so.
 			log.info("New content version "
 					+ version
-					+ " indexed and available. Not changing liveVersion of the site as per configuration instruction.");
+					+ " indexed and available. Not changing liveVersion of the "
+					+ "site as per configuration instruction.");
 		}
 
-		if (success)
+		if (success) {
 			this.cleanupCache(version);
+		}
+		
 		log.info("Sync job completed - callback received and finished. ");
 	}
 
@@ -136,9 +155,9 @@ public class ContentVersionController {
 	 * 
 	 * This method is threadsafe.
 	 * 
-	 * @param newLiveVersion
+	 * @param newLiveVersion - the version to make live.
 	 */
-	public void setLiveVersion(String newLiveVersion) {
+	public void setLiveVersion(final String newLiveVersion) {
 
 		if (!contentManager.getCachedVersionList().contains(newLiveVersion)) {
 			log.warn("New version hasn't been synced yet. Requesting sync job.");
@@ -153,19 +172,24 @@ public class ContentVersionController {
 			liveVersion = newLiveVersion;
 		}
 	}
-
+	
+	/**
+	 * Utility method to allow classes to query the content Manager directly.
+	 * 
+	 * @return content manager.
+	 */
 	public IContentManager getContentManager() {
 		return contentManager;
 	}
 
 	/**
 	 * Check to see if the the version specified is in use by the controller for
-	 * some reason
+	 * some reason.
 	 * 
-	 * @param version
+	 * @param version - find out if the version is in use.
 	 * @return true if it is being used, false if not.
 	 */
-	public boolean isVersionInUse(String version) {
+	public boolean isVersionInUse(final String version) {
 		// This method will be used to indicate if a version is currently being
 		// used in A/B testing in the future. For now it is just checking if it
 		// is the live one.
@@ -175,13 +199,14 @@ public class ContentVersionController {
 	/**
 	 * This method should use the configuration settings to maintain the cache
 	 * of the content manager object.
+	 * @param versionJustIndexed - the version we just indexed.
 	 */
-	public synchronized void cleanupCache(String versionJustIndexed) {
-		int max_cache_size = Integer.parseInt(properties
+	public synchronized void cleanupCache(final String versionJustIndexed) {
+		int maxCacheSize = Integer.parseInt(properties
 				.getProperty(Constants.MAX_VERSIONS_TO_CACHE));
 
 		// first check if our cache is bigger than we want it to be
-		if (contentManager.getCachedVersionList().size() > max_cache_size) {
+		if (contentManager.getCachedVersionList().size() > maxCacheSize) {
 			log.info("Cache is too full ("
 					+ contentManager.getCachedVersionList().size()
 					+ ") finding and deleting old versions");
@@ -191,7 +216,7 @@ public class ContentVersionController {
 			// got through all versions in reverse until you find the oldest one
 			// that is also in the cached versions list and then remove it.
 			for (int index = allVersions.size() - 1; contentManager
-					.getCachedVersionList().size() > max_cache_size
+					.getCachedVersionList().size() > maxCacheSize
 					&& index >= 0; index--) {
 
 				// check if the version is cached
@@ -210,7 +235,7 @@ public class ContentVersionController {
 			}
 
 			// we couldn't free up enough space
-			if (contentManager.getCachedVersionList().size() > max_cache_size) {
+			if (contentManager.getCachedVersionList().size() > maxCacheSize) {
 				log.warn("Warning unable to reduce cache to target size: current cache size is "
 						+ contentManager.getCachedVersionList().size());
 			}
@@ -222,7 +247,7 @@ public class ContentVersionController {
 
 	/**
 	 * Instructs all content Managers to dump all cache information and any
-	 * associated search indices
+	 * associated search indices.
 	 */
 	public synchronized void deleteAllCacheData() {
 		log.info("Clearing all caches and search indices.");

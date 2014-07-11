@@ -64,12 +64,9 @@ public class SegueApiFacade {
 
 	private static ContentMapper mapper;
 
-	private static ContentVersionController contentVersionController;
-
-	private static UserManager userManager;
-
+	private ContentVersionController contentVersionController;
+	private UserManager userManager;
 	private QuestionManager questionManager;
-
 	private PropertiesLoader properties;
 
 	/**
@@ -111,13 +108,8 @@ public class SegueApiFacade {
 			}
 		}
 
-		if (null == SegueApiFacade.contentVersionController) {
-			SegueApiFacade.contentVersionController = contentVersionController;
-		}
-
-		if (null == SegueApiFacade.userManager) {
-			SegueApiFacade.userManager = userManager;
-		}
+		this.contentVersionController = contentVersionController;
+		this.userManager = userManager;
 
 		// Check if we want to get the latest from git each time a request is
 		// made from segue. - Will add overhead
@@ -177,7 +169,6 @@ public class SegueApiFacade {
 			@QueryParam("type") final String type,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("limit") final String limit) {
-
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch = Maps
 				.newHashMap();
 
@@ -243,7 +234,7 @@ public class SegueApiFacade {
 		}
 
 		if (null == limit) {
-			limit = Constants.DEFAULT_SEARCH_LIMIT;
+			limit = Constants.DEFAULT_RESULTS_LIMIT;
 		}
 
 		if (null == startIndex) {
@@ -293,7 +284,7 @@ public class SegueApiFacade {
 		}
 
 		if (null == limit) {
-			limit = Constants.DEFAULT_SEARCH_LIMIT;
+			limit = Constants.DEFAULT_RESULTS_LIMIT;
 		}
 
 		if (null == startIndex) {
@@ -334,7 +325,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("content/{version}/{id}")
 	public final Response getContentById(@PathParam("version") String version,
-			@PathParam("id") String id) {
+			@PathParam("id") final String id) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -499,22 +490,21 @@ public class SegueApiFacade {
 		String mimeType = MediaType.WILDCARD;
 
 		switch (Files.getFileExtension(path).toLowerCase()) {
-			case "svg": {
+			case "svg":
 				mimeType = "image/svg+xml";
 				break;
-			}
-			case "jpg": {
+	
+			case "jpg":
 				mimeType = "image/jpeg";
 				break;
-			}
-			default: {
+	
+			default:
 				// if it is an unknown type return an error as they shouldn't be
 				// using this endpoint.
 				SegueErrorResponse error = new SegueErrorResponse(
 						Status.BAD_REQUEST, "Invalid file extension requested");
 				log.debug(error.getErrorMessage());
 				return error.toResponse();
-			}
 		}
 
 		try {
@@ -600,7 +590,7 @@ public class SegueApiFacade {
 
 		try {
 			if (null == limit) {
-				limitAsInt = 10;
+				limitAsInt = Constants.DEFAULT_RESULTS_LIMIT;
 			} else {
 				limitAsInt = Integer.parseInt(limit);
 			}
@@ -975,7 +965,8 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();

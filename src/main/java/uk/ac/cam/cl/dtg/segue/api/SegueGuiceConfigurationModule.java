@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -44,7 +45,7 @@ import com.mongodb.DB;
 
 /**
  * This class is responsible for injecting configuration values for persistence
- * related classes
+ * related classes.
  * 
  */
 public class SegueGuiceConfigurationModule extends AbstractModule {
@@ -52,13 +53,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static final Logger log = LoggerFactory
 			.getLogger(SegueGuiceConfigurationModule.class);
 
-	// TODO: These are effectively singletons...
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
+	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
+	private static UserManager userManager = null;
 
 	private PropertiesLoader globalProperties = null;
 
+	/**
+	 * Create a SegueGuiceConfigurationModule.
+	 */
 	public SegueGuiceConfigurationModule() {
 		try {
 			globalProperties = new PropertiesLoader(
@@ -92,6 +97,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 	}
 
+	/**
+	 * Extract properties and bind them to constants.
+	 */
 	private void configureProperties() {
 		// Properties loader
 		bind(PropertiesLoader.class).toInstance(globalProperties);
@@ -104,6 +112,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 	}
 
+	/**
+	 * Configure all things persistency.
+	 * 
+	 * @throws IOException
+	 *             - when we cannot load the database.
+	 */
 	private void configureDataPersistence() throws IOException {
 		// Setup different persistence bindings
 		// MongoDb
@@ -121,10 +135,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 										.getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
 	}
 
+	/**
+	 * Configure segue search classes.
+	 */
 	private void configureSegueSearch() {
 		bind(ISearchProvider.class).to(ElasticSearchProvider.class);
 	}
 
+	/**
+	 * Configure user security related classes.
+	 */
 	private void configureSecurity() {
 		this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
 
@@ -145,7 +165,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
-	 * Deals with application data managers
+	 * Deals with application data managers.
 	 */
 	private void configureApplicationManagers() {
 		// bind(IContentManager.class).to(MongoContentManager.class); //Allows
@@ -170,22 +190,80 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * The client is threadsafe so we don't need to keep creating new ones.
 	 * 
 	 * @param clusterName
+	 *            - The name of the cluster to create.
 	 * @param address
+	 *            - address of the cluster to create.
 	 * @param port
+	 *            - port of the custer to create.
 	 * @return Client to be injected into ElasticSearch Provider.
 	 */
 	@Inject
 	@Provides
+	@Singleton
 	private static Client getSearchConnectionInformation(
-			@Named(Constants.SEARCH_CLUSTER_NAME) String clusterName,
-			@Named(Constants.SEARCH_CLUSTER_ADDRESS) String address,
-			@Named(Constants.SEARCH_CLUSTER_PORT) int port) {
+			@Named(Constants.SEARCH_CLUSTER_NAME) final String clusterName,
+			@Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
+			@Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
 		if (null == elasticSearchClient) {
 			elasticSearchClient = ElasticSearchProvider.getTransportClient(
 					clusterName, address, port);
+			log.info("Creating singleton of ElasticSearchProvider");
 		}
 
 		return elasticSearchClient;
+	}
+
+	/**
+	 * This provides a singleton of the contentVersionController for the segue
+	 * facade.
+	 * 
+	 * @param properties
+	 *            - properties loader
+	 * @param contentManager
+	 *            - content manager (with associated persistence links).
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private static ContentVersionController getContentVersionController(
+			final PropertiesLoader properties,
+			final IContentManager contentManager) {
+		if (null == contentVersionController) {
+			contentVersionController = new ContentVersionController(properties,
+					contentManager);
+			log.info("Creating singleton of ContentVersionController");
+		}
+		return contentVersionController;
+	}
+
+	/**
+	 * This provides a singleton of the contentVersionController for the segue
+	 * facade.
+	 * 
+	 * @param database
+	 *            - IUserManager
+	 * @param hmacSalt
+	 *            - the salt for the hmac
+	 * @param providersToRegister
+	 *            - list of known providers.
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private static UserManager getUserManager(
+			final IUserDataManager database,
+			@Named(Constants.HMAC_SALT) final String hmacSalt,
+			final Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister) {
+
+		if (null == userManager) {
+			userManager = new UserManager(database, hmacSalt,
+					providersToRegister);
+			log.info("Creating singleton of UserManager");
+		}
+
+		return userManager;
 	}
 
 	/**
@@ -197,7 +275,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * @return initial segue type map.
 	 */
 	private Map<String, Class<? extends Content>> buildDefaultJsonTypeMap() {
-		HashMap<String, Class<? extends Content>> map = new HashMap<String, Class<? extends Content>>();
+		HashMap<String, Class<? extends Content>> map 
+			= new HashMap<String, Class<? extends Content>>();
 
 		// We need to pre-register different content objects here for the
 		// auto-mapping to work
@@ -215,26 +294,34 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * Utility method to make the syntax of property bindings clearer.
 	 * 
 	 * @param propertyLabel
+	 *            - Key for a given property
 	 * @param propertyLoader
+	 *            - property loader to use
 	 */
-	private void bindConstantToProperty(String propertyLabel,
-			PropertiesLoader propertyLoader) {
+	private void bindConstantToProperty(final String propertyLabel,
+			final PropertiesLoader propertyLoader) {
 		bindConstant().annotatedWith(Names.named(propertyLabel)).to(
 				propertyLoader.getProperty(propertyLabel));
 	}
-	
+
 	/**
-	 * Segue utility method for providing a new instance of an application manager.
+	 * Segue utility method for providing a new instance of an application
+	 * manager.
 	 * 
-	 * @param databaseName - the database / table name - should be unique.
-	 * @param classType - the class type that represents what can be managed by this app manager.
-	 * @param <T> the type that can be managed by this App Manager. 
+	 * @param databaseName
+	 *            - the database / table name - should be unique.
+	 * @param classType
+	 *            - the class type that represents what can be managed by this
+	 *            app manager.
+	 * @param <T>
+	 *            the type that can be managed by this App Manager.
 	 * @return the application manager ready to use.
 	 */
-	public static <T> IAppDataManager<T> getAppDataManager(final String databaseName, 
-			final Class<T> classType) {
+	public static <T> IAppDataManager<T> getAppDataManager(
+			final String databaseName, final Class<T> classType) {
 		// for now this only returns mongodb typed objects.
-		return new MongoAppDataManager<T>(Mongo.getDB(), databaseName, classType);
+		return new MongoAppDataManager<T>(Mongo.getDB(), databaseName,
+				classType);
 	}
 
 }
