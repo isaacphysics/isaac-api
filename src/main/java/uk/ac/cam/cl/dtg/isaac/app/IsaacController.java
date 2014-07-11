@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.isaac.dto.ContentPage;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
@@ -569,55 +568,55 @@ public class IsaacController {
 	// return ImmutableMap.of("result", "success");
 	// }
 
-	/**
-	 * This method will look at a content objects related content list and
-	 * return a list of contentInfo objects which can be used for creating links
-	 * etc.
-	 * 
-	 * This method returns null if the content object provided has no related
-	 * Content
-	 * 
-	 * @param proxyPath
-	 *            - the string prefix for the server being used
-	 * @param content
-	 *            - the content object which contains related content
-	 * @return a list of content summary objects.
-	 */
-	private List<ContentSummary> buildMetaContentmap(final String proxyPath,
-			final Content content) {
-		if (null == content) {
-			return null;
-		} else if (content.getRelatedContent() == null
-				|| content.getRelatedContent().isEmpty()) {
-			return null;
-		}
-
-		List<ContentSummary> contentInfoList = new ArrayList<ContentSummary>();
-
-		for (String id : content.getRelatedContent()) {
-			try {
-				Content relatedContent = (Content) api.getContentById(
-						api.getLiveVersion(), id).getEntity();
-
-				if (relatedContent == null) {
-					log.warn("Related content (" + id
-							+ ") does not exist in the data store.");
-				} else {
-					ContentSummary contentInfo = extractContentSummary(
-							relatedContent, proxyPath);
-					contentInfoList.add(contentInfo);
-				}
-			} catch (ClassCastException exception) {
-				log.error("Error whilst trying to cast one object to another.",
-						exception);
-				// TODO: fix how SegueErrorResponse exception objects are
-				// handled - they clearly cannot be cast as content objects
-				// here.
-			}
-		}
-
-		return contentInfoList;
-	}
+//	/**
+//	 * This method will look at a content objects related content list and
+//	 * return a list of contentInfo objects which can be used for creating links
+//	 * etc.
+//	 * 
+//	 * This method returns null if the content object provided has no related
+//	 * Content
+//	 * 
+//	 * @param proxyPath
+//	 *            - the string prefix for the server being used
+//	 * @param content
+//	 *            - the content object which contains related content
+//	 * @return a list of content summary objects.
+//	 */
+//	private List<ContentSummary> buildMetaContentmap(final String proxyPath,
+//			final Content content) {
+//		if (null == content) {
+//			return null;
+//		} else if (content.getRelatedContent() == null
+//				|| content.getRelatedContent().isEmpty()) {
+//			return null;
+//		}
+//
+//		List<ContentSummary> contentInfoList = new ArrayList<ContentSummary>();
+//
+//		for (String id : content.getRelatedContent()) {
+//			try {
+//				Content relatedContent = (Content) api.getContentById(
+//						api.getLiveVersion(), id).getEntity();
+//
+//				if (relatedContent == null) {
+//					log.warn("Related content (" + id
+//							+ ") does not exist in the data store.");
+//				} else {
+//					ContentSummary contentInfo = extractContentSummary(
+//							relatedContent, proxyPath);
+//					contentInfoList.add(contentInfo);
+//				}
+//			} catch (ClassCastException exception) {
+//				log.error("Error whilst trying to cast one object to another.",
+//						exception);
+//				// TODO: fix how SegueErrorResponse exception objects are
+//				// handled - they clearly cannot be cast as content objects
+//				// here.
+//			}
+//		}
+//
+//		return contentInfoList;
+//	}
 
 	/**
 	 * Generate a URI that will enable us to find an object again.
