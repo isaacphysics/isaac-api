@@ -95,6 +95,10 @@
     <module name="StringLiteralEquality"/>
     <module name="UnnecessaryParentheses"/>
     <module name="OneStatementPerLine"/>
+    <module name="DesignForExtension">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="info"/>
+    </module>
   </module>
   <module name="JavadocPackage">
     <property name="severity" value="ignore"/>

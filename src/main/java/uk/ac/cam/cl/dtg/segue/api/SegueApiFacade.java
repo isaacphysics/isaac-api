@@ -700,7 +700,7 @@ public class SegueApiFacade {
 	 * 
 	 * @return a string representing the live version.
 	 */
-	public final String getLiveVersion() {
+	public String getLiveVersion() {
 		return contentVersionController.getLiveVersion();
 	}
 

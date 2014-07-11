@@ -91,7 +91,7 @@ public class GameManager {
 	 * @return a gameboard if possible that satisifies the conditions provided
 	 *         by the parameters. Will return null if no questions can be provided.
 	 */
-	public final GameboardDTO generateRandomGameboard(
+	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
 			final List<String> conceptsList, final User boardOwner) {
