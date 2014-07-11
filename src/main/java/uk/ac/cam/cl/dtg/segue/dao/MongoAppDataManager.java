@@ -20,26 +20,30 @@ import com.mongodb.DB;
 /**
  * Implementation that specifically works with MongoDB Content objects.
  * 
- * @param <T> the type that this App Data Manager looks after.
+ * @param <T>
+ *            the type that this App Data Manager looks after.
  */
 public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	private static final Logger log = LoggerFactory
 			.getLogger(MongoAppDataManager.class);
-	
+
 	private final DB database;
 	private final String databaseName;
 	private final Class<T> typeParamaterClass;
-	
+
 	/**
-	 * Create a new ApplicationDataManager that is responsible for managing a particular type of DO.
+	 * Create a new ApplicationDataManager that is responsible for managing a
+	 * particular type of DO.
 	 * 
-	 * @param database - Database that will store the objects.
-	 * @param typeParameterClass - Class value for the type that this object manages.
-	 * @param databaseName - the string name identifying this database / table.
+	 * @param database
+	 *            - Database that will store the objects.
+	 * @param typeParameterClass
+	 *            - Class value for the type that this object manages.
+	 * @param databaseName
+	 *            - the string name identifying this database / table.
 	 */
 	@Inject
-	public MongoAppDataManager(final DB database, 
-			final String databaseName,
+	public MongoAppDataManager(final DB database, final String databaseName,
 			final Class<T> typeParameterClass) {
 		this.database = database;
 		this.databaseName = databaseName;
@@ -48,13 +52,13 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 
 	@Override
 	public final String save(final T objectToSave) {
-		
+
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(databaseName),
-				typeParamaterClass, String.class);
-		
+				database.getCollection(databaseName), typeParamaterClass,
+				String.class);
+
 		WriteResult<T, String> r = jc.save(objectToSave);
-		
+
 		return r.getSavedId().toString();
 	}
 
@@ -72,14 +76,14 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	}
 
 	/**
-	 * This method must provide a string response equivalent to the table name or
-	 * collection name for the objects to be persisted.
+	 * This method must provide a string response equivalent to the table name
+	 * or collection name for the objects to be persisted.
 	 * 
-	 * It is good practice to prefix the result of this method with something 
+	 * It is good practice to prefix the result of this method with something
 	 * unique to the application.
 	 * 
-	 * @return the databaseName / collection name / internal reference for 
-	 * objects of this type.
+	 * @return the databaseName / collection name / internal reference for
+	 *         objects of this type.
 	 */
 	public final String getDatabaseName() {
 		return databaseName;
@@ -87,29 +91,31 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 
 	@Override
 	public final List<T> find(
-			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch) {		
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch) {
 		Validate.notNull(fieldsToMatch);
-		
+
 		Query query = DBQuery.empty();
-		
-		for (Map.Entry<Map.Entry<BooleanOperator, String>, List<String>> pair 
-					: fieldsToMatch.entrySet()) {
+
+		for (Map.Entry<Map.Entry<BooleanOperator, String>, List<String>> pair : fieldsToMatch
+				.entrySet()) {
 			// go through the values for each query
 			for (String queryValue : pair.getValue()) {
 				if (pair.getKey().getKey().equals(BooleanOperator.AND)) {
-					query = query.and(DBQuery.is(pair.getKey().getValue(), queryValue));
+					query = query.and(DBQuery.is(pair.getKey().getValue(),
+							queryValue));
 				} else {
-					query = query.or(DBQuery.is(pair.getKey().getValue(), queryValue));
+					query = query.or(DBQuery.is(pair.getKey().getValue(),
+							queryValue));
 				}
 			}
 		}
-		
+
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(databaseName), typeParamaterClass,
 				String.class);
-		
+
 		List<T> result = jc.find(query).toArray();
-		
+
 		log.info("Result = " + result.size());
 		return result;
 	}

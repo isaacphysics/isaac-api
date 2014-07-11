@@ -40,9 +40,9 @@ import static uk.ac.cam.cl.dtg.isaac.app.Constants.*;
 public class GameManager {
 	private static final Logger log = LoggerFactory
 			.getLogger(GameManager.class);
-	
+
 	private static final int MAX_QUESTIONS_TO_SEARCH = 20;
-	
+
 	private final SegueApiFacade api;
 	private final GameboardPersistenceManager gameboardPersistenceManager;
 
@@ -54,9 +54,9 @@ public class GameManager {
 	 */
 	public GameManager(final SegueApiFacade api) {
 		this.api = api;
-		this.gameboardPersistenceManager 
-			= new GameboardPersistenceManager(api.requestAppDataManager(
-					GAMEBOARD_COLLECTION_NAME, uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class), api);
+		this.gameboardPersistenceManager = new GameboardPersistenceManager(
+				api.requestAppDataManager(GAMEBOARD_COLLECTION_NAME,
+						uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class), api);
 	}
 
 	/**
@@ -85,8 +85,9 @@ public class GameManager {
 	 * @param conceptsList
 	 *            list of concepts (relatedContent) to include in filtered
 	 *            results
-	 * @param boardOwner 
-	 *            The user that should be marked as the creator of the gameBoard.
+	 * @param boardOwner
+	 *            The user that should be marked as the creator of the
+	 *            gameBoard.
 	 * @return a gameboard if possible that satisifies the conditions provided
 	 *         by the parameters.
 	 */
@@ -98,7 +99,7 @@ public class GameManager {
 		if (boardOwner != null) {
 			boardOwnerId = boardOwner.getDbId();
 		}
-		
+
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
 			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
@@ -111,7 +112,7 @@ public class GameManager {
 
 		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
-		// Search for questions that match the fields to map variable. 
+		// Search for questions that match the fields to map variable.
 		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(
 				api.getLiveVersion(), fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
 
@@ -132,58 +133,64 @@ public class GameManager {
 			Injector injector = Guice.createInjector(
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
-			
+
 			Mapper mapper = injector.getInstance(Mapper.class);
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
 			// Map each Content object into an IsaacQuestionInfo object
 			for (Content c : questionsForGameboard) {
-				GameboardItem questionInfo = mapper.map(c,
-						GameboardItem.class);
+				GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
 				questionInfo.setUri(IsaacController.generateApiUrl(c));
 				gameboardReadyQuestions.add(questionInfo);
 			}
 
 			log.debug("Created gameboard " + uuid);
-			GameboardDTO gameboard = 
-					new GameboardDTO(uuid, gameboardReadyQuestions, new Date(), gameFilter, 
-							boardOwnerId);
-			this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboard);
-			
+			GameboardDTO gameboard = new GameboardDTO(uuid,
+					gameboardReadyQuestions, new Date(), gameFilter,
+					boardOwnerId);
+			this.gameboardPersistenceManager
+					.temporarilyStoreGameboard(gameboard);
+
 			return gameboard;
 		} else {
 			return new GameboardDTO();
 		}
 	}
-	
+
 	/**
 	 * Store a gameboard in a public location.
 	 * 
-	 * @param gameboardToStore - Gameboard object to persist.
+	 * @param gameboardToStore
+	 *            - Gameboard object to persist.
 	 */
-	public final void permanentlyStoreGameboard(final GameboardDTO gameboardToStore) {
-		this.gameboardPersistenceManager.saveGameboardToPermanentStorage(gameboardToStore);
+	public final void permanentlyStoreGameboard(
+			final GameboardDTO gameboardToStore) {
+		this.gameboardPersistenceManager
+				.saveGameboardToPermanentStorage(gameboardToStore);
 	}
-	
+
 	/**
 	 * Get a gameboard by its id.
-	 * @param gameboardId - to look up.
+	 * 
+	 * @param gameboardId
+	 *            - to look up.
 	 * @return the gameboard or null.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId) {
 		return this.gameboardPersistenceManager.getGameboardById(gameboardId);
 	}
-	
+
 	/**
 	 * Lookup gameboards belonging to a current user.
 	 * 
-	 * @param userId - the id of the user to search.
+	 * @param userId
+	 *            - the id of the user to search.
 	 * @return a list of gameboards created and owned by the given userId
 	 */
 	public final List<GameboardDTO> getUsersGameboards(final String userId) {
 		return this.gameboardPersistenceManager.getGameboardsByUserId(userId);
 	}
-	
+
 	/**
 	 * Find a wildcard object to add to a gameboard.
 	 * 
@@ -201,8 +208,9 @@ public class GameManager {
 	 * This method will decide what should be AND and what should be OR based on
 	 * the field names used.
 	 * 
-	 * @param gameFilter 
-	 * 		- filter object containing all the filter information used to make this board.
+	 * @param gameFilter
+	 *            - filter object containing all the filter information used to
+	 *            make this board.
 	 * @return A map ready to be passed to a content provider
 	 */
 	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
@@ -268,7 +276,7 @@ public class GameManager {
 			for (Integer levelInt : gameFilter.getLevels()) {
 				levelsAsString.add(levelInt.toString());
 			}
-			
+
 			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
 					.immutableEntry(Constants.BooleanOperator.OR,
 							Constants.LEVEL_FIELDNAME);
@@ -289,17 +297,17 @@ public class GameManager {
 	 * Currently only validates subjects, fields and topics.
 	 * 
 	 * @param gameFilter
-	 *            containing the following data: (1) subjects - multiple subjects
-	 *            are only ok if there are not any fields or topics (2) fields -
-	 *            multiple fields are only ok if there are not any topics.
-	 *            (3) topics - You can have multiple fields only if there is
-	 *            precisely one subject and field. (4) levels - currently not used
-	 *            for validation (5) concepts - currently not used for validation
+	 *            containing the following data: (1) subjects - multiple
+	 *            subjects are only ok if there are not any fields or topics (2)
+	 *            fields - multiple fields are only ok if there are not any
+	 *            topics. (3) topics - You can have multiple fields only if
+	 *            there is precisely one subject and field. (4) levels -
+	 *            currently not used for validation (5) concepts - currently not
+	 *            used for validation
 	 * @return true if the query adheres to the rules specified, false if not.
 	 */
 	private static boolean validateFilterQuery(final GameFilter gameFilter) {
-		if (null == gameFilter.getSubjects()
-				&& null == gameFilter.getFields()
+		if (null == gameFilter.getSubjects() && null == gameFilter.getFields()
 				&& null == gameFilter.getTopics()) {
 			return true;
 		} else if (null == gameFilter.getSubjects()

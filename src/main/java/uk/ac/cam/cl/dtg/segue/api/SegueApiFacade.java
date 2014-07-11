@@ -492,22 +492,22 @@ public class SegueApiFacade {
 		String mimeType = MediaType.WILDCARD;
 
 		switch (Files.getFileExtension(path).toLowerCase()) {
-			case "svg": {
-				mimeType = "image/svg+xml";
-				break;
-			}
-			case "jpg": {
-				mimeType = "image/jpeg";
-				break;
-			}
-			default: {
-				// if it is an unknown type return an error as they shouldn't be
-				// using this endpoint.
-				SegueErrorResponse error = new SegueErrorResponse(
-						Status.BAD_REQUEST, "Invalid file extension requested");
-				log.debug(error.getErrorMessage());
-				return error.toResponse();
-			}
+		case "svg": {
+			mimeType = "image/svg+xml";
+			break;
+		}
+		case "jpg": {
+			mimeType = "image/jpeg";
+			break;
+		}
+		default: {
+			// if it is an unknown type return an error as they shouldn't be
+			// using this endpoint.
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.BAD_REQUEST, "Invalid file extension requested");
+			log.debug(error.getErrorMessage());
+			return error.toResponse();
+		}
 		}
 
 		try {
@@ -629,8 +629,7 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		ImmutableMap<String, Collection<String>> result 
-			= new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
 				.put("version_list", limitedVersions).build();
 
 		return Response.ok().entity(result).build();
@@ -688,8 +687,7 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		ImmutableMap<String, Collection<String>> result 
-			= new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
 				.put("cachedVersions",
 						contentPersistenceManager.getCachedVersionList())
 				.build();
@@ -940,7 +938,6 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/content_problems")
 	public final Response getContentProblems() {
-
 		Map<Content, List<String>> problemMap = contentVersionController
 				.getContentManager().getProblemMap(
 						contentVersionController.getLiveVersion());
@@ -991,8 +988,7 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static 
-	Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
@@ -1000,14 +996,12 @@ public class SegueApiFacade {
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
 			Map.Entry<Constants.BooleanOperator, String> newEntry = null;
 			if (pair.getKey().equals(Constants.ID_FIELDNAME)) {
-				newEntry = com.google.common.collect.Maps
-						.immutableEntry(Constants.BooleanOperator.OR,
-								pair.getKey());
-				
+				newEntry = com.google.common.collect.Maps.immutableEntry(
+						Constants.BooleanOperator.OR, pair.getKey());
+
 			} else {
-				newEntry = com.google.common.collect.Maps
-						.immutableEntry(Constants.BooleanOperator.AND,
-								pair.getKey());
+				newEntry = com.google.common.collect.Maps.immutableEntry(
+						Constants.BooleanOperator.AND, pair.getKey());
 			}
 
 			fieldsToMatchOutput.put(newEntry, pair.getValue());
