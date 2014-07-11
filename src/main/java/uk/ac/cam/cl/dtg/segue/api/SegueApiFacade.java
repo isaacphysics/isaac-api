@@ -499,22 +499,22 @@ public class SegueApiFacade {
 		String mimeType = MediaType.WILDCARD;
 
 		switch (Files.getFileExtension(path).toLowerCase()) {
-		case "svg": {
-			mimeType = "image/svg+xml";
-			break;
-		}
-		case "jpg": {
-			mimeType = "image/jpeg";
-			break;
-		}
-		default: {
-			// if it is an unknown type return an error as they shouldn't be
-			// using this endpoint.
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.BAD_REQUEST, "Invalid file extension requested");
-			log.debug(error.getErrorMessage());
-			return error.toResponse();
-		}
+			case "svg": {
+				mimeType = "image/svg+xml";
+				break;
+			}
+			case "jpg": {
+				mimeType = "image/jpeg";
+				break;
+			}
+			default: {
+				// if it is an unknown type return an error as they shouldn't be
+				// using this endpoint.
+				SegueErrorResponse error = new SegueErrorResponse(
+						Status.BAD_REQUEST, "Invalid file extension requested");
+				log.debug(error.getErrorMessage());
+				return error.toResponse();
+			}
 		}
 
 		try {
