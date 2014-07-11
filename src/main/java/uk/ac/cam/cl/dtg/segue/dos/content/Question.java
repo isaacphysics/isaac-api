@@ -1,10 +1,9 @@
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -12,15 +11,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * the storage of data relating to possible answers to questions.
  * 
  */
-@JsonType("choice")
-public class Choice extends Content {
-	@JsonIgnore
-	protected boolean correct;
-	@JsonIgnore
-	protected ContentBase explanation;
+@JsonType("question")
+public class Question extends Content {
+
+	protected ContentBase answer;
+	protected List<ContentBase> hints;
 
 	@JsonCreator
-	public Choice(@JsonProperty("_id") String _id,
+	public Question(@JsonProperty("_id") String _id,
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
@@ -32,41 +30,29 @@ public class Choice extends Content {
 			@JsonProperty("value") String value,
 			@JsonProperty("attribution") String attribution,
 			@JsonProperty("relatedContent") List<String> relatedContent,
-			@JsonProperty("published") boolean published,
+			@JsonProperty("version") boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,
-			@JsonProperty("correct") boolean correct,
-			@JsonProperty("explanation") ContentBase explanation) {
+			@JsonProperty("answer") ContentBase answer,
+			@JsonProperty("hints") List<ContentBase> hints) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 
-		this.correct = correct;
-		this.explanation = explanation;
+		this.answer = answer;
+		this.hints = hints;
 	}
 
-	public Choice() {
+	public Question() {
 		super();
 	}
 
-	@JsonIgnore
-	public boolean isCorrect() {
-		return correct;
+	public ContentBase getAnswer() {
+		return answer;
 	}
 
-	@JsonIgnore
-	public void setCorrect(boolean correct) {
-		this.correct = correct;
-	}
-
-	@JsonIgnore
-	public ContentBase getExplanation() {
-		return explanation;
-	}
-
-	@JsonIgnore
-	public void setExplanation(ContentBase explanation) {
-		this.explanation = explanation;
+	public List<ContentBase> getHints() {
+		return hints;
 	}
 
 }

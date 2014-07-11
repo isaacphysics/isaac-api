@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
-import uk.ac.cam.cl.dtg.segue.dto.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**

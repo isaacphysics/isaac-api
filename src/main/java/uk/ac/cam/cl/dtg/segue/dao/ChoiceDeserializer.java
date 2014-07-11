@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dto.content.Quantity;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 
 /**
  * Choice deserializer

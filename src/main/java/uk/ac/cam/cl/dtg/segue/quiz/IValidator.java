@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 
 public interface IValidator {
 	public QuestionValidationResponse validateQuestionResponse(

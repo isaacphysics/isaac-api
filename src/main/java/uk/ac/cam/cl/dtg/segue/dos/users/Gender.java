@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.ac.cam.cl.dtg.segue.dto.users;
+package uk.ac.cam.cl.dtg.segue.dos.users;
 
 /**
  * @author Stephen Cummins

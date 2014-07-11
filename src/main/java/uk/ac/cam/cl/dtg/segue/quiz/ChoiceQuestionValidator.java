@@ -4,11 +4,11 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dto.content.Content;
-import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 
 /**
  * Default quiz validator for ChoiceQuestions.

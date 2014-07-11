@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto.users;
+package uk.ac.cam.cl.dtg.segue.dos.users;
 
 import java.util.ArrayList;
 import java.util.Date;

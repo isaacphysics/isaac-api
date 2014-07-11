@@ -32,13 +32,13 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.Media;
+import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dto.content.Content;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dto.content.Media;
-import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**

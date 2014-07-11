@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.List;
 import java.util.Set;
@@ -6,15 +6,22 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonType("image")
-public class Image extends Media {
+/**
+ * Figure DTO To be used anywhere that a figure should be displayed in the CMS.
+ * 
+ */
+@JsonType("media")
+public abstract class Media extends Content {
 
-	public Image() {
+	protected String src;
+	protected String altText;
+
+	public Media() {
 
 	}
 
 	@JsonCreator
-	public Image(@JsonProperty("_id") String _id,
+	public Media(@JsonProperty("_id") String _id,
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
@@ -33,6 +40,24 @@ public class Image extends Media {
 			@JsonProperty("altText") String altText) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level, src, altText);
+				relatedContent, published, tags, level);
+		this.src = src;
+		this.altText = altText;
+	}
+
+	public String getSrc() {
+		return src;
+	}
+
+	public void setSrc(String src) {
+		this.src = src;
+	}
+
+	public String getAltText() {
+		return altText;
+	}
+
+	public void setAltText(String altText) {
+		this.altText = altText;
 	}
 }

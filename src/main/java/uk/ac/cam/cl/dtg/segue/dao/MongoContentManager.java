@@ -17,8 +17,8 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
 /**
  * Implementation that specifically works with MongoDB Content objects.

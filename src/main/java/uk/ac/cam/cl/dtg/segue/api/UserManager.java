@@ -37,10 +37,10 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
+import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.users.QuestionAttempt;
-import uk.ac.cam.cl.dtg.segue.dto.users.User;
 
 /**
  * This class is responsible for all low level user management actions e.g.

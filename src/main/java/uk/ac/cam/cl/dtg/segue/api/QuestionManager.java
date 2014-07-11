@@ -8,9 +8,9 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;

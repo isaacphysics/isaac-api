@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dto.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
  * Interface for managing and persisting user specific data in segue.

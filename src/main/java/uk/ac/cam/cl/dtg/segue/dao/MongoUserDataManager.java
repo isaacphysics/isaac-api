@@ -15,8 +15,8 @@ import com.mongodb.MongoException;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dto.users.LinkedAccount;
-import uk.ac.cam.cl.dtg.segue.dto.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
+import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
  * This class is responsible for managing and persisting user data.

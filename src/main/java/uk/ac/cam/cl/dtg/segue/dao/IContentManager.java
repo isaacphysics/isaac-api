@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 
 /**
  * Shared interface for content managers. This is to allow them to be backed by

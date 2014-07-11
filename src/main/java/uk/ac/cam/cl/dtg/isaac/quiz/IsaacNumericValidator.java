@@ -4,12 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dto.content.Content;
-import uk.ac.cam.cl.dtg.segue.dto.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dto.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 /**

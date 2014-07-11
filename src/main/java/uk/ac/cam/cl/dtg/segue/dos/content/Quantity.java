@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dto.content;
+package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.List;
 import java.util.Set;

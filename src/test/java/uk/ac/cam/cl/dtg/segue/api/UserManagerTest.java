@@ -27,9 +27,9 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dto.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dto.users.Role;
-import uk.ac.cam.cl.dtg.segue.dto.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.User;
 /**
  * Test class for the user manager class.
  * 

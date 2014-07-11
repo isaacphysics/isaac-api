@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import uk.ac.cam.cl.dtg.segue.dto.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
 /**
  * Content deserializer will try and use the map built up in the ContentMapper
