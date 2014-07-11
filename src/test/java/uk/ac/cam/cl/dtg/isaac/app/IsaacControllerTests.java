@@ -45,7 +45,7 @@ public class IsaacControllerTests {
 	}
 
 	/**
-	 * Verify that the constructor responds correctly to bad input.
+	 * Verify that when an empty gameboard is noticed a 204 is returned.
 	 */
 	@Test
 	public final void isaacEndPoint_checkEmptyGameboardCausesError_SegueErrorResponseShouldBeReturned() {

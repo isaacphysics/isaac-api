@@ -56,11 +56,9 @@ public class IsaacController {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacController.class);
 
-	// TODO: this probably don't need to be static if we make them GUICE singletons
-	private static SegueApiFacade api;
-	private static PropertiesLoader propertiesLoader;
-
-	private static GameManager gameManager;
+	private SegueApiFacade api;
+	private PropertiesLoader propertiesLoader;
+	private GameManager gameManager;
 
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
@@ -68,18 +66,16 @@ public class IsaacController {
 	 * 
 	 */
 	public IsaacController() {
-		// Get an instance of the segue api so that we can service requests
-		// directly from it
+		// Get an singleton instances of dependencies 
 		// without using the rest endpoints.
-		if (null == api) {
-			Injector injector = Guice.createInjector(
-					new IsaacGuiceConfigurationModule(),
-					new SegueGuiceConfigurationModule());
-			api = injector.getInstance(SegueApiFacade.class);
-			propertiesLoader = injector.getInstance(PropertiesLoader.class);
-			gameManager = new GameManager(api);
-		}
-
+		Injector injector = Guice.createInjector(
+				new IsaacGuiceConfigurationModule(),
+				new SegueGuiceConfigurationModule());
+		api = injector.getInstance(SegueApiFacade.class);
+		propertiesLoader = injector.getInstance(PropertiesLoader.class);
+		gameManager = injector.getInstance(GameManager.class);
+		
+		
 		// test of user registration - this is just a snippet for future
 		// reference as I didn't know where else to put it.
 		// User user = api.getCurrentUser(req);
@@ -102,7 +98,7 @@ public class IsaacController {
 			final SegueApiFacade api, 
 			final PropertiesLoader propertiesLoader, 
 			final GameManager gameManager) {
-		IsaacController.api = api;
+		this.api = api;
 		this.propertiesLoader = propertiesLoader;
 		this.gameManager = gameManager;
 	}

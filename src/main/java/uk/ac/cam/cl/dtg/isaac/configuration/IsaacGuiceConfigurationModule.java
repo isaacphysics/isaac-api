@@ -9,6 +9,7 @@ import org.dozer.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.app.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
@@ -36,6 +37,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
 	private static SegueApiFacade segueApi = null;
 	private static Mapper dozerDOToDTOMapper = null;
+	private static GameManager gameManager = null;
 
 	public IsaacGuiceConfigurationModule() {
 		try {
@@ -71,6 +73,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 */
 	@Inject
 	@Provides
+	@Singleton
 	private static SegueApiFacade getSegueFacadeSingleton(
 			PropertiesLoader properties, ContentMapper mapper,
 			@Nullable ISegueDTOConfigurationModule segueConfigurationModule,
@@ -93,5 +96,16 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		}
 
 		return dozerDOToDTOMapper;
+	}
+	
+	@Inject
+	@Provides
+	@Singleton
+	private static GameManager getGameManager(final SegueApiFacade api) {
+		if (null == gameManager) {
+			gameManager = new GameManager(api);
+		}
+
+		return gameManager;
 	}
 }
