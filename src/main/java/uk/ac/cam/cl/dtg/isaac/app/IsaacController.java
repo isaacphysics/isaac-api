@@ -91,6 +91,8 @@ public class IsaacController {
 	/**
 	 * REST end point to provide a list of concepts.
 	 * 
+	 * @param ids
+	 *            - the ids of the concepts to request.
 	 * @param tags
 	 *            - a comma separated list of strings
 	 * @param startIndex
@@ -105,19 +107,32 @@ public class IsaacController {
 	@GET
 	@Path("pages/concepts")
 	@Produces("application/json")
-	public final Response getConceptList(@QueryParam("tags") final String tags,
+	public final Response getConceptList(@QueryParam("ids") final String ids,
+			@QueryParam("tags") final String tags,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("limit") final String limit) {
 
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
-
+		
+		String newLimit = null;
+		
+		if (limit != null) {
+			newLimit = limit;
+		}
+		
 		// options
-		if (null != tags) {
+		if (ids != null) {
+			List<String> idsList = Arrays.asList(ids.split(","));
+			fieldsToMatch.put(ID_FIELDNAME, idsList);
+			newLimit = String.valueOf(idsList.size());
+		}
+		
+		if (tags != null) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		}
 
-		return listContentObjects(fieldsToMatch, startIndex, limit);
+		return listContentObjects(fieldsToMatch, startIndex, newLimit);
 	}
 
 	/**
@@ -147,7 +162,9 @@ public class IsaacController {
 
 	/**
 	 * REST end point to provide a list of questions.
-	 * 
+	 *
+	 * @param ids
+	 *            - the ids of the concepts to request.
 	 * @param tags
 	 *            - a comma separated list of strings
 	 * @param level
@@ -166,6 +183,7 @@ public class IsaacController {
 	@Path("pages/questions")
 	@Produces("application/json")
 	public final Response getQuestionList(
+			@QueryParam("ids") final String ids, 
 			@QueryParam("tags") final String tags,
 			@QueryParam("levels") final String level,
 			@QueryParam("start_index") final String startIndex,
@@ -174,16 +192,28 @@ public class IsaacController {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 
-		// options
-		if (null != tags) {
+		String newLimit = null;
+
+		// options	
+		if (limit != null) {
+			newLimit = limit;
+		}
+		
+		if (ids != null) {
+			List<String> idsList = Arrays.asList(ids.split(","));
+			fieldsToMatch.put(ID_FIELDNAME, idsList);
+			newLimit = String.valueOf(idsList.size());
+		}
+	
+		if (tags != null) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		}
 
-		if (null != level) {
+		if (level != null) {
 			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
 		}
-
-		return listContentObjects(fieldsToMatch, startIndex, limit);
+		
+		return listContentObjects(fieldsToMatch, startIndex, newLimit);
 	}
 
 	/**

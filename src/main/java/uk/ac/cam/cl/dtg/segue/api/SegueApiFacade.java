@@ -994,14 +994,21 @@ public class SegueApiFacade {
 	public static 
 	Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
-
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
 
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
-					.immutableEntry(Constants.BooleanOperator.AND,
-							pair.getKey());
+			Map.Entry<Constants.BooleanOperator, String> newEntry = null;
+			if (pair.getKey().equals(Constants.ID_FIELDNAME)) {
+				newEntry = com.google.common.collect.Maps
+						.immutableEntry(Constants.BooleanOperator.OR,
+								pair.getKey());
+				
+			} else {
+				newEntry = com.google.common.collect.Maps
+						.immutableEntry(Constants.BooleanOperator.AND,
+								pair.getKey());
+			}
 
 			fieldsToMatchOutput.put(newEntry, pair.getValue());
 		}
