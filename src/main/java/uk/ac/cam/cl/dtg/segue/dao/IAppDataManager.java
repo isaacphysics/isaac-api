@@ -1,5 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.List;
+import java.util.Map;
+
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+
 /**
  * Interface that provides persistence functionality to external apps
  * that sit on top of Segue.
@@ -17,6 +22,15 @@ public interface IAppDataManager<T> {
 	 * @return the object associated with the given id or null if not found.
 	 */
 	T getById(String id);
+	
+	/**
+	 * Find a database record using the map parameter.
+	 * 
+	 * @param fieldsToMatch - a map of boolean operators mapped to lists of field names.
+	 * @return a list of results or an empty list.
+	 */
+	List<T> find(
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch);
 	
 	/**
 	 * Persist an object in the database.

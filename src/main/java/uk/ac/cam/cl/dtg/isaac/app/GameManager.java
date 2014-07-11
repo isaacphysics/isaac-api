@@ -20,7 +20,7 @@ import com.google.inject.Injector;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
-import uk.ac.cam.cl.dtg.isaac.dto.Gameboard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.Wildcard;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -56,7 +56,7 @@ public class GameManager {
 		this.api = api;
 		this.gameboardPersistenceManager 
 			= new GameboardPersistenceManager(api.requestAppDataManager(
-					GAMEBOARD_COLLECTION_NAME, uk.ac.cam.cl.dtg.isaac.dos.Gameboard.class), api);
+					GAMEBOARD_COLLECTION_NAME, uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class), api);
 	}
 
 	/**
@@ -65,7 +65,7 @@ public class GameManager {
 	 * @see generateRandomGambeoard
 	 * @return gameboard containing random problems.
 	 */
-	public final Gameboard generateRandomGameboard() {
+	public final GameboardDTO generateRandomGameboard() {
 		return this.generateRandomGameboard(null, null, null, null, null, null);
 	}
 
@@ -90,7 +90,7 @@ public class GameManager {
 	 * @return a gameboard if possible that satisifies the conditions provided
 	 *         by the parameters.
 	 */
-	public final Gameboard generateRandomGameboard(
+	public final GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
 			final List<String> conceptsList, final User boardOwner) {
@@ -145,14 +145,14 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
-			Gameboard gameboard = 
-					new Gameboard(uuid, gameboardReadyQuestions, new Date(), gameFilter, 
+			GameboardDTO gameboard = 
+					new GameboardDTO(uuid, gameboardReadyQuestions, new Date(), gameFilter, 
 							boardOwnerId);
 			this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboard);
 			
 			return gameboard;
 		} else {
-			return new Gameboard();
+			return new GameboardDTO();
 		}
 	}
 	
@@ -161,7 +161,7 @@ public class GameManager {
 	 * 
 	 * @param gameboardToStore - Gameboard object to persist.
 	 */
-	public final void permanentlyStoreGameboard(final Gameboard gameboardToStore) {
+	public final void permanentlyStoreGameboard(final GameboardDTO gameboardToStore) {
 		this.gameboardPersistenceManager.saveGameboardToPermanentStorage(gameboardToStore);
 	}
 	
@@ -170,8 +170,18 @@ public class GameManager {
 	 * @param gameboardId - to look up.
 	 * @return the gameboard or null.
 	 */
-	public final Gameboard getGameboard(final String gameboardId) {
+	public final GameboardDTO getGameboard(final String gameboardId) {
 		return this.gameboardPersistenceManager.getGameboardById(gameboardId);
+	}
+	
+	/**
+	 * Lookup gameboards belonging to a current user.
+	 * 
+	 * @param userId - the id of the user to search.
+	 * @return a list of gameboards created and owned by the given userId
+	 */
+	public final List<GameboardDTO> getUsersGameboards(final String userId) {
+		return this.gameboardPersistenceManager.getGameboardsByUserId(userId);
 	}
 	
 	/**

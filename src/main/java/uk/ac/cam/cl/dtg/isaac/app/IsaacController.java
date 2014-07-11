@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.ContentPage;
-import uk.ac.cam.cl.dtg.isaac.dto.Gameboard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummary;
 import uk.ac.cam.cl.dtg.segue.dto.content.Image;
+import uk.ac.cam.cl.dtg.segue.dto.users.User;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -342,7 +343,7 @@ public class IsaacController {
 		}
 
 		try {
-			Gameboard gameboard = gameManager.generateRandomGameboard(
+			GameboardDTO gameboard = gameManager.generateRandomGameboard(
 					subjectsList, fieldsList, topicsList, levelsList,
 					conceptsList, api.getCurrentUser(request));
 
@@ -373,7 +374,7 @@ public class IsaacController {
 
 		// tags are and relationships except for subject
 		try {
-			Gameboard gameboard = gameManager.getGameboard(gameboardId);
+			GameboardDTO gameboard = gameManager.getGameboard(gameboardId);
 
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
@@ -387,6 +388,37 @@ public class IsaacController {
 					"Your gameboard filter request is invalid.").toResponse();
 		}
 	}
+	
+
+	/**
+	 * REST end point to find all of a user's gameboards.
+	 * 
+	 * @param request
+	 *            - so that we can find out the currently logged in user
+	 * @return a Response containing a list of gameboard objects.
+	 */
+	@GET
+	@Path("users/current_user/gameboards")
+	@Produces("application/json")
+	public final Response getGameboardByUser(
+			@Context final HttpServletRequest request) {
+		User user = api.getCurrentUser(request);
+		
+		if (null == user) {
+			// user not logged in return not authorized
+			return new SegueErrorResponse(Status.UNAUTHORIZED, 
+					"User not logged in. Unable to retrieve gameboards.")
+				.toResponse();
+		}
+
+		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user.getDbId());
+		
+		if (null == gameboards) {
+			return Response.noContent().build();
+		}
+		
+		return Response.ok(gameboards).build();
+	}	
 
 	/**
 	 * Rest end point that gets a single page based on a given id.

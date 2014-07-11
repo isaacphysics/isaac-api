@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.mongojack.ObjectId;
 
-import uk.ac.cam.cl.dtg.isaac.dto.Gameboard;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,7 +34,7 @@ public class User {
 	// Map of questionPage id -> map of question id -> questionAttempt information
 	private Map<String, Map<String, QuestionAttempt>> questionAttempts;
 	// TODO: move out of segue DTO into isaac one.
-	private List<Gameboard> gameBoards;
+	private List<GameboardDTO> gameBoards;
 
 	/**
 	 * Full constructor for the User object.
@@ -93,7 +93,7 @@ public class User {
 	 */
 	public User() {
 		this.questionAttempts = Maps.newHashMap();
-		this.gameBoards = new ArrayList<Gameboard>();
+		this.gameBoards = new ArrayList<GameboardDTO>();
 	}
 
 	/**
@@ -214,7 +214,7 @@ public class User {
 	 * 
 	 * @return the gameBoards
 	 */
-	public final List<Gameboard> getGameBoards() {
+	public final List<GameboardDTO> getGameBoards() {
 		return gameBoards;
 	}
 
@@ -224,7 +224,7 @@ public class User {
 	 * @param gameBoards
 	 *            the gameBoards to set
 	 */
-	public final void setGameBoards(final List<Gameboard> gameBoards) {
+	public final void setGameBoards(final List<GameboardDTO> gameBoards) {
 		this.gameBoards = gameBoards;
 	}
 

@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * The primary difference between this DO and the Gameboard DTO is the references to 
  * gameboardItems are ids rather than full objects.
  */
-public class Gameboard {
+public class GameboardDO {
 	@JsonProperty("_id")
 	private String id;
 	private List<String> questions;

@@ -13,8 +13,8 @@ import uk.ac.cam.cl.dtg.isaac.app.Constants;
  * DTO representation of a gameboard.
  *
  */
-public class Gameboard {
-	private static final Logger log = LoggerFactory.getLogger(Gameboard.class);
+public class GameboardDTO {
+	private static final Logger log = LoggerFactory.getLogger(GameboardDTO.class);
 
 	private String id;
 	private List<GameboardItem> questions;
@@ -26,7 +26,7 @@ public class Gameboard {
 	/**
 	 * Default Gameboard Constructor.
 	 */
-	public Gameboard() {
+	public GameboardDTO() {
 		this.questions = new ArrayList<GameboardItem>();
 	}
 
@@ -46,7 +46,7 @@ public class Gameboard {
 	 *            - User id of the owner of the gameboard.            
 	 * @throws IllegalArgumentException
 	 */
-	public Gameboard(final String id, final List<GameboardItem> questions,
+	public GameboardDTO(final String id, final List<GameboardItem> questions,
 			final Date creationDate, final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
 		this.questions = questions;

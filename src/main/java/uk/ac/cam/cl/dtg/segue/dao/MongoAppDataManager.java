@@ -1,8 +1,18 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.commons.lang3.Validate;
+import org.mongojack.DBQuery;
+import org.mongojack.DBQuery.Query;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 
 import com.google.inject.Inject;
 import com.mongodb.DB;
@@ -13,6 +23,9 @@ import com.mongodb.DB;
  * @param <T> the type that this App Data Manager looks after.
  */
 public class MongoAppDataManager<T> implements IAppDataManager<T> {
+	private static final Logger log = LoggerFactory
+			.getLogger(MongoAppDataManager.class);
+	
 	private final DB database;
 	private final String databaseName;
 	private final Class<T> typeParamaterClass;
@@ -70,5 +83,34 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	 */
 	public final String getDatabaseName() {
 		return databaseName;
+	}
+
+	@Override
+	public final List<T> find(
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch) {		
+		Validate.notNull(fieldsToMatch);
+		
+		Query query = DBQuery.empty();
+		
+		for (Map.Entry<Map.Entry<BooleanOperator, String>, List<String>> pair 
+					: fieldsToMatch.entrySet()) {
+			// go through the values for each query
+			for (String queryValue : pair.getValue()) {
+				if (pair.getKey().getKey().equals(BooleanOperator.AND)) {
+					query = query.and(DBQuery.is(pair.getKey().getValue(), queryValue));
+				} else {
+					query = query.or(DBQuery.is(pair.getKey().getValue(), queryValue));
+				}
+			}
+		}
+		
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(databaseName), typeParamaterClass,
+				String.class);
+		
+		List<T> result = jc.find(query).toArray();
+		
+		log.info("Result = " + result.size());
+		return result;
 	}
 }
