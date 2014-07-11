@@ -442,8 +442,6 @@ public class IsaacController {
 	/**
 	 * Rest end point that gets a single page based on a given id.
 	 * 
-	 * TODO: Currently there is no type checking on the object returned.
-	 * 
 	 * @param pageId
 	 *            as a string
 	 * @return A Response object containing a page object.
@@ -452,8 +450,6 @@ public class IsaacController {
 	@Path("pages/{page}")
 	@Produces("application/json")
 	public final Response getPage(@PathParam("page") final String pageId) {
-		//Response apiResponse = api.getContentById(api.getLiveVersion(), pageId);
-
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
 
@@ -466,6 +462,30 @@ public class IsaacController {
 
 		return this.findSingleResult(fieldsToMatch);
 	}
+	
+	/**
+	 * Rest end point that gets a single page fragment based on a given id.
+	 * 
+	 * @param fragmentId
+	 *            as a string
+	 * @return A Response object containing a page object.
+	 */
+	@GET
+	@Path("pages/fragments/{fragment_id}")
+	@Produces("application/json")
+	public final Response getPageFragment(@PathParam("fragment_id") final String fragmentId) {
+		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
+
+		// options
+		if (null != fragmentId) {
+			fieldsToMatch
+					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
+							Arrays.asList(fragmentId));
+		}
+
+		return this.findSingleResult(fieldsToMatch);
+	}	
 
 	/**
 	 * Rest end point to allow images to be requested from the database.
