@@ -452,26 +452,19 @@ public class IsaacController {
 	@Path("pages/{page}")
 	@Produces("application/json")
 	public final Response getPage(@PathParam("page") final String pageId) {
-		Response apiResponse = api.getContentById(api.getLiveVersion(), pageId);
+		//Response apiResponse = api.getContentById(api.getLiveVersion(), pageId);
 
-		Content c = null;
-		if (apiResponse.getEntity() instanceof Content) {
-			c = (Content) api.getContentById(api.getLiveVersion(), pageId)
-					.getEntity();
+		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
 
-			if (null == c) {
-				return new SegueErrorResponse(Status.NOT_FOUND,
-						"Unable to locate the content requested.").toResponse();
-			}
-
-			String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-			ContentPage cp = new ContentPage(c.getId(), c,
-					this.buildMetaContentmap(proxyPath, c));
-
-			return Response.ok(cp).build();
-		} else {
-			return apiResponse;
+		// options
+		if (null != pageId) {
+			fieldsToMatch
+					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
+							Arrays.asList(pageId));
 		}
+
+		return this.findSingleResult(fieldsToMatch);
 	}
 
 	/**
@@ -758,11 +751,11 @@ public class IsaacController {
 			c = conceptList.getResults().get(0);
 		}
 
-		String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-		ContentPage cp = new ContentPage(c.getId(), c,
-				this.buildMetaContentmap(proxyPath, c));
+//		String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
+//		ContentPage cp = new ContentPage(c.getId(), c,
+//				this.buildMetaContentmap(proxyPath, c));
 
-		return Response.ok(cp).build();
+		return Response.ok(c).build();
 	}
 
 	/**
