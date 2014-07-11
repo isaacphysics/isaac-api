@@ -89,6 +89,23 @@ public class IsaacController {
 		// else
 		// log.info("User Logged in: " + user.getEmail());
 	}
+	
+	/**
+	 * Creates an instance of the isaac controller which provides the REST
+	 * endpoints for the isaac api.
+	 * 
+	 * @param api - Instance of segue Api
+	 * @param propertiesLoader - Instance of properties Loader
+	 * @param gameManager - Instance of Game Manager
+	 */
+	public IsaacController(
+			final SegueApiFacade api, 
+			final PropertiesLoader propertiesLoader, 
+			final GameManager gameManager) {
+		IsaacController.api = api;
+		this.propertiesLoader = propertiesLoader;
+		this.gameManager = gameManager;
+	}
 
 	/**
 	 * REST end point to provide a list of concepts.
@@ -347,7 +364,7 @@ public class IsaacController {
 			GameboardDTO gameboard = gameManager.generateRandomGameboard(
 					subjectsList, fieldsList, topicsList, levelsList,
 					conceptsList, api.getCurrentUser(request));
-
+			
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NO_CONTENT, 
 						"We cannot find any questions based on your filter criteria.").toResponse();
