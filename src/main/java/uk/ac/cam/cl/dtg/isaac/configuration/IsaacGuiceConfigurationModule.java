@@ -14,6 +14,7 @@ import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -73,10 +74,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	private static SegueApiFacade getSegueFacadeSingleton(
 			PropertiesLoader properties, ContentMapper mapper,
 			@Nullable ISegueDTOConfigurationModule segueConfigurationModule,
-			ContentVersionController versionController) {
+			ContentVersionController versionController,
+			UserManager userManager) {
 		if (null == segueApi) {
 			segueApi = new SegueApiFacade(properties, mapper,
-					segueConfigurationModule, versionController);
+					segueConfigurationModule, versionController, userManager);
 		}
 
 		return segueApi;

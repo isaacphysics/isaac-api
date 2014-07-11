@@ -47,9 +47,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
 /**
  * Segue Api Facade
@@ -68,6 +66,8 @@ public class SegueApiFacade {
 
 	private static ContentVersionController contentVersionController;
 
+	private static UserManager userManager;
+
 	private QuestionManager questionManager;
 
 	private PropertiesLoader properties;
@@ -84,13 +84,16 @@ public class SegueApiFacade {
 	 *            - The Guice DI configuration module.
 	 * @param contentVersionController
 	 *            - The content version controller used by the api.
+	 * @param userManager
+	 *            - The manager object responsible for users.
 	 */
 	@Inject
 	public SegueApiFacade(
 			final PropertiesLoader properties,
 			final ContentMapper mapper,
 			@Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-			final ContentVersionController contentVersionController) {
+			final ContentVersionController contentVersionController,
+			final UserManager userManager) {
 
 		this.properties = properties;
 		this.questionManager = new QuestionManager();
@@ -110,6 +113,10 @@ public class SegueApiFacade {
 
 		if (null == SegueApiFacade.contentVersionController) {
 			SegueApiFacade.contentVersionController = contentVersionController;
+		}
+
+		if (null == SegueApiFacade.userManager) {
+			SegueApiFacade.userManager = userManager;
 		}
 
 		// Check if we want to get the latest from git each time a request is
@@ -605,10 +612,8 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		IContentManager contentPersistenceManager = injector
-				.getInstance(IContentManager.class);
+		IContentManager contentPersistenceManager = contentVersionController
+				.getContentManager();
 
 		List<String> allVersions = contentPersistenceManager
 				.listAvailableVersions();
@@ -629,7 +634,8 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result 
+			= new ImmutableMap.Builder<String, Collection<String>>()
 				.put("version_list", limitedVersions).build();
 
 		return Response.ok().entity(result).build();
@@ -687,7 +693,8 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result 
+			= new ImmutableMap.Builder<String, Collection<String>>()
 				.put("cachedVersions",
 						contentPersistenceManager.getCachedVersionList())
 				.build();
@@ -715,11 +722,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("users/current_user")
-	public final User getCurrentUser(@Context final HttpServletRequest request) {
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		UserManager userManager = injector.getInstance(UserManager.class);
-
+	public User getCurrentUser(@Context final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
 
@@ -742,11 +745,6 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
 			@QueryParam("redirect") final String redirectUrl) {
-
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		UserManager userManager = injector.getInstance(UserManager.class);
-
 		User currentUser = getCurrentUser(request);
 
 		if (null != currentUser) {
@@ -787,10 +785,6 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			@PathParam("provider") final String signinProvider) {
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		UserManager userManager = injector.getInstance(UserManager.class);
-
 		return userManager.authenticateCallback(request, response,
 				signinProvider);
 	}
@@ -806,10 +800,6 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("auth/logout")
 	public final Response userLogout(@Context final HttpServletRequest request) {
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		UserManager userManager = injector.getInstance(UserManager.class);
-
 		userManager.logUserOut(request);
 
 		return Response.ok("success").build();
@@ -916,9 +906,6 @@ public class SegueApiFacade {
 		User user = this.getCurrentUser(request);
 		if (user != null
 				&& response.getEntity() instanceof QuestionValidationResponse) {
-			Injector injector = Guice
-					.createInjector(new SegueGuiceConfigurationModule());
-			UserManager userManager = injector.getInstance(UserManager.class);
 			userManager.recordUserQuestionInformation(user,
 					(QuestionValidationResponse) response.getEntity());
 		}
