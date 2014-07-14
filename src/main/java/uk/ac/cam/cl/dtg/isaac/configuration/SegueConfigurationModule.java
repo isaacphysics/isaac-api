@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacMultiChoiceQuestion;
@@ -12,23 +12,23 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
+/**
+ * Segue Configuration module for Isaac. 
+ * 
+ * This is used to register isaac specific DOs and DTOs with Segue.
+ */
 public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 
 	@Override
-	public Map<String, Class<? extends Content>> getContentDataTransferObjectMap() {
-		Map<String, Class<? extends Content>> supplementaryContentDTOs = new HashMap<String, Class<? extends Content>>();
+	public List<Class<? extends Content>> getContentDataTransferObjectMap() {
+		List<Class<? extends Content>> supplementaryContentDTOs = Lists.newArrayList();
 
-		supplementaryContentDTOs.put("isaacQuestion", IsaacQuestion.class);
-		supplementaryContentDTOs.put("isaacMultiChoiceQuestion",
-				IsaacMultiChoiceQuestion.class);
-		supplementaryContentDTOs.put("isaacNumericQuestion",
-				IsaacNumericQuestion.class);
-		supplementaryContentDTOs.put("isaacSymbolicQuestion",
-				IsaacSymbolicQuestion.class);
-		supplementaryContentDTOs.put("isaacQuestionPage",
-				IsaacQuestionPage.class);
-		supplementaryContentDTOs.put("isaacFeaturedProfile",
-				IsaacFeaturedProfile.class);
+		supplementaryContentDTOs.add(IsaacQuestion.class);
+		supplementaryContentDTOs.add(IsaacMultiChoiceQuestion.class);
+		supplementaryContentDTOs.add(IsaacNumericQuestion.class);
+		supplementaryContentDTOs.add(IsaacSymbolicQuestion.class);
+		supplementaryContentDTOs.add(IsaacQuestionPage.class);
+		supplementaryContentDTOs.add(IsaacFeaturedProfile.class);
 
 		return supplementaryContentDTOs;
 	}

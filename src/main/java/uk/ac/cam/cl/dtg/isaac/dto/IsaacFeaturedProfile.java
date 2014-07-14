@@ -11,6 +11,10 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 
+/**
+ * DO for isaac featured profiles.
+ *
+ */
 @JsonType("isaacFeaturedProfile")
 public class IsaacFeaturedProfile extends Content {
 

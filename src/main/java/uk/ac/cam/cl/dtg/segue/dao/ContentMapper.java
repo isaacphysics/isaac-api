@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.Validate;
 import org.dozer.Mapper;
+import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -35,8 +38,26 @@ public class ContentMapper {
 	// Currently depends on the string key being the same text value as the type
 	// field.
 	private final Map<String, Class<? extends Content>> jsonTypes;
-	
+
+	private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
+
 	private final Mapper dozerDOandDTOMapper;
+
+	/**
+	 * Creates a new content mapper without type information.
+	 * 
+	 * Note: Type information must be provided by using the register type
+	 * methods.
+	 * 
+	 * @param dozerDOandDTOMapper
+	 *            - the mapper to use for DO and DTO mapping.
+	 */
+	public ContentMapper(final Mapper dozerDOandDTOMapper) {
+		Validate.notNull(dozerDOandDTOMapper);
+		jsonTypes = Maps.newConcurrentMap();
+		mapOfDOsToDTOs = Maps.newConcurrentMap();
+		this.dozerDOandDTOMapper = dozerDOandDTOMapper;
+	}
 
 	/**
 	 * Creates a new content mapper initialized with a set of types.
@@ -45,16 +66,24 @@ public class ContentMapper {
 	 *            - types to add to our look up map.
 	 * @param dozerDOandDTOMapper
 	 *            - instance of the autoMapper.
+	 * @param mapOfDOsToDTOs
+	 *            - map of DOs To DTOs.
 	 */
 	public ContentMapper(
 			final Map<String, Class<? extends Content>> additionalTypes,
-			final Mapper dozerDOandDTOMapper) {
-		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
-
+			final Mapper dozerDOandDTOMapper,
+			final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs) {
 		Validate.notNull(additionalTypes);
+		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
 		jsonTypes.putAll(additionalTypes);
-		
+
 		this.dozerDOandDTOMapper = dozerDOandDTOMapper;
+
+		this.mapOfDOsToDTOs = Maps.newConcurrentMap();
+
+		if (mapOfDOsToDTOs != null) {
+			this.mapOfDOsToDTOs.putAll(mapOfDOsToDTOs);
+		}
 	}
 
 	/**
@@ -142,14 +171,18 @@ public class ContentMapper {
 	 * 
 	 * @see #registerJsonTypeToDO(String, Class)
 	 * @param newTypes
-	 *            a map of types to merge with the segue type map.
+	 *            a map of types to merge with the segue type map. The classes added to the map
+	 *            must contain jsonType annotations and may contain DTOMapping annotations.
 	 */
 	public synchronized void registerJsonTypes(
-			final Map<String, Class<? extends Content>> newTypes) {
+			final List<Class<? extends Content>> newTypes) {
 		Validate.notNull(newTypes, "New types map cannot be null");
-		log.info("Adding new content Types to Segue: "
-				+ newTypes.keySet().toString());
-		jsonTypes.putAll(newTypes);
+		
+		log.info("Adding new content Types to Segue");
+		
+		for (Class<? extends Content> contentClass : newTypes) {
+			this.registerJsonTypeAndDTOMapping(contentClass);
+		}
 	}
 
 	/**
@@ -164,7 +197,42 @@ public class ContentMapper {
 		JsonType jt = cls.getAnnotation(JsonType.class);
 		if (jt != null) {
 			jsonTypes.put(jt.value(), cls);
+		} else {
+			log.error("The jsonType annotation type provided cannot be null. For the class " + cls);
 		}
+	}
+
+	/**
+	 * Registers DTOMapping using class annotation.
+	 * 
+	 * @param cls
+	 *            - the class to extract the jsontype value from.
+	 */
+	public synchronized void registerDTOMapping(
+			final Class<? extends Content> cls) {
+		Validate.notNull(cls, "Class cannot be null.");
+
+		DTOMapping dtoMapping = cls.getAnnotation(DTOMapping.class);
+		if (dtoMapping != null) {
+			this.mapOfDOsToDTOs.put(cls, dtoMapping.value());
+		} else {
+			log.warn("The DTO mapping provided is null or the annotation is not present"
+					+ " for the class " 
+					+ cls 
+					+ ". This class cannot be auto mapped from DO to DTO.");
+		}
+	}
+
+	/**
+	 * Registers JsonTypes and DTO mappings using class annotation.
+	 * 
+	 * @param cls
+	 *            - the class to extract the jsontype value from.
+	 */
+	public synchronized void registerJsonTypeAndDTOMapping(
+			final Class<? extends Content> cls) {
+		this.registerJsonType(cls);
+		this.registerDTOMapping(cls);
 	}
 
 	/**
@@ -233,9 +301,10 @@ public class ContentMapper {
 		}
 		return contentList;
 	}
-	
+
 	/**
 	 * Gets the instance of the Dozer auto mapper.
+	 * 
 	 * @return Auto Mapper.
 	 */
 	public Mapper getDTOandDOMapper() {

@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
-import java.util.Map;
-
+import java.util.List;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
 /**
@@ -22,6 +21,6 @@ public interface ISegueDTOConfigurationModule {
 	 * 
 	 * @return a map of string type identifiers to classes that extend Content.
 	 */
-	Map<String, Class<? extends Content>> getContentDataTransferObjectMap();
+	List<Class<? extends Content>> getContentDataTransferObjectMap();
 
 }

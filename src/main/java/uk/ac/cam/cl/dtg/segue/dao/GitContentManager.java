@@ -164,6 +164,7 @@ public class GitContentManager implements IContentManager {
 			// Required to deal with type polymorphism
 			List<Content> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
+			
 			finalResults = new ResultsWrapper<Content>(result,
 					searchHits.getTotalResults());
 		}

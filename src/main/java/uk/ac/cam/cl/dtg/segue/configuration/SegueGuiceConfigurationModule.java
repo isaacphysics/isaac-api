@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.dozer.DozerBeanMapper;
@@ -30,7 +29,6 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.Mongo;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Figure;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
@@ -83,7 +81,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 
 		if (null == mapper) {
-			mapper = new ContentMapper(buildDefaultJsonTypeMap(), this.getDozerDOtoDTOMapper());
+			mapper = new ContentMapper(getDozerDOtoDTOMapper());
+			buildDefaultJsonTypeMap();
+			// TODO: create a provider for this and inject it properly.
 		}
 	}
 
@@ -91,13 +91,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	protected void configure() {
 		try {
 			this.configureProperties();
-
 			this.configureDataPersistence();
-
 			this.configureSegueSearch();
-
 			this.configureSecurity();
-
 			this.configureApplicationManagers();
 
 		} catch (IOException e) {
@@ -301,27 +297,20 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	
 
 	/**
-	 * This method will return you a populated Map which enables mapping to and
-	 * from content objects.
+	 * This method will pre-register the mapper class so that content objects can be mapped.
 	 * 
 	 * It requires that the class definition has the JsonType("XYZ") annotation
-	 * 
-	 * @return initial segue type map.
 	 */
-	private Map<String, Class<? extends Content>> buildDefaultJsonTypeMap() {
-		HashMap<String, Class<? extends Content>> map 
-			= new HashMap<String, Class<? extends Content>>();
-
+	private void buildDefaultJsonTypeMap() {
 		// We need to pre-register different content objects here for the
 		// auto-mapping to work
-		map.put("choice", Choice.class);
-		map.put("quantity", Quantity.class);
-		map.put("question", Question.class);
-		map.put("choiceQuestion", ChoiceQuestion.class);
-		map.put("image", Image.class);
-		map.put("figure", Figure.class);
-		map.put("video", Video.class);
-		return map;
+		mapper.registerJsonTypeAndDTOMapping(Choice.class);
+		mapper.registerJsonTypeAndDTOMapping(Quantity.class);
+		mapper.registerJsonTypeAndDTOMapping(Question.class);
+		mapper.registerJsonTypeAndDTOMapping(ChoiceQuestion.class);
+		mapper.registerJsonTypeAndDTOMapping(Image.class);
+		mapper.registerJsonTypeAndDTOMapping(Figure.class);
+		mapper.registerJsonTypeAndDTOMapping(Video.class);
 	}
 
 	/**
