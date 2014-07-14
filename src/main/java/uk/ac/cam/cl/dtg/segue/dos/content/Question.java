@@ -3,6 +3,8 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -11,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * the storage of data relating to possible answers to questions.
  * 
  */
+@DTOMapping(QuestionDTO.class)
 @JsonType("question")
 public class Question extends Content {
 

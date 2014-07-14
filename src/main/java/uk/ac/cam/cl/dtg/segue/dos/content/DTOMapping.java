@@ -9,17 +9,17 @@ import java.lang.annotation.RetentionPolicy;
  * This annotation is used to allow mapping of Domain Objects to 
  * string type identifiers.
  * 
- * e.g. jsonType("video").
+ * e.g. DTOClass(Content.class).
  *
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JsonType {
+public @interface DTOMapping {
 
 	/**
-	 * gets the string value associated with the jsonType annotation. 
+	 * gets the DTO class that any Domain objects should be mapped to and from.
 	 * 
-	 * default is "string"
+	 * default is Object.class
 	 */
-	String value() default "string";
+	Class<?> value() default Object.class;
 }

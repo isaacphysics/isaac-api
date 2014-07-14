@@ -3,6 +3,8 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * the storage of data relating to possible answers to questions.
  * 
  */
+@DTOMapping(ChoiceDTO.class)
 @JsonType("choice")
 public class Choice extends Content {
 	@JsonIgnore

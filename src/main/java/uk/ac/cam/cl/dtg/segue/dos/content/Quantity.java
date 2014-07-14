@@ -3,14 +3,24 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Quantity class is a specialised choice object that allows both a
+ * value and a unit to be stored.
+ */
+@DTOMapping(QuantityDTO.class)
 @JsonType("quantity")
 public class Quantity extends Choice {
-	protected String units;
-	protected boolean requireUnitsMatch;
+	private String units;
+	private boolean requireUnitsMatch;
 
+	/**
+	 * Default constructor required for mapping.
+	 */
 	public Quantity() {
 
 	}

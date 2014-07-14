@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.Validate;
+import org.dozer.Mapper;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,6 @@ import com.mongodb.DBObject;
 /**
  * Class responsible for mapping Content objects (or contentBase objects) to
  * their respective subclass.
- * 
  */
 public class ContentMapper {
 	private static final Logger log = LoggerFactory
@@ -35,47 +35,50 @@ public class ContentMapper {
 	// Currently depends on the string key being the same text value as the type
 	// field.
 	private final Map<String, Class<? extends Content>> jsonTypes;
-
-	/**
-	 * Creates a new content mapper
-	 * 
-	 */
-	public ContentMapper() {
-		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
-	}
+	
+	private final Mapper dozerDOandDTOMapper;
 
 	/**
 	 * Creates a new content mapper initialized with a set of types.
 	 * 
 	 * @param additionalTypes
+	 *            - types to add to our look up map.
+	 * @param dozerDOandDTOMapper
+	 *            - instance of the autoMapper.
 	 */
-	public ContentMapper(Map<String, Class<? extends Content>> additionalTypes) {
-		this();
+	public ContentMapper(
+			final Map<String, Class<? extends Content>> additionalTypes,
+			final Mapper dozerDOandDTOMapper) {
+		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
 
 		Validate.notNull(additionalTypes);
 		jsonTypes.putAll(additionalTypes);
+		
+		this.dozerDOandDTOMapper = dozerDOandDTOMapper;
 	}
 
 	/**
 	 * This method will accept a json string and will return a Content object
-	 * (or one of its subtypes)
+	 * (or one of its subtypes).
 	 * 
-	 * @param json
+	 * @param docJson
+	 *            - to load
 	 * @return A Content object or one of its registered sub classes
 	 * @throws JsonParseException
 	 * @throws JsonMappingException
 	 * @throws IOException
+	 *             - if there is a problem with IO
 	 */
-	public Content load(String docJson) throws JsonParseException,
-			JsonMappingException, IOException {
+	public Content load(final String docJson) throws IOException {
 		Content c = JsonLoader.load(docJson, Content.class, true);
 
 		Class<? extends Content> cls = jsonTypes.get(c.getType());
 
-		if (cls != null)
+		if (cls != null) {
 			return JsonLoader.load(docJson, cls);
-		else
+		} else {
 			return JsonLoader.load(docJson, Content.class);
+		}
 	}
 
 	/**
@@ -86,16 +89,12 @@ public class ContentMapper {
 	 * its subtypes when it is provided with an object from this method (without
 	 * having to do instanceof checks or anything).
 	 * 
-	 * @param reference
+	 * @param obj
 	 *            to the DBObject obj
 	 * @return A content object or any subclass of Content or Null if the obj
 	 *         param is not provided.
-	 * @throws IllegalArgumentException
-	 *             if the database item retrieved fails to map into a content
-	 *             object.
 	 */
-	public Content mapDBOjectToContentDTO(DBObject obj)
-			throws IllegalArgumentException {
+	public Content mapDBOjectToContentDO(final DBObject obj) {
 		Validate.notNull(obj);
 
 		// Create an ObjectMapper capable of deserializing mongo ObjectIDs
@@ -106,14 +105,7 @@ public class ContentMapper {
 		String labelledType = (String) obj.get("type");
 
 		// Lookup the matching POJO class
-		Class<? extends Content> contentClass = jsonTypes.get(labelledType); // Returns
-																				// null
-																				// if
-																				// no
-																				// entry
-																				// for
-																				// this
-																				// type
+		Class<? extends Content> contentClass = jsonTypes.get(labelledType);
 
 		if (null == contentClass) {
 			// We haven't registered this type. Deserialize into the Content
@@ -123,23 +115,21 @@ public class ContentMapper {
 		} else {
 
 			// We have a registered POJO class. Deserialize into it.
-			// TODO: Work out whether we should configure the contentMapper to
-			// ignore missing fields in this case.
 			return contentMapper.convertValue(obj, contentClass);
 		}
 	}
 
 	/**
-	 * Register a new content type with the content mapper
+	 * Register a new content type with the content mapper.
 	 * 
 	 * @param type
 	 *            - String that should match the type field of the content
 	 *            object.
 	 * @param cls
-	 *            - Class implementing the deserialized DTO.
+	 *            - Class implementing the deserialized DO.
 	 */
-	public synchronized void registerJsonType(String type,
-			Class<? extends Content> cls) {
+	public synchronized void registerJsonTypeToDO(final String type,
+			final Class<? extends Content> cls) {
 		Validate.notEmpty(type,
 				"Invalid type string entered. It cannot be empty.");
 		Validate.notNull(cls, "Class cannot be null.");
@@ -148,13 +138,14 @@ public class ContentMapper {
 	}
 
 	/**
-	 * Works the same as {@link #registerJsonType(String, Class)}
+	 * Works the same as {@link #registerJsonTypeToDO(String, Class)}.
 	 * 
-	 * @see #registerJsonType(String, Class)
+	 * @see #registerJsonTypeToDO(String, Class)
 	 * @param newTypes
+	 *            a map of types to merge with the segue type map.
 	 */
 	public synchronized void registerJsonTypes(
-			Map<String, Class<? extends Content>> newTypes) {
+			final Map<String, Class<? extends Content>> newTypes) {
 		Validate.notNull(newTypes, "New types map cannot be null");
 		log.info("Adding new content Types to Segue: "
 				+ newTypes.keySet().toString());
@@ -165,16 +156,25 @@ public class ContentMapper {
 	 * Registers JsonTypes using class annotation.
 	 * 
 	 * @param cls
+	 *            - the class to extract the jsontype value from.
 	 */
-	public synchronized void registerJsonType(Class<? extends Content> cls) {
+	public synchronized void registerJsonType(final Class<? extends Content> cls) {
 		Validate.notNull(cls, "Class cannot be null.");
 
 		JsonType jt = cls.getAnnotation(JsonType.class);
-		if (jt != null)
+		if (jt != null) {
 			jsonTypes.put(jt.value(), cls);
+		}
 	}
 
-	public Class<? extends Content> getClassByType(String type) {
+	/**
+	 * Find the class that implements the content DO based on a type string.
+	 * 
+	 * @param type
+	 *            - string to lookup
+	 * @return the content DO class.
+	 */
+	public Class<? extends Content> getClassByType(final String type) {
 		return jsonTypes.get(type);
 	}
 
@@ -183,7 +183,7 @@ public class ContentMapper {
 	 * that contentBase objects can be deseerialized using the custom
 	 * deserializer.
 	 * 
-	 * @return
+	 * @return a jackson object mapper.
 	 */
 	public ObjectMapper getContentObjectMapper() {
 		ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
@@ -205,12 +205,14 @@ public class ContentMapper {
 	}
 
 	/**
-	 * Map a list of String to a List of Content
+	 * Map a list of String to a List of Content.
 	 * 
 	 * @param stringList
+	 *            - Converts a list of strings to a list of content
 	 * @return Content List
 	 */
-	public List<Content> mapFromStringListToContentList(List<String> stringList) {
+	public List<Content> mapFromStringListToContentList(
+			final List<String> stringList) {
 		// setup object mapper to use preconfigured deserializer module.
 		// Required to deal with type polymorphism
 		ObjectMapper objectMapper = this.getContentObjectMapper();
@@ -231,4 +233,13 @@ public class ContentMapper {
 		}
 		return contentList;
 	}
+	
+	/**
+	 * Gets the instance of the Dozer auto mapper.
+	 * @return Auto Mapper.
+	 */
+	public Mapper getDTOandDOMapper() {
+		return this.dozerDOandDTOMapper;
+	}
+
 }

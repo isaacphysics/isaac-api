@@ -3,12 +3,20 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Image is any picture.
+ */
+@DTOMapping(ImageDTO.class)
 @JsonType("image")
 public class Image extends Media {
-
+	/**
+	 * Default constructor required for mapping purposes.
+	 */
 	public Image() {
 
 	}

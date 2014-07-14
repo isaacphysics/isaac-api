@@ -83,7 +83,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 
 		if (null == mapper) {
-			mapper = new ContentMapper(buildDefaultJsonTypeMap());
+			mapper = new ContentMapper(buildDefaultJsonTypeMap(), this.getDozerDOtoDTOMapper());
 		}
 	}
 

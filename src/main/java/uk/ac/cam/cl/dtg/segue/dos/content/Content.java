@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * being easily serializable to enable it to be exposed via web views.
  * 
  */
+@DTOMapping(ContentDTO.class)
 @JsonType("content")
 public class Content extends ContentBase {
 	protected String title;

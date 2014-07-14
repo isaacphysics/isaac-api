@@ -59,7 +59,7 @@ public class MongoContentManager implements IContentManager {
 		// the database once.
 		DBObject node = dbCollection.findOne(new BasicDBObject("id", id));
 
-		Content c = mapper.mapDBOjectToContentDTO(node);
+		Content c = mapper.mapDBOjectToContentDO(node);
 
 		return c;
 	}
