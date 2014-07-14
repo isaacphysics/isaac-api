@@ -11,7 +11,7 @@ import com.google.inject.Injector;
 import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.api.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is

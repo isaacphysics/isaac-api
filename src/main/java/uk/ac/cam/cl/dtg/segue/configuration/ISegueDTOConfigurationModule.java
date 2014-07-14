@@ -1,9 +1,13 @@
-package uk.ac.cam.cl.dtg.segue.api;
+package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
+/**
+ * Interface for configuration modules that will work nicely with Segue.
+ *
+ */
 public interface ISegueDTOConfigurationModule {
 
 	/**
@@ -16,8 +20,8 @@ public interface ISegueDTOConfigurationModule {
 	 * Note: It is expected that the 'type' key should be exactly the same as
 	 * any type declared in json files that might need to be deserialized.
 	 * 
-	 * @return
+	 * @return a map of string type identifiers to classes that extend Content.
 	 */
-	public Map<String, Class<? extends Content>> getContentDataTransferObjectMap();
+	Map<String, Class<? extends Content>> getContentDataTransferObjectMap();
 
 }

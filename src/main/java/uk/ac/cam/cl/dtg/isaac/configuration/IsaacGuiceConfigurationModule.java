@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.app.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
+import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
