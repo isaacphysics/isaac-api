@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.dozer.DozerBeanMapper;
+import org.dozer.Mapper;
+import org.dozer.loader.api.BeanMappingBuilder;
 import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +58,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
+	// Dozer mapper
+	private static DozerBeanMapper dozerDOToDTOMapper = null;
+	
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
@@ -265,6 +271,31 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return userManager;
 	}
+	
+	/**
+	 * Gets the instance of the dozer mapper object.
+	 * 
+	 * @return Dozer Mapper.
+	 */
+	@Provides
+	@Singleton
+	private static Mapper getDozerDOtoDTOMapper() {
+		if (null == dozerDOToDTOMapper) {
+			dozerDOToDTOMapper = new DozerBeanMapper();
+			log.info("Creating singleton for Dozer mapper");
+		}
+
+		return dozerDOToDTOMapper;
+	}
+	
+	/**
+	 * Utility method to allow third party apps to extend the dozer mapper.
+	 * @param builder - the builder to add to the DTO / DO mapper.
+	 */
+	public static void addMappingConfigurationToDozerMapper(final BeanMappingBuilder builder) {
+		dozerDOToDTOMapper.addMapping(builder);
+	}
+	
 
 	/**
 	 * This method will return you a populated Map which enables mapping to and
