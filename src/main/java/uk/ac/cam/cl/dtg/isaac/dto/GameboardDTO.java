@@ -7,7 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.app.Constants;
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
 
 /**
  * DTO representation of a gameboard.

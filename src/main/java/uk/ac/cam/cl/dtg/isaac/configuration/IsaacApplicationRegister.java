@@ -8,8 +8,8 @@ import javax.ws.rs.core.Application;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import uk.ac.cam.cl.dtg.isaac.app.IsaacController;
-import uk.ac.cam.cl.dtg.isaac.app.APIOverviewResource;
+import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
+import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 

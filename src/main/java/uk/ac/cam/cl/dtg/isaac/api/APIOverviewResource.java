@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.api;
 
 import java.io.Serializable;
 import java.util.Arrays;

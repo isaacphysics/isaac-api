@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.app;
+package uk.ac.cam.cl.dtg.isaac.api;
 
 /**
  * Utility class to provide common isaac-specific constants.
