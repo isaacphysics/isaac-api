@@ -27,11 +27,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentSummary;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -668,7 +668,7 @@ public class IsaacController {
 	 *            - the path prefix used for augmentation of urls
 	 * @return Content summary object.
 	 */
-	private ContentSummary extractContentSummary(final Content content,
+	private ContentSummaryDTO extractContentSummary(final Content content,
 			final String proxyPath) {
 		if (null == content) {
 			return null;
@@ -680,7 +680,7 @@ public class IsaacController {
 				new SegueGuiceConfigurationModule());
 		Mapper mapper = injector.getInstance(Mapper.class);
 
-		ContentSummary contentInfo = mapper.map(content, ContentSummary.class);
+		ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
 		contentInfo.setUrl(generateApiUrl(content));
 
 		return contentInfo;
@@ -696,16 +696,16 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter contentInfo objects.
 	 */
-	private List<ContentSummary> extractContentSummaryFromList(
+	private List<ContentSummaryDTO> extractContentSummaryFromList(
 			final List<Content> contentList, final String proxyPath) {
 		if (null == contentList) {
 			return null;
 		}
 
-		List<ContentSummary> listOfContentInfo = new ArrayList<ContentSummary>();
+		List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
 
 		for (Content content : contentList) {
-			ContentSummary contentInfo = extractContentSummary(content,
+			ContentSummaryDTO contentInfo = extractContentSummary(content,
 					proxyPath);
 			if (null != contentInfo) {
 				listOfContentInfo.add(contentInfo);
@@ -724,16 +724,16 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter contentInfo objects.
 	 */
-	private ResultsWrapper<ContentSummary> extractContentSummaryFromResultsWrapper(
+	private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
 			final ResultsWrapper<Content> contentList, final String proxyPath) {
 		if (null == contentList) {
 			return null;
 		}
 
-		ResultsWrapper<ContentSummary> contentSummaryResults = new ResultsWrapper<ContentSummary>();
+		ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>();
 
 		for (Content content : contentList.getResults()) {
-			ContentSummary contentInfo = extractContentSummary(content,
+			ContentSummaryDTO contentInfo = extractContentSummary(content,
 					proxyPath);
 			if (null != contentInfo) {
 				contentSummaryResults.getResults().add(contentInfo);
@@ -818,7 +818,7 @@ public class IsaacController {
 					.toResponse();
 		}
 
-		ResultsWrapper<ContentSummary> summarizedContent = new ResultsWrapper<ContentSummary>(
+		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
 				this.extractContentSummaryFromList(c.getResults(),
 						propertiesLoader.getProperty(PROXY_PATH)),
 				c.getTotalResults());

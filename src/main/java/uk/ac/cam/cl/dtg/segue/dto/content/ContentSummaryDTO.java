@@ -4,23 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DTO represents high level information about a piece of content
+ * This DTO represents high level information about a piece of content
  * 
  * This should be a light weight object used for presenting search results etc.
  * 
  */
 public class ContentSummaryDTO {
 	private String id;
-
 	private String title;
-
 	private String type;
-
 	private List<String> tags;
-
 	private String url;
 
-	// Private constructor required for Dozer
+	/**
+	 *  Private constructor required for Dozer.
+	 */
 	private ContentSummaryDTO() {
 		tags = new ArrayList<String>();
 	}
