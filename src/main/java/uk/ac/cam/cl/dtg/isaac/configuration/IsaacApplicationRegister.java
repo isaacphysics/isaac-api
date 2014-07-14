@@ -36,7 +36,7 @@ public class IsaacApplicationRegister extends Application {
 		Injector injector = Guice.createInjector(
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
-		this.singletons.add((injector.getInstance(SegueApiFacade.class)));
+		this.singletons.add(injector.getInstance(SegueApiFacade.class));
 		return this.singletons;
 	}
 
