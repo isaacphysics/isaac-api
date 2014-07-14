@@ -200,7 +200,7 @@ public class SegueApiFacade {
 			c = this.findMatchingContent(version, fieldsToMatch,
 					startIndexOfResults, resultsLimit);
 
-			return Response.ok().entity(c).build();
+			return Response.ok(c).build();
 		} catch (NumberFormatException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Unable to convert one of the integer parameters provided into numbers. "
