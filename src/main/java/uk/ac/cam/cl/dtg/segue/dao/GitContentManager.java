@@ -263,6 +263,7 @@ public class GitContentManager implements IContentManager {
 		gitCache.clear();
 		searchProvider.expungeEntireSearchCache();
 		indexProblemCache.clear();
+		tagsList.clear();
 	}
 
 	@Override
@@ -273,6 +274,7 @@ public class GitContentManager implements IContentManager {
 			gitCache.remove(version);
 			searchProvider.expungeIndexFromSearchCache(version);
 			indexProblemCache.remove(version);
+			tagsList.remove(version);
 		}
 	}
 
