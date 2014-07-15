@@ -315,6 +315,10 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public final boolean ensureCache(final String version) {
+		if (version == null) {
+			return false;
+		}
+		
 		if (!gitCache.containsKey(version)) {
 			if (database.verifyCommitExists(version)) {
 				log.info("Rebuilding cache as sha does not exist in hashmap");
@@ -394,133 +398,134 @@ public class GitContentManager implements IContentManager {
 	private synchronized void buildGitContentIndex(final String sha) {
 		// This set of code only needs to happen if we have to read from git
 		// again.
-		if (null != sha && gitCache.get(sha) == null) {
+		if (null == sha || gitCache.get(sha) != null) {
+			return;
+		}
 
-			// iterate through them to create content objects
-			Repository repository = database.getGitRepository();
+		// iterate through them to create content objects
+		Repository repository = database.getGitRepository();
 
-			try {
-				ObjectId commitId = repository.resolve(sha);
+		try {
+			ObjectId commitId = repository.resolve(sha);
 
-				if (null == commitId) {
-					log.error("Failed to buildGitIndex - Unable to locate resource with SHA: "
-							+ sha);
-					return;
-				}
+			if (null == commitId) {
+				log.error("Failed to buildGitIndex - Unable to locate resource with SHA: "
+						+ sha);
+				return;
+			}
 
-				Map<String, Content> shaCache = new HashMap<String, Content>();
+			Map<String, Content> shaCache = new HashMap<String, Content>();
 
-				TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
-				log.info("Populating git content cache based on sha " + sha
-						+ " ...");
+			TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
+			log.info("Populating git content cache based on sha " + sha
+					+ " ...");
 
-				// Traverse the git repository looking for the .json files
-				while (treeWalk.next()) {
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					ObjectLoader loader = repository.open(treeWalk
-							.getObjectId(0));
-					loader.copyTo(out);
+			// Traverse the git repository looking for the .json files
+			while (treeWalk.next()) {
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				ObjectLoader loader = repository.open(treeWalk
+						.getObjectId(0));
+				loader.copyTo(out);
 
-					// setup object mapper to use preconfigured deserializer
-					// module. Required to deal with type polymorphism
-					ObjectMapper objectMapper = mapper.getContentObjectMapper();
+				// setup object mapper to use preconfigured deserializer
+				// module. Required to deal with type polymorphism
+				ObjectMapper objectMapper = mapper.getContentObjectMapper();
 
-					Content content = null;
-					try {
-						content = (Content) objectMapper.readValue(
-								out.toString(), ContentBase.class);
-						content = this.augmentChildContent(content,
-								treeWalk.getPathString(), null);
+				Content content = null;
+				try {
+					content = (Content) objectMapper.readValue(
+							out.toString(), ContentBase.class);
+					content = this.augmentChildContent(content,
+							treeWalk.getPathString(), null);
 
-						if (null != content) {
-							// add children (and parent) from flattened Set to
-							// cache if they have ids
-							for (Content flattenedContent : this
-									.flattenContentObjects(content)) {
-								if (flattenedContent.getId() != null) {
-									// check if we have seen this key before if
-									// we have then we don't want to add it
-									// again
-									if (shaCache.containsKey(flattenedContent
-											.getId())) {
-										// if the key is the same but the
-										// content is different then something
-										// has gone wrong - log an error
-										if (!shaCache.get(
-												flattenedContent.getId())
-												.equals(flattenedContent)) {
-											// log an error if we find that
-											// there are duplicate ids and the
-											// content is different.
-											log.warn("Resource with duplicate ID ("
-													+ content.getId()
-													+ ") detected in cache. Skipping "
-													+ treeWalk.getPathString());
-											this.registerContentProblem(
-													sha,
-													flattenedContent,
-													"Index failure - Duplicate ID found in file "
-															+ treeWalk
-																	.getPathString()
-															+ " and "
-															+ shaCache
-																	.get(flattenedContent
-																			.getId())
-																	.getCanonicalSourceFile());
-										}
-										// if the content is the same then it is
-										// just reuse of a content object so
-										// that is fine.
-										else {
-											log.info("Resource ("
-													+ content.getId()
-													+ ") already seen in cache. Skipping "
-													+ treeWalk.getPathString());
-										}
-									}
-									// It must be new so we can add it
-									else {
-										log.debug("Loading into cache: "
-												+ flattenedContent.getId()
-												+ "("
-												+ flattenedContent.getType()
-												+ ")" + " from "
+					if (null != content) {
+						// add children (and parent) from flattened Set to
+						// cache if they have ids
+						for (Content flattenedContent : this
+								.flattenContentObjects(content)) {
+							if (flattenedContent.getId() != null) {
+								// check if we have seen this key before if
+								// we have then we don't want to add it
+								// again
+								if (shaCache.containsKey(flattenedContent
+										.getId())) {
+									// if the key is the same but the
+									// content is different then something
+									// has gone wrong - log an error
+									if (!shaCache.get(
+											flattenedContent.getId())
+											.equals(flattenedContent)) {
+										// log an error if we find that
+										// there are duplicate ids and the
+										// content is different.
+										log.warn("Resource with duplicate ID ("
+												+ content.getId()
+												+ ") detected in cache. Skipping "
 												+ treeWalk.getPathString());
-										shaCache.put(flattenedContent.getId(),
-												flattenedContent);
-										registerTagsWithVersion(sha,
-												flattenedContent.getTags());
+										this.registerContentProblem(
+												sha,
+												flattenedContent,
+												"Index failure - Duplicate ID found in file "
+														+ treeWalk
+																.getPathString()
+														+ " and "
+														+ shaCache
+																.get(flattenedContent
+																		.getId())
+																.getCanonicalSourceFile());
+									}
+									// if the content is the same then it is
+									// just reuse of a content object so
+									// that is fine.
+									else {
+										log.info("Resource ("
+												+ content.getId()
+												+ ") already seen in cache. Skipping "
+												+ treeWalk.getPathString());
 									}
 								}
+								// It must be new so we can add it
+								else {
+									log.debug("Loading into cache: "
+											+ flattenedContent.getId()
+											+ "("
+											+ flattenedContent.getType()
+											+ ")" + " from "
+											+ treeWalk.getPathString());
+									shaCache.put(flattenedContent.getId(),
+											flattenedContent);
+									registerTagsWithVersion(sha,
+											flattenedContent.getTags());
+								}
 							}
-
 						}
-					} catch (JsonMappingException e) {
-						log.warn("Unable to parse the json file found "
-								+ treeWalk.getPathString()
-								+ " as a content object. Skipping file...", e);
-						Content dummyContent = new Content();
-						dummyContent.setCanonicalSourceFile(treeWalk
-								.getPathString());
-						this.registerContentProblem(sha, dummyContent,
-								"Index failure - Unable to parse json file found - "
-										+ treeWalk.getPathString()
-										+ ". The following error occurred: "
-										+ e.getMessage());
-					}
-				}
 
-				// add all of the work we have done to the git cache.
-				gitCache.put(sha, shaCache);
-				repository.close();
-				log.info("Tags available " + tagsList);
-				log.info("Git content cache population for " + sha
-						+ " completed!");
-			} catch (IOException e) {
-				log.error(
-						"IOException while trying to access git repository. ",
-						e);
+					}
+				} catch (JsonMappingException e) {
+					log.warn("Unable to parse the json file found "
+							+ treeWalk.getPathString()
+							+ " as a content object. Skipping file...", e);
+					Content dummyContent = new Content();
+					dummyContent.setCanonicalSourceFile(treeWalk
+							.getPathString());
+					this.registerContentProblem(sha, dummyContent,
+							"Index failure - Unable to parse json file found - "
+									+ treeWalk.getPathString()
+									+ ". The following error occurred: "
+									+ e.getMessage());
+				}
 			}
+
+			// add all of the work we have done to the git cache.
+			gitCache.put(sha, shaCache);
+			repository.close();
+			log.info("Tags available " + tagsList);
+			log.info("Git content cache population for " + sha
+					+ " completed!");
+		} catch (IOException e) {
+			log.error(
+					"IOException while trying to access git repository. ",
+					e);
 		}
 	}
 

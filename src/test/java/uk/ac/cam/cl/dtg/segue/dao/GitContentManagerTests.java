@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,6 +11,12 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -254,5 +261,72 @@ public class GitContentManagerTests {
 		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
 		
 		verify(searchProvider);
+	}
+	
+	/**
+	 * Test that the ensureCache method returns false if a null version hash
+	 * is provided.
+	 */
+	@Test
+	public void ensureCache_nullVersion_checkFalseReturned() {
+		assertTrue(!defaultGCM.ensureCache(null));
+	}
+	
+	/**
+	 * Test that the ensureCache method returns true if a cached and indexed
+	 * version is provided.
+	 */
+	@Test
+	public void ensureCache_cachedVerion_checkTrueReturned() {
+		Map<String, Map<String, Content>> gitCache =
+				new ConcurrentHashMap<String, Map<String, Content>>();
+		gitCache.put(INITIAL_VERSION, new TreeMap<String, Content>());
+		
+		searchProvider = createMock(ISearchProvider.class);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache);
+		
+		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
+		replay(searchProvider);
+		
+		assertTrue(gitContentManager.ensureCache(INITIAL_VERSION));
+		
+		verify(searchProvider);
+	}
+	
+	/**
+	 * Test that the ensureCache method rebuilds the cache when a version
+	 * that exists in the database is not found in the cache.
+	 */
+	@Test
+	public void ensureCache_uncachedVersion_checkGitContentIndexBuilt() throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
+		database = createMock(GitDb.class);
+		searchProvider = createMock(ISearchProvider.class);
+
+		Map<String, Map<String, Content>> gitCache =
+				new ConcurrentHashMap<String, Map<String, Content>>();
+		
+		GitContentManager gitContentManager = new GitContentManager(database, searchProvider, contentMapper, gitCache);
+		
+		Repository repository = createMock(Repository.class);
+		ObjectId commitId = createMock(ObjectId.class);
+		TreeWalk treeWalk = createMock(TreeWalk.class);
+		
+		expect(database.verifyCommitExists(INITIAL_VERSION)).andReturn(true).once();
+		expect(database.getGitRepository()).andReturn(repository).once();
+		expect(repository.resolve(INITIAL_VERSION)).andReturn(commitId).once();
+		expect(database.getTreeWalk(anyString(), anyString())).andReturn(treeWalk).once();
+		expect(treeWalk.next()).andReturn(false).once();
+		repository.close();
+		expectLastCall().once();
+		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).times(2);
+		
+		replay(database, repository, treeWalk, searchProvider);
+		
+		assertTrue(gitContentManager.ensureCache(INITIAL_VERSION));
+		assertTrue(gitCache.containsKey(INITIAL_VERSION));
+		
+		verify(database, repository, treeWalk, searchProvider);
 	}
 }
