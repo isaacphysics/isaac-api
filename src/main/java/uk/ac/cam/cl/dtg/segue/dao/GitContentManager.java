@@ -740,7 +740,7 @@ public class GitContentManager implements IContentManager {
 	 *            content object to flatten
 	 * @return Set of content objects comprised of all children and the parent.
 	 */
-	private Set<Content> flattenContentObjects(final Content content) {
+	public Set<Content> flattenContentObjects(final Content content) {
 		Set<Content> setOfContentObjects = new HashSet<Content>();
 
 		if (!content.getChildren().isEmpty()) {

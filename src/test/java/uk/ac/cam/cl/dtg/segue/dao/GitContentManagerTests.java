@@ -5,9 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
@@ -338,8 +341,8 @@ public class GitContentManagerTests {
 	}
 
 	/**
-	 * Test that the buildSearchIndexFromLocalGitIndex sends each Content object to the
-	 * searchProvider.
+	 * Test that the buildSearchIndexFromLocalGitIndex sends each Content object
+	 * to the searchProvider.
 	 */
 	@Test
 	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
@@ -349,8 +352,7 @@ public class GitContentManagerTests {
 		String uniqueObjectId = UUID.randomUUID().toString();
 		String uniqueObjectHash = UUID.randomUUID().toString();
 
-		Map<String, Map<String, Content>> gitCache =
-				new ConcurrentHashMap<String, Map<String, Content>>();
+		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		Map<String, Content> contents = new TreeMap<String, Content>();
 		Content content = new Content();
 		content.setId(uniqueObjectId);
@@ -368,13 +370,58 @@ public class GitContentManagerTests {
 				.once();
 		expect(objectMapper.writeValueAsString(content)).andReturn(
 				uniqueObjectHash).once();
-		expect(searchProvider.indexObject(eq(INITIAL_VERSION), anyString(),
-						eq(uniqueObjectHash), eq(uniqueObjectId))).andReturn(true).once();
+		expect(
+				searchProvider.indexObject(eq(INITIAL_VERSION), anyString(),
+						eq(uniqueObjectHash), eq(uniqueObjectId))).andReturn(
+				true).once();
 
 		replay(searchProvider, contentMapper, objectMapper);
 
 		gitContentManager.buildSearchIndexFromLocalGitIndex(INITIAL_VERSION);
 
 		verify(searchProvider, contentMapper, objectMapper);
+	}
+
+	/**
+	 * Test the flattenContentObjects method and ensure the expected output
+	 * is generated.
+	 */
+	@Test
+	public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned() {
+		Content innerChild = createEmptyContentElement(new LinkedList<ContentBase>());
+		List<ContentBase> innerChildren = new LinkedList<ContentBase>();
+		innerChildren.add(innerChild);
+		Content child = createEmptyContentElement(innerChildren);
+		List<ContentBase> children = new LinkedList<ContentBase>();
+		children.add(child);
+		Content root = createEmptyContentElement(children);
+		
+		Set<Content> elements = new HashSet<Content>();
+		elements.add(root);
+		elements.add(child);
+		elements.add(innerChild);
+		
+		Set<Content> contents = defaultGCM.flattenContentObjects(root);
+		
+		for (Content c : contents) {
+			boolean containsElement = elements.contains(c);
+			assertTrue(containsElement);
+			if (containsElement) {
+				elements.remove(c);
+			}
+		}
+		
+		assertTrue(elements.size() == 0);
+	}
+
+	/**
+	 * Helper method for the flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned
+	 * test, generates a Content object with the given children.
+	 * @param children - The children of the new Content object
+	 * @return The new Content object
+	 */
+	private Content createEmptyContentElement(List<ContentBase> children) {
+		return new Content("", "", "", "", "", "", "", "", "", children, "",
+				"", new LinkedList<String>(), false, new HashSet<String>(), 1);
 	}
 }
