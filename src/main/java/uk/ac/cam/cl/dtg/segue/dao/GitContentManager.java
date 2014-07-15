@@ -51,7 +51,7 @@ public class GitContentManager implements IContentManager {
 
 	private static final String CONTENT_TYPE = "content";
 
-	private static final Map<String, Map<String, Content>> gitCache 
+	private static Map<String, Map<String, Content>> gitCache 
 		= new ConcurrentHashMap<String, Map<String, Content>>();
 	private static final Map<String, Map<Content, List<String>>> indexProblemCache 
 		= new ConcurrentHashMap<String, Map<Content, List<String>>>();
@@ -61,7 +61,7 @@ public class GitContentManager implements IContentManager {
 	private final GitDb database;
 	private final ContentMapper mapper;
 	private final ISearchProvider searchProvider;
-	
+
 	/**
 	 * Constructor for instanciating a new Git Content Manager Object. 
 	 * @param database - that the content Manager manages.
@@ -77,6 +77,21 @@ public class GitContentManager implements IContentManager {
 
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
+	}
+
+	/**
+	 * FOR TESTING PURPOSES ONLY - Constructor for instanciating a new Git Content Manager Object. 
+	 * @param database - that the content Manager manages.
+	 * @param searchProvider - search provider that the content manager manages and controls.
+	 * @param contentMapper - The utility class for mapping content objects.
+	 * @param gitCache - A manually constructed gitCache for testing purposes.
+	 */
+	public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
+			final ContentMapper contentMapper, Map<String, Map<String, Content>> gitCache) {
+		this.database = database;
+		this.mapper = contentMapper;
+		this.searchProvider = searchProvider;
+		GitContentManager.gitCache = gitCache;
 	}
 
 	@Override

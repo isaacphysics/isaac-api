@@ -4,29 +4,29 @@ import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Calendar;
-import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import javax.ws.rs.core.Response.Status;
-
-import org.apache.commons.lang3.Validate;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 /**
  * Test class for the GitContentManager class.
  * 
  */
 public class GitContentManagerTests {
-	private static final Logger log = LoggerFactory.getLogger(GitDb.class);
-
 	private GitDb database;
 	private ISearchProvider searchProvider;
 	private ContentMapper contentMapper;
+
+	private GitContentManager defaultGCM;
 
 	/**
 	 * Initial configuration of tests.
@@ -34,11 +34,15 @@ public class GitContentManagerTests {
 	 * @throws Exception
 	 *             - test exception
 	 */
+	@SuppressWarnings("unchecked")
 	@Before
 	public final void setUp() throws Exception {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);
 		this.contentMapper = createMock(ContentMapper.class);
+
+		this.defaultGCM = new GitContentManager(database, searchProvider,
+				contentMapper);
 	}
 
 	/**
@@ -46,7 +50,7 @@ public class GitContentManagerTests {
 	 * newer than V2.
 	 */
 	@Test
-	public void compareTo_checkV1NewerThanV2_checkPositiveNumberReceived() {
+	public void compareTo_checkV1NewerThanV2_checkPositiveNumberReturned() {
 		assertTrue(compareTo_getResult(2010, 2000) > 0);
 	}
 
@@ -55,7 +59,7 @@ public class GitContentManagerTests {
 	 * newer than V1.
 	 */
 	@Test
-	public void compareTo_checkV2NewerThanV1_checkNegativeNumberReceived() {
+	public void compareTo_checkV2NewerThanV1_checkNegativeNumberReturned() {
 		assertTrue(compareTo_getResult(2000, 2010) < 0);
 	}
 
@@ -64,7 +68,7 @@ public class GitContentManagerTests {
 	 * same age as V2.
 	 */
 	@Test
-	public void compareTo_checkV2SameAgeAsV1_checkZeroReceived() {
+	public void compareTo_checkV2SameAgeAsV1_checkZeroReturned() {
 		assertTrue(compareTo_getResult(2000, 2000) == 0);
 	}
 
@@ -81,9 +85,6 @@ public class GitContentManagerTests {
 	 *         GitContentManager.compareTo method
 	 */
 	private int compareTo_getResult(final int v1Year, final int v2Year) {
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper);
-
 		String v1Hash = "V1";
 		String v2Hash = "V2";
 
@@ -99,10 +100,68 @@ public class GitContentManagerTests {
 
 		replay(database);
 
-		int result = gitContentManager.compareTo(v1Hash, v2Hash);
+		int result = defaultGCM.compareTo(v1Hash, v2Hash);
 
 		verify(database);
 
 		return result;
+	}
+
+	/**
+	 * Test that the searchForContent method returns null if an invalid version
+	 * hash is given.
+	 */
+	@Test
+	public void searchForContent_handleBogusVersion_checkNullReturned() {
+		final String version = "";
+
+		expect(database.verifyCommitExists(version)).andReturn(false).once();
+		replay(database);
+
+		assertTrue(defaultGCM.searchForContent(version, "", null) == null);
+
+		verify(database);
+	}
+
+	/**
+	 * Test that the searchForContent method returns null if an invalid version
+	 * number is given.
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void searchForContent_handleNoResults_checkEmptyResultsWrapperReturned() {
+		final String version = "0b72984c5eff4f53604fe9f1c724d3f387799db9";
+		final String searchString = "";
+		final Map<String, List<String>> fieldsThatMustMatch = null;
+
+		Map<String, Map<String, Content>> gitCache =
+				new ConcurrentHashMap<String, Map<String, Content>>();
+		gitCache.put(version, new ConcurrentHashMap<String, Content>());
+		
+		searchProvider = createMock(ISearchProvider.class);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache);
+
+		ResultsWrapper<String> searchHits = createMock(ResultsWrapper.class);
+
+		expect(searchProvider.hasIndex(version)).andReturn(true).once();
+		/*expect(searchProvider.fuzzySearch(isA(String.class), isA(String.class),
+					isA(String.class), isA(Map.class), isA(String.class), isA(String.class),
+					isA(String.class), isA(String.class), ""))
+				.andReturn(searchHits).once();*/
+		expect(searchProvider.fuzzySearch(
+					anyString(), anyString(), anyString(), anyObject(Map.class),
+					anyString(), anyString(),
+					anyString(), anyString(),
+					anyString())).andReturn(searchHits).once();
+		expect(searchHits.getResults()).andReturn(new LinkedList<String>())
+				.once();
+		expect(searchHits.getTotalResults()).andReturn(0L).once();
+		replay(database, searchProvider, searchHits);
+
+		assertTrue(gitContentManager.searchForContent(version, searchString, fieldsThatMustMatch).getResults().size() == 0);
+
+		verify(database, searchProvider, searchHits);
 	}
 }
