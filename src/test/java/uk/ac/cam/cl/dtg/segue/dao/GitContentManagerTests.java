@@ -7,6 +7,7 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.Before;
@@ -27,6 +28,8 @@ public class GitContentManagerTests {
 	private ContentMapper contentMapper;
 
 	private GitContentManager defaultGCM;
+	
+	private static final String INITIAL_VERSION = "0b72984c5eff4f53604fe9f1c724d3f387799db9";
 
 	/**
 	 * Initial configuration of tests.
@@ -124,19 +127,18 @@ public class GitContentManagerTests {
 	}
 
 	/**
-	 * Test that the searchForContent method returns null if an invalid version
-	 * number is given.
+	 * Test that the searchForContent method returns an empty ResultsWrapper
+	 * if no results are found.
 	 */
 	@Test
 	@SuppressWarnings("unchecked")
 	public void searchForContent_handleNoResults_checkEmptyResultsWrapperReturned() {
-		final String version = "0b72984c5eff4f53604fe9f1c724d3f387799db9";
 		final String searchString = "";
 		final Map<String, List<String>> fieldsThatMustMatch = null;
 
 		Map<String, Map<String, Content>> gitCache =
 				new ConcurrentHashMap<String, Map<String, Content>>();
-		gitCache.put(version, new ConcurrentHashMap<String, Content>());
+		gitCache.put(INITIAL_VERSION, new ConcurrentHashMap<String, Content>());
 		
 		searchProvider = createMock(ISearchProvider.class);
 		
@@ -145,7 +147,7 @@ public class GitContentManagerTests {
 
 		ResultsWrapper<String> searchHits = createMock(ResultsWrapper.class);
 
-		expect(searchProvider.hasIndex(version)).andReturn(true).once();
+		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
 		/*expect(searchProvider.fuzzySearch(isA(String.class), isA(String.class),
 					isA(String.class), isA(Map.class), isA(String.class), isA(String.class),
 					isA(String.class), isA(String.class), ""))
@@ -160,8 +162,97 @@ public class GitContentManagerTests {
 		expect(searchHits.getTotalResults()).andReturn(0L).once();
 		replay(database, searchProvider, searchHits);
 
-		assertTrue(gitContentManager.searchForContent(version, searchString, fieldsThatMustMatch).getResults().size() == 0);
+		assertTrue(gitContentManager.searchForContent(INITIAL_VERSION, searchString, fieldsThatMustMatch).getResults().size() == 0);
 
 		verify(database, searchProvider, searchHits);
+	}
+	
+	/**
+	 * Test that the getById method returns the correct object.
+	 */
+	@Test
+	public void getById_retrieveObject_checkCorrectObjectReturned() {
+		final String id = "test";
+		
+		Map<String, Map<String, Content>> gitCache =
+				new ConcurrentHashMap<String, Map<String, Content>>();
+		Map<String, Content> contentMap = new TreeMap<String, Content>();
+		Content testContent = new Content();
+		contentMap.put(id, testContent);
+		gitCache.put(INITIAL_VERSION, contentMap);
+		
+		searchProvider = createMock(ISearchProvider.class);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache);
+
+		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
+		replay(searchProvider);
+		
+		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == testContent);
+		
+		verify(searchProvider);
+	}
+	
+	/**
+	 * Test that the getById method returns null if it is passed a null id.
+	 */
+	@Test
+	public void getById_invalidId_checkNullReturned() {
+		String id = null;
+		assertTrue(defaultGCM.getById(id, INITIAL_VERSION) == null);
+	}
+	
+	/**
+	 * Test that the getById method returns null if the specified version
+	 * does not exist.
+	 */
+	@Test
+	public void getById_missingVersion_checkNullReturned() {
+		final String id = "test";
+		
+		Map<String, Map<String, Content>> gitCache =
+				new ConcurrentHashMap<String, Map<String, Content>>();
+		
+		searchProvider = createMock(ISearchProvider.class);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache);
+
+		
+		expect(database.verifyCommitExists(INITIAL_VERSION)).andReturn(false).once();
+		replay(database);
+		
+		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
+		
+		verify(database);
+	}
+	
+	/**
+	 * Test that the getById method returns null if the specified object
+	 * does not exist the specified version.
+	 */
+	@Test
+	public void getById_missingKey_checkNullReturned() {
+		final String id = "test";
+		
+		Map<String, Map<String, Content>> gitCache =
+				new ConcurrentHashMap<String, Map<String, Content>>();
+
+		// Create a version containing an empty TreeMap of Content
+		gitCache.put(INITIAL_VERSION, new TreeMap<String, Content>());
+		
+		searchProvider = createMock(ISearchProvider.class);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache);
+
+		
+		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
+		replay(searchProvider);
+		
+		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
+		
+		verify(searchProvider);
 	}
 }
