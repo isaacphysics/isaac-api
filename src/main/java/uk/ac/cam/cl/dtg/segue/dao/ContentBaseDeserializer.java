@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -41,8 +40,7 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 
 	@Override
 	public final Content deserialize(final JsonParser jsonParser,
-			final DeserializationContext deserializationContext) throws	JsonProcessingException, 
-			JsonMappingException, IOException {
+			final DeserializationContext deserializationContext) throws	IOException {
 
 		if (null == typeMap) {
 			throw new IllegalStateException(

@@ -19,6 +19,7 @@ import com.mongodb.DBObject;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 /**
  * Implementation that specifically works with MongoDB Content objects.
@@ -100,14 +101,14 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> getContentByTags(String version,
+	public ResultsWrapper<ContentDTO> getContentByTags(String version,
 			Set<String> tags) {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}
 
 	@Override
-	public ResultsWrapper<Content> searchForContent(String version,
+	public ResultsWrapper<ContentDTO> searchForContent(String version,
 			String searchString, Map<String, List<String>> typesToInclude) {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
@@ -156,7 +157,7 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> findByFieldNames(String version,
+	public ResultsWrapper<ContentDTO> findByFieldNames(String version,
 			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) {
 		throw new UnsupportedOperationException(
@@ -164,7 +165,7 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<Content> findByFieldNamesRandomOrder(String version,
+	public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(String version,
 			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) {
 		throw new UnsupportedOperationException(

@@ -7,9 +7,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class QuantityDTO extends ChoiceDTO {
-	protected String units;
-	protected boolean requireUnitsMatch;
+	private String units;
+	private boolean requireUnitsMatch;
 
+	/**
+	 * Default constructor required for mapping.
+	 */
 	public QuantityDTO() {
 
 	}
@@ -57,5 +60,4 @@ public class QuantityDTO extends ChoiceDTO {
 	public void setRequireUnitsMatch(boolean requireUnitsMatch) {
 		this.requireUnitsMatch = requireUnitsMatch;
 	}
-
 }

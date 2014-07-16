@@ -3,12 +3,14 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Choice object The choice object is a specialised form of content and allows
+ * Choice object The choice object is a specialized form of content and allows
  * the storage of data relating to possible answers to questions.
  * 
  */

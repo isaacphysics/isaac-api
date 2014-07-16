@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.DOAndDTOMapper;
+import uk.ac.cam.cl.dtg.segue.api.SegueObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.Mongo;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Figure;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
@@ -59,8 +60,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
 	// Dozer mapper
-	private static DOAndDTOMapper modelMapperDOToDTOMapper = null;
-	
+	private static SegueObjectMapper modelMapperDOToDTOMapper = null;
+
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
@@ -269,31 +270,37 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return userManager;
 	}
-	
+
 	/**
 	 * Gets the instance of the dozer mapper object.
 	 * 
+	 * @param mapper
+	 *            - Content Mapper that has been preconfigured with knowledge of
+	 *            the inheritance hierarchy for content objects.
 	 * @return Dozer Mapper.
 	 */
 	@Provides
 	@Singleton
-	private static MapperFacade getDozerDOtoDTOMapper() {
+	@Inject
+	private static MapperFacade getDozerDOtoDTOMapper(final ContentMapper mapper) {
 		if (null == modelMapperDOToDTOMapper) {
-			modelMapperDOToDTOMapper = new DOAndDTOMapper();
+			modelMapperDOToDTOMapper = new SegueObjectMapper(mapper);
 			log.info("Creating singleton for Dozer mapper");
 		}
 
 		return modelMapperDOToDTOMapper.getMapper();
-	}	
+	}
 
 	/**
-	 * This method will pre-register the mapper class so that content objects can be mapped.
+	 * This method will pre-register the mapper class so that content objects
+	 * can be mapped.
 	 * 
 	 * It requires that the class definition has the JsonType("XYZ") annotation
 	 */
 	private void buildDefaultJsonTypeMap() {
 		// We need to pre-register different content objects here for the
 		// auto-mapping to work
+		mapper.registerJsonTypeAndDTOMapping(Content.class);
 		mapper.registerJsonTypeAndDTOMapping(Choice.class);
 		mapper.registerJsonTypeAndDTOMapping(Quantity.class);
 		mapper.registerJsonTypeAndDTOMapping(Question.class);

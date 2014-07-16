@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -185,7 +186,7 @@ public class SegueApiFacade {
 					Arrays.asList(tags.split(",")));
 		}
 
-		ResultsWrapper<Content> c;
+		ResultsWrapper<ContentDTO> c;
 
 		try {
 			Integer resultsLimit = null;
@@ -224,7 +225,7 @@ public class SegueApiFacade {
 	 * @return Response containing a list of content or a Response containing
 	 *         null if none found.
 	 */
-	public final ResultsWrapper<Content> findMatchingContent(
+	public final ResultsWrapper<ContentDTO> findMatchingContent(
 			String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			@Nullable Integer startIndex, @Nullable Integer limit) {
@@ -243,7 +244,7 @@ public class SegueApiFacade {
 			startIndex = 0;
 		}
 
-		ResultsWrapper<Content> c = null;
+		ResultsWrapper<ContentDTO> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
@@ -274,7 +275,7 @@ public class SegueApiFacade {
 	 * @return Response containing a list of content or a Response containing
 	 *         null if none found.
 	 */
-	public final ResultsWrapper<Content> findMatchingContentRandomOrder(
+	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
 			String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) {
@@ -293,7 +294,7 @@ public class SegueApiFacade {
 			startIndex = 0;
 		}
 
-		ResultsWrapper<Content> c = null;
+		ResultsWrapper<ContentDTO> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
@@ -391,7 +392,7 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		ResultsWrapper<Content> searchResults = contentPersistenceManager
+		ResultsWrapper<ContentDTO> searchResults = contentPersistenceManager
 				.searchForContent(contentVersionController.getLiveVersion(),
 						searchString, typesThatMustMatch);
 

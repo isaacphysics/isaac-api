@@ -30,8 +30,8 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
@@ -236,16 +236,16 @@ public class GameboardPersistenceManager {
 				gameboardDO.getQuestions());
 
 		// Search for questions that match the ids.
-		ResultsWrapper<Content> results = api.findMatchingContent(api
+		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api
 				.getLiveVersion(), fieldsToMap, 0, gameboardDO.getQuestions()
 				.size());
 
-		List<Content> questionsForGameboard = results.getResults();
+		List<ContentDTO> questionsForGameboard = results.getResults();
 
 		// Map each Content object into an GameboardItem object
 		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
 
-		for (Content c : questionsForGameboard) {
+		for (ContentDTO c : questionsForGameboard) {
 			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
 			questionInfo.setUri(IsaacController.generateApiUrl(c));
 			gameboardReadyQuestions.put(c.getId(), questionInfo);

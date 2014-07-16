@@ -32,7 +32,7 @@ public class ContentDTO extends ContentBaseDTO {
 	protected List<String> relatedContent;
 	protected boolean published;
 	protected Integer level;
-
+	
 	@JsonCreator
 	public ContentDTO(@JsonProperty("_id") String _id,
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -170,6 +170,10 @@ public class ContentDTO extends ContentBaseDTO {
 
 	public List<ContentBaseDTO> getChildren() {
 		return this.children;
+	}
+	
+	public void setChildren(List<ContentBaseDTO> children) {
+		this.children = children;
 	}
 
 	public Integer getLevel() {

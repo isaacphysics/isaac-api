@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
-import uk.ac.cam.cl.dtg.isaac.dto.Wildcard;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

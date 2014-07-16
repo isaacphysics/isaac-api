@@ -52,4 +52,12 @@ public class ChoiceQuestionDTO extends QuestionDTO {
 	public List<ChoiceDTO> getChoices() {
 		return choices;
 	}
+
+	/**
+	 * Sets the choices.
+	 * @param choices the choices to set
+	 */
+	public final void setChoices(List<ChoiceDTO> choices) {
+		this.choices = choices;
+	}
 }

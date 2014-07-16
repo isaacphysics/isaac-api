@@ -20,17 +20,17 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
-import uk.ac.cam.cl.dtg.isaac.dto.Wildcard;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.DOAndDTOMapper;
+import uk.ac.cam.cl.dtg.segue.api.SegueObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -115,7 +115,7 @@ public class GameManager {
 		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
 		// Search for questions that match the fields to map variable.
-		ResultsWrapper<Content> results = api.findMatchingContentRandomOrder(
+		ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(
 				api.getLiveVersion(), fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
 
 		if (!results.getResults().isEmpty()) {
@@ -128,20 +128,20 @@ public class GameManager {
 				sizeOfGameboard = results.getResults().size();
 			}
 
-			List<Content> questionsForGameboard = results.getResults().subList(
+			List<ContentDTO> questionsForGameboard = results.getResults().subList(
 					0, sizeOfGameboard);
 
-			// build gameboard
+			// build gameboard using automapper
 			Injector injector = Guice.createInjector(
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
 
-			MapperFacade mapper = new DOAndDTOMapper().getMapper();
+			MapperFacade mapper = injector.getInstance(MapperFacade.class);
 			
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
 			// Map each Content object into an IsaacQuestionInfo object
-			for (Content c : questionsForGameboard) {
+			for (ContentDTO c : questionsForGameboard) {
 				GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
 				questionInfo.setUri(IsaacController.generateApiUrl(c));
 				gameboardReadyQuestions.add(questionInfo);

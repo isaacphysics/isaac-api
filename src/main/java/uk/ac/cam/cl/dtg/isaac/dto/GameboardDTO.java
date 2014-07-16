@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
+import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
 
 /**
  * DTO representation of a gameboard.

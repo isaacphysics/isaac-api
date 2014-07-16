@@ -6,12 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ma.glasnost.orika.MapperFacade;
+
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
@@ -19,10 +22,11 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.api.client.util.Lists;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.mongodb.DBObject;
 
 /**
@@ -37,7 +41,6 @@ public class ContentMapper {
 	// Currently depends on the string key being the same text value as the type
 	// field.
 	private final Map<String, Class<? extends Content>> jsonTypes;
-
 	private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
 
 	/**
@@ -159,15 +162,16 @@ public class ContentMapper {
 	 * 
 	 * @see #registerJsonTypeToDO(String, Class)
 	 * @param newTypes
-	 *            a map of types to merge with the segue type map. The classes added to the map
-	 *            must contain jsonType annotations and may contain DTOMapping annotations.
+	 *            a map of types to merge with the segue type map. The classes
+	 *            added to the map must contain jsonType annotations and may
+	 *            contain DTOMapping annotations.
 	 */
 	public synchronized void registerJsonTypes(
 			final List<Class<? extends Content>> newTypes) {
 		Validate.notNull(newTypes, "New types map cannot be null");
-		
+
 		log.info("Adding new content Types to Segue");
-		
+
 		for (Class<? extends Content> contentClass : newTypes) {
 			this.registerJsonTypeAndDTOMapping(contentClass);
 		}
@@ -186,7 +190,8 @@ public class ContentMapper {
 		if (jt != null) {
 			jsonTypes.put(jt.value(), cls);
 		} else {
-			log.error("The jsonType annotation type provided cannot be null. For the class " + cls);
+			log.error("The jsonType annotation type provided cannot be null. For the class "
+					+ cls);
 		}
 	}
 
@@ -205,8 +210,8 @@ public class ContentMapper {
 			this.mapOfDOsToDTOs.put(cls, dtoMapping.value());
 		} else {
 			log.warn("The DTO mapping provided is null or the annotation is not present"
-					+ " for the class " 
-					+ cls 
+					+ " for the class "
+					+ cls
 					+ ". This class cannot be auto mapped from DO to DTO.");
 		}
 	}
@@ -232,6 +237,64 @@ public class ContentMapper {
 	 */
 	public Class<? extends Content> getClassByType(final String type) {
 		return jsonTypes.get(type);
+	}
+
+	/**
+	 * Get a DTOClass based on a DOClass.
+	 * 
+	 * @param cls
+	 *            - DO class.
+	 * @return DTO class.
+	 */
+	public Class<? extends ContentDTO> getDTOClassByDOClass(
+			final Class<? extends Content> cls) {
+		return mapOfDOsToDTOs.get(cls);
+	}
+
+	/**
+	 * Find the default DTO class from a given Domain object.
+	 * 
+	 * @param content
+	 *            - Content DO to map to DTO.
+	 * @return DTO that can be used for mapping.
+	 */
+	public ContentDTO getDTOByDO(final Content content) {
+
+		// try auto-mapping with dozer
+		Injector injector = Guice
+				.createInjector(new SegueGuiceConfigurationModule());
+		MapperFacade mapper = injector.getInstance(MapperFacade.class);
+
+		return mapper.map(content, this.mapOfDOsToDTOs.get(content.getClass()));
+	}
+
+	/**
+	 * Converts the DO list to a list of DTOs.
+	 * 
+	 * @see #getDTOByDO(Content)
+	 * @param contentDOList
+	 *            - list of objects to convert.
+	 * @return the list of DTOs
+	 */
+	public List<ContentDTO> getDTOByDOList(final List<Content> contentDOList) {
+		Validate.notNull(contentDOList);
+
+		// try auto-mapping with dozer
+		Injector injector = Guice
+				.createInjector(new SegueGuiceConfigurationModule());
+		MapperFacade mapper = injector.getInstance(MapperFacade.class);
+
+		List<ContentDTO> resultList = Lists.newArrayList();
+		for (Content c : contentDOList) {
+			if (this.mapOfDOsToDTOs.get(c.getClass()) != null) {
+				resultList.add(mapper.map(c,
+						this.mapOfDOsToDTOs.get(c.getClass())));
+			} else {
+				log.error("Unable to find DTO mapping class");
+			}
+
+		}
+		return resultList;
 	}
 
 	/**
@@ -267,7 +330,7 @@ public class ContentMapper {
 	 *            - Converts a list of strings to a list of content
 	 * @return Content List
 	 */
-	public List<Content> mapFromStringListToContentList(
+	public List<ContentDTO> mapFromStringListToContentList(
 			final List<String> stringList) {
 		// setup object mapper to use preconfigured deserializer module.
 		// Required to deal with type polymorphism
@@ -279,14 +342,12 @@ public class ContentMapper {
 			try {
 				contentList.add((Content) objectMapper.readValue(item,
 						ContentBase.class));
-			} catch (JsonParseException e) {
-				e.printStackTrace();
-			} catch (JsonMappingException e) {
-				e.printStackTrace();
 			} catch (IOException e) {
-				e.printStackTrace();
+				log.error(
+						"Error whilst mapping from string to list of content",
+						e);
 			}
 		}
-		return contentList;
+		return this.getDTOByDOList(contentList);
 	}
 }

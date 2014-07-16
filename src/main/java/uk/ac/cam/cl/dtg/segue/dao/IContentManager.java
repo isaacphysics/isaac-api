@@ -9,6 +9,7 @@ import java.util.Set;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 /**
  * Shared interface for content managers. This is to allow them to be backed by
@@ -52,7 +53,7 @@ public interface IContentManager {
 	 * @param limit - the maximum number of results to return.
 	 * @return Results Wrapper containing results of the search.
 	 */
-	ResultsWrapper<Content> findByFieldNames(
+	ResultsWrapper<ContentDTO> findByFieldNames(
 			String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit);
@@ -67,7 +68,7 @@ public interface IContentManager {
 	 * @param limit - the maximum number of results to return.
 	 * @return Results Wrapper containing results of the search.
 	 */
-	ResultsWrapper<Content> findByFieldNamesRandomOrder(
+	ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
 			String version,
 			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit);
@@ -79,7 +80,7 @@ public interface IContentManager {
 	 * @param typesToInclude - list of types to include i.e. type field must match.
 	 * @return list of results ordered by relevance.
 	 */
-	ResultsWrapper<Content> searchForContent(String version,
+	ResultsWrapper<ContentDTO> searchForContent(String version,
 			String searchString, Map<String, List<String>> typesToInclude);
 
 	/**
@@ -90,7 +91,7 @@ public interface IContentManager {
 	 * @return Content objects that are associated with any of the tags
 	 *         specified.
 	 */
-	ResultsWrapper<Content> getContentByTags(String version,
+	ResultsWrapper<ContentDTO> getContentByTags(String version,
 			Set<String> tags);
 
 	/**

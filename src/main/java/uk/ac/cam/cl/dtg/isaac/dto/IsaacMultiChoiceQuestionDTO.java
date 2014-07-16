@@ -7,6 +7,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
  *
  */
 @JsonType("isaacMultiChoiceQuestion")
-public class IsaacMultiChoiceQuestion extends IsaacQuestion {
-
+public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionDTO {
+	
 }

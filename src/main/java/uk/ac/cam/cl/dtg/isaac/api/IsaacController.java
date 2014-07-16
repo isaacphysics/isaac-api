@@ -27,12 +27,12 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -273,12 +273,12 @@ public class IsaacController {
 	public final Response search(
 			@PathParam("searchString") final String searchString,
 			@QueryParam("types") final String types) {
-		ResultsWrapper<Content> searchResults = null;
+		ResultsWrapper<ContentDTO> searchResults = null;
 
 		Response unknownApiResult = api.search(searchString,
 				api.getLiveVersion(), types);
 		if (unknownApiResult.getEntity() instanceof ResultsWrapper) {
-			searchResults = (ResultsWrapper<Content>) unknownApiResult
+			searchResults = (ResultsWrapper<ContentDTO>) unknownApiResult
 					.getEntity();
 		} else {
 			return unknownApiResult;
@@ -628,7 +628,7 @@ public class IsaacController {
 	 *         represents the url combined with any proxypath information
 	 *         required.
 	 */
-	public static String generateApiUrl(final Content content) {
+	public static String generateApiUrl(final ContentDTO content) {
 		Injector injector = Guice.createInjector(
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
@@ -638,7 +638,7 @@ public class IsaacController {
 		String resourceUrl = null;
 		try {
 			// TODO fix this stuff to be less horrid
-			if (content instanceof Image) {
+			if (content instanceof ImageDTO) {
 				resourceUrl = proxyPath + "/api/images/"
 						+ URLEncoder.encode(content.getId(), "UTF-8");
 			} else if (content.getType().toLowerCase().contains("question")) {
@@ -669,7 +669,7 @@ public class IsaacController {
 	 *            - the path prefix used for augmentation of urls
 	 * @return Content summary object.
 	 */
-	private ContentSummaryDTO extractContentSummary(final Content content,
+	private ContentSummaryDTO extractContentSummary(final ContentDTO content,
 			final String proxyPath) {
 		if (null == content) {
 			return null;
@@ -698,14 +698,14 @@ public class IsaacController {
 	 * @return list of shorter contentInfo objects.
 	 */
 	private List<ContentSummaryDTO> extractContentSummaryFromList(
-			final List<Content> contentList, final String proxyPath) {
+			final List<ContentDTO> contentList, final String proxyPath) {
 		if (null == contentList) {
 			return null;
 		}
 
 		List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
 
-		for (Content content : contentList) {
+		for (ContentDTO content : contentList) {
 			ContentSummaryDTO contentInfo = extractContentSummary(content,
 					proxyPath);
 			if (null != contentInfo) {
@@ -726,14 +726,15 @@ public class IsaacController {
 	 * @return list of shorter contentInfo objects.
 	 */
 	private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
-			final ResultsWrapper<Content> contentList, final String proxyPath) {
+			final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
 		if (null == contentList) {
 			return null;
 		}
 
-		ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>();
+		ResultsWrapper<ContentSummaryDTO> contentSummaryResults 
+			= new ResultsWrapper<ContentSummaryDTO>();
 
-		for (Content content : contentList.getResults()) {
+		for (ContentDTO content : contentList.getResults()) {
 			ContentSummaryDTO contentInfo = extractContentSummary(content,
 					proxyPath);
 			if (null != contentInfo) {
@@ -753,11 +754,11 @@ public class IsaacController {
 	 */
 	private Response findSingleResult(
 			final Map<String, List<String>> fieldsToMatch) {
-		ResultsWrapper<Content> conceptList = api.findMatchingContent(
+		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(
 				api.getLiveVersion(),
 				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
 				null, null); // includes type checking.
-		Content c = null;
+		ContentDTO c = null;
 		if (conceptList.getResults().size() > 1) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Multiple results (" + conceptList.getResults().size()
@@ -793,7 +794,7 @@ public class IsaacController {
 	private Response listContentObjects(
 			final Map<String, List<String>> fieldsToMatch,
 			final String startIndex, final String limit) {
-		ResultsWrapper<Content> c;
+		ResultsWrapper<ContentDTO> c;
 		try {
 			Integer resultsLimit = null;
 			Integer startIndexOfResults = null;

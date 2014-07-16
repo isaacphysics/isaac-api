@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.dto;
+package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.List;
 import java.util.Set;
@@ -6,8 +6,10 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 
@@ -15,6 +17,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
  * DO for isaac featured profiles.
  *
  */
+@DTOMapping(IsaacFeaturedProfileDTO.class)
 @JsonType("isaacFeaturedProfile")
 public class IsaacFeaturedProfile extends Content {
 

@@ -54,4 +54,20 @@ public class QuestionDTO extends ContentDTO {
 		return hints;
 	}
 
+	/**
+	 * Sets the answer.
+	 * @param answer the answer to set
+	 */
+	public final void setAnswer(ContentBaseDTO answer) {
+		this.answer = answer;
+	}
+
+	/**
+	 * Sets the hints.
+	 * @param hints the hints to set
+	 */
+	public final void setHints(List<ContentBaseDTO> hints) {
+		this.hints = hints;
+	}
+
 }

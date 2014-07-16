@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
@@ -162,7 +163,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<Content> searchForContent(final String version,
+	public final ResultsWrapper<ContentDTO> searchForContent(final String version,
 			final String searchString,
 			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
 		if (this.ensureCache(version)) {
@@ -186,7 +187,8 @@ public class GitContentManager implements IContentManager {
 							+ searchString + " in version " + version, e);
 				}
 			}
-			return new ResultsWrapper<Content>(searchResults,
+			
+			return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
 					searchHits.getTotalResults());
 		} else {
 			log.error("Unable to ensure cache for requested version" + version);
@@ -196,11 +198,11 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<Content> findByFieldNames(
+	public final ResultsWrapper<ContentDTO> findByFieldNames(
 			final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) {
-		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
+		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
@@ -217,10 +219,11 @@ public class GitContentManager implements IContentManager {
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<Content> result = mapper
+			List<ContentDTO> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
 
-			finalResults = new ResultsWrapper<Content>(result,
+			
+			finalResults = new ResultsWrapper<ContentDTO>(result,
 					searchHits.getTotalResults());
 		}
 
@@ -228,11 +231,11 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<Content> findByFieldNamesRandomOrder(
+	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
 			final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) {
-		ResultsWrapper<Content> finalResults = new ResultsWrapper<Content>();
+		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
 		if (this.ensureCache(version)) {
 			ResultsWrapper<String> searchHits = searchProvider
@@ -241,9 +244,10 @@ public class GitContentManager implements IContentManager {
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<Content> result = mapper
+			List<ContentDTO> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
-			finalResults = new ResultsWrapper<Content>(result,
+			
+			finalResults = new ResultsWrapper<ContentDTO>(result,
 					searchHits.getTotalResults());
 		}
 
@@ -319,7 +323,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<Content> getContentByTags(final String version,
+	public final ResultsWrapper<ContentDTO> getContentByTags(final String version,
 			final Set<String> tags) {
 		if (null == version || null == tags) {
 			return null;
@@ -329,10 +333,10 @@ public class GitContentManager implements IContentManager {
 			ResultsWrapper<String> searchResults = this.searchProvider
 					.termSearch(version, CONTENT_TYPE, tags, "tags");
 
-			List<Content> contentResults = mapper
+			List<ContentDTO> contentResults = mapper
 					.mapFromStringListToContentList(searchResults.getResults());
 
-			return new ResultsWrapper<Content>(contentResults,
+			return new ResultsWrapper<ContentDTO>(contentResults,
 					searchResults.getTotalResults());
 		} else {
 			log.error("Cache not found. Failed to build cache with version: "
