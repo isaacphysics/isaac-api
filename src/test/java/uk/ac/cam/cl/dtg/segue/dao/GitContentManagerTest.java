@@ -642,11 +642,14 @@ public class GitContentManagerTest {
 	}
 
 	/**
-	 * Test the buildGitContentIndex and ensure it adds content objects to the cache.
+	 * Test the buildGitContentIndex method and ensure it adds content objects
+	 * to the cache.
+	 * 
 	 * @throws Exception
 	 */
 	@Test
-	public void buildGitContentIndex_addObject_objectAddedToCache() throws Exception {
+	public void buildGitContentIndex_addObject_objectAddedToCache()
+			throws Exception {
 		reset(database, searchProvider);
 
 		final String pathToContent = "/path/to/content/";
@@ -665,7 +668,7 @@ public class GitContentManagerTest {
 
 		Content content = new Content();
 		content.setId(UUID.randomUUID().toString());
-		
+
 		expect(database.getGitRepository()).andReturn(repository).once();
 		expect(repository.resolve(INITIAL_VERSION)).andReturn(commitId).once();
 		expect(database.getTreeWalk(eq(INITIAL_VERSION), anyString()))
@@ -692,6 +695,72 @@ public class GitContentManagerTest {
 
 		assertTrue(gitCache.containsKey(INITIAL_VERSION));
 		assertTrue(gitCache.get(INITIAL_VERSION).containsKey(content.getId()));
+
+		verify(database, repository, treeWalk, contentMapper, objectMapper,
+				searchProvider);
+	}
+
+	/**
+	 * Test the buildGitContentIndex method to ensure it reports a content fault
+	 * if different content with the same id is attempted to be added to the cache.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void buildGitContentIndex_addDuplicateObject_contentErrorLogged()
+			throws Exception {
+		reset(database, searchProvider);
+
+		final String pathToContent = "/path/to/content/";
+
+		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, indexProblemCache);
+
+		Repository repository = createMock(Repository.class);
+		ObjectId commitId = createMock(ObjectId.class);
+		TreeWalk treeWalk = createMock(TreeWalk.class);
+		ObjectLoader loader = createMock(ObjectLoader.class);
+		ObjectMapper objectMapper = createMock(ObjectMapper.class);
+
+		
+		String id = UUID.randomUUID().toString();
+		Content content = new Content();
+		content.setId(id);
+		content.setTitle("CONTENT1");
+		Content content2 = new Content();
+		content2.setId(id);
+		content2.setTitle("CONTENT2");
+
+		expect(database.getGitRepository()).andReturn(repository).once();
+		expect(repository.resolve(INITIAL_VERSION)).andReturn(commitId).once();
+		expect(database.getTreeWalk(eq(INITIAL_VERSION), anyString()))
+				.andReturn(treeWalk).once();
+		expect(treeWalk.next()).andReturn(true).times(2);
+		expect(treeWalk.getObjectId(0)).andReturn(null).times(2);
+		expect(repository.open(null)).andReturn(loader).times(2);
+		loader.copyTo(anyObject(ByteArrayOutputStream.class));
+		expectLastCall().times(2);
+		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
+				.times(2);
+		expect(objectMapper.readValue(anyString(), eq(ContentBase.class)))
+				.andReturn(content).once().andReturn(content2).once();
+		expect(treeWalk.getPathString()).andReturn(pathToContent).atLeastOnce();
+		expect(treeWalk.next()).andReturn(false).once();
+		repository.close();
+		expectLastCall().once();
+
+		replay(database, repository, treeWalk, contentMapper, objectMapper,
+				searchProvider);
+
+		Whitebox.invokeMethod(gitContentManager, "buildGitContentIndex",
+				INITIAL_VERSION);
+
+		assertTrue(gitCache.containsKey(INITIAL_VERSION));
+		assertTrue(gitCache.get(INITIAL_VERSION).containsKey(id));
+		assertTrue(indexProblemCache.size() == 1);
 
 		verify(database, repository, treeWalk, contentMapper, objectMapper,
 				searchProvider);
