@@ -24,12 +24,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
@@ -160,7 +160,7 @@ public class GitContentManagerTest {
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		gitCache.put(INITIAL_VERSION, new ConcurrentHashMap<String, Content>());
 
-		searchProvider = createMock(ISearchProvider.class);
+		reset(database, searchProvider, contentMapper);
 
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache);
@@ -203,7 +203,7 @@ public class GitContentManagerTest {
 		contentMap.put(id, testContent);
 		gitCache.put(INITIAL_VERSION, contentMap);
 
-		searchProvider = createMock(ISearchProvider.class);
+		reset(searchProvider);
 
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache);
@@ -235,7 +235,7 @@ public class GitContentManagerTest {
 
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 
-		searchProvider = createMock(ISearchProvider.class);
+		reset(database, searchProvider);
 
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache);
@@ -262,7 +262,7 @@ public class GitContentManagerTest {
 		// Create a version containing an empty TreeMap of Content
 		gitCache.put(INITIAL_VERSION, new TreeMap<String, Content>());
 
-		searchProvider = createMock(ISearchProvider.class);
+		reset(searchProvider);
 
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache);
@@ -293,7 +293,7 @@ public class GitContentManagerTest {
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		gitCache.put(INITIAL_VERSION, new TreeMap<String, Content>());
 
-		searchProvider = createMock(ISearchProvider.class);
+		reset(searchProvider);
 
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache);
@@ -314,8 +314,7 @@ public class GitContentManagerTest {
 	public void ensureCache_uncachedVersion_checkGitContentIndexBuilt()
 			throws RevisionSyntaxException, AmbiguousObjectException,
 			IncorrectObjectTypeException, IOException {
-		database = createMock(GitDb.class);
-		searchProvider = createMock(ISearchProvider.class);
+		reset(database, searchProvider);
 
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 
@@ -355,8 +354,7 @@ public class GitContentManagerTest {
 	@Test
 	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
 			throws Exception {
-		database = createMock(GitDb.class);
-		searchProvider = createMock(ISearchProvider.class);
+		reset(database, searchProvider);
 		String uniqueObjectId = UUID.randomUUID().toString();
 		String uniqueObjectHash = UUID.randomUUID().toString();
 
@@ -452,5 +450,143 @@ public class GitContentManagerTest {
 			final String id) {
 		return new Content("", id, "", "", "", "", "", "", "", children, "",
 				"", new LinkedList<String>(), false, new HashSet<String>(), 1);
+	}
+
+	/**
+	 * Test the validateReferentialIntegrity method to ensure it handles web
+	 * based media correctly and does not attempt to search for it in the
+	 * database.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void validateReferentialIntegrity_handlesWebMedia_trueReturned()
+			throws Exception {
+		Media content = createMock(Media.class);
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
+				content, indexProblemCache);
+
+		String uniqueObjectId = UUID.randomUUID().toString();
+
+		// Self reference for the purpose of passing the test
+		List<String> relatedContent = new LinkedList<String>();
+		relatedContent.add(uniqueObjectId);
+
+		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
+				.once();
+		expect(content.getRelatedContent()).andReturn(relatedContent)
+				.atLeastOnce();
+		expect(content.getSrc())
+				.andReturn("http://www.website.com/media.media").atLeastOnce();
+		replay(content, database);
+
+		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
+				"validateReferentialIntegrity", INITIAL_VERSION);
+
+		assertTrue(result);
+		assertTrue(indexProblemCache.size() == 0);
+
+		verify(content, database);
+	}
+
+	/**
+	 * Test the validateReferentialIntegrity method to ensure it searches the
+	 * database for nonweb media content and returns true if found.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void validateReferentialIntegrity_storedMediaDatabaseLookup_trueReturned()
+			throws Exception {
+		Media content = createMock(Media.class);
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
+				content, indexProblemCache);
+
+		String uniqueObjectId = UUID.randomUUID().toString();
+
+		// Self reference for the purpose of passing the test
+		List<String> relatedContent = new LinkedList<String>();
+		relatedContent.add(uniqueObjectId);
+
+		String src = "media.media";
+
+		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
+				.once();
+		expect(content.getRelatedContent()).andReturn(relatedContent)
+				.atLeastOnce();
+		expect(content.getSrc()).andReturn(src).atLeastOnce();
+		expect(database.verifyGitObject(INITIAL_VERSION, src)).andReturn(true)
+				.once();
+		replay(content, database);
+
+		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
+				"validateReferentialIntegrity", INITIAL_VERSION);
+
+		assertTrue(result);
+		assertTrue(indexProblemCache.size() == 0);
+
+		verify(content, database);
+	}
+
+	/**
+	 * Test the validateReferentialIntegrity method to ensure it searches the
+	 * database for nonweb media content and when not found, returns true but
+	 * registers a content error if not found.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void validateReferentialIntegrity_missingMediaDatabaseLookup_falseReturned()
+			throws Exception {
+		Media content = createMock(Media.class);
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
+				content, indexProblemCache);
+
+		String uniqueObjectId = UUID.randomUUID().toString();
+
+		// Self reference for the purpose of passing the test
+		List<String> relatedContent = new LinkedList<String>();
+		relatedContent.add(uniqueObjectId);
+
+		String src = "media.media";
+
+		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
+				.once();
+		expect(content.getRelatedContent()).andReturn(relatedContent)
+				.atLeastOnce();
+		expect(content.getSrc()).andReturn(src).atLeastOnce();
+		expect(database.verifyGitObject(INITIAL_VERSION, src)).andReturn(false)
+				.once();
+		expect(content.getCanonicalSourceFile()).andReturn("").anyTimes();
+		expect(content.getTitle()).andReturn("").anyTimes();
+		replay(content, database);
+
+		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
+				"validateReferentialIntegrity", INITIAL_VERSION);
+
+		assertTrue(result);
+		assertTrue(indexProblemCache.size() == 1);
+
+		verify(content, database);
+	}
+
+	private GitContentManager validateReferentialIntegrity_setUpTest(
+			Content content,
+			Map<String, Map<Content, List<String>>> indexProblemCache) {
+		reset(database, searchProvider);
+
+		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
+		Map<String, Content> contents = new TreeMap<String, Content>();
+		contents.put(INITIAL_VERSION, content);
+		gitCache.put(INITIAL_VERSION, contents);
+
+		return new GitContentManager(database, searchProvider, contentMapper,
+				gitCache, indexProblemCache);
 	}
 }

@@ -51,25 +51,31 @@ public class GitContentManager implements IContentManager {
 
 	private static final String CONTENT_TYPE = "content";
 
-	private static Map<String, Map<String, Content>> gitCache 
-		= new ConcurrentHashMap<String, Map<String, Content>>();
-	private static final Map<String, Map<Content, List<String>>> indexProblemCache 
-		= new ConcurrentHashMap<String, Map<Content, List<String>>>();
-	private static final Map<String, Set<String>> tagsList 
-		= new ConcurrentHashMap<String, Set<String>>();
+	private static Map<String, Map<String, Content>> gitCache =
+			new ConcurrentHashMap<String, Map<String, Content>>();
+	private static Map<String, Map<Content, List<String>>> indexProblemCache =
+			new ConcurrentHashMap<String, Map<Content, List<String>>>();
+	private static final Map<String, Set<String>> tagsList =
+			new ConcurrentHashMap<String, Set<String>>();
 
 	private final GitDb database;
 	private final ContentMapper mapper;
 	private final ISearchProvider searchProvider;
 
 	/**
-	 * Constructor for instanciating a new Git Content Manager Object. 
-	 * @param database - that the content Manager manages.
-	 * @param searchProvider - search provider that the content manager manages and controls.
-	 * @param contentMapper - The utility class for mapping content objects.
+	 * Constructor for instanciating a new Git Content Manager Object.
+	 * 
+	 * @param database
+	 *            - that the content Manager manages.
+	 * @param searchProvider
+	 *            - search provider that the content manager manages and
+	 *            controls.
+	 * @param contentMapper
+	 *            - The utility class for mapping content objects.
 	 */
 	@Inject
-	public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
+	public GitContentManager(final GitDb database,
+			final ISearchProvider searchProvider,
 			final ContentMapper contentMapper) {
 		this.database = database;
 		this.mapper = contentMapper;
@@ -80,18 +86,55 @@ public class GitContentManager implements IContentManager {
 	}
 
 	/**
-	 * FOR TESTING PURPOSES ONLY - Constructor for instanciating a new Git Content Manager Object. 
-	 * @param database - that the content Manager manages.
-	 * @param searchProvider - search provider that the content manager manages and controls.
-	 * @param contentMapper - The utility class for mapping content objects.
-	 * @param gitCache - A manually constructed gitCache for testing purposes.
+	 * FOR TESTING PURPOSES ONLY - Constructor for instanciating a new Git
+	 * Content Manager Object.
+	 * 
+	 * @param database
+	 *            - that the content Manager manages.
+	 * @param searchProvider
+	 *            - search provider that the content manager manages and
+	 *            controls.
+	 * @param contentMapper
+	 *            - The utility class for mapping content objects.
+	 * @param gitCache
+	 *            - A manually constructed gitCache for testing purposes.
 	 */
-	public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-			final ContentMapper contentMapper, Map<String, Map<String, Content>> gitCache) {
+	public GitContentManager(final GitDb database,
+			final ISearchProvider searchProvider,
+			final ContentMapper contentMapper,
+			Map<String, Map<String, Content>> gitCache) {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
 		GitContentManager.gitCache = gitCache;
+	}
+
+	/**
+	 * FOR TESTING PURPOSES ONLY - Constructor for instanciating a new Git
+	 * Content Manager Object.
+	 * 
+	 * @param database
+	 *            - that the content Manager manages.
+	 * @param searchProvider
+	 *            - search provider that the content manager manages and
+	 *            controls.
+	 * @param contentMapper
+	 *            - The utility class for mapping content objects.
+	 * @param gitCache
+	 *            - A manually constructed gitCache for testing purposes.
+	 * @param indexProblemCache
+	 *            - A manually constructed indexProblemCache for testing purposes
+	 */
+	public GitContentManager(final GitDb database,
+			final ISearchProvider searchProvider,
+			final ContentMapper contentMapper,
+			Map<String, Map<String, Content>> gitCache,
+			Map<String, Map<Content, List<String>>> indexProblemCache) {
+		this.database = database;
+		this.mapper = contentMapper;
+		this.searchProvider = searchProvider;
+		GitContentManager.gitCache = gitCache;
+		GitContentManager.indexProblemCache = indexProblemCache;
 	}
 
 	@Override
@@ -164,8 +207,7 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
 			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions
-				= new HashMap<String, Constants.SortOrder>();
+			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
 
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "."
 					+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -179,7 +221,7 @@ public class GitContentManager implements IContentManager {
 			// Required to deal with type polymorphism
 			List<Content> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
-			
+
 			finalResults = new ResultsWrapper<Content>(result,
 					searchHits.getTotalResults());
 		}
@@ -320,7 +362,7 @@ public class GitContentManager implements IContentManager {
 		if (version == null) {
 			return false;
 		}
-		
+
 		if (!gitCache.containsKey(version)) {
 			if (database.verifyCommitExists(version)) {
 				log.info("Rebuilding cache as sha does not exist in hashmap");
@@ -425,8 +467,7 @@ public class GitContentManager implements IContentManager {
 			// Traverse the git repository looking for the .json files
 			while (treeWalk.next()) {
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				ObjectLoader loader = repository.open(treeWalk
-						.getObjectId(0));
+				ObjectLoader loader = repository.open(treeWalk.getObjectId(0));
 				loader.copyTo(out);
 
 				// setup object mapper to use preconfigured deserializer
@@ -435,8 +476,8 @@ public class GitContentManager implements IContentManager {
 
 				Content content = null;
 				try {
-					content = (Content) objectMapper.readValue(
-							out.toString(), ContentBase.class);
+					content = (Content) objectMapper.readValue(out.toString(),
+							ContentBase.class);
 					content = this.augmentChildContent(content,
 							treeWalk.getPathString(), null);
 
@@ -454,8 +495,7 @@ public class GitContentManager implements IContentManager {
 									// if the key is the same but the
 									// content is different then something
 									// has gone wrong - log an error
-									if (!shaCache.get(
-											flattenedContent.getId())
+									if (!shaCache.get(flattenedContent.getId())
 											.equals(flattenedContent)) {
 										// log an error if we find that
 										// there are duplicate ids and the
@@ -489,10 +529,9 @@ public class GitContentManager implements IContentManager {
 								// It must be new so we can add it
 								else {
 									log.debug("Loading into cache: "
-											+ flattenedContent.getId()
-											+ "("
-											+ flattenedContent.getType()
-											+ ")" + " from "
+											+ flattenedContent.getId() + "("
+											+ flattenedContent.getType() + ")"
+											+ " from "
 											+ treeWalk.getPathString());
 									shaCache.put(flattenedContent.getId(),
 											flattenedContent);
@@ -504,13 +543,17 @@ public class GitContentManager implements IContentManager {
 
 					}
 				} catch (JsonMappingException e) {
-					log.warn("Unable to parse the json file found "
-							+ treeWalk.getPathString()
-							+ " as a content object. Skipping file...", e);
+					log.warn(
+							"Unable to parse the json file found "
+									+ treeWalk.getPathString()
+									+ " as a content object. Skipping file...",
+							e);
 					Content dummyContent = new Content();
 					dummyContent.setCanonicalSourceFile(treeWalk
 							.getPathString());
-					this.registerContentProblem(sha, dummyContent,
+					this.registerContentProblem(
+							sha,
+							dummyContent,
 							"Index failure - Unable to parse json file found - "
 									+ treeWalk.getPathString()
 									+ ". The following error occurred: "
@@ -522,12 +565,9 @@ public class GitContentManager implements IContentManager {
 			gitCache.put(sha, shaCache);
 			repository.close();
 			log.info("Tags available " + tagsList);
-			log.info("Git content cache population for " + sha
-					+ " completed!");
+			log.info("Git content cache population for " + sha + " completed!");
 		} catch (IOException e) {
-			log.error(
-					"IOException while trying to access git repository. ",
-					e);
+			log.error("IOException while trying to access git repository. ", e);
 		}
 	}
 
@@ -622,7 +662,8 @@ public class GitContentManager implements IContentManager {
 	 * references are valid. TODO: Convert this into a more useful method.
 	 * Currently it is a hack to flag bad references.
 	 * 
-	 * @param sha version to validate integrity of.
+	 * @param sha
+	 *            version to validate integrity of.
 	 * @return True if we are happy with the integrity of the git repository,
 	 *         False if there is something wrong.
 	 */
@@ -682,16 +723,24 @@ public class GitContentManager implements IContentManager {
 			}
 
 			// TODO: remove reference to isaac specific type from here.
-			if (c instanceof ChoiceQuestion && !(c.getType().equals("isaacQuestion"))) {
+			if (c instanceof ChoiceQuestion
+					&& !(c.getType().equals("isaacQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
-				if (question.getChoices() == null || question.getChoices().isEmpty()) {
-					log.warn("Choice question: " + question.getId() + " in " 
-							+ question.getCanonicalSourceFile() + " found without any choices - "
+				if (question.getChoices() == null
+						|| question.getChoices().isEmpty()) {
+					log.warn("Choice question: " + question.getId() + " in "
+							+ question.getCanonicalSourceFile()
+							+ " found without any choices - "
 							+ "this will mean users will always get it wrong.");
-					this.registerContentProblem(sha, question, "Question: " + question.getId() 
-							+ " in " + question.getCanonicalSourceFile() 
-							+ " found without any choice metadata. "
-							+ "This question will always be automatically marked as incorrect");
+					this.registerContentProblem(
+							sha,
+							question,
+							"Question: "
+									+ question.getId()
+									+ " in "
+									+ question.getCanonicalSourceFile()
+									+ " found without any choice metadata. "
+									+ "This question will always be automatically marked as incorrect");
 				} else {
 					boolean correctOptionFound = false;
 					for (Choice choice : question.getChoices()) {
@@ -699,12 +748,17 @@ public class GitContentManager implements IContentManager {
 							correctOptionFound = true;
 						}
 					}
-					
+
 					if (!correctOptionFound) {
-						this.registerContentProblem(sha, question, "Question: " + question.getId() 
-								+ " in " + question.getCanonicalSourceFile() 
-								+ " found without a correct answer. "
-								+ "This question will always be automatically marked as incorrect");
+						this.registerContentProblem(
+								sha,
+								question,
+								"Question: "
+										+ question.getId()
+										+ " in "
+										+ question.getCanonicalSourceFile()
+										+ " found without a correct answer. "
+										+ "This question will always be automatically marked as incorrect");
 					}
 				}
 			}
@@ -717,11 +771,10 @@ public class GitContentManager implements IContentManager {
 			missingContent.addAll(expectedIds);
 
 			for (String id : missingContent) {
-				this.registerContentProblem(sha, whoAmI.get(id),
-						"This id (" + id + ") was referenced by "
-								+ whoAmI.get(id).getCanonicalSourceFile()
-								+ " but the content with that "
-								+ "ID cannot be found.");
+				this.registerContentProblem(sha, whoAmI.get(id), "This id ("
+						+ id + ") was referenced by "
+						+ whoAmI.get(id).getCanonicalSourceFile()
+						+ " but the content with that " + "ID cannot be found.");
 			}
 
 			log.error("Referential integrity broken for (" + expectedIds.size()
@@ -742,7 +795,6 @@ public class GitContentManager implements IContentManager {
 	 */
 	private Set<Content> flattenContentObjects(final Content content) {
 		Set<Content> setOfContentObjects = new HashSet<Content>();
-
 		if (!content.getChildren().isEmpty()) {
 
 			List<ContentBase> children = content.getChildren();
