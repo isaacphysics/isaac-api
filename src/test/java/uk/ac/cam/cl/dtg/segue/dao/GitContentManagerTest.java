@@ -22,6 +22,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
  * Test class for the GitContentManager class.
  * 
  */
-public class GitContentManagerTests {
+public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
 	private ContentMapper contentMapper;
@@ -51,7 +52,6 @@ public class GitContentManagerTests {
 	 * @throws Exception
 	 *             - test exception
 	 */
-	@SuppressWarnings("unchecked")
 	@Before
 	public final void setUp() throws Exception {
 		this.database = createMock(GitDb.class);
@@ -91,7 +91,7 @@ public class GitContentManagerTests {
 
 	/**
 	 * This method will evaluate the result of the compareTo method using the
-	 * years provided as the arguments for datestamps. The rest of the timestamp
+	 * years provided as the arguments for timestamps. The rest of the timestamp
 	 * will read 1st January 00:00:00
 	 * 
 	 * @param v1Year
@@ -383,11 +383,14 @@ public class GitContentManagerTests {
 	}
 
 	/**
-	 * Test the flattenContentObjects method and ensure the expected output
-	 * is generated.
+	 * Test the flattenContentObjects method and ensure the expected output is
+	 * generated.
+	 * 
+	 * @throws Exception
 	 */
 	@Test
-	public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned() {
+	public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned()
+			throws Exception {
 		Content innerChild = createEmptyContentElement(new LinkedList<ContentBase>());
 		List<ContentBase> innerChildren = new LinkedList<ContentBase>();
 		innerChildren.add(innerChild);
@@ -395,14 +398,15 @@ public class GitContentManagerTests {
 		List<ContentBase> children = new LinkedList<ContentBase>();
 		children.add(child);
 		Content root = createEmptyContentElement(children);
-		
+
 		Set<Content> elements = new HashSet<Content>();
 		elements.add(root);
 		elements.add(child);
 		elements.add(innerChild);
-		
-		Set<Content> contents = defaultGCM.flattenContentObjects(root);
-		
+
+		Set<Content> contents = Whitebox.<Set<Content>> invokeMethod(
+				defaultGCM, "flattenContentObjects", root);
+
 		for (Content c : contents) {
 			boolean containsElement = elements.contains(c);
 			assertTrue(containsElement);
@@ -410,14 +414,22 @@ public class GitContentManagerTests {
 				elements.remove(c);
 			}
 		}
-		
+
 		assertTrue(elements.size() == 0);
+	}
+	
+	private Content createContentHierarchy(int numLevels) {
+		return new Content();
+		//return createEmptyContentElement(createContentHeirarchy(--numLevels));
 	}
 
 	/**
-	 * Helper method for the flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned
+	 * Helper method for the
+	 * flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned
 	 * test, generates a Content object with the given children.
-	 * @param children - The children of the new Content object
+	 * 
+	 * @param children
+	 *            - The children of the new Content object
 	 * @return The new Content object
 	 */
 	private Content createEmptyContentElement(List<ContentBase> children) {
