@@ -349,10 +349,12 @@ public class GitContentManagerTest {
 	/**
 	 * Test that the buildSearchIndexFromLocalGitIndex sends each Content object
 	 * to the searchProvider.
+	 * 
+	 * @throws Exception
 	 */
 	@Test
 	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
-			throws JsonProcessingException {
+			throws Exception {
 		database = createMock(GitDb.class);
 		searchProvider = createMock(ISearchProvider.class);
 		String uniqueObjectId = UUID.randomUUID().toString();
@@ -383,7 +385,8 @@ public class GitContentManagerTest {
 
 		replay(searchProvider, contentMapper, objectMapper);
 
-		gitContentManager.buildSearchIndexFromLocalGitIndex(INITIAL_VERSION);
+		Whitebox.invokeMethod(gitContentManager,
+				"buildSearchIndexFromLocalGitIndex", INITIAL_VERSION);
 
 		verify(searchProvider, contentMapper, objectMapper);
 	}
@@ -419,9 +422,10 @@ public class GitContentManagerTest {
 		assertTrue(elements.size() == 0);
 	}
 
-	private Content createContentHierarchy(final int numLevels, final Set<Content> flatSet) {
+	private Content createContentHierarchy(final int numLevels,
+			final Set<Content> flatSet) {
 		List<ContentBase> children = new LinkedList<ContentBase>();
-		
+
 		if (numLevels > 0) {
 			Content child = createContentHierarchy(numLevels - 1, flatSet);
 			children.add(child);
@@ -440,6 +444,8 @@ public class GitContentManagerTest {
 	 * 
 	 * @param children
 	 *            - The children of the new Content object
+	 * @param id
+	 *            - The id of the content element
 	 * @return The new Content object
 	 */
 	private Content createEmptyContentElement(final List<ContentBase> children,

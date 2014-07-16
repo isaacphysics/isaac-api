@@ -357,7 +357,7 @@ public class GitContentManager implements IContentManager {
 	 * @param sha
 	 *            - the version in the git cache to send to the search provider.
 	 */
-	public synchronized void buildSearchIndexFromLocalGitIndex(final String sha) {
+	private synchronized void buildSearchIndexFromLocalGitIndex(final String sha) {
 		if (!gitCache.containsKey(sha)) {
 			log.error("Unable to create search index as git cache does not exist locally");
 			return;
