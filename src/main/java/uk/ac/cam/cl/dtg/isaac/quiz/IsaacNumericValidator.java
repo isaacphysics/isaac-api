@@ -45,6 +45,15 @@ public class IsaacNumericValidator implements IValidator {
 					if (c instanceof Quantity) {
 						Quantity quantityChoice = (Quantity) c;
 
+						if (null == answerFromUser.getValue()) {
+							bestResponse = new QuantityValidationResponse(
+									question.getId(), null
+											+ " " + answerFromUser.getUnits(),
+									false, new Content("You did not provide a complete answer."),
+									false, false);
+							break;
+						}
+						
 						// match known choices
 						if (answerFromUser.getValue().equals(
 								quantityChoice.getValue())
