@@ -175,13 +175,18 @@ public class GitContentManagerTest {
 		expect(searchHits.getResults()).andReturn(new LinkedList<String>())
 				.once();
 		expect(searchHits.getTotalResults()).andReturn(0L).once();
-		replay(database, searchProvider, searchHits);
+		
+		ObjectMapper objectMapper = createMock(ObjectMapper.class);
+		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
+		.once();
+		
+		replay(database, searchProvider, searchHits, contentMapper);
 
 		assertTrue(gitContentManager
 				.searchForContent(INITIAL_VERSION, searchString,
 						fieldsThatMustMatch).getResults().size() == 0);
 
-		verify(database, searchProvider, searchHits);
+		verify(database, searchProvider, searchHits, contentMapper);
 	}
 
 	/**
