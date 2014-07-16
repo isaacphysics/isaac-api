@@ -819,6 +819,6 @@ public class GitContentManager implements IContentManager {
 			indexProblemCache.get(version).put(c, new ArrayList<String>());
 		}
 
-		indexProblemCache.get(version).get(c).add(message);
+		indexProblemCache.get(version).get(c).add(message.replace("_", "\\_"));
 	}
 }
