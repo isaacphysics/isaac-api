@@ -540,7 +540,7 @@ public class GitContentManagerTest {
 	 * @throws Exception
 	 */
 	@Test
-	public void validateReferentialIntegrity_missingMediaDatabaseLookup_falseReturned()
+	public void validateReferentialIntegrity_missingMediaDatabaseLookup_trueReturned()
 			throws Exception {
 		Media content = createMock(Media.class);
 		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
@@ -576,6 +576,17 @@ public class GitContentManagerTest {
 		verify(content, database);
 	}
 
+	/**
+	 * Helper method to construct the tests for the validateReferentialIntegrity
+	 * method.
+	 * 
+	 * @param content
+	 *            - Content object to be tested
+	 * @param indexProblemCache
+	 *            - Externally provided indexProblemCache for GitContentManager
+	 *            so that it can be inspected during the test
+	 * @return An instance of GitContentManager
+	 */
 	private GitContentManager validateReferentialIntegrity_setUpTest(
 			Content content,
 			Map<String, Map<Content, List<String>>> indexProblemCache) {
@@ -588,5 +599,43 @@ public class GitContentManagerTest {
 
 		return new GitContentManager(database, searchProvider, contentMapper,
 				gitCache, indexProblemCache);
+	}
+
+	/**
+	 * Test the validateReferentialIntegrity method to ensure it reports
+	 * a content fault if related content is not found in the cache.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void validateReferentialIntegrity_missingRelatedContent_falseReturned()
+			throws Exception {
+		Content content = createMock(Content.class);
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
+				content, indexProblemCache);
+
+		String uniqueObjectId = UUID.randomUUID().toString();
+
+		// Reference a non-existant object
+		List<String> relatedContent = new LinkedList<String>();
+		relatedContent.add(UUID.randomUUID().toString());
+
+		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
+				.once();
+		expect(content.getRelatedContent()).andReturn(relatedContent)
+				.atLeastOnce();
+		expect(content.getCanonicalSourceFile()).andReturn("").anyTimes();
+		expect(content.getTitle()).andReturn("").anyTimes();
+		replay(content);
+
+		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
+				"validateReferentialIntegrity", INITIAL_VERSION);
+
+		assertTrue(!result);
+		assertTrue(indexProblemCache.size() == 1);
+
+		verify(content);
 	}
 }
