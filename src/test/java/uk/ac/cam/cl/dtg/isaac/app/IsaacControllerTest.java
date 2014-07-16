@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Test class for the user manager class.
  * 
  */
-public class IsaacControllerTests {
+public class IsaacControllerTest {
 
 	private SegueApiFacade dummyAPI = null;
 	private PropertiesLoader dummyPropertiesLoader = null;

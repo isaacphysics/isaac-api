@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
  * Test class for the GitContentManager class.
  * 
  */
-public class GitContentManagerTests {
+public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
 	private ContentMapper contentMapper;
