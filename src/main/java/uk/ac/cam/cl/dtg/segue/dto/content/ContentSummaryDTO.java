@@ -19,7 +19,7 @@ public class ContentSummaryDTO {
 	/**
 	 *  Private constructor required for Dozer.
 	 */
-	private ContentSummaryDTO() {
+	public ContentSummaryDTO() {
 		tags = new ArrayList<String>();
 	}
 

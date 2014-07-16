@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.modelmapper.ModelMapper;
+import ma.glasnost.orika.MapperFacade;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,7 +136,7 @@ public class GameManager {
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
 
-			ModelMapper mapper = new DOAndDTOMapper().getMapper();
+			MapperFacade mapper = new DOAndDTOMapper().getMapper();
 			
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 

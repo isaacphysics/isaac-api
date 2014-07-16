@@ -17,8 +17,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import ma.glasnost.orika.MapperFacade;
+
 import org.jboss.resteasy.annotations.cache.Cache;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -678,7 +679,7 @@ public class IsaacController {
 		Injector injector = Guice.createInjector(
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
-		ModelMapper mapper = injector.getInstance(ModelMapper.class);
+		MapperFacade mapper = injector.getInstance(MapperFacade.class);
 
 		ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
 		contentInfo.setUrl(generateApiUrl(content));

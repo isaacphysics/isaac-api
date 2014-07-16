@@ -8,9 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import ma.glasnost.orika.MapperFacade;
+
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Maps;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class GameboardPersistenceManager {
 
 	private final IAppDataManager<uk.ac.cam.cl.dtg.isaac.dos.GameboardDO> gameboardDataManager;
 
-	private final ModelMapper mapper;
+	private final MapperFacade mapper;
 	private final SegueApiFacade api;
 
 	private final Map<String, GameboardDTO> gameboardNonPersistentStorage;
@@ -72,7 +73,7 @@ public class GameboardPersistenceManager {
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
 
-		this.mapper = injector.getInstance(ModelMapper.class);
+		this.mapper = injector.getInstance(MapperFacade.class);
 		this.api = api;
 		this.gameboardNonPersistentStorage = Maps.newConcurrentMap();
 	}

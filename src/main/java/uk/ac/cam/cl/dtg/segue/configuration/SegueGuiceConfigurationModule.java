@@ -3,8 +3,9 @@ package uk.ac.cam.cl.dtg.segue.configuration;
 import java.io.IOException;
 import java.util.Map;
 
+import ma.glasnost.orika.MapperFacade;
+
 import org.elasticsearch.client.Client;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -276,7 +277,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 */
 	@Provides
 	@Singleton
-	private static ModelMapper getDozerDOtoDTOMapper() {
+	private static MapperFacade getDozerDOtoDTOMapper() {
 		if (null == modelMapperDOToDTOMapper) {
 			modelMapperDOToDTOMapper = new DOAndDTOMapper();
 			log.info("Creating singleton for Dozer mapper");

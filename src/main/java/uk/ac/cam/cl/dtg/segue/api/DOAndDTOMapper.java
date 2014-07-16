@@ -1,21 +1,23 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
-import org.modelmapper.ModelMapper;
+import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
 
 public class DOAndDTOMapper {
 
-	private ModelMapper mapper;
+	private MapperFacade mapper;
 	
 	public DOAndDTOMapper() {
-		this.mapper = new ModelMapper();
-		
+		MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
+		mapper = mapperFactory.getMapperFacade();
 	}
 
 	/**
 	 * Gets the mapper.
 	 * @return the mapper
 	 */
-	public final ModelMapper getMapper() {
+	public final MapperFacade getMapper() {
 		return mapper;
 	}
 
@@ -23,7 +25,7 @@ public class DOAndDTOMapper {
 	 * Sets the mapper.
 	 * @param mapper the mapper to set
 	 */
-	public final void setMapper(ModelMapper mapper) {
+	public final void setMapper(MapperFacade mapper) {
 		this.mapper = mapper;
 	}
 	
