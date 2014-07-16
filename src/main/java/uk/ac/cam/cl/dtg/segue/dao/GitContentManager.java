@@ -51,12 +51,9 @@ public class GitContentManager implements IContentManager {
 
 	private static final String CONTENT_TYPE = "content";
 
-	private static Map<String, Map<String, Content>> gitCache =
-			new ConcurrentHashMap<String, Map<String, Content>>();
-	private static Map<String, Map<Content, List<String>>> indexProblemCache =
-			new ConcurrentHashMap<String, Map<Content, List<String>>>();
-	private static final Map<String, Set<String>> tagsList =
-			new ConcurrentHashMap<String, Set<String>>();
+	private static Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
+	private static Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+	private static final Map<String, Set<String>> tagsList = new ConcurrentHashMap<String, Set<String>>();
 
 	private final GitDb database;
 	private final ContentMapper mapper;
@@ -123,7 +120,8 @@ public class GitContentManager implements IContentManager {
 	 * @param gitCache
 	 *            - A manually constructed gitCache for testing purposes.
 	 * @param indexProblemCache
-	 *            - A manually constructed indexProblemCache for testing purposes
+	 *            - A manually constructed indexProblemCache for testing
+	 *            purposes
 	 */
 	public GitContentManager(final GitDb database,
 			final ISearchProvider searchProvider,
@@ -486,61 +484,57 @@ public class GitContentManager implements IContentManager {
 						// cache if they have ids
 						for (Content flattenedContent : this
 								.flattenContentObjects(content)) {
-							if (flattenedContent.getId() != null) {
-								// check if we have seen this key before if
-								// we have then we don't want to add it
-								// again
-								if (shaCache.containsKey(flattenedContent
-										.getId())) {
-									// if the key is the same but the
-									// content is different then something
-									// has gone wrong - log an error
-									if (!shaCache.get(flattenedContent.getId())
-											.equals(flattenedContent)) {
-										// log an error if we find that
-										// there are duplicate ids and the
-										// content is different.
-										log.warn("Resource with duplicate ID ("
-												+ content.getId()
-												+ ") detected in cache. Skipping "
-												+ treeWalk.getPathString());
-										this.registerContentProblem(
-												sha,
-												flattenedContent,
-												"Index failure - Duplicate ID found in file "
-														+ treeWalk
-																.getPathString()
-														+ " and "
-														+ shaCache
-																.get(flattenedContent
-																		.getId())
-																.getCanonicalSourceFile());
-									}
-									// if the content is the same then it is
-									// just reuse of a content object so
-									// that is fine.
-									else {
-										log.info("Resource ("
-												+ content.getId()
-												+ ") already seen in cache. Skipping "
-												+ treeWalk.getPathString());
-									}
-								}
-								// It must be new so we can add it
-								else {
-									log.debug("Loading into cache: "
-											+ flattenedContent.getId() + "("
-											+ flattenedContent.getType() + ")"
-											+ " from "
-											+ treeWalk.getPathString());
-									shaCache.put(flattenedContent.getId(),
-											flattenedContent);
-									registerTagsWithVersion(sha,
-											flattenedContent.getTags());
-								}
+							if (flattenedContent.getId() == null) {
+								continue;
 							}
-						}
 
+							// check if we have seen this key before if
+							// we have then we don't want to add it
+							// again
+							if (!shaCache.containsKey(flattenedContent.getId())) {
+								// It must be new so we can add it
+								log.debug("Loading into cache: "
+										+ flattenedContent.getId() + "("
+										+ flattenedContent.getType() + ")"
+										+ " from " + treeWalk.getPathString());
+								shaCache.put(flattenedContent.getId(),
+										flattenedContent);
+								registerTagsWithVersion(sha,
+										flattenedContent.getTags());
+								continue; // our work here is done (reduces
+											// nesting compared to else)
+							}
+
+							// shaCache contains key already, compare the
+							// content
+							if (shaCache.get(flattenedContent.getId()).equals(
+									flattenedContent)) {
+								// content is the same therefore it is just
+								// reuse of a content object so that is
+								// fine.
+								log.info("Resource (" + content.getId()
+										+ ") already seen in cache. Skipping "
+										+ treeWalk.getPathString());
+								continue; // our work here is done (reduces
+											// nesting compared to else)
+							}
+
+							// Otherwise, duplicate IDs with different content,
+							// therefore log an error
+							log.warn("Resource with duplicate ID ("
+									+ content.getId()
+									+ ") detected in cache. Skipping "
+									+ treeWalk.getPathString());
+							this.registerContentProblem(
+									sha,
+									flattenedContent,
+									"Index failure - Duplicate ID found in file "
+											+ treeWalk.getPathString()
+											+ " and "
+											+ shaCache.get(
+													flattenedContent.getId())
+													.getCanonicalSourceFile());
+						}
 					}
 				} catch (JsonMappingException e) {
 					log.warn(

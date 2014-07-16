@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.Before;
@@ -602,8 +604,8 @@ public class GitContentManagerTest {
 	}
 
 	/**
-	 * Test the validateReferentialIntegrity method to ensure it reports
-	 * a content fault if related content is not found in the cache.
+	 * Test the validateReferentialIntegrity method to ensure it reports a
+	 * content fault if related content is not found in the cache.
 	 * 
 	 * @throws Exception
 	 */
@@ -637,5 +639,61 @@ public class GitContentManagerTest {
 		assertTrue(indexProblemCache.size() == 1);
 
 		verify(content);
+	}
+
+	/**
+	 * Test the buildGitContentIndex and ensure it adds content objects to the cache.
+	 * @throws Exception
+	 */
+	@Test
+	public void buildGitContentIndex_addObject_objectAddedToCache() throws Exception {
+		reset(database, searchProvider);
+
+		final String pathToContent = "/path/to/content/";
+
+		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, indexProblemCache);
+
+		Repository repository = createMock(Repository.class);
+		ObjectId commitId = createMock(ObjectId.class);
+		TreeWalk treeWalk = createMock(TreeWalk.class);
+		ObjectLoader loader = createMock(ObjectLoader.class);
+		ObjectMapper objectMapper = createMock(ObjectMapper.class);
+
+		Content content = new Content();
+		content.setId(UUID.randomUUID().toString());
+		
+		expect(database.getGitRepository()).andReturn(repository).once();
+		expect(repository.resolve(INITIAL_VERSION)).andReturn(commitId).once();
+		expect(database.getTreeWalk(eq(INITIAL_VERSION), anyString()))
+				.andReturn(treeWalk).once();
+		expect(treeWalk.next()).andReturn(true).once();
+		expect(treeWalk.getObjectId(0)).andReturn(null);
+		expect(repository.open(null)).andReturn(loader).once();
+		loader.copyTo(anyObject(ByteArrayOutputStream.class));
+		expectLastCall().once();
+		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
+				.once();
+		expect(objectMapper.readValue(anyString(), eq(ContentBase.class)))
+				.andReturn(content).once();
+		expect(treeWalk.getPathString()).andReturn(pathToContent).atLeastOnce();
+		expect(treeWalk.next()).andReturn(false).once();
+		repository.close();
+		expectLastCall().once();
+
+		replay(database, repository, treeWalk, contentMapper, objectMapper,
+				searchProvider);
+
+		Whitebox.invokeMethod(gitContentManager, "buildGitContentIndex",
+				INITIAL_VERSION);
+
+		assertTrue(gitCache.containsKey(INITIAL_VERSION));
+		assertTrue(gitCache.get(INITIAL_VERSION).containsKey(content.getId()));
+
+		verify(database, repository, treeWalk, contentMapper, objectMapper,
+				searchProvider);
 	}
 }
