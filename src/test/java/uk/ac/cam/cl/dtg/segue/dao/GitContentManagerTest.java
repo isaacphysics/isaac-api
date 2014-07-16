@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -34,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 /**
  * Test class for the GitContentManager class.
@@ -175,6 +178,7 @@ public class GitContentManagerTest {
 						anyString(), anyObject(Map.class), anyString(),
 						anyString(), anyString(), anyString(), anyString()))
 				.andReturn(searchHits).once();
+		
 		expect(searchHits.getResults()).andReturn(new LinkedList<String>())
 				.once();
 		expect(searchHits.getTotalResults()).andReturn(0L).once();
@@ -182,6 +186,10 @@ public class GitContentManagerTest {
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
 		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
 				.once();
+		
+		expect(contentMapper.getDTOByDOList((List<Content>) anyObject()))
+			.andReturn(new ArrayList<ContentDTO>())
+			.once();
 
 		replay(database, searchProvider, searchHits, contentMapper);
 
