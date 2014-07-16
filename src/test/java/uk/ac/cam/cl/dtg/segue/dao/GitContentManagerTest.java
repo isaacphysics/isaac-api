@@ -68,7 +68,9 @@ public class GitContentManagerTest {
 	 */
 	@Test
 	public void compareTo_checkV1NewerThanV2_checkPositiveNumberReturned() {
-		assertTrue(compareTo_getResult(2010, 2000) > 0);
+		final int v1Year = 2010;
+		final int v2Year = 2000;
+		assertTrue(compareTo_getResult(v1Year, v2Year) > 0);
 	}
 
 	/**
@@ -77,7 +79,9 @@ public class GitContentManagerTest {
 	 */
 	@Test
 	public void compareTo_checkV2NewerThanV1_checkNegativeNumberReturned() {
-		assertTrue(compareTo_getResult(2000, 2010) < 0);
+		final int v1Year = 2000;
+		final int v2Year = 2010;
+		assertTrue(compareTo_getResult(v1Year, v2Year) < 0);
 	}
 
 	/**
@@ -86,7 +90,9 @@ public class GitContentManagerTest {
 	 */
 	@Test
 	public void compareTo_checkV2SameAgeAsV1_checkZeroReturned() {
-		assertTrue(compareTo_getResult(2000, 2000) == 0);
+		final int v1Year = 2000;
+		final int v2Year = 2000;
+		assertTrue(compareTo_getResult(v1Year, v2Year) == 0);
 	}
 
 	/**
@@ -102,15 +108,16 @@ public class GitContentManagerTest {
 	 *         GitContentManager.compareTo method
 	 */
 	private int compareTo_getResult(final int v1Year, final int v2Year) {
-		String v1Hash = "V1";
-		String v2Hash = "V2";
+		final long millisecondsPerSecond = 1000L;
+		final String v1Hash = "V1";
+		final String v2Hash = "V2";
 
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(0);
 		cal.set(v1Year, 0, 1, 0, 0, 0);
-		int v1Date = (int) (cal.getTimeInMillis() / 1000L);
+		int v1Date = (int) (cal.getTimeInMillis() / millisecondsPerSecond);
 		cal.set(v2Year, 0, 1, 0, 0, 0);
-		int v2Date = (int) (cal.getTimeInMillis() / 1000L);
+		int v2Date = (int) (cal.getTimeInMillis() / millisecondsPerSecond);
 
 		expect(database.getCommitTime(v1Hash)).andReturn(v1Date).once();
 		expect(database.getCommitTime(v2Hash)).andReturn(v2Date).once();
@@ -161,12 +168,6 @@ public class GitContentManagerTest {
 		ResultsWrapper<String> searchHits = createMock(ResultsWrapper.class);
 
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
-		/*
-		 * expect(searchProvider.fuzzySearch(isA(String.class),
-		 * isA(String.class), isA(String.class), isA(Map.class),
-		 * isA(String.class), isA(String.class), isA(String.class),
-		 * isA(String.class), "")) .andReturn(searchHits).once();
-		 */
 		expect(
 				searchProvider.fuzzySearch(anyString(), anyString(),
 						anyString(), anyObject(Map.class), anyString(),
@@ -175,11 +176,11 @@ public class GitContentManagerTest {
 		expect(searchHits.getResults()).andReturn(new LinkedList<String>())
 				.once();
 		expect(searchHits.getTotalResults()).andReturn(0L).once();
-		
+
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
 		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
-		.once();
-		
+				.once();
+
 		replay(database, searchProvider, searchHits, contentMapper);
 
 		assertTrue(gitContentManager
@@ -396,21 +397,16 @@ public class GitContentManagerTest {
 	@Test
 	public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned()
 			throws Exception {
-		Content innerChild = createEmptyContentElement(new LinkedList<ContentBase>());
-		List<ContentBase> innerChildren = new LinkedList<ContentBase>();
-		innerChildren.add(innerChild);
-		Content child = createEmptyContentElement(innerChildren);
-		List<ContentBase> children = new LinkedList<ContentBase>();
-		children.add(child);
-		Content root = createEmptyContentElement(children);
+		final int numChildLevels = 5;
+		final int numNodes = numChildLevels + 1;
 
 		Set<Content> elements = new HashSet<Content>();
-		elements.add(root);
-		elements.add(child);
-		elements.add(innerChild);
+		Content rootNode = createContentHierarchy(numChildLevels, elements);
 
 		Set<Content> contents = Whitebox.<Set<Content>> invokeMethod(
-				defaultGCM, "flattenContentObjects", root);
+				defaultGCM, "flattenContentObjects", rootNode);
+
+		assertTrue(contents.size() == numNodes);
 
 		for (Content c : contents) {
 			boolean containsElement = elements.contains(c);
@@ -422,10 +418,19 @@ public class GitContentManagerTest {
 
 		assertTrue(elements.size() == 0);
 	}
-	
-	private Content createContentHierarchy(int numLevels) {
-		return new Content();
-		//return createEmptyContentElement(createContentHeirarchy(--numLevels));
+
+	private Content createContentHierarchy(final int numLevels, final Set<Content> flatSet) {
+		List<ContentBase> children = new LinkedList<ContentBase>();
+		
+		if (numLevels > 0) {
+			Content child = createContentHierarchy(numLevels - 1, flatSet);
+			children.add(child);
+		}
+
+		Content content = createEmptyContentElement(children,
+				String.format("%d", numLevels));
+		flatSet.add(content);
+		return content;
 	}
 
 	/**
@@ -437,8 +442,9 @@ public class GitContentManagerTest {
 	 *            - The children of the new Content object
 	 * @return The new Content object
 	 */
-	private Content createEmptyContentElement(List<ContentBase> children) {
-		return new Content("", "", "", "", "", "", "", "", "", children, "",
+	private Content createEmptyContentElement(final List<ContentBase> children,
+			final String id) {
+		return new Content("", id, "", "", "", "", "", "", "", children, "",
 				"", new LinkedList<String>(), false, new HashSet<String>(), 1);
 	}
 }
