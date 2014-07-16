@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
-import org.dozer.Mapping;
 /**
  * DTO that provides high level information for Isaac Questions.
  * 
@@ -11,7 +10,6 @@ import org.dozer.Mapping;
 public class GameboardItem {
 	private String id;
 	private String title;
-	@Mapping("subtitle")
 	private String description;
 	private String uri;
 	private List<String> tags;

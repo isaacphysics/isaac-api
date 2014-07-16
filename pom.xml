@@ -46,11 +46,12 @@
 			<artifactId>resteasy-cache-core</artifactId>
 			<version>${resteasy.version}</version>
 		</dependency>
+
 		<dependency>
-			<groupId>net.sf.dozer</groupId>
-			<artifactId>dozer</artifactId>
-			<version>5.4.0</version>
-		</dependency>
+		  <groupId>org.modelmapper</groupId>
+		  <artifactId>modelmapper</artifactId>
+		  <version>0.7.2</version>
+		</dependency>		
 
 		<dependency>
 			<groupId>com.google.guava</groupId>

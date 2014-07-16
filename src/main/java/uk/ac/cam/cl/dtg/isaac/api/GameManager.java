@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.dozer.Mapper;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.Wildcard;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.DOAndDTOMapper;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -134,7 +135,8 @@ public class GameManager {
 					new IsaacGuiceConfigurationModule(),
 					new SegueGuiceConfigurationModule());
 
-			Mapper mapper = injector.getInstance(Mapper.class);
+			ModelMapper mapper = new DOAndDTOMapper().getMapper();
+			
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
 			// Map each Content object into an IsaacQuestionInfo object

@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.Validate;
-import org.dozer.Mapper;
 import org.elasticsearch.common.collect.Maps;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class GameboardPersistenceManager {
 
 	private final IAppDataManager<uk.ac.cam.cl.dtg.isaac.dos.GameboardDO> gameboardDataManager;
 
-	private final Mapper mapper;
+	private final ModelMapper mapper;
 	private final SegueApiFacade api;
 
 	private final Map<String, GameboardDTO> gameboardNonPersistentStorage;
@@ -72,7 +72,7 @@ public class GameboardPersistenceManager {
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
 
-		this.mapper = injector.getInstance(Mapper.class);
+		this.mapper = injector.getInstance(ModelMapper.class);
 		this.api = api;
 		this.gameboardNonPersistentStorage = Maps.newConcurrentMap();
 	}

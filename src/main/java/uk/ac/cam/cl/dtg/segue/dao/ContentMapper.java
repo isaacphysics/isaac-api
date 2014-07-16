@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.Validate;
-import org.dozer.Mapper;
 import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
@@ -41,22 +40,16 @@ public class ContentMapper {
 
 	private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
 
-	private final Mapper dozerDOandDTOMapper;
-
 	/**
 	 * Creates a new content mapper without type information.
 	 * 
 	 * Note: Type information must be provided by using the register type
 	 * methods.
 	 * 
-	 * @param dozerDOandDTOMapper
-	 *            - the mapper to use for DO and DTO mapping.
 	 */
-	public ContentMapper(final Mapper dozerDOandDTOMapper) {
-		Validate.notNull(dozerDOandDTOMapper);
+	public ContentMapper() {
 		jsonTypes = Maps.newConcurrentMap();
 		mapOfDOsToDTOs = Maps.newConcurrentMap();
-		this.dozerDOandDTOMapper = dozerDOandDTOMapper;
 	}
 
 	/**
@@ -64,20 +57,15 @@ public class ContentMapper {
 	 * 
 	 * @param additionalTypes
 	 *            - types to add to our look up map.
-	 * @param dozerDOandDTOMapper
-	 *            - instance of the autoMapper.
 	 * @param mapOfDOsToDTOs
 	 *            - map of DOs To DTOs.
 	 */
 	public ContentMapper(
 			final Map<String, Class<? extends Content>> additionalTypes,
-			final Mapper dozerDOandDTOMapper,
 			final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs) {
 		Validate.notNull(additionalTypes);
 		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
 		jsonTypes.putAll(additionalTypes);
-
-		this.dozerDOandDTOMapper = dozerDOandDTOMapper;
 
 		this.mapOfDOsToDTOs = Maps.newConcurrentMap();
 
@@ -301,14 +289,4 @@ public class ContentMapper {
 		}
 		return contentList;
 	}
-
-	/**
-	 * Gets the instance of the Dozer auto mapper.
-	 * 
-	 * @return Auto Mapper.
-	 */
-	public Mapper getDTOandDOMapper() {
-		return this.dozerDOandDTOMapper;
-	}
-
 }

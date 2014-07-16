@@ -3,15 +3,14 @@ package uk.ac.cam.cl.dtg.segue.configuration;
 import java.io.IOException;
 import java.util.Map;
 
-import org.dozer.DozerBeanMapper;
-import org.dozer.Mapper;
-import org.dozer.loader.api.BeanMappingBuilder;
 import org.elasticsearch.client.Client;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.DOAndDTOMapper;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -53,14 +52,13 @@ import com.mongodb.DB;
  * 
  */
 public class SegueGuiceConfigurationModule extends AbstractModule {
-
 	private static final Logger log = LoggerFactory
 			.getLogger(SegueGuiceConfigurationModule.class);
 
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
 	// Dozer mapper
-	private static DozerBeanMapper dozerDOToDTOMapper = null;
+	private static DOAndDTOMapper modelMapperDOToDTOMapper = null;
 	
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
@@ -81,7 +79,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 
 		if (null == mapper) {
-			mapper = new ContentMapper(getDozerDOtoDTOMapper());
+			mapper = new ContentMapper();
 			buildDefaultJsonTypeMap();
 			// TODO: create a provider for this and inject it properly.
 		}
@@ -278,23 +276,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 */
 	@Provides
 	@Singleton
-	private static Mapper getDozerDOtoDTOMapper() {
-		if (null == dozerDOToDTOMapper) {
-			dozerDOToDTOMapper = new DozerBeanMapper();
+	private static ModelMapper getDozerDOtoDTOMapper() {
+		if (null == modelMapperDOToDTOMapper) {
+			modelMapperDOToDTOMapper = new DOAndDTOMapper();
 			log.info("Creating singleton for Dozer mapper");
 		}
 
-		return dozerDOToDTOMapper;
-	}
-	
-	/**
-	 * Utility method to allow third party apps to extend the dozer mapper.
-	 * @param builder - the builder to add to the DTO / DO mapper.
-	 */
-	public static void addMappingConfigurationToDozerMapper(final BeanMappingBuilder builder) {
-		dozerDOToDTOMapper.addMapping(builder);
-	}
-	
+		return modelMapperDOToDTOMapper.getMapper();
+	}	
 
 	/**
 	 * This method will pre-register the mapper class so that content objects can be mapped.
