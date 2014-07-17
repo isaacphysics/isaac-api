@@ -696,7 +696,16 @@ public class GitContentManager implements IContentManager {
 					whoAmI.put(id, c);
 				}
 			}
+			
+			// ensure content does not have children and a value
+			if (c.getValue() != null && !c.getChildren().isEmpty()) {
+				this.registerContentProblem(sha, c, "This id ("
+						+ c.getId() + ") has both children and a value.");
 
+				log.error("Invalid content item detected: The object with ID ("
+						+ c.getId() + ") has both children and a value.");
+			}
+			
 			// content type specific checks
 			if (c instanceof Media) {
 				Media f = (Media) c;
