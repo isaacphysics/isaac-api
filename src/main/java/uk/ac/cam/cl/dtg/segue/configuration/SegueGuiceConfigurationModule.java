@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Figure;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.segue.dos.content.Video;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -301,6 +302,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		// We need to pre-register different content objects here for the
 		// auto-mapping to work
 		mapper.registerJsonTypeAndDTOMapping(Content.class);
+		mapper.registerJsonTypeAndDTOMapping(SeguePage.class);
 		mapper.registerJsonTypeAndDTOMapping(Choice.class);
 		mapper.registerJsonTypeAndDTOMapping(Quantity.class);
 		mapper.registerJsonTypeAndDTOMapping(Question.class);

@@ -12,6 +12,7 @@ import java.util.List;
 public class ContentSummaryDTO {
 	private String id;
 	private String title;
+	private String summary;
 	private String type;
 	private List<String> tags;
 	private String url;
@@ -46,6 +47,22 @@ public class ContentSummaryDTO {
 
 	public void setTitle(String title) {
 		this.title = title;
+	}
+
+	/**
+	 * Gets the summary.
+	 * @return the summary
+	 */
+	public final String getSummary() {
+		return summary;
+	}
+
+	/**
+	 * Sets the summary.
+	 * @param summary the summary to set
+	 */
+	public final void setSummary(final String summary) {
+		this.summary = summary;
 	}
 
 	public String getType() {

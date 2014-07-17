@@ -20,12 +20,12 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.SegueObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -58,7 +58,7 @@ public class GameManager {
 		this.api = api;
 		this.gameboardPersistenceManager = new GameboardPersistenceManager(
 				api.requestAppDataManager(GAMEBOARD_COLLECTION_NAME,
-						uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class), api);
+						GameboardDO.class), api);
 	}
 
 	/**

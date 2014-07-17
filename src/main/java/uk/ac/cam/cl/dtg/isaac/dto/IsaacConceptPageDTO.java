@@ -3,9 +3,10 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
 /**
- * IsaacQuestion Page DTO.
+ * IsaacQuestion Page DO.
  *
  */
-public class IsaacQuestionPageDTO extends SeguePageDTO {
+public class IsaacConceptPageDTO extends SeguePageDTO {
 
+	
 }
