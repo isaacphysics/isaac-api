@@ -87,8 +87,8 @@ public class GameboardPersistenceManager {
 	 */
 	public final String saveGameboardToPermanentStorage(
 			final GameboardDTO gameboard) {
-		GameboardDO gameboardToSave = mapper.map(
-				gameboard, uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class);
+		GameboardDO gameboardToSave = mapper.map(gameboard,
+				uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class);
 		// the mapping operation won't work for the list so we should just
 		// create a new one.
 		gameboardToSave.setQuestions(new ArrayList<String>());
@@ -119,8 +119,8 @@ public class GameboardPersistenceManager {
 	 * @return gameboard id
 	 */
 	public final String temporarilyStoreGameboard(final GameboardDTO gameboard) {
-		
-		this.gameboardNonPersistentStorage.put(gameboard.getId(), this.convertToGameboardDO(gameboard));
+		this.gameboardNonPersistentStorage.put(gameboard.getId(),
+				this.convertToGameboardDO(gameboard));
 
 		tidyTemporaryGameboardStorage();
 
@@ -137,7 +137,9 @@ public class GameboardPersistenceManager {
 	public final GameboardDTO getGameboardById(final String gameboardId) {
 		// first try temporary storage
 		if (this.gameboardNonPersistentStorage.containsKey(gameboardId)) {
-			return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.get(gameboardId));
+			return this
+					.convertToGameboardDTO(this.gameboardNonPersistentStorage
+							.get(gameboardId));
 		}
 
 		GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
@@ -171,7 +173,7 @@ public class GameboardPersistenceManager {
 
 		List<GameboardDTO> gameboardDTOs = this
 				.convertToGameboardDTOs(gameboardsFromDb);
-		
+
 		return gameboardDTOs;
 	}
 
@@ -261,17 +263,17 @@ public class GameboardPersistenceManager {
 		}
 		return gameboardDTO;
 	}
-	
+
 	/**
 	 * Convert from a gameboard DTO to a gameboard DO.
-	 *  
-	 * @param gameboardDTO - DTO to convert.
+	 * 
+	 * @param gameboardDTO
+	 *            - DTO to convert.
 	 * @return GameboardDO.
 	 */
 	private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
-		
-		GameboardDO gameboardDO = mapper.map(
-				gameboardDTO, GameboardDO.class);
+
+		GameboardDO gameboardDO = mapper.map(gameboardDTO, GameboardDO.class);
 		// the mapping operation won't work for the list so we should just
 		// create a new one.
 		gameboardDO.setQuestions(new ArrayList<String>());
@@ -280,7 +282,7 @@ public class GameboardPersistenceManager {
 		for (GameboardItem c : gameboardDTO.getQuestions()) {
 			gameboardDO.getQuestions().add(c.getId());
 		}
-		
+
 		return gameboardDO;
 	}
 }
