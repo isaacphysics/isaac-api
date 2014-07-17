@@ -148,7 +148,7 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
-			GameboardDTO gameboard = new GameboardDTO(uuid,
+			GameboardDTO gameboard = new GameboardDTO(uuid, null,
 					gameboardReadyQuestions, new Date(), gameFilter,
 					boardOwnerId);
 			this.gameboardPersistenceManager
