@@ -712,7 +712,7 @@ public class GitContentManager implements IContentManager {
 								+ " in "
 								+ c.getCanonicalSourceFile()
 								+ " found with both children and a value. "
-								+ "This question will always be automatically marked as incorrect");
+								+ "This content will always be automatically marked as incorrect");
 
 				log.error("Invalid content item detected: The object with ID ("
 						+ id + ") has both children and a value.");
