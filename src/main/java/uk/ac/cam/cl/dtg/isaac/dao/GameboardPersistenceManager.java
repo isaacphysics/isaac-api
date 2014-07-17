@@ -47,12 +47,12 @@ public class GameboardPersistenceManager {
 
 	private static final String USER_ID_FKEY = "ownerUserId";
 
-	private final IAppDataManager<uk.ac.cam.cl.dtg.isaac.dos.GameboardDO> gameboardDataManager;
+	private final IAppDataManager<GameboardDO> gameboardDataManager;
 
 	private final MapperFacade mapper;
 	private final SegueApiFacade api;
 
-	private final Map<String, GameboardDTO> gameboardNonPersistentStorage;
+	private final Map<String, GameboardDO> gameboardNonPersistentStorage;
 
 	/**
 	 * Creates a new user data manager object.
@@ -87,8 +87,8 @@ public class GameboardPersistenceManager {
 	 */
 	public final String saveGameboardToPermanentStorage(
 			final GameboardDTO gameboard) {
-		uk.ac.cam.cl.dtg.isaac.dos.GameboardDO gameboardToSave = mapper.map(
-				gameboard, uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class);
+		GameboardDO gameboardToSave = mapper.map(gameboard,
+				uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class);
 		// the mapping operation won't work for the list so we should just
 		// create a new one.
 		gameboardToSave.setQuestions(new ArrayList<String>());
@@ -119,7 +119,8 @@ public class GameboardPersistenceManager {
 	 * @return gameboard id
 	 */
 	public final String temporarilyStoreGameboard(final GameboardDTO gameboard) {
-		this.gameboardNonPersistentStorage.put(gameboard.getId(), gameboard);
+		this.gameboardNonPersistentStorage.put(gameboard.getId(),
+				this.convertToGameboardDO(gameboard));
 
 		tidyTemporaryGameboardStorage();
 
@@ -136,7 +137,9 @@ public class GameboardPersistenceManager {
 	public final GameboardDTO getGameboardById(final String gameboardId) {
 		// first try temporary storage
 		if (this.gameboardNonPersistentStorage.containsKey(gameboardId)) {
-			return this.gameboardNonPersistentStorage.get(gameboardId);
+			return this
+					.convertToGameboardDTO(this.gameboardNonPersistentStorage
+							.get(gameboardId));
 		}
 
 		GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
@@ -170,6 +173,7 @@ public class GameboardPersistenceManager {
 
 		List<GameboardDTO> gameboardDTOs = this
 				.convertToGameboardDTOs(gameboardsFromDb);
+
 		return gameboardDTOs;
 	}
 
@@ -181,7 +185,7 @@ public class GameboardPersistenceManager {
 			log.debug("Running gameboard temporary cache eviction as it is of size  "
 					+ this.gameboardNonPersistentStorage.size());
 
-			for (GameboardDTO board : this.gameboardNonPersistentStorage
+			for (GameboardDO board : this.gameboardNonPersistentStorage
 					.values()) {
 				long duration = new Date().getTime()
 						- board.getCreationDate().getTime();
@@ -258,5 +262,27 @@ public class GameboardPersistenceManager {
 					gameboardReadyQuestions.get(questionid));
 		}
 		return gameboardDTO;
+	}
+
+	/**
+	 * Convert from a gameboard DTO to a gameboard DO.
+	 * 
+	 * @param gameboardDTO
+	 *            - DTO to convert.
+	 * @return GameboardDO.
+	 */
+	private GameboardDO convertToGameboardDO(final GameboardDTO gameboardDTO) {
+
+		GameboardDO gameboardDO = mapper.map(gameboardDTO, GameboardDO.class);
+		// the mapping operation won't work for the list so we should just
+		// create a new one.
+		gameboardDO.setQuestions(new ArrayList<String>());
+
+		// Map each question into an IsaacQuestionInfo object
+		for (GameboardItem c : gameboardDTO.getQuestions()) {
+			gameboardDO.getQuestions().add(c.getId());
+		}
+
+		return gameboardDO;
 	}
 }
