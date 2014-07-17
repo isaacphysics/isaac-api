@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class GameboardDO {
 	@JsonProperty("_id")
 	private String id;
+	private String title;
 	private List<String> questions;
 	private Wildcard wildCard;
 	private Date creationDate;
@@ -38,6 +39,23 @@ public class GameboardDO {
 	 */
 	public final void setId(final String id) {
 		this.id = id;
+	}
+
+	/**
+	 * Gets the title.
+	 * @return the title
+	 */
+	public final String getTitle() {
+		return title;
+	}
+	
+
+	/**
+	 * Sets the title.
+	 * @param title the title to set
+	 */
+	public final void setTitle(final String title) {
+		this.title = title;
 	}
 
 	/**

@@ -12,12 +12,14 @@ import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
 
 /**
  * DTO representation of a gameboard.
- *
+ * 
  */
 public class GameboardDTO {
-	private static final Logger log = LoggerFactory.getLogger(GameboardDTO.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(GameboardDTO.class);
 
 	private String id;
+	private String title;
 	private List<GameboardItem> questions;
 	private Wildcard wildCard;
 	private Date creationDate;
@@ -36,6 +38,8 @@ public class GameboardDTO {
 	 * 
 	 * @param id
 	 *            - unique id for the gameboard
+	 * @param title
+	 *            - optional title for gameboard.
 	 * @param questions
 	 *            - list of gameboard items (shallow questions).
 	 * @param creationDate
@@ -44,12 +48,14 @@ public class GameboardDTO {
 	 *            - simple DO that represents the filter criteria used to creat
 	 *            the gameboard.
 	 * @param ownerUserId
-	 *            - User id of the owner of the gameboard.            
+	 *            - User id of the owner of the gameboard.
 	 * @throws IllegalArgumentException
 	 */
-	public GameboardDTO(final String id, final List<GameboardItem> questions,
-			final Date creationDate, final GameFilter gameFilter, final String ownerUserId) {
+	public GameboardDTO(final String id, final String title,
+			final List<GameboardItem> questions, final Date creationDate,
+			final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
+		this.title = title;
 		this.questions = questions;
 		this.creationDate = creationDate;
 		this.gameFilter = gameFilter;
@@ -80,6 +86,25 @@ public class GameboardDTO {
 	 */
 	public final void setId(final String id) {
 		this.id = id;
+	}
+
+	/**
+	 * Gets the title.
+	 * 
+	 * @return the title
+	 */
+	public final String getTitle() {
+		return title;
+	}
+
+	/**
+	 * Sets the title.
+	 * 
+	 * @param title
+	 *            the title to set
+	 */
+	public final void setTitle(final String title) {
+		this.title = title;
 	}
 
 	/**
@@ -160,6 +185,7 @@ public class GameboardDTO {
 
 	/**
 	 * Gets the userId.
+	 * 
 	 * @return the userId
 	 */
 	public final String getOwnerUserId() {
@@ -168,7 +194,9 @@ public class GameboardDTO {
 
 	/**
 	 * Sets the ownerUserId.
-	 * @param ownerUserId the ownerUserId to set
+	 * 
+	 * @param ownerUserId
+	 *            the ownerUserId to set
 	 */
 	public final void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
