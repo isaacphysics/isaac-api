@@ -177,6 +177,26 @@ public final class Constants {
 	 * requested.
 	 */
 	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
+
+	/**
+	 * Constant representing the key for the FACEBOOK OAUTH secret.
+	 */
+	public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
+
+	/**
+	 * Constant representing the key for the FACEBOOK OAUTH client id.
+	 */
+	public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
+
+	/**
+	 * Constant representing the key for the FACEBOOK OAUTH callback uri.
+	 */
+	public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
+
+	/**
+	 * Constant representing the key for the FACEBOOK OAUTH permissions to be requested.
+	 */
+	public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
 	
 	/*
 	 * Default values.
