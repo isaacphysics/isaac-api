@@ -87,6 +87,13 @@ public class Content extends ContentBase {
 		this.value = value;
 		this.type = "content";
 		this.encoding = "markdown";
+
+		// useful for when we want to augment this POJO
+		if (null == this.children)
+			this.children = new ArrayList<ContentBase>();
+
+		if (null == this.tags)
+			this.tags = new HashSet<String>();
 	}
 
 	/**
