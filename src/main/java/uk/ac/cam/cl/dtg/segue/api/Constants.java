@@ -67,6 +67,13 @@ public final class Constants {
 	public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
 	
 	/**
+	 * Constant representing the key for the property id that represents whether
+	 * segue should track and load all git changes as they arrive on the
+	 * repository.
+	 */
+	public static final String CLEAR_CACHES_ON_APP_START = "CLEAR_CACHES_ON_APP_START";
+	
+	/**
 	 * Constant representing the segue application version. 
 	 */
 	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
