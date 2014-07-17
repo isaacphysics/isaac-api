@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 import ma.glasnost.orika.MapperFacade;
@@ -47,6 +48,7 @@ public class GameManager {
 
 	private final SegueApiFacade api;
 	private final GameboardPersistenceManager gameboardPersistenceManager;
+	private final Random randomGenerator;
 
 	/**
 	 * Creates a game manager that operates using the provided api.
@@ -59,6 +61,7 @@ public class GameManager {
 		this.gameboardPersistenceManager = new GameboardPersistenceManager(
 				api.requestAppDataManager(GAMEBOARD_COLLECTION_NAME,
 						GameboardDO.class), api);
+		this.randomGenerator = new Random();
 	}
 
 	/**
@@ -91,19 +94,20 @@ public class GameManager {
 	 *            The user that should be marked as the creator of the
 	 *            gameBoard.
 	 * @return a gameboard if possible that satisifies the conditions provided
-	 *         by the parameters. Will return null if no questions can be provided.
+	 *         by the parameters. Will return null if no questions can be
+	 *         provided.
 	 */
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
 			final List<String> conceptsList, final User boardOwner) {
+
 		String boardOwnerId = null;
 		if (boardOwner != null) {
 			boardOwnerId = boardOwner.getDbId();
 		}
 
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
-			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
 				Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays
@@ -115,8 +119,9 @@ public class GameManager {
 		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
 		// Search for questions that match the fields to map variable.
-		ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(
-				api.getLiveVersion(), fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
+		ResultsWrapper<ContentDTO> results = api
+				.findMatchingContentRandomOrder(api.getLiveVersion(),
+						fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
 
 		if (!results.getResults().isEmpty()) {
 			String uuid = UUID.randomUUID().toString();
@@ -128,8 +133,8 @@ public class GameManager {
 				sizeOfGameboard = results.getResults().size();
 			}
 
-			List<ContentDTO> questionsForGameboard = results.getResults().subList(
-					0, sizeOfGameboard);
+			List<ContentDTO> questionsForGameboard = results.getResults()
+					.subList(0, sizeOfGameboard);
 
 			// build gameboard using automapper
 			Injector injector = Guice.createInjector(
@@ -137,7 +142,7 @@ public class GameManager {
 					new SegueGuiceConfigurationModule());
 
 			MapperFacade mapper = injector.getInstance(MapperFacade.class);
-			
+
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
 			// Map each Content object into an IsaacQuestionInfo object
@@ -148,13 +153,15 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
-			GameboardDTO gameboard = new GameboardDTO(uuid, null,
-					gameboardReadyQuestions, new Date(), gameFilter,
+			GameboardDTO gameboardDTO = new GameboardDTO(uuid, null,
+					gameboardReadyQuestions, null,
+					generateRandomWildCardPosition(), new Date(), gameFilter,
 					boardOwnerId);
-			this.gameboardPersistenceManager
-					.temporarilyStoreGameboard(gameboard);
 
-			return gameboard;
+			this.gameboardPersistenceManager
+					.temporarilyStoreGameboard(gameboardDTO);
+
+			return gameboardDTO;
 		} else {
 			return null;
 		}
@@ -205,6 +212,16 @@ public class GameManager {
 	}
 
 	/**
+	 * Generate a random integer value to represent the position of the wildcard
+	 * tile in the gameboard.
+	 * 
+	 * @return integer between one and GAME_BOARD_SIZE+1
+	 */
+	private Integer generateRandomWildCardPosition() {
+		return randomGenerator.nextInt(GAME_BOARD_SIZE + 1);
+	}
+
+	/**
 	 * Helper method to generate field to match requirements for search queries
 	 * (specialised for isaac-filtering rules)
 	 * 
@@ -216,8 +233,7 @@ public class GameManager {
 	 *            make this board.
 	 * @return A map ready to be passed to a content provider
 	 */
-	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
-	generateFieldToMatchForQuestionFilter(
+	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateFieldToMatchForQuestionFilter(
 			final GameFilter gameFilter) {
 
 		// Validate that the field sizes are as we expect for tags

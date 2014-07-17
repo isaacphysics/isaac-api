@@ -1,10 +1,10 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -18,9 +18,53 @@ public class GameboardDO {
 	private String title;
 	private List<String> questions;
 	private Wildcard wildCard;
+	private Integer wildCardPosition;
 	private Date creationDate;
 	private GameFilter gameFilter;
 	private String ownerUserId;
+	
+	/**
+	 * Complete gameboard constructor with all dependencies.
+	 * 
+	 * @param id
+	 *            - unique id for the gameboard
+	 * @param title
+	 *            - optional title for gameboard.
+	 * @param questions
+	 *            - list of gameboard items (shallow questions).
+	 * @param wildCard
+	 *            - wildcard content object for advertising purposes.
+	 * @param wildcardPosition
+	 *            - position for where the front end should display this.
+	 * @param creationDate
+	 *            - Date in which the gameboard was created.
+	 * @param gameFilter
+	 *            - simple DO that represents the filter criteria used to creat
+	 *            the gameboard.
+	 * @param ownerUserId
+	 *            - User id of the owner of the gameboard.
+	 * @throws IllegalArgumentException
+	 */
+	public GameboardDO(final String id, final String title,
+			final List<String> questions, final Wildcard wildCard,
+			final Integer wildcardPosition, final Date creationDate,
+			final GameFilter gameFilter, final String ownerUserId) {
+		this.id = id;
+		this.title = title;
+		this.questions = questions;
+		this.wildCard = wildCard;
+		this.wildCardPosition = wildcardPosition;
+		this.creationDate = creationDate;
+		this.gameFilter = gameFilter;
+		this.ownerUserId = ownerUserId;	
+	}
+	
+	/**
+	 * Default constructor required for AutoMapping.
+	 */
+	public GameboardDO() {
+		this.questions = new ArrayList<String>();
+	}
 	
 	/**
 	 * Gets the id.
@@ -95,6 +139,24 @@ public class GameboardDO {
 	public final void setWildCard(final Wildcard wildCard) {
 		this.wildCard = wildCard;
 	}
+
+	/**
+	 * Gets the wildCardPosition.
+	 * @return the wildCardPosition
+	 */
+	public final Integer getWildCardPosition() {
+		return wildCardPosition;
+	}
+	
+
+	/**
+	 * Sets the wildCardPosition.
+	 * @param wildCardPosition the wildCardPosition to set
+	 */
+	public final void setWildCardPosition(final Integer wildCardPosition) {
+		this.wildCardPosition = wildCardPosition;
+	}
+	
 
 	/**
 	 * Gets the creationDate.

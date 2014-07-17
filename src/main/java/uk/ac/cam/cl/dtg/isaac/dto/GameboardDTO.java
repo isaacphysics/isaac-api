@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
 
 /**
@@ -15,13 +11,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
  * 
  */
 public class GameboardDTO {
-	private static final Logger log = LoggerFactory
-			.getLogger(GameboardDTO.class);
-
 	private String id;
 	private String title;
 	private List<GameboardItem> questions;
 	private Wildcard wildCard;
+	private Integer wildCardPosition;
 	private Date creationDate;
 	private GameFilter gameFilter;
 	private String ownerUserId;
@@ -42,6 +36,10 @@ public class GameboardDTO {
 	 *            - optional title for gameboard.
 	 * @param questions
 	 *            - list of gameboard items (shallow questions).
+	 * @param wildCard
+	 *            - wildcard content object for advertising purposes.
+	 * @param wildcardPosition
+	 *            - position for where the front end should display this.
 	 * @param creationDate
 	 *            - Date in which the gameboard was created.
 	 * @param gameFilter
@@ -52,21 +50,17 @@ public class GameboardDTO {
 	 * @throws IllegalArgumentException
 	 */
 	public GameboardDTO(final String id, final String title,
-			final List<GameboardItem> questions, final Date creationDate,
+			final List<GameboardItem> questions, final Wildcard wildCard,
+			final Integer wildcardPosition, final Date creationDate,
 			final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
 		this.title = title;
 		this.questions = questions;
+		this.wildCard = wildCard;
+		this.wildCardPosition = wildcardPosition;
 		this.creationDate = creationDate;
 		this.gameFilter = gameFilter;
 		this.ownerUserId = ownerUserId;
-
-		if (questions.size() > Constants.GAME_BOARD_SIZE) {
-			throw new IllegalArgumentException(
-					"Too many questions added to gameboard");
-		} else if (questions.size() < Constants.GAME_BOARD_SIZE) {
-			log.warn("Gameboard created without enough questions.");
-		}
 	}
 
 	/**
@@ -145,6 +139,22 @@ public class GameboardDTO {
 		this.wildCard = wildCard;
 	}
 
+	/**
+	 * Gets the wildCardPosition.
+	 * @return the wildCardPosition
+	 */
+	public final Integer getWildCardPosition() {
+		return wildCardPosition;
+	}
+	
+	/**
+	 * Sets the wildCardPosition.
+	 * @param wildCardPosition the wildCardPosition to set
+	 */
+	public final void setWildCardPosition(final Integer wildCardPosition) {
+		this.wildCardPosition = wildCardPosition;
+	}
+	
 	/**
 	 * Gets the creationDate.
 	 * 
