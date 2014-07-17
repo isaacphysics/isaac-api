@@ -51,7 +51,7 @@ public class GitContentManager implements IContentManager {
 			.getLogger(GitContentManager.class);
 
 	private static final String CONTENT_TYPE = "content";
-
+	// TODO: these should probably not be static.
 	private static Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 	private static Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 	private static final Map<String, Set<String>> tagsList = new ConcurrentHashMap<String, Set<String>>();
@@ -100,7 +100,7 @@ public class GitContentManager implements IContentManager {
 	public GitContentManager(final GitDb database,
 			final ISearchProvider searchProvider,
 			final ContentMapper contentMapper,
-			Map<String, Map<String, Content>> gitCache) {
+			final Map<String, Map<String, Content>> gitCache) {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
@@ -127,8 +127,8 @@ public class GitContentManager implements IContentManager {
 	public GitContentManager(final GitDb database,
 			final ISearchProvider searchProvider,
 			final ContentMapper contentMapper,
-			Map<String, Map<String, Content>> gitCache,
-			Map<String, Map<Content, List<String>>> indexProblemCache) {
+			final Map<String, Map<String, Content>> gitCache,
+			final Map<String, Map<Content, List<String>>> indexProblemCache) {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
@@ -303,7 +303,7 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public final void clearCache() {
-		log.info("Clearing Git content cache.");
+		log.info("Clearing all content caches.");
 		gitCache.clear();
 		searchProvider.expungeEntireSearchCache();
 		indexProblemCache.clear();

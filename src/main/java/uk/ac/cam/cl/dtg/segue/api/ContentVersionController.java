@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,13 @@ public class ContentVersionController {
 			final IContentManager contentManager) {
 		this.properties = properties;
 		this.contentManager = contentManager;
-
+		
+		// Check on object creation if we need to clear caches.
+		if (Boolean.parseBoolean(this.properties
+				.getProperty(Constants.CLEAR_CACHES_ON_APP_START))) {
+			contentManager.clearCache();
+		}
+		
 		// we want to make sure we have set a default liveVersion number
 		if (null == liveVersion) {
 			liveVersion = this.properties
