@@ -699,18 +699,23 @@ public class GitContentManager implements IContentManager {
 
 			// ensure content does not have children and a value
 			if (c.getValue() != null && !c.getChildren().isEmpty()) {
+				String id = c.getId();
+				String firstLine = "Content";
+				if (id != null) {
+					firstLine += ": " + id;
+				}
+				
 				this.registerContentProblem(
 						sha,
 						c,
-						"Content: "
-								+ c.getId()
+						firstLine
 								+ " in "
 								+ c.getCanonicalSourceFile()
 								+ " found with both children and a value. "
 								+ "This question will always be automatically marked as incorrect");
 
 				log.error("Invalid content item detected: The object with ID ("
-						+ c.getId() + ") has both children and a value.");
+						+ id + ") has both children and a value.");
 			}
 
 			// content type specific checks
