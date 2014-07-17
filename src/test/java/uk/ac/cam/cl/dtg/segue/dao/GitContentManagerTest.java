@@ -178,7 +178,7 @@ public class GitContentManagerTest {
 						anyString(), anyObject(Map.class), anyString(),
 						anyString(), anyString(), anyString(), anyString()))
 				.andReturn(searchHits).once();
-		
+
 		expect(searchHits.getResults()).andReturn(new LinkedList<String>())
 				.once();
 		expect(searchHits.getTotalResults()).andReturn(0L).once();
@@ -186,10 +186,9 @@ public class GitContentManagerTest {
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
 		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
 				.once();
-		
+
 		expect(contentMapper.getDTOByDOList((List<Content>) anyObject()))
-			.andReturn(new ArrayList<ContentDTO>())
-			.once();
+				.andReturn(new ArrayList<ContentDTO>()).once();
 
 		replay(database, searchProvider, searchHits, contentMapper);
 
@@ -488,6 +487,7 @@ public class GitContentManagerTest {
 				.once();
 		expect(content.getRelatedContent()).andReturn(relatedContent)
 				.atLeastOnce();
+		expect(content.getValue()).andReturn(null).once();
 		expect(content.getSrc())
 				.andReturn("http://www.website.com/media.media").atLeastOnce();
 		replay(content, database);
@@ -528,6 +528,7 @@ public class GitContentManagerTest {
 				.once();
 		expect(content.getRelatedContent()).andReturn(relatedContent)
 				.atLeastOnce();
+		expect(content.getValue()).andReturn(null).once();
 		expect(content.getSrc()).andReturn(src).atLeastOnce();
 		expect(database.verifyGitObject(INITIAL_VERSION, src)).andReturn(true)
 				.once();
@@ -570,6 +571,7 @@ public class GitContentManagerTest {
 				.once();
 		expect(content.getRelatedContent()).andReturn(relatedContent)
 				.atLeastOnce();
+		expect(content.getValue()).andReturn(null).once();
 		expect(content.getSrc()).andReturn(src).atLeastOnce();
 		expect(database.verifyGitObject(INITIAL_VERSION, src)).andReturn(false)
 				.once();
@@ -582,8 +584,96 @@ public class GitContentManagerTest {
 
 		assertTrue(result);
 		assertTrue(indexProblemCache.size() == 1);
+		assertTrue(indexProblemCache.get(INITIAL_VERSION).size() == 1);
 
 		verify(content, database);
+	}
+
+	/**
+	 * Test the validateReferentialIntegrity method to ensure it reports a
+	 * content fault if related content is not found in the cache.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void validateReferentialIntegrity_missingRelatedContent_trueReturned()
+			throws Exception {
+		Content content = createMock(Content.class);
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
+				content, indexProblemCache);
+
+		String uniqueObjectId = UUID.randomUUID().toString();
+
+		// Reference a non-existent object
+		List<String> relatedContent = new LinkedList<String>();
+		relatedContent.add(UUID.randomUUID().toString());
+
+		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
+				.once();
+		expect(content.getRelatedContent()).andReturn(relatedContent)
+				.atLeastOnce();
+		expect(content.getValue()).andReturn(null).once();
+		expect(content.getCanonicalSourceFile()).andReturn("").anyTimes();
+		expect(content.getTitle()).andReturn("").anyTimes();
+		replay(content);
+
+		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
+				"validateReferentialIntegrity", INITIAL_VERSION);
+
+		assertTrue(!result);
+		assertTrue(indexProblemCache.size() == 1);
+		assertTrue(indexProblemCache.get(INITIAL_VERSION).size() == 1);
+
+		verify(content);
+	}
+
+	/**
+	 * Test the validateReferentialIntegrity method to ensure it reports a
+	 * content fault if a content object has both children and a value.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void validateReferentialIntegrity_contentWithValueAndChildren_trueReturned()
+			throws Exception {
+		Content content = createMock(Content.class);
+		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
+				content, indexProblemCache);
+
+		String uniqueObjectId = UUID.randomUUID().toString();
+		
+		// Self reference for the purpose of passing the test
+		List<String> relatedContent = new LinkedList<String>();
+		relatedContent.add(uniqueObjectId);
+		
+		List<ContentBase> children = new LinkedList<ContentBase>();
+		Content child = createMock(Content.class);
+		expect(child.getId()).andReturn(null).once();
+		expect(child.getRelatedContent()).andReturn(null).once();
+		expect(child.getValue()).andReturn(null).once();
+		expect(child.getChildren()).andReturn(new LinkedList<ContentBase>()).atLeastOnce();
+		children.add(child);
+		
+		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getChildren()).andReturn(children).atLeastOnce();
+		expect(content.getRelatedContent()).andReturn(relatedContent)
+				.atLeastOnce();
+		expect(content.getValue()).andReturn(new String()).once();
+		expect(content.getCanonicalSourceFile()).andReturn("").anyTimes();
+		expect(content.getTitle()).andReturn("").anyTimes();
+		replay(child, content);
+
+		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
+				"validateReferentialIntegrity", INITIAL_VERSION);
+
+		assertTrue(result);
+		assertTrue(indexProblemCache.size() == 1);
+		assertTrue(indexProblemCache.get(INITIAL_VERSION).size() == 1);
+
+		verify(child, content);
 	}
 
 	/**
@@ -609,44 +699,6 @@ public class GitContentManagerTest {
 
 		return new GitContentManager(database, searchProvider, contentMapper,
 				gitCache, indexProblemCache);
-	}
-
-	/**
-	 * Test the validateReferentialIntegrity method to ensure it reports a
-	 * content fault if related content is not found in the cache.
-	 * 
-	 * @throws Exception
-	 */
-	@Test
-	public void validateReferentialIntegrity_missingRelatedContent_falseReturned()
-			throws Exception {
-		Content content = createMock(Content.class);
-		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
-		GitContentManager gitContentManager = validateReferentialIntegrity_setUpTest(
-				content, indexProblemCache);
-
-		String uniqueObjectId = UUID.randomUUID().toString();
-
-		// Reference a non-existant object
-		List<String> relatedContent = new LinkedList<String>();
-		relatedContent.add(UUID.randomUUID().toString());
-
-		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
-		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
-				.once();
-		expect(content.getRelatedContent()).andReturn(relatedContent)
-				.atLeastOnce();
-		expect(content.getCanonicalSourceFile()).andReturn("").anyTimes();
-		expect(content.getTitle()).andReturn("").anyTimes();
-		replay(content);
-
-		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
-				"validateReferentialIntegrity", INITIAL_VERSION);
-
-		assertTrue(!result);
-		assertTrue(indexProblemCache.size() == 1);
-
-		verify(content);
 	}
 
 	/**
@@ -710,7 +762,8 @@ public class GitContentManagerTest {
 
 	/**
 	 * Test the buildGitContentIndex method to ensure it reports a content fault
-	 * if different content with the same id is attempted to be added to the cache.
+	 * if different content with the same id is attempted to be added to the
+	 * cache.
 	 * 
 	 * @throws Exception
 	 */
@@ -733,7 +786,6 @@ public class GitContentManagerTest {
 		ObjectLoader loader = createMock(ObjectLoader.class);
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
 
-		
 		String id = UUID.randomUUID().toString();
 		Content content = new Content();
 		content.setId(id);

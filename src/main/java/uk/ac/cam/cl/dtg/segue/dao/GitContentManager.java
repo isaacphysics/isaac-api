@@ -163,8 +163,8 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> searchForContent(final String version,
-			final String searchString,
+	public final ResultsWrapper<ContentDTO> searchForContent(
+			final String version, final String searchString,
 			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
 		if (this.ensureCache(version)) {
 			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
@@ -187,8 +187,9 @@ public class GitContentManager implements IContentManager {
 							+ searchString + " in version " + version, e);
 				}
 			}
-			
-			return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
+
+			return new ResultsWrapper<ContentDTO>(
+					mapper.getDTOByDOList(searchResults),
 					searchHits.getTotalResults());
 		} else {
 			log.error("Unable to ensure cache for requested version" + version);
@@ -222,7 +223,6 @@ public class GitContentManager implements IContentManager {
 			List<ContentDTO> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
 
-			
 			finalResults = new ResultsWrapper<ContentDTO>(result,
 					searchHits.getTotalResults());
 		}
@@ -246,7 +246,7 @@ public class GitContentManager implements IContentManager {
 			// Required to deal with type polymorphism
 			List<ContentDTO> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
-			
+
 			finalResults = new ResultsWrapper<ContentDTO>(result,
 					searchHits.getTotalResults());
 		}
@@ -323,8 +323,8 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> getContentByTags(final String version,
-			final Set<String> tags) {
+	public final ResultsWrapper<ContentDTO> getContentByTags(
+			final String version, final Set<String> tags) {
 		if (null == version || null == tags) {
 			return null;
 		}
@@ -695,6 +695,27 @@ public class GitContentManager implements IContentManager {
 				for (String id : c.getRelatedContent()) {
 					whoAmI.put(id, c);
 				}
+			}
+
+			// ensure content does not have children and a value
+			if (c.getValue() != null && !c.getChildren().isEmpty()) {
+				String id = c.getId();
+				String firstLine = "Content";
+				if (id != null) {
+					firstLine += ": " + id;
+				}
+				
+				this.registerContentProblem(
+						sha,
+						c,
+						firstLine
+								+ " in "
+								+ c.getCanonicalSourceFile()
+								+ " found with both children and a value. "
+								+ "This content will always be automatically marked as incorrect");
+
+				log.error("Invalid content item detected: The object with ID ("
+						+ id + ") has both children and a value.");
 			}
 
 			// content type specific checks
