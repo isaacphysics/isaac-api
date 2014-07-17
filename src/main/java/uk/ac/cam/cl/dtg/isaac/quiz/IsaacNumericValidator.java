@@ -64,7 +64,8 @@ public class IsaacNumericValidator implements IValidator {
 											+ " " + answerFromUser.getUnits(),
 									quantityChoice.isCorrect(),
 									(Content) quantityChoice.getExplanation(),
-									true, true);
+									quantityChoice.isCorrect(),
+									quantityChoice.isCorrect());
 							// exact match so we can break
 							break;
 						} else if (answerFromUser.getValue().equals(
