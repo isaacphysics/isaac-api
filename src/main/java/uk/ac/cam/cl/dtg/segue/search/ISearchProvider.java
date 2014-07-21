@@ -144,9 +144,27 @@ public interface ISearchProvider {
 			int startIndex, int limit);
 
 	/**
+	 * Query for a list of Results that match a given id prefix.
+	 * 
+	 * This is useful if you use unanalysed fields for ids and use the dot
+	 * separator as a way of nesting fields.
+	 * 
+	 * @param index
+	 *            index that the content is stored in
+	 * @param indexType
+	 *            - type of index as registered with search provider.
+	 * @param idPrefix
+	 *            - idPrefix to search for.
+	 * @return A list of results that match the id prefix.
+	 */
+	ResultsWrapper<String> findByPrefix(String index, String indexType,
+			String fieldname, String prefix);
+
+	/**
 	 * Clear a specific index from the search providers cache.
 	 * 
-	 * @param index the index to delete from the search providers cache.
+	 * @param index
+	 *            the index to delete from the search providers cache.
 	 * @return true if successful false if not.
 	 */
 	boolean expungeIndexFromSearchCache(final String index);
