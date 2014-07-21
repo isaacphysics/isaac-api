@@ -781,8 +781,7 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			@PathParam("provider") final String signinProvider) {
-		return userManager.authenticateCallback(request, response,
-				signinProvider);
+		return userManager.authenticateCallback(request, signinProvider);
 	}
 
 	/**

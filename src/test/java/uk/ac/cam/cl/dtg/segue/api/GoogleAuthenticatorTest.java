@@ -34,7 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
  * Test class for the user manager class.
  * 
  */
-public class UserManagerTest {
+public class GoogleAuthenticatorTest {
 
 	private IUserDataManager dummyDatabase;
 	private String dummyHMACSalt;
@@ -265,7 +265,6 @@ public class UserManagerTest {
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		HttpServletResponse response = createMock(HttpServletResponse.class);
 		StringBuffer sb = new StringBuffer(
 				"http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
 		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
@@ -348,8 +347,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, response,
-				validOAuthProvider);
+		Response r = userManager.authenticateCallback(request, validOAuthProvider);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
@@ -375,7 +373,6 @@ public class UserManagerTest {
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		HttpServletResponse response = createMock(HttpServletResponse.class);
 		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
 		String someInvalidCSRFValue = "FRAUDHASHAPPENED";
 		String validOAuthProvider = "google";
@@ -401,8 +398,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, response,
-				validOAuthProvider);
+		Response r = userManager.authenticateCallback(request, validOAuthProvider);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
@@ -433,7 +429,6 @@ public class UserManagerTest {
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		HttpServletResponse response = createMock(HttpServletResponse.class);
 		String queryStringFromProviderWithCSRFToken 
 			= "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com"
 					+ "&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code"
@@ -462,8 +457,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, response,
-				validOAuthProvider);
+		Response r = userManager.authenticateCallback(request, validOAuthProvider);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
