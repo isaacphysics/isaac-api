@@ -60,13 +60,15 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 	private final JsonFactory jsonFactory;
 	private final HttpTransport httpTransport;
 
-	private final String secret;
 	private final String clientId;
+	private final String clientSecret;
 	private final String callbackUri;
 	private final Collection<String> requestedScopes;
 
-	private final String AUTH_SERVER = "https://graph.facebook.com/oauth/authorize";
-	private final String TOKEN_SERVER = "https://graph.facebook.com/oauth/access_token";
+	private final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
+	private final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/oauth/access_token";
+	private final String USER_INFO_URL = "https://graph.facebook.com/me";
+	private final String TOKEN_VERIFICATION_URL = "https://graph.facebook.com/debug_token";
 
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
@@ -74,14 +76,14 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 
 	@Inject
 	public FacebookAuthenticator(
-			@Named(Constants.FACEBOOK_SECRET) final String secret,
 			@Named(Constants.FACEBOOK_CLIENT_ID) final String clientId,
+			@Named(Constants.FACEBOOK_SECRET) final String clientSecret,
 			@Named(Constants.FACEBOOK_CALLBACK_URI) final String callbackUri,
 			@Named(Constants.FACEBOOK_OAUTH_SCOPES) final String requestedScopes) {
 		this.jsonFactory = new JacksonFactory();
 		this.httpTransport = new NetHttpTransport();
 
-		this.secret = secret;
+		this.clientSecret = clientSecret;
 		this.clientId = clientId;
 		this.callbackUri = callbackUri;
 		this.requestedScopes = Arrays.asList(requestedScopes.split(","));
@@ -110,7 +112,7 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 	public String getAuthorizationUrl(final String emailAddress)
 			throws IOException {
 		AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(
-				AUTH_SERVER, clientId);
+				AUTH_URL, clientId);
 
 		urlBuilder.set(Constants.STATE_PARAM_NAME, getAntiForgeryStateToken());
 		urlBuilder.set("redirect_uri", callbackUri);
@@ -139,11 +141,11 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 			throws IOException, CodeExchangeException, NoUserIdException {
 		try {
 			AuthorizationCodeTokenRequest request = new AuthorizationCodeTokenRequest(
-					httpTransport, jsonFactory, new GenericUrl(TOKEN_SERVER),
+					httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
 					authorizationCode);
 
 			request.setClientAuthentication(new ClientParametersAuthentication(
-					clientId, secret));
+					clientId, clientSecret));
 			request.setRedirectUri(callbackUri);
 
 			// TokenResponse response = request.execute();
@@ -186,9 +188,9 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 			// easier to get credentials this way.
 			Builder builder = new AuthorizationCodeFlow.Builder(
 					BearerToken.authorizationHeaderAccessMethod(),
-					httpTransport, jsonFactory, new GenericUrl(TOKEN_SERVER),
-					new ClientParametersAuthentication(clientId, secret),
-					clientId, AUTH_SERVER);
+					httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
+					new ClientParametersAuthentication(clientId, clientSecret),
+					clientId, AUTH_URL);
 			builder.setScopes(requestedScopes);
 
 			AuthorizationCodeFlow flow = builder.setDataStoreFactory(
@@ -232,9 +234,10 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 		FacebookUser userInfo = null;
 
 		try {
-			URL url = new URL("https://graph.facebook.com/me?access_token="
-					+ credentials.getAccessToken());
-			userInfo = JsonLoader.load(inputStreamToString(url.openStream()),
+			GenericUrl url = new GenericUrl(USER_INFO_URL);
+			url.set("access_token", credentials.getAccessToken());
+			
+			userInfo = JsonLoader.load(inputStreamToString(url.toURL().openStream()),
 					FacebookUser.class, true);
 
 			log.debug("Retrieved User info from Facebook");
@@ -266,12 +269,12 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 		Validate.notNull(credentials, "Credentials cannot be null");
 
 		try {
-			URL url = new URL(
-					"https://graph.facebook.com/debug_token?access_token="
-							+ clientId + "|" + secret + "&input_token="
-							+ credentials.getAccessToken());
+			GenericUrl urlBuilder = new GenericUrl(TOKEN_VERIFICATION_URL);
+			urlBuilder.set("access_token", clientId + "|" + clientSecret);
+			urlBuilder.set("input_token", credentials.getAccessToken());
+			
 			FacebookTokenInfo info = JsonLoader.load(
-					inputStreamToString(url.openStream()),
+					inputStreamToString(urlBuilder.toURL().openStream()),
 					FacebookTokenInfo.class, true);
 			return info.getData().getAppId().equals(clientId)
 					&& info.getData().isValid();
