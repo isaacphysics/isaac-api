@@ -29,6 +29,12 @@ public final class Constants {
 	public static final int GAME_BOARD_SIZE = 10;
 	
 	/**
+	 * GameboardItemState
+	 * Represents the potential states of a gameboard.
+	 */
+	public enum GameboardItemState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED, TRY_AGAIN }
+	
+	/**
 	 * Private constructor to prevent this class being created.
 	 */
 	private Constants() {
