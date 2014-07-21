@@ -43,29 +43,49 @@ public interface IContentManager {
 	 *         no content object is found.
 	 */
 	Content getById(String id, String version);
-	
+
+	/**
+	 * GetByIdPrefix Returns results that match a given id prefix for a
+	 * specified version number.
+	 * 
+	 * @param idPrefix
+	 *            - id prefix to search for.
+	 * @param version
+	 *            - version of the content to search against.
+	 * @return ResultsWrapper of objects that match the id prefix.
+	 */
+	ResultsWrapper<ContentDTO> getByIdPrefix(String idPrefix, String version);
+
 	/**
 	 * Method to allow bulk search of content based on the type field.
 	 * 
-	 * @param version - version of the content to search.
-	 * @param fieldsToMatch - Map which is used for field matching.
-	 * @param startIndex - the index of the first item to return.
-	 * @param limit - the maximum number of results to return.
+	 * @param version
+	 *            - version of the content to search.
+	 * @param fieldsToMatch
+	 *            - Map which is used for field matching.
+	 * @param startIndex
+	 *            - the index of the first item to return.
+	 * @param limit
+	 *            - the maximum number of results to return.
 	 * @return Results Wrapper containing results of the search.
 	 */
 	ResultsWrapper<ContentDTO> findByFieldNames(
 			String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit);
-	
+
 	/**
 	 * The same as findByFieldNames but the results list is returned in a
 	 * randomised order.
 	 * 
-	 * @param version - version of the content to search.
-	 * @param fieldsToMatch - Map which is used for field matching.
-	 * @param startIndex - the index of the first item to return.
-	 * @param limit - the maximum number of results to return.
+	 * @param version
+	 *            - version of the content to search.
+	 * @param fieldsToMatch
+	 *            - Map which is used for field matching.
+	 * @param startIndex
+	 *            - the index of the first item to return.
+	 * @param limit
+	 *            - the maximum number of results to return.
 	 * @return Results Wrapper containing results of the search.
 	 */
 	ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
@@ -75,9 +95,13 @@ public interface IContentManager {
 
 	/**
 	 * Allows fullText search using the internal search provider.
-	 * @param version - version of the content to search.
-	 * @param searchString - string to use as search term.
-	 * @param typesToInclude - list of types to include i.e. type field must match.
+	 * 
+	 * @param version
+	 *            - version of the content to search.
+	 * @param searchString
+	 *            - string to use as search term.
+	 * @param typesToInclude
+	 *            - list of types to include i.e. type field must match.
 	 * @return list of results ordered by relevance.
 	 */
 	ResultsWrapper<ContentDTO> searchForContent(String version,
@@ -86,13 +110,14 @@ public interface IContentManager {
 	/**
 	 * Search for content by providing a set of tags.
 	 * 
-	 * @param version - version of the content to search.
-	 * @param tags - set of tags that must match search results.
+	 * @param version
+	 *            - version of the content to search.
+	 * @param tags
+	 *            - set of tags that must match search results.
 	 * @return Content objects that are associated with any of the tags
 	 *         specified.
 	 */
-	ResultsWrapper<ContentDTO> getContentByTags(String version,
-			Set<String> tags);
+	ResultsWrapper<ContentDTO> getContentByTags(String version, Set<String> tags);
 
 	/**
 	 * Method allows raw output to be retrieved for given files in the git
@@ -103,7 +128,8 @@ public interface IContentManager {
 	 * @param filename
 	 *            - The full path of the file you wish to retrieve.
 	 * @return The output stream of the file contents
-	 * @throws IOException if failed IO occurs.
+	 * @throws IOException
+	 *             if failed IO occurs.
 	 */
 	ByteArrayOutputStream getFileBytes(String version, String filename)
 		throws IOException;
@@ -140,7 +166,8 @@ public interface IContentManager {
 	 * version of the content from its caches. This includes data held within
 	 * its search providers.
 	 * 
-	 * @param version - version to dump the cache of.
+	 * @param version
+	 *            - version to dump the cache of.
 	 */
 	void clearCache(String version);
 
@@ -148,7 +175,8 @@ public interface IContentManager {
 	 * A method that will return an unordered set of tags registered for a
 	 * particular version of the content.
 	 * 
-	 * @param version - version to look up tag list for.
+	 * @param version
+	 *            - version to look up tag list for.
 	 * @return A set of tags that have been already used in a particular version
 	 *         of the content
 	 */
@@ -166,7 +194,8 @@ public interface IContentManager {
 	 * Utility method that will check whether a version number supplied
 	 * validates.
 	 * 
-	 * @param version - version to validate.
+	 * @param version
+	 *            - version to validate.
 	 * @return true if the version specified is valid and can potentially be
 	 *         indexed, false if it cannot.
 	 */
@@ -186,8 +215,10 @@ public interface IContentManager {
 	/**
 	 * This method will compare two versions to determine which is the newer.
 	 * 
-	 * @param version1 - Version 1 to compare.
-	 * @param version2 - Version 2 to compare.
+	 * @param version1
+	 *            - Version 1 to compare.
+	 * @param version2
+	 *            - Version 2 to compare.
 	 * 
 	 * @return a positive number if version1 is newer, zero if they are the
 	 *         same, and a negative number if version 2 is newer.
@@ -197,10 +228,12 @@ public interface IContentManager {
 	/**
 	 * Get the problem map for a particular version.
 	 * 
-	 * @param version - version of the content to get problem map for.
+	 * @param version
+	 *            - version of the content to get problem map for.
 	 * @return the map containing the content objects with problems and
 	 *         associated list of problem messages. Or null if there is no
 	 *         problem index.
 	 */
 	Map<Content, List<String>> getProblemMap(String version);
+
 }

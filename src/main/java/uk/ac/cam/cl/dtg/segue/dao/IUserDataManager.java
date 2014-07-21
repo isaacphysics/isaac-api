@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
@@ -51,26 +52,36 @@ public interface IUserDataManager {
 	/**
 	 * Update user object in the data store.
 	 * 
-	 * @param user - the user object to persist.
+	 * @param user
+	 *            - the user object to persist.
 	 */
 	void updateUser(User user);
 
 	/**
 	 * Add item to user's field list.
 	 * 
-	 * @param user - user to update
-	 * @param key - field to update
-	 * @param value - value to replace field with.
+	 * @param user
+	 *            - user to update
+	 * @param key
+	 *            - field to update
+	 * @param value
+	 *            - value to replace field with.
 	 */
 	void addItemToListField(User user, String key, List value);
 
 	/**
 	 * Update a particular field on a user object.
 	 * 
-	 * @param user - the user object containing the users local id.
-	 * @param field - the name of the field that we want to update.
-	 * @param mapKey - The key to add to the map.
-	 * @param value - the object to use as the value for the field. Must be serializable.
+	 * @param user
+	 *            - the user object containing the users local id.
+	 * @param questionPageId
+	 *            - the high level id of the question page. This may be used for
+	 *            determining whether a page of questions has been completed.
+	 * @param fullQuestionId
+	 *            - the full id of the question.
+	 * @param questionAttempt
+	 *            - the question attempt object recording the users result.
 	 */
-	void addItemToMapField(User user, String field, String mapKey, Object value);
+	void registerQuestionAttempt(final User user, final String questionPageId,
+			final String fullQuestionId, final QuestionAttempt questionAttempt);
 }

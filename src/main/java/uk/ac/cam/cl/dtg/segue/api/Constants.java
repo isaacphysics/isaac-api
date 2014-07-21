@@ -192,9 +192,13 @@ public final class Constants {
 	public static final String CHILDREN_FIELDNAME = "children";
 	public static final String LEVEL_FIELDNAME = "level";
 
+	public static final String ID_SEPARATOR = "|"; 
+	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
+	
 	// User persistence model stuff
 	public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
 	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
+	public static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
 	
 	/**
 	 * Private constructor to prevent this class being created.

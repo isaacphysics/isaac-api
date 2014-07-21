@@ -171,4 +171,11 @@ public class MongoContentManager implements IContentManager {
 		throw new UnsupportedOperationException(
 				"MongoDB Content Manager does not support this operation.");
 	}
+
+	@Override
+	public ResultsWrapper<ContentDTO> getByIdPrefix(String idPrefix,
+			String version) {
+		throw new UnsupportedOperationException(
+				"MongoDB Content Manager does not support this operation.");
+	}
 }

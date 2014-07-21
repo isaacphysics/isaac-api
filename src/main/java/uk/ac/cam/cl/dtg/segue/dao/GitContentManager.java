@@ -163,6 +163,40 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
+	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix,
+			final String version) {
+		if (this.ensureCache(version)) {
+			ResultsWrapper<String> searchHits = this.searchProvider
+					.findByPrefix(version, CONTENT_TYPE, Constants.ID_FIELDNAME
+							+ "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+							idPrefix);
+
+			// TODO: Refactor out common mapping code. Also use auto mapper.
+			// setup object mapper to use preconfigured deserializer module.
+			// Required to deal with type polymorphism
+			ObjectMapper objectMapper = mapper.getContentObjectMapper();
+
+			List<Content> searchResults = new ArrayList<Content>();
+			for (String hit : searchHits.getResults()) {
+				try {
+					searchResults.add((Content) objectMapper.readValue(hit,
+							ContentBase.class));
+				} catch (IOException e) {
+					log.error("Error while trying to search for id prefix: "
+							+ idPrefix + " in version " + version, e);
+				}
+			}
+
+			return new ResultsWrapper<ContentDTO>(
+					mapper.getDTOByDOList(searchResults),
+					searchHits.getTotalResults());
+		} else {
+			log.error("Unable to ensure cache for requested version" + version);
+			return null;
+		}
+	}
+
+	@Override
 	public final ResultsWrapper<ContentDTO> searchForContent(
 			final String version, final String searchString,
 			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
@@ -601,12 +635,14 @@ public class GitContentManager implements IContentManager {
 
 		// Try to figure out the parent ids.
 		String newParentId = null;
-		if (null == parentId) {
-			if (content.getId() != null) {
-				newParentId = content.getId();
-			}
+		if (null == parentId && content.getId() != null) {
+			newParentId = content.getId();
 		} else {
-			newParentId = parentId + '.' + content.getId();
+			if (content.getId() != null) {
+				newParentId = parentId + Constants.ID_SEPARATOR + content.getId();	
+			} else {
+				newParentId = parentId;
+			}
 		}
 
 		content.setCanonicalSourceFile(canonicalSourceFile);
@@ -649,7 +685,7 @@ public class GitContentManager implements IContentManager {
 		// Concatenate the parentId with our id to get a fully qualified
 		// identifier.
 		if (content.getId() != null && parentId != null) {
-			content.setId(parentId + '.' + content.getId());
+			content.setId(parentId + Constants.ID_SEPARATOR + content.getId());
 		}
 
 		return content;
@@ -704,7 +740,7 @@ public class GitContentManager implements IContentManager {
 				if (id != null) {
 					firstLine += ": " + id;
 				}
-				
+
 				this.registerContentProblem(
 						sha,
 						c,
