@@ -34,6 +34,8 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import static java.util.concurrent.TimeUnit.*;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * This class is responsible for managing and persisting user data.
  */
@@ -239,6 +241,10 @@ public class GameboardPersistenceManager {
 				Constants.BooleanOperator.OR, Constants.ID_FIELDNAME),
 				gameboardDO.getQuestions());
 
+		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
+				Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
+				Arrays.asList(QUESTION_TYPE));
+		
 		// Search for questions that match the ids.
 		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api
 				.getLiveVersion(), fieldsToMap, 0, gameboardDO.getQuestions()
