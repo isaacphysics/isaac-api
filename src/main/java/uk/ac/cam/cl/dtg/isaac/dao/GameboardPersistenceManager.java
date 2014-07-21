@@ -88,7 +88,7 @@ public class GameboardPersistenceManager {
 	public final String saveGameboardToPermanentStorage(
 			final GameboardDTO gameboard) {
 		GameboardDO gameboardToSave = mapper.map(gameboard,
-				uk.ac.cam.cl.dtg.isaac.dos.GameboardDO.class);
+				GameboardDO.class);
 		// the mapping operation won't work for the list so we should just
 		// create a new one.
 		gameboardToSave.setQuestions(new ArrayList<String>());
