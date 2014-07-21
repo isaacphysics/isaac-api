@@ -14,6 +14,7 @@ import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.SegueObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
@@ -161,6 +162,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
 				globalProperties);
+		
+		// Configure security providers
+		this.bindConstantToProperty(Constants.FACEBOOK_SECRET,
+				globalProperties);
+		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
+				globalProperties);
+		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
+				globalProperties);
+		this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES,
+				globalProperties);
 
 		// Register a map of security providers
 		MapBinder<AuthenticationProvider, IFederatedAuthenticator> mapBinder = MapBinder
@@ -168,6 +179,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 						IFederatedAuthenticator.class);
 		mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(
 				GoogleAuthenticator.class);
+		mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(
+				FacebookAuthenticator.class);
 	}
 
 	/**
