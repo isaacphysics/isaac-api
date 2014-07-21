@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
+import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
+
 /**
  * DTO that provides high level information for Isaac Questions.
  * 
@@ -15,7 +17,7 @@ public class GameboardItem {
 	private List<String> tags;
 	
 	private Integer level;
-	private String state;
+	private GameboardItemState state;
 	
 	/**
 	 * Gets the id.
@@ -117,7 +119,7 @@ public class GameboardItem {
 	 * Gets the state.
 	 * @return the state
 	 */
-	public final String getState() {
+	public final GameboardItemState getState() {
 		return state;
 	}
 
@@ -125,7 +127,7 @@ public class GameboardItem {
 	 * Sets the state.
 	 * @param state the state to set
 	 */
-	public final void setState(final String state) {
+	public final void setState(final GameboardItemState state) {
 		this.state = state;
 	}
 

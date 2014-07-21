@@ -16,24 +16,28 @@ import com.mongodb.MongoException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
+import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
  * This class is responsible for managing and persisting user data.
+ * 
  * @author Stephen Cummins
  */
 public class MongoUserDataManager implements IUserDataManager {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MongoUserDataManager.class);
-	
+
 	private final DB database;
 	private static final String USER_COLLECTION_NAME = "users";
 	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
 
 	/**
 	 * Creates a new user data maanger object.
-	 * @param database - the database reference used for persistence.
+	 * 
+	 * @param database
+	 *            - the database reference used for persistence.
 	 */
 	@Inject
 	public MongoUserDataManager(final DB database) {
@@ -41,8 +45,8 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final String register(final User user, final AuthenticationProvider provider,
-			final String providerUserId) {
+	public final String register(final User user,
+			final AuthenticationProvider provider, final String providerUserId) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
@@ -83,43 +87,45 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
-		
+
 		WriteResult<User, String> r = jc.save(user);
 
 		if (r.getError() != null) {
 			log.error("Error during database update " + r.getError());
 		}
 	}
-	
+
 	@Override
-	public final void addItemToMapField(final User user, final String field, 
-			final String mapKey, final Object value) {
+	public void registerQuestionAttempt(final User user,
+			final String questionPageId, final String fullQuestionId,
+			final QuestionAttempt questionAttempt) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
-		
-		try{
-			WriteResult<User, String> r = jc.updateById(user.getDbId(), 
-					DBUpdate.set(field + "." + mapKey, value));
+
+		try {
+			WriteResult<User, String> r = jc.updateById(
+					user.getDbId(),
+					DBUpdate.set(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
+							+ questionPageId + "." + fullQuestionId, questionAttempt));
 
 			if (r.getError() != null) {
 				log.error("Error during database update " + r.getError());
-			}			
+			}
 		} catch (MongoException e) {
 			log.error("MongoDB Database Exception. ", e);
 		}
 	}
-	
+
 	@Override
-	public final void addItemToListField(
-			final User user, 
-			final String fieldName, 
-			final List value) {
+	public final void addItemToListField(final User user,
+			final String fieldName, final List value) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
-		
-		WriteResult<User, String> r = jc.updateById(user.getDbId(), DBUpdate.addToSet(fieldName, value));
+
+		WriteResult<User, String> r = jc.updateById(user.getDbId(),
+				DBUpdate.addToSet(fieldName, value));
 
 		if (r.getError() != null) {
 			log.error("Error during database update " + r.getError());
@@ -137,9 +143,10 @@ public class MongoUserDataManager implements IUserDataManager {
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 
-		LinkedAccount linkAccount = jc.findOne(DBQuery.and(
-				DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider),
-				DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, providerUserId)));
+		LinkedAccount linkAccount = jc.findOne(DBQuery.and(DBQuery.is(
+				Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider), DBQuery
+				.is(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME,
+						providerUserId)));
 
 		if (null == linkAccount) {
 			return null;
@@ -152,9 +159,12 @@ public class MongoUserDataManager implements IUserDataManager {
 	 * Creates a link record, connecting a local user to an external provider
 	 * for authentication purposes.
 	 * 
-	 * @param user - the local user object
-	 * @param provider - the provider that authenticated the user.
-	 * @param providerUserId - the providers unique id for the user.
+	 * @param user
+	 *            - the local user object
+	 * @param provider
+	 *            - the provider that authenticated the user.
+	 * @param providerUserId
+	 *            - the providers unique id for the user.
 	 * @return true if success false if failure.
 	 */
 	private boolean linkAuthProviderToAccount(final User user,

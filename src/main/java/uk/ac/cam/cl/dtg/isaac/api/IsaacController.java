@@ -66,7 +66,7 @@ public class IsaacController {
 	 * 
 	 */
 	public IsaacController() {
-		// Get an singleton instances of dependencies 
+		// Get an singleton instances of dependencies
 		// without using the rest endpoints.
 		Injector injector = Guice.createInjector(
 				new IsaacGuiceConfigurationModule(),
@@ -74,8 +74,7 @@ public class IsaacController {
 		api = injector.getInstance(SegueApiFacade.class);
 		propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		gameManager = injector.getInstance(GameManager.class);
-		
-		
+
 		// test of user registration - this is just a snippet for future
 		// reference as I didn't know where else to put it.
 		// User user = api.getCurrentUser(req);
@@ -85,18 +84,20 @@ public class IsaacController {
 		// else
 		// log.info("User Logged in: " + user.getEmail());
 	}
-	
+
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
 	 * endpoints for the isaac api.
 	 * 
-	 * @param api - Instance of segue Api
-	 * @param propertiesLoader - Instance of properties Loader
-	 * @param gameManager - Instance of Game Manager
+	 * @param api
+	 *            - Instance of segue Api
+	 * @param propertiesLoader
+	 *            - Instance of properties Loader
+	 * @param gameManager
+	 *            - Instance of Game Manager
 	 */
-	public IsaacController(
-			final SegueApiFacade api, 
-			final PropertiesLoader propertiesLoader, 
+	public IsaacController(final SegueApiFacade api,
+			final PropertiesLoader propertiesLoader,
 			final GameManager gameManager) {
 		this.api = api;
 		this.propertiesLoader = propertiesLoader;
@@ -129,20 +130,20 @@ public class IsaacController {
 
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
-		
+
 		String newLimit = null;
-		
+
 		if (limit != null) {
 			newLimit = limit;
 		}
-		
+
 		// options
 		if (ids != null) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
 			newLimit = String.valueOf(idsList.size());
 		}
-		
+
 		if (tags != null) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		}
@@ -177,7 +178,7 @@ public class IsaacController {
 
 	/**
 	 * REST end point to provide a list of questions.
-	 *
+	 * 
 	 * @param ids
 	 *            - the ids of the concepts to request.
 	 * @param tags
@@ -197,8 +198,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/questions")
 	@Produces("application/json")
-	public final Response getQuestionList(
-			@QueryParam("ids") final String ids, 
+	public final Response getQuestionList(@QueryParam("ids") final String ids,
 			@QueryParam("tags") final String tags,
 			@QueryParam("levels") final String level,
 			@QueryParam("start_index") final String startIndex,
@@ -209,17 +209,17 @@ public class IsaacController {
 
 		String newLimit = null;
 
-		// options	
+		// options
 		if (limit != null) {
 			newLimit = limit;
 		}
-		
+
 		if (ids != null) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
 			newLimit = String.valueOf(idsList.size());
 		}
-	
+
 		if (tags != null) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		}
@@ -227,7 +227,7 @@ public class IsaacController {
 		if (level != null) {
 			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
 		}
-		
+
 		return listContentObjects(fieldsToMatch, startIndex, newLimit);
 	}
 
@@ -360,12 +360,13 @@ public class IsaacController {
 			GameboardDTO gameboard = gameManager.generateRandomGameboard(
 					subjectsList, fieldsList, topicsList, levelsList,
 					conceptsList, api.getCurrentUser(request));
-			
+
 			if (null == gameboard) {
-				return new SegueErrorResponse(Status.NO_CONTENT, 
-						"We cannot find any questions based on your filter criteria.").toResponse();
+				return new SegueErrorResponse(Status.NO_CONTENT,
+						"We cannot find any questions based on your filter criteria.")
+						.toResponse();
 			}
-			
+
 			if (gameboard.getOwnerUserId() != null) {
 				// go ahead and persist the gameboard
 				gameManager.permanentlyStoreGameboard(gameboard);
@@ -381,6 +382,9 @@ public class IsaacController {
 	/**
 	 * REST end point to provide a gameboard containing a list of questions.
 	 * 
+	 * @param request
+	 *            - so that wer can extract the users session information if
+	 *            available.
 	 * @param gameboardId
 	 *            - the unique id of the gameboard to be requested
 	 * @return a Response containing a gameboard object.
@@ -389,11 +393,13 @@ public class IsaacController {
 	@Path("gameboards/{gameboard_id}")
 	@Produces("application/json")
 	public final Response getGameboard(
+			@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
 
 		// tags are and relationships except for subject
 		try {
-			GameboardDTO gameboard = gameManager.getGameboard(gameboardId);
+			GameboardDTO gameboard = gameManager.getGameboard(gameboardId,
+					api.getCurrentUser(request));
 
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
@@ -407,7 +413,6 @@ public class IsaacController {
 					"Your gameboard filter request is invalid.").toResponse();
 		}
 	}
-	
 
 	/**
 	 * REST end point to find all of a user's gameboards.
@@ -422,22 +427,23 @@ public class IsaacController {
 	public final Response getGameboardByUser(
 			@Context final HttpServletRequest request) {
 		User user = api.getCurrentUser(request);
-		
+
 		if (null == user) {
 			// user not logged in return not authorized
-			return new SegueErrorResponse(Status.UNAUTHORIZED, 
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"User not logged in. Unable to retrieve gameboards.")
-				.toResponse();
+					.toResponse();
 		}
 
-		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user.getDbId());
-		
+		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user
+				.getDbId());
+
 		if (null == gameboards) {
 			return Response.noContent().build();
 		}
-		
+
 		return Response.ok(gameboards).build();
-	}	
+	}
 
 	/**
 	 * Rest end point that gets a single page based on a given id.
@@ -455,14 +461,13 @@ public class IsaacController {
 
 		// options
 		if (null != pageId) {
-			fieldsToMatch
-					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-							Arrays.asList(pageId));
+			fieldsToMatch.put(ID_FIELDNAME + "."
+					+ UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
 		}
 
 		return this.findSingleResult(fieldsToMatch);
 	}
-	
+
 	/**
 	 * Rest end point that gets a single page fragment based on a given id.
 	 * 
@@ -473,19 +478,20 @@ public class IsaacController {
 	@GET
 	@Path("pages/fragments/{fragment_id}")
 	@Produces("application/json")
-	public final Response getPageFragment(@PathParam("fragment_id") final String fragmentId) {
+	public final Response getPageFragment(
+			@PathParam("fragment_id") final String fragmentId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
 
 		// options
 		if (null != fragmentId) {
-			fieldsToMatch
-					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-							Arrays.asList(fragmentId));
+			fieldsToMatch.put(ID_FIELDNAME + "."
+					+ UNPROCESSED_SEARCH_FIELD_SUFFIX,
+					Arrays.asList(fragmentId));
 		}
 
 		return this.findSingleResult(fieldsToMatch);
-	}	
+	}
 
 	/**
 	 * Rest end point to allow images to be requested from the database.
@@ -569,55 +575,56 @@ public class IsaacController {
 	// return ImmutableMap.of("result", "success");
 	// }
 
-//	/**
-//	 * This method will look at a content objects related content list and
-//	 * return a list of contentInfo objects which can be used for creating links
-//	 * etc.
-//	 * 
-//	 * This method returns null if the content object provided has no related
-//	 * Content
-//	 * 
-//	 * @param proxyPath
-//	 *            - the string prefix for the server being used
-//	 * @param content
-//	 *            - the content object which contains related content
-//	 * @return a list of content summary objects.
-//	 */
-//	private List<ContentSummary> buildMetaContentmap(final String proxyPath,
-//			final Content content) {
-//		if (null == content) {
-//			return null;
-//		} else if (content.getRelatedContent() == null
-//				|| content.getRelatedContent().isEmpty()) {
-//			return null;
-//		}
-//
-//		List<ContentSummary> contentInfoList = new ArrayList<ContentSummary>();
-//
-//		for (String id : content.getRelatedContent()) {
-//			try {
-//				Content relatedContent = (Content) api.getContentById(
-//						api.getLiveVersion(), id).getEntity();
-//
-//				if (relatedContent == null) {
-//					log.warn("Related content (" + id
-//							+ ") does not exist in the data store.");
-//				} else {
-//					ContentSummary contentInfo = extractContentSummary(
-//							relatedContent, proxyPath);
-//					contentInfoList.add(contentInfo);
-//				}
-//			} catch (ClassCastException exception) {
-//				log.error("Error whilst trying to cast one object to another.",
-//						exception);
-//				// TODO: fix how SegueErrorResponse exception objects are
-//				// handled - they clearly cannot be cast as content objects
-//				// here.
-//			}
-//		}
-//
-//		return contentInfoList;
-//	}
+	// /**
+	// * This method will look at a content objects related content list and
+	// * return a list of contentInfo objects which can be used for creating
+	// links
+	// * etc.
+	// *
+	// * This method returns null if the content object provided has no related
+	// * Content
+	// *
+	// * @param proxyPath
+	// * - the string prefix for the server being used
+	// * @param content
+	// * - the content object which contains related content
+	// * @return a list of content summary objects.
+	// */
+	// private List<ContentSummary> buildMetaContentmap(final String proxyPath,
+	// final Content content) {
+	// if (null == content) {
+	// return null;
+	// } else if (content.getRelatedContent() == null
+	// || content.getRelatedContent().isEmpty()) {
+	// return null;
+	// }
+	//
+	// List<ContentSummary> contentInfoList = new ArrayList<ContentSummary>();
+	//
+	// for (String id : content.getRelatedContent()) {
+	// try {
+	// Content relatedContent = (Content) api.getContentById(
+	// api.getLiveVersion(), id).getEntity();
+	//
+	// if (relatedContent == null) {
+	// log.warn("Related content (" + id
+	// + ") does not exist in the data store.");
+	// } else {
+	// ContentSummary contentInfo = extractContentSummary(
+	// relatedContent, proxyPath);
+	// contentInfoList.add(contentInfo);
+	// }
+	// } catch (ClassCastException exception) {
+	// log.error("Error whilst trying to cast one object to another.",
+	// exception);
+	// // TODO: fix how SegueErrorResponse exception objects are
+	// // handled - they clearly cannot be cast as content objects
+	// // here.
+	// }
+	// }
+	//
+	// return contentInfoList;
+	// }
 
 	/**
 	 * Generate a URI that will enable us to find an object again.
@@ -681,7 +688,8 @@ public class IsaacController {
 				new SegueGuiceConfigurationModule());
 		MapperFacade mapper = injector.getInstance(MapperFacade.class);
 
-		ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
+		ContentSummaryDTO contentInfo = mapper.map(content,
+				ContentSummaryDTO.class);
 		contentInfo.setUrl(generateApiUrl(content));
 
 		return contentInfo;
@@ -772,9 +780,9 @@ public class IsaacController {
 			c = conceptList.getResults().get(0);
 		}
 
-//		String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-//		ContentPage cp = new ContentPage(c.getId(), c,
-//				this.buildMetaContentmap(proxyPath, c));
+		// String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
+		// ContentPage cp = new ContentPage(c.getId(), c,
+		// this.buildMetaContentmap(proxyPath, c));
 
 		return Response.ok(c).build();
 	}

@@ -55,8 +55,6 @@ public class UserManager {
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
 	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
 
-	private static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
-
 	private final IUserDataManager database;
 	private final String hmacSalt;
 	private final Map<AuthenticationProvider, IFederatedAuthenticator> registeredAuthProviders;
@@ -439,9 +437,15 @@ public class UserManager {
 		QuestionAttempt questionAttempt = new QuestionAttempt(
 				questionResponse.getQuestionId(), new Date(),
 				questionResponse.isCorrect(), questionResponse.getAnswer());
+		// We are operating against the convention that the first component of
+		// an id is the question page
+		// and that the id separator is |
+		String[] questionPageId = questionAttempt.getQuestionId().split(
+				Constants.ESCAPED_ID_SEPARATOR);
 
-		this.database.addItemToMapField(user, QUESTION_ATTEMPTS_FIELDNAME,
+		this.database.registerQuestionAttempt(user, questionPageId[0],
 				questionAttempt.getQuestionId(), questionAttempt);
+
 		log.info("Question information recorded for user: " + user.getDbId());
 	}
 
@@ -449,8 +453,9 @@ public class UserManager {
 	 * Method to update a user object in our database.
 	 * 
 	 * @param user
+	 *            - the user to update.
 	 */
-	private void updateUserObject(final User user) {
+	public void updateUserObject(final User user) {
 		this.database.updateUser(user);
 	}
 
@@ -615,7 +620,7 @@ public class UserManager {
 	private User getUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
-			throws AuthenticatorSecurityException, NoUserIdException,
+		throws AuthenticatorSecurityException, NoUserIdException,
 			IOException {
 		// get user info from federated provider
 		// note the userid field in this object will contain the providers user
@@ -692,7 +697,7 @@ public class UserManager {
 	private String getOauth2InternalRefCode(
 			final IOAuth2Authenticator oauthProvider,
 			final HttpServletRequest request)
-			throws AuthenticationCodeException, IOException,
+		throws AuthenticationCodeException, IOException,
 			CodeExchangeException, NoUserIdException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
@@ -743,7 +748,7 @@ public class UserManager {
 	 *             - if the session retrieved is an invalid URI.
 	 */
 	private URI loadRedirectUrl(final HttpServletRequest request)
-			throws URISyntaxException {
+		throws URISyntaxException {
 		String url = (String) request.getSession().getAttribute(
 				Constants.REDIRECT_URL_PARAM_NAME);
 		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);

@@ -627,8 +627,7 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		ImmutableMap<String, Collection<String>> result 
-			= new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
 				.put("version_list", limitedVersions).build();
 
 		return Response.ok().entity(result).build();
@@ -686,8 +685,7 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		ImmutableMap<String, Collection<String>> result 
-			= new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
 				.put("cachedVersions",
 						contentPersistenceManager.getCachedVersionList())
 				.build();
@@ -970,8 +968,7 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
-	generateDefaultFieldToMatch(
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
@@ -1016,5 +1013,20 @@ public class SegueApiFacade {
 			final String databaseName, final Class<T> classType) {
 		return SegueGuiceConfigurationModule.getAppDataManager(databaseName,
 				classType);
+	}
+
+	/**
+	 * Library method for finding content by id prefix.
+	 * 
+	 * @param version
+	 *            - of the content to search for.
+	 * @param idPrefix
+	 *            - prefix / id to match against.
+	 * @return a results wrapper containing any matching content.
+	 */
+	public final ResultsWrapper<ContentDTO> searchByIdPrefix(
+			final String version, final String idPrefix) {
+		return this.contentVersionController.getContentManager().getByIdPrefix(
+				idPrefix, version);
 	}
 }

@@ -29,9 +29,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -107,7 +109,8 @@ public class GameManager {
 			boardOwnerId = boardOwner.getDbId();
 		}
 
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
+			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
 				Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays
@@ -161,7 +164,7 @@ public class GameManager {
 			this.gameboardPersistenceManager
 					.temporarilyStoreGameboard(gameboardDTO);
 
-			return gameboardDTO;
+			return augmentGameboardWithUserInformation(gameboardDTO, boardOwner);
 		} else {
 			return null;
 		}
@@ -184,10 +187,16 @@ public class GameManager {
 	 * 
 	 * @param gameboardId
 	 *            - to look up.
+	 * @param user
+	 *            - the user (if available) of who wants it. THis allows state
+	 *            information to be retrieved.
 	 * @return the gameboard or null.
 	 */
-	public final GameboardDTO getGameboard(final String gameboardId) {
-		return this.gameboardPersistenceManager.getGameboardById(gameboardId);
+	public final GameboardDTO getGameboard(final String gameboardId,
+			final User user) {
+		return augmentGameboardWithUserInformation(
+				this.gameboardPersistenceManager.getGameboardById(gameboardId),
+				user);
 	}
 
 	/**
@@ -212,6 +221,77 @@ public class GameManager {
 	}
 
 	/**
+	 * Attempt to calculate the gameboard state from a users history.
+	 * 
+	 * @param gameboardDTO
+	 *            - the DTO of the gameboard
+	 * @param user
+	 *            - that we are using for the augmentation.
+	 * @return Augmented Gameboard
+	 */
+	public final GameboardDTO augmentGameboardWithUserInformation(
+			final GameboardDTO gameboardDTO, final User user) {
+		if (null == gameboardDTO) {
+			return null;
+		}
+		if (null == user) {
+			return gameboardDTO;
+		}
+
+		for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
+			gameItem.setState(this.calculateQuestionState(gameItem, user));
+		}
+
+		return gameboardDTO;
+	}
+
+	/**
+	 * CalculateQuestionState
+	 * 
+	 * This method will calculate the question state for use in gameboards based
+	 * on the question.
+	 * 
+	 * @param item
+	 *            - the gameboard item / question tile.
+	 * @param user
+	 *            - the user that may or may not have attempted questions in the
+	 *            gameboard.
+	 * @return The state of the gameboard item.
+	 */
+	private GameboardItemState calculateQuestionState(final GameboardItem item,
+			final User user) {
+		String questionPageId = item.getId();
+
+		if (user.getQuestionAttempts() != null
+				&& user.getQuestionAttempts().containsKey(questionPageId)) {
+			// go through each question in the question page
+			ResultsWrapper<ContentDTO> listOfQuestions = api.searchByIdPrefix(
+					api.getLiveVersion(), questionPageId
+							+ Constants.ID_SEPARATOR);
+
+			for (ContentDTO contentDTO : listOfQuestions.getResults()) {
+				if (!(contentDTO instanceof QuestionDTO)) {
+					continue;
+				}
+
+				if (user.getQuestionAttempts().containsKey(questionPageId)) {
+					QuestionAttempt attempt = user.getQuestionAttempts()
+							.get(questionPageId).get(contentDTO.getId());
+					if (null == attempt) {
+						return GameboardItemState.IN_PROGRESS;
+					}
+					if (!attempt.isSuccess()) {
+						return GameboardItemState.TRY_AGAIN;
+					}
+				}
+			}
+			return GameboardItemState.COMPLETED;
+		}
+		// default to not attempted
+		return GameboardItemState.NOT_ATTEMPTED;
+	}
+
+	/**
 	 * Generate a random integer value to represent the position of the wildcard
 	 * tile in the gameboard.
 	 * 
@@ -233,7 +313,8 @@ public class GameManager {
 	 *            make this board.
 	 * @return A map ready to be passed to a content provider
 	 */
-	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateFieldToMatchForQuestionFilter(
+	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	generateFieldToMatchForQuestionFilter(
 			final GameFilter gameFilter) {
 
 		// Validate that the field sizes are as we expect for tags
@@ -377,4 +458,5 @@ public class GameManager {
 		}
 		return true;
 	}
+
 }

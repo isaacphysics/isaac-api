@@ -27,6 +27,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.PrefixQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
@@ -38,17 +39,17 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
-
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
+
 /**
- * A class that works as an adapter for ElasticSearch. 
+ * A class that works as an adapter for ElasticSearch.
+ * 
  * @author Stephen Cummins
- *
+ * 
  */
 public class ElasticSearchProvider implements ISearchProvider {
-
 	private static final Logger log = LoggerFactory
 			.getLogger(ElasticSearchProvider.class);
 
@@ -77,8 +78,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final boolean indexObject(final String index, final String indexType,
-			final String content, final String uniqueId) {
+	public final boolean indexObject(final String index,
+			final String indexType, final String content, final String uniqueId) {
 		// check index already exists if not execute any initialisation steps.
 		if (!this.hasIndex(index)) {
 			this.sendMappingCorrections(index, indexType);
@@ -123,8 +124,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 			// this is a restriction on elastic search.
 			log.warn("Setting limit to be the size of the result set... "
 					+ "Unlimited search may cause performance issues");
-			int largerlimit = this.executeQuery(searchRequest).getTotalResults()
-					.intValue();
+			int largerlimit = this.executeQuery(searchRequest)
+					.getTotalResults().intValue();
 			searchRequest.setSize(largerlimit);
 		}
 
@@ -306,8 +307,9 @@ public class ElasticSearchProvider implements ISearchProvider {
 		// This Set will allow us to calculate the minimum should match value -
 		// it is assumed that for each or'd field there should be a match
 		Set<String> shouldMatchSet = Sets.newHashSet();
-		for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> pair 
-				: fieldsToMatch.entrySet()) {
+		for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+		pair : fieldsToMatch
+				.entrySet()) {
 			// extract the MapEntry which contains a key value pair of the
 			// operator and the list of operands to match against.
 			Constants.BooleanOperator operatorForThisField = pair.getKey()
@@ -460,5 +462,17 @@ public class ElasticSearchProvider implements ISearchProvider {
 		}
 
 		return result;
+	}
+
+	@Override
+	public ResultsWrapper<String> findByPrefix(final String index,
+			final String indexType, final String fieldname, final String prefix) {
+		ResultsWrapper<String> resultList;
+
+		PrefixQueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
+
+		resultList = this.executeBasicQuery(index, indexType, query);
+
+		return resultList;
 	}
 }
