@@ -195,15 +195,12 @@ public class UserManager {
 	 * 
 	 * @param request
 	 *            - http request from the user.
-	 * @param response
-	 *            - http response for the user.
 	 * @param provider
 	 *            - the provider who has just authenticated the user.
 	 * @return Response redirecting the user to their redirect url.
 	 */
 	public final Response authenticateCallback(
-			final HttpServletRequest request,
-			final HttpServletResponse response, final String provider) {
+			final HttpServletRequest request, final String provider) {
 		User currentUser = getCurrentUser(request);
 
 		if (null != currentUser) {

@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -19,10 +18,11 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
@@ -39,7 +39,8 @@ public class UserManagerTest {
 	private IUserDataManager dummyDatabase;
 	private String dummyHMACSalt;
 	private Map<AuthenticationProvider, IFederatedAuthenticator> dummyProvidersMap;
-	private static final String CSRF_Test_VALUE = "googleomrdd07hbe6vc1efim5rnsgvms";
+	private static final String CSRF_Test_VALUE = "facebookomrdd07hbe6vc1efim5rnsgvms";
+	private static final String DEFAULT_URL = "facebookomrdd07hbe6vc1efim5rnsgvms";
 
 	/**
 	 * Initial configuration of tests.
@@ -83,9 +84,9 @@ public class UserManagerTest {
 	@Test
 	public final void getCurrentUser_isNotLoggedIn_noUserObjectReturned() {
 		// Arrange
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
 
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
@@ -114,9 +115,9 @@ public class UserManagerTest {
 	@Test
 	public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() {
 		// Arrange
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
 
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
@@ -164,9 +165,9 @@ public class UserManagerTest {
 	@Test
 	public final void authenticate_badProviderGiven_givesServerErrorResponse() {
 		// Arrange
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -195,7 +196,7 @@ public class UserManagerTest {
 	}
 
 	/**
-	 * Test that a valid OAuth provider (Google) provides a redirect response.
+	 * Test that a valid OAuth provider (Facebook) provides a redirect response.
 	 * 
 	 * @throws IOException - test exception
 	 */
@@ -204,17 +205,17 @@ public class UserManagerTest {
 	authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
 		throws IOException {
 		// Arrange
-		IOAuth2Authenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		IOAuth2Authenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE,
-				(IFederatedAuthenticator) dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK,
+				(IFederatedAuthenticator) dummyFacebookAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		String exampleRedirectUrl = "https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
-		String someValidProviderString = "google";
+		String someValidProviderString = "facebook";
 		Status expectedResponseCode = Status.TEMPORARY_REDIRECT;
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
@@ -229,9 +230,9 @@ public class UserManagerTest {
 		replay(request);
 		replay(dummyDatabase);
 
-		expect(dummyGoogleAuth.getAuthorizationUrl()).andReturn(
+		expect(dummyFacebookAuth.getAuthorizationUrl()).andReturn(
 				exampleRedirectUrl);
-		replay(dummyGoogleAuth);
+		replay(dummyFacebookAuth);
 
 		// Act
 		Response r = userManager.authenticate(request, someValidProviderString,
@@ -255,17 +256,16 @@ public class UserManagerTest {
 		throws IOException, CodeExchangeException, NoUserIdException,
 			AuthenticatorSecurityException {
 		// Arrange
-		IOAuth2Authenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		IOAuth2Authenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE,
-				(IFederatedAuthenticator) dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK,
+				(IFederatedAuthenticator) dummyFacebookAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		HttpServletResponse response = createMock(HttpServletResponse.class);
 		StringBuffer sb = new StringBuffer(
 				"http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
 		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
@@ -274,7 +274,7 @@ public class UserManagerTest {
 		String someProviderGeneratedLookupValue = "MYPROVIDERREF";
 		String someProviderUniqueUserId = "GOOGLEUSER-1";
 		String someSegueUserId = "533ee66842f639e95ce35e29";
-		String validOAuthProvider = "google";
+		String validOAuthProvider = "facebook";
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -295,17 +295,17 @@ public class UserManagerTest {
 		expect(request.getRequestURL()).andReturn(sb);
 
 		// Mock extract auth code call
-		expect(dummyGoogleAuth.extractAuthCode(fullResponseUrlFromProvider))
+		expect(dummyFacebookAuth.extractAuthCode(fullResponseUrlFromProvider))
 				.andReturn(authorizationCodeFromProviderUrl);
 
 		// Mock exchange code for token call
-		expect(dummyGoogleAuth.exchangeCode(authorizationCodeFromProviderUrl))
+		expect(dummyFacebookAuth.exchangeCode(authorizationCodeFromProviderUrl))
 				.andReturn(someProviderGeneratedLookupValue);
 
 		expect(
-				((IFederatedAuthenticator) dummyGoogleAuth)
+				((IFederatedAuthenticator) dummyFacebookAuth)
 						.getAuthenticationProvider()).andReturn(
-				AuthenticationProvider.GOOGLE).atLeastOnce();
+				AuthenticationProvider.FACEBOOK).atLeastOnce();
 
 		// User object back from provider
 		User providerUser = new User(someProviderUniqueUserId, "TestFirstName",
@@ -314,20 +314,20 @@ public class UserManagerTest {
 
 		// Mock get User Information from provider call
 		expect(
-				((IFederatedAuthenticator) dummyGoogleAuth)
+				((IFederatedAuthenticator) dummyFacebookAuth)
 						.getUserInfo(someProviderGeneratedLookupValue))
 				.andReturn(providerUser);
 
 		// Expect this to be a new user and to register them (i.e. return null
 		// from database)
 		expect(
-				dummyDatabase.getByLinkedAccount(AuthenticationProvider.GOOGLE,
+				dummyDatabase.getByLinkedAccount(AuthenticationProvider.FACEBOOK,
 						someProviderUniqueUserId)).andReturn(null);
 
 		// A main part of the test is to check the below call happens
 		expect(
 				dummyDatabase
-						.register(providerUser, AuthenticationProvider.GOOGLE,
+						.register(providerUser, AuthenticationProvider.FACEBOOK,
 								someProviderUniqueUserId)).andReturn(
 				someSegueUserId).atLeastOnce();
 		expect(dummyDatabase.getById(someSegueUserId)).andReturn(
@@ -344,15 +344,14 @@ public class UserManagerTest {
 
 		replay(dummySession);
 		replay(request);
-		replay(dummyGoogleAuth);
+		replay(dummyFacebookAuth);
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, response,
-				validOAuthProvider);
+		Response r = userManager.authenticateCallback(request, validOAuthProvider);
 
 		// Assert
-		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+		verify(dummyDatabase, dummySession, request, dummyFacebookAuth);
 		assertTrue(r.getStatusInfo().equals(Status.TEMPORARY_REDIRECT));
 	}
 
@@ -365,29 +364,27 @@ public class UserManagerTest {
 	@Test
 	public final void authenticateCallback_checkInvalidCSRF_returnsUnauthorizedResponse()
 		throws IOException, CodeExchangeException, NoUserIdException {
-		// Arrange
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
-
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		
+		// Value must be a class which implements IFederatedAuthenticator and IOAuth2Authenticator
+		providerMap.put(AuthenticationProvider.TEST, createMock(IOAuth2Authenticator.class));
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		HttpServletResponse response = createMock(HttpServletResponse.class);
-		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
 		String someInvalidCSRFValue = "FRAUDHASHAPPENED";
-		String validOAuthProvider = "google";
+		String validOAuthProvider = "test";
 		Status expectedResponseCode = Status.UNAUTHORIZED;
-
+		
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
 				null).atLeastOnce();
 
 		// Mock URL params extract stuff
-		expect(request.getQueryString())
-				.andReturn(validQueryStringFromProvider).atLeastOnce();
+		// Return any non-null string
+		String queryString = Constants.STATE_PARAM_NAME + "=" + someInvalidCSRFValue;
+		expect(request.getQueryString()).andReturn(queryString).once();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
@@ -395,17 +392,13 @@ public class UserManagerTest {
 		expect(request.getParameter(Constants.STATE_PARAM_NAME)).andReturn(
 				someInvalidCSRFValue).atLeastOnce();
 
-		replay(dummySession);
-		replay(request);
-		replay(dummyGoogleAuth);
-		replay(dummyDatabase);
+		replay(dummySession, request, dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, response,
-				validOAuthProvider);
+		Response r = userManager.authenticateCallback(request, validOAuthProvider);
 
 		// Assert
-		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+		verify(dummyDatabase, dummySession, request);
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
 	}
 
@@ -420,11 +413,11 @@ public class UserManagerTest {
 	@Test
 	public final void authenticateCallback_checkWhenNoCSRFProvided_respondWithUnauthorized()
 		throws IOException, CodeExchangeException, NoUserIdException {
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap 
 			= new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
 
 		// Setup object under test
 		UserManager userManager = new UserManager(this.dummyDatabase,
@@ -433,13 +426,12 @@ public class UserManagerTest {
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		HttpServletResponse response = createMock(HttpServletResponse.class);
 		String queryStringFromProviderWithCSRFToken 
 			= "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com"
 					+ "&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code"
 					+ "&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email"
 					+ "&state=googleomrdd07hbe6vc1efim5rnsgvms";
-		String validOAuthProvider = "google";
+		String validOAuthProvider = "facebook";
 		Status expectedResponseCode = Status.UNAUTHORIZED;
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
@@ -458,15 +450,14 @@ public class UserManagerTest {
 
 		replay(dummySession);
 		replay(request);
-		replay(dummyGoogleAuth);
+		replay(dummyFacebookAuth);
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, response,
-				validOAuthProvider);
+		Response r = userManager.authenticateCallback(request, validOAuthProvider);
 
 		// Assert
-		verify(dummyDatabase, dummySession, request, dummyGoogleAuth);
+		verify(dummyDatabase, dummySession, request, dummyFacebookAuth);
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
 	}
 
@@ -476,9 +467,9 @@ public class UserManagerTest {
 	@Test
 	public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
 		// Arrange
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
 
@@ -519,9 +510,9 @@ public class UserManagerTest {
 	@Test
 	public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
 		// Arrange
-		GoogleAuthenticator dummyGoogleAuth = createMock(GoogleAuthenticator.class);
+		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
 		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.GOOGLE, dummyGoogleAuth);
+		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
 		UserManager userManager = new UserManager(this.dummyDatabase,
 				this.dummyHMACSalt, providerMap);
 

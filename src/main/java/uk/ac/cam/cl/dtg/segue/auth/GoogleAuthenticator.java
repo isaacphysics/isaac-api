@@ -37,8 +37,7 @@ import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class GoogleAuthenticator implements IFederatedAuthenticator,
-		IOAuth2Authenticator {
+public class GoogleAuthenticator implements IOAuth2Authenticator {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(GoogleAuthenticator.class);

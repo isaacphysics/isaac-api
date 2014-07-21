@@ -51,8 +51,7 @@ import com.google.inject.name.Named;
  * 
  * @author nr378
  */
-public class FacebookAuthenticator implements IFederatedAuthenticator,
-		IOAuth2Authenticator {
+public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(FacebookAuthenticator.class);
@@ -258,9 +257,6 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 	/**
 	 * This method will contact the identity provider to verify that the token
 	 * is valid for our application.
-	 * 
-	 * This check is intended to mitigate against the confused deputy problem;
-	 * although I suspect the google client might already do this.
 	 * 
 	 * @param credentials
 	 * @return true if the token passes our validation false if not.

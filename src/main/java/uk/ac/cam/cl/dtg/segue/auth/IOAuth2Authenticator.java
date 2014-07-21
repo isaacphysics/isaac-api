@@ -7,7 +7,7 @@ import java.io.IOException;
  * 
  * @author sac92
  */
-public interface IOAuth2Authenticator {
+public interface IOAuth2Authenticator extends IFederatedAuthenticator {
 
 	/**
 	 * Step 1 of OAUTH2 - Request authorisation URL. Request an authorisation
