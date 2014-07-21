@@ -45,6 +45,12 @@ import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+/**
+ * This class is derived from GoogleAuthenticator and provides 3rd party
+ * authentication via the Facebook OAuth API.
+ * 
+ * @author nr378
+ */
 public class FacebookAuthenticator implements IFederatedAuthenticator,
 		IOAuth2Authenticator {
 
@@ -253,10 +259,6 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 	 * This check is intended to mitigate against the confused deputy problem;
 	 * although I suspect the google client might already do this.
 	 * 
-	 * TODO: Verify that the google server client library doesn't already do
-	 * this check internally - if it does then we can remove this additional
-	 * check.
-	 * 
 	 * @param credentials
 	 * @return true if the token passes our validation false if not.
 	 */
@@ -268,9 +270,11 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 					"https://graph.facebook.com/debug_token?access_token="
 							+ clientId + "|" + secret + "&input_token="
 							+ credentials.getAccessToken());
-			FacebookTokenInfo info = JsonLoader.load(inputStreamToString(url.openStream()),
+			FacebookTokenInfo info = JsonLoader.load(
+					inputStreamToString(url.openStream()),
 					FacebookTokenInfo.class, true);
-			return info.getData().getAppId().equals(clientId) && info.getData().isValid();
+			return info.getData().getAppId().equals(clientId)
+					&& info.getData().isValid();
 		} catch (IOException e) {
 			log.error("IO error while trying to validate oauth2 security token.");
 			e.printStackTrace();
@@ -278,6 +282,15 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 		return false;
 	}
 
+	/**
+	 * Helper method to merge a collection of strings into a single string.
+	 * 
+	 * @param delim
+	 *            - The delimiter to be inserted between the merged strings
+	 * @param strings
+	 *            - A collection of strings to be merged
+	 * @return the merged string
+	 */
 	private String mergeStrings(final String delim,
 			final Collection<String> strings) {
 		if (strings == null) {
@@ -303,6 +316,14 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 		return sb.toString();
 	}
 
+	/**
+	 * Helper method to read an InputStream into a String.
+	 * 
+	 * @param is
+	 *            - The InputStream to be read
+	 * @return the contents of the InputStream
+	 * @throws IOException
+	 */
 	private String inputStreamToString(final InputStream is) throws IOException {
 		String line = "";
 		StringBuilder total = new StringBuilder();
