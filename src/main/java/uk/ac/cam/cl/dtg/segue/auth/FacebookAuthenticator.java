@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
+import uk.ac.cam.cl.dtg.segue.dos.users.FacebookTokenInfo;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
@@ -63,18 +65,6 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
-
-	public String getLoginRedirectURL() {
-		return "https://graph.facebook.com/oauth/authorize?client_id="
-				+ clientId + "&display=page&redirect_uri=" + callbackUri
-				+ "&scope=" + requestedScopes;
-	}
-
-	public String getAuthURL(final String authCode) {
-		return "https://graph.facebook.com/oauth/access_token?client_id="
-				+ clientId + "&redirect_uri=" + callbackUri + "&client_secret="
-				+ secret + "&code=" + authCode;
-	}
 
 	@Inject
 	public FacebookAuthenticator(
@@ -224,13 +214,14 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 			throws NoUserIdException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
-		// if (verifyAccessTokenIsValid(credentials)) {
-		// log.debug("Successful Verification of access token with provider.");
-		// } else {
-		// log.error("Unable to verify access token - it could be an indication of fraud.");
-		// throw new AuthenticatorSecurityException(
-		// "Access token is invalid - the client id returned by the identity provider does not match ours.");
-		// }
+
+		if (verifyAccessTokenIsValid(credentials)) {
+			log.debug("Successful Verification of access token with provider.");
+		} else {
+			log.error("Unable to verify access token - it could be an indication of fraud.");
+			throw new AuthenticatorSecurityException(
+					"Access token is invalid - the client id returned by the identity provider does not match ours.");
+		}
 
 		FacebookUser userInfo = null;
 
@@ -245,7 +236,7 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 			log.error("An IO error occurred while trying to retrieve user information: "
 					+ e);
 		}
-		
+
 		if (userInfo != null && userInfo.getId() != null) {
 			return new User(userInfo.getId(), userInfo.getFirstName(),
 					userInfo.getLastName(), userInfo.getEmail(), null, null,
@@ -272,16 +263,14 @@ public class FacebookAuthenticator implements IFederatedAuthenticator,
 	private boolean verifyAccessTokenIsValid(final Credential credentials) {
 		Validate.notNull(credentials, "Credentials cannot be null");
 
-		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory,
-				credentials).setApplicationName(Constants.APPLICATION_NAME)
-				.build();
 		try {
-			Tokeninfo tokeninfo = oauth2.tokeninfo()
-					.setAccessToken(credentials.getAccessToken()).execute();
-
-			if (tokeninfo.getAudience().equals(clientId)) {
-				return true;
-			}
+			URL url = new URL(
+					"https://graph.facebook.com/debug_token?access_token="
+							+ clientId + "|" + secret + "&input_token="
+							+ credentials.getAccessToken());
+			FacebookTokenInfo info = JsonLoader.load(inputStreamToString(url.openStream()),
+					FacebookTokenInfo.class, true);
+			return info.getData().getAppId().equals(clientId) && info.getData().isValid();
 		} catch (IOException e) {
 			log.error("IO error while trying to validate oauth2 security token.");
 			e.printStackTrace();
