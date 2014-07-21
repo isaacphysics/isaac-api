@@ -6,6 +6,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 import uk.ac.cam.cl.dtg.isaac.app.IsaacControllerTest;
 import uk.ac.cam.cl.dtg.segue.api.GoogleAuthenticatorTest;
+import uk.ac.cam.cl.dtg.segue.api.UserManagerTest;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManagerTest;
 import uk.ac.cam.cl.dtg.segue.database.GitDbTest;
 
@@ -16,6 +17,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDbTest;
  */
 @RunWith(Suite.class)
 @SuiteClasses({
+	UserManagerTest.class, 
 	GoogleAuthenticatorTest.class, 
 	GitDbTest.class, 
 	IsaacControllerTest.class,
