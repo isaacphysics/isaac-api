@@ -18,7 +18,6 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
@@ -30,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
+
 /**
  * Test class for the user manager class.
  * 
@@ -39,12 +39,13 @@ public class UserManagerTest {
 	private IUserDataManager dummyDatabase;
 	private String dummyHMACSalt;
 	private Map<AuthenticationProvider, IFederatedAuthenticator> dummyProvidersMap;
-	private static final String CSRF_Test_VALUE = "facebookomrdd07hbe6vc1efim5rnsgvms";
-	private static final String DEFAULT_URL = "facebookomrdd07hbe6vc1efim5rnsgvms";
+	private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
 	/**
 	 * Initial configuration of tests.
-	 * @throws Exception - test exception 
+	 * 
+	 * @throws Exception
+	 *             - test exception
 	 */
 	@Before
 	public final void setUp() throws Exception {
@@ -52,7 +53,7 @@ public class UserManagerTest {
 		this.dummyHMACSalt = "BOB";
 		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
 	}
-	
+
 	/**
 	 * Verify that the constructor responds correctly to bad input.
 	 */
@@ -79,17 +80,12 @@ public class UserManagerTest {
 	}
 
 	/**
-	 * Test that the get current user method behaves correctly when not logged in.
+	 * Test that the get current user method behaves correctly when not logged
+	 * in.
 	 */
 	@Test
 	public final void getCurrentUser_isNotLoggedIn_noUserObjectReturned() {
-		// Arrange
-		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
-
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -114,13 +110,7 @@ public class UserManagerTest {
 	 */
 	@Test
 	public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() {
-		// Arrange
-		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
-
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -156,20 +146,17 @@ public class UserManagerTest {
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
-		assertTrue(null != returnedUser && returnedUser instanceof User);
+		assertTrue(returnedUser == returnUser);
 	}
 
 	/**
-	 * Test that requesting authentication with a bad provider behaves as expected.
+	 * Test that requesting authentication with a bad provider behaves as
+	 * expected.
 	 */
 	@Test
 	public final void authenticate_badProviderGiven_givesServerErrorResponse() {
-		// Arrange
-		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		UserManager userManager = buildTestUserManager();
+
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		String someInvalidProvider = "BAD_PROVIDER!!";
@@ -198,24 +185,21 @@ public class UserManagerTest {
 	/**
 	 * Test that a valid OAuth provider (Facebook) provides a redirect response.
 	 * 
-	 * @throws IOException - test exception
+	 * @throws IOException
+	 *             - test exception
 	 */
 	@Test
-	public final void 
-	authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
-		throws IOException {
+	public final void authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
+			throws IOException {
 		// Arrange
-		IOAuth2Authenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK,
-				(IFederatedAuthenticator) dummyFacebookAuth);
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		IOAuth2Authenticator dummyAuth = createMock(IOAuth2Authenticator.class);
+		UserManager userManager = buildTestUserManager(
+				AuthenticationProvider.TEST, dummyAuth);
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		String exampleRedirectUrl = "https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
-		String someValidProviderString = "facebook";
+		String someValidProviderString = "test";
 		Status expectedResponseCode = Status.TEMPORARY_REDIRECT;
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
@@ -230,9 +214,8 @@ public class UserManagerTest {
 		replay(request);
 		replay(dummyDatabase);
 
-		expect(dummyFacebookAuth.getAuthorizationUrl()).andReturn(
-				exampleRedirectUrl);
-		replay(dummyFacebookAuth);
+		expect(dummyAuth.getAuthorizationUrl()).andReturn(exampleRedirectUrl);
+		replay(dummyAuth);
 
 		// Act
 		Response r = userManager.authenticate(request, someValidProviderString,
@@ -240,41 +223,51 @@ public class UserManagerTest {
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
+		assertTrue(r.getEntity().toString().equals(exampleRedirectUrl));
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
 	}
 
 	/**
 	 * Check that a new (unseen) user is registered.
 	 * 
-	 * @throws IOException - test exceptions
-	 * @throws CodeExchangeException - test exceptions
-	 * @throws NoUserIdException - test exceptions
-	 * @throws AuthenticatorSecurityException - test exceptions
+	 * @throws IOException
+	 *             - test exceptions
+	 * @throws CodeExchangeException
+	 *             - test exceptions
+	 * @throws NoUserIdException
+	 *             - test exceptions
+	 * @throws AuthenticatorSecurityException
+	 *             - test exceptions
 	 */
 	@Test
 	public final void authenticateCallback_checkNewUserIsAuthenticated_registerUserWithSegue()
-		throws IOException, CodeExchangeException, NoUserIdException,
+			throws IOException, CodeExchangeException, NoUserIdException,
 			AuthenticatorSecurityException {
-		// Arrange
-		IOAuth2Authenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK,
-				(IFederatedAuthenticator) dummyFacebookAuth);
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		IOAuth2Authenticator dummyAuth = createMock(FacebookAuthenticator.class);
+		UserManager userManager = buildTestUserManager(
+				AuthenticationProvider.TEST, dummyAuth);
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		StringBuffer sb = new StringBuffer(
-				"http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI");
-		String validQueryStringFromProvider = "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
-		String fullResponseUrlFromProvider = "http://localhost:8080/rutherford-server/segue/api/auth/google/callback?state=googleh0317vhdvo5375tf55r8fqeit0&code=4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
-		String authorizationCodeFromProviderUrl = "4/IuHuyvm3zNYMuqy5JS_pS4hiCsfv.YpQGR8XEqzIeYKs_1NgQtmVFQjZ5igI";
+
+		// TODO: What do these strings actually need to be?
+		String someDomain = "http://www.somedomain.com/";
+		String someClientId = "someClinetId";
+		String someAuthCode = "someAuthCode";
+		String someState = "someState";
+
+		StringBuffer sb = new StringBuffer(someDomain + "?state=" + someState
+				+ "&code=" + someAuthCode);
+		String validQueryStringFromProvider = "client_id=" + someClientId
+				+ "&redirect_uri=" + someDomain;
+		String fullResponseUrlFromProvider = someDomain + "?state=" + someState
+				+ "&code=" + someAuthCode + "?client_id=" + someClientId
+				+ "&redirect_uri=" + someDomain;
 		String someProviderGeneratedLookupValue = "MYPROVIDERREF";
-		String someProviderUniqueUserId = "GOOGLEUSER-1";
+		String someProviderUniqueUserId = "USER-1";
 		String someSegueUserId = "533ee66842f639e95ce35e29";
-		String validOAuthProvider = "facebook";
+		String validOAuthProvider = "test";
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -284,9 +277,9 @@ public class UserManagerTest {
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
-				.andReturn(CSRF_Test_VALUE).atLeastOnce();
+				.andReturn(CSRF_TEST_VALUE).atLeastOnce();
 		expect(request.getParameter(Constants.STATE_PARAM_NAME)).andReturn(
-				CSRF_Test_VALUE).atLeastOnce();
+				CSRF_TEST_VALUE).atLeastOnce();
 
 		// Mock URL params extract stuff
 		expect(request.getQueryString())
@@ -295,41 +288,40 @@ public class UserManagerTest {
 		expect(request.getRequestURL()).andReturn(sb);
 
 		// Mock extract auth code call
-		expect(dummyFacebookAuth.extractAuthCode(fullResponseUrlFromProvider))
-				.andReturn(authorizationCodeFromProviderUrl);
+		expect(dummyAuth.extractAuthCode(fullResponseUrlFromProvider))
+				.andReturn(someAuthCode);
 
 		// Mock exchange code for token call
-		expect(dummyFacebookAuth.exchangeCode(authorizationCodeFromProviderUrl))
-				.andReturn(someProviderGeneratedLookupValue);
+		expect(dummyAuth.exchangeCode(someAuthCode)).andReturn(
+				someProviderGeneratedLookupValue);
 
 		expect(
-				((IFederatedAuthenticator) dummyFacebookAuth)
+				((IFederatedAuthenticator) dummyAuth)
 						.getAuthenticationProvider()).andReturn(
-				AuthenticationProvider.FACEBOOK).atLeastOnce();
+				AuthenticationProvider.TEST).atLeastOnce();
 
 		// User object back from provider
 		User providerUser = new User(someProviderUniqueUserId, "TestFirstName",
-				"testLastName", "", Role.STUDENT, "", new Date(), Gender.MALE,
+				"TestLastName", "", Role.STUDENT, "", new Date(), Gender.MALE,
 				new Date(), null, null);
 
 		// Mock get User Information from provider call
 		expect(
-				((IFederatedAuthenticator) dummyFacebookAuth)
+				((IFederatedAuthenticator) dummyAuth)
 						.getUserInfo(someProviderGeneratedLookupValue))
 				.andReturn(providerUser);
 
 		// Expect this to be a new user and to register them (i.e. return null
 		// from database)
 		expect(
-				dummyDatabase.getByLinkedAccount(AuthenticationProvider.FACEBOOK,
+				dummyDatabase.getByLinkedAccount(AuthenticationProvider.TEST,
 						someProviderUniqueUserId)).andReturn(null);
 
 		// A main part of the test is to check the below call happens
 		expect(
-				dummyDatabase
-						.register(providerUser, AuthenticationProvider.FACEBOOK,
-								someProviderUniqueUserId)).andReturn(
-				someSegueUserId).atLeastOnce();
+				dummyDatabase.register(providerUser,
+						AuthenticationProvider.TEST, someProviderUniqueUserId))
+				.andReturn(someSegueUserId).atLeastOnce();
 		expect(dummyDatabase.getById(someSegueUserId)).andReturn(
 				new User(someSegueUserId, "TestFirstName", "testLastName", "",
 						Role.STUDENT, "", new Date(), Gender.MALE, new Date(),
@@ -342,96 +334,88 @@ public class UserManagerTest {
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
 		dummySession.removeAttribute(EasyMock.<String> anyObject());
 
-		replay(dummySession);
-		replay(request);
-		replay(dummyFacebookAuth);
-		replay(dummyDatabase);
+		replay(dummySession, request, dummyAuth, dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, validOAuthProvider);
+		Response r = userManager.authenticateCallback(request,
+				validOAuthProvider);
 
 		// Assert
-		verify(dummyDatabase, dummySession, request, dummyFacebookAuth);
+		verify(dummySession, request, dummyAuth, dummyDatabase);
 		assertTrue(r.getStatusInfo().equals(Status.TEMPORARY_REDIRECT));
 	}
 
 	/**
-	 * Verify that a bad CSRF response from the authentication provider causes an error response.
-	 * @throws IOException - test exceptions
-	 * @throws CodeExchangeException - test exceptions
-	 * @throws NoUserIdException - test exceptions
+	 * Verify that a bad CSRF response from the authentication provider causes
+	 * an error response.
+	 * 
+	 * @throws IOException
+	 *             - test exceptions
+	 * @throws CodeExchangeException
+	 *             - test exceptions
+	 * @throws NoUserIdException
+	 *             - test exceptions
 	 */
 	@Test
 	public final void authenticateCallback_checkInvalidCSRF_returnsUnauthorizedResponse()
-		throws IOException, CodeExchangeException, NoUserIdException {
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		
-		// Value must be a class which implements IFederatedAuthenticator and IOAuth2Authenticator
-		providerMap.put(AuthenticationProvider.TEST, createMock(IOAuth2Authenticator.class));
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+			throws IOException, CodeExchangeException, NoUserIdException {
+		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		String someInvalidCSRFValue = "FRAUDHASHAPPENED";
 		String validOAuthProvider = "test";
 		Status expectedResponseCode = Status.UNAUTHORIZED;
-		
+
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
 				null).atLeastOnce();
 
 		// Mock URL params extract stuff
 		// Return any non-null string
-		String queryString = Constants.STATE_PARAM_NAME + "=" + someInvalidCSRFValue;
+		String queryString = Constants.STATE_PARAM_NAME + "="
+				+ someInvalidCSRFValue;
 		expect(request.getQueryString()).andReturn(queryString).once();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
-				.andReturn(CSRF_Test_VALUE).atLeastOnce();
+				.andReturn(CSRF_TEST_VALUE).atLeastOnce();
 		expect(request.getParameter(Constants.STATE_PARAM_NAME)).andReturn(
 				someInvalidCSRFValue).atLeastOnce();
 
 		replay(dummySession, request, dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, validOAuthProvider);
+		Response r = userManager.authenticateCallback(request,
+				validOAuthProvider);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
 	}
 
-	
 	/**
-	 * Verify that a bad (null) CSRF response from the authentication provider causes 
-	 * an error response.
-	 * @throws IOException - test exceptions
-	 * @throws CodeExchangeException - test exceptions
-	 * @throws NoUserIdException - test exceptions
+	 * Verify that a bad (null) CSRF response from the authentication provider
+	 * causes an error response.
+	 * 
+	 * @throws IOException
+	 *             - test exceptions
+	 * @throws CodeExchangeException
+	 *             - test exceptions
+	 * @throws NoUserIdException
+	 *             - test exceptions
 	 */
 	@Test
 	public final void authenticateCallback_checkWhenNoCSRFProvided_respondWithUnauthorized()
-		throws IOException, CodeExchangeException, NoUserIdException {
-		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap 
-			= new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
-
-		// Setup object under test
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+			throws IOException, CodeExchangeException, NoUserIdException {
+		UserManager userManager = buildTestUserManager();
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
-		String queryStringFromProviderWithCSRFToken 
-			= "client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com"
-					+ "&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code"
-					+ "&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email"
-					+ "&state=googleomrdd07hbe6vc1efim5rnsgvms";
-		String validOAuthProvider = "facebook";
+		String queryStringFromProviderWithCSRFToken = "state="
+				+ CSRF_TEST_VALUE;
+		String validOAuthProvider = "test";
 		Status expectedResponseCode = Status.UNAUTHORIZED;
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
@@ -439,25 +423,24 @@ public class UserManagerTest {
 				null).atLeastOnce();
 
 		// Mock URL params extract stuff
-		expect(request.getQueryString()).andReturn(
-				queryStringFromProviderWithCSRFToken).atLeastOnce();
+		expect(request.getQueryString()).andReturn("").atLeastOnce();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
 				.andReturn(null).atLeastOnce();
 		expect(request.getParameter(Constants.STATE_PARAM_NAME)).andReturn(
-				CSRF_Test_VALUE).atLeastOnce();
+				CSRF_TEST_VALUE).atLeastOnce();
 
 		replay(dummySession);
 		replay(request);
-		replay(dummyFacebookAuth);
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticateCallback(request, validOAuthProvider);
+		Response r = userManager.authenticateCallback(request,
+				validOAuthProvider);
 
 		// Assert
-		verify(dummyDatabase, dummySession, request, dummyFacebookAuth);
+		verify(dummyDatabase, dummySession, request);
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
 	}
 
@@ -466,12 +449,7 @@ public class UserManagerTest {
 	 */
 	@Test
 	public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
-		// Arrange
-		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		UserManager userManager = buildTestUserManager();
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -503,18 +481,13 @@ public class UserManagerTest {
 		verify(dummyDatabase, dummySession, request);
 		assertTrue(valid);
 	}
-	
+
 	/**
 	 * Verify that a bad user session is detected as invalid.
 	 */
 	@Test
 	public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
-		// Arrange
-		FacebookAuthenticator dummyFacebookAuth = createMock(FacebookAuthenticator.class);
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
-		providerMap.put(AuthenticationProvider.FACEBOOK, dummyFacebookAuth);
-		UserManager userManager = new UserManager(this.dummyDatabase,
-				this.dummyHMACSalt, providerMap);
+		UserManager userManager = buildTestUserManager();
 
 		// method param setup for method under test
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -545,5 +518,32 @@ public class UserManagerTest {
 		// Assert
 		verify(dummyDatabase, dummySession, request);
 		assertTrue(!valid);
+	}
+
+	/**
+	 * Helper method to construct a UserManager with the default TEST provider.
+	 * 
+	 * @return A new UserManager instance
+	 */
+	private UserManager buildTestUserManager() {
+		return buildTestUserManager(AuthenticationProvider.TEST,
+				createMock(IOAuth2Authenticator.class));
+	}
+
+	/**
+	 * Helper method to construct a UserManager with the specified providers.
+	 * 
+	 * @param provider
+	 *            - The provider to register
+	 * @param authenticator
+	 *            - The associated authenticating engine
+	 * @return A new UserManager instance
+	 */
+	private UserManager buildTestUserManager(AuthenticationProvider provider,
+			IFederatedAuthenticator authenticator) {
+		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
+		providerMap.put(provider, authenticator);
+		return new UserManager(this.dummyDatabase, this.dummyHMACSalt,
+				providerMap);
 	}
 }
