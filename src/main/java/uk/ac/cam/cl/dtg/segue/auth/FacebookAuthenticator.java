@@ -137,7 +137,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public String exchangeCode(final String authorizationCode)
-			throws IOException, CodeExchangeException, NoUserIdException {
+			throws CodeExchangeException {
 		try {
 			AuthorizationCodeTokenRequest request = new AuthorizationCodeTokenRequest(
 					httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
