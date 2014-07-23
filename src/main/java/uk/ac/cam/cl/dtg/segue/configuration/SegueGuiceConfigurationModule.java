@@ -162,16 +162,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
 				globalProperties);
-<<<<<<< HEAD
 		
 		// Facebook
 		this.bindConstantToProperty(Constants.FACEBOOK_SECRET,
 				globalProperties);
-=======
-
-		// Configure security providers
-		this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
->>>>>>> 6a08e5e26cc0b17d7e00310e64d1af0433d14f18
 		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
