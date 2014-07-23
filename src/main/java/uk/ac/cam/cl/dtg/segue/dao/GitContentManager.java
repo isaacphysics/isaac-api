@@ -424,9 +424,13 @@ public class GitContentManager implements IContentManager {
 	 */
 	@Override
 	public ContentDTO populateContentSummaries(final ContentDTO contentDTO) {
-		// build query the db to get full question information
+		if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
+			return contentDTO;
+		}
+		
+		// build query the db to get full content information
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
-
+		
 		List<String> relatedContentIds = Lists.newArrayList();
 		for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
 			relatedContentIds.add(summary.getId());

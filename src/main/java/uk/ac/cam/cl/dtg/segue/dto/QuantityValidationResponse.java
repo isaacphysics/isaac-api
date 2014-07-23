@@ -2,11 +2,19 @@ package uk.ac.cam.cl.dtg.segue.dto;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
+/**
+ * The DTO which can be used to inform clients of the result of an answered
+ * question.
+ * 
+ * 
+ */
 public class QuantityValidationResponse extends QuestionValidationResponse {
-
-	protected boolean correctValue;
-	protected boolean correctUnits;
-
+	private boolean correctValue;
+	private boolean correctUnits;
+	
+	/**
+	 * Default constructor.
+	 */
 	public QuantityValidationResponse() {
 
 	}
