@@ -155,12 +155,17 @@ public final class Constants {
 	// Federated Authentication Stuff
 
 	public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
-	
+
 	/**
 	 * This constant is used for matching against url params to prevent CSRF.
 	 */
 	public static final String STATE_PARAM_NAME = "state";
 	
+	/**
+	 * This constant is used for matching against url params to prevent CSRF.
+	 */
+	public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
+
 	/**
 	 * Constant representing the key for the GOOGLE client secret location.
 	 */
@@ -197,6 +202,21 @@ public final class Constants {
 	 * Constant representing the key for the FACEBOOK OAUTH permissions to be requested.
 	 */
 	public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
+
+	/**
+	 * Constant representing the key for the TWITTER OAUTH secret.
+	 */
+	public static final String TWITTER_SECRET = "TWITTER_SECRET";
+
+	/**
+	 * Constant representing the key for the TWITTER OAUTH client id.
+	 */
+	public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
+
+	/**
+	 * Constant representing the key for the TWITTER OAUTH callback uri.
+	 */
+	public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
 	
 	/*
 	 * Default values.

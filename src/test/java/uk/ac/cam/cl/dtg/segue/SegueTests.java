@@ -8,6 +8,7 @@ import uk.ac.cam.cl.dtg.isaac.app.IsaacControllerTest;
 import uk.ac.cam.cl.dtg.segue.api.UserManagerTest;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticatorTest;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticatorTest;
+import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticatorTest;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManagerTest;
 import uk.ac.cam.cl.dtg.segue.database.GitDbTest;
 
@@ -21,6 +22,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDbTest;
 	UserManagerTest.class, 
 	FacebookAuthenticatorTest.class, 
 	GoogleAuthenticatorTest.class, 
+	TwitterAuthenticatorTest.class, 
 	GitDbTest.class, 
 	IsaacControllerTest.class,
 	GitContentManagerTest.class

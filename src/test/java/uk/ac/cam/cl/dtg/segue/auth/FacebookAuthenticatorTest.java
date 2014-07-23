@@ -11,8 +11,9 @@ public class FacebookAuthenticatorTest extends IOAuth2AuthenticatorTest {
 	 */
 	@Before
 	public final void setUp() throws Exception {
-		this.authenticator =
+		this.oauth2Authenticator =
 				new FacebookAuthenticator(clientId, clientSecret, callbackUri, requestedScopes);
+		this.authenticator = this.oauth2Authenticator;
 	}
 
 }

@@ -20,6 +20,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
@@ -154,20 +155,30 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
 
 		// Configure security providers
+		// Google
 		this.bindConstantToProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION,
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI,
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
 				globalProperties);
-
-		// Configure security providers
-		this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
+		
+		// Facebook
+		this.bindConstantToProperty(Constants.FACEBOOK_SECRET,
+				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES,
+				globalProperties);
+		
+		// Twitter
+		this.bindConstantToProperty(Constants.TWITTER_SECRET,
+				globalProperties);
+		this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID,
+				globalProperties);
+		this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI,
 				globalProperties);
 
 		// Register a map of security providers
@@ -178,6 +189,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				GoogleAuthenticator.class);
 		mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(
 				FacebookAuthenticator.class);
+		mapBinder.addBinding(AuthenticationProvider.TWITTER).to(
+				TwitterAuthenticator.class);
 
 	}
 

@@ -75,12 +75,12 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public String getAuthorizationUrl() throws IOException {
-		return getAuthorizationUrl(null);
+	public AuthenticationProvider getAuthenticationProvider() {
+		return AuthenticationProvider.GOOGLE;
 	}
-
+	
 	@Override
-	public String getAuthorizationUrl(String emailAddress) throws IOException {
+	public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
 		GoogleAuthorizationCodeRequestUrl urlBuilder = null;
 		urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets
 				.getDetails().getClientId(), callbackUri, requestedScopes);
@@ -88,11 +88,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 		// time the user logs in if we wish.
 		// .setApprovalPrompt("force");
 
-		urlBuilder.set("state", getAntiForgeryStateToken());
-
-		if (emailAddress != null) {
-			urlBuilder.set("user_id", emailAddress);
-		}
+		urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
 
 		return urlBuilder.build();
 	}
@@ -222,10 +218,5 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 			e.printStackTrace();
 		}
 		return false;
-	}
-
-	@Override
-	public AuthenticationProvider getAuthenticationProvider() {
-		return AuthenticationProvider.GOOGLE;
 	}
 }
