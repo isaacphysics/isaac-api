@@ -69,7 +69,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
-	
+
 	private static GoogleClientSecrets googleClientSecrets = null;
 
 	private PropertiesLoader globalProperties = null;
@@ -160,10 +160,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
 				globalProperties);
-		
+
 		// Configure security providers
-		this.bindConstantToProperty(Constants.FACEBOOK_SECRET,
-				globalProperties);
+		this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
@@ -251,7 +250,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 		return contentVersionController;
 	}
-	
+
 	/**
 	 * This provides a singleton of the contentVersionController for the segue
 	 * facade.
@@ -266,9 +265,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			mapper = new ContentMapper();
 			this.buildDefaultJsonTypeMap();
 		}
-		
+
 		return mapper;
-	}	
+	}
 
 	/**
 	 * This provides a singleton of the contentVersionController for the segue
@@ -302,7 +301,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	/**
 	 * Gets the instance of the dozer mapper object.
 	 * 
-	 * @return Auto Mapper.
+	 * @return a preconfigured instance of an Auto Mapper. This is specialised
+	 *         for mapping SegueObjects.
 	 */
 	@Provides
 	@Singleton
@@ -317,25 +317,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * @param clientSecretLocation
 	 *            - The path to the client secrets json file
 	 * @return GoogleClientSecrets
-	 * @throws IOException 
+	 * @throws IOException
+	 *             - when we are unable to access the google client file.
 	 */
 	@Provides
 	@Singleton
 	@Inject
 	private static GoogleClientSecrets getGoogleClientSecrets(
 			@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation)
-					throws IOException {
+		throws IOException {
 		if (null == googleClientSecrets) {
 			Validate.notNull(clientSecretLocation, "Missing resource %s",
 					clientSecretLocation);
-	
+
 			// load up the client secrets from the file system.
 			InputStream inputStream = new FileInputStream(clientSecretLocation);
 			InputStreamReader isr = new InputStreamReader(inputStream);
 
-			googleClientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
+			googleClientSecrets = GoogleClientSecrets.load(
+					new JacksonFactory(), isr);
 		}
-		
+
 		return googleClientSecrets;
 	}
 
