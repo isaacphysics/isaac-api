@@ -175,21 +175,8 @@ public class GitContentManager implements IContentManager {
 							+ "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
 							idPrefix);
 
-			// TODO: Refactor out common mapping code. Also use auto mapper.
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-			ObjectMapper objectMapper = mapper.getContentObjectMapper();
-
-			List<Content> searchResults = new ArrayList<Content>();
-			for (String hit : searchHits.getResults()) {
-				try {
-					searchResults.add((Content) objectMapper.readValue(hit,
-							ContentBase.class));
-				} catch (IOException e) {
-					log.error("Error while trying to search for id prefix: "
-							+ idPrefix + " in version " + version, e);
-				}
-			}
+			List<Content> searchResults = mapper
+					.mapFromStringListToContentList(searchHits.getResults());
 
 			return new ResultsWrapper<ContentDTO>(
 					mapper.getDTOByDOList(searchResults),
@@ -211,24 +198,8 @@ public class GitContentManager implements IContentManager {
 					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
 					Constants.CHILDREN_FIELDNAME);
 
-			// TODO: Refactor out common mapping code. Also use auto mapper.
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-			ObjectMapper objectMapper = mapper.getContentObjectMapper();
-
-			List<Content> searchResults = new ArrayList<Content>();
-			for (String hit : searchHits.getResults()) {
-				try {
-					searchResults.add((Content) objectMapper.readValue(hit,
-							ContentBase.class));
-				} catch (IOException e) {
-					log.error("Error while trying to search for "
-							+ searchString + " in version " + version, e);
-				}
-			}
+			List<Content> searchResults = mapper
+					.mapFromStringListToContentList(searchHits.getResults());
 
 			return new ResultsWrapper<ContentDTO>(
 					mapper.getDTOByDOList(searchResults),
