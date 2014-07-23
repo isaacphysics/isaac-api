@@ -22,6 +22,8 @@ public class GoogleAuthenticatorTest extends IOAuth2AuthenticatorTest {
 		details.setClientId(clientId);
 		details.setClientSecret(clientSecret);
         
-		this.authenticator = new GoogleAuthenticator(clientSecrets, callbackUri, requestedScopes);
+		this.oauth2Authenticator =
+				new GoogleAuthenticator(clientSecrets, callbackUri, requestedScopes);
+		this.authenticator = this.oauth2Authenticator;
 	}
 }

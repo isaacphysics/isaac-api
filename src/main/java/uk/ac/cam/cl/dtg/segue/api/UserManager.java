@@ -34,8 +34,11 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -128,40 +131,33 @@ public class UserManager {
 		try {
 			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
 
-			// if we are an OAuth2Provider redirect to the provider
+			// if we are an OAuthProvider redirect to the provider
 			// authorization url.
+			URI redirectLink = null;
 			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
-
-				URI redirectLink = URI.create(oauthProvider
-						.getAuthorizationUrl());
-				List<NameValuePair> urlParams = URLEncodedUtils.parse(
-						redirectLink.toString(), Charset.defaultCharset());
-
-				// to deal with cross site request forgery (Provider should
-				// embed a state param in the uri returned in the redirectLink)
-				String antiForgeryTokenFromProvider = null;
-
-				for (NameValuePair param : urlParams) {
-					if (param.getName().equals(Constants.STATE_PARAM_NAME)) {
-						antiForgeryTokenFromProvider = param.getValue();
-					}
-				}
-
-				if (null == antiForgeryTokenFromProvider) {
-					SegueErrorResponse error = new SegueErrorResponse(
-							Status.INTERNAL_SERVER_ERROR,
-							"Anti forgery authenitication error."
-									+ " Please contact server admin.");
-					log.error("Unable to extract Anti Forgery Token "
-							+ "from Authentication provider");
-					return error.toResponse();
-				}
+				IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
+				String antiForgeryTokenFromProvider = oauth2Provider
+						.getAntiForgeryStateToken();
 
 				// Store antiForgeryToken in the users session.
 				request.getSession().setAttribute(Constants.STATE_PARAM_NAME,
 						antiForgeryTokenFromProvider);
 
+				redirectLink = URI.create(oauth2Provider
+						.getAuthorizationUrl(antiForgeryTokenFromProvider));
+			} else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
+				IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
+				OAuth1Token token = oauth1Provider.getRequestToken();
+
+				// Store token and secret in the users session.
+				request.getSession().setAttribute(
+						Constants.OAUTH_TOKEN_PARAM_NAME, token.getToken());
+
+				redirectLink = URI.create(oauth1Provider
+						.getAuthorizationUrl(token));
+			}
+
+			if (redirectLink != null) {
 				return Response.temporaryRedirect(redirectLink)
 						.entity(redirectLink).build();
 			} else {
@@ -227,11 +223,11 @@ public class UserManager {
 			String providerSpecificUserLookupReference = null;
 
 			// if we are an OAuth2Provider complete next steps of oauth
-			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauthProvider = (IOAuth2Authenticator) federatedAuthenticator;
+			if (federatedAuthenticator instanceof IOAuthAuthenticator) {
+				IOAuthAuthenticator oauthProvider = (IOAuthAuthenticator) federatedAuthenticator;
 
 				providerSpecificUserLookupReference = this
-						.getOauth2InternalRefCode(oauthProvider, request);
+						.getOauthInternalRefCode(oauthProvider, request);
 			} else {
 				// This should catch any invalid providers
 				SegueErrorResponse error = new SegueErrorResponse(
@@ -527,17 +523,27 @@ public class UserManager {
 	 * 
 	 * @param request
 	 *            - http request to verify there is no CSRF
+	 * @param oauthProvider - 
 	 * @return true if we are happy , false if we think a violation has
 	 *         occurred.
+	 * @throws CrossSiteRequestForgeryException 
 	 */
-	private boolean ensureNoCSRF(final HttpServletRequest request) {
+	private boolean ensureNoCSRF(final HttpServletRequest request,
+			final IOAuthAuthenticator oauthProvider) throws CrossSiteRequestForgeryException {
 		Validate.notNull(request);
-
+		
+		String key;
+		if (oauthProvider instanceof IOAuth2Authenticator) {
+			key = Constants.STATE_PARAM_NAME;
+		} else if (oauthProvider instanceof IOAuth1Authenticator) {
+			key = Constants.OAUTH_TOKEN_PARAM_NAME;
+		} else {
+			throw new CrossSiteRequestForgeryException("Provider not recognized.");
+		}
+		
 		// to deal with cross site request forgery
-		String csrfTokenFromUser = (String) request.getSession().getAttribute(
-				Constants.STATE_PARAM_NAME);
-		String csrfTokenFromProvider = request
-				.getParameter(Constants.STATE_PARAM_NAME);
+		String csrfTokenFromUser = (String) request.getSession().getAttribute(key);
+		String csrfTokenFromProvider = request.getParameter(key);
 
 		if (null == csrfTokenFromUser || null == csrfTokenFromProvider
 				|| !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
@@ -620,7 +626,7 @@ public class UserManager {
 	private User getUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
-		throws AuthenticatorSecurityException, NoUserIdException,
+			throws AuthenticatorSecurityException, NoUserIdException,
 			IOException {
 		// get user info from federated provider
 		// note the userid field in this object will contain the providers user
@@ -694,14 +700,14 @@ public class UserManager {
 	 * @throws CrossSiteRequestForgeryException
 	 *             - Unable to guarantee no CSRF
 	 */
-	private String getOauth2InternalRefCode(
-			final IOAuth2Authenticator oauthProvider,
+	private String getOauthInternalRefCode(
+			final IOAuthAuthenticator oauthProvider,
 			final HttpServletRequest request)
-		throws AuthenticationCodeException, IOException,
+			throws AuthenticationCodeException, IOException,
 			CodeExchangeException, NoUserIdException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
-		if (request.getQueryString() == null || !ensureNoCSRF(request)) {
+		if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
 			throw new CrossSiteRequestForgeryException("CRSF check failed");
 		}
 
@@ -748,7 +754,7 @@ public class UserManager {
 	 *             - if the session retrieved is an invalid URI.
 	 */
 	private URI loadRedirectUrl(final HttpServletRequest request)
-		throws URISyntaxException {
+			throws URISyntaxException {
 		String url = (String) request.getSession().getAttribute(
 				Constants.REDIRECT_URL_PARAM_NAME);
 		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);

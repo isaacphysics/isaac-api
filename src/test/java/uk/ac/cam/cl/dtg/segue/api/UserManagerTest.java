@@ -214,7 +214,9 @@ public class UserManagerTest {
 		replay(request);
 		replay(dummyDatabase);
 
-		expect(dummyAuth.getAuthorizationUrl()).andReturn(exampleRedirectUrl);
+		String someAntiForgeryToken = "someAntiForgeryToken";
+		expect(dummyAuth.getAntiForgeryStateToken()).andReturn(someAntiForgeryToken).once();
+		expect(dummyAuth.getAuthorizationUrl(someAntiForgeryToken)).andReturn(exampleRedirectUrl).once();
 		replay(dummyAuth);
 
 		// Act
@@ -253,7 +255,7 @@ public class UserManagerTest {
 
 		// TODO: What do these strings actually need to be?
 		String someDomain = "http://www.somedomain.com/";
-		String someClientId = "someClinetId";
+		String someClientId = "someClientId";
 		String someAuthCode = "someAuthCode";
 		String someState = "someState";
 

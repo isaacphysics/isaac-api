@@ -103,17 +103,11 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public String getAuthorizationUrl() throws IOException {
-		return getAuthorizationUrl(null);
-	}
-
-	@Override
-	public String getAuthorizationUrl(final String emailAddress)
-			throws IOException {
+	public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
 		AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(
 				AUTH_URL, clientId);
 
-		urlBuilder.set(Constants.STATE_PARAM_NAME, getAntiForgeryStateToken());
+		urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
 		urlBuilder.set("redirect_uri", callbackUri);
 		urlBuilder.set("scope", mergeStrings(",", requestedScopes));
 
