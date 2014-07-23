@@ -575,7 +575,6 @@ public class IsaacController {
 	// return ImmutableMap.of("result", "success");
 	// }
 
-
 	/**
 	 * Generate a URI that will enable us to find an object again.
 	 * 
@@ -689,8 +688,9 @@ public class IsaacController {
 			return null;
 		}
 
-		ResultsWrapper<ContentSummaryDTO> contentSummaryResults 
-			= new ResultsWrapper<ContentSummaryDTO>();
+		ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
+				new ArrayList<ContentSummaryDTO>(),
+				contentList.getTotalResults());
 
 		for (ContentDTO content : contentList.getResults()) {
 			ContentSummaryDTO contentInfo = extractContentSummary(content,
@@ -705,7 +705,8 @@ public class IsaacController {
 	/**
 	 * For use when we expect to only find a single result.
 	 * 
-	 * By default related content ContentSummary objects will be fully augmented. 
+	 * By default related content ContentSummary objects will be fully
+	 * augmented.
 	 * 
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
