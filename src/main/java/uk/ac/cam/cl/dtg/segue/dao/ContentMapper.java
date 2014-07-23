@@ -370,17 +370,18 @@ public class ContentMapper {
 		if (null == this.autoMapper) {
 			MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
 					.build();
-
+			
 			ContentBaseOrikaConverter contentConverter = new ContentBaseOrikaConverter(
 					this);
-
 			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter(
 					contentConverter);
 
 			ConverterFactory converterFactory = mapperFactory
 					.getConverterFactory();
+			
 			converterFactory.registerConverter(contentConverter);
 			converterFactory.registerConverter(choiceConverter);
+			
 			this.autoMapper = mapperFactory.getMapperFacade();
 		}
 

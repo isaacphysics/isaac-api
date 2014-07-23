@@ -221,7 +221,7 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
 			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
+			Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
 
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "."
 					+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -807,6 +807,7 @@ public class GitContentManager implements IContentManager {
 			if (c instanceof ChoiceQuestion
 					&& !(c.getType().equals("isaacQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
+				
 				if (question.getChoices() == null
 						|| question.getChoices().isEmpty()) {
 					log.warn("Choice question: " + question.getId() + " in "
@@ -821,7 +822,8 @@ public class GitContentManager implements IContentManager {
 									+ " in "
 									+ question.getCanonicalSourceFile()
 									+ " found without any choice metadata. "
-									+ "This question will always be automatically marked as incorrect");
+									+ "This question will always be automatically "
+									+ "marked as incorrect");
 				} else {
 					boolean correctOptionFound = false;
 					for (Choice choice : question.getChoices()) {
@@ -839,8 +841,18 @@ public class GitContentManager implements IContentManager {
 										+ " in "
 										+ question.getCanonicalSourceFile()
 										+ " found without a correct answer. "
-										+ "This question will always be automatically marked as incorrect");
+										+ "This question will always be automatically marked "
+										+ "as incorrect");
 					}
+				}
+
+				// check if level is valid.
+				if (c.getLevel() == null || c.getLevel() == 0) {
+					this.registerContentProblem(sha, c, "Level error! Question: "
+							+ question.getId()
+							+ " in "
+							+ question.getCanonicalSourceFile()
+							+ " has the level field set to: " + c.getLevel());
 				}
 			}
 		}

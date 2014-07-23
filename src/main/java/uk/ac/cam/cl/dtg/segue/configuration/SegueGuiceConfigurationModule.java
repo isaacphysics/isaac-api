@@ -185,13 +185,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * Deals with application data managers.
 	 */
 	private void configureApplicationManagers() {
-		// bind(IContentManager.class).to(MongoContentManager.class); //Allows
-		// Mongo take over Content Management
-		bind(IContentManager.class).to(GitContentManager.class); // Allows GitDb
-																	// take over
-																	// Content
-																	// Management
+		// Allows Mongo to take over Content Management
+		// bind(IContentManager.class).to(MongoContentManager.class);
+		
+		// Allows GitDb to take over content Management 
+		bind(IContentManager.class).to(GitContentManager.class); 
 
+		//TODO: the log manager needs redoing.
 		bind(ILogManager.class).to(LogManager.class);
 
 		bind(IUserDataManager.class).to(MongoUserDataManager.class);

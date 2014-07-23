@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
-
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
@@ -183,12 +181,13 @@ public class GitContentManagerTest {
 				.once();
 		expect(searchHits.getTotalResults()).andReturn(0L).once();
 
-		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
-				.once();
-
 		expect(contentMapper.getDTOByDOList((List<Content>) anyObject()))
 				.andReturn(new ArrayList<ContentDTO>()).once();
+
+		expect(
+				contentMapper
+						.mapFromStringListToContentList((List<String>) anyObject()))
+				.andReturn(new ArrayList<Content>()).once();
 
 		replay(database, searchProvider, searchHits, contentMapper);
 
@@ -644,19 +643,20 @@ public class GitContentManagerTest {
 				content, indexProblemCache);
 
 		String uniqueObjectId = UUID.randomUUID().toString();
-		
+
 		// Self reference for the purpose of passing the test
 		List<String> relatedContent = new LinkedList<String>();
 		relatedContent.add(uniqueObjectId);
-		
+
 		List<ContentBase> children = new LinkedList<ContentBase>();
 		Content child = createMock(Content.class);
 		expect(child.getId()).andReturn(null).once();
 		expect(child.getRelatedContent()).andReturn(null).once();
 		expect(child.getValue()).andReturn(null).once();
-		expect(child.getChildren()).andReturn(new LinkedList<ContentBase>()).atLeastOnce();
+		expect(child.getChildren()).andReturn(new LinkedList<ContentBase>())
+				.atLeastOnce();
 		children.add(child);
-		
+
 		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
 		expect(content.getChildren()).andReturn(children).atLeastOnce();
 		expect(content.getRelatedContent()).andReturn(relatedContent)
