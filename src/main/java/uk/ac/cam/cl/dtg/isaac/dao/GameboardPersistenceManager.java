@@ -89,8 +89,7 @@ public class GameboardPersistenceManager {
 	 */
 	public final String saveGameboardToPermanentStorage(
 			final GameboardDTO gameboard) {
-		GameboardDO gameboardToSave = mapper.map(gameboard,
-				GameboardDO.class);
+		GameboardDO gameboardToSave = mapper.map(gameboard, GameboardDO.class);
 		// the mapping operation won't work for the list so we should just
 		// create a new one.
 		gameboardToSave.setQuestions(new ArrayList<String>());
@@ -238,13 +237,14 @@ public class GameboardPersistenceManager {
 			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
-				Constants.BooleanOperator.OR, Constants.ID_FIELDNAME),
+				Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
 				gameboardDO.getQuestions());
 
 		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
-				Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
-				Arrays.asList(QUESTION_TYPE));
-		
+				Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME), Arrays
+				.asList(QUESTION_TYPE));
+
 		// Search for questions that match the ids.
 		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api
 				.getLiveVersion(), fieldsToMap, 0, gameboardDO.getQuestions()

@@ -5,12 +5,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 
 /**
  * Content Class (Data Transfer Object) This class represents a majority of
@@ -29,7 +27,7 @@ public class ContentDTO extends ContentBaseDTO {
 	protected List<ContentBaseDTO> children;
 	protected String value;
 	protected String attribution;
-	protected List<String> relatedContent;
+	protected List<ContentSummaryDTO> relatedContent;
 	protected boolean published;
 	protected Integer level;
 	
@@ -45,7 +43,7 @@ public class ContentDTO extends ContentBaseDTO {
 			@JsonProperty("children") List<ContentBaseDTO> children,
 			@JsonProperty("value") String value,
 			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<String> relatedContent,
+			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
 			@JsonProperty("published") boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level) {
@@ -84,6 +82,13 @@ public class ContentDTO extends ContentBaseDTO {
 		this.value = value;
 		this.type = "content";
 		this.encoding = "markdown";
+
+		// useful for when we want to augment this POJO
+		if (null == this.children)
+			this.children = Lists.newArrayList();
+
+		if (null == this.tags)
+			this.tags = Sets.newHashSet();
 	}
 
 	/**
@@ -91,7 +96,8 @@ public class ContentDTO extends ContentBaseDTO {
 	 */
 	public ContentDTO() {
 		// useful for when we want to augment this POJO
-		this.children = new ArrayList<ContentBaseDTO>();
+		this.children = Lists.newArrayList();
+		this.tags = Sets.newHashSet();
 	}
 
 	public String getTitle() {
@@ -150,22 +156,12 @@ public class ContentDTO extends ContentBaseDTO {
 		this.attribution = attribution;
 	}
 
-	public List<String> getRelatedContent() {
+	public List<ContentSummaryDTO> getRelatedContent() {
 		return relatedContent;
 	}
 
-	@JsonDeserialize(using = TrimWhitespaceListDeserializer.class)
-	public void setRelatedContent(List<String> relatedContent) {
+	public void setRelatedContent(List<ContentSummaryDTO> relatedContent) {
 		this.relatedContent = relatedContent;
-	}
-
-	@JsonIgnore
-	public boolean getPublished() {
-		return published;
-	}
-
-	public void setPublished(boolean published) {
-		this.published = published;
 	}
 
 	public List<ContentBaseDTO> getChildren() {

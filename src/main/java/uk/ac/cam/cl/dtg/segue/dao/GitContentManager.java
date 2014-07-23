@@ -28,8 +28,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -40,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
@@ -148,6 +151,8 @@ public class GitContentManager implements IContentManager {
 			return null;
 		}
 
+		// TODO: perhaps instead of using gitcache we should just use elastic
+		// search?
 		if (this.ensureCache(version)) {
 			Content result = gitCache.get(version).get(id);
 			if (null == result) {
@@ -171,21 +176,8 @@ public class GitContentManager implements IContentManager {
 							+ "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
 							idPrefix);
 
-			// TODO: Refactor out common mapping code. Also use auto mapper.
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-			ObjectMapper objectMapper = mapper.getContentObjectMapper();
-
-			List<Content> searchResults = new ArrayList<Content>();
-			for (String hit : searchHits.getResults()) {
-				try {
-					searchResults.add((Content) objectMapper.readValue(hit,
-							ContentBase.class));
-				} catch (IOException e) {
-					log.error("Error while trying to search for id prefix: "
-							+ idPrefix + " in version " + version, e);
-				}
-			}
+			List<Content> searchResults = mapper
+					.mapFromStringListToContentList(searchHits.getResults());
 
 			return new ResultsWrapper<ContentDTO>(
 					mapper.getDTOByDOList(searchResults),
@@ -207,20 +199,8 @@ public class GitContentManager implements IContentManager {
 					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
 					Constants.CHILDREN_FIELDNAME);
 
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-			ObjectMapper objectMapper = mapper.getContentObjectMapper();
-
-			List<Content> searchResults = new ArrayList<Content>();
-			for (String hit : searchHits.getResults()) {
-				try {
-					searchResults.add((Content) objectMapper.readValue(hit,
-							ContentBase.class));
-				} catch (IOException e) {
-					log.error("Error while trying to search for "
-							+ searchString + " in version " + version, e);
-				}
-			}
+			List<Content> searchResults = mapper
+					.mapFromStringListToContentList(searchHits.getResults());
 
 			return new ResultsWrapper<ContentDTO>(
 					mapper.getDTOByDOList(searchResults),
@@ -242,7 +222,7 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
 			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions = new HashMap<String, Constants.SortOrder>();
+			Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
 
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "."
 					+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -254,10 +234,11 @@ public class GitContentManager implements IContentManager {
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<ContentDTO> result = mapper
+			List<Content> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
+			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-			finalResults = new ResultsWrapper<ContentDTO>(result,
+			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults,
 					searchHits.getTotalResults());
 		}
 
@@ -278,10 +259,12 @@ public class GitContentManager implements IContentManager {
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<ContentDTO> result = mapper
+			List<Content> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
 
-			finalResults = new ResultsWrapper<ContentDTO>(result,
+			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
+
+			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults,
 					searchHits.getTotalResults());
 		}
 
@@ -367,10 +350,13 @@ public class GitContentManager implements IContentManager {
 			ResultsWrapper<String> searchResults = this.searchProvider
 					.termSearch(version, CONTENT_TYPE, tags, "tags");
 
-			List<ContentDTO> contentResults = mapper
+			List<Content> contentResults = mapper
 					.mapFromStringListToContentList(searchResults.getResults());
 
-			return new ResultsWrapper<ContentDTO>(contentResults,
+			List<ContentDTO> contentDTOResults = mapper
+					.getDTOByDOList(contentResults);
+
+			return new ResultsWrapper<ContentDTO>(contentDTOResults,
 					searchResults.getTotalResults());
 		} else {
 			log.error("Cache not found. Failed to build cache with version: "
@@ -426,6 +412,50 @@ public class GitContentManager implements IContentManager {
 	@Override
 	public final Map<Content, List<String>> getProblemMap(final String version) {
 		return indexProblemCache.get(version);
+	}
+	
+	
+	/**
+	 * Augment content DTO with related content.
+	 * 
+	 * @param contentDTO
+	 *            - the destination contentDTO which should have content
+	 *            summaries created.
+	 * @return fully populated contentDTO.
+	 */
+	@Override
+	public ContentDTO populateContentSummaries(final ContentDTO contentDTO) {
+		if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
+			return contentDTO;
+		}
+		
+		// build query the db to get full content information
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+		
+		List<String> relatedContentIds = Lists.newArrayList();
+		for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
+			relatedContentIds.add(summary.getId());
+		}
+
+		fieldsToMap.put(Maps.immutableEntry(Constants.BooleanOperator.OR,
+				Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
+				relatedContentIds);
+
+		ResultsWrapper<ContentDTO> results = this.findByFieldNames(
+				getLatestVersionId(), fieldsToMap, 0, relatedContentIds.size());
+
+		List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
+
+		for (ContentDTO relatedContent : results.getResults()) {
+			ContentSummaryDTO summary = this.mapper.getAutoMapper().map(
+					relatedContent, ContentSummaryDTO.class);
+			relatedContentDTOs.add(summary);
+		}
+
+		contentDTO.setRelatedContent(relatedContentDTOs);
+
+		return contentDTO;
 	}
 
 	/**
@@ -639,7 +669,8 @@ public class GitContentManager implements IContentManager {
 			newParentId = content.getId();
 		} else {
 			if (content.getId() != null) {
-				newParentId = parentId + Constants.ID_SEPARATOR + content.getId();	
+				newParentId = parentId + Constants.ID_SEPARATOR
+						+ content.getId();
 			} else {
 				newParentId = parentId;
 			}
@@ -781,6 +812,7 @@ public class GitContentManager implements IContentManager {
 			if (c instanceof ChoiceQuestion
 					&& !(c.getType().equals("isaacQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
+				
 				if (question.getChoices() == null
 						|| question.getChoices().isEmpty()) {
 					log.warn("Choice question: " + question.getId() + " in "
@@ -795,7 +827,8 @@ public class GitContentManager implements IContentManager {
 									+ " in "
 									+ question.getCanonicalSourceFile()
 									+ " found without any choice metadata. "
-									+ "This question will always be automatically marked as incorrect");
+									+ "This question will always be automatically "
+									+ "marked as incorrect");
 				} else {
 					boolean correctOptionFound = false;
 					for (Choice choice : question.getChoices()) {
@@ -813,9 +846,19 @@ public class GitContentManager implements IContentManager {
 										+ " in "
 										+ question.getCanonicalSourceFile()
 										+ " found without a correct answer. "
-										+ "This question will always be automatically marked as incorrect");
+										+ "This question will always be automatically marked "
+										+ "as incorrect");
 					}
 				}
+			}
+			
+			// check if level is valid.
+			if (c instanceof IsaacQuestionPage && (c.getLevel() == null || c.getLevel() == 0)) {
+				this.registerContentProblem(sha, c, "Level error! - Question: "
+						+ c.getId()
+						+ " in "
+						+ c.getCanonicalSourceFile()
+						+ " has the level field set to: " + c.getLevel());
 			}
 		}
 

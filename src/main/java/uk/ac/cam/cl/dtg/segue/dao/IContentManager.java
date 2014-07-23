@@ -235,5 +235,15 @@ public interface IContentManager {
 	 *         problem index.
 	 */
 	Map<Content, List<String>> getProblemMap(String version);
+	
+	/**
+	 * Augment content DTO with related content.
+	 * 
+	 * @param contentDTO
+	 *            - the destination contentDTO which should have content
+	 *            summaries created.
+	 * @return fully populated contentDTO.
+	 */
+	ContentDTO populateContentSummaries(ContentDTO contentDTO);
 
 }

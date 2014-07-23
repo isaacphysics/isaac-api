@@ -10,6 +10,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 
 /**
  * DO for isaac featured profiles.
@@ -33,7 +34,7 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 			@JsonProperty("children") List<ContentBaseDTO> children,
 			@JsonProperty("value") String value,
 			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<String> relatedContent,
+			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
 			@JsonProperty("version") boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,

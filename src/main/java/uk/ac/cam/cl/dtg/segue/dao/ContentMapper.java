@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Maps;
@@ -14,19 +17,18 @@ import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.api.client.util.Lists;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
 import com.mongodb.DBObject;
 
 /**
@@ -42,6 +44,9 @@ public class ContentMapper {
 	// field.
 	private final Map<String, Class<? extends Content>> jsonTypes;
 	private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
+	
+	// this autoMapper is initialised lazily in the getAutoMapper method
+	private MapperFacade autoMapper = null;
 
 	/**
 	 * Creates a new content mapper without type information.
@@ -50,6 +55,7 @@ public class ContentMapper {
 	 * methods.
 	 * 
 	 */
+	@Inject
 	public ContentMapper() {
 		jsonTypes = Maps.newConcurrentMap();
 		mapOfDOsToDTOs = Maps.newConcurrentMap();
@@ -67,6 +73,7 @@ public class ContentMapper {
 			final Map<String, Class<? extends Content>> additionalTypes,
 			final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs) {
 		Validate.notNull(additionalTypes);
+
 		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
 		jsonTypes.putAll(additionalTypes);
 
@@ -259,13 +266,20 @@ public class ContentMapper {
 	 * @return DTO that can be used for mapping.
 	 */
 	public ContentDTO getDTOByDO(final Content content) {
+		ContentDTO result = autoMapper.map(content,
+				this.mapOfDOsToDTOs.get(content.getClass()));
+		if (result.getRelatedContent() != null) {
+			List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
 
-		// try auto-mapping with dozer
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		MapperFacade mapper = injector.getInstance(MapperFacade.class);
+			for (String relatedId : content.getRelatedContent()) {
+				ContentSummaryDTO contentSummary = new ContentSummaryDTO();
+				contentSummary.setId(relatedId);
+				relatedContent.add(contentSummary);
+			}
+			result.setRelatedContent(relatedContent);
+		}
 
-		return mapper.map(content, this.mapOfDOsToDTOs.get(content.getClass()));
+		return result;
 	}
 
 	/**
@@ -279,21 +293,15 @@ public class ContentMapper {
 	public List<ContentDTO> getDTOByDOList(final List<Content> contentDOList) {
 		Validate.notNull(contentDOList);
 
-		// try auto-mapping with dozer
-		Injector injector = Guice
-				.createInjector(new SegueGuiceConfigurationModule());
-		MapperFacade mapper = injector.getInstance(MapperFacade.class);
-
 		List<ContentDTO> resultList = Lists.newArrayList();
 		for (Content c : contentDOList) {
 			if (this.mapOfDOsToDTOs.get(c.getClass()) != null) {
-				resultList.add(mapper.map(c,
-						this.mapOfDOsToDTOs.get(c.getClass())));
+				resultList.add(this.getDTOByDO(c));
 			} else {
 				log.error("Unable to find DTO mapping class");
 			}
-
 		}
+
 		return resultList;
 	}
 
@@ -330,7 +338,7 @@ public class ContentMapper {
 	 *            - Converts a list of strings to a list of content
 	 * @return Content List
 	 */
-	public List<ContentDTO> mapFromStringListToContentList(
+	public List<Content> mapFromStringListToContentList(
 			final List<String> stringList) {
 		// setup object mapper to use preconfigured deserializer module.
 		// Required to deal with type polymorphism
@@ -348,6 +356,35 @@ public class ContentMapper {
 						e);
 			}
 		}
-		return this.getDTOByDOList(contentList);
+		return contentList;
+	}
+
+	/**
+	 * Get an instance of the automapper which has been configured to cope with
+	 * recursive content objects. This automapper is more efficient than the
+	 * jackson one as there is no intermediate representation.
+	 * 
+	 * @return autoMapper
+	 */
+	public MapperFacade getAutoMapper() {
+		if (null == this.autoMapper) {
+			MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
+					.build();
+			
+			ContentBaseOrikaConverter contentConverter = new ContentBaseOrikaConverter(
+					this);
+			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter(
+					contentConverter);
+
+			ConverterFactory converterFactory = mapperFactory
+					.getConverterFactory();
+			
+			converterFactory.registerConverter(contentConverter);
+			converterFactory.registerConverter(choiceConverter);
+			
+			this.autoMapper = mapperFactory.getMapperFacade();
+		}
+
+		return this.autoMapper;
 	}
 }

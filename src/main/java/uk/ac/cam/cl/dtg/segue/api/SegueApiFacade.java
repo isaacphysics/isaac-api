@@ -1029,4 +1029,19 @@ public class SegueApiFacade {
 		return this.contentVersionController.getContentManager().getByIdPrefix(
 				idPrefix, version);
 	}
+
+	/**
+	 * Utility method to allow related content to be populated as summary
+	 * objects.
+	 * 
+	 * By default content summary objects may just have ids.
+	 * 
+	 * @param contentToAugment - the content to augment.
+	 * @return content which has been augmented
+	 */
+	public ContentDTO augmentContentWithRelatedContent(
+			final ContentDTO contentToAugment) {
+		return this.contentVersionController.getContentManager()
+				.populateContentSummaries(contentToAugment);
+	}
 }

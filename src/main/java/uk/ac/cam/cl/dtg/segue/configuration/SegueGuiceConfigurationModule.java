@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.SegueObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -68,13 +67,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
-	// Dozer mapper
-	private static SegueObjectMapper modelMapperDOToDTOMapper = null;
-
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
-	
+
 	private static GoogleClientSecrets googleClientSecrets = null;
 
 	private PropertiesLoader globalProperties = null;
@@ -89,12 +85,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		} catch (IOException e) {
 			log.error("Error loading properties file.", e);
-		}
-
-		if (null == mapper) {
-			mapper = new ContentMapper();
-			buildDefaultJsonTypeMap();
-			// TODO: create a provider for this and inject it properly.
 		}
 	}
 
@@ -172,10 +162,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
 				globalProperties);
+<<<<<<< HEAD
 		
 		// Facebook
 		this.bindConstantToProperty(Constants.FACEBOOK_SECRET,
 				globalProperties);
+=======
+
+		// Configure security providers
+		this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
+>>>>>>> 6a08e5e26cc0b17d7e00310e64d1af0433d14f18
 		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
@@ -208,19 +204,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * Deals with application data managers.
 	 */
 	private void configureApplicationManagers() {
-		// bind(IContentManager.class).to(MongoContentManager.class); //Allows
-		// Mongo take over Content Management
-		bind(IContentManager.class).to(GitContentManager.class); // Allows GitDb
-																	// take over
-																	// Content
-																	// Management
+		// Allows Mongo to take over Content Management
+		// bind(IContentManager.class).to(MongoContentManager.class);
+		
+		// Allows GitDb to take over content Management 
+		bind(IContentManager.class).to(GitContentManager.class); 
 
+		//TODO: the log manager needs redoing.
 		bind(ILogManager.class).to(LogManager.class);
 
 		bind(IUserDataManager.class).to(MongoUserDataManager.class);
-
-		// bind to single instances mainly because caches are used
-		bind(ContentMapper.class).toInstance(mapper);
 	}
 
 	/**
@@ -281,6 +274,24 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * This provides a singleton of the contentVersionController for the segue
 	 * facade.
 	 * 
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private ContentMapper getContentMapper() {
+		if (null == mapper) {
+			mapper = new ContentMapper();
+			this.buildDefaultJsonTypeMap();
+		}
+
+		return mapper;
+	}
+
+	/**
+	 * This provides a singleton of the contentVersionController for the segue
+	 * facade.
+	 * 
 	 * @param database
 	 *            - IUserManager
 	 * @param hmacSalt
@@ -309,21 +320,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	/**
 	 * Gets the instance of the dozer mapper object.
 	 * 
-	 * @param mapper
-	 *            - Content Mapper that has been preconfigured with knowledge of
-	 *            the inheritance hierarchy for content objects.
-	 * @return Dozer Mapper.
+	 * @return a preconfigured instance of an Auto Mapper. This is specialised
+	 *         for mapping SegueObjects.
 	 */
 	@Provides
 	@Singleton
 	@Inject
-	private static MapperFacade getDozerDOtoDTOMapper(final ContentMapper mapper) {
-		if (null == modelMapperDOToDTOMapper) {
-			modelMapperDOToDTOMapper = new SegueObjectMapper(mapper);
-			log.info("Creating singleton for Dozer mapper");
-		}
-
-		return modelMapperDOToDTOMapper.getMapper();
+	private MapperFacade getDozerDOtoDTOMapper() {
+		return this.getContentMapper().getAutoMapper();
 	}
 
 	/**
@@ -332,25 +336,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * @param clientSecretLocation
 	 *            - The path to the client secrets json file
 	 * @return GoogleClientSecrets
-	 * @throws IOException 
+	 * @throws IOException
+	 *             - when we are unable to access the google client file.
 	 */
 	@Provides
 	@Singleton
 	@Inject
 	private static GoogleClientSecrets getGoogleClientSecrets(
 			@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation)
-					throws IOException {
+		throws IOException {
 		if (null == googleClientSecrets) {
 			Validate.notNull(clientSecretLocation, "Missing resource %s",
 					clientSecretLocation);
-	
+
 			// load up the client secrets from the file system.
 			InputStream inputStream = new FileInputStream(clientSecretLocation);
 			InputStreamReader isr = new InputStreamReader(inputStream);
 
-			googleClientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
+			googleClientSecrets = GoogleClientSecrets.load(
+					new JacksonFactory(), isr);
 		}
-		
+
 		return googleClientSecrets;
 	}
 
