@@ -178,4 +178,10 @@ public class MongoContentManager implements IContentManager {
 		throw new UnsupportedOperationException(
 				"MongoDB Content Manager does not support this operation.");
 	}
+
+	@Override
+	public ContentDTO populateContentSummaries(ContentDTO contentDTO) {
+		throw new UnsupportedOperationException(
+				"This method is not implemented yet.");
+	}
 }

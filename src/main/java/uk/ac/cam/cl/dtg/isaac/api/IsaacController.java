@@ -575,56 +575,6 @@ public class IsaacController {
 	// return ImmutableMap.of("result", "success");
 	// }
 
-	// /**
-	// * This method will look at a content objects related content list and
-	// * return a list of contentInfo objects which can be used for creating
-	// links
-	// * etc.
-	// *
-	// * This method returns null if the content object provided has no related
-	// * Content
-	// *
-	// * @param proxyPath
-	// * - the string prefix for the server being used
-	// * @param content
-	// * - the content object which contains related content
-	// * @return a list of content summary objects.
-	// */
-	// private List<ContentSummary> buildMetaContentmap(final String proxyPath,
-	// final Content content) {
-	// if (null == content) {
-	// return null;
-	// } else if (content.getRelatedContent() == null
-	// || content.getRelatedContent().isEmpty()) {
-	// return null;
-	// }
-	//
-	// List<ContentSummary> contentInfoList = new ArrayList<ContentSummary>();
-	//
-	// for (String id : content.getRelatedContent()) {
-	// try {
-	// Content relatedContent = (Content) api.getContentById(
-	// api.getLiveVersion(), id).getEntity();
-	//
-	// if (relatedContent == null) {
-	// log.warn("Related content (" + id
-	// + ") does not exist in the data store.");
-	// } else {
-	// ContentSummary contentInfo = extractContentSummary(
-	// relatedContent, proxyPath);
-	// contentInfoList.add(contentInfo);
-	// }
-	// } catch (ClassCastException exception) {
-	// log.error("Error whilst trying to cast one object to another.",
-	// exception);
-	// // TODO: fix how SegueErrorResponse exception objects are
-	// // handled - they clearly cannot be cast as content objects
-	// // here.
-	// }
-	// }
-	//
-	// return contentInfoList;
-	// }
 
 	/**
 	 * Generate a URI that will enable us to find an object again.
@@ -755,6 +705,8 @@ public class IsaacController {
 	/**
 	 * For use when we expect to only find a single result.
 	 * 
+	 * By default related content ContentSummary objects will be fully augmented. 
+	 * 
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
 	 *            match
@@ -784,7 +736,7 @@ public class IsaacController {
 		// ContentPage cp = new ContentPage(c.getId(), c,
 		// this.buildMetaContentmap(proxyPath, c));
 
-		return Response.ok(c).build();
+		return Response.ok(api.augmentContentWithRelatedContent(c)).build();
 	}
 
 	/**

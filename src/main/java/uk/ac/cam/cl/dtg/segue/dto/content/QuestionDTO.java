@@ -28,7 +28,7 @@ public class QuestionDTO extends ContentDTO {
 			@JsonProperty("children") List<ContentBaseDTO> children,
 			@JsonProperty("value") String value,
 			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<String> relatedContent,
+			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
 			@JsonProperty("version") boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,

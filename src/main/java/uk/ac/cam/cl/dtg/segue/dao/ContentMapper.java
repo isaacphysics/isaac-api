@@ -23,6 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -43,7 +44,8 @@ public class ContentMapper {
 	// field.
 	private final Map<String, Class<? extends Content>> jsonTypes;
 	private final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs;
-
+	
+	// this autoMapper is initialised lazily in the getAutoMapper method
 	private MapperFacade autoMapper = null;
 
 	/**
@@ -64,15 +66,12 @@ public class ContentMapper {
 	 * 
 	 * @param additionalTypes
 	 *            - types to add to our look up map.
-	 * @param autoMapper
-	 *            -
 	 * @param mapOfDOsToDTOs
 	 *            - map of DOs To DTOs.
 	 */
 	public ContentMapper(
 			final Map<String, Class<? extends Content>> additionalTypes,
-			final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs,
-			final MapperFacade autoMapper) {
+			final Map<Class<? extends Content>, Class<? extends ContentDTO>> mapOfDOsToDTOs) {
 		Validate.notNull(additionalTypes);
 
 		this.jsonTypes = new ConcurrentHashMap<String, Class<? extends Content>>();
@@ -269,6 +268,16 @@ public class ContentMapper {
 	public ContentDTO getDTOByDO(final Content content) {
 		ContentDTO result = autoMapper.map(content,
 				this.mapOfDOsToDTOs.get(content.getClass()));
+		if (result.getRelatedContent() != null) {
+			List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
+
+			for (String relatedId : content.getRelatedContent()) {
+				ContentSummaryDTO contentSummary = new ContentSummaryDTO();
+				contentSummary.setId(relatedId);
+				relatedContent.add(contentSummary);
+			}
+			result.setRelatedContent(relatedContent);
+		}
 
 		return result;
 	}
@@ -329,7 +338,7 @@ public class ContentMapper {
 	 *            - Converts a list of strings to a list of content
 	 * @return Content List
 	 */
-	public List<ContentDTO> mapFromStringListToContentList(
+	public List<Content> mapFromStringListToContentList(
 			final List<String> stringList) {
 		// setup object mapper to use preconfigured deserializer module.
 		// Required to deal with type polymorphism
@@ -347,29 +356,34 @@ public class ContentMapper {
 						e);
 			}
 		}
-		return this.getDTOByDOList(contentList);
+		return contentList;
 	}
-	
+
 	/**
-	 * Get an instance of the automapper.
+	 * Get an instance of the automapper which has been configured to cope with
+	 * recursive content objects. This automapper is more efficient than the
+	 * jackson one as there is no intermediate representation.
+	 * 
 	 * @return autoMapper
 	 */
 	public MapperFacade getAutoMapper() {
 		if (null == this.autoMapper) {
 			MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
-				.build();
+					.build();
 
 			ContentBaseOrikaConverter contentConverter = new ContentBaseOrikaConverter(
 					this);
-			
-			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter(contentConverter);
-			
-			ConverterFactory converterFactory = mapperFactory.getConverterFactory();
+
+			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter(
+					contentConverter);
+
+			ConverterFactory converterFactory = mapperFactory
+					.getConverterFactory();
 			converterFactory.registerConverter(contentConverter);
 			converterFactory.registerConverter(choiceConverter);
 			this.autoMapper = mapperFactory.getMapperFacade();
 		}
-		
+
 		return this.autoMapper;
 	}
 }

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -40,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 
 /**
@@ -148,6 +150,8 @@ public class GitContentManager implements IContentManager {
 			return null;
 		}
 
+		// TODO: perhaps instead of using gitcache we should just use elastic
+		// search?
 		if (this.ensureCache(version)) {
 			Content result = gitCache.get(version).get(id);
 			if (null == result) {
@@ -207,6 +211,10 @@ public class GitContentManager implements IContentManager {
 					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
 					Constants.CHILDREN_FIELDNAME);
 
+			// TODO: Refactor out common mapping code. Also use auto mapper.
+			// setup object mapper to use preconfigured deserializer module.
+			// Required to deal with type polymorphism
+
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
 			ObjectMapper objectMapper = mapper.getContentObjectMapper();
@@ -254,10 +262,11 @@ public class GitContentManager implements IContentManager {
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<ContentDTO> result = mapper
+			List<Content> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
+			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-			finalResults = new ResultsWrapper<ContentDTO>(result,
+			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults,
 					searchHits.getTotalResults());
 		}
 
@@ -278,10 +287,12 @@ public class GitContentManager implements IContentManager {
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<ContentDTO> result = mapper
+			List<Content> result = mapper
 					.mapFromStringListToContentList(searchHits.getResults());
 
-			finalResults = new ResultsWrapper<ContentDTO>(result,
+			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
+
+			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults,
 					searchHits.getTotalResults());
 		}
 
@@ -367,10 +378,13 @@ public class GitContentManager implements IContentManager {
 			ResultsWrapper<String> searchResults = this.searchProvider
 					.termSearch(version, CONTENT_TYPE, tags, "tags");
 
-			List<ContentDTO> contentResults = mapper
+			List<Content> contentResults = mapper
 					.mapFromStringListToContentList(searchResults.getResults());
 
-			return new ResultsWrapper<ContentDTO>(contentResults,
+			List<ContentDTO> contentDTOResults = mapper
+					.getDTOByDOList(contentResults);
+
+			return new ResultsWrapper<ContentDTO>(contentDTOResults,
 					searchResults.getTotalResults());
 		} else {
 			log.error("Cache not found. Failed to build cache with version: "
@@ -426,6 +440,46 @@ public class GitContentManager implements IContentManager {
 	@Override
 	public final Map<Content, List<String>> getProblemMap(final String version) {
 		return indexProblemCache.get(version);
+	}
+	
+	
+	/**
+	 * Augment content DTO with related content.
+	 * 
+	 * @param contentDTO
+	 *            - the destination contentDTO which should have content
+	 *            summaries created.
+	 * @return fully populated contentDTO.
+	 */
+	@Override
+	public ContentDTO populateContentSummaries(final ContentDTO contentDTO) {
+		// build query the db to get full question information
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+
+		List<String> relatedContentIds = Lists.newArrayList();
+		for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
+			relatedContentIds.add(summary.getId());
+		}
+
+		fieldsToMap.put(Maps.immutableEntry(Constants.BooleanOperator.OR,
+				Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
+				relatedContentIds);
+
+		ResultsWrapper<ContentDTO> results = this.findByFieldNames(
+				getLatestVersionId(), fieldsToMap, 0, relatedContentIds.size());
+
+		List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
+
+		for (ContentDTO relatedContent : results.getResults()) {
+			ContentSummaryDTO summary = this.mapper.getAutoMapper().map(
+					relatedContent, ContentSummaryDTO.class);
+			relatedContentDTOs.add(summary);
+		}
+
+		contentDTO.setRelatedContent(relatedContentDTOs);
+
+		return contentDTO;
 	}
 
 	/**
@@ -639,7 +693,8 @@ public class GitContentManager implements IContentManager {
 			newParentId = content.getId();
 		} else {
 			if (content.getId() != null) {
-				newParentId = parentId + Constants.ID_SEPARATOR + content.getId();	
+				newParentId = parentId + Constants.ID_SEPARATOR
+						+ content.getId();
 			} else {
 				newParentId = parentId;
 			}

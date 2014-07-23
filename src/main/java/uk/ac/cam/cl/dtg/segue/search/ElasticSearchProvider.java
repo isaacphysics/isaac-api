@@ -380,7 +380,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
 		List<String> resultList = new ArrayList<String>();
 
-		log.info("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
+		log.debug("TOTAL SEARCH HITS " + response.getHits().getTotalHits());
 		log.debug("Search Request: " + configuredSearchRequestBuilder);
 		for (SearchHit item : hitAsList) {
 			resultList.add(item.getSourceAsString());
