@@ -78,6 +78,11 @@
 			<artifactId>google-api-services-oauth2</artifactId>
 			<version>v2-rev64-1.17.0-rc</version>
 		</dependency>
+		<dependency>
+			<groupId>org.twitter4j</groupId>
+			<artifactId>twitter4j-core</artifactId>
+			<version>4.0.2</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.google.inject</groupId>
