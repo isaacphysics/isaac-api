@@ -56,29 +56,22 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
 	@Inject
 	public GoogleAuthenticator(
-			@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) String clientSecretLocation,
+			GoogleClientSecrets clientSecrets,
 			@Named(Constants.GOOGLE_CALLBACK_URI) String callbackUri,
-			@Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes)
-			throws IOException {
-		try {
-			this.jsonFactory = new JacksonFactory();
-			this.httpTransport = new NetHttpTransport();
+			@Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes) {
+		this.jsonFactory = new JacksonFactory();
+		this.httpTransport = new NetHttpTransport();
 
-			this.clientSecrets = getClientCredential(clientSecretLocation);
-			this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
-			this.callbackUri = callbackUri;
+		this.clientSecrets = clientSecrets;
+		this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
+		this.callbackUri = callbackUri;
 
-			if (null == credentialStore)
-				credentialStore = new WeakHashMap<String, Credential>();
+		if (null == credentialStore)
+			credentialStore = new WeakHashMap<String, Credential>();
 
-			if (null == tokenVerifier)
-				tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
-						jsonFactory);
-
-		} catch (IOException exception) {
-			log.error("IOException occurred while trying to initialise the Google Authenticator.");
-			throw exception;
-		}
+		if (null == tokenVerifier)
+			tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
+					jsonFactory);
 	}
 
 	@Override
@@ -194,22 +187,6 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 		String antiForgeryStateToken = "google" + antiForgerySalt;
 
 		return antiForgeryStateToken;
-	}
-
-	private GoogleClientSecrets getClientCredential(String clientSecretLocation)
-			throws IOException {
-		Validate.notNull(clientSecretLocation, "Missing resource %s",
-				clientSecretLocation);
-
-		GoogleClientSecrets clientSecret = null;
-
-		// load up the client secrets from the file system.
-		InputStream inputStream = new FileInputStream(clientSecretLocation);
-		InputStreamReader isr = new InputStreamReader(inputStream);
-
-		clientSecret = GoogleClientSecrets.load(jsonFactory, isr);
-
-		return clientSecret;
 	}
 
 	/**

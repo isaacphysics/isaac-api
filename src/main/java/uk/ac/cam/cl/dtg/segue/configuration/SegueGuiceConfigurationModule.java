@@ -1,10 +1,14 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
 
 import ma.glasnost.orika.MapperFacade;
 
+import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +44,8 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
@@ -63,6 +69,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
+	
+	private static GoogleClientSecrets googleClientSecrets = null;
 
 	private PropertiesLoader globalProperties = null;
 
@@ -171,6 +179,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				GoogleAuthenticator.class);
 		mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(
 				FacebookAuthenticator.class);
+
 	}
 
 	/**
@@ -300,6 +309,34 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	private MapperFacade getDozerDOtoDTOMapper() {
 		return this.getContentMapper().getAutoMapper();
+	}
+
+	/**
+	 * Gets the instance of the dozer mapper object.
+	 * 
+	 * @param clientSecretLocation
+	 *            - The path to the client secrets json file
+	 * @return GoogleClientSecrets
+	 * @throws IOException 
+	 */
+	@Provides
+	@Singleton
+	@Inject
+	private static GoogleClientSecrets getGoogleClientSecrets(
+			@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation)
+					throws IOException {
+		if (null == googleClientSecrets) {
+			Validate.notNull(clientSecretLocation, "Missing resource %s",
+					clientSecretLocation);
+	
+			// load up the client secrets from the file system.
+			InputStream inputStream = new FileInputStream(clientSecretLocation);
+			InputStreamReader isr = new InputStreamReader(inputStream);
+
+			googleClientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
+		}
+		
+		return googleClientSecrets;
 	}
 
 	/**
