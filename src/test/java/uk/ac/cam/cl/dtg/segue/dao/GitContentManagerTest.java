@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
@@ -165,11 +166,11 @@ public class GitContentManagerTest {
 
 		reset(database, searchProvider, contentMapper);
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
 
 		ResultsWrapper<String> searchHits = createMock(ResultsWrapper.class);
-
+		
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
 		expect(
 				searchProvider.fuzzySearch(anyString(), anyString(),
@@ -191,6 +192,9 @@ public class GitContentManagerTest {
 
 		replay(database, searchProvider, searchHits, contentMapper);
 
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
+		
 		assertTrue(gitContentManager
 				.searchForContent(INITIAL_VERSION, searchString,
 						fieldsThatMustMatch).getResults().size() == 0);
@@ -212,12 +216,15 @@ public class GitContentManagerTest {
 		gitCache.put(INITIAL_VERSION, contentMap);
 
 		reset(searchProvider);
-
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
-
+		
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
+		
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
 		replay(searchProvider);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
 		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == testContent);
 
@@ -246,7 +253,7 @@ public class GitContentManagerTest {
 		reset(database, searchProvider);
 
 		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
 		expect(database.verifyCommitExists(INITIAL_VERSION)).andReturn(false)
 				.once();
@@ -272,12 +279,15 @@ public class GitContentManagerTest {
 
 		reset(searchProvider);
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
-
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
+		
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
 		replay(searchProvider);
 
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
+		
 		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
 
 		verify(searchProvider);
@@ -303,11 +313,14 @@ public class GitContentManagerTest {
 
 		reset(searchProvider);
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
-
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
+		
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
 		replay(searchProvider);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
 		assertTrue(gitContentManager.ensureCache(INITIAL_VERSION));
 
@@ -326,13 +339,12 @@ public class GitContentManagerTest {
 
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
+
 
 		Repository repository = createMock(Repository.class);
 		ObjectId commitId = createMock(ObjectId.class);
 		TreeWalk treeWalk = createMock(TreeWalk.class);
-
+		
 		expect(database.verifyCommitExists(INITIAL_VERSION)).andReturn(true)
 				.once();
 		expect(database.getGitRepository()).andReturn(repository).once();
@@ -342,10 +354,16 @@ public class GitContentManagerTest {
 		expect(treeWalk.next()).andReturn(false).once();
 		repository.close();
 		expectLastCall().once();
+		
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).times(
 				2);
 
 		replay(database, repository, treeWalk, searchProvider);
+		
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
 		assertTrue(gitContentManager.ensureCache(INITIAL_VERSION));
 		assertTrue(gitCache.containsKey(INITIAL_VERSION));
@@ -373,11 +391,11 @@ public class GitContentManagerTest {
 		contents.put(uniqueObjectId, content);
 		gitCache.put(INITIAL_VERSION, contents);
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache);
-
 		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-
+		
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
+		
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(false)
 				.once();
 		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
@@ -388,9 +406,12 @@ public class GitContentManagerTest {
 				searchProvider.indexObject(eq(INITIAL_VERSION), anyString(),
 						eq(uniqueObjectHash), eq(uniqueObjectId))).andReturn(
 				true).once();
-
+		
 		replay(searchProvider, contentMapper, objectMapper);
 
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
+		
 		Whitebox.invokeMethod(gitContentManager,
 				"buildSearchIndexFromLocalGitIndex", INITIAL_VERSION);
 
@@ -717,9 +738,9 @@ public class GitContentManagerTest {
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache, indexProblemCache);
-
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
+		
 		Repository repository = createMock(Repository.class);
 		ObjectId commitId = createMock(ObjectId.class);
 		TreeWalk treeWalk = createMock(TreeWalk.class);
@@ -750,6 +771,9 @@ public class GitContentManagerTest {
 		replay(database, repository, treeWalk, contentMapper, objectMapper,
 				searchProvider);
 
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, indexProblemCache);
+		
 		Whitebox.invokeMethod(gitContentManager, "buildGitContentIndex",
 				INITIAL_VERSION);
 
@@ -777,9 +801,9 @@ public class GitContentManagerTest {
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, gitCache, indexProblemCache);
-
+		searchProvider.registerRawStringFields((List<String>) anyObject());
+		expectLastCall().once();
+		
 		Repository repository = createMock(Repository.class);
 		ObjectId commitId = createMock(ObjectId.class);
 		TreeWalk treeWalk = createMock(TreeWalk.class);
@@ -815,6 +839,9 @@ public class GitContentManagerTest {
 		replay(database, repository, treeWalk, contentMapper, objectMapper,
 				searchProvider);
 
+		GitContentManager gitContentManager = new GitContentManager(database,
+				searchProvider, contentMapper, gitCache, indexProblemCache);
+		
 		Whitebox.invokeMethod(gitContentManager, "buildGitContentIndex",
 				INITIAL_VERSION);
 

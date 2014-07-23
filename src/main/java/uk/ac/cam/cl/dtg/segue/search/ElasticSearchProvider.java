@@ -249,14 +249,14 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final boolean hasIndex(final String index) {
+	public boolean hasIndex(final String index) {
 		Validate.notNull(index);
 		return client.admin().indices().exists(new IndicesExistsRequest(index))
 				.actionGet().isExists();
 	}
 
 	@Override
-	public final void registerRawStringFields(final List<String> fieldNames) {
+	public void registerRawStringFields(final List<String> fieldNames) {
 		this.rawFieldsList.addAll(fieldNames);
 	}
 
