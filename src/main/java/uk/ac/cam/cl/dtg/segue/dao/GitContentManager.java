@@ -800,10 +800,6 @@ public class GitContentManager implements IContentManager {
 				
 				if (question.getChoices() == null
 						|| question.getChoices().isEmpty()) {
-					log.warn("Choice question: " + question.getId() + " in "
-							+ question.getCanonicalSourceFile()
-							+ " found without any choices - "
-							+ "this will mean users will always get it wrong.");
 					this.registerContentProblem(
 							sha,
 							question,
