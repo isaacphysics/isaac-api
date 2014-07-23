@@ -31,6 +31,7 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -849,15 +850,15 @@ public class GitContentManager implements IContentManager {
 										+ "as incorrect");
 					}
 				}
-
-				// check if level is valid.
-				if (c.getLevel() == null || c.getLevel() == 0) {
-					this.registerContentProblem(sha, c, "Level error! Question: "
-							+ question.getId()
-							+ " in "
-							+ question.getCanonicalSourceFile()
-							+ " has the level field set to: " + c.getLevel());
-				}
+			}
+			
+			// check if level is valid.
+			if (c instanceof IsaacQuestionPage && (c.getLevel() == null || c.getLevel() == 0)) {
+				this.registerContentProblem(sha, c, "Level error! - Question: "
+						+ c.getId()
+						+ " in "
+						+ c.getCanonicalSourceFile()
+						+ " has the level field set to: " + c.getLevel());
 			}
 		}
 
