@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.SegueObjectMapper;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -61,9 +60,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
-	// Dozer mapper
-	private static SegueObjectMapper modelMapperDOToDTOMapper = null;
-
 	private static ContentVersionController contentVersionController = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
@@ -80,12 +76,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		} catch (IOException e) {
 			log.error("Error loading properties file.", e);
-		}
-
-		if (null == mapper) {
-			mapper = new ContentMapper();
-			buildDefaultJsonTypeMap();
-			// TODO: create a provider for this and inject it properly.
 		}
 	}
 
@@ -197,9 +187,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		bind(ILogManager.class).to(LogManager.class);
 
 		bind(IUserDataManager.class).to(MongoUserDataManager.class);
-
-		// bind to single instances mainly because caches are used
-		bind(ContentMapper.class).toInstance(mapper);
 	}
 
 	/**
@@ -255,6 +242,24 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 		return contentVersionController;
 	}
+	
+	/**
+	 * This provides a singleton of the contentVersionController for the segue
+	 * facade.
+	 * 
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private ContentMapper getContentMapper() {
+		if (null == mapper) {
+			mapper = new ContentMapper();
+			this.buildDefaultJsonTypeMap();
+		}
+		
+		return mapper;
+	}	
 
 	/**
 	 * This provides a singleton of the contentVersionController for the segue
@@ -288,21 +293,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	/**
 	 * Gets the instance of the dozer mapper object.
 	 * 
-	 * @param mapper
-	 *            - Content Mapper that has been preconfigured with knowledge of
-	 *            the inheritance hierarchy for content objects.
-	 * @return Dozer Mapper.
+	 * @return Auto Mapper.
 	 */
 	@Provides
 	@Singleton
 	@Inject
-	private static MapperFacade getDozerDOtoDTOMapper(final ContentMapper mapper) {
-		if (null == modelMapperDOToDTOMapper) {
-			modelMapperDOToDTOMapper = new SegueObjectMapper(mapper);
-			log.info("Creating singleton for Dozer mapper");
-		}
-
-		return modelMapperDOToDTOMapper.getMapper();
+	private MapperFacade getDozerDOtoDTOMapper() {
+		return this.getContentMapper().getAutoMapper();
 	}
 
 	/**
