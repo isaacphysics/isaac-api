@@ -4,11 +4,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.net.URL;
 
 import org.junit.Test;
-
-import com.google.api.client.http.GenericUrl;
 
 /**
  * Test class for the facebook authenticator class.
