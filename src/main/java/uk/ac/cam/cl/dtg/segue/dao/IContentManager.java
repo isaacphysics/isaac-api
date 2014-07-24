@@ -244,6 +244,6 @@ public interface IContentManager {
 	 *            summaries created.
 	 * @return fully populated contentDTO.
 	 */
-	ContentDTO populateContentSummaries(ContentDTO contentDTO);
+	ContentDTO populateContentSummaries(String version, ContentDTO contentDTO);
 
 }

@@ -1036,12 +1036,14 @@ public class SegueApiFacade {
 	 * 
 	 * By default content summary objects may just have ids.
 	 * 
+	 * @param version - version of the content to use for augmentation.
 	 * @param contentToAugment - the content to augment.
 	 * @return content which has been augmented
 	 */
 	public ContentDTO augmentContentWithRelatedContent(
+			final String version,
 			final ContentDTO contentToAugment) {
 		return this.contentVersionController.getContentManager()
-				.populateContentSummaries(contentToAugment);
+				.populateContentSummaries(version, contentToAugment);
 	}
 }

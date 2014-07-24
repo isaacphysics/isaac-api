@@ -81,7 +81,7 @@ public class GitContentManager implements IContentManager {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
-		
+
 		this.gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
@@ -115,11 +115,11 @@ public class GitContentManager implements IContentManager {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
-		
+
 		this.gitCache = gitCache;
 		this.indexProblemCache = indexProblemCache;
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-		
+
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
 	}
@@ -207,7 +207,8 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
 			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+			Map<String, Constants.SortOrder> sortInstructions = Maps
+					.newHashMap();
 
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "."
 					+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -372,15 +373,17 @@ public class GitContentManager implements IContentManager {
 
 		if (!gitCache.containsKey(version)) {
 			synchronized (this) {
-				if (database.verifyCommitExists(version)) {
-					log.info("Rebuilding cache as sha does not exist in hashmap");
-					buildGitContentIndex(version);
-					buildSearchIndexFromLocalGitIndex(version);
-					validateReferentialIntegrity(version);
-				} else {
-					log.warn("Unable find the commit (" + version
-							+ ") in git to ensure the cache");
-					return false;
+				if (!gitCache.containsKey(version)) {
+					if (database.verifyCommitExists(version)) {
+						log.info("Rebuilding cache as sha does not exist in hashmap");
+						buildGitContentIndex(version);
+						buildSearchIndexFromLocalGitIndex(version);
+						validateReferentialIntegrity(version);
+					} else {
+						log.warn("Unable find the commit (" + version
+								+ ") in git to ensure the cache");
+						return false;
+					}
 				}
 			}
 		}
@@ -390,7 +393,7 @@ public class GitContentManager implements IContentManager {
 			log.warn("Search does not have a valid index for the " + version
 					+ " version of the content");
 			synchronized (this) {
-				this.buildSearchIndexFromLocalGitIndex(version);	
+				this.buildSearchIndexFromLocalGitIndex(version);
 			}
 		}
 
@@ -401,10 +404,13 @@ public class GitContentManager implements IContentManager {
 	public final Map<Content, List<String>> getProblemMap(final String version) {
 		return indexProblemCache.get(version);
 	}
-	
-	
+
 	/**
 	 * Augment content DTO with related content.
+	 * 
+	 * @param version
+	 *            - the version of the content to use for the augmentation
+	 *            process.
 	 * 
 	 * @param contentDTO
 	 *            - the destination contentDTO which should have content
@@ -412,15 +418,17 @@ public class GitContentManager implements IContentManager {
 	 * @return fully populated contentDTO.
 	 */
 	@Override
-	public ContentDTO populateContentSummaries(final ContentDTO contentDTO) {
-		if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
+	public ContentDTO populateContentSummaries(final String version,
+			final ContentDTO contentDTO) {
+		if (contentDTO.getRelatedContent() == null
+				|| contentDTO.getRelatedContent().isEmpty()) {
 			return contentDTO;
 		}
-		
+
 		// build query the db to get full content information
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
 			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
-		
+
 		List<String> relatedContentIds = Lists.newArrayList();
 		for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
 			relatedContentIds.add(summary.getId());
@@ -431,8 +439,8 @@ public class GitContentManager implements IContentManager {
 						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
 				relatedContentIds);
 
-		ResultsWrapper<ContentDTO> results = this.findByFieldNames(
-				getLatestVersionId(), fieldsToMap, 0, relatedContentIds.size());
+		ResultsWrapper<ContentDTO> results = this.findByFieldNames(version,
+				fieldsToMap, 0, relatedContentIds.size());
 
 		List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
@@ -801,7 +809,7 @@ public class GitContentManager implements IContentManager {
 			if (c instanceof ChoiceQuestion
 					&& !(c.getType().equals("isaacQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
-				
+
 				if (question.getChoices() == null
 						|| question.getChoices().isEmpty()) {
 					this.registerContentProblem(
@@ -836,13 +844,12 @@ public class GitContentManager implements IContentManager {
 					}
 				}
 			}
-			
+
 			// check if level is valid.
-			if (c instanceof IsaacQuestionPage && (c.getLevel() == null || c.getLevel() == 0)) {
+			if (c instanceof IsaacQuestionPage
+					&& (c.getLevel() == null || c.getLevel() == 0)) {
 				this.registerContentProblem(sha, c, "Level error! - Question: "
-						+ c.getId()
-						+ " in "
-						+ c.getCanonicalSourceFile()
+						+ c.getId() + " in " + c.getCanonicalSourceFile()
 						+ " has the level field set to: " + c.getLevel());
 			}
 		}
@@ -935,8 +942,8 @@ public class GitContentManager implements IContentManager {
 	 * @param message
 	 *            - Error message to associate with the problem file / content.
 	 */
-	private synchronized void registerContentProblem(final String version, final Content c,
-			final String message) {
+	private synchronized void registerContentProblem(final String version,
+			final Content c, final String message) {
 		Validate.notNull(c);
 
 		// try and make sure each dummy content object has a title

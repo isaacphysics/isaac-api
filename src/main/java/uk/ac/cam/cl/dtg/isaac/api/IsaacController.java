@@ -737,7 +737,7 @@ public class IsaacController {
 		// ContentPage cp = new ContentPage(c.getId(), c,
 		// this.buildMetaContentmap(proxyPath, c));
 
-		return Response.ok(api.augmentContentWithRelatedContent(c)).build();
+		return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
 	}
 
 	/**

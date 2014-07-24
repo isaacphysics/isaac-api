@@ -180,7 +180,7 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ContentDTO populateContentSummaries(ContentDTO contentDTO) {
+	public ContentDTO populateContentSummaries(String version, ContentDTO contentDTO) {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}
