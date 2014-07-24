@@ -349,7 +349,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
-	 * Gets the instance of the dozer mapper object.
+	 * Gets the instance of the GoogleClientSecrets object.
 	 * 
 	 * @param clientSecretLocation
 	 *            - The path to the client secrets json file

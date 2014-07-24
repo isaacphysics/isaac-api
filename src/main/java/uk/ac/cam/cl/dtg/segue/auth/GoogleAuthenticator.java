@@ -1,9 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
