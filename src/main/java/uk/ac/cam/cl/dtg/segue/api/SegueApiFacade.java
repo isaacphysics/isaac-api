@@ -627,7 +627,8 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result 
+			= new ImmutableMap.Builder<String, Collection<String>>()
 				.put("version_list", limitedVersions).build();
 
 		return Response.ok().entity(result).build();
@@ -685,7 +686,8 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+		ImmutableMap<String, Collection<String>> result 
+			= new ImmutableMap.Builder<String, Collection<String>>()
 				.put("cachedVersions",
 						contentPersistenceManager.getCachedVersionList())
 				.build();
@@ -968,7 +970,8 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
+	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
@@ -1036,12 +1039,13 @@ public class SegueApiFacade {
 	 * 
 	 * By default content summary objects may just have ids.
 	 * 
-	 * @param version - version of the content to use for augmentation.
-	 * @param contentToAugment - the content to augment.
+	 * @param version
+	 *            - version of the content to use for augmentation.
+	 * @param contentToAugment
+	 *            - the content to augment.
 	 * @return content which has been augmented
 	 */
-	public ContentDTO augmentContentWithRelatedContent(
-			final String version,
+	public ContentDTO augmentContentWithRelatedContent(final String version,
 			final ContentDTO contentToAugment) {
 		return this.contentVersionController.getContentManager()
 				.populateContentSummaries(version, contentToAugment);

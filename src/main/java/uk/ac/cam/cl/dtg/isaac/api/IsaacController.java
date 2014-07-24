@@ -688,7 +688,8 @@ public class IsaacController {
 			return null;
 		}
 
-		ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
+		ResultsWrapper<ContentSummaryDTO> contentSummaryResults 
+			= new ResultsWrapper<ContentSummaryDTO>(
 				new ArrayList<ContentSummaryDTO>(),
 				contentList.getTotalResults());
 

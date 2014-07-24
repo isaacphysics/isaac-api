@@ -145,7 +145,10 @@ public interface IContentManager {
 	List<String> listAvailableVersions();
 
 	/**
-	 * Get the latest version id from the data source.
+	 * Get the latest version number from the database.
+	 * 
+	 * This is a low level operation that will return the latest version of the
+	 * content that is known to the underlying database.
 	 * 
 	 * @return the latest version id
 	 */
@@ -235,10 +238,13 @@ public interface IContentManager {
 	 *         problem index.
 	 */
 	Map<Content, List<String>> getProblemMap(String version);
-	
+
 	/**
 	 * Augment content DTO with related content.
 	 * 
+	 * @param version
+	 *            - the version of the content to use for the augmentation
+	 *            operation.
 	 * @param contentDTO
 	 *            - the destination contentDTO which should have content
 	 *            summaries created.
