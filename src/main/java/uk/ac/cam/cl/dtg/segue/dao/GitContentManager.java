@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javax.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
@@ -80,9 +82,9 @@ public class GitContentManager implements IContentManager {
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
 		
-		this.gitCache = Maps.newConcurrentMap();
-		this.indexProblemCache = Maps.newConcurrentMap();
-		this.tagsList = Maps.newConcurrentMap();
+		this.gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
+		this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
+		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
 
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
@@ -116,7 +118,7 @@ public class GitContentManager implements IContentManager {
 		
 		this.gitCache = gitCache;
 		this.indexProblemCache = indexProblemCache;
-		this.tagsList = Maps.newConcurrentMap();
+		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
 		
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
@@ -369,24 +371,27 @@ public class GitContentManager implements IContentManager {
 		}
 
 		if (!gitCache.containsKey(version)) {
-			if (database.verifyCommitExists(version)) {
-				log.info("Rebuilding cache as sha does not exist in hashmap");
-				buildGitContentIndex(version);
-				buildSearchIndexFromLocalGitIndex(version);
-				validateReferentialIntegrity(version);
-			} else {
-				log.warn("Unable find the commit (" + version
-						+ ") in git to ensure the cache");
-				return false;
+			synchronized (this) {
+				if (database.verifyCommitExists(version)) {
+					log.info("Rebuilding cache as sha does not exist in hashmap");
+					buildGitContentIndex(version);
+					buildSearchIndexFromLocalGitIndex(version);
+					validateReferentialIntegrity(version);
+				} else {
+					log.warn("Unable find the commit (" + version
+							+ ") in git to ensure the cache");
+					return false;
+				}
 			}
 		}
 
 		boolean searchIndexed = searchProvider.hasIndex(version);
-
 		if (!searchIndexed) {
 			log.warn("Search does not have a valid index for the " + version
 					+ " version of the content");
-			this.buildSearchIndexFromLocalGitIndex(version);
+			synchronized (this) {
+				this.buildSearchIndexFromLocalGitIndex(version);	
+			}
 		}
 
 		return gitCache.containsKey(version) && searchIndexed;
@@ -897,7 +902,7 @@ public class GitContentManager implements IContentManager {
 	 * @param tags
 	 *            - set of tags to register.
 	 */
-	private void registerTagsWithVersion(final String version,
+	private synchronized void registerTagsWithVersion(final String version,
 			final Set<String> tags) {
 		Validate.notBlank(version);
 
@@ -930,7 +935,7 @@ public class GitContentManager implements IContentManager {
 	 * @param message
 	 *            - Error message to associate with the problem file / content.
 	 */
-	private void registerContentProblem(final String version, final Content c,
+	private synchronized void registerContentProblem(final String version, final Content c,
 			final String message) {
 		Validate.notNull(c);
 
