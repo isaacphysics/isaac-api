@@ -68,6 +68,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	// we only ever want there to be one instance of each of these.
 	private static ContentMapper mapper = null;
 	private static ContentVersionController contentVersionController = null;
+	private static GitContentManager contentManager = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
 
@@ -263,6 +264,29 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 		return contentVersionController;
 	}
+	
+	/**
+	 * This provides a singleton of the git content manager for the segue
+	 * facade.
+	 * 
+	 * @param database - database reference
+	 * @param searchProvider - search provider to use
+	 * @param contentMapper - content mapper to use.
+	 * @return a fully configured content Manager.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private GitContentManager getContentManager(final GitDb database,
+			final ISearchProvider searchProvider,
+			final ContentMapper contentMapper) {		
+		if (null == contentManager) {
+			contentManager = new GitContentManager(database, searchProvider, contentMapper);
+			log.info("Creating singleton of ContentManager");
+		}
+
+		return contentManager;
+	}	
 
 	/**
 	 * This provides a singleton of the contentVersionController for the segue
