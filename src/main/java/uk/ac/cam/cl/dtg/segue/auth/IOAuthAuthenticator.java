@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import java.io.IOException;
 
 /**
- * This interface defines the required methods for an oauth 1 or oauth 2 provider
+ * This interface defines the required methods for an oauth 1 or oauth 2 provider.
  * 
  * @author nr378
  */
