@@ -55,16 +55,16 @@ public class GitContentManager implements IContentManager {
 
 	private static final String CONTENT_TYPE = "content";
 	// TODO: these should probably not be static.
-	private static Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
-	private static Map<String, Map<Content, List<String>>> indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
-	private static final Map<String, Set<String>> tagsList = new ConcurrentHashMap<String, Set<String>>();
+	private final Map<String, Map<String, Content>> gitCache;
+	private final Map<String, Map<Content, List<String>>> indexProblemCache;
+	private final Map<String, Set<String>> tagsList;
 
 	private final GitDb database;
 	private final ContentMapper mapper;
 	private final ISearchProvider searchProvider;
 
 	/**
-	 * Constructor for instanciating a new Git Content Manager Object.
+	 * Constructor for instantiating a new Git Content Manager Object.
 	 * 
 	 * @param database
 	 *            - that the content Manager manages.
@@ -81,37 +81,17 @@ public class GitContentManager implements IContentManager {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
+		
+		this.gitCache = Maps.newConcurrentMap();
+		this.indexProblemCache = Maps.newConcurrentMap();
+		this.tagsList = Maps.newConcurrentMap();
 
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
 	}
 
 	/**
-	 * FOR TESTING PURPOSES ONLY - Constructor for instanciating a new Git
-	 * Content Manager Object.
-	 * 
-	 * @param database
-	 *            - that the content Manager manages.
-	 * @param searchProvider
-	 *            - search provider that the content manager manages and
-	 *            controls.
-	 * @param contentMapper
-	 *            - The utility class for mapping content objects.
-	 * @param gitCache
-	 *            - A manually constructed gitCache for testing purposes.
-	 */
-	public GitContentManager(final GitDb database,
-			final ISearchProvider searchProvider,
-			final ContentMapper contentMapper,
-			final Map<String, Map<String, Content>> gitCache) {
-		this.database = database;
-		this.mapper = contentMapper;
-		this.searchProvider = searchProvider;
-		GitContentManager.gitCache = gitCache;
-	}
-
-	/**
-	 * FOR TESTING PURPOSES ONLY - Constructor for instanciating a new Git
+	 * FOR TESTING PURPOSES ONLY - Constructor for instantiating a new Git
 	 * Content Manager Object.
 	 * 
 	 * @param database
@@ -135,8 +115,13 @@ public class GitContentManager implements IContentManager {
 		this.database = database;
 		this.mapper = contentMapper;
 		this.searchProvider = searchProvider;
-		GitContentManager.gitCache = gitCache;
-		GitContentManager.indexProblemCache = indexProblemCache;
+		
+		this.gitCache = gitCache;
+		this.indexProblemCache = indexProblemCache;
+		this.tagsList = Maps.newConcurrentMap();
+		
+		searchProvider.registerRawStringFields(Lists.newArrayList(
+				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
 	}
 
 	@Override
@@ -815,10 +800,6 @@ public class GitContentManager implements IContentManager {
 				
 				if (question.getChoices() == null
 						|| question.getChoices().isEmpty()) {
-					log.warn("Choice question: " + question.getId() + " in "
-							+ question.getCanonicalSourceFile()
-							+ " found without any choices - "
-							+ "this will mean users will always get it wrong.");
 					this.registerContentProblem(
 							sha,
 							question,

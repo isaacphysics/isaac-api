@@ -89,12 +89,11 @@ public class ElasticSearchProvider implements ISearchProvider {
 			IndexResponse indexResponse = client
 					.prepareIndex(index, indexType, uniqueId)
 					.setSource(content).execute().actionGet();
-			log.info("Document: " + indexResponse.getId() + " indexed.");
+			log.debug("Document: " + indexResponse.getId() + " indexed.");
 
 			return true;
 		} catch (ElasticsearchException e) {
-			log.error("Elastic Search Exception detected.");
-			e.printStackTrace();
+			log.error("Elastic Search Exception detected.", e);
 			return false;
 		}
 	}
@@ -249,15 +248,27 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final boolean hasIndex(final String index) {
+	public boolean hasIndex(final String index) {
 		Validate.notNull(index);
 		return client.admin().indices().exists(new IndicesExistsRequest(index))
 				.actionGet().isExists();
 	}
 
 	@Override
-	public final void registerRawStringFields(final List<String> fieldNames) {
+	public void registerRawStringFields(final List<String> fieldNames) {
 		this.rawFieldsList.addAll(fieldNames);
+	}
+	
+	@Override
+	public ResultsWrapper<String> findByPrefix(final String index,
+			final String indexType, final String fieldname, final String prefix) {
+		ResultsWrapper<String> resultList;
+
+		PrefixQueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
+
+		resultList = this.executeBasicQuery(index, indexType, query);
+
+		return resultList;
 	}
 
 	/**
@@ -397,6 +408,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * This is useful if we want to query the original data without
 	 * ElasticSearch having messed with it.
 	 * 
+	 * TODO: this method should be made more generic and less segue specific.
+	 * 
 	 * @param index
 	 *            - index to send the mapping corrections to.
 	 * @param indexType
@@ -413,7 +426,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 					.startObject("properties");
 
 			for (String fieldName : this.rawFieldsList) {
-				log.info("Sending raw mapping correction for " + fieldName
+				log.debug("Sending raw mapping correction for " + fieldName
 						+ "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
 
 				mappingBuilder.startObject(fieldName).field("type", "string")
@@ -462,17 +475,5 @@ public class ElasticSearchProvider implements ISearchProvider {
 		}
 
 		return result;
-	}
-
-	@Override
-	public ResultsWrapper<String> findByPrefix(final String index,
-			final String indexType, final String fieldname, final String prefix) {
-		ResultsWrapper<String> resultList;
-
-		PrefixQueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
-
-		resultList = this.executeBasicQuery(index, indexType, query);
-
-		return resultList;
 	}
 }
