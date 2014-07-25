@@ -738,12 +738,6 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
 			@QueryParam("redirect") final String redirectUrl) {
-		User currentUser = getCurrentUser(request);
-
-		if (null != currentUser) {
-			return Response.ok().entity(currentUser).build();
-		}
-
 		String newRedirectUrl = null;
 		if (null == redirectUrl || !redirectUrl.contains("http://")) {
 			// TODO: Make this redirection stuff less horrid.
