@@ -715,6 +715,26 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("users/current_user")
+	public Response getCurrentUserEndpoint(
+			@Context final HttpServletRequest request) {
+		User currentUser = userManager.getCurrentUser(request);
+
+		if (null == currentUser) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"Unable to retrieve the current user as no user is currently logged in.")
+					.toResponse();
+		}
+
+		return Response.ok(currentUser).build();
+	}
+
+	/**
+	 * Library method to retrieve the current logged in user.
+	 * 
+	 * @param request
+	 *            which may contain session information.
+	 * @return User DTO.
+	 */
 	public User getCurrentUser(@Context final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
