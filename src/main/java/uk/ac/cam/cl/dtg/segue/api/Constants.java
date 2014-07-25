@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 /**
  * Utility class to provide common isaac-specific constants.
- *
+ * 
  */
 public final class Constants {
 	/**
@@ -23,8 +23,7 @@ public final class Constants {
 	 * - Used for a default location of where authentication provider callbacks
 	 * should land..
 	 */
-	public static final String DEFAULT_LANDING_URL_SUFFIX 
-		= "DEFAULT_LANDING_URL_SUFFIX";
+	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX";
 
 	/**
 	 * Constant representing the key for the maximum number of versions to
@@ -37,21 +36,25 @@ public final class Constants {
 	/**
 	 * Constant representing the key for the path to Local GIT instance.
 	 */
-	public static final String LOCAL_GIT_DB 
-		= "LOCAL_GIT_DB";
+	public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
 
 	/**
 	 * Constant representing the key for the path to the ssh private key for
 	 * remote git repository.
 	 */
-	public static final String REMOTE_GIT_SSH_KEY_PATH 
-		= "REMOTE_GIT_SSH_KEY_PATH";
+	public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
 
 	/**
 	 * Constant representing the key for the URL to remote git repository for
 	 * SSH traffic.
 	 */
 	public static final String REMOTE_GIT_SSH_URL = "REMOTE_GIT_SSH_URL";
+
+	/**
+	 * Constant representing the key for the configuration option indicating
+	 * whether or not unpublished content should be visible.
+	 */
+	public static final String SHOW_ONLY_PUBLISHED_CONTENT = "SHOW_ONLY_PUBLISHED_CONTENT";
 
 	/**
 	 * Constant representing the key for the version id of the content that
@@ -65,16 +68,16 @@ public final class Constants {
 	 * repository.
 	 */
 	public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
-	
+
 	/**
 	 * Constant representing the key for the property id that represents whether
 	 * segue should track and load all git changes as they arrive on the
 	 * repository.
 	 */
 	public static final String CLEAR_CACHES_ON_APP_START = "CLEAR_CACHES_ON_APP_START";
-	
+
 	/**
-	 * Constant representing the segue application version. 
+	 * Constant representing the segue application version.
 	 */
 	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
 
@@ -160,7 +163,7 @@ public final class Constants {
 	 * This constant is used for matching against url params to prevent CSRF.
 	 */
 	public static final String STATE_PARAM_NAME = "state";
-	
+
 	/**
 	 * This constant is used for matching against url params to prevent CSRF.
 	 */
@@ -169,8 +172,7 @@ public final class Constants {
 	/**
 	 * Constant representing the key for the GOOGLE client secret location.
 	 */
-	public static final String GOOGLE_CLIENT_SECRET_LOCATION 
-		= "GOOGLE_CLIENT_SECRET_LOCATION";
+	public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
 
 	/**
 	 * Constant representing the key for the GOOGLE OAUTH callback uri.
@@ -199,7 +201,8 @@ public final class Constants {
 	public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
 
 	/**
-	 * Constant representing the key for the FACEBOOK OAUTH permissions to be requested.
+	 * Constant representing the key for the FACEBOOK OAUTH permissions to be
+	 * requested.
 	 */
 	public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
 
@@ -217,7 +220,7 @@ public final class Constants {
 	 * Constant representing the key for the TWITTER OAUTH callback uri.
 	 */
 	public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
-	
+
 	/*
 	 * Default values.
 	 */
@@ -232,14 +235,14 @@ public final class Constants {
 	public static final String CHILDREN_FIELDNAME = "children";
 	public static final String LEVEL_FIELDNAME = "level";
 
-	public static final String ID_SEPARATOR = "|"; 
+	public static final String ID_SEPARATOR = "|";
 	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
-	
+
 	// User persistence model stuff
 	public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
 	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
 	public static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
-	
+
 	/**
 	 * Private constructor to prevent this class being created.
 	 */
