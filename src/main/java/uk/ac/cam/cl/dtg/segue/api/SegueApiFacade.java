@@ -805,13 +805,13 @@ public class SegueApiFacade {
 	 *            so that we can destroy the associated session
 	 * @return successful response.
 	 */
-	@GET
+	@POST
 	@Produces("application/json")
 	@Path("auth/logout")
 	public final Response userLogout(@Context final HttpServletRequest request) {
 		userManager.logUserOut(request);
-
-		return Response.ok("success").build();
+		
+		return Response.ok().build();
 	}
 
 	/**
