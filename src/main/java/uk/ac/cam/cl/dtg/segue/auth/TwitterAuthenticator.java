@@ -67,6 +67,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 		this.httpTransport = new NetHttpTransport();
 		this.twitter = new TwitterFactory().getInstance();
 		this.twitter.setOAuthConsumer(clientId, clientSecret);
+		this.twitter.setOAuthAccessToken(null); // ensure we start from a blank slate
 
 		this.clientSecret = clientSecret;
 		this.clientId = clientId;
