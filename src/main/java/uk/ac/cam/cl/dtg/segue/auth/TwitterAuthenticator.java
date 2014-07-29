@@ -91,6 +91,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 	public OAuth1Token getRequestToken() throws IOException {
 		RequestToken requestToken;
 		try {
+			twitter.setOAuthAccessToken(null); // ensure we start from a blank slate
 			requestToken = twitter.getOAuthRequestToken(callbackUri);
 		} catch (TwitterException e) {
 			throw new IOException(e.getMessage());
