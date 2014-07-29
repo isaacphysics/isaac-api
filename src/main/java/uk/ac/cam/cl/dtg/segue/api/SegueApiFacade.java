@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -725,17 +726,19 @@ public class SegueApiFacade {
 					.toResponse();
 		}
 
-		return Response.ok(currentUser).build();
+		return Response.ok(mapper.getAutoMapper().map(currentUser, UserDTO.class)).build();
 	}
 
 	/**
-	 * Library method to retrieve the current logged in user.
+	 * Library method to retrieve the current logged in user domain object.
+	 * 
+	 * NOTE: This should never be exposed as an endpoint.
 	 * 
 	 * @param request
 	 *            which may contain session information.
 	 * @return User DTO.
 	 */
-	public User getCurrentUser(@Context final HttpServletRequest request) {
+	public User getCurrentUser(final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
 
