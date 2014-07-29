@@ -28,7 +28,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 			.getLogger(MongoAppDataManager.class);
 
 	private final DB database;
-	private final String databaseName;
+	private final String collectionName;
 	private final Class<T> typeParamaterClass;
 
 	/**
@@ -39,14 +39,14 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	 *            - Database that will store the objects.
 	 * @param typeParameterClass
 	 *            - Class value for the type that this object manages.
-	 * @param databaseName
+	 * @param collectionName
 	 *            - the string name identifying this database / table.
 	 */
 	@Inject
-	public MongoAppDataManager(final DB database, final String databaseName,
+	public MongoAppDataManager(final DB database, final String collectionName,
 			final Class<T> typeParameterClass) {
 		this.database = database;
-		this.databaseName = databaseName;
+		this.collectionName = collectionName;
 		this.typeParamaterClass = typeParameterClass;
 	}
 
@@ -54,7 +54,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	public final String save(final T objectToSave) {
 
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(databaseName), typeParamaterClass,
+				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
 
 		WriteResult<T, String> r = jc.save(objectToSave);
@@ -67,7 +67,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 		Validate.notNull(id);
 
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(databaseName), typeParamaterClass,
+				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
 
 		T result = jc.findOneById(id);
@@ -86,7 +86,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	 *         objects of this type.
 	 */
 	public final String getDatabaseName() {
-		return databaseName;
+		return collectionName;
 	}
 
 	@Override
@@ -111,7 +111,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 		}
 
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(databaseName), typeParamaterClass,
+				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
 
 		List<T> result = jc.find(query).toArray();

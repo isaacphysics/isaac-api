@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import ma.glasnost.orika.MapperFacade;
@@ -31,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.database.Mongo;
+import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -55,6 +56,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.mongodb.DB;
+import com.mongodb.MongoClient;
 
 /**
  * This class is responsible for injecting configuration values for persistence
@@ -71,8 +73,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static GitContentManager contentManager = null;
 	private static Client elasticSearchClient = null;
 	private static UserManager userManager = null;
-
 	private static GoogleClientSecrets googleClientSecrets = null;
+	private static MongoDb mongoDB = null;
 
 	private PropertiesLoader globalProperties = null;
 
@@ -95,7 +97,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			this.configureProperties();
 			this.configureDataPersistence();
 			this.configureSegueSearch();
-			this.configureSecurity();
+			this.configureAuthenticationProviders();
 			this.configureApplicationManagers();
 
 		} catch (IOException e) {
@@ -128,7 +130,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private void configureDataPersistence() throws IOException {
 		// Setup different persistence bindings
 		// MongoDb
-		bind(DB.class).toInstance(Mongo.getDB());
+		this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME,
+				globalProperties);
+		this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
+		this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
 		// GitDb
 		bind(GitDb.class)
@@ -152,7 +157,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	/**
 	 * Configure user security related classes.
 	 */
-	private void configureSecurity() {
+	private void configureAuthenticationProviders() {
 		this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
 
 		// Configure security providers
@@ -163,20 +168,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
 				globalProperties);
-		
+
 		// Facebook
-		this.bindConstantToProperty(Constants.FACEBOOK_SECRET,
-				globalProperties);
+		this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
 				globalProperties);
 		this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES,
 				globalProperties);
-		
+
 		// Twitter
-		this.bindConstantToProperty(Constants.TWITTER_SECRET,
-				globalProperties);
+		this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
 		this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID,
 				globalProperties);
 		this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI,
@@ -201,11 +204,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private void configureApplicationManagers() {
 		// Allows Mongo to take over Content Management
 		// bind(IContentManager.class).to(MongoContentManager.class);
-		
-		// Allows GitDb to take over content Management 
-		bind(IContentManager.class).to(GitContentManager.class); 
 
-		//TODO: the log manager needs redoing.
+		// Allows GitDb to take over content Management
+		bind(IContentManager.class).to(GitContentManager.class);
+
+		// TODO: the log manager needs redoing.
 		bind(ILogManager.class).to(LogManager.class);
 
 		bind(IUserDataManager.class).to(MongoUserDataManager.class);
@@ -264,14 +267,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 		return contentVersionController;
 	}
-	
+
 	/**
 	 * This provides a singleton of the git content manager for the segue
 	 * facade.
 	 * 
-	 * @param database - database reference
-	 * @param searchProvider - search provider to use
-	 * @param contentMapper - content mapper to use.
+	 * @param database
+	 *            - database reference
+	 * @param searchProvider
+	 *            - search provider to use
+	 * @param contentMapper
+	 *            - content mapper to use.
 	 * @return a fully configured content Manager.
 	 */
 	@Inject
@@ -279,14 +285,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Singleton
 	private GitContentManager getContentManager(final GitDb database,
 			final ISearchProvider searchProvider,
-			final ContentMapper contentMapper) {		
+			final ContentMapper contentMapper) {
 		if (null == contentManager) {
-			contentManager = new GitContentManager(database, searchProvider, contentMapper);
+			contentManager = new GitContentManager(database, searchProvider,
+					contentMapper);
 			log.info("Creating singleton of ContentManager");
 		}
 
 		return contentManager;
-	}	
+	}
 
 	/**
 	 * This provides a singleton of the contentVersionController for the segue
@@ -379,6 +386,38 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
+	 * Gets the instance of the mongodb client object.
+	 * 
+	 * @param host
+	 *            - database host to connect to.
+	 * @param port
+	 *            - port that the mongodb service is running on.
+	 * @param dbName
+	 *            - the name of the database to configure the wrapper to use.
+	 * @return MongoDB db object preconfigured to work with the segue database.
+	 * @throws UnknownHostException
+	 *             - when we are unable to access the host.
+	 */
+	@Provides
+	@Singleton
+	@Inject
+	private static DB getMongoDB(
+			@Named(Constants.MONGO_DB_HOSTNAME) final String host,
+			@Named(Constants.MONGO_DB_PORT) final String port,
+			@Named(Constants.SEGUE_DB_NAME) final String dbName)
+		throws UnknownHostException {
+
+		if (null == mongoDB) {
+			MongoClient client = new MongoClient(host, Integer.parseInt(port));
+			MongoDb newMongoDB = new MongoDb(client, dbName);
+			mongoDB = newMongoDB;
+			log.info("Created Singleton of MongoDb wrapper");
+		}
+
+		return mongoDB.getDB();
+	}
+
+	/**
 	 * This method will pre-register the mapper class so that content objects
 	 * can be mapped.
 	 * 
@@ -427,8 +466,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 */
 	public static <T> IAppDataManager<T> getAppDataManager(
 			final String databaseName, final Class<T> classType) {
+		Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
+
+		// TODO: fix possible problem in that mongoDB may not have been
+		// initialized at the point that we want to execute this.
 		// for now this only returns mongodb typed objects.
-		return new MongoAppDataManager<T>(Mongo.getDB(), databaseName,
+		return new MongoAppDataManager<T>(mongoDB.getDB(), databaseName,
 				classType);
 	}
 
