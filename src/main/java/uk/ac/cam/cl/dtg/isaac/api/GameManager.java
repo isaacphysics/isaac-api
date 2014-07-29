@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -17,16 +16,15 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
@@ -34,8 +32,10 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static com.google.common.collect.Maps.*;
 
 /**
  * This class will be responsible for generating and managing gameboards used by
@@ -57,12 +57,17 @@ public class GameManager {
 	 * 
 	 * @param api
 	 *            - the api that the game manager can use.
+	 * @param gameboardPersistenceManager
+	 *            - the gameboardPersistenceManager that handles storage and
+	 *            retrieval of gameboards.
 	 */
-	public GameManager(final SegueApiFacade api) {
+	@Inject
+	public GameManager(final SegueApiFacade api,
+			final GameboardPersistenceManager gameboardPersistenceManager) {
 		this.api = api;
-		this.gameboardPersistenceManager = new GameboardPersistenceManager(
-				api.requestAppDataManager(GAMEBOARD_COLLECTION_NAME,
-						GameboardDO.class), api);
+
+		this.gameboardPersistenceManager = gameboardPersistenceManager;
+
 		this.randomGenerator = new Random();
 	}
 
@@ -109,12 +114,12 @@ public class GameManager {
 			boardOwnerId = boardOwner.getDbId();
 		}
 
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
-			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps
+				.newHashMap();
 
-		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
-				Constants.BooleanOperator.AND, TYPE_FIELDNAME), Arrays
-				.asList(QUESTION_TYPE));
+		fieldsToMap.put(
+				immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME),
+				Arrays.asList(QUESTION_TYPE));
 
 		GameFilter gameFilter = new GameFilter(subjectsList, fieldsList,
 				topicsList, levelsList, conceptsList);
@@ -130,8 +135,8 @@ public class GameManager {
 			String uuid = UUID.randomUUID().toString();
 
 			Integer sizeOfGameboard = GAME_BOARD_SIZE;
-			// TODO: if there are not enough questions then really we should
-			// fill it with random questions or just say no
+			// TODO: if there are not enough questions then should we
+			// fill it with random questions or just say so?
 			if (GAME_BOARD_SIZE > results.getResults().size()) {
 				sizeOfGameboard = results.getResults().size();
 			}
@@ -267,7 +272,7 @@ public class GameManager {
 			// go through each question in the question page
 			ResultsWrapper<ContentDTO> listOfQuestions = api.searchByIdPrefix(
 					api.getLiveVersion(), questionPageId
-							+ Constants.ID_SEPARATOR);
+							+ ID_SEPARATOR);
 
 			for (ContentDTO contentDTO : listOfQuestions.getResults()) {
 				if (!(contentDTO instanceof QuestionDTO)) {
@@ -313,7 +318,7 @@ public class GameManager {
 	 *            make this board.
 	 * @return A map ready to be passed to a content provider
 	 */
-	private static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	private static Map<Map.Entry<BooleanOperator, String>, List<String>>
 	generateFieldToMatchForQuestionFilter(
 			final GameFilter gameFilter) {
 
@@ -323,7 +328,7 @@ public class GameManager {
 			throw new IllegalArgumentException("Error validating filter query.");
 		}
 
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
 
 		// Deal with tags which represent subjects, fields and topics
@@ -358,15 +363,13 @@ public class GameManager {
 		// deal with adding overloaded tags field for subjects, fields and
 		// topics
 		if (ands.size() > 0) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
-					.immutableEntry(Constants.BooleanOperator.AND,
-							Constants.TAGS_FIELDNAME);
+			Map.Entry<BooleanOperator, String> newEntry = immutableEntry(
+					BooleanOperator.AND, TAGS_FIELDNAME);
 			fieldsToMatchOutput.put(newEntry, ands);
 		}
 		if (ors.size() > 0) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
-					.immutableEntry(Constants.BooleanOperator.OR,
-							Constants.TAGS_FIELDNAME);
+			Map.Entry<BooleanOperator, String> newEntry = immutableEntry(
+					BooleanOperator.OR, TAGS_FIELDNAME);
 			fieldsToMatchOutput.put(newEntry, ors);
 		}
 
@@ -377,16 +380,14 @@ public class GameManager {
 				levelsAsString.add(levelInt.toString());
 			}
 
-			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
-					.immutableEntry(Constants.BooleanOperator.OR,
-							Constants.LEVEL_FIELDNAME);
+			Map.Entry<BooleanOperator, String> newEntry = immutableEntry(
+					BooleanOperator.OR, LEVEL_FIELDNAME);
 			fieldsToMatchOutput.put(newEntry, levelsAsString);
 		}
 
 		if (null != gameFilter.getConcepts()) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = com.google.common.collect.Maps
-					.immutableEntry(Constants.BooleanOperator.AND,
-							RELATED_CONTENT_FIELDNAME);
+			Map.Entry<BooleanOperator, String> newEntry = immutableEntry(
+					BooleanOperator.AND, RELATED_CONTENT_FIELDNAME);
 			fieldsToMatchOutput.put(newEntry, gameFilter.getConcepts());
 		}
 

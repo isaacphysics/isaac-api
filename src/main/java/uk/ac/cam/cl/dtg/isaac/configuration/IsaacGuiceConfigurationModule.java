@@ -1,13 +1,19 @@
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_COLLECTION_NAME;
+
 import java.io.IOException;
 
 import javax.annotation.Nullable;
+
+import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
@@ -33,6 +39,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
 	private static SegueApiFacade segueApi = null;
 	private static GameManager gameManager = null;
+
+	private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
 	/**
 	 * Creates a new isaac guice configuration module.
@@ -94,6 +102,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		if (null == segueApi) {
 			segueApi = new SegueApiFacade(properties, mapper,
 					segueConfigurationModule, versionController, userManager);
+			log.info("Creating Singleton of Segue API");
 		}
 
 		return segueApi;
@@ -101,17 +110,49 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
 	/**
 	 * Gets a Game manager.
-	 * @param api - api that the game manager can use for content resolution.
+	 * 
+	 * @param api
+	 *            - api that the game manager can use for content resolution.
+	 * @param gameboardPersistenceManager
+	 *            - a persistence manager that deals with storing and retrieving
+	 *            gameboards.
 	 * @return Game manager object.
 	 */
 	@Inject
 	@Provides
 	@Singleton
-	private static GameManager getGameManager(final SegueApiFacade api) {
+	private static GameManager getGameManager(final SegueApiFacade api,
+			final GameboardPersistenceManager gameboardPersistenceManager) {
 		if (null == gameManager) {
-			gameManager = new GameManager(api);
+			gameManager = new GameManager(api, gameboardPersistenceManager);
+			log.info("Creating Singleton of Game Manager");
 		}
 
 		return gameManager;
 	}
+
+	/**
+	 * Gets a Game persistence manager.
+	 * 
+	 * @param api
+	 *            - api that the game manager can use for content resolution.
+	 * @param mapper
+	 *            - an instance of an auto mapper.
+	 * @return Game persistence manager object.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private static GameboardPersistenceManager getGameboardPersistenceManager(
+			final SegueApiFacade api, final MapperFacade mapper) {
+		if (null == gameboardPersistenceManager) {
+			gameboardPersistenceManager = new GameboardPersistenceManager(
+					api.requestAppDataManager(GAMEBOARD_COLLECTION_NAME,
+							GameboardDO.class), api, mapper);
+			log.info("Creating Singleton of GameboardPersistenceManager");
+		}
+
+		return gameboardPersistenceManager;
+	}
+
 }

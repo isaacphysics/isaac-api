@@ -3,25 +3,20 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -626,7 +621,7 @@ public class UserManager {
 	private User getUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
-			throws AuthenticatorSecurityException, NoUserIdException,
+		throws AuthenticatorSecurityException, NoUserIdException,
 			IOException {
 		// get user info from federated provider
 		// note the userid field in this object will contain the providers user
@@ -703,7 +698,7 @@ public class UserManager {
 	private String getOauthInternalRefCode(
 			final IOAuthAuthenticator oauthProvider,
 			final HttpServletRequest request)
-			throws AuthenticationCodeException, IOException,
+		throws AuthenticationCodeException, IOException,
 			CodeExchangeException, NoUserIdException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
@@ -754,7 +749,7 @@ public class UserManager {
 	 *             - if the session retrieved is an invalid URI.
 	 */
 	private URI loadRedirectUrl(final HttpServletRequest request)
-			throws URISyntaxException {
+		throws URISyntaxException {
 		String url = (String) request.getSession().getAttribute(
 				Constants.REDIRECT_URL_PARAM_NAME);
 		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);

@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -445,6 +448,48 @@ public class IsaacController {
 		return Response.ok(gameboards).build();
 	}
 
+	/**
+	 * REST end point to allow gamesboards to be labelled by users.
+	 * 
+	 * @param request
+	 *            - so that we can find out the currently logged in user
+	 * @param gameboardId - So that we can look up an existing gameboard to modify.
+	 * @param newGameboardObject - to get updated information from.
+	 * @return a Response containing a list of gameboard objects.
+	 */
+	@POST
+	@Path("gameboards/{id}/")
+	@Produces("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public final Response updateGameboard(
+			@Context final HttpServletRequest request,
+			@PathParam("id") final String gameboardId,
+			final GameboardDTO newGameboardObject) {
+		User user = api.getCurrentUser(request);
+		//TODO: check what happens when invalid deserialization happens.
+		//TODO: allow only renaming of gameboards if they are owned by you, otherwise
+		// they need to clone it and then rename it.
+		
+		if (null == user) {
+			// user not logged in return not authorized
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"User not logged in. Unable to retrieve gameboards.")
+					.toResponse();
+		}
+		
+		GameboardDTO existingGameboard = gameManager.getGameboard(gameboardId, user);
+		
+		if (null == existingGameboard) {
+			return new SegueErrorResponse(Status.NOT_FOUND,
+					"No gameboard found with the id: " + gameboardId)
+					.toResponse();
+		}
+
+		// currently we only support setting a title.
+		
+		return Response.ok().build();
+	}
+	
 	/**
 	 * Rest end point that gets a single page based on a given id.
 	 * 

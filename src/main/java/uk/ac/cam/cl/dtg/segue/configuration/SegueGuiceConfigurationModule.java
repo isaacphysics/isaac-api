@@ -344,7 +344,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Provides
 	@Singleton
 	@Inject
-	private MapperFacade getDozerDOtoDTOMapper() {
+	public MapperFacade getDOtoDTOMapper() {
 		return this.getContentMapper().getAutoMapper();
 	}
 

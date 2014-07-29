@@ -16,25 +16,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
-
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import static java.util.concurrent.TimeUnit.*;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static com.google.common.collect.Maps.*;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -64,18 +60,16 @@ public class GameboardPersistenceManager {
 	 * @param api
 	 *            - handle to segue api so that we can perform queries to
 	 *            augment gameboard data before and after persistence.
+	 * @param mapper
+	 *            - An instance of an automapper that can be used for mapping to
+	 *            and from GameboardDOs and DTOs.
 	 */
 	@Inject
 	public GameboardPersistenceManager(
-			final IAppDataManager<uk.ac.cam.cl.dtg.isaac.dos.GameboardDO> database,
-			final SegueApiFacade api) {
+			final IAppDataManager<GameboardDO> database,
+			final SegueApiFacade api, final MapperFacade mapper) {
 		this.gameboardDataManager = database;
-
-		Injector injector = Guice.createInjector(
-				new IsaacGuiceConfigurationModule(),
-				new SegueGuiceConfigurationModule());
-
-		this.mapper = injector.getInstance(MapperFacade.class);
+		this.mapper = mapper;
 		this.api = api;
 		this.gameboardNonPersistentStorage = Maps.newConcurrentMap();
 	}
@@ -165,7 +159,7 @@ public class GameboardPersistenceManager {
 		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps
 				.newHashMap();
 
-		fieldsToMatch.put(com.google.common.collect.Maps.immutableEntry(
+		fieldsToMatch.put(immutableEntry(
 				Constants.BooleanOperator.AND, USER_ID_FKEY), Arrays
 				.asList(userId));
 
@@ -176,6 +170,17 @@ public class GameboardPersistenceManager {
 				.convertToGameboardDTOs(gameboardsFromDb);
 
 		return gameboardDTOs;
+	}
+
+	/**
+	 * Update a gameboard. 
+	 * The gameboard must already exist and have the same id.
+	 * @param gameboard - to update. Note the ID should already exist.
+	 * @return gameboardDTO
+	 */
+	public GameboardDTO updateGameboard(final GameboardDTO gameboard) {
+		// TODO: write this.
+		return null;
 	}
 
 	/**
@@ -234,14 +239,14 @@ public class GameboardPersistenceManager {
 
 		// build query the db to get full question information
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
-			= new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+			= Maps.newHashMap();
 
-		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
+		fieldsToMap.put(immutableEntry(
 				Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
 						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
 				gameboardDO.getQuestions());
 
-		fieldsToMap.put(com.google.common.collect.Maps.immutableEntry(
+		fieldsToMap.put(immutableEntry(
 				Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME), Arrays
 				.asList(QUESTION_TYPE));
 
