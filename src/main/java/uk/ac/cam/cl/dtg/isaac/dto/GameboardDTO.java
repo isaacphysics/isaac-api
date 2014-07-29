@@ -47,7 +47,6 @@ public class GameboardDTO {
 	 *            the gameboard.
 	 * @param ownerUserId
 	 *            - User id of the owner of the gameboard.
-	 * @throws IllegalArgumentException
 	 */
 	public GameboardDTO(final String id, final String title,
 			final List<GameboardItem> questions, final Wildcard wildCard,

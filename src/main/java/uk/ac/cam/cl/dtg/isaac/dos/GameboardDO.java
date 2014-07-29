@@ -43,7 +43,6 @@ public class GameboardDO {
 	 *            the gameboard.
 	 * @param ownerUserId
 	 *            - User id of the owner of the gameboard.
-	 * @throws IllegalArgumentException
 	 */
 	public GameboardDO(final String id, final String title,
 			final List<String> questions, final Wildcard wildCard,
