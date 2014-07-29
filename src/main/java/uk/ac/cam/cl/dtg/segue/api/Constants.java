@@ -32,7 +32,6 @@ public final class Constants {
 	public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
 
 	// GIT stuff
-
 	/**
 	 * Constant representing the key for the path to Local GIT instance.
 	 */
@@ -82,7 +81,6 @@ public final class Constants {
 	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
 
 	// HMAC stuff
-
 	/**
 	 * Constant representing the key for the date signed property - used in HMAC
 	 * calculations.
@@ -114,7 +112,6 @@ public final class Constants {
 	public static final String HMAC_SALT = "HMAC_SALT";
 
 	// Search stuff
-
 	/**
 	 * Constant representing the key for the ClusterName - used for Search
 	 * providers.
@@ -156,7 +153,6 @@ public final class Constants {
 	};
 
 	// Federated Authentication Stuff
-
 	public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
 
 	/**
@@ -220,7 +216,12 @@ public final class Constants {
 	 * Constant representing the key for the TWITTER OAUTH callback uri.
 	 */
 	public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
-
+	
+	// Database properties
+	public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";
+	public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
+	public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
+	
 	/*
 	 * Default values.
 	 */
