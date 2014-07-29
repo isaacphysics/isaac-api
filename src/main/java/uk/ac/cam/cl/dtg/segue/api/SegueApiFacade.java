@@ -1027,7 +1027,7 @@ public class SegueApiFacade {
 	 *         for.
 	 */
 	public final <T> IAppDataManager<T> requestAppDataManager(
-			final String databaseName, final Class<T> classType) {
+			final String databaseName, final Class<T> classType) {		
 		return SegueGuiceConfigurationModule.getAppDataManager(databaseName,
 				classType);
 	}
