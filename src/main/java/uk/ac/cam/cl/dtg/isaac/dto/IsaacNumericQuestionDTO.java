@@ -12,13 +12,21 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestionDTO extends IsaacQuestionDTO {
 
-//	/**
-//	 * This method overrides the choices getter to prevent choices from being
-//	 * output for this type of question.
-//	 * @return null
-//	 */
-//	@Override
-//	public List<ChoiceDTO> getChoices() {
-//		return null;
-//	}
+	private Boolean requireUnits;
+
+	/**
+	 * Gets the requireUnits.
+	 * @return the requireUnits
+	 */
+	public final Boolean getRequireUnits() {
+		return requireUnits;
+	}
+
+	/**
+	 * Sets the requireUnits.
+	 * @param requireUnits the requireUnits to set
+	 */
+	public final void setRequireUnits(final Boolean requireUnits) {
+		this.requireUnits = requireUnits;
+	}
 }

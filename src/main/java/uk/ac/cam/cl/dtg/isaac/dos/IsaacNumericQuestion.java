@@ -14,5 +14,21 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonType("isaacNumericQuestion")
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestion extends IsaacQuestion {
+	private Boolean requireUnits;
 
+	/**
+	 * Gets the requireUnits.
+	 * @return the requireUnits
+	 */
+	public final Boolean getRequireUnits() {
+		return requireUnits;
+	}
+
+	/**
+	 * Sets the requireUnits.
+	 * @param requireUnits the requireUnits to set
+	 */
+	public final void setRequireUnits(final Boolean requireUnits) {
+		this.requireUnits = requireUnits;
+	}
 }

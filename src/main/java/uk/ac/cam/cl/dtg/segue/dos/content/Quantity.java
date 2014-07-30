@@ -16,18 +16,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonType("quantity")
 public class Quantity extends Choice {
 	private String units;
-	private boolean requireUnitsMatch;
 
 	/**
 	 * Default constructor required for mapping.
 	 */
 	public Quantity() {
-
+		
 	}
 
 	@JsonCreator
 	public Quantity(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
+			@JsonProperty("id") String id, 
+			@JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
 			@JsonProperty("author") String author,
@@ -50,7 +50,6 @@ public class Quantity extends Choice {
 				relatedContent, published, tags, level, correct, explanation);
 
 		this.units = units;
-		this.requireUnitsMatch = requiredUnitsMatch;
 	}
 
 	public String getUnits() {
@@ -60,13 +59,4 @@ public class Quantity extends Choice {
 	public void setUnits(String unit) {
 		this.units = unit;
 	}
-
-	public boolean isRequireUnitsMatch() {
-		return requireUnitsMatch;
-	}
-
-	public void setRequireUnitsMatch(boolean requireUnitsMatch) {
-		this.requireUnitsMatch = requireUnitsMatch;
-	}
-
 }
