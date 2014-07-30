@@ -144,10 +144,12 @@ public class IsaacNumericValidator implements IValidator {
 		if (null == bestResponse) {
 			// tell them they got it wrong but we cannot find an
 			// feedback for them.
-			return new QuestionValidationResponse(
+			return new QuantityValidationResponse(
 					isaacNumericQuestion.getId(),
-					answerFromUser.getValue() + " " + answerFromUser.getUnits(),
-					false, null);
+					answerFromUser.getValue() + " "
+							+ answerFromUser.getUnits(), false,
+					new Content("Check your working."), false, false);
+			
 		} else {
 			return bestResponse;
 		}
