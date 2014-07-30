@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import java.io.IOException;
 
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 /**
  * This interface defines the required methods for an oauth 1 or oauth 2 provider.
@@ -11,6 +11,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
  * @author nr378
  */
 public interface IOAuthAuthenticator extends IFederatedAuthenticator {
+
 	/**
 	 * Step 2 of OAUTH - Get authorisation code from oauth provider using the
 	 * response URL they have provided.
@@ -43,5 +44,5 @@ public interface IOAuthAuthenticator extends IFederatedAuthenticator {
 	 *             , CodeExchangeException, NoUserIdException
 	 */
 	String exchangeCode(String authorizationCode) throws IOException,
-			CodeExchangeException, NoUserIdException;
+			CodeExchangeException, NoUserException;
 }

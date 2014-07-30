@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookTokenInfo;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookUser;
@@ -211,7 +211,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public synchronized User getUserInfo(final String internalProviderReference)
-			throws NoUserIdException, IOException,
+			throws NoUserException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 
@@ -243,7 +243,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 					userInfo.getLastName(), userInfo.getEmail(), null, null,
 					null, null, null, null, null, null);
 		} else {
-			throw new NoUserIdException();
+			throw new NoUserException();
 		}
 	}
 

@@ -30,7 +30,7 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -743,8 +743,6 @@ public class SegueApiFacade {
 	 *            - object containing all user account information including
 	 *            passwords.
 	 * @return the updated users object.
-	 * @throws FailedToSetPasswordException
-	 * @throws InvalidPasswordException
 	 */
 	@POST
 	@Produces("application/json")
@@ -782,7 +780,7 @@ public class SegueApiFacade {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Invalid password. You cannot have an empty password.")
 					.toResponse();
-		} catch (FailedToSetPasswordException e) {
+		} catch (FailedToHashPasswordException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to set a password.").toResponse();
 		} catch (MissingRequiredFieldException e) {

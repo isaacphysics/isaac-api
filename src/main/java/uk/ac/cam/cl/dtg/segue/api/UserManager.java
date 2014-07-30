@@ -38,12 +38,11 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -213,7 +212,9 @@ public class UserManager {
 
 		// in this case we expect a username and password to have been
 		// sent in the json response.
-		if (null == credentials) {
+		if (null == credentials
+				|| credentials.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME) == null
+				|| credentials.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME) == null) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"You must specify credentials to use this authentication provider.");
@@ -240,7 +241,7 @@ public class UserManager {
 				return Response.temporaryRedirect(URI.create(redirectUrl))
 						.build();
 
-			} catch (IncorrectCredentialsProvidedException | NoUserIdException
+			} catch (IncorrectCredentialsProvidedException | NoUserException
 					| NoCredentialsAvailableException e) {
 				log.debug("Incorrect Credentials Received", e);
 				return new SegueErrorResponse(Status.UNAUTHORIZED,
@@ -346,7 +347,7 @@ public class UserManager {
 							+ " - during callback step. IO problem.", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
-		} catch (NoUserIdException e) {
+		} catch (NoUserException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.UNAUTHORIZED, "Unable to locate user information.");
 			log.error("No userID exception received. Unable to locate user.", e);
@@ -546,8 +547,6 @@ public class UserManager {
 	 * 
 	 * @param user
 	 *            - the user to update.
-	 * @throws FailedToSetPasswordException
-	 *             - unable to set a password.
 	 * @throws InvalidPasswordException
 	 *             - the password provided does not meet our requirements.
 	 * @throws MissingRequiredFieldException
@@ -556,7 +555,7 @@ public class UserManager {
 	 * @return the user object as was saved.
 	 */
 	public User createOrUpdateUserObject(final User user)
-		throws InvalidPasswordException, FailedToSetPasswordException,
+		throws InvalidPasswordException,
 			MissingRequiredFieldException {
 		User userToSave = null;
 
@@ -768,7 +767,7 @@ public class UserManager {
 	 * @return a user object that exists in the segue system.
 	 * @throws AuthenticatorSecurityException
 	 *             - error with authenticator.
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 *             - If we are unable to locate the user id based on the lookup
 	 *             reference provided.
 	 * @throws IOException
@@ -777,7 +776,7 @@ public class UserManager {
 	private User getUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
-		throws AuthenticatorSecurityException, NoUserIdException,
+		throws AuthenticatorSecurityException, NoUserException,
 			IOException {
 		// get user info from federated provider
 		// note the userid field in this object will contain the providers user
@@ -789,7 +788,7 @@ public class UserManager {
 		if (null == userFromProvider) {
 			log.warn("Unable to create user for the provider "
 					+ federatedAuthenticator.getAuthenticationProvider().name());
-			throw new NoUserIdException();
+			throw new NoUserException();
 		}
 
 		log.debug("User with name " + userFromProvider.getEmail()
@@ -819,7 +818,7 @@ public class UserManager {
 				// we just put it in so something has gone very wrong.
 				log.error("Failed to retreive user even though we "
 						+ "just put it in the database.");
-				throw new NoUserIdException();
+				throw new NoUserException();
 			}
 		} else {
 			log.debug("Returning user detected"
@@ -846,7 +845,7 @@ public class UserManager {
 	 *             - error reading from client key?
 	 * @throws CodeExchangeException
 	 *             - exception whilst exchanging codes
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 *             - cannot find the user requested
 	 * @throws CrossSiteRequestForgeryException
 	 *             - Unable to guarantee no CSRF
@@ -855,7 +854,7 @@ public class UserManager {
 			final IOAuthAuthenticator oauthProvider,
 			final HttpServletRequest request)
 		throws AuthenticationCodeException, IOException,
-			CodeExchangeException, NoUserIdException,
+			CodeExchangeException, NoUserException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
 		if (request.getQueryString() == null

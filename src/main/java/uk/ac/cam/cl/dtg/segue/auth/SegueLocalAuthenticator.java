@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
@@ -58,7 +58,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
 	@Override
 	public void setOrChangeUsersPassword(final User userWithNewPassword)
-		throws InvalidPasswordException, FailedToSetPasswordException {
+		throws InvalidPasswordException {
 		if (null == userWithNewPassword.getPassword()
 				|| userWithNewPassword.getPassword().isEmpty()) {
 			throw new InvalidPasswordException(
@@ -74,11 +74,11 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
 		} catch (NoSuchAlgorithmException e) {
 			log.error("Error detecting security algorithm", e);
-			throw new FailedToSetPasswordException(
+			throw new FailedToHashPasswordException(
 					"Security algorithrm configuration error.");
 		} catch (InvalidKeySpecException e) {
 			log.error("Error building secret key specification", e);
-			throw new FailedToSetPasswordException(
+			throw new FailedToHashPasswordException(
 					"Security algorithrm configuration error.");
 		}
 	}
@@ -87,20 +87,19 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	public User authenticate(final String usersEmailAddress,
 			final String plainTextPassword)
 		throws IncorrectCredentialsProvidedException, 
-		NoUserIdException, 
+		NoUserException, 
 		NoCredentialsAvailableException {
 		if (null == usersEmailAddress) {
-			throw new NoUserIdException();
+			throw new IllegalArgumentException();
 		}
 		if (null == plainTextPassword) {
-			// TODO: create exception to say no password set.
-			throw new NoUserIdException();
+			throw new IllegalArgumentException();
 		}
 
 		User localUserAccount = userDataManager.getByEmail(usersEmailAddress);
 
 		if (null == localUserAccount) {
-			throw new NoUserIdException();
+			throw new NoUserException();
 		}
 		if (null == localUserAccount.getPassword() || null == localUserAccount.getSecureSalt()) {
 			log.info("No credentials available for this account");

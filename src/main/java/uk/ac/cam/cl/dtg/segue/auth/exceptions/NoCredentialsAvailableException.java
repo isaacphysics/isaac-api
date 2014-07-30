@@ -10,7 +10,13 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 public class NoCredentialsAvailableException extends Exception {
 	private static final long serialVersionUID = -2703137641897650020L;
 
-	public NoCredentialsAvailableException(String message) {
+	/**
+	 * Creates a NoCredentialsAvailableException.
+	 * 
+	 * @param message
+	 *            - to accompany the exception.
+	 */
+	public NoCredentialsAvailableException(final String message) {
 		super(message);
 	}
 }

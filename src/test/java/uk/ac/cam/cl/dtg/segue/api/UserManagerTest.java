@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -237,14 +237,14 @@ public class UserManagerTest {
 	 *             - test exceptions
 	 * @throws CodeExchangeException
 	 *             - test exceptions
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 *             - test exceptions
 	 * @throws AuthenticatorSecurityException
 	 *             - test exceptions
 	 */
 	@Test
 	public final void authenticateCallback_checkNewUserIsAuthenticated_registerUserWithSegue()
-			throws IOException, CodeExchangeException, NoUserIdException,
+			throws IOException, CodeExchangeException, NoUserException,
 			AuthenticatorSecurityException {
 		IOAuth2Authenticator dummyAuth = createMock(FacebookAuthenticator.class);
 		UserManager userManager = buildTestUserManager(
@@ -356,12 +356,12 @@ public class UserManagerTest {
 	 *             - test exceptions
 	 * @throws CodeExchangeException
 	 *             - test exceptions
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 *             - test exceptions
 	 */
 	@Test
 	public final void authenticateCallback_checkInvalidCSRF_returnsUnauthorizedResponse()
-			throws IOException, CodeExchangeException, NoUserIdException {
+			throws IOException, CodeExchangeException, NoUserException {
 		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -405,12 +405,12 @@ public class UserManagerTest {
 	 *             - test exceptions
 	 * @throws CodeExchangeException
 	 *             - test exceptions
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 *             - test exceptions
 	 */
 	@Test
 	public final void authenticateCallback_checkWhenNoCSRFProvided_respondWithUnauthorized()
-			throws IOException, CodeExchangeException, NoUserIdException {
+			throws IOException, CodeExchangeException, NoUserException {
 		UserManager userManager = buildTestUserManager();
 
 		// method param setup for method under test

@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
@@ -142,7 +142,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public synchronized User getUserInfo(String internalProviderReference)
-			throws NoUserIdException, IOException,
+			throws NoUserException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		if (verifyAccessTokenIsValid(credentials)) {
@@ -171,7 +171,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 					userInfo.getFamilyName(), userInfo.getEmail(), null, null,
 					null, null, null, null, null, null);
 		} else {
-			throw new NoUserIdException();
+			throw new NoUserException();
 		}
 	}
 

@@ -3,7 +3,7 @@ package uk.ac.cam.cl.dtg.segue.auth;
 import java.io.IOException;
 
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
@@ -27,11 +27,11 @@ public interface IFederatedAuthenticator extends IAuthenticator {
 	 *            user (e.g. OAuth implementations will map this code to
 	 *            external tokens to allow api calls to be made).
 	 * @return User's information contained in a User DTO.
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 * @throws IOException
 	 * @throws AuthenticatorSecurityException
 	 */
 	User getUserInfo(String internalProviderReference)
-		throws NoUserIdException, IOException,
+		throws NoUserException, IOException,
 			AuthenticatorSecurityException;
 }

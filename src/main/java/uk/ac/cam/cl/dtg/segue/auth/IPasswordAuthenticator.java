@@ -1,10 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
@@ -25,11 +24,8 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @throws InvalidPasswordException
 	 *             - if the password specified does not meet the complexity
 	 *             requirements or is empty.
-	 * @throws FailedToSetPasswordException
-	 *             - if we couldn't set a password for another reason.
 	 */
-	void setOrChangeUsersPassword(User user) throws InvalidPasswordException,
-			FailedToSetPasswordException;
+	void setOrChangeUsersPassword(User user) throws InvalidPasswordException;
 
 	/**
 	 * authenticate This method authenticates a given user based on the given
@@ -42,14 +38,14 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @return the user object or Authenticator Security Exception.
 	 * @throws IncorrectCredentialsProvidedException
 	 *             - if invalid credentials are provided.
-	 * @throws NoUserIdException
+	 * @throws NoUserException
 	 *             - if we cannot find the user specified.
 	 * @throws NoCredentialsAvailableException
 	 *             - No credentials are configured on this account so we cannot
 	 *             authenticate the user.
 	 */
 	User authenticate(String usersEmailAddress, String plainTextPassword)
-		throws IncorrectCredentialsProvidedException, NoUserIdException,
+		throws IncorrectCredentialsProvidedException, NoUserException,
 			NoCredentialsAvailableException;
 
 	/**
