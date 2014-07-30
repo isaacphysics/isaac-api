@@ -834,5 +834,4 @@ public class IsaacController {
 
 		return Response.ok(summarizedContent).build();
 	}
-
 }
