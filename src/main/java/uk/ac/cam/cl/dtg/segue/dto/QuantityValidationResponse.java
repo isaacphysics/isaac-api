@@ -9,8 +9,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
  * 
  */
 public class QuantityValidationResponse extends QuestionValidationResponse {
-	private boolean correctValue;
-	private boolean correctUnits;
+	private Boolean correctValue;
+	private Boolean correctUnits;
 	
 	/**
 	 * Default constructor.
@@ -20,26 +20,44 @@ public class QuantityValidationResponse extends QuestionValidationResponse {
 	}
 
 	public QuantityValidationResponse(String questionId, String answer,
-			boolean correct, Content explanation, boolean correctValue,
-			boolean correctUnits) {
+			Boolean correct, Content explanation, Boolean correctValue,
+			Boolean correctUnits) {
 		super(questionId, answer, correct, explanation);
 		this.correctValue = correctValue;
 		this.correctUnits = correctUnits;
 	}
 
-	public boolean isCorrectValue() {
+	/**
+	 * Gets the correctValue.
+	 * @return the correctValue
+	 */
+	public final Boolean getCorrectValue() {
 		return correctValue;
 	}
 
-	public void setCorrectValue(boolean correctValue) {
+	/**
+	 * Sets the correctValue.
+	 * @param correctValue the correctValue to set
+	 */
+	public final void setCorrectValue(final Boolean correctValue) {
 		this.correctValue = correctValue;
 	}
 
-	public boolean isCorrectUnits() {
+	/**
+	 * Gets the correctUnits.
+	 * @return the correctUnits
+	 */
+	public final Boolean getCorrectUnits() {
 		return correctUnits;
 	}
 
-	public void setCorrectUnits(boolean correctUnits) {
+	/**
+	 * Sets the correctUnits.
+	 * @param correctUnits the correctUnits to set
+	 */
+	public final void setCorrectUnits(final Boolean correctUnits) {
 		this.correctUnits = correctUnits;
 	}
+
+
 }
