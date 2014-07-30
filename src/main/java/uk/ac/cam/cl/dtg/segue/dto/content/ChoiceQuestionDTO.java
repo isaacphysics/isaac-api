@@ -45,6 +45,9 @@ public class ChoiceQuestionDTO extends QuestionDTO {
 		this.choices = choices;
 	}
 
+	/**
+	 * Default Constructor for mappers.
+	 */
 	public ChoiceQuestionDTO() {
 		super();
 	}

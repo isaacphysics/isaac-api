@@ -3,8 +3,6 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,7 +17,14 @@ public class ChoiceDTO extends ContentDTO {
 	protected boolean correct;
 	@JsonIgnore
 	protected ContentBaseDTO explanation;
-
+	
+	/**
+	 * Default Constructor required for mappers.
+	 */
+	public ChoiceDTO() {
+		super();
+	}
+	
 	@JsonCreator
 	public ChoiceDTO(@JsonProperty("_id") String _id,
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -46,9 +51,7 @@ public class ChoiceDTO extends ContentDTO {
 		this.explanation = explanation;
 	}
 
-	public ChoiceDTO() {
-		super();
-	}
+
 
 	@JsonIgnore
 	public boolean isCorrect() {

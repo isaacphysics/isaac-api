@@ -6,7 +6,6 @@ import java.util.Set;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -17,11 +16,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @DTOMapping(ChoiceDTO.class)
 @JsonType("choice")
 public class Choice extends Content {
-	@JsonIgnore
 	protected boolean correct;
-	@JsonIgnore
 	protected ContentBase explanation;
 
+	/**
+	 * Default Constructor required for mappers.
+	 */
+	public Choice() {
+		
+	}
+	
 	@JsonCreator
 	public Choice(@JsonProperty("_id") String _id,
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
@@ -48,28 +52,35 @@ public class Choice extends Content {
 		this.explanation = explanation;
 	}
 
-	public Choice() {
-		super();
-	}
-
-	@JsonIgnore
-	public boolean isCorrect() {
+	/**
+	 * Gets the correct.
+	 * @return the correct
+	 */
+	public final boolean isCorrect() {
 		return correct;
 	}
 
-	@JsonIgnore
-	public void setCorrect(boolean correct) {
+	/**
+	 * Sets the correct.
+	 * @param correct the correct to set
+	 */
+	public final void setCorrect(final boolean correct) {
 		this.correct = correct;
 	}
 
-	@JsonIgnore
-	public ContentBase getExplanation() {
+	/**
+	 * Gets the explanation.
+	 * @return the explanation
+	 */
+	public final ContentBase getExplanation() {
 		return explanation;
 	}
 
-	@JsonIgnore
-	public void setExplanation(ContentBase explanation) {
+	/**
+	 * Sets the explanation.
+	 * @param explanation the explanation to set
+	 */
+	public final void setExplanation(final ContentBase explanation) {
 		this.explanation = explanation;
 	}
-
 }
