@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.util.List;
-
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -26,7 +24,14 @@ public interface IUserDataManager {
 	 */
 	String register(final User user, final AuthenticationProvider provider,
 			final String providerUserId);
-
+	
+	/**
+	 * Determine whether the user has at least one linked account. 
+	 * @param user with a valid id.
+	 * @return true if we can find at least one linked account, false if we can't.
+	 */
+	boolean hasALinkedAccount(User user);
+	
 	/**
 	 * Find a user by their linked account information.
 	 * 
@@ -50,24 +55,23 @@ public interface IUserDataManager {
 	User getById(final String id);
 
 	/**
+	 * Get a user by email.
+	 * 
+	 * @param email
+	 *            - local user id.
+	 * @return A user object.
+	 */
+	User getByEmail(final String email);
+
+	/**
 	 * Update user object in the data store.
 	 * 
 	 * @param user
 	 *            - the user object to persist.
+	 *            
+	 * @return user which was saved.
 	 */
-	void updateUser(User user);
-
-	/**
-	 * Add item to user's field list.
-	 * 
-	 * @param user
-	 *            - user to update
-	 * @param key
-	 *            - field to update
-	 * @param value
-	 *            - value to replace field with.
-	 */
-	void addItemToListField(User user, String key, List value);
+	User updateUser(User user);
 
 	/**
 	 * Update a particular field on a user object.
@@ -84,4 +88,5 @@ public interface IUserDataManager {
 	 */
 	void registerQuestionAttempt(final User user, final String questionPageId,
 			final String fullQuestionId, final QuestionAttempt questionAttempt);
+
 }

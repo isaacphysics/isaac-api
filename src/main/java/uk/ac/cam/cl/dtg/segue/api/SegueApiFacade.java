@@ -30,6 +30,9 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.auth.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
@@ -726,7 +729,75 @@ public class SegueApiFacade {
 					.toResponse();
 		}
 
-		return Response.ok(mapper.getAutoMapper().map(currentUser, UserDTO.class)).build();
+		return Response.ok(
+				mapper.getAutoMapper().map(currentUser, UserDTO.class)).build();
+	}
+
+	/**
+	 * This method allows users to create a local account or update their
+	 * settings.
+	 * 
+	 * @param request
+	 *            - the http request of the user wishing to authenticate
+	 * @param userObject
+	 *            - object containing all user account information including
+	 *            passwords.
+	 * @return the updated users object.
+	 * @throws FailedToSetPasswordException
+	 * @throws InvalidPasswordException
+	 */
+	@POST
+	@Produces("application/json")
+	@Path("users/")
+	@Consumes("application/json")
+	public final Response createOrUpdateUserSettings(
+			@Context final HttpServletRequest request, final User userObject) {
+		if (null == userObject) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"No user settings provided.").toResponse();
+		}
+
+
+		// determine if this is intended to be an update or create.
+		// if it is an update we need to do some security checks.
+		if (userObject.getDbId() != null) {
+			User currentUser = this.getCurrentUser(request);
+			if (null == currentUser) {
+				return new SegueErrorResponse(Status.UNAUTHORIZED,
+						"You must be logged in to change your user settings.")
+						.toResponse();
+			} else if (!currentUser.getDbId().equals(userObject.getDbId())) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You cannot change someone elses' user settings.")
+						.toResponse();
+			}
+		}
+
+		try {
+			User savedUser = userManager.createOrUpdateUserObject(userObject);
+			this.userManager.createSession(request, savedUser.getDbId());
+			
+			return Response.ok(mapper.getAutoMapper().map(savedUser, UserDTO.class)).build();
+		} catch (InvalidPasswordException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Invalid password. You cannot have an empty password.")
+					.toResponse();
+		} catch (FailedToSetPasswordException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to set a password.").toResponse();
+		} catch (MissingRequiredFieldException e) {
+			return new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"You are missing a required field. "
+					+ "Please make sure you have specified all mandatory fields in your response.")
+					.toResponse();
+		} catch (com.mongodb.MongoException.DuplicateKey e) {
+			return new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"Duplicate key found. An existing account may "
+					+ "already exist with the e-mail address specified.")
+					.toResponse();
+		}
 	}
 
 	/**
@@ -780,6 +851,51 @@ public class SegueApiFacade {
 	}
 
 	/**
+	 * This is the initial step of the authentication process.
+	 * 
+	 * @param request
+	 *            - the http request of the user wishing to authenticate
+	 * @param signinProvider
+	 *            - string representing the supported auth provider so that we
+	 *            know who to redirect the user to.
+	 * @param redirectUrl
+	 *            - optional redirect url after authentication has completed.
+	 * @param credentials
+	 *            - optional field for local authentication only. Credentials
+	 *            should be specified within a user object. e.g. email and
+	 *            password.
+	 * @return Redirect response to the auth providers site.
+	 */
+	@POST
+	@Produces("application/json")
+	@Path("auth/{provider}/authenticate")
+	@Consumes("application/json")
+	public final Response authenticateWithCredentials(
+			@Context final HttpServletRequest request,
+			@PathParam("provider") final String signinProvider,
+			@QueryParam("redirect") final String redirectUrl,
+			final Map<String, String> credentials) {
+
+		// TODO: fix duplicate code with authenticationInitalisation
+		String newRedirectUrl = null;
+		if (null == redirectUrl || !redirectUrl.contains("http://")) {
+			// TODO: Make this redirection stuff less horrid.
+			newRedirectUrl = "http://"
+					+ this.properties.getProperty(Constants.HOST_NAME);
+
+			if (redirectUrl != null) {
+				newRedirectUrl += redirectUrl;
+			}
+		} else {
+			newRedirectUrl = redirectUrl;
+		}
+
+		// ok we need to hand over to user manager
+		return userManager.authenticate(request, signinProvider,
+				newRedirectUrl, credentials);
+	}
+
+	/**
 	 * This is the callback url that auth providers should use to send us
 	 * information about users.
 	 * 
@@ -813,7 +929,7 @@ public class SegueApiFacade {
 	@Path("auth/logout")
 	public final Response userLogout(@Context final HttpServletRequest request) {
 		userManager.logUserOut(request);
-		
+
 		return Response.ok().build();
 	}
 
@@ -1030,7 +1146,7 @@ public class SegueApiFacade {
 	 *         for.
 	 */
 	public final <T> IAppDataManager<T> requestAppDataManager(
-			final String databaseName, final Class<T> classType) {		
+			final String databaseName, final Class<T> classType) {
 		return SegueGuiceConfigurationModule.getAppDataManager(databaseName,
 				classType);
 	}

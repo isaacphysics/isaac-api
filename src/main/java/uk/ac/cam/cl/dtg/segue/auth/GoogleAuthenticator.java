@@ -166,7 +166,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
 			return new User(userInfo.getId(), userInfo.getGivenName(),
 					userInfo.getFamilyName(), userInfo.getEmail(), null, null,
-					null, null, null, null, null);
+					null, null, null, null, null, null);
 		} else {
 			throw new NoUserIdException();
 		}

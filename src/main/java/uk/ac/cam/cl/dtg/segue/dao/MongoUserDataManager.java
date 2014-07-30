@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.util.List;
-
+import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
@@ -10,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.MongoException;
 
@@ -42,6 +42,8 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Inject
 	public MongoUserDataManager(final DB database) {
 		this.database = database;
+
+		initialiseDataManager();
 	}
 
 	@Override
@@ -83,7 +85,25 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final void updateUser(final User user) {
+	public User getByEmail(final String email) {
+		if (null == email) {
+			return null;
+		}
+
+		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), User.class,
+				String.class);
+
+		// Do database query using plain mongodb so we only have to read from
+		// the database once.
+		User user = jc.findOne(new BasicDBObject(
+				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, email.trim()));
+
+		return user;
+	}
+
+	@Override
+	public final User updateUser(final User user) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
@@ -93,6 +113,8 @@ public class MongoUserDataManager implements IUserDataManager {
 		if (r.getError() != null) {
 			log.error("Error during database update " + r.getError());
 		}
+
+		return r.getSavedObject();
 	}
 
 	@Override
@@ -104,31 +126,16 @@ public class MongoUserDataManager implements IUserDataManager {
 				String.class);
 
 		try {
-			WriteResult<User, String> r = jc.updateById(
-					user.getDbId(),
+			WriteResult<User, String> r = jc.updateById(user.getDbId(),
 					DBUpdate.set(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
-							+ questionPageId + "." + fullQuestionId, questionAttempt));
+							+ questionPageId + "." + fullQuestionId,
+							questionAttempt));
 
 			if (r.getError() != null) {
 				log.error("Error during database update " + r.getError());
 			}
 		} catch (MongoException e) {
 			log.error("MongoDB Database Exception. ", e);
-		}
-	}
-
-	@Override
-	public final void addItemToListField(final User user,
-			final String fieldName, final List value) {
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class);
-
-		WriteResult<User, String> r = jc.updateById(user.getDbId(),
-				DBUpdate.addToSet(fieldName, value));
-
-		if (r.getError() != null) {
-			log.error("Error during database update " + r.getError());
 		}
 	}
 
@@ -155,6 +162,22 @@ public class MongoUserDataManager implements IUserDataManager {
 		return this.getById(linkAccount.getLocalUserId());
 	}
 
+	@Override
+	public boolean hasALinkedAccount(final User user) {
+		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
+				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+						LinkedAccount.class, String.class);
+
+		DBCursor<LinkedAccount> linkAccounts = jc.find(new BasicDBObject(
+				Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, user
+						.getDbId()));
+		
+		if (linkAccounts.size() > 0) {
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Creates a link record, connecting a local user to an external provider
 	 * for authentication purposes.
@@ -179,4 +202,14 @@ public class MongoUserDataManager implements IUserDataManager {
 		return null == r.getError();
 	}
 
+	/**
+	 * This method ensures that the collection is setup correctly and has all of
+	 * the required indices.
+	 */
+	private void initialiseDataManager() {
+		log.info("Initializing Mongo DB user collection indices");
+		database.getCollection(USER_COLLECTION_NAME).ensureIndex(
+				new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, 1),
+				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, true);
+	}
 }

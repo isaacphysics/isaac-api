@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
@@ -38,7 +39,7 @@ public class UserManagerTest {
 
 	private IUserDataManager dummyDatabase;
 	private String dummyHMACSalt;
-	private Map<AuthenticationProvider, IFederatedAuthenticator> dummyProvidersMap;
+	private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
 	private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
 	/**
@@ -51,7 +52,7 @@ public class UserManagerTest {
 	public final void setUp() throws Exception {
 		this.dummyDatabase = createMock(IUserDataManager.class);
 		this.dummyHMACSalt = "BOB";
-		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
+		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
 	}
 
 	/**
@@ -121,7 +122,7 @@ public class UserManagerTest {
 		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
 		User returnUser = new User(validUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, "", new Date(), Gender.MALE,
-				new Date(), null, null);
+				new Date(), null, null, null);
 
 		expect(request.getSession()).andReturn(dummySession).times(5);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -305,7 +306,7 @@ public class UserManagerTest {
 		// User object back from provider
 		User providerUser = new User(someProviderUniqueUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, "", new Date(), Gender.MALE,
-				new Date(), null, null);
+				new Date(), null, null, null);
 
 		// Mock get User Information from provider call
 		expect(
@@ -327,7 +328,7 @@ public class UserManagerTest {
 		expect(dummyDatabase.getById(someSegueUserId)).andReturn(
 				new User(someSegueUserId, "TestFirstName", "testLastName", "",
 						Role.STUDENT, "", new Date(), Gender.MALE, new Date(),
-						null, null));
+						null, null, null));
 
 		// Expect a session to be created
 		dummySession.setAttribute(EasyMock.<String> anyObject(),
@@ -543,7 +544,7 @@ public class UserManagerTest {
 	 */
 	private UserManager buildTestUserManager(AuthenticationProvider provider,
 			IFederatedAuthenticator authenticator) {
-		HashMap<AuthenticationProvider, IFederatedAuthenticator> providerMap = new HashMap<AuthenticationProvider, IFederatedAuthenticator>();
+		HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
 		providerMap.put(provider, authenticator);
 		return new UserManager(this.dummyDatabase, this.dummyHMACSalt,
 				providerMap);

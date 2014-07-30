@@ -15,6 +15,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -28,10 +31,17 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
@@ -39,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 
 /**
  * This class is responsible for all low level user management actions e.g.
@@ -55,7 +66,7 @@ public class UserManager {
 
 	private final IUserDataManager database;
 	private final String hmacSalt;
-	private final Map<AuthenticationProvider, IFederatedAuthenticator> registeredAuthProviders;
+	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 
 	/**
 	 * Create an instance of the user manager class.
@@ -71,7 +82,7 @@ public class UserManager {
 	public UserManager(
 			final IUserDataManager database,
 			@Named(Constants.HMAC_SALT) final String hmacSalt,
-			final Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister) {
+			final Map<AuthenticationProvider, IAuthenticator> providersToRegister) {
 		Validate.notNull(database);
 		Validate.notNull(hmacSalt);
 		Validate.notNull(providersToRegister);
@@ -124,7 +135,7 @@ public class UserManager {
 		// Ok we don't have a current user so now we have to go ahead and try
 		// and authenticate them.
 		try {
-			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
+			IAuthenticator federatedAuthenticator = mapToProvider(provider);
 
 			// if we are an OAuthProvider redirect to the provider
 			// authorization url.
@@ -150,11 +161,6 @@ public class UserManager {
 
 				redirectLink = URI.create(oauth1Provider
 						.getAuthorizationUrl(token));
-			}
-
-			if (redirectLink != null) {
-				return Response.temporaryRedirect(redirectLink)
-						.entity(redirectLink).build();
 			} else {
 				SegueErrorResponse error = new SegueErrorResponse(
 						Status.INTERNAL_SERVER_ERROR,
@@ -163,6 +169,10 @@ public class UserManager {
 				log.error(error.getErrorMessage());
 				return error.toResponse();
 			}
+
+			return Response.temporaryRedirect(redirectLink)
+					.entity(redirectLink).build();
+
 		} catch (IllegalArgumentException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
@@ -175,6 +185,74 @@ public class UserManager {
 					Status.INTERNAL_SERVER_ERROR,
 					"IOException when trying to redirect to OAuth provider", e);
 			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		}
+	}
+
+	/**
+	 * This method will attempt to authenticate the user using the provided
+	 * credentials and if successful will provide a redirect response to the
+	 * user based on the redirectUrl provided.
+	 * 
+	 * @param request
+	 *            - http request that we can attach the session to.
+	 * @param provider
+	 *            - the provider the user wishes to authenticate with.
+	 * @param redirectUrl
+	 *            - optional redirect Url for when authentication has completed.
+	 * @param credentials
+	 *            - Credentials email and password credentials should be
+	 *            specified in a map
+	 * @return A response redirecting the user to their redirect url or a
+	 *         redirect URI to the authentication provider if authorization /
+	 *         login is required.
+	 */
+	public final Response authenticate(final HttpServletRequest request,
+			final String provider, @Nullable final String redirectUrl,
+			@Nullable final Map<String, String> credentials) {
+
+		// in this case we expect a username and password to have been
+		// sent in the json response.
+		if (null == credentials) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"You must specify credentials to use this authentication provider.");
+			return error.toResponse();
+		}
+
+		// get the current user based on their session id information.
+		User currentUser = getCurrentUser(request);
+		if (null != currentUser) {
+			return Response.temporaryRedirect(URI.create(redirectUrl)).build();
+		}
+
+		IAuthenticator authenticator = mapToProvider(provider);
+		if (authenticator instanceof IPasswordAuthenticator) {
+			IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
+
+			try {
+				User user = passwordAuthenticator.authenticate(credentials
+						.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME), credentials
+						.get(Constants.LOCAL_AUTH_PASSWORD_FIELDNAME));
+
+				this.createSession(request, user.getDbId());
+
+				return Response.temporaryRedirect(URI.create(redirectUrl))
+						.build();
+
+			} catch (IncorrectCredentialsProvidedException | NoUserIdException
+					| NoCredentialsAvailableException e) {
+				log.debug("Incorrect Credentials Received", e);
+				return new SegueErrorResponse(Status.UNAUTHORIZED,
+						"Incorrect credentials received.").toResponse();
+			}
+		} else {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.INTERNAL_SERVER_ERROR,
+					"Unable to map to a known authenticator that accepts "
+							+ "raw credentials for the given provider: "
+							+ provider);
+			log.error(error.getErrorMessage());
 			return error.toResponse();
 		}
 	}
@@ -213,7 +291,15 @@ public class UserManager {
 		// Ok we don't have a current user so now we have to go ahead and try
 		// and authenticate them.
 		try {
-			IFederatedAuthenticator federatedAuthenticator = mapToProvider(provider);
+			IAuthenticator authenticator = mapToProvider(provider);
+			IFederatedAuthenticator federatedAuthenticator;
+			if (authenticator instanceof IFederatedAuthenticator) {
+				federatedAuthenticator = (IFederatedAuthenticator) authenticator;
+			} else {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"The authenticator requested does not have a callback function.")
+						.toResponse();
+			}
 
 			String providerSpecificUserLookupReference = null;
 
@@ -255,9 +341,9 @@ public class UserManager {
 			return error.toResponse();
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED,
+					Status.INTERNAL_SERVER_ERROR,
 					"Exception while trying to authenticate a user"
-							+ " - during callback step", e);
+							+ " - during callback step. IO problem.", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		} catch (NoUserIdException e) {
@@ -317,6 +403,21 @@ public class UserManager {
 
 		// retrieve the user from database.
 		return database.getById(currentUserId);
+	}
+
+	/**
+	 * Library method that allows the api to locate a user object from the
+	 * database based on a given unique id.
+	 * 
+	 * @param userId
+	 *            - to search for.
+	 * @return user or null if we cannot find it.
+	 */
+	public final User findUserById(final String userId) {
+		if (null == userId) {
+			return null;
+		}
+		return this.database.getById(userId);
 	}
 
 	/**
@@ -445,9 +546,59 @@ public class UserManager {
 	 * 
 	 * @param user
 	 *            - the user to update.
+	 * @throws FailedToSetPasswordException
+	 *             - unable to set a password.
+	 * @throws InvalidPasswordException
+	 *             - the password provided does not meet our requirements.
+	 * @throws MissingRequiredFieldException
+	 *             - A required field is missing for the user object so cannot
+	 *             be saved.
+	 * @return the user object as was saved.
 	 */
-	public void updateUserObject(final User user) {
-		this.database.updateUser(user);
+	public User createOrUpdateUserObject(final User user)
+		throws InvalidPasswordException, FailedToSetPasswordException,
+			MissingRequiredFieldException {
+		User userToSave = null;
+
+		MapperFacade mapper = new DefaultMapperFactory.Builder()
+				.mapNulls(false).build().getMapperFacade();
+
+		// We want to map to DTO first to make sure that the user cannot
+		// change fields that aren't exposed to them
+		UserDTO userDTOContainingUpdates = mapper.map(user, UserDTO.class);
+
+		if (user.getDbId() != null && !user.getDbId().isEmpty()) {
+			// This is an update operation.
+			User existingUser = this.findUserById(user.getDbId());
+
+			userToSave = existingUser;
+		} else {
+			userToSave = mapper.map(userDTOContainingUpdates, User.class);
+		}
+
+		// do we need to do local password storage using the segue
+		// authenticator? I.e. is the password changing?
+		if (null != user.getPassword() && !user.getPassword().isEmpty()) {
+			IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
+					.mapToProvider(AuthenticationProvider.SEGUE.name());
+			authenticator.setOrChangeUsersPassword(user);
+			userToSave.setPassword(user.getPassword());
+			userToSave.setSecureSalt(user.getSecureSalt());
+		}
+
+		// Before save we should validate the user for mandatory fields.
+		if (!this.isUserValid(userToSave)) {
+			throw new MissingRequiredFieldException(
+					"The user provided is missing a mandatory field");
+		} else if (!this.database.hasALinkedAccount(userToSave)
+				&& userToSave.getPassword() == null) {
+			// a user must have a way of logging on.
+			throw new MissingRequiredFieldException(
+					"This modification would mean that the user"
+							+ " no longer has a way of authenticating. Failing change.");
+		} else {
+			return this.database.updateUser(userToSave);
+		}
 	}
 
 	/**
@@ -488,7 +639,7 @@ public class UserManager {
 	 * @return the FederatedAuthenticator object which can be used to get a
 	 *         user.
 	 */
-	private IFederatedAuthenticator mapToProvider(final String provider) {
+	private IAuthenticator mapToProvider(final String provider) {
 		Validate.notEmpty(provider,
 				"Provider name must not be empty or null if we are going "
 						+ "to map it to an implementation.");
@@ -518,26 +669,31 @@ public class UserManager {
 	 * 
 	 * @param request
 	 *            - http request to verify there is no CSRF
-	 * @param oauthProvider - 
+	 * @param oauthProvider
+	 *            -
 	 * @return true if we are happy , false if we think a violation has
 	 *         occurred.
-	 * @throws CrossSiteRequestForgeryException 
+	 * @throws CrossSiteRequestForgeryException
+	 *             - if we suspect cross site request forgery.
 	 */
 	private boolean ensureNoCSRF(final HttpServletRequest request,
-			final IOAuthAuthenticator oauthProvider) throws CrossSiteRequestForgeryException {
+			final IOAuthAuthenticator oauthProvider)
+		throws CrossSiteRequestForgeryException {
 		Validate.notNull(request);
-		
+
 		String key;
 		if (oauthProvider instanceof IOAuth2Authenticator) {
 			key = Constants.STATE_PARAM_NAME;
 		} else if (oauthProvider instanceof IOAuth1Authenticator) {
 			key = Constants.OAUTH_TOKEN_PARAM_NAME;
 		} else {
-			throw new CrossSiteRequestForgeryException("Provider not recognized.");
+			throw new CrossSiteRequestForgeryException(
+					"Provider not recognized.");
 		}
-		
+
 		// to deal with cross site request forgery
-		String csrfTokenFromUser = (String) request.getSession().getAttribute(key);
+		String csrfTokenFromUser = (String) request.getSession().getAttribute(
+				key);
 		String csrfTokenFromProvider = request.getParameter(key);
 
 		if (null == csrfTokenFromUser || null == csrfTokenFromProvider
@@ -702,7 +858,8 @@ public class UserManager {
 			CodeExchangeException, NoUserIdException,
 			CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
-		if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
+		if (request.getQueryString() == null
+				|| !ensureNoCSRF(request, oauthProvider)) {
 			throw new CrossSiteRequestForgeryException("CRSF check failed");
 		}
 
@@ -759,4 +916,24 @@ public class UserManager {
 
 		return new URI(url);
 	}
+
+	/**
+	 * IsUserValid This function will check that the user object is valid.
+	 * 
+	 * @param userToValidate
+	 *            - the user to validate.
+	 * @return true if it meets the internal storage requirements, false if not.
+	 */
+	private boolean isUserValid(final User userToValidate) {
+		boolean isValid = true;
+
+		if (userToValidate.getEmail() == null
+				|| userToValidate.getEmail().isEmpty()
+				|| !userToValidate.getEmail().contains("@")) {
+			isValid = false;
+		}
+
+		return isValid;
+	}
+
 }

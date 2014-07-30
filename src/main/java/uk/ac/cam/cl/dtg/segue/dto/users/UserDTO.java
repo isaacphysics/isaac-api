@@ -70,6 +70,7 @@ public class UserDTO {
 		this.role = role;
 		this.school = school;
 		this.dateOfBirth = dateOfBirth;
+		this.gender = gender;
 		this.registrationDate = registrationTime;
 		this.schoolId = schoolId;
 	}

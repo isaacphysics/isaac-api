@@ -217,6 +217,10 @@ public final class Constants {
 	 */
 	public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
 	
+	// Local authentication specific stuff
+	public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
+	public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
+	
 	// Database properties
 	public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";
 	public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
@@ -238,7 +242,7 @@ public final class Constants {
 
 	public static final String ID_SEPARATOR = "|";
 	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
-
+	
 	// User persistence model stuff
 	public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
 	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";

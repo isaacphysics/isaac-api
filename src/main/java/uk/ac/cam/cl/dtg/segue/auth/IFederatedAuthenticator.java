@@ -15,12 +15,12 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
  * specific user.
  * 
  */
-public interface IFederatedAuthenticator {
+public interface IFederatedAuthenticator extends IAuthenticator {
 
 	/**
 	 * Send a request to the Provider's API to retrieve the user's information.
 	 * 
-	 * @param A
+	 * @param internalProviderReference
 	 *            reference code that allows the authenticator to identify the
 	 *            user (e.g. OAuth implementations will map this code to
 	 *            external tokens to allow api calls to be made).
@@ -29,15 +29,7 @@ public interface IFederatedAuthenticator {
 	 * @throws IOException
 	 * @throws AuthenticatorSecurityException
 	 */
-	public User getUserInfo(String internalProviderReference)
-			throws NoUserIdException, IOException,
+	User getUserInfo(String internalProviderReference)
+		throws NoUserIdException, IOException,
 			AuthenticatorSecurityException;
-
-	/**
-	 * Returns a string representation of the providers name
-	 * 
-	 * @return AuthenticationProvider
-	 */
-	public AuthenticationProvider getAuthenticationProvider();
-
 }

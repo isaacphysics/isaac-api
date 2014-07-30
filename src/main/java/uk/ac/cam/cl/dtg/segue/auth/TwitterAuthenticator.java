@@ -168,7 +168,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 			if (userInfo != null) {
 				return new User(String.valueOf(userInfo.getId()),
 						userInfo.getName(), null, null, null, null, null, null,
-						null, null, null);
+						null, null, null, null);
 			} else {
 				throw new NoUserIdException();
 			}

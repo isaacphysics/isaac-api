@@ -36,6 +36,10 @@ public class User {
 	// TODO: move out of segue DTO into isaac one.
 	private List<GameboardDTO> gameBoards;
 
+	// local password - only used for segue local authentication.
+	private String password;
+	private String secureSalt;
+	
 	/**
 	 * Full constructor for the User object.
 	 * 
@@ -61,6 +65,8 @@ public class User {
 	 *            - the list of linked authentication provider accounts.
 	 * @param questionAttempts
 	 *            - the list of question attempts made by the user.
+	 * @param password
+	 *            - password for local segue authentication.            
 	 */
 	@JsonCreator
 	public User(
@@ -75,7 +81,9 @@ public class User {
 			@JsonProperty("registrationTime") final Date registrationTime,
 			@JsonProperty("schoolId") final String schoolId,
 			@JsonProperty("questionAttempts") 
-			final Map<String, Map<String, QuestionAttempt>> questionAttempts) {
+			final Map<String, Map<String, QuestionAttempt>> questionAttempts,
+			@JsonProperty("password") 
+			final String password) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -83,9 +91,11 @@ public class User {
 		this.role = role;
 		this.school = school;
 		this.dateOfBirth = dateOfBirth;
+		this.gender = gender;
 		this.registrationDate = registrationTime;
 		this.schoolId = schoolId;
 		this.questionAttempts = questionAttempts;
+		this.password = password;
 	}
 
 	/**
@@ -120,62 +130,103 @@ public class User {
 	}
 
 	/**
-	 * Gets the family name for the user.
-	 * 
-	 * @return familyName.
-	 */
-	public final String getFamilyName() {
-		return familyName;
-	}
-
-	/**
-	 * Gets the given name / firstname of the user.
-	 * 
-	 * @return users given name.
+	 * Gets the givenName.
+	 * @return the givenName
 	 */
 	public final String getGivenName() {
 		return givenName;
 	}
 
 	/**
-	 * Gets the users e-mail address.
-	 * 
-	 * @return users email address
+	 * Sets the givenName.
+	 * @param givenName the givenName to set
+	 */
+	public final void setGivenName(final String givenName) {
+		this.givenName = givenName;
+	}
+
+	/**
+	 * Gets the familyName.
+	 * @return the familyName
+	 */
+	public final String getFamilyName() {
+		return familyName;
+	}
+
+	/**
+	 * Sets the familyName.
+	 * @param familyName the familyName to set
+	 */
+	public final void setFamilyName(final String familyName) {
+		this.familyName = familyName;
+	}
+
+	/**
+	 * Gets the email.
+	 * @return the email
 	 */
 	public final String getEmail() {
 		return email;
 	}
 
 	/**
-	 * Gets the users role information.
-	 * 
-	 * @return the role of the user.
+	 * Sets the email.
+	 * @param email the email to set
+	 */
+	public final void setEmail(final String email) {
+		this.email = email;
+	}
+
+	/**
+	 * Gets the role.
+	 * @return the role
 	 */
 	public final Role getRole() {
 		return role;
 	}
 
 	/**
-	 * Gets the unique id of the school the user should belong to.
-	 * 
-	 * @return school id.
+	 * Sets the role.
+	 * @param role the role to set
+	 */
+	public final void setRole(final Role role) {
+		this.role = role;
+	}
+
+	/**
+	 * Gets the school.
+	 * @return the school
 	 */
 	public final String getSchool() {
 		return school;
 	}
 
 	/**
-	 * Gets the date of birth for the given user.
-	 * 
-	 * @return date of birth
+	 * Sets the school.
+	 * @param school the school to set
+	 */
+	public final void setSchool(final String school) {
+		this.school = school;
+	}
+
+	/**
+	 * Gets the dateOfBirth.
+	 * @return the dateOfBirth
 	 */
 	public final Date getDateOfBirth() {
 		return dateOfBirth;
 	}
 
 	/**
-	 * Get Gender for this user.
-	 * 
+	 * Sets the dateOfBirth.
+	 * @param dateOfBirth the dateOfBirth to set
+	 */
+	public final void setDateOfBirth(final Date dateOfBirth) {
+		this.dateOfBirth = dateOfBirth;
+	}
+
+	/**
+	 * Gets the gender.
 	 * @return the gender
 	 */
 	public final Gender getGender() {
@@ -183,35 +234,64 @@ public class User {
 	}
 
 	/**
-	 * Gets the date of when the user first registered with us.
-	 * 
-	 * @return the date in which the user registered.
+	 * Sets the gender.
+	 * @param gender the gender to set
 	 */
-	public final Date getRegistrationTime() {
+	public final void setGender(final Gender gender) {
+		this.gender = gender;
+	}
+
+	/**
+	 * Gets the registrationDate.
+	 * @return the registrationDate
+	 */
+	public final Date getRegistrationDate() {
 		return registrationDate;
 	}
 
 	/**
-	 * Gets the list of SchoolId for this user.
-	 * 
-	 * @return the schoolId that the user is a member of.
+	 * Sets the registrationDate.
+	 * @param registrationDate the registrationDate to set
+	 */
+	public final void setRegistrationDate(final Date registrationDate) {
+		this.registrationDate = registrationDate;
+	}
+
+	/**
+	 * Gets the schoolId.
+	 * @return the schoolId
 	 */
 	public final String getSchoolId() {
 		return schoolId;
 	}
 
 	/**
-	 * Get Question attempts for this user.
-	 * 
-	 * @return list of attempts
+	 * Sets the schoolId.
+	 * @param schoolId the schoolId to set
+	 */
+	public final void setSchoolId(final String schoolId) {
+		this.schoolId = schoolId;
+	}
+
+	/**
+	 * Gets the questionAttempts.
+	 * @return the questionAttempts
 	 */
 	public final Map<String, Map<String, QuestionAttempt>> getQuestionAttempts() {
 		return questionAttempts;
 	}
 
 	/**
+	 * Sets the questionAttempts.
+	 * @param questionAttempts the questionAttempts to set
+	 */
+	public final void setQuestionAttempts(
+			final Map<String, Map<String, QuestionAttempt>> questionAttempts) {
+		this.questionAttempts = questionAttempts;
+	}
+
+	/**
 	 * Gets the gameBoards.
-	 * 
 	 * @return the gameBoards
 	 */
 	public final List<GameboardDTO> getGameBoards() {
@@ -220,12 +300,41 @@ public class User {
 
 	/**
 	 * Sets the gameBoards.
-	 * 
-	 * @param gameBoards
-	 *            the gameBoards to set
+	 * @param gameBoards the gameBoards to set
 	 */
 	public final void setGameBoards(final List<GameboardDTO> gameBoards) {
 		this.gameBoards = gameBoards;
 	}
 
+	/**
+	 * Gets the password.
+	 * @return the password
+	 */
+	public final String getPassword() {
+		return password;
+	}
+
+	/**
+	 * Sets the password.
+	 * @param password the password to set
+	 */
+	public final void setPassword(final String password) {
+		this.password = password;
+	}
+
+	/**
+	 * Gets the secureSalt.
+	 * @return the secureSalt
+	 */
+	public final String getSecureSalt() {
+		return secureSalt;
+	}
+
+	/**
+	 * Sets the secureSalt.
+	 * @param secureSalt the secureSalt to set
+	 */
+	public final void setSecureSalt(final String secureSalt) {
+		this.secureSalt = secureSalt;
+	}
 }

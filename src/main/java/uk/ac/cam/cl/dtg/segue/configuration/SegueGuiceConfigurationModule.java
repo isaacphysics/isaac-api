@@ -20,7 +20,8 @@ import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
@@ -186,15 +187,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 
 		// Register a map of security providers
-		MapBinder<AuthenticationProvider, IFederatedAuthenticator> mapBinder = MapBinder
+		MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder
 				.newMapBinder(binder(), AuthenticationProvider.class,
-						IFederatedAuthenticator.class);
+						IAuthenticator.class);
 		mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(
 				GoogleAuthenticator.class);
 		mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(
 				FacebookAuthenticator.class);
 		mapBinder.addBinding(AuthenticationProvider.TWITTER).to(
 				TwitterAuthenticator.class);
+		mapBinder.addBinding(AuthenticationProvider.SEGUE).to(
+				SegueLocalAuthenticator.class);
 
 	}
 
@@ -331,7 +334,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static UserManager getUserManager(
 			final IUserDataManager database,
 			@Named(Constants.HMAC_SALT) final String hmacSalt,
-			final Map<AuthenticationProvider, IFederatedAuthenticator> providersToRegister) {
+			final Map<AuthenticationProvider, IAuthenticator> providersToRegister) {
 
 		if (null == userManager) {
 			userManager = new UserManager(database, hmacSalt,
