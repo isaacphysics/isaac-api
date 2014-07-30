@@ -69,13 +69,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			.getLogger(SegueGuiceConfigurationModule.class);
 
 	// we only ever want there to be one instance of each of these.
+	private static MongoDb mongoDB = null;
+	
 	private static ContentMapper mapper = null;
 	private static ContentVersionController contentVersionController = null;
+	
 	private static GitContentManager contentManager = null;
 	private static Client elasticSearchClient = null;
+	
 	private static UserManager userManager = null;
+	private static IUserDataManager userDataManager = null;
 	private static GoogleClientSecrets googleClientSecrets = null;
-	private static MongoDb mongoDB = null;
+
 
 	private PropertiesLoader globalProperties = null;
 
@@ -213,8 +218,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		// TODO: the log manager needs redoing.
 		bind(ILogManager.class).to(LogManager.class);
-
-		bind(IUserDataManager.class).to(MongoUserDataManager.class);
 	}
 
 	/**
@@ -344,6 +347,28 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return userManager;
 	}
+	
+	/**
+	 * This provides a singleton of the contentVersionController for the segue
+	 * facade.
+	 * 
+	 * @param database
+	 *            - to use for persistence.
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private static IUserDataManager getUserDataManager(
+			final DB database) {
+		if (null == userDataManager) {
+			userDataManager = new MongoUserDataManager(database);
+			log.info("Creating singleton of MongoUserDataManager");
+		}
+
+		return userDataManager;
+	}
+
 
 	/**
 	 * Gets the instance of the dozer mapper object.

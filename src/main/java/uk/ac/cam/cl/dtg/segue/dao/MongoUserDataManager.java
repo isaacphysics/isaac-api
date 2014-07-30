@@ -207,7 +207,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	 * the required indices.
 	 */
 	private void initialiseDataManager() {
-		log.info("Initializing Mongo DB user collection indices");
+		log.info("Initializing Mongo DB user collection indices.");
 		database.getCollection(USER_COLLECTION_NAME).ensureIndex(
 				new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, 1),
 				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, true);
