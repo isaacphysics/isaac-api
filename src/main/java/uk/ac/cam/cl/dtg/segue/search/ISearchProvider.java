@@ -153,7 +153,9 @@ public interface ISearchProvider {
 	 *            index that the content is stored in
 	 * @param indexType
 	 *            - type of index as registered with search provider.
-	 * @param idPrefix
+	 * @param fieldname
+	 *            - fieldName to search within.
+	 * @param prefix
 	 *            - idPrefix to search for.
 	 * @return A list of results that match the id prefix.
 	 */
