@@ -31,6 +31,7 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -39,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.Media;
+import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -58,6 +60,7 @@ public class GitContentManager implements IContentManager {
 	private final Map<String, Map<String, Content>> gitCache;
 	private final Map<String, Map<Content, List<String>>> indexProblemCache;
 	private final Map<String, Set<String>> tagsList;
+	private final Map<String, Set<String>> allUnits;									
 
 	private final GitDb database;
 	private final ContentMapper mapper;
@@ -85,6 +88,7 @@ public class GitContentManager implements IContentManager {
 		this.gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
+		this.allUnits = new ConcurrentHashMap<String, Set<String>>();
 
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
@@ -119,7 +123,8 @@ public class GitContentManager implements IContentManager {
 		this.gitCache = gitCache;
 		this.indexProblemCache = indexProblemCache;
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-
+		this.allUnits = new ConcurrentHashMap<String, Set<String>>();
+		
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
 	}
@@ -311,6 +316,7 @@ public class GitContentManager implements IContentManager {
 		searchProvider.expungeEntireSearchCache();
 		indexProblemCache.clear();
 		tagsList.clear();
+		allUnits.clear();
 	}
 
 	@Override
@@ -322,6 +328,7 @@ public class GitContentManager implements IContentManager {
 			searchProvider.expungeIndexFromSearchCache(version);
 			indexProblemCache.remove(version);
 			tagsList.remove(version);
+			allUnits.remove(version);
 		}
 	}
 
@@ -566,6 +573,16 @@ public class GitContentManager implements IContentManager {
 										flattenedContent);
 								registerTagsWithVersion(sha,
 										flattenedContent.getTags());
+								
+								
+								// If this is a numeric question, extract any 
+								// units from its answers.
+								
+								if (flattenedContent instanceof IsaacNumericQuestion) {
+									registerUnitsWithVersion(sha, 
+											(IsaacNumericQuestion)flattenedContent);									
+								}
+									
 								continue; // our work here is done (reduces
 											// nesting compared to else)
 							}
@@ -624,6 +641,7 @@ public class GitContentManager implements IContentManager {
 			gitCache.put(sha, shaCache);
 			repository.close();
 			log.info("Tags available " + tagsList);
+			log.info("All units: " + allUnits);
 			log.info("Git content cache population for " + sha + " completed!");
 		} catch (IOException e) {
 			log.error("IOException while trying to access git repository. ", e);
@@ -929,6 +947,42 @@ public class GitContentManager implements IContentManager {
 		}
 
 		tagsList.get(version).addAll(newTagSet);
+	}
+	
+	/**
+	 * Helper function to accumulate the set of all units used in
+	 * numeric question answers.
+	 * 
+	 * @param version
+	 * 			- version to register the units for.
+	 * @param q
+	 * 			- numeric question from which to extract units.
+	 */
+	private synchronized void registerUnitsWithVersion(final String version, 
+			final IsaacNumericQuestion q) {		
+		
+		Set<String> newUnits = Sets.newHashSet();
+		
+		for (Choice c: q.getChoices()) {
+			if(c instanceof Quantity) {
+				Quantity quantity = (Quantity)c;
+				
+				if (!quantity.getUnits().equals("")) {
+					newUnits.add(quantity.getUnits());
+				}
+			}
+		}
+		
+		if (newUnits.isEmpty()) {
+			// This question contained no units.
+			return;
+		}
+		
+		if (!allUnits.containsKey(version)) {
+			allUnits.put(version, new HashSet<String>());
+		}
+		
+		allUnits.get(version).addAll(newUnits);
 	}
 
 	/**
