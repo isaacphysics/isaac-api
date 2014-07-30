@@ -21,6 +21,10 @@ public class IsaacNumericQuestion extends IsaacQuestion {
 	 * @return the requireUnits
 	 */
 	public final Boolean getRequireUnits() {
+		if (requireUnits == null) {
+			return true;
+		}
+		
 		return requireUnits;
 	}
 

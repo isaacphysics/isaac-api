@@ -19,6 +19,10 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionDTO {
 	 * @return the requireUnits
 	 */
 	public final Boolean getRequireUnits() {
+		if (requireUnits == null) {
+			return true;
+		}
+		
 		return requireUnits;
 	}
 

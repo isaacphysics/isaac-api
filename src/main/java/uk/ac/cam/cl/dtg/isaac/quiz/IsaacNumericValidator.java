@@ -56,16 +56,14 @@ public class IsaacNumericValidator implements IValidator {
 					+ answerFromUser.getUnits(), false, new Content(
 							"You did not provide a complete answer."), false, false);
 		} else if (null == answerFromUser.getUnits()
-				&& (isaacNumericQuestion.getRequireUnits() != null && isaacNumericQuestion
-						.getRequireUnits())) {
+				&& (isaacNumericQuestion.getRequireUnits())) {
 			
 			return new QuantityValidationResponse(question.getId(), null + " "
 					+ answerFromUser.getUnits(), false, new Content(
 							"You did not provide any units."), false, false);
 		}
 
-		if (isaacNumericQuestion.getRequireUnits() == null
-				|| isaacNumericQuestion.getRequireUnits()) {
+		if (isaacNumericQuestion.getRequireUnits()) {
 			return this.validateWithUnits(isaacNumericQuestion, answerFromUser);
 		} else {
 			return this.validateWithoutUnits(isaacNumericQuestion,
