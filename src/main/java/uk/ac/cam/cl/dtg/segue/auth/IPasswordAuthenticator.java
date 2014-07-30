@@ -1,5 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**

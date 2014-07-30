@@ -14,6 +14,9 @@ import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;

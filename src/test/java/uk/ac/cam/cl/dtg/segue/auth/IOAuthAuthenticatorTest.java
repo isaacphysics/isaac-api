@@ -7,6 +7,10 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+
 /**
  * Test class for the facebook authenticator class.
  * 

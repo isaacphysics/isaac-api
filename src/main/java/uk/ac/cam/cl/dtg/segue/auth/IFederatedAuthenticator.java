@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.segue.auth;
 
 import java.io.IOException;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**

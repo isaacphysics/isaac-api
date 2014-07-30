@@ -13,6 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 

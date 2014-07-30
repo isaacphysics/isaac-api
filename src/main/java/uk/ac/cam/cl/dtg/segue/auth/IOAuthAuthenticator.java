@@ -2,6 +2,9 @@ package uk.ac.cam.cl.dtg.segue.auth;
 
 import java.io.IOException;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserIdException;
+
 /**
  * This interface defines the required methods for an oauth 1 or oauth 2 provider.
  * 

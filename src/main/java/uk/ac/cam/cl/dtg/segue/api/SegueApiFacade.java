@@ -30,9 +30,9 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.auth.FailedToSetPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToSetPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;

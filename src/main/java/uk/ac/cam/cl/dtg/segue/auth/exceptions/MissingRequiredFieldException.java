@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.auth;
+package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
  * An exception which indicates that the user provided is invalid.
