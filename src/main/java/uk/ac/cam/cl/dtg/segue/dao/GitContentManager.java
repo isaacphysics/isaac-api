@@ -371,6 +371,20 @@ public class GitContentManager implements IContentManager {
 
 		return tagsList.get(version);
 	}
+	
+	@Override
+	public final Set<String> getAllUnits(final String version) {
+		Validate.notBlank(version);
+
+		this.ensureCache(version);
+
+		if (!allUnits.containsKey(version)) {
+			log.warn("The version requested does not exist in the set of all units.");
+			return null;
+		}
+
+		return allUnits.get(version);
+	}
 
 	@Override
 	public final boolean ensureCache(final String version) {
