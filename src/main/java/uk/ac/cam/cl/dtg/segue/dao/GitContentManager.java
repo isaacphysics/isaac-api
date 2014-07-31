@@ -862,6 +862,28 @@ public class GitContentManager implements IContentManager {
 					}
 				}
 			}
+			
+			// Find quantities with values that cannot be parsed as numbers.
+			if (c instanceof IsaacNumericQuestion) {
+				IsaacNumericQuestion q = (IsaacNumericQuestion)c;
+				
+				for (Choice choice : q.getChoices()) {
+					
+					if (choice instanceof Quantity) {
+						Quantity quantity = (Quantity)choice;
+						
+						try {
+							Double.parseDouble(quantity.getValue());
+						} catch (NumberFormatException e) {
+							this.registerContentProblem(sha, c, "Quantity found with value that"
+										+ "cannot be interpreted as a number in "
+										+ c.getCanonicalSourceFile()
+										+ ". Users will never be able to give a correct answer.");
+						}
+					}
+				}
+			
+			}
 
 			// check if level is valid.
 			if (c instanceof IsaacQuestionPage
