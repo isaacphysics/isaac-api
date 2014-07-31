@@ -119,6 +119,12 @@ public class MongoContentManager implements IContentManager {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}
+	
+	@Override
+	public Set<String> getAllUnits(String version) {
+		throw new UnsupportedOperationException(
+				"This method is not implemented yet.");
+	}
 
 	@Override
 	public Set<String> getCachedVersionList() {
