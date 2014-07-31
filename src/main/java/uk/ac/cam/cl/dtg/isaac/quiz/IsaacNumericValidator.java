@@ -97,7 +97,7 @@ public class IsaacNumericValidator implements IValidator {
 				}
 
 				// match known choices
-				if (answerFromUser.getValue().equals(
+				if (numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())
 						&& answerFromUser.getUnits().equals(
 								quantityFromQuestion.getUnits())) {
@@ -112,21 +112,23 @@ public class IsaacNumericValidator implements IValidator {
 							quantityFromQuestion.isCorrect());
 
 					break;
-				} else if (answerFromUser.getValue().equals(
+				} else if (numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())
 						&& !answerFromUser.getUnits().equals(
-								quantityFromQuestion.getUnits())) {
-					// matches value but not units.
+								quantityFromQuestion.getUnits())
+						&& quantityFromQuestion.isCorrect()) {
+					// matches value but not units of a correct choice.
 					bestResponse = new QuantityValidationResponse(
 							isaacNumericQuestion.getId(),
 							answerFromUser.getValue() + " "
 									+ answerFromUser.getUnits(), false,
 							new Content("Check your units."), true, false);
-				} else if (!answerFromUser.getValue().equals(
+				} else if (!numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())
 						&& answerFromUser.getUnits().equals(
-								quantityFromQuestion.getUnits())) {
-					// matches units but not value.
+								quantityFromQuestion.getUnits())
+						&& quantityFromQuestion.isCorrect()) {
+					// matches units but not value of a correct choice.
 					bestResponse = new QuantityValidationResponse(
 							isaacNumericQuestion.getId(),
 							answerFromUser.getValue() + " "
@@ -171,9 +173,9 @@ public class IsaacNumericValidator implements IValidator {
 				Quantity quantityFromQuestion = (Quantity) c;
 
 				// match known choices
-				if (answerFromUser.getValue().equals(
+				if (numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())) {
-					// exact match
+					// value match
 					bestResponse = new QuantityValidationResponse(
 							isaacNumericQuestion.getId(),
 							answerFromUser.getValue(),
@@ -181,9 +183,8 @@ public class IsaacNumericValidator implements IValidator {
 							(Content) quantityFromQuestion.getExplanation(),
 							quantityFromQuestion.isCorrect(), null);
 					break;
-				} else if (!answerFromUser.getValue().equals(
-						quantityFromQuestion.getValue())) {
-					// incorrect units.
+				} else {
+					// value doesn't match this choice
 					bestResponse = new QuantityValidationResponse(
 							isaacNumericQuestion.getId(),
 							answerFromUser.getValue(), false, new Content(
@@ -205,5 +206,61 @@ public class IsaacNumericValidator implements IValidator {
 		} else {
 			return bestResponse;
 		}
+	}
+	
+	/**
+	 * Test whether two quantity values match. Parse the strings as doubles,
+	 * supporting notation of 3x10^12 to mean 3e12, then test that they match
+	 * to 3 s.f.
+	 * 
+	 * @param v1
+	 * 			- first number
+	 * @param v2
+	 * 			- second number
+	 * @return true when the numbers match
+	 */
+	private boolean numericValuesMatch(String v1, String v2) {
+		
+		// First replace "x10^" with "e";
+		
+		v1 = v1.replace("x10^", "e");
+		v2 = v2.replace("x10^", "e");
+		
+		double f1, f2;
+		
+		try {
+			f1 = Double.parseDouble(v1);
+			f2 = Double.parseDouble(v2);
+		} catch (NumberFormatException e) {
+			// One of the values was not a valid float.
+			return false;
+		}
+		
+		// Round to 3 s.f.
+		
+		int sigFigs = 3;
+		
+		f1 = roundToSigFigs(f1, sigFigs);
+		f2 = roundToSigFigs(f2, sigFigs);
+		
+		return Math.abs(f1 - f2) < 1e-12 * Math.max(f1,  f2);
+	}
+	
+	/**
+	 * Round a double to a given number of significant figures.
+	 * 
+	 * @param f
+	 * 			- number to round
+	 * @param sigFigs
+	 * 			- number of significant figures required
+	 * @return the rounded number.
+	 */
+	private double roundToSigFigs(double f, int sigFigs) {
+		
+		int mag = (int) Math.floor(Math.log10(f));
+		
+		double normalised = f / Math.pow(10, mag);
+				
+		return Math.round(normalised * Math.pow(10, sigFigs - 1)) * Math.pow(10, mag) / Math.pow(10, sigFigs - 1);
 	}
 }
