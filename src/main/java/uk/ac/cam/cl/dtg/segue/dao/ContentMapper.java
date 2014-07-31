@@ -10,7 +10,6 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
@@ -266,7 +265,7 @@ public class ContentMapper {
 	 * @return DTO that can be used for mapping.
 	 */
 	public ContentDTO getDTOByDO(final Content content) {
-		ContentDTO result = autoMapper.map(content,
+		ContentDTO result = getAutoMapper().map(content,
 				this.mapOfDOsToDTOs.get(content.getClass()));
 		if (result.getRelatedContent() != null) {
 			List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
@@ -368,13 +367,13 @@ public class ContentMapper {
 	 */
 	public MapperFacade getAutoMapper() {
 		if (null == this.autoMapper) {
+			log.info("Creating instance of content auto mapper.");
 			MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
 					.build();
 			
 			ContentBaseOrikaConverter contentConverter = new ContentBaseOrikaConverter(
 					this);
-			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter(
-					contentConverter);
+			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter();
 
 			ConverterFactory converterFactory = mapperFactory
 					.getConverterFactory();

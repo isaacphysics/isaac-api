@@ -5,8 +5,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import ma.glasnost.orika.CustomConverter;
-import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.Type;
 
 /**
@@ -18,8 +16,6 @@ import ma.glasnost.orika.metadata.Type;
  */
 public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
 
-	private ContentBaseOrikaConverter contentBaseOrikaConverter;
-
 	/**
 	 * Constructs an Orika Converter specialises in selecting the correct
 	 * subclass for choice objects.
@@ -28,9 +24,8 @@ public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
 	 *            - converter that can be used when mapping a plain choice
 	 *            object to prevent infinite loops.
 	 */
-	public ChoiceOrikaConverter(
-			final ContentBaseOrikaConverter contentBaseOrikaConverter) {
-		this.contentBaseOrikaConverter = contentBaseOrikaConverter;
+	public ChoiceOrikaConverter() {
+		
 	}
 
 	@Override
@@ -43,12 +38,11 @@ public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
 		if (source instanceof Quantity) {
 			return super.mapperFacade.map(source, QuantityDTO.class);
 		} else {
-			MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
-					.build();
-
-			mapperFactory.getConverterFactory().registerConverter(
-					contentBaseOrikaConverter);
-			return mapperFactory.getMapperFacade().map(source, ChoiceDTO.class);
+			// I would have expected this to cause an infinite loop / stack
+			// overflow but apparently it doesn't.
+			ChoiceDTO choiceDTO = new ChoiceDTO();
+			super.mapperFacade.map(source, choiceDTO);
+			return choiceDTO;
 		}
 	}
 }
