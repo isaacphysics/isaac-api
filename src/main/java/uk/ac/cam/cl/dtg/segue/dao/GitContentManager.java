@@ -821,6 +821,22 @@ public class GitContentManager implements IContentManager {
 					log.debug("Verified image " + f.getSrc()
 							+ " exists in git.");
 				}
+
+				// check that there is some alt text.
+				if (f.getAltText() == null || f.getAltText().isEmpty()) {
+					log.warn("No altText attribute set for media element: "
+							+ f.getSrc()
+							+ " in Git source file "
+							+ c.getCanonicalSourceFile());
+					
+					this.registerContentProblem(
+							sha,
+							c,
+							"No altText attribute set for media element: "
+									+ f.getSrc()
+									+ " in Git source file "
+									+ c.getCanonicalSourceFile());
+				}
 			}
 
 			// TODO: remove reference to isaac specific type from here.
@@ -865,12 +881,12 @@ public class GitContentManager implements IContentManager {
 			
 			// Find quantities with values that cannot be parsed as numbers.
 			if (c instanceof IsaacNumericQuestion) {
-				IsaacNumericQuestion q = (IsaacNumericQuestion)c;
+				IsaacNumericQuestion q = (IsaacNumericQuestion) c;
 				
 				for (Choice choice : q.getChoices()) {
 					
 					if (choice instanceof Quantity) {
-						Quantity quantity = (Quantity)choice;
+						Quantity quantity = (Quantity) choice;
 						
 						try {
 							Double.parseDouble(quantity.getValue());
