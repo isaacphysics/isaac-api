@@ -425,10 +425,10 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method provides a set of all tags for a given version of the
-	 * content.
+	 * This method provides a set of all tags for the 
+	 * live version of the content
 	 * 
-	 * @return a version info as json response
+	 * @return a set of all tags used in the live version
 	 */
 	@GET
 	@Produces("application/json")
@@ -442,9 +442,8 @@ public class SegueApiFacade {
 	 * This method provides a set of all tags for a given version of the
 	 * content.
 	 * 
-	 * @param version
-	 *            of the site to provide the tag list from.
-	 * @return a version info as json response
+	 * @param version of the site to provide the tag list from.
+	 * @return a set of tags used in the specified version
 	 */
 	@GET
 	@Produces("application/json")
@@ -457,6 +456,41 @@ public class SegueApiFacade {
 		Set<String> tags = contentPersistenceManager.getTagsList(version);
 
 		return Response.ok().entity(tags).build();
+	}
+
+	/**
+	 * This method provides a set of all units for the 
+	 * live version of the content
+	 * 
+	 * TODO: This is isaac-specific, so should not be in segue.
+	 * 
+	 * @return a set of all units used in the live version
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/units")
+	public final Response getAllUnitsByLiveVersion() {
+		return this.getAllUnitsByVersion(contentVersionController
+				.getLiveVersion());
+	}	
+	/**
+	 * @param version of the site to provide the unit list from.
+	 * 
+	 * TODO: This is isaac-specific, so should not be in segue.
+	 * 
+	 * @return a set of units used in the specified version of the site
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("content/units/{version}")
+	public final Response getAllUnitsByVersion(
+			@PathParam("version") final String version) {
+		IContentManager contentPersistenceManager = contentVersionController
+				.getContentManager();
+
+		Set<String> units = contentPersistenceManager.getAllUnits(version);
+
+		return Response.ok().entity(units).build();
 	}
 
 	/**

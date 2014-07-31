@@ -186,6 +186,17 @@ public interface IContentManager {
 	Set<String> getTagsList(String version);
 
 	/**
+	 * A method that will return an unordered set of all units registered for a
+	 * particular version of the content.
+	 * 
+	 * @param version
+	 *            - version to look up unit list for.
+	 * @return A set of units that have been already used in a particular version
+	 *         of the content
+	 */
+	Set<String> getAllUnits(String version);
+
+	/**
 	 * Provides a Set of currently indexed and cached versions.
 	 * 
 	 * @return A set of all of the version id's which are currently available
