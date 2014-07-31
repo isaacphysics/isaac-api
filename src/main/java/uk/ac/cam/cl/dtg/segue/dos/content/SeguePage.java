@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
-
 /**
  * Segue Page object.
  *

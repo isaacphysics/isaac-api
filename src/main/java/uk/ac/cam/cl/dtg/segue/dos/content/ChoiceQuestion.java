@@ -1,14 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import java.util.List;
-import java.util.Set;
-
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Choice object The choice object is a specialised form of content and allows
@@ -19,9 +14,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonType("choiceQuestion")
 @ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestion extends Question {
-
 	protected List<Choice> choices;
 
+	/**
+	 * Default constructors for auto mappers.
+	 */
 	public ChoiceQuestion() {
 		
 	}
@@ -38,7 +35,7 @@ public class ChoiceQuestion extends Question {
 	 * Sets the choices.
 	 * @param choices the choices to set
 	 */
-	public final void setChoices(List<Choice> choices) {
+	public final void setChoices(final List<Choice> choices) {
 		this.choices = choices;
 	}
 

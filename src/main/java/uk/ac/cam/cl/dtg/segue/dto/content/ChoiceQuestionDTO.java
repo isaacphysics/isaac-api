@@ -11,14 +11,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
  */
 @ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestionDTO extends QuestionDTO {
-
 	protected List<ChoiceDTO> choices;
 
 	/**
 	 * Default Constructor for mappers.
 	 */
 	public ChoiceQuestionDTO() {
-		super();
+		
 	}
 
 	/**
@@ -33,7 +32,7 @@ public class ChoiceQuestionDTO extends QuestionDTO {
 	 * Sets the choices.
 	 * @param choices the choices to set
 	 */
-	public final void setChoices(List<ChoiceDTO> choices) {
+	public final void setChoices(final List<ChoiceDTO> choices) {
 		this.choices = choices;
 	}
 

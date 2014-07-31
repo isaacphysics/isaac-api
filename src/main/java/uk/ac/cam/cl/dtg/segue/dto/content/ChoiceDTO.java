@@ -6,6 +6,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  * 
  */
 public class ChoiceDTO extends ContentDTO {
+	
 	/**
 	 * Default Constructor required for mappers.
 	 */

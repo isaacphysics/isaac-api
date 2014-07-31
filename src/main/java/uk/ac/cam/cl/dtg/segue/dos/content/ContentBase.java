@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * (ContentBaseDeserializer).
  */
 public abstract class ContentBase {
-
 	// this is a legacy field used for mongodb indexing
 	protected String _id;
 	protected String id;
