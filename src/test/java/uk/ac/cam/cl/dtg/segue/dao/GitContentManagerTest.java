@@ -505,6 +505,7 @@ public class GitContentManagerTest {
 		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
 		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
 				.once();
+		expect(content.getAltText()).andReturn("Test Alt Text").anyTimes();
 		expect(content.getRelatedContent()).andReturn(relatedContent)
 				.atLeastOnce();
 		expect(content.getValue()).andReturn(null).once();
@@ -546,6 +547,7 @@ public class GitContentManagerTest {
 		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
 		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
 				.once();
+		expect(content.getAltText()).andReturn("Test Alt Text").anyTimes();
 		expect(content.getRelatedContent()).andReturn(relatedContent)
 				.atLeastOnce();
 		expect(content.getValue()).andReturn(null).once();
@@ -587,6 +589,7 @@ public class GitContentManagerTest {
 		String src = "media.media";
 
 		expect(content.getId()).andReturn(uniqueObjectId).atLeastOnce();
+		expect(content.getAltText()).andReturn("Test Alt Text").anyTimes();
 		expect(content.getChildren()).andReturn(new LinkedList<ContentBase>())
 				.once();
 		expect(content.getRelatedContent()).andReturn(relatedContent)

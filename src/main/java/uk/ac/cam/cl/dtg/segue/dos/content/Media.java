@@ -15,7 +15,7 @@ public abstract class Media extends Content {
 	 * 
 	 * @return the src
 	 */
-	public final String getSrc() {
+	public String getSrc() {
 		return src;
 	}
 
@@ -25,7 +25,7 @@ public abstract class Media extends Content {
 	 * @param src
 	 *            the src to set
 	 */
-	public final void setSrc(final String src) {
+	public void setSrc(final String src) {
 		this.src = src;
 	}
 
@@ -34,7 +34,7 @@ public abstract class Media extends Content {
 	 * 
 	 * @return the altText
 	 */
-	public final String getAltText() {
+	public String getAltText() {
 		return altText;
 	}
 
@@ -44,7 +44,7 @@ public abstract class Media extends Content {
 	 * @param altText
 	 *            the altText to set
 	 */
-	public final void setAltText(final String altText) {
+	public void setAltText(final String altText) {
 		this.altText = altText;
 	}
 
