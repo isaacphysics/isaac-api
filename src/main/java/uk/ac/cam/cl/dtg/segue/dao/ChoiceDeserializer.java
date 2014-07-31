@@ -45,9 +45,10 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 
 		ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
 
-		if (null == root.get("type"))
+		if (null == root.get("type")) {
 			throw new JsonMappingException(
-					"Error: unable to parse content as there is no type property within the json input.");
+					"Error: unable to parse content as there is no type property within the json input.");			
+		}
 
 		String contentType = root.get("type").textValue();
 

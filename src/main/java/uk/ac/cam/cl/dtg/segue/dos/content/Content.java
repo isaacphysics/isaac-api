@@ -182,6 +182,14 @@ public class Content extends ContentBase {
 		return this.children;
 	}
 
+	/**
+	 * Sets the children.
+	 * @param children the children to set
+	 */
+	public final void setChildren(List<ContentBase> children) {
+		this.children = children;
+	}
+
 	public Integer getLevel() {
 		return level;
 	}

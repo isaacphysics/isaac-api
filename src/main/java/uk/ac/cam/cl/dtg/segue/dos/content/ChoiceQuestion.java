@@ -22,37 +22,25 @@ public class ChoiceQuestion extends Question {
 
 	protected List<Choice> choices;
 
-	@JsonCreator
-	public ChoiceQuestion(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBase> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<String> relatedContent,
-			@JsonProperty("published") boolean published,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level,
-			@JsonProperty("answer") ContentBase answer,
-			@JsonProperty("hints") List<ContentBase> hints,
-			@JsonProperty("choices") List<Choice> choices) {
-		super(_id, id, title, subtitle, type, author, encoding,
-				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level, answer, hints);
+	public ChoiceQuestion() {
+		
+	}
+	
+	/**
+	 * Gets the choices.
+	 * @return the choices
+	 */
+	public final List<Choice> getChoices() {
+		return choices;
+	}
 
+	/**
+	 * Sets the choices.
+	 * @param choices the choices to set
+	 */
+	public final void setChoices(List<Choice> choices) {
 		this.choices = choices;
 	}
 
-	public ChoiceQuestion() {
-		super();
-	}
 
-	public List<Choice> getChoices() {
-		return choices;
-	}
 }
