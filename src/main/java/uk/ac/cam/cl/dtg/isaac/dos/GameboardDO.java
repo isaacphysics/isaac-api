@@ -17,7 +17,7 @@ public class GameboardDO {
 	private String id;
 	private String title;
 	private List<String> questions;
-	private Wildcard wildCard;
+	private IsaacWildcard wildCard;
 	private Integer wildCardPosition;
 	private Date creationDate;
 	private GameFilter gameFilter;
@@ -45,7 +45,7 @@ public class GameboardDO {
 	 *            - User id of the owner of the gameboard.
 	 */
 	public GameboardDO(final String id, final String title,
-			final List<String> questions, final Wildcard wildCard,
+			final List<String> questions, final IsaacWildcard wildCard,
 			final Integer wildcardPosition, final Date creationDate,
 			final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
@@ -125,7 +125,7 @@ public class GameboardDO {
 	 * 
 	 * @return the wildCard
 	 */
-	public final Wildcard getWildCard() {
+	public final IsaacWildcard getWildCard() {
 		return wildCard;
 	}
 
@@ -135,7 +135,7 @@ public class GameboardDO {
 	 * @param wildCard
 	 *            the wildCard to set
 	 */
-	public final void setWildCard(final Wildcard wildCard) {
+	public final void setWildCard(final IsaacWildcard wildCard) {
 		this.wildCard = wildCard;
 	}
 
