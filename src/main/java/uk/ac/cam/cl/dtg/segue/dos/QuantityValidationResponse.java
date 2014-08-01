@@ -1,9 +1,10 @@
-package uk.ac.cam.cl.dtg.segue.dto;
+package uk.ac.cam.cl.dtg.segue.dos;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
 /**
- * The DTO which can be used to inform clients of the result of an answered
+ * The DO which can be used to inform clients of the result of an answered
  * question.
  * 
  * 
@@ -19,7 +20,7 @@ public class QuantityValidationResponse extends QuestionValidationResponse {
 
 	}
 
-	public QuantityValidationResponse(String questionId, String answer,
+	public QuantityValidationResponse(String questionId, Choice answer,
 			Boolean correct, Content explanation, Boolean correctValue,
 			Boolean correctUnits) {
 		super(questionId, answer, correct, explanation);
@@ -58,6 +59,4 @@ public class QuantityValidationResponse extends QuestionValidationResponse {
 	public final void setCorrectUnits(final Boolean correctUnits) {
 		this.correctUnits = correctUnits;
 	}
-
-
 }

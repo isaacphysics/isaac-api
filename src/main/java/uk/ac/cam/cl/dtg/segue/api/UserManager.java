@@ -44,9 +44,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 
@@ -446,14 +445,6 @@ public class UserManager {
 	}
 
 	/**
-	 * Creates a signed session for the user so we know that it is them when we
-	 * check them.
-	 * 
-	 * @param request
-	 * @param userId
-	 */
-
-	/**
 	 * Create a session and attach it to the request provided.
 	 * 
 	 * @param request
@@ -525,19 +516,16 @@ public class UserManager {
 	 *            - question results.
 	 */
 	public final void recordUserQuestionInformation(final User user,
-			final QuestionValidationResponse questionResponse) {
+			final QuestionValidationResponseDTO questionResponse) {
 
-		QuestionAttempt questionAttempt = new QuestionAttempt(
-				questionResponse.getQuestionId(), new Date(),
-				questionResponse.isCorrect(), questionResponse.getAnswer());
 		// We are operating against the convention that the first component of
 		// an id is the question page
 		// and that the id separator is |
-		String[] questionPageId = questionAttempt.getQuestionId().split(
+		String[] questionPageId = questionResponse.getQuestionId().split(
 				Constants.ESCAPED_ID_SEPARATOR);
 
 		this.database.registerQuestionAttempt(user, questionPageId[0],
-				questionAttempt.getQuestionId(), questionAttempt);
+				questionResponse.getQuestionId(), questionResponse);
 
 		log.info("Question information recorded for user: " + user.getDbId());
 	}

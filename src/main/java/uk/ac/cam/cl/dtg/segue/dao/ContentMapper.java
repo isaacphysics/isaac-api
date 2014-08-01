@@ -10,12 +10,14 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
@@ -316,14 +318,19 @@ public class ContentMapper {
 		contentDeserializer.registerTypeMap(jsonTypes);
 		ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(
 				contentDeserializer);
-
+		
+		QuestionValidationResponseDeserializer validationResponseDeserializer = new QuestionValidationResponseDeserializer(
+				contentDeserializer, choiceDeserializer);
+		
 		SimpleModule contentDeserializerModule = new SimpleModule(
 				"ContentDeserializerModule");
 		contentDeserializerModule.addDeserializer(ContentBase.class,
 				contentDeserializer);
 		contentDeserializerModule.addDeserializer(Choice.class,
 				choiceDeserializer);
-
+		contentDeserializerModule.addDeserializer(
+				QuestionValidationResponse.class,
+				validationResponseDeserializer);
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.registerModule(contentDeserializerModule);
 

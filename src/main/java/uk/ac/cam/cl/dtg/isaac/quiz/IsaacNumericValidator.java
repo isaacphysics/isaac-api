@@ -8,8 +8,10 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 /**
@@ -20,8 +22,8 @@ public class IsaacNumericValidator implements IValidator {
 			.getLogger(IsaacNumericValidator.class);
 
 	@Override
-	public final QuestionValidationResponse validateQuestionResponse(
-			final Question question, final Choice answer) {
+	public final QuestionValidationResponseDTO validateQuestionResponse(
+			final Question question, final ChoiceDTO answer) {
 		if (!(question instanceof IsaacNumericQuestion)) {
 			log.error("Incorrect validator used for question: "
 					+ question.getId());
@@ -29,37 +31,42 @@ public class IsaacNumericValidator implements IValidator {
 					"This validator only works with Isaac Numeric Questions...");
 		}
 
-		if (!(answer instanceof Quantity)) {
+		if (!(answer instanceof QuantityDTO)) {
 			log.error("Expected Quantity for IsaacNumericQuestion: "
 					+ question.getId());
-			
-			return new QuantityValidationResponse(question.getId(), null + " "
-					+ answer, false, new Content(
+
+			return new QuantityValidationResponseDTO(
+					question.getId(),
+					answer,
+					false,
+					new Content(
 							"The answer we received was not in Quantity format."),
 					false, false);
 		}
 
 		IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
-		Quantity answerFromUser = (Quantity) answer;
+		QuantityDTO answerFromUser = (QuantityDTO) answer;
 		if (null == isaacNumericQuestion.getChoices()
 				|| isaacNumericQuestion.getChoices().isEmpty()) {
 			log.warn("Question does not have any answers. " + question.getId()
 					+ " src: " + question.getCanonicalSourceFile());
 
-			return new QuantityValidationResponse(question.getId(), null,
+			return new QuantityValidationResponseDTO(question.getId(), null,
 					false, new Content(""), false, false);
 		}
 
 		if (null == answerFromUser.getValue()) {
-			
-			return new QuantityValidationResponse(question.getId(), null + " "
-					+ answerFromUser.getUnits(), false, new Content(
-							"You did not provide a complete answer."), false, false);
+
+			return new QuantityValidationResponseDTO(question.getId(),
+					answerFromUser, false, new Content(
+							"You did not provide a complete answer."), false,
+					false);
+
 		} else if (null == answerFromUser.getUnits()
 				&& (isaacNumericQuestion.getRequireUnits())) {
-			
-			return new QuantityValidationResponse(question.getId(), null + " "
-					+ answerFromUser.getUnits(), false, new Content(
+
+			return new QuantityValidationResponseDTO(question.getId(),
+					answerFromUser, false, new Content(
 							"You did not provide any units."), false, false);
 		}
 
@@ -82,10 +89,10 @@ public class IsaacNumericValidator implements IValidator {
 	 *            - answer from user
 	 * @return the validation response
 	 */
-	private QuestionValidationResponse validateWithUnits(
+	private QuestionValidationResponseDTO validateWithUnits(
 			final IsaacNumericQuestion isaacNumericQuestion,
-			final Quantity answerFromUser) {
-		QuantityValidationResponse bestResponse = null;
+			final QuantityDTO answerFromUser) {
+		QuantityValidationResponseDTO bestResponse = null;
 		for (Choice c : isaacNumericQuestion.getChoices()) {
 			if (c instanceof Quantity) {
 				Quantity quantityFromQuestion = (Quantity) c;
@@ -102,10 +109,8 @@ public class IsaacNumericValidator implements IValidator {
 						&& answerFromUser.getUnits().equals(
 								quantityFromQuestion.getUnits())) {
 					// exact match
-					bestResponse = new QuantityValidationResponse(
-							isaacNumericQuestion.getId(),
-							answerFromUser.getValue() + " "
-									+ answerFromUser.getUnits(),
+					bestResponse = new QuantityValidationResponseDTO(
+							isaacNumericQuestion.getId(), answerFromUser,
 							quantityFromQuestion.isCorrect(),
 							(Content) quantityFromQuestion.getExplanation(),
 							quantityFromQuestion.isCorrect(),
@@ -118,25 +123,24 @@ public class IsaacNumericValidator implements IValidator {
 								quantityFromQuestion.getUnits())
 						&& quantityFromQuestion.isCorrect()) {
 					// matches value but not units of a correct choice.
-					bestResponse = new QuantityValidationResponse(
-							isaacNumericQuestion.getId(),
-							answerFromUser.getValue() + " "
-									+ answerFromUser.getUnits(), false,
-							new Content("Check your units."), true, false);
+					bestResponse = new QuantityValidationResponseDTO(
+							isaacNumericQuestion.getId(), answerFromUser,
+							false, new Content("Check your units."), true,
+							false);
 				} else if (!numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())
 						&& answerFromUser.getUnits().equals(
 								quantityFromQuestion.getUnits())
 						&& quantityFromQuestion.isCorrect()) {
 					// matches units but not value of a correct choice.
-					bestResponse = new QuantityValidationResponse(
-							isaacNumericQuestion.getId(),
-							answerFromUser.getValue() + " "
-									+ answerFromUser.getUnits(), false,
-							new Content("Check your working."), false, true);
+					bestResponse = new QuantityValidationResponseDTO(
+							isaacNumericQuestion.getId(), answerFromUser,
+							false, new Content("Check your working."), false,
+							true);
 				}
 			} else {
-				log.error("Isaac Numeric Validator for questionId: " + isaacNumericQuestion.getId()
+				log.error("Isaac Numeric Validator for questionId: "
+						+ isaacNumericQuestion.getId()
 						+ " expected there to be a Quantity. Instead it found a Choice.");
 			}
 		}
@@ -144,12 +148,10 @@ public class IsaacNumericValidator implements IValidator {
 		if (null == bestResponse) {
 			// tell them they got it wrong but we cannot find an
 			// feedback for them.
-			return new QuantityValidationResponse(
-					isaacNumericQuestion.getId(),
-					answerFromUser.getValue() + " "
-							+ answerFromUser.getUnits(), false,
-					new Content("Check your working."), false, false);
-			
+			return new QuantityValidationResponseDTO(isaacNumericQuestion.getId(),
+					answerFromUser, false, new Content("Check your working."),
+					false, false);
+
 		} else {
 			return bestResponse;
 		}
@@ -164,10 +166,10 @@ public class IsaacNumericValidator implements IValidator {
 	 *            - answer from user
 	 * @return the validation response
 	 */
-	private QuestionValidationResponse validateWithoutUnits(
+	private QuestionValidationResponseDTO validateWithoutUnits(
 			final IsaacNumericQuestion isaacNumericQuestion,
-			final Quantity answerFromUser) {
-		QuantityValidationResponse bestResponse = null;
+			final QuantityDTO answerFromUser) {
+		QuantityValidationResponseDTO bestResponse = null;
 		for (Choice c : isaacNumericQuestion.getChoices()) {
 			if (c instanceof Quantity) {
 				Quantity quantityFromQuestion = (Quantity) c;
@@ -176,19 +178,18 @@ public class IsaacNumericValidator implements IValidator {
 				if (numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())) {
 					// value match
-					bestResponse = new QuantityValidationResponse(
-							isaacNumericQuestion.getId(),
-							answerFromUser.getValue(),
+					bestResponse = new QuantityValidationResponseDTO(
+							isaacNumericQuestion.getId(), answerFromUser,
 							quantityFromQuestion.isCorrect(),
 							(Content) quantityFromQuestion.getExplanation(),
 							quantityFromQuestion.isCorrect(), null);
 					break;
 				} else {
 					// value doesn't match this choice
-					bestResponse = new QuantityValidationResponse(
-							isaacNumericQuestion.getId(),
-							answerFromUser.getValue(), false, new Content(
-									"Check your working."), false, null);
+					bestResponse = new QuantityValidationResponseDTO(
+							isaacNumericQuestion.getId(), answerFromUser,
+							false, new Content("Check your working."), false,
+							null);
 				}
 			} else {
 				log.error("Isaac Numeric Validator "
@@ -199,10 +200,8 @@ public class IsaacNumericValidator implements IValidator {
 		if (null == bestResponse) {
 			// tell them they got it wrong but we cannot find an
 			// feedback for them.
-			return new QuestionValidationResponse(
-					isaacNumericQuestion.getId(),
-					answerFromUser.getValue() + " " + answerFromUser.getUnits(),
-					false, null);
+			return new QuestionValidationResponseDTO(isaacNumericQuestion.getId(),
+					answerFromUser, false, null);
 		} else {
 			return bestResponse;
 		}

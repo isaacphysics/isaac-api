@@ -8,7 +8,8 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 
 /**
  * Default quiz validator for ChoiceQuestions.
@@ -21,8 +22,8 @@ public class ChoiceQuestionValidator implements IValidator {
 			.getLogger(ChoiceQuestionValidator.class);
 
 	@Override
-	public final QuestionValidationResponse validateQuestionResponse(
-			final Question question, final Choice answer) {
+	public final QuestionValidationResponseDTO validateQuestionResponse(
+			final Question question, final ChoiceDTO answer) {
 		Validate.notNull(question);
 		Validate.notNull(answer);
 
@@ -36,14 +37,14 @@ public class ChoiceQuestionValidator implements IValidator {
 				log.warn("Question does not have any answers. "
 						+ question.getId() + " src: "
 						+ question.getCanonicalSourceFile());
-				return new QuestionValidationResponse(question.getId(),
-						answer.getValue(), false, null);
+				return new QuestionValidationResponseDTO(question.getId(),
+						answer, false, null);
 			}
 
 			for (Choice choice : choiceQuestion.getChoices()) {
 				if (choice.getValue().equals(answer.getValue())) {
-					return new QuestionValidationResponse(question.getId(),
-							answer.getValue(), choice.isCorrect(),
+					return new QuestionValidationResponseDTO(question.getId(),
+							answer, choice.isCorrect(),
 							(Content) choice.getExplanation());
 				}
 			}
@@ -54,8 +55,8 @@ public class ChoiceQuestionValidator implements IValidator {
 					+ answer
 					+ "). Returning that it is incorrect with out an explanation.");
 
-			return new QuestionValidationResponse(question.getId(),
-					answer.getValue(), false, null);
+			return new QuestionValidationResponseDTO(question.getId(),
+					answer, false, null);
 		} else {
 			log.error("Expected to be able to cast the question as a ChoiceQuestion "
 					+ "but this cast failed.");
