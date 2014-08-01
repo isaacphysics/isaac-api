@@ -1,8 +1,13 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 
-import com.google.inject.internal.util.$Maps;
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
@@ -20,7 +25,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -28,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -71,6 +76,8 @@ public class GameManager {
 	 * 
 	 * @see generateRandomGambeoard
 	 * @return gameboard containing random problems.
+	 * @throws NoWildcardException
+	 *             - when we are unable to provide you with a wildcard object.
 	 */
 	public final GameboardDTO generateRandomGameboard() throws NoWildcardException {
 		return this.generateRandomGameboard(null, null, null, null, null, null);
@@ -98,6 +105,8 @@ public class GameManager {
 	 * @return a gameboard if possible that satisifies the conditions provided
 	 *         by the parameters. Will return null if no questions can be
 	 *         provided.
+	 * @throws NoWildcardException
+	 *             - when we are unable to provide you with a wildcard object.
 	 */
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
@@ -322,14 +331,18 @@ public class GameManager {
 
 	/**
 	 * Find a wildcard object to add to a gameboard.
-	 *
-	 * @return wildCard
+	 * 
+	 * @param mapper
+	 *            - to convert between contentDTO to wildcard.
+	 * @return wildCard object.
+	 * @throws NoWildcardException
+	 *             - when we are unable to provide you with a wildcard object.
 	 */
-	private IsaacWildcard getRandomWildcard(MapperFacade mapper) throws NoWildcardException {
-		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = org.elasticsearch.common.collect.Maps.newHashMap();
+	private IsaacWildcard getRandomWildcard(final MapperFacade mapper) throws NoWildcardException {
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
 		fieldsToMap.put(immutableEntry(
-				uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator.OR, uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME), Arrays
+				BooleanOperator.OR, TYPE_FIELDNAME), Arrays
 				.asList(WILDCARD_TYPE));
 
 		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);

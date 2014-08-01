@@ -52,7 +52,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
  * 
  * This class specifically caters for the Rutherford physics server and is
  * expected to provide extended functionality to the Segue api for use only on
- * the Rutherford site.
+ * the Isaac site.
  * 
  */
 @Path("/")

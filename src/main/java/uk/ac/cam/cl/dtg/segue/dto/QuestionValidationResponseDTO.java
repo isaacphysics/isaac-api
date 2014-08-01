@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import java.util.Date;
+
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 
@@ -12,17 +14,30 @@ public class QuestionValidationResponseDTO {
 	private ChoiceDTO answer;
 	private boolean correct;
 	private Content explanation;
-
+	private Date dateAttempted;
+	
+	/**
+	 * Default Constructor for mappers. 
+	 */
 	public QuestionValidationResponseDTO() {
 
 	}
-
-	public QuestionValidationResponseDTO(String questionId, ChoiceDTO answer,
-			boolean correct, Content explanation) {
+	
+	/**
+	 * Full constructor. 
+	 * @param questionId - 
+	 * @param answer - 
+	 * @param correct -
+	 * @param explanation - 
+	 * @param dateAttempted - 
+	 */
+	public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer,
+			final boolean correct, final Content explanation, final Date dateAttempted) {
 		this.questionId = questionId;
 		this.answer = answer;
 		this.correct = correct;
 		this.explanation = explanation;
+		this.dateAttempted = dateAttempted;
 	}
 
 	/**
@@ -87,5 +102,21 @@ public class QuestionValidationResponseDTO {
 	 */
 	public final void setExplanation(final Content explanation) {
 		this.explanation = explanation;
+	}
+	
+	/**
+	 * Gets the dateAttempted.
+	 * @return the dateAttempted
+	 */
+	public Date getDateAttempted() {
+		return dateAttempted;
+	}
+
+	/**
+	 * Sets the dateAttempted.
+	 * @param dateAttempted the dateAttempted to set
+	 */
+	public void setDateAttempted(final Date dateAttempted) {
+		this.dateAttempted = dateAttempted;
 	}
 }

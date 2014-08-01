@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dto;
 
+import java.util.Date;
+
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 
@@ -19,11 +21,21 @@ public class QuantityValidationResponseDTO extends QuestionValidationResponseDTO
 	public QuantityValidationResponseDTO() {
 
 	}
-
-	public QuantityValidationResponseDTO(String questionId, ChoiceDTO answer,
-			Boolean correct, Content explanation, Boolean correctValue,
-			Boolean correctUnits) {
-		super(questionId, answer, correct, explanation);
+	
+	/**
+	 * Full constructor. 
+	 * @param questionId - 
+	 * @param answer - 
+	 * @param correct - 
+	 * @param explanation - 
+	 * @param correctValue - 
+ 	 * @param correctUnits - 
+	 * @param dateAttempted -
+	 */
+	public QuantityValidationResponseDTO(final String questionId, final ChoiceDTO answer,
+			final Boolean correct, final Content explanation, final Boolean correctValue,
+			final Boolean correctUnits, final Date dateAttempted) {
+		super(questionId, answer, correct, explanation, dateAttempted);
 		this.correctValue = correctValue;
 		this.correctUnits = correctUnits;
 	}

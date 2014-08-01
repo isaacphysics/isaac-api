@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;

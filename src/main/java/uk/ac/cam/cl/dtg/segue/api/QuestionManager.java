@@ -55,7 +55,7 @@ public class QuestionManager {
 	 *            The question to which the answer must be validated against.
 	 * @param answers
 	 *            from the client as a list used for comparison purposes.
-	 * @return A response containing a QuestionValidationResponse object
+	 * @return A response containing a QuestionValidationResponse object.
 	 */
 	public final Response validateAnswer(final Question question, final List<ChoiceDTO> answers) {
 		IValidator validator = locateValidator(question.getClass());

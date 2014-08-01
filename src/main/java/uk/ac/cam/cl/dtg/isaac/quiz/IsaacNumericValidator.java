@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +23,8 @@ public class IsaacNumericValidator implements IValidator {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacNumericValidator.class);
 
+	private static final int SIGNIFICANT_FIGURES = 3; 
+	
 	@Override
 	public final QuestionValidationResponseDTO validateQuestionResponse(
 			final Question question, final ChoiceDTO answer) {
@@ -41,7 +45,7 @@ public class IsaacNumericValidator implements IValidator {
 					false,
 					new Content(
 							"The answer we received was not in Quantity format."),
-					false, false);
+					false, false, new Date());
 		}
 
 		IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
@@ -52,7 +56,7 @@ public class IsaacNumericValidator implements IValidator {
 					+ " src: " + question.getCanonicalSourceFile());
 
 			return new QuantityValidationResponseDTO(question.getId(), null,
-					false, new Content(""), false, false);
+					false, new Content(""), false, false, new Date());
 		}
 
 		if (null == answerFromUser.getValue()) {
@@ -60,14 +64,14 @@ public class IsaacNumericValidator implements IValidator {
 			return new QuantityValidationResponseDTO(question.getId(),
 					answerFromUser, false, new Content(
 							"You did not provide a complete answer."), false,
-					false);
+					false, new Date());
 
 		} else if (null == answerFromUser.getUnits()
 				&& (isaacNumericQuestion.getRequireUnits())) {
 
 			return new QuantityValidationResponseDTO(question.getId(),
 					answerFromUser, false, new Content(
-							"You did not provide any units."), false, false);
+							"You did not provide any units."), false, false, new Date());
 		}
 
 		if (isaacNumericQuestion.getRequireUnits()) {
@@ -114,7 +118,7 @@ public class IsaacNumericValidator implements IValidator {
 							quantityFromQuestion.isCorrect(),
 							(Content) quantityFromQuestion.getExplanation(),
 							quantityFromQuestion.isCorrect(),
-							quantityFromQuestion.isCorrect());
+							quantityFromQuestion.isCorrect(), new Date());
 
 					break;
 				} else if (numericValuesMatch(answerFromUser.getValue(),
@@ -126,7 +130,7 @@ public class IsaacNumericValidator implements IValidator {
 					bestResponse = new QuantityValidationResponseDTO(
 							isaacNumericQuestion.getId(), answerFromUser,
 							false, new Content("Check your units."), true,
-							false);
+							false, new Date());
 				} else if (!numericValuesMatch(answerFromUser.getValue(),
 						quantityFromQuestion.getValue())
 						&& answerFromUser.getUnits().equals(
@@ -136,7 +140,7 @@ public class IsaacNumericValidator implements IValidator {
 					bestResponse = new QuantityValidationResponseDTO(
 							isaacNumericQuestion.getId(), answerFromUser,
 							false, new Content("Check your working."), false,
-							true);
+							true, new Date());
 				}
 			} else {
 				log.error("Isaac Numeric Validator for questionId: "
@@ -150,7 +154,7 @@ public class IsaacNumericValidator implements IValidator {
 			// feedback for them.
 			return new QuantityValidationResponseDTO(isaacNumericQuestion.getId(),
 					answerFromUser, false, new Content("Check your working."),
-					false, false);
+					false, false, new Date());
 
 		} else {
 			return bestResponse;
@@ -182,14 +186,14 @@ public class IsaacNumericValidator implements IValidator {
 							isaacNumericQuestion.getId(), answerFromUser,
 							quantityFromQuestion.isCorrect(),
 							(Content) quantityFromQuestion.getExplanation(),
-							quantityFromQuestion.isCorrect(), null);
+							quantityFromQuestion.isCorrect(), null, new Date());
 					break;
 				} else {
 					// value doesn't match this choice
 					bestResponse = new QuantityValidationResponseDTO(
 							isaacNumericQuestion.getId(), answerFromUser,
 							false, new Content("Check your working."), false,
-							null);
+							null, new Date());
 				}
 			} else {
 				log.error("Isaac Numeric Validator "
@@ -201,7 +205,7 @@ public class IsaacNumericValidator implements IValidator {
 			// tell them they got it wrong but we cannot find an
 			// feedback for them.
 			return new QuestionValidationResponseDTO(isaacNumericQuestion.getId(),
-					answerFromUser, false, null);
+					answerFromUser, false, null, new Date());
 		} else {
 			return bestResponse;
 		}
@@ -237,10 +241,8 @@ public class IsaacNumericValidator implements IValidator {
 		
 		// Round to 3 s.f.
 		
-		int sigFigs = 3;
-		
-		f1 = roundToSigFigs(f1, sigFigs);
-		f2 = roundToSigFigs(f2, sigFigs);
+		f1 = roundToSigFigs(f1, SIGNIFICANT_FIGURES);
+		f2 = roundToSigFigs(f2, SIGNIFICANT_FIGURES);
 		
 		return Math.abs(f1 - f2) < 1e-12 * Math.max(f1,  f2);
 	}
@@ -254,7 +256,7 @@ public class IsaacNumericValidator implements IValidator {
 	 * 			- number of significant figures required
 	 * @return the rounded number.
 	 */
-	private double roundToSigFigs(double f, int sigFigs) {
+	private double roundToSigFigs(final double f, final int sigFigs) {
 		
 		int mag = (int) Math.floor(Math.log10(f));
 		

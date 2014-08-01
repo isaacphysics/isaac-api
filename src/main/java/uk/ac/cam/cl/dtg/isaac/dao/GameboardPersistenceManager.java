@@ -228,7 +228,7 @@ public class GameboardPersistenceManager {
 	/**
 	 * Convert form a gameboard DO to a Gameboard DTO.
 	 * 
-	 * TODO: this needs refactoring and improving as it will no doubt be slow.
+	 * This method relies on the api to fully resolve questions.
 	 * 
 	 * @param gameboardDO
 	 *            to convert

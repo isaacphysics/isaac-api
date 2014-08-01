@@ -222,16 +222,20 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method will return a List<Content> based on the parameters supplied.
+	 * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
 	 * 
 	 * @param version
+	 *            - the version of the content to search. If null it will
+	 *            default to the current live version.
 	 * @param fieldsToMatch
 	 *            - Map representing fieldName -> field value mappings to search
 	 *            for. Note: tags is a special field name and the list will be
 	 *            split by commas.
 	 * @param startIndex
+	 *            - the start index for the search results.
 	 * @param limit
-	 * @return Response containing a list of content or a Response containing
+	 *            - the max number of results to return.
+	 * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing
 	 *         null if none found.
 	 */
 	public final ResultsWrapper<ContentDTO> findMatchingContent(
@@ -271,21 +275,25 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method will return a List<Content> based on the parameters supplied.
+	 * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
 	 * Providing the results in a randomised order.
 	 * 
 	 * @param version
+	 *            - the version of the content to search. If null it will
+	 *            default to the current live version.
 	 * @param fieldsToMatch
 	 *            - Map representing fieldName -> field value mappings to search
 	 *            for. Note: tags is a special field name and the list will be
 	 *            split by commas.
 	 * @param startIndex
+	 *            - the start index for the search results.
 	 * @param limit
-	 * @return Response containing a list of content or a Response containing
+	 *            - the max number of results to return.
+	 * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing
 	 *         null if none found.
 	 */
 	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-			String version,
+			@Nullable String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) {
 		IContentManager contentPersistenceManager = contentVersionController
@@ -336,7 +344,8 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/{version}/{id}")
-	public final Response getContentById(@PathParam("version") String version,
+	public final Response getContentById(
+			@PathParam("version") String version,
 			@PathParam("id") final String id) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();

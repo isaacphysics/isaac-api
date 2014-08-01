@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.quiz;
 
+import java.util.Date;
+
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,14 +40,14 @@ public class ChoiceQuestionValidator implements IValidator {
 						+ question.getId() + " src: "
 						+ question.getCanonicalSourceFile());
 				return new QuestionValidationResponseDTO(question.getId(),
-						answer, false, null);
+						answer, false, null, new Date());
 			}
 
 			for (Choice choice : choiceQuestion.getChoices()) {
 				if (choice.getValue().equals(answer.getValue())) {
 					return new QuestionValidationResponseDTO(question.getId(),
 							answer, choice.isCorrect(),
-							(Content) choice.getExplanation());
+							(Content) choice.getExplanation(), new Date());
 				}
 			}
 
@@ -56,7 +58,7 @@ public class ChoiceQuestionValidator implements IValidator {
 					+ "). Returning that it is incorrect with out an explanation.");
 
 			return new QuestionValidationResponseDTO(question.getId(),
-					answer, false, null);
+					answer, false, null, new Date());
 		} else {
 			log.error("Expected to be able to cast the question as a ChoiceQuestion "
 					+ "but this cast failed.");
