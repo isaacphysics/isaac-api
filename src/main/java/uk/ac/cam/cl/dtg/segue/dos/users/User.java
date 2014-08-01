@@ -8,6 +8,7 @@ import java.util.Map;
 import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,8 +32,8 @@ public class User {
 	private Date registrationDate;
 	private String schoolId;
 	
-	// Map of questionPage id -> map of question id -> questionAttempt information
-	private Map<String, Map<String, QuestionAttempt>> questionAttempts;
+	// Map of questionPage id -> map of question id -> List of questionAttempts information
+	private Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
 	// TODO: move out of segue DTO into isaac one.
 	private List<GameboardDTO> gameBoards;
 
@@ -81,7 +82,7 @@ public class User {
 			@JsonProperty("registrationTime") final Date registrationTime,
 			@JsonProperty("schoolId") final String schoolId,
 			@JsonProperty("questionAttempts") 
-			final Map<String, Map<String, QuestionAttempt>> questionAttempts,
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts,
 			@JsonProperty("password") 
 			final String password) {
 		this.databaseId = databaseId;
@@ -277,7 +278,7 @@ public class User {
 	 * Gets the questionAttempts.
 	 * @return the questionAttempts
 	 */
-	public final Map<String, Map<String, QuestionAttempt>> getQuestionAttempts() {
+	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts() {
 		return questionAttempts;
 	}
 
@@ -286,7 +287,7 @@ public class User {
 	 * @param questionAttempts the questionAttempts to set
 	 */
 	public final void setQuestionAttempts(
-			final Map<String, Map<String, QuestionAttempt>> questionAttempts) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
 		this.questionAttempts = questionAttempts;
 	}
 

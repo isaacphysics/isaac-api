@@ -360,9 +360,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Provides
 	@Singleton
 	private static IUserDataManager getUserDataManager(
-			final DB database) {
+			final DB database, final ContentMapper contentMapper) {
 		if (null == userDataManager) {
-			userDataManager = new MongoUserDataManager(database);
+			userDataManager = new MongoUserDataManager(database, contentMapper);
 			log.info("Creating singleton of MongoUserDataManager");
 		}
 

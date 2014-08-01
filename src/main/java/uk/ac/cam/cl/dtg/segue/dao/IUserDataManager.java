@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
  * Interface for managing and persisting user specific data in segue.
@@ -87,6 +87,6 @@ public interface IUserDataManager {
 	 *            - the question attempt object recording the users result.
 	 */
 	void registerQuestionAttempt(final User user, final String questionPageId,
-			final String fullQuestionId, final QuestionAttempt questionAttempt);
+			final String fullQuestionId, final QuestionValidationResponseDTO questionAttempt);
 
 }

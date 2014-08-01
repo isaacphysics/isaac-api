@@ -42,9 +42,10 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -1039,13 +1040,16 @@ public class SegueApiFacade {
 
 		// decide if we have been given a list or an object and put it in a list
 		// either way
-		List<Choice> answersFromClient = Lists.newArrayList();
+		List<ChoiceDTO> answersFromClient = Lists.newArrayList();
 
 		try {
 			// convert single object into a list.
 			Choice answerFromClient = mapper.getContentObjectMapper()
 					.readValue(jsonAnswer, Choice.class);
-			answersFromClient.add(answerFromClient);
+			
+			ChoiceDTO answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
+			
+			answersFromClient.add(answerFromClientDTO);
 		} catch (JsonMappingException | JsonParseException e) {
 			log.info("Failed to map to any expected input...", e);
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
@@ -1065,9 +1069,9 @@ public class SegueApiFacade {
 
 		User user = this.getCurrentUser(request);
 		if (user != null
-				&& response.getEntity() instanceof QuestionValidationResponse) {
+				&& response.getEntity() instanceof QuestionValidationResponseDTO) {
 			userManager.recordUserQuestionInformation(user,
-					(QuestionValidationResponse) response.getEntity());
+					(QuestionValidationResponseDTO) response.getEntity());
 		}
 
 		return response;

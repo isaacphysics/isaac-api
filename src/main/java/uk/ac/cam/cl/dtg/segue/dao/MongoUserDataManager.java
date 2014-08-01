@@ -1,13 +1,19 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.io.IOException;
+
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
+import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -16,8 +22,8 @@ import com.mongodb.MongoException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
-import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -30,6 +36,8 @@ public class MongoUserDataManager implements IUserDataManager {
 			.getLogger(MongoUserDataManager.class);
 
 	private final DB database;
+	private final ContentMapper contentMapper;
+	
 	private static final String USER_COLLECTION_NAME = "users";
 	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
 
@@ -40,9 +48,9 @@ public class MongoUserDataManager implements IUserDataManager {
 	 *            - the database reference used for persistence.
 	 */
 	@Inject
-	public MongoUserDataManager(final DB database) {
+	public MongoUserDataManager(final DB database, final ContentMapper contentMapper) {
 		this.database = database;
-
+		this.contentMapper = contentMapper;
 		initialiseDataManager();
 	}
 
@@ -73,14 +81,17 @@ public class MongoUserDataManager implements IUserDataManager {
 			return null;
 		}
 
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+		
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class);
-
+				String.class, objectMapper);
+		
 		// Do database query using plain mongodb so we only have to read from
 		// the database once.
 		User user = jc.findOneById(id);
-
+		
 		return user;
 	}
 
@@ -120,14 +131,14 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Override
 	public void registerQuestionAttempt(final User user,
 			final String questionPageId, final String fullQuestionId,
-			final QuestionAttempt questionAttempt) {
+			final QuestionValidationResponseDTO questionAttempt) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
-
+		// TODO: check that this works with lists and appends to a list rather than overrides object in a map
 		try {
 			WriteResult<User, String> r = jc.updateById(user.getDbId(),
-					DBUpdate.set(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
+					DBUpdate.push(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
 							+ questionPageId + "." + fullQuestionId,
 							questionAttempt));
 
@@ -137,6 +148,10 @@ public class MongoUserDataManager implements IUserDataManager {
 		} catch (MongoException e) {
 			log.error("MongoDB Database Exception. ", e);
 		}
+		
+		
+		BasicDBObject updateQuery = new BasicDBObject();
+	    updateQuery.put( "_id", "default" );		
 	}
 
 	@Override

@@ -27,12 +27,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dos.users.QuestionAttempt;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -271,29 +270,57 @@ public class GameManager {
 				&& user.getQuestionAttempts().containsKey(questionPageId)) {
 			// go through each question in the question page
 			ResultsWrapper<ContentDTO> listOfQuestions = api.searchByIdPrefix(
-					api.getLiveVersion(), questionPageId
-							+ ID_SEPARATOR);
-
+					api.getLiveVersion(), questionPageId + ID_SEPARATOR);
+			
+			// go through all of the questions that make up this gameboard item.
+			boolean allQuestionsCorrect = true;
 			for (ContentDTO contentDTO : listOfQuestions.getResults()) {
 				if (!(contentDTO instanceof QuestionDTO)) {
+					// we are not interested if this is not a question.
 					continue;
 				}
-
-				if (user.getQuestionAttempts().containsKey(questionPageId)) {
-					QuestionAttempt attempt = user.getQuestionAttempts()
-							.get(questionPageId).get(contentDTO.getId());
-					if (null == attempt) {
-						return GameboardItemState.IN_PROGRESS;
-					}
-					if (!attempt.isSuccess()) {
-						return GameboardItemState.TRY_AGAIN;
-					}
+				
+				// get the attempts for this particular question.
+				List<QuestionValidationResponse> questionAttempts = user
+						.getQuestionAttempts().get(questionPageId)
+						.get(contentDTO.getId());
+				
+				// If we have an entry for the question page and do not have
+				// any attempts for this question then it means that we have
+				// done something on this question but have not yet answered
+				// all parts.
+				if (user.getQuestionAttempts().get(questionPageId) != null
+						&& null == questionAttempts) {
+					return GameboardItemState.IN_PROGRESS;
 				}
+				
+				boolean foundCorrectForThisQuestion = false;
+				
+				// Go through the attempts in reverse chronological order
+				// for this question to determine if there is a 
+				// correct answer somewhere.
+				for (int i = questionAttempts.size() - 1; i >= 0; i--) {
+					if (questionAttempts.get(i).isCorrect()) {
+						foundCorrectForThisQuestion = true;
+						break;
+					} 
+				}
+				
+				// update the all questions correct variable with the 
+				// information from this question.
+				allQuestionsCorrect = allQuestionsCorrect & foundCorrectForThisQuestion;
+
+				// if We know that this is now false we can just return and stop looking.
+				if (!allQuestionsCorrect) {
+					return GameboardItemState.TRY_AGAIN;
+				}
+				
 			}
+			// if we get to the end and haven't sent a false back then they must have completed it.
 			return GameboardItemState.COMPLETED;
+		} else {
+			return GameboardItemState.NOT_ATTEMPTED;
 		}
-		// default to not attempted
-		return GameboardItemState.NOT_ATTEMPTED;
 	}
 
 	/**

@@ -8,9 +8,9 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
@@ -36,10 +36,10 @@ public class QuestionManager {
 	 * @param question
 	 *            The question to which the answer must be validated against.
 	 * @param answers
-	 *            as a list used for comparison purposes.
+	 *            from the client as a list used for comparison purposes.
 	 * @return A response containing a QuestionValidationResponse object
 	 */
-	public final Response validateAnswer(final Question question, final List<Choice> answers) {
+	public final Response validateAnswer(final Question question, final List<ChoiceDTO> answers) {
 		IValidator validator = locateValidator(question.getClass());
 
 		if (null == validator) {
