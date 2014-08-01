@@ -17,6 +17,7 @@ import java.util.Set;
  */
 @JsonType("isaacWildcard")
 public class IsaacWildcardDTO extends ContentDTO {
+	protected String description;
 	protected String url;
 
 	@JsonCreator
@@ -39,11 +40,13 @@ public class IsaacWildcardDTO extends ContentDTO {
 	                        @JsonProperty("altText") String altText,
 	                        @JsonProperty("emailAddress") String emailAddress,
 	                        @JsonProperty("image") Image image,
+	                        @JsonProperty("description") String description,
 	                        @JsonProperty("url") String url) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 
+		this.description = description;
 		this.url = url;
 	}
 
@@ -52,6 +55,14 @@ public class IsaacWildcardDTO extends ContentDTO {
 	 */
 	public IsaacWildcardDTO() {
 
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public String getUrl() {

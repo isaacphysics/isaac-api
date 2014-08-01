@@ -15,8 +15,8 @@ import java.util.Set;
 @JsonType("isaacWildcard")
 @DTOMapping(IsaacWildcardDTO.class)
 public class IsaacWildcard extends Content {
+	protected String description;
 	protected String url;
-
 
 	@JsonCreator
 	public IsaacWildcard(@JsonProperty("_id") String _id,
@@ -34,11 +34,13 @@ public class IsaacWildcard extends Content {
 	                     @JsonProperty("published") boolean published,
 	                     @JsonProperty("tags") Set<String> tags,
 	                     @JsonProperty("level") Integer level,
+	                     @JsonProperty("description") String description,
 	                     @JsonProperty("url") String url) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 
+		this.description = description;
 		this.url = url;
 	}
 
@@ -47,6 +49,14 @@ public class IsaacWildcard extends Content {
 	 */
 	public IsaacWildcard() {
 
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public String getUrl() {
