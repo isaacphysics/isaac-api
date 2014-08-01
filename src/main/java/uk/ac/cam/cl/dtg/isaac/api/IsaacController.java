@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -235,16 +236,21 @@ public class IsaacController {
 	}
 
 	/**
-	 * Rest end point that gets a single question based on a given id.
+	 * Rest end point that gets a single question page based on a given id.
 	 * 
 	 * @param questionId
-	 *            as a string
-	 * @return A Response object containing a concept object.
+	 *            to find as a string
+	 * @param request
+	 *            - so that we can try and determine if the user is logged in.
+	 *            This will allow us to augment the question objects with any
+	 *            recorded state.
+	 * @return A Response object containing a question page object or a
+	 *         SegueErrorResponse.
 	 */
 	@GET
 	@Path("pages/questions/{question_page_id}")
 	@Produces("application/json")
-	public final Response getQuestion(
+	public final Response getQuestion(@Context final HttpServletRequest request,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE));
@@ -256,7 +262,21 @@ public class IsaacController {
 					Arrays.asList(questionId));
 		}
 
-		return this.findSingleResult(fieldsToMatch);
+		User currentUser = this.api.getCurrentUser(request);
+		Response response = this.findSingleResult(fieldsToMatch);
+		Object unknownResponse = response.getEntity();
+
+		if (currentUser != null) {
+			if (unknownResponse instanceof SeguePageDTO) {
+				SeguePageDTO content = (SeguePageDTO) unknownResponse;
+				content = api.getQuestionManager()
+						.augmentQuestionObjectWithAttemptInformation(content,
+								currentUser.getQuestionAttempts());
+				return Response.ok(content).build();
+			}
+		}
+
+		return response;
 	}
 
 	/**
@@ -293,7 +313,7 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to provide a gameboard containing a list of questions.
+	 * REST end point to provide a gameboard.
 	 * 
 	 * @param request
 	 *            - this allows us to check to see if a user is currently
@@ -308,7 +328,8 @@ public class IsaacController {
 	 *            - a comma separated list of levels
 	 * @param concepts
 	 *            - a comma separated list of conceptIds
-	 * @return a Response containing a gameboard object.
+	 * @return a Response containing a gameboard object or containing
+	 *         a SegueErrorResponse.
 	 */
 	@GET
 	@Path("gameboards")
@@ -387,14 +408,15 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to provide a gameboard containing a list of questions.
+	 * REST end point to retrieve a specific gameboard by Id.
 	 * 
 	 * @param request
 	 *            - so that wer can extract the users session information if
 	 *            available.
 	 * @param gameboardId
 	 *            - the unique id of the gameboard to be requested
-	 * @return a Response containing a gameboard object.
+	 * @return a Response containing a gameboard object or containing
+	 *         a SegueErrorResponse.
 	 */
 	@GET
 	@Path("gameboards/{gameboard_id}")
@@ -426,7 +448,7 @@ public class IsaacController {
 	 * 
 	 * @param request
 	 *            - so that we can find out the currently logged in user
-	 * @return a Response containing a list of gameboard objects.
+	 * @return a Response containing a list of gameboard objects or a noContent Response.
 	 */
 	@GET
 	@Path("users/current_user/gameboards")
@@ -453,13 +475,16 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to allow gamesboards to be labelled by users.
+	 * REST end point to allow gamesboards to be updated by users.
 	 * 
 	 * @param request
 	 *            - so that we can find out the currently logged in user
-	 * @param gameboardId - So that we can look up an existing gameboard to modify.
-	 * @param newGameboardObject - to get updated information from.
-	 * @return a Response containing a list of gameboard objects.
+	 * @param gameboardId
+	 *            - So that we can look up an existing gameboard to modify.
+	 * @param newGameboardObject
+	 *            - as a GameboardDTO this should contain all of the updates.
+	 * @return a Response containing a list of gameboard objects or containing
+	 *         a SegueErrorResponse.
 	 */
 	@POST
 	@Path("gameboards/{id}/")
@@ -473,7 +498,7 @@ public class IsaacController {
 		//TODO: check what happens when invalid deserialization happens.
 		//TODO: allow only renaming of gameboards if they are owned by you, otherwise
 		// they need to clone it and then rename it.
-		
+		// TODO: finish this method.
 		if (null == user) {
 			// user not logged in return not authorized
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
@@ -491,7 +516,7 @@ public class IsaacController {
 
 		// currently we only support setting a title.
 		
-		return Response.ok().build();
+		return Response.serverError().entity("This service has not been implemented yet.").build();
 	}
 	
 	/**
@@ -499,7 +524,7 @@ public class IsaacController {
 	 * 
 	 * @param pageId
 	 *            as a string
-	 * @return A Response object containing a page object.
+	 * @return A Response object containing a page object or containing a SegueErrorResponse.
 	 */
 	@GET
 	@Path("pages/{page}")
@@ -522,7 +547,8 @@ public class IsaacController {
 	 * 
 	 * @param fragmentId
 	 *            as a string
-	 * @return A Response object containing a page object.
+	 * @return A Response object containing a page fragment object or containing
+	 *         a SegueErrorResponse.
 	 */
 	@GET
 	@Path("pages/fragments/{fragment_id}")
@@ -547,7 +573,8 @@ public class IsaacController {
 	 * 
 	 * @param path
 	 *            of image in the database
-	 * @return image file contents.
+	 * @return a Response containing the image file contents or containing
+	 *         a SegueErrorResponse.
 	 */
 	@GET
 	@Produces("*/*")
@@ -672,7 +699,7 @@ public class IsaacController {
 	 *            - the content object to summarise
 	 * @param proxyPath
 	 *            - the path prefix used for augmentation of urls
-	 * @return Content summary object.
+	 * @return ContentSummaryDTO.
 	 */
 	private ContentSummaryDTO extractContentSummary(final ContentDTO content,
 			final String proxyPath) {
@@ -695,13 +722,13 @@ public class IsaacController {
 
 	/**
 	 * Utility method to convert a list of content objects into a list of
-	 * ContentInfo Objects.
+	 * ContentSummaryDTO Objects.
 	 * 
 	 * @param contentList
 	 *            - the list of content to summarise.
 	 * @param proxyPath
 	 *            - the path used for augmentation of urls.
-	 * @return list of shorter contentInfo objects.
+	 * @return list of shorter ContentSummaryDTO objects.
 	 */
 	private List<ContentSummaryDTO> extractContentSummaryFromList(
 			final List<ContentDTO> contentList, final String proxyPath) {
@@ -723,13 +750,13 @@ public class IsaacController {
 
 	/**
 	 * Utility method to convert a ResultsWrapper of content objects into one
-	 * with content Summary objects.
+	 * with ContentSummaryDTO objects.
 	 * 
 	 * @param contentList
 	 *            - the list of content to summarise.
 	 * @param proxyPath
 	 *            - the path used for augmentation of urls.
-	 * @return list of shorter contentInfo objects.
+	 * @return list of shorter ContentSummaryDTO objects.
 	 */
 	private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
 			final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
@@ -761,7 +788,8 @@ public class IsaacController {
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
 	 *            match
-	 * @return A Response containing a single conceptPage or an error.
+	 * @return A Response containing a single conceptPage or containing
+	 *         a SegueErrorResponse.
 	 */
 	private Response findSingleResult(
 			final Map<String, List<String>> fieldsToMatch) {
@@ -800,7 +828,8 @@ public class IsaacController {
 	 *            - the initial index for the first result.
 	 * @param limit
 	 *            - the maximums number of results to return
-	 * @return Response containing a list of content summary objects
+	 * @return Response containing a list of content summary objects or containing
+	 *         a SegueErrorResponse
 	 */
 	private Response listContentObjects(
 			final Map<String, List<String>> fieldsToMatch,

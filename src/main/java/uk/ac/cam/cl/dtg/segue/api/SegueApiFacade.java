@@ -91,6 +91,9 @@ public class SegueApiFacade {
 	 *            - The content version controller used by the api.
 	 * @param userManager
 	 *            - The manager object responsible for users.
+	 * @param questionManager
+	 *            - A question manager object responsible for managing questions
+	 *            and augmenting questions with user information.
 	 */
 	@Inject
 	public SegueApiFacade(
@@ -98,10 +101,11 @@ public class SegueApiFacade {
 			final ContentMapper mapper,
 			@Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
 			final ContentVersionController contentVersionController,
-			final UserManager userManager) {
+			final UserManager userManager,
+			final QuestionManager questionManager) {
 
 		this.properties = properties;
-		this.questionManager = new QuestionManager();
+		this.questionManager = questionManager;
 
 		// We only want to do this if the mapper needs to be changed - I expect
 		// the same instance to be injected from Guice each time.
@@ -474,6 +478,7 @@ public class SegueApiFacade {
 		return this.getAllUnitsByVersion(contentVersionController
 				.getLiveVersion());
 	}	
+	
 	/**
 	 * @param version of the site to provide the unit list from.
 	 * 
@@ -508,7 +513,7 @@ public class SegueApiFacade {
 	 * @param path
 	 *            - path of the image file
 	 * @return Response object containing the serialized content object. (with
-	 *         no levels of recursion into the content)
+	 *         no levels of recursion into the content) or containing a SegueErrorResponse
 	 */
 	@GET
 	@Produces("*/*")
@@ -986,6 +991,8 @@ public class SegueApiFacade {
 	 * This method will delete all cached data from the CMS and any search
 	 * indices.
 	 * 
+	 * TODO: Needs security.
+	 * 
 	 * @return the latest version id that will be cached if content is
 	 *         requested.
 	 */
@@ -1012,10 +1019,12 @@ public class SegueApiFacade {
 	 *            - the servlet request so we can find out if it is a known
 	 *            user.
 	 * @param questionId
-	 *            that you are attempting
+	 *            that you are attempting to answer.
 	 * @param jsonAnswer
-	 *            - answer body.
-	 * @return Response containing a QuestionValidationResponse object.
+	 *            - answer body which will be parsed as a Choice and then
+	 *            converted to a ChoiceDTO.
+	 * @return Response containing a QuestionValidationResponse object or
+	 *         containing a SegueErrorResponse .
 	 */
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -1041,13 +1050,13 @@ public class SegueApiFacade {
 		// decide if we have been given a list or an object and put it in a list
 		// either way
 		List<ChoiceDTO> answersFromClient = Lists.newArrayList();
-
 		try {
 			// convert single object into a list.
 			Choice answerFromClient = mapper.getContentObjectMapper()
 					.readValue(jsonAnswer, Choice.class);
-			
-			ChoiceDTO answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
+			// convert to a DTO so that it strips out any untrusted data.
+			ChoiceDTO answerFromClientDTO = mapper.getAutoMapper().map(
+					answerFromClient, ChoiceDTO.class);
 			
 			answersFromClient.add(answerFromClientDTO);
 		} catch (JsonMappingException | JsonParseException e) {
@@ -1064,6 +1073,7 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
+		// validate the answer.
 		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
 
@@ -1102,7 +1112,7 @@ public class SegueApiFacade {
 		int errors = 0;
 
 		Content c = new Content();
-		c.setId("dyanmic_problem_report");
+		c.setId("dynamic_problem_report");
 		for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
 			Content child = new Content();
 			child.setTitle(pair.getKey().getTitle());
@@ -1202,6 +1212,14 @@ public class SegueApiFacade {
 				idPrefix, version);
 	}
 
+	/**
+	 * Library method to allow the question manager to be accessed.
+	 * @return question manager.
+	 */
+	public QuestionManager getQuestionManager() {
+		return this.questionManager;
+	}
+	
 	/**
 	 * Utility method to allow related content to be populated as summary
 	 * objects.

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -354,6 +355,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * 
 	 * @param database
 	 *            - to use for persistence.
+	 * @param contentMapper
+	 *            - the instance of a content mapper to use.
 	 * @return Content version controller with associated dependencies.
 	 */
 	@Inject

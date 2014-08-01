@@ -319,7 +319,8 @@ public class ContentMapper {
 		ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(
 				contentDeserializer);
 		
-		QuestionValidationResponseDeserializer validationResponseDeserializer = new QuestionValidationResponseDeserializer(
+		QuestionValidationResponseDeserializer validationResponseDeserializer 
+			= new QuestionValidationResponseDeserializer(
 				contentDeserializer, choiceDeserializer);
 		
 		SimpleModule contentDeserializerModule = new SimpleModule(
