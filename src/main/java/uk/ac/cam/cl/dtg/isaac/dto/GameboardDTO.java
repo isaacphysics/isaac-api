@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 
 /**
  * DTO representation of a gameboard.
@@ -14,7 +14,7 @@ public class GameboardDTO {
 	private String id;
 	private String title;
 	private List<GameboardItem> questions;
-	private Wildcard wildCard;
+	private IsaacWildcard wildCard;
 	private Integer wildCardPosition;
 	private Date creationDate;
 	private GameFilter gameFilter;
@@ -49,7 +49,7 @@ public class GameboardDTO {
 	 *            - User id of the owner of the gameboard.
 	 */
 	public GameboardDTO(final String id, final String title,
-			final List<GameboardItem> questions, final Wildcard wildCard,
+			final List<GameboardItem> questions, final IsaacWildcard wildCard,
 			final Integer wildcardPosition, final Date creationDate,
 			final GameFilter gameFilter, final String ownerUserId) {
 		this.id = id;
@@ -124,7 +124,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the wildCard
 	 */
-	public final Wildcard getWildCard() {
+	public final IsaacWildcard getWildCard() {
 		return wildCard;
 	}
 
@@ -134,7 +134,7 @@ public class GameboardDTO {
 	 * @param wildCard
 	 *            the wildCard to set
 	 */
-	public final void setWildCard(final Wildcard wildCard) {
+	public final void setWildCard(final IsaacWildcard wildCard) {
 		this.wildCard = wildCard;
 	}
 

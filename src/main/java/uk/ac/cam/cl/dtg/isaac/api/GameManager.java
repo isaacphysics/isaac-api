@@ -1,13 +1,8 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
+import com.google.inject.internal.util.$Maps;
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
@@ -21,10 +16,11 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.Wildcard;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -160,8 +156,9 @@ public class GameManager {
 			}
 
 			log.debug("Created gameboard " + uuid);
+
 			GameboardDTO gameboardDTO = new GameboardDTO(uuid, null,
-					gameboardReadyQuestions, null,
+					gameboardReadyQuestions, getRandomWildcard(mapper),
 					generateRandomWildCardPosition(), new Date(), gameFilter,
 					boardOwnerId);
 
@@ -212,16 +209,6 @@ public class GameManager {
 	 */
 	public final List<GameboardDTO> getUsersGameboards(final String userId) {
 		return this.gameboardPersistenceManager.getGameboardsByUserId(userId);
-	}
-
-	/**
-	 * Find a wildcard object to add to a gameboard.
-	 * 
-	 * @return wildCard
-	 */
-	public final Wildcard getRandomWildcardTile() {
-		// TODO: stub
-		return null;
 	}
 
 	/**
@@ -331,6 +318,27 @@ public class GameManager {
 	 */
 	private Integer generateRandomWildCardPosition() {
 		return randomGenerator.nextInt(GAME_BOARD_SIZE + 1);
+	}
+
+	/**
+	 * Find a wildcard object to add to a gameboard.
+	 *
+	 * @return wildCard
+	 */
+	private IsaacWildcard getRandomWildcard(MapperFacade mapper) {
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = org.elasticsearch.common.collect.Maps.newHashMap();
+
+		fieldsToMap.put(immutableEntry(
+				uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator.OR, uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME), Arrays
+				.asList(WILDCARD_TYPE));
+
+		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
+
+		if (wildcardResults.getTotalResults() > 0) {
+			return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
+		}
+
+		return null;
 	}
 
 	/**
