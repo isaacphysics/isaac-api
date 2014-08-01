@@ -379,6 +379,10 @@ public class IsaacController {
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Your gameboard filter request is invalid.").toResponse();
+		} catch (NoWildcardException e) {
+
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to load the wildcard.").toResponse();
 		}
 	}
 

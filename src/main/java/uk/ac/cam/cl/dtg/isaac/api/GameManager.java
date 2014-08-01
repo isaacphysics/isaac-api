@@ -73,7 +73,7 @@ public class GameManager {
 	 * @see generateRandomGambeoard
 	 * @return gameboard containing random problems.
 	 */
-	public final GameboardDTO generateRandomGameboard() {
+	public final GameboardDTO generateRandomGameboard() throws NoWildcardException {
 		return this.generateRandomGameboard(null, null, null, null, null, null);
 	}
 
@@ -103,7 +103,7 @@ public class GameManager {
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
-			final List<String> conceptsList, final User boardOwner) {
+			final List<String> conceptsList, final User boardOwner) throws NoWildcardException {
 
 		String boardOwnerId = null;
 		if (boardOwner != null) {
@@ -298,7 +298,7 @@ public class GameManager {
 	 *
 	 * @return wildCard
 	 */
-	private IsaacWildcard getRandomWildcard(MapperFacade mapper) {
+	private IsaacWildcard getRandomWildcard(MapperFacade mapper) throws NoWildcardException {
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = org.elasticsearch.common.collect.Maps.newHashMap();
 
 		fieldsToMap.put(immutableEntry(
@@ -307,11 +307,11 @@ public class GameManager {
 
 		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
 
-		if (wildcardResults.getTotalResults() > 0) {
-			return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
+		if (wildcardResults.getTotalResults() == 0) {
+			throw new NoWildcardException();
 		}
 
-		return null;
+		return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
 	}
 
 	/**

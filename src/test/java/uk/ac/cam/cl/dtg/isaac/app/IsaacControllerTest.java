@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import uk.ac.cam.cl.dtg.isaac.api.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
+import uk.ac.cam.cl.dtg.isaac.api.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -50,7 +51,7 @@ public class IsaacControllerTest {
 	 * Verify that when an empty gameboard is noticed a 204 is returned.
 	 */
 	@Test
-	public final void isaacEndPoint_checkEmptyGameboardCausesError_SegueErrorResponseShouldBeReturned() {
+	public final void isaacEndPoint_checkEmptyGameboardCausesError_SegueErrorResponseShouldBeReturned() throws NoWildcardException {
 		IsaacController isaacController = new IsaacController(dummyAPI,
 				dummyPropertiesLoader, dummyGameManager);
 
