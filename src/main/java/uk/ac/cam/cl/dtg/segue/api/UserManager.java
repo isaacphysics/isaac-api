@@ -239,7 +239,7 @@ public class UserManager {
 
 				this.createSession(request, user.getDbId());
 
-				UserDTO userDTO = this.dtoMapper.map(currentUser, UserDTO.class);
+				UserDTO userDTO = this.dtoMapper.map(user, UserDTO.class);
 				return Response.ok(userDTO).build();
 
 			} catch (IncorrectCredentialsProvidedException | NoUserException
@@ -549,8 +549,7 @@ public class UserManager {
 			MissingRequiredFieldException {
 		User userToSave = null;
 
-		MapperFacade mapper = new DefaultMapperFactory.Builder()
-				.mapNulls(false).build().getMapperFacade();
+		MapperFacade mapper = this.dtoMapper;
 
 		// We want to map to DTO first to make sure that the user cannot
 		// change fields that aren't exposed to them
@@ -561,7 +560,13 @@ public class UserManager {
 			User existingUser = this.findUserById(user.getDbId());
 
 			userToSave = existingUser;
+
+			MapperFacade mergeMapper = new DefaultMapperFactory.Builder()
+            	.mapNulls(false).build().getMapperFacade();
+
+			mergeMapper.map(userDTOContainingUpdates, userToSave);
 		} else {
+			// This is a new registration
 			userToSave = mapper.map(userDTOContainingUpdates, User.class);
 		}
 

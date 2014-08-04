@@ -99,9 +99,13 @@ public class MongoUserDataManager implements IUserDataManager {
 			return null;
 		}
 
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+				
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class);
+				String.class, objectMapper);
 
 		// Do database query using plain mongodb so we only have to read from
 		// the database once.
@@ -113,10 +117,14 @@ public class MongoUserDataManager implements IUserDataManager {
 
 	@Override
 	public final User updateUser(final User user) {
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+				
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class);
-
+				String.class, objectMapper);
+		
 		WriteResult<User, String> r = jc.save(user);
 
 		if (r.getError() != null) {
