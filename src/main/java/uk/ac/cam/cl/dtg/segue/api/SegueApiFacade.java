@@ -905,8 +905,6 @@ public class SegueApiFacade {
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
-	 * @param redirectUrl
-	 *            - optional redirect url after authentication has completed.
 	 * @param credentials
 	 *            - optional field for local authentication only. Credentials
 	 *            should be specified within a user object. e.g. email and
@@ -920,26 +918,10 @@ public class SegueApiFacade {
 	public final Response authenticateWithCredentials(
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
-			@QueryParam("redirect") final String redirectUrl,
 			final Map<String, String> credentials) {
 
-		// TODO: fix duplicate code with authenticationInitalisation
-		String newRedirectUrl = null;
-		if (null == redirectUrl || !redirectUrl.contains("http://")) {
-			// TODO: Make this redirection stuff less horrid.
-			newRedirectUrl = "http://"
-					+ this.properties.getProperty(Constants.HOST_NAME);
-
-			if (redirectUrl != null) {
-				newRedirectUrl += redirectUrl;
-			}
-		} else {
-			newRedirectUrl = redirectUrl;
-		}
-
 		// ok we need to hand over to user manager
-		return userManager.authenticate(request, signinProvider,
-				newRedirectUrl, credentials);
+		return userManager.authenticate(request, signinProvider, credentials);
 	}
 
 	/**

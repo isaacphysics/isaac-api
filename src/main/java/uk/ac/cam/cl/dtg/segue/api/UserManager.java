@@ -65,6 +65,8 @@ public class UserManager {
 	private final IUserDataManager database;
 	private final String hmacSalt;
 	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
+	
+	private final MapperFacade dtoMapper;
 
 	/**
 	 * Create an instance of the user manager class.
@@ -75,19 +77,22 @@ public class UserManager {
 	 *            - A random / unique HMAC salt for session authentication.
 	 * @param providersToRegister
 	 *            - A map of known authentication providers.
+	 * @param dtoMapper
+	 *            - the preconfigured DO to DTO object mapper for user objects.
 	 */
 	@Inject
-	public UserManager(
-			final IUserDataManager database,
-			@Named(Constants.HMAC_SALT) final String hmacSalt,
-			final Map<AuthenticationProvider, IAuthenticator> providersToRegister) {
+	public UserManager(final IUserDataManager database, @Named(Constants.HMAC_SALT) final String hmacSalt,
+			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+			final MapperFacade dtoMapper) {
 		Validate.notNull(database);
 		Validate.notNull(hmacSalt);
 		Validate.notNull(providersToRegister);
+		Validate.notNull(dtoMapper);
 
 		this.database = database;
 		this.hmacSalt = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;
+		this.dtoMapper = dtoMapper;
 	}
 
 	/**
@@ -196,17 +201,13 @@ public class UserManager {
 	 *            - http request that we can attach the session to.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @param redirectUrl
-	 *            - optional redirect Url for when authentication has completed.
 	 * @param credentials
 	 *            - Credentials email and password credentials should be
 	 *            specified in a map
-	 * @return A response redirecting the user to their redirect url or a
-	 *         redirect URI to the authentication provider if authorization /
-	 *         login is required.
+	 * @return A response containing the UserDTO object or a SegueErrorResponse.
 	 */
 	public final Response authenticate(final HttpServletRequest request,
-			final String provider, @Nullable final String redirectUrl,
+			final String provider,
 			@Nullable final Map<String, String> credentials) {
 
 		// in this case we expect a username and password to have been
@@ -216,14 +217,15 @@ public class UserManager {
 				|| credentials.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME) == null) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
-					"You must specify credentials to use this authentication provider.");
+					"You must specify credentials email and password to use this authentication provider.");
 			return error.toResponse();
 		}
 
 		// get the current user based on their session id information.
 		User currentUser = getCurrentUser(request);
 		if (null != currentUser) {
-			return Response.temporaryRedirect(URI.create(redirectUrl)).build();
+			UserDTO userDTO = this.dtoMapper.map(currentUser, UserDTO.class);
+			return Response.ok(userDTO).build();
 		}
 
 		IAuthenticator authenticator = mapToProvider(provider);
@@ -237,8 +239,8 @@ public class UserManager {
 
 				this.createSession(request, user.getDbId());
 
-				return Response.temporaryRedirect(URI.create(redirectUrl))
-						.build();
+				UserDTO userDTO = this.dtoMapper.map(currentUser, UserDTO.class);
+				return Response.ok(userDTO).build();
 
 			} catch (IncorrectCredentialsProvidedException | NoUserException
 					| NoCredentialsAvailableException e) {

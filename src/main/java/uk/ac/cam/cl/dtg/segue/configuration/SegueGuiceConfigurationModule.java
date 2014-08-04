@@ -334,14 +334,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	@Provides
 	@Singleton
-	private static UserManager getUserManager(
+	private UserManager getUserManager(
 			final IUserDataManager database,
 			@Named(Constants.HMAC_SALT) final String hmacSalt,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister) {
 
 		if (null == userManager) {
 			userManager = new UserManager(database, hmacSalt,
-					providersToRegister);
+					providersToRegister, this.getDOtoDTOMapper());
 			log.info("Creating singleton of UserManager");
 		}
 

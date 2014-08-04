@@ -13,6 +13,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.*;
+import ma.glasnost.orika.MapperFacade;
 
 import org.easymock.EasyMock;
 import org.junit.Before;
@@ -42,6 +43,8 @@ public class UserManagerTest {
 	private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
 	private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
+	private MapperFacade dummyMapper;
+	
 	/**
 	 * Initial configuration of tests.
 	 * 
@@ -53,6 +56,7 @@ public class UserManagerTest {
 		this.dummyDatabase = createMock(IUserDataManager.class);
 		this.dummyHMACSalt = "BOB";
 		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
+		this.dummyMapper = createMock(MapperFacade.class);
 	}
 
 	/**
@@ -61,19 +65,19 @@ public class UserManagerTest {
 	@Test
 	public final void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown() {
 		try {
-			new UserManager(null, this.dummyHMACSalt, this.dummyProvidersMap);
+			new UserManager(null, this.dummyHMACSalt, this.dummyProvidersMap, this.dummyMapper);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
-			new UserManager(this.dummyDatabase, null, this.dummyProvidersMap);
+			new UserManager(this.dummyDatabase, null, this.dummyProvidersMap, this.dummyMapper);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
-			new UserManager(this.dummyDatabase, this.dummyHMACSalt, null);
+			new UserManager(this.dummyDatabase, this.dummyHMACSalt, null, this.dummyMapper);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
@@ -542,11 +546,11 @@ public class UserManagerTest {
 	 *            - The associated authenticating engine
 	 * @return A new UserManager instance
 	 */
-	private UserManager buildTestUserManager(AuthenticationProvider provider,
-			IFederatedAuthenticator authenticator) {
+	private UserManager buildTestUserManager(final AuthenticationProvider provider,
+			final IFederatedAuthenticator authenticator) {
 		HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
 		providerMap.put(provider, authenticator);
 		return new UserManager(this.dummyDatabase, this.dummyHMACSalt,
-				providerMap);
+				providerMap, this.dummyMapper);
 	}
 }
