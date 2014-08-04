@@ -332,6 +332,7 @@ public class ContentMapper {
 		contentDeserializerModule.addDeserializer(
 				QuestionValidationResponse.class,
 				validationResponseDeserializer);
+		
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.registerModule(contentDeserializerModule);
 

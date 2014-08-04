@@ -152,7 +152,11 @@ public class QuestionManager {
 			final SeguePageDTO page,
 			final Map<String, Map<String, List<QuestionValidationResponse>>> 
 			usersQuestionAttempts) {
-
+		
+		if (null == usersQuestionAttempts) {
+			return page;
+		}
+		
 		List<QuestionDTO> questionsToAugment = QuestionManager
 				.extractQuestionObjectsRecursively(page,
 						new ArrayList<QuestionDTO>());

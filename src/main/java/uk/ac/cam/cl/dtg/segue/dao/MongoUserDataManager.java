@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import java.io.IOException;
-
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBUpdate;
@@ -11,8 +9,6 @@ import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -46,6 +42,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	 * 
 	 * @param database
 	 *            - the database reference used for persistence.
+	 * @param contentMapper - The preconfigured content mapper for pojo mapping.
 	 */
 	@Inject
 	public MongoUserDataManager(final DB database, final ContentMapper contentMapper) {
@@ -81,9 +78,10 @@ public class MongoUserDataManager implements IUserDataManager {
 			return null;
 		}
 
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
 		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
 		MongoJackModule.configure(objectMapper);
-		
+				
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class, objectMapper);
@@ -135,7 +133,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
-		// TODO: check that this works with lists and appends to a list rather than overrides object in a map
+
 		try {
 			WriteResult<User, String> r = jc.updateById(user.getDbId(),
 					DBUpdate.push(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
@@ -148,10 +146,6 @@ public class MongoUserDataManager implements IUserDataManager {
 		} catch (MongoException e) {
 			log.error("MongoDB Database Exception. ", e);
 		}
-		
-		
-		BasicDBObject updateQuery = new BasicDBObject();
-	    updateQuery.put( "_id", "default" );		
 	}
 
 	@Override

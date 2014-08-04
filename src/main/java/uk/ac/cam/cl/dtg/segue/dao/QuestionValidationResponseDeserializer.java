@@ -2,8 +2,9 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
 
+import org.mongojack.internal.MongoJackModule;
+
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -28,15 +29,23 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
 	private ContentBaseDeserializer contentDeserializer;
 	private ChoiceDeserializer choiceDeserializer;
 	
-	public QuestionValidationResponseDeserializer(ContentBaseDeserializer contentDeserializer, ChoiceDeserializer choiceDeserializer) {
+	/**
+	 * Create a QuestionValidationResponse deserializer.
+	 * 
+	 * @param contentDeserializer
+	 *            -
+	 * @param choiceDeserializer
+	 *            -
+	 */
+	public QuestionValidationResponseDeserializer(final ContentBaseDeserializer contentDeserializer,
+			final ChoiceDeserializer choiceDeserializer) {
 		this.contentDeserializer = contentDeserializer;
 		this.choiceDeserializer = choiceDeserializer;
 	}
 
 	@Override
-	public QuestionValidationResponse deserialize(JsonParser jsonParser,
-			DeserializationContext deserializationContext) throws IOException,
-			JsonProcessingException, JsonMappingException {
+	public QuestionValidationResponse deserialize(final JsonParser jsonParser,
+			final DeserializationContext deserializationContext) throws IOException {
 
 		SimpleModule contentDeserializerModule = new SimpleModule(
 				"ContentDeserializerModule");
@@ -46,7 +55,9 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
 
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(contentDeserializerModule);
-
+		
+		MongoJackModule.configure(mapper);
+		
 		ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
 
 		if (null == root.get("answer")) {
@@ -54,12 +65,13 @@ public class QuestionValidationResponseDeserializer extends JsonDeserializer<Que
 					"Error: unable to parse content as there is no answer property within the json input.");			
 		}
 
-		String QuestionResponseType = root.get("answer").get("type").textValue();
-
-		if (QuestionResponseType.equals("quantity")) {
-			return mapper.readValue(root.toString(), QuantityValidationResponse.class);
+		// Have to get the raw json out otherwise we dates do not serialize properly. 		
+		String jsonString = new ObjectMapper().writeValueAsString(root);
+		String questionResponseType = root.get("answer").get("type").textValue();
+		if (questionResponseType.equals("quantity")) {
+			return mapper.readValue(jsonString, QuantityValidationResponse.class);
 		} else {
-			return mapper.readValue(root.toString(), QuestionValidationResponse.class);
+			return mapper.readValue(jsonString, QuestionValidationResponse.class);
 		}
 	}
 }
