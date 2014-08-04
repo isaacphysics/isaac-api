@@ -18,7 +18,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 
 /**
- * Choice deserializer
+ * QuestionValidationResponse deserializer
  * 
  * This class requires the primary content bas deserializer as a constructor
  * arguement.

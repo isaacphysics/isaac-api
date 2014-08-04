@@ -777,7 +777,7 @@ public class SegueApiFacade {
 					"Unable to retrieve the current user as no user is currently logged in.")
 					.toResponse();
 		}
-
+		
 		return Response.ok(
 				mapper.getAutoMapper().map(currentUser, UserDTO.class)).build();
 	}

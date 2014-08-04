@@ -20,9 +20,6 @@ public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
 	 * Constructs an Orika Converter specialises in selecting the correct
 	 * subclass for choice objects.
 	 * 
-	 * @param contentBaseOrikaConverter
-	 *            - converter that can be used when mapping a plain choice
-	 *            object to prevent infinite loops.
 	 */
 	public ChoiceOrikaConverter() {
 		
