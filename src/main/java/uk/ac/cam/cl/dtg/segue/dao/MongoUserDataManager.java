@@ -190,8 +190,10 @@ public class MongoUserDataManager implements IUserDataManager {
 						.getDbId()));
 		
 		if (linkAccounts.size() > 0) {
+			log.info("User " + user.getDbId() + " has linked accounts.");
 			return true;
 		}
+		log.info("User " + user.getDbId() + " DOES NOT HAVE linked accounts.");
 		return false;
 	}
 
