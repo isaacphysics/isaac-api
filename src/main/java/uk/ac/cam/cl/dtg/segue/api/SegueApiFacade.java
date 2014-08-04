@@ -833,6 +833,7 @@ public class SegueApiFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to set a password.").toResponse();
 		} catch (MissingRequiredFieldException e) {
+			log.error("Missing field during update operation. ", e);
 			return new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"You are missing a required field. "

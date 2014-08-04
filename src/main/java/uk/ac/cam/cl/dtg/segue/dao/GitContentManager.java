@@ -56,11 +56,11 @@ public class GitContentManager implements IContentManager {
 			.getLogger(GitContentManager.class);
 
 	private static final String CONTENT_TYPE = "content";
-	// TODO: these should probably not be static.
+
 	private final Map<String, Map<String, Content>> gitCache;
 	private final Map<String, Map<Content, List<String>>> indexProblemCache;
 	private final Map<String, Set<String>> tagsList;
-	private final Map<String, Set<String>> allUnits;									
+	private final Map<String, Set<String>> allUnits;					
 
 	private final GitDb database;
 	private final ContentMapper mapper;
