@@ -184,17 +184,16 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
+
 		BasicDBObject query = new BasicDBObject(
-				Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, user
+				Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user
 				.getDbId());
 		DBCursor<LinkedAccount> linkAccounts = jc.find(query);
 		
 		if (linkAccounts.size() > 0) {
-			log.info("User " + user.getDbId() + " has linked accounts.");
 			return true;
 		}
-		log.info("User " + user.getDbId() + " DOES NOT HAVE linked accounts.");
-		log.info("DB QUERY " + query);
+		
 		return false;
 	}
 
