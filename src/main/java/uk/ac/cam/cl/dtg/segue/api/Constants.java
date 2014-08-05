@@ -30,6 +30,11 @@ public final class Constants {
 	 * cache.
 	 */
 	public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
+	
+	/**
+	 * The path for the csv file containing the list of schools.
+	 */
+	public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
 	// GIT stuff
 	/**
@@ -151,6 +156,9 @@ public final class Constants {
 	public enum BooleanOperator {
 		AND, OR
 	};
+	
+	public static final String SCHOOLS_SEARCH_INDEX = "autocomplete_data";
+	public static final String SCHOOLS_SEARCH_TYPE = "schools";
 
 	// Federated Authentication Stuff
 	public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
@@ -249,6 +257,19 @@ public final class Constants {
 	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
 	public static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
 
+	// School List loading - raw data
+	public static final String SCHOOL_URN_FIELDNAME = "URN";
+	public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME = "EstablishmentNumber";
+	public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
+	public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
+	
+	// School List loading POJO fields
+	public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
+	public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME_POJO = "establishmentNumber";
+	public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
+	public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
+	
+	
 	/**
 	 * Private constructor to prevent this class being created.
 	 */

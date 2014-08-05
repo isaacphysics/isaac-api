@@ -81,7 +81,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static IUserDataManager userDataManager = null;
 	private static GoogleClientSecrets googleClientSecrets = null;
 
-
 	private PropertiesLoader globalProperties = null;
 
 	/**
@@ -125,6 +124,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT,
 				globalProperties);
+		
+		this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 	}
 
 	/**
@@ -504,5 +505,4 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		return new MongoAppDataManager<T>(mongoDB.getDB(), databaseName,
 				classType);
 	}
-
 }

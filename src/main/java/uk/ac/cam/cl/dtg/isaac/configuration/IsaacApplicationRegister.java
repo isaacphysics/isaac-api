@@ -10,6 +10,7 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
+import uk.ac.cam.cl.dtg.segue.api.SchoolLookupFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
@@ -46,6 +47,7 @@ public class IsaacApplicationRegister extends Application {
 		result.add(IsaacController.class);
 		result.add(APIOverviewResource.class);
 		result.add(RestEasyJacksonConfiguration.class);
+		result.add(SchoolLookupFacade.class);
 		return result;
 	}
 }
