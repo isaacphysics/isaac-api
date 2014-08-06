@@ -565,16 +565,18 @@ public class IsaacController {
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
 		User user = api.getCurrentUser(request);
-		//TODO: check what happens when invalid deserialization happens.
-		//TODO: allow only renaming of gameboards if they are owned by you, otherwise
-		// they need to clone it and then rename it.
-		// TODO: finish this method.
+		
 		if (null == user) {
 			// user not logged in return not authorized
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"User not logged in. Unable to retrieve gameboards.")
 					.toResponse();
 		}
+		
+		//TODO: check what happens when invalid deserialization happens.
+		//TODO: allow only renaming of gameboards if they are owned by you, otherwise
+		// they need to clone it and then rename it.
+		// TODO: finish this method.
 		
 		GameboardDTO existingGameboard;
 		try {

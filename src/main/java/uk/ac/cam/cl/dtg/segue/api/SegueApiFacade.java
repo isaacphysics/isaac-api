@@ -882,7 +882,6 @@ public class SegueApiFacade {
 			@QueryParam("redirect") final String redirectUrl) {
 		String newRedirectUrl = null;
 		if (null == redirectUrl || !redirectUrl.contains("http://")) {
-			// TODO: Make this redirection stuff less horrid.
 			newRedirectUrl = "http://"
 					+ this.properties.getProperty(Constants.HOST_NAME);
 

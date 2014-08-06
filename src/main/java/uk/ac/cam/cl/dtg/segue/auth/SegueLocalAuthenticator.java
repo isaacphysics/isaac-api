@@ -127,7 +127,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
 	@Override
 	public void triggerLostPasswordFlow(final String usersEmailAddress) {
-		// TODO Auto-generated method stub
+		// TODO Lost password flow.
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}

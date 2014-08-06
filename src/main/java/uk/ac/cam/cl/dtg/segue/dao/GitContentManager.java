@@ -141,8 +141,6 @@ public class GitContentManager implements IContentManager {
 			return null;
 		}
 
-		// TODO: perhaps instead of using gitcache we should just use elastic
-		// search?
 		if (this.ensureCache(version)) {
 			Content result = gitCache.get(version).get(id);
 			if (null == result) {
@@ -594,7 +592,7 @@ public class GitContentManager implements IContentManager {
 								
 								if (flattenedContent instanceof IsaacNumericQuestion) {
 									registerUnitsWithVersion(sha, 
-											(IsaacNumericQuestion)flattenedContent);									
+											(IsaacNumericQuestion) flattenedContent);									
 								}
 									
 								continue; // our work here is done (reduces
@@ -753,8 +751,9 @@ public class GitContentManager implements IContentManager {
 
 	/**
 	 * This method will attempt to traverse the cache to ensure that all content
-	 * references are valid. TODO: Convert this into a more useful method.
-	 * Currently it is a hack to flag bad references.
+	 * references are valid.
+	 * 
+	 * TODO: add a property to bypass this method on live?
 	 * 
 	 * @param sha
 	 *            version to validate integrity of.
@@ -801,17 +800,12 @@ public class GitContentManager implements IContentManager {
 					firstLine += ": " + id;
 				}
 
-				this.registerContentProblem(
-						sha,
-						c,
-						firstLine
-								+ " in "
-								+ c.getCanonicalSourceFile()
-								+ " found with both children and a value. "
-								+ "This content will always be automatically marked as incorrect");
+				this.registerContentProblem(sha, c, firstLine + " in " + c.getCanonicalSourceFile()
+						+ " found with both children and a value. "
+						+ "This content will always be automatically marked as incorrect");
 
-				log.error("Invalid content item detected: The object with ID ("
-						+ id + ") has both children and a value.");
+				log.error("Invalid content item detected: The object with ID (" + id
+						+ ") has both children and a value.");
 			}
 
 			// content type specific checks
@@ -820,56 +814,38 @@ public class GitContentManager implements IContentManager {
 
 				if (f.getSrc() != null && !f.getSrc().startsWith("http")
 						&& !database.verifyGitObject(sha, f.getSrc())) {
-					log.warn("Unable to find Image: "
-							+ f.getSrc()
+					log.warn("Unable to find Image: " + f.getSrc()
 							+ " in Git. Could the reference be incorrect? SourceFile is "
 							+ c.getCanonicalSourceFile());
 					this.registerContentProblem(
 							sha,
 							c,
-							"Unable to find Image: "
-									+ f.getSrc()
+							"Unable to find Image: " + f.getSrc()
 									+ " in Git. Could the reference be incorrect? SourceFile is "
 									+ c.getCanonicalSourceFile());
 				} else {
-					log.debug("Verified image " + f.getSrc()
-							+ " exists in git.");
+					log.debug("Verified image " + f.getSrc() + " exists in git.");
 				}
 
 				// check that there is some alt text.
 				if (f.getAltText() == null || f.getAltText().isEmpty()) {
-					log.warn("No altText attribute set for media element: "
-							+ f.getSrc()
-							+ " in Git source file "
-							+ c.getCanonicalSourceFile());
-					
-					this.registerContentProblem(
-							sha,
-							c,
-							"No altText attribute set for media element: "
-									+ f.getSrc()
-									+ " in Git source file "
-									+ c.getCanonicalSourceFile());
+					log.warn("No altText attribute set for media element: " + f.getSrc()
+							+ " in Git source file " + c.getCanonicalSourceFile());
+
+					this.registerContentProblem(sha, c,
+							"No altText attribute set for media element: " + f.getSrc()
+									+ " in Git source file " + c.getCanonicalSourceFile());
 				}
 			}
 
-			// TODO: remove reference to isaac specific type from here.
-			if (c instanceof ChoiceQuestion
-					&& !(c.getType().equals("isaacQuestion"))) {
+			// TODO: remove reference to isaac specific types from here.
+			if (c instanceof ChoiceQuestion && !(c.getType().equals("isaacQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
 
-				if (question.getChoices() == null
-						|| question.getChoices().isEmpty()) {
-					this.registerContentProblem(
-							sha,
-							question,
-							"Question: "
-									+ question.getId()
-									+ " in "
-									+ question.getCanonicalSourceFile()
-									+ " found without any choice metadata. "
-									+ "This question will always be automatically "
-									+ "marked as incorrect");
+				if (question.getChoices() == null || question.getChoices().isEmpty()) {
+					this.registerContentProblem(sha, question, "Question: " + question.getId() + " in "
+							+ question.getCanonicalSourceFile() + " found without any choice metadata. "
+							+ "This question will always be automatically " + "marked as incorrect");
 				} else {
 					boolean correctOptionFound = false;
 					for (Choice choice : question.getChoices()) {
@@ -879,48 +855,39 @@ public class GitContentManager implements IContentManager {
 					}
 
 					if (!correctOptionFound) {
-						this.registerContentProblem(
-								sha,
-								question,
-								"Question: "
-										+ question.getId()
-										+ " in "
-										+ question.getCanonicalSourceFile()
-										+ " found without a correct answer. "
-										+ "This question will always be automatically marked "
-										+ "as incorrect");
+						this.registerContentProblem(sha, question, "Question: " + question.getId() + " in "
+								+ question.getCanonicalSourceFile() + " found without a correct answer. "
+								+ "This question will always be automatically marked " + "as incorrect");
 					}
 				}
 			}
-			
+
 			// Find quantities with values that cannot be parsed as numbers.
 			if (c instanceof IsaacNumericQuestion) {
 				IsaacNumericQuestion q = (IsaacNumericQuestion) c;
-				
+
 				for (Choice choice : q.getChoices()) {
-					
+
 					if (choice instanceof Quantity) {
 						Quantity quantity = (Quantity) choice;
-						
+
 						try {
 							Double.parseDouble(quantity.getValue());
 						} catch (NumberFormatException e) {
 							this.registerContentProblem(sha, c, "Quantity found with value that"
-										+ "cannot be interpreted as a number in "
-										+ c.getCanonicalSourceFile()
-										+ ". Users will never be able to give a correct answer.");
+									+ "cannot be interpreted as a number in " + c.getCanonicalSourceFile()
+									+ ". Users will never be able to give a correct answer.");
 						}
 					}
 				}
-			
+
 			}
 
 			// check if level is valid.
-			if (c instanceof IsaacQuestionPage
-					&& (c.getLevel() == null || c.getLevel() == 0)) {
-				this.registerContentProblem(sha, c, "Level error! - Question: "
-						+ c.getId() + " in " + c.getCanonicalSourceFile()
-						+ " has the level field set to: " + c.getLevel());
+			if (c instanceof IsaacQuestionPage && (c.getLevel() == null || c.getLevel() == 0)) {
+				this.registerContentProblem(sha, c,
+						"Level error! - Question: " + c.getId() + " in " + c.getCanonicalSourceFile()
+								+ " has the level field set to: " + c.getLevel());
 			}
 		}
 
@@ -931,16 +898,13 @@ public class GitContentManager implements IContentManager {
 			missingContent.addAll(expectedIds);
 
 			for (String id : missingContent) {
-				this.registerContentProblem(sha, whoAmI.get(id), "This id ("
-						+ id + ") was referenced by "
-						+ whoAmI.get(id).getCanonicalSourceFile()
-						+ " but the content with that " + "ID cannot be found.");
+				this.registerContentProblem(sha, whoAmI.get(id), "This id (" + id + ") was referenced by "
+						+ whoAmI.get(id).getCanonicalSourceFile() + " but the content with that "
+						+ "ID cannot be found.");
 			}
 
-			log.error("Referential integrity broken for (" + expectedIds.size()
-					+ ") related Content items. "
-					+ "The following ids are referenced but do not exist: "
-					+ expectedIds.toString());
+			log.error("Referential integrity broken for (" + expectedIds.size() + ") related Content items. "
+					+ "The following ids are referenced but do not exist: " + expectedIds.toString());
 			return false;
 		}
 	}
@@ -1016,8 +980,8 @@ public class GitContentManager implements IContentManager {
 		Set<String> newUnits = Sets.newHashSet();
 		
 		for (Choice c: q.getChoices()) {
-			if(c instanceof Quantity) {
-				Quantity quantity = (Quantity)c;
+			if (c instanceof Quantity) {
+				Quantity quantity = (Quantity) c;
 				
 				if (!quantity.getUnits().equals("")) {
 					newUnits.add(quantity.getUnits());
