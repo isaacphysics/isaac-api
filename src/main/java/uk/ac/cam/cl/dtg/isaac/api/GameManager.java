@@ -217,7 +217,15 @@ public class GameManager {
 	 * @return a list of gameboards created and owned by the given userId
 	 */
 	public final List<GameboardDTO> getUsersGameboards(final User user) {
-		return this.gameboardPersistenceManager.getGameboardsByUserId(user);
+		
+		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
+		
+		for (GameboardDTO gameboard : usersGameboards) {
+			this.augmentGameboardWithUserInformation(gameboard, user);
+			gameboard.setQuestions(null);
+		}
+				
+		return usersGameboards;
 	}
 
 	/**
@@ -241,7 +249,7 @@ public class GameManager {
 		int totalCompleted = 0;
 		
 		for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
-			GameboardItemState state = this.calculateQuestionState(gameItem, user);
+			GameboardItemState state = this.calculateQuestionState(gameItem.getId(), user);
 			gameItem.setState(state);
 			if (state.equals(GameboardItemState.COMPLETED)) {
 				totalCompleted++;
@@ -260,16 +268,15 @@ public class GameManager {
 	 * This method will calculate the question state for use in gameboards based
 	 * on the question.
 	 * 
-	 * @param item
-	 *            - the gameboard item / question tile.
+	 * @param questionPageId
+	 *            - the gameboard item id.
 	 * @param user
 	 *            - the user that may or may not have attempted questions in the
 	 *            gameboard.
 	 * @return The state of the gameboard item.
 	 */
-	private GameboardItemState calculateQuestionState(final GameboardItem item,
+	private GameboardItemState calculateQuestionState(final String questionPageId,
 			final User user) {
-		String questionPageId = item.getId();
 
 		if (user.getQuestionAttempts() != null
 				&& user.getQuestionAttempts().containsKey(questionPageId)) {

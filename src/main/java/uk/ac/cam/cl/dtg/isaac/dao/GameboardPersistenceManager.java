@@ -254,14 +254,21 @@ public class GameboardPersistenceManager {
 	 *            - to convert
 	 * @param populateGameboardItems
 	 *            - true if we should fully populate the gameboard DTO with gameboard items 
-	 *            false if a summary is ok do? 
+	 *            false if just the question ids will do? 
 	 * @return gameboard DTO
 	 */
 	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO, final boolean populateGameboardItems) {
 		GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
 		
 		if (!populateGameboardItems) {
-			gameboardDTO.setQuestions(null);
+			List<GameboardItem> listOfSparseGameItems = Lists.newArrayList();
+			
+			for (String questionPageId : gameboardDO.getQuestions()) {
+				GameboardItem gameboardItem = new GameboardItem();
+				gameboardItem.setId(questionPageId);
+				listOfSparseGameItems.add(gameboardItem);
+			}
+			gameboardDTO.setQuestions(listOfSparseGameItems);
 			return gameboardDTO;
 		}
 		
