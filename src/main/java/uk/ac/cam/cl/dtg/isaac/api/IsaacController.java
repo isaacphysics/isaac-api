@@ -464,8 +464,7 @@ public class IsaacController {
 					.toResponse();
 		}
 
-		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user
-				.getDbId());
+		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user);
 
 		if (null == gameboards) {
 			return Response.noContent().build();

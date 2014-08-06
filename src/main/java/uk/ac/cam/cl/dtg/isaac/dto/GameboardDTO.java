@@ -20,6 +20,8 @@ public class GameboardDTO {
 	private GameFilter gameFilter;
 	private String ownerUserId;
 
+	private Integer percentageCompleted;
+	
 	/**
 	 * Default Gameboard Constructor.
 	 */
@@ -209,5 +211,21 @@ public class GameboardDTO {
 	 */
 	public final void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
+	}
+
+	/**
+	 * Gets the percentageCompleted.
+	 * @return the percentageCompleted
+	 */
+	public Integer getPercentageCompleted() {
+		return percentageCompleted;
+	}
+
+	/**
+	 * Sets the percentageCompleted.
+	 * @param percentageCompleted the percentageCompleted to set
+	 */
+	public void setPercentageCompleted(final Integer percentageCompleted) {
+		this.percentageCompleted = percentageCompleted;
 	}
 }

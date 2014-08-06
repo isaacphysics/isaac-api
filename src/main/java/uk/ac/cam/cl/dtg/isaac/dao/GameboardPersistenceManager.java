@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -25,10 +26,10 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import static java.util.concurrent.TimeUnit.*;
-
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
 
@@ -149,25 +150,28 @@ public class GameboardPersistenceManager {
 	}
 
 	/**
-	 * Retrieve all gameboards for a given user.
+	 * Retrieve all gameboards (without underlying Gameboard Items) for a given user.
 	 * 
-	 * @param userId
+	 * @param user
 	 *            - to search for
-	 * @return gameboards as a list.
+	 * @return gameboards as a list - note these gameboards will not have the
+	 *         questions fully populated as it is expected only summary objects
+	 *         are required.
 	 */
-	public final List<GameboardDTO> getGameboardsByUserId(final String userId) {
+	public final List<GameboardDTO> getGameboardsByUserId(final User user) {
+		// TODO: we probably want to augment the DTOs with completeness information if possible.
 		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps
 				.newHashMap();
 
 		fieldsToMatch.put(immutableEntry(
 				Constants.BooleanOperator.AND, USER_ID_FKEY), Arrays
-				.asList(userId));
+				.asList(user.getDbId()));
 
 		List<GameboardDO> gameboardsFromDb = this.gameboardDataManager
 				.find(fieldsToMatch);
 
 		List<GameboardDTO> gameboardDTOs = this
-				.convertToGameboardDTOs(gameboardsFromDb);
+				.convertToGameboardDTOs(gameboardsFromDb, false);
 
 		return gameboardDTOs;
 	}
@@ -210,16 +214,19 @@ public class GameboardPersistenceManager {
 	 * 
 	 * @param gameboardDOs
 	 *            to convert
+	 * @param populateGameboardItems
+	 *            - true if we should fully populate the gameboard DTO with gameboard items 
+	 *            false if a summary is ok do? 
 	 * @return gameboard DTO
 	 */
 	private List<GameboardDTO> convertToGameboardDTOs(
-			final List<GameboardDO> gameboardDOs) {
+			final List<GameboardDO> gameboardDOs, final boolean populateGameboardItems) {
 		Validate.notNull(gameboardDOs);
 
 		List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
 
 		for (GameboardDO gameboardDO : gameboardDOs) {
-			gameboardDTOs.add(this.convertToGameboardDTO(gameboardDO));
+			gameboardDTOs.add(this.convertToGameboardDTO(gameboardDO, populateGameboardItems));
 		}
 
 		return gameboardDTOs;
@@ -231,12 +238,33 @@ public class GameboardPersistenceManager {
 	 * This method relies on the api to fully resolve questions.
 	 * 
 	 * @param gameboardDO
-	 *            to convert
+	 *            - to convert
 	 * @return gameboard DTO
 	 */
-	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
+	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) { 
+		return this.convertToGameboardDTO(gameboardDO, true);
+	}
+	
+	/**
+	 * Convert form a gameboard DO to a Gameboard DTO.
+	 * 
+	 * This method relies on the api to fully resolve questions.
+	 * 
+	 * @param gameboardDO
+	 *            - to convert
+	 * @param populateGameboardItems
+	 *            - true if we should fully populate the gameboard DTO with gameboard items 
+	 *            false if a summary is ok do? 
+	 * @return gameboard DTO
+	 */
+	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO, final boolean populateGameboardItems) {
 		GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
-
+		
+		if (!populateGameboardItems) {
+			gameboardDTO.setQuestions(null);
+			return gameboardDTO;
+		}
+		
 		// build query the db to get full question information
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
 			= Maps.newHashMap();

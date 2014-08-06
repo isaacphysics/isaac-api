@@ -212,12 +212,12 @@ public class GameManager {
 	/**
 	 * Lookup gameboards belonging to a current user.
 	 * 
-	 * @param userId
-	 *            - the id of the user to search.
+	 * @param user
+	 *            - the user object for the user of interest.
 	 * @return a list of gameboards created and owned by the given userId
 	 */
-	public final List<GameboardDTO> getUsersGameboards(final String userId) {
-		return this.gameboardPersistenceManager.getGameboardsByUserId(userId);
+	public final List<GameboardDTO> getUsersGameboards(final User user) {
+		return this.gameboardPersistenceManager.getGameboardsByUserId(user);
 	}
 
 	/**
@@ -238,10 +238,19 @@ public class GameManager {
 			return gameboardDTO;
 		}
 
+		int totalCompleted = 0;
+		
 		for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
-			gameItem.setState(this.calculateQuestionState(gameItem, user));
+			GameboardItemState state = this.calculateQuestionState(gameItem, user);
+			gameItem.setState(state);
+			if (state.equals(GameboardItemState.COMPLETED)) {
+				totalCompleted++;
+			}
 		}
-
+		
+		double percentageCompleted = totalCompleted * 100 / gameboardDTO.getQuestions().size();
+		gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
+		
 		return gameboardDTO;
 	}
 

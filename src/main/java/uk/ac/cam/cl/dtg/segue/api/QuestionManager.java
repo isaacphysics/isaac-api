@@ -140,7 +140,7 @@ public class QuestionManager {
 	 * information if we can provide it.
 	 * 
 	 * @param page
-	 *            to augment - this object may be mutated as a result of this
+	 *            - to augment - this object may be mutated as a result of this
 	 *            method. i.e BestAttempt field set on question DTOs.
 	 * @param usersQuestionAttempts
 	 *            - as a map of QuestionPageId to Map of QuestionId to
