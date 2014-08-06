@@ -10,8 +10,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import ma.glasnost.orika.MapperFacade;
 
+import org.apache.commons.collections4.comparators.ComparatorChain;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -232,13 +236,18 @@ public class GameManager {
 	 *            - the limit of the number of results to return
 	 * @param showOnly
 	 *            - show only gameboards matching the given state.
+	 * @param sortInstructions
+	 *            - List of instructions of the form fieldName -> SortOrder. Can be null.
 	 * @return a list of gameboards (without full question information) which are associated with a given user. 
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboards from the
 	 *             database.
 	 */
-	public final List<GameboardDTO> getUsersGameboards(final User user, final Integer startIndex, final Integer limit,
-			final GameboardState showOnly) throws SegueDatabaseException {
+	public final List<GameboardDTO> getUsersGameboards(final User user, 
+			@Nullable final Integer startIndex, 
+			@Nullable final Integer limit,
+			@Nullable final GameboardState showOnly, 
+			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions) throws SegueDatabaseException {
 		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
@@ -263,12 +272,41 @@ public class GameManager {
 			}
 		}
 		
-		// assume we want reverse date order for creation date for now.
-		Collections.sort(resultToReturn, new Comparator<GameboardDTO>() {
-			public int compare(final GameboardDTO o1, final GameboardDTO o2) {
-				return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
+		ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
+
+		// assume we want reverse date order for visited date for now.
+		if (null == sortInstructions || sortInstructions.isEmpty()) {
+			comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
+				public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+					return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
+				}
+			});
+		} else {
+			// we have to use a more complex sorting Comparator.
+			
+			for (Map.Entry<String, SortOrder> sortInstruction : sortInstructions) {
+				Boolean reverseOrder = false;
+				if (sortInstruction.getValue().equals(SortOrder.DESC)) {
+					reverseOrder = true;
+				}
+				
+				if (sortInstruction.getKey().equals(CREATED_DATE_FIELDNAME)) {
+					comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
+						public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+							return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
+						}
+					}, reverseOrder);
+				} else if (sortInstruction.getKey().equals(VISITED_DATE_FIELDNAME)) {
+					comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
+						public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+							return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
+						}
+					}, reverseOrder);
+				}
 			}
-		});
+		}
+		
+		Collections.sort(resultToReturn, comparatorForSorting);	
 		
 		int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
 		

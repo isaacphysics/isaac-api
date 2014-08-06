@@ -47,6 +47,7 @@ import com.google.inject.Injector;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static com.google.common.collect.Maps.*;
 
 /**
  * Isaac Controller
@@ -60,6 +61,8 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 public class IsaacController {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacController.class);
+
+	
 
 	private SegueApiFacade api;
 	private PropertiesLoader propertiesLoader;
@@ -493,19 +496,42 @@ public class IsaacController {
 		if (showCriteria != null) {
 			if (showCriteria.toLowerCase().contains("completed")) {
 				gameboardShowCriteria = GameboardState.COMPLETED;
-			}
-			if (showCriteria.toLowerCase().contains("in_progress")) {
+			} else if (showCriteria.toLowerCase().contains("in_progress")) {
 				gameboardShowCriteria = GameboardState.IN_PROGRESS;
 			} else {
 				return new SegueErrorResponse(Status.BAD_REQUEST,
 						"Unable to interpret showOnly criteria specified " + showCriteria).toResponse();				
 			}
 		}
-		
+		List<Map.Entry<String, SortOrder>> parsedSortInstructions = null;
+		// sort instructions
+		if (sortInstructions != null && !sortInstructions.isEmpty()) {
+			parsedSortInstructions = Lists.newArrayList();
+			for (String instruction : Arrays.asList(sortInstructions.toLowerCase().split(","))) {
+				SortOrder s = SortOrder.ASC;
+				if (instruction.startsWith("-")) {
+					s = SortOrder.DESC;
+					instruction = instruction.substring(1, instruction.length());
+				}
+				
+				if (instruction.equals("created")) {
+					parsedSortInstructions.add(immutableEntry(CREATED_DATE_FIELDNAME, s));
+				}
+				
+				if (instruction.equals("visited")) {
+					parsedSortInstructions.add(immutableEntry(VISITED_DATE_FIELDNAME, s));
+				}
+				
+				if (instruction.equals("level")) {
+					parsedSortInstructions.add(immutableEntry(LEVEL_FIELDNAME, s));
+				}
+			}
+		}
+
 		List<GameboardDTO> gameboards;
 		try {
 			gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
-					DEFAULT_RESULTS_LIMIT, gameboardShowCriteria);
+					DEFAULT_RESULTS_LIMIT, gameboardShowCriteria, parsedSortInstructions);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();

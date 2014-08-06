@@ -41,6 +41,9 @@ public final class Constants {
 	 * Represents the potential states of a gameboard.
 	 */
 	public enum GameboardState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED }
+	// GameboardDTO field names
+	public static final String CREATED_DATE_FIELDNAME = "created";
+	public static final String VISITED_DATE_FIELDNAME = "lastVisited";
 	
 	/**
 	 * Private constructor to prevent this class being created.
