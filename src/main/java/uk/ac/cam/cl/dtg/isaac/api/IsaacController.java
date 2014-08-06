@@ -444,7 +444,7 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to find all of a user's gameboards.
+	 * REST end point to find all of a user's gameboards. The My Boards endpoint.
 	 * 
 	 * @param request
 	 *            - so that we can find out the currently logged in user

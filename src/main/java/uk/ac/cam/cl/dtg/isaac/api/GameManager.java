@@ -139,15 +139,13 @@ public class GameManager {
 			String uuid = UUID.randomUUID().toString();
 
 			Integer sizeOfGameboard = GAME_BOARD_SIZE;
-			// TODO: if there are not enough questions then should we
-			// fill it with random questions or just say so?
 			if (GAME_BOARD_SIZE > results.getResults().size()) {
 				sizeOfGameboard = results.getResults().size();
 			}
 
 			List<ContentDTO> questionsForGameboard = results.getResults()
 					.subList(0, sizeOfGameboard);
-
+			// TODO: we should probably inject this properly.
 			// build gameboard using automapper
 			Injector injector = Guice.createInjector(
 					new IsaacGuiceConfigurationModule(),
