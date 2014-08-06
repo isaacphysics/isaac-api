@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,6 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -43,8 +44,7 @@ import static com.google.common.collect.Maps.*;
  * 
  */
 public class GameManager {
-	private static final Logger log = LoggerFactory
-			.getLogger(GameManager.class);
+	private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
 	private static final int MAX_QUESTIONS_TO_SEARCH = 20;
 
@@ -214,18 +214,42 @@ public class GameManager {
 	 * 
 	 * @param user
 	 *            - the user object for the user of interest.
+	 * @param startIndex
+	 *            - the initial index to return.
+	 * @param limit
+	 *            - the limit of the number of results to return
+	 * @param showOnly
+	 *            - show only gameboards matching the given state.
 	 * @return a list of gameboards created and owned by the given userId
 	 */
-	public final List<GameboardDTO> getUsersGameboards(final User user) {
+	public final List<GameboardDTO> getUsersGameboards(final User user, final Integer startIndex, final Integer limit,
+			final GameboardState showOnly) {
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
-		
+		List<GameboardDTO> resultToReturn = Lists.newArrayList();
 		for (GameboardDTO gameboard : usersGameboards) {
 			this.augmentGameboardWithUserInformation(gameboard, user);
 			gameboard.setQuestions(null);
+			
+			if (null == showOnly) {
+				resultToReturn.add(gameboard);
+			} else if (gameboard.getPercentageCompleted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
+				resultToReturn.add(gameboard);
+			} else if (gameboard.getPercentageCompleted() > 0 && showOnly.equals(GameboardState.IN_PROGRESS)) {
+				resultToReturn.add(gameboard);
+			}
 		}
-				
-		return usersGameboards;
+		
+		// assume we want reverse date order for creation date for now.
+		Collections.sort(resultToReturn, new Comparator<GameboardDTO>() {
+			public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+				return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
+			}
+		});
+		
+		int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
+		
+		return resultToReturn.subList(startIndex, toIndex);
 	}
 
 	/**

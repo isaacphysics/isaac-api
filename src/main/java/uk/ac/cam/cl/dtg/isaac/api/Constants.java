@@ -31,9 +31,15 @@ public final class Constants {
 	
 	/**
 	 * GameboardItemState
-	 * Represents the potential states of a gameboard.
+	 * Represents the potential states of a gameboard item.
 	 */
 	public enum GameboardItemState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED, TRY_AGAIN }
+	
+	/**
+	 * GameboardState
+	 * Represents the potential states of a gameboard.
+	 */
+	public enum GameboardState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED }
 	
 	/**
 	 * Private constructor to prevent this class being created.

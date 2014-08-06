@@ -448,23 +448,56 @@ public class IsaacController {
 	 * 
 	 * @param request
 	 *            - so that we can find out the currently logged in user
+	 * @param startIndex
+	 *            - the first board index to return.
+	 * @param sortInstructions
+	 *            - the criteria to use for sorting. Default is reverse chronological by created date.
+	 * @param showCriteria
+	 *            - e.g. completed,incompleted
 	 * @return a Response containing a list of gameboard objects or a noContent Response.
 	 */
 	@GET
 	@Path("users/current_user/gameboards")
 	@Produces("application/json")
 	public final Response getGameboardByUser(
-			@Context final HttpServletRequest request) {
+			@Context final HttpServletRequest request,
+			@QueryParam("start_index") final String startIndex,
+			@QueryParam("sort") final String sortInstructions,
+			@QueryParam("show_only") final String showCriteria) {
 		User user = api.getCurrentUser(request);
-
+		
 		if (null == user) {
 			// user not logged in return not authorized
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"User not logged in. Unable to retrieve gameboards.")
 					.toResponse();
 		}
+		
+		Integer startIndexAsInteger = 0;
+		if (startIndex != null) {
+			try {
+				startIndexAsInteger = Integer.parseInt(startIndex);	
+			} catch (NumberFormatException e) {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"The number you entered as the startIndex is not valid.").toResponse();
+			}
+		}
+		
+		GameboardState gameboardShowCriteria = null;
+		if (showCriteria != null) {
+			if (showCriteria.toLowerCase().contains("completed")) {
+				gameboardShowCriteria = GameboardState.COMPLETED;
+			}
+			if (showCriteria.toLowerCase().contains("in_progress")) {
+				gameboardShowCriteria = GameboardState.IN_PROGRESS;
+			} else {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"Unable to interpret showOnly criteria specified " + showCriteria).toResponse();				
+			}
+		}
 
-		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user);
+		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
+				DEFAULT_RESULTS_LIMIT, gameboardShowCriteria);
 
 		if (null == gameboards) {
 			return Response.noContent().build();
