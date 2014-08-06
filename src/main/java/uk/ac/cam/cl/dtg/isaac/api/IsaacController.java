@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -401,9 +402,11 @@ public class IsaacController {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Your gameboard filter request is invalid.").toResponse();
 		} catch (NoWildcardException e) {
-
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to load the wildcard.").toResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Failed while trying to save your gameboard.", e).toResponse();
 		}
 	}
 
@@ -440,6 +443,9 @@ public class IsaacController {
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Your gameboard filter request is invalid.").toResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 	}
 
@@ -495,9 +501,15 @@ public class IsaacController {
 						"Unable to interpret showOnly criteria specified " + showCriteria).toResponse();				
 			}
 		}
-
-		List<GameboardDTO> gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
-				DEFAULT_RESULTS_LIMIT, gameboardShowCriteria);
+		
+		List<GameboardDTO> gameboards;
+		try {
+			gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
+					DEFAULT_RESULTS_LIMIT, gameboardShowCriteria);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		}
 
 		if (null == gameboards) {
 			return Response.noContent().build();
@@ -538,7 +550,13 @@ public class IsaacController {
 					.toResponse();
 		}
 		
-		GameboardDTO existingGameboard = gameManager.getGameboard(gameboardId, user);
+		GameboardDTO existingGameboard;
+		try {
+			existingGameboard = gameManager.getGameboard(gameboardId, user);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		}
 		
 		if (null == existingGameboard) {
 			return new SegueErrorResponse(Status.NOT_FOUND,

@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -184,9 +185,10 @@ public class GameManager {
 	 * 
 	 * @param gameboardToStore
 	 *            - Gameboard object to persist.
+	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
 	 */
 	public final void permanentlyStoreGameboard(
-			final GameboardDTO gameboardToStore) {
+			final GameboardDTO gameboardToStore) throws SegueDatabaseException {
 		this.gameboardPersistenceManager
 				.saveGameboardToPermanentStorage(gameboardToStore);
 	}
@@ -200,9 +202,12 @@ public class GameManager {
 	 *            - the user (if available) of who wants it. This allows state
 	 *            information to be retrieved.
 	 * @return the gameboard or null.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem retrieving the gameboard in the
+	 *             database or updating the users gameboard link table.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId,
-			final User user) {
+			final User user) throws SegueDatabaseException {
 		
 		GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
@@ -228,9 +233,12 @@ public class GameManager {
 	 * @param showOnly
 	 *            - show only gameboards matching the given state.
 	 * @return a list of gameboards (without full question information) which are associated with a given user. 
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem retrieving the gameboards from the
+	 *             database.
 	 */
 	public final List<GameboardDTO> getUsersGameboards(final User user, final Integer startIndex, final Integer limit,
-			final GameboardState showOnly) {
+			final GameboardState showOnly) throws SegueDatabaseException {
 		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);

@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -38,12 +39,10 @@ import static com.google.common.collect.Maps.*;
  * This class is responsible for managing and persisting user data.
  */
 public class GameboardPersistenceManager {
-	private static final Logger log = LoggerFactory
-			.getLogger(GameboardPersistenceManager.class);
+	private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
 
 	private static final Integer CACHE_TARGET_SIZE = 142;
-	private static final Long GAMEBOARD_TTL_HOURS = MILLISECONDS.convert(30,
-			MINUTES);
+	private static final Long GAMEBOARD_TTL_HOURS = MILLISECONDS.convert(30, MINUTES);
 
 	private static final String USER_ID_FKEY = "userId";
 	private static final String DB_ID_FIELD = "_id";
@@ -62,7 +61,8 @@ public class GameboardPersistenceManager {
 	 * @param database
 	 *            - the database reference used for persistence.
 	 * @param userToGameboardMappings
-	 *            - the database reference used for persistence of user to gameboard relationships.
+	 *            - the database reference used for persistence of user to
+	 *            gameboard relationships.
 	 * @param api
 	 *            - handle to segue api so that we can perform queries to
 	 *            augment gameboard data before and after persistence.
@@ -71,10 +71,9 @@ public class GameboardPersistenceManager {
 	 *            and from GameboardDOs and DTOs.
 	 */
 	@Inject
-	public GameboardPersistenceManager(
-			final IAppDataManager<GameboardDO> database,
-			final IAppDataManager<UserGameboardsDO> userToGameboardMappings,
-			final SegueApiFacade api, final MapperFacade mapper) {
+	public GameboardPersistenceManager(final IAppDataManager<GameboardDO> database,
+			final IAppDataManager<UserGameboardsDO> userToGameboardMappings, final SegueApiFacade api,
+			final MapperFacade mapper) {
 		this.gameboardDataManager = database;
 		this.userToGameboardMappingsDatabase = userToGameboardMappings;
 		this.mapper = mapper;
@@ -88,9 +87,11 @@ public class GameboardPersistenceManager {
 	 * @param gameboard
 	 *            - gameboard to save
 	 * @return internal database id for the saved gameboard.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem saving the gameboard in the database.
 	 */
-	public final String saveGameboardToPermanentStorage(
-			final GameboardDTO gameboard) {
+	public final String saveGameboardToPermanentStorage(final GameboardDTO gameboard)
+		throws SegueDatabaseException {
 		GameboardDO gameboardToSave = mapper.map(gameboard, GameboardDO.class);
 		// the mapping operation won't work for the list so we should just
 		// create a new one.
@@ -103,8 +104,7 @@ public class GameboardPersistenceManager {
 
 		String resultId = gameboardDataManager.save(gameboardToSave);
 
-		log.info("Saving gameboard... Gameboard ID: " + gameboard.getId()
-				+ " DB id : " + resultId);
+		log.info("Saving gameboard... Gameboard ID: " + gameboard.getId() + " DB id : " + resultId);
 
 		// add the gameboard to the users myboards list.
 		this.createOrUpdateUserLinkToGameboard(gameboardToSave.getOwnerUserId(), resultId);
@@ -112,10 +112,10 @@ public class GameboardPersistenceManager {
 
 		// make sure that it is not still in temporary storage
 		this.gameboardNonPersistentStorage.remove(gameboard.getId());
-		
+
 		return resultId;
 	}
-	
+
 	/**
 	 * Link a user to a gameboard or update an existing link.
 	 * 
@@ -123,34 +123,38 @@ public class GameboardPersistenceManager {
 	 *            - userId to link
 	 * @param gameboardId
 	 *            - gameboard to link
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem persisting the link in the database.
 	 */
-	public void createOrUpdateUserLinkToGameboard(final String userId, final String gameboardId) {
+	public void createOrUpdateUserLinkToGameboard(final String userId, final String gameboardId)
+		throws SegueDatabaseException {
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-		
+
 		Map.Entry<BooleanOperator, String> userIdFieldParam = immutableEntry(BooleanOperator.AND, "userId");
-		Map.Entry<BooleanOperator, String> gameboardIdFieldParam = immutableEntry(BooleanOperator.AND, "gameboardId");
+		Map.Entry<BooleanOperator, String> gameboardIdFieldParam = immutableEntry(BooleanOperator.AND,
+				"gameboardId");
 		fieldsToMatch.put(userIdFieldParam, Arrays.asList(userId));
 		fieldsToMatch.put(gameboardIdFieldParam, Arrays.asList(gameboardId));
-		
+
 		List<UserGameboardsDO> userGameboardDOs = this.userToGameboardMappingsDatabase.find(fieldsToMatch);
-		
+
 		if (userGameboardDOs.size() == 0) {
 			// if this user is not already connected make a connection.
-			UserGameboardsDO userGameboardConnection = new UserGameboardsDO(null, userId,
-					gameboardId, new Date(), new Date());
-			
+			UserGameboardsDO userGameboardConnection = new UserGameboardsDO(null, userId, gameboardId,
+					new Date(), new Date());
+
 			this.userToGameboardMappingsDatabase.save(userGameboardConnection);
 		} else if (userGameboardDOs.size() == 1) {
-			// if the user is already connected to the game board update their link.
+			// if the user is already connected to the game board update their
+			// link.
 			UserGameboardsDO userGameboardConnection = userGameboardDOs.get(0);
 			userGameboardConnection.setLastVisited(new Date());
 			this.userToGameboardMappingsDatabase.save(userGameboardConnection);
-			
 		} else {
 			log.error("Expected one result and found multiple gameboard -  user relationships.");
 		}
 	}
-	
+
 	/**
 	 * Keep generated gameboard in non-persistent storage.
 	 * 
@@ -161,8 +165,7 @@ public class GameboardPersistenceManager {
 	 * @return gameboard id
 	 */
 	public final String temporarilyStoreGameboard(final GameboardDTO gameboard) {
-		this.gameboardNonPersistentStorage.put(gameboard.getId(),
-				this.convertToGameboardDO(gameboard));
+		this.gameboardNonPersistentStorage.put(gameboard.getId(), this.convertToGameboardDO(gameboard));
 
 		tidyTemporaryGameboardStorage();
 
@@ -175,13 +178,12 @@ public class GameboardPersistenceManager {
 	 * @param gameboardId
 	 *            - the id to search for.
 	 * @return the gameboard or null if we can't find it..
+	 * @throws SegueDatabaseException  - if there is a problem accessing the database.
 	 */
-	public final GameboardDTO getGameboardById(final String gameboardId) {
+	public final GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
 		// first try temporary storage
 		if (this.gameboardNonPersistentStorage.containsKey(gameboardId)) {
-			return this
-					.convertToGameboardDTO(this.gameboardNonPersistentStorage
-							.get(gameboardId));
+			return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.get(gameboardId));
 		}
 
 		GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
@@ -196,48 +198,52 @@ public class GameboardPersistenceManager {
 	}
 
 	/**
-	 * Retrieve all gameboards (without underlying Gameboard Items) for a given user.
+	 * Retrieve all gameboards (without underlying Gameboard Items) for a given
+	 * user.
 	 * 
 	 * @param user
 	 *            - to search for
 	 * @return gameboards as a list - note these gameboards will not have the
 	 *         questions fully populated as it is expected only summary objects
 	 *         are required.
+	 * @throws SegueDatabaseException
+	 *             - if there is an error when accessing the database.
 	 */
-	public final List<GameboardDTO> getGameboardsByUserId(final User user) {
+	public final List<GameboardDTO> getGameboardsByUserId(final User user) throws SegueDatabaseException {
 		// find all gameboards related to this user.
-		Map<String, UserGameboardsDO> gameboardLinksToUser = this.findLinkedGameboardIdsForUser(user.getDbId());
-		
+		Map<String, UserGameboardsDO> gameboardLinksToUser = this.findLinkedGameboardIdsForUser(user
+				.getDbId());
+
 		List<String> gameboardIdsLinkedToUser = Lists.newArrayList();
 		gameboardIdsLinkedToUser.addAll(gameboardLinksToUser.keySet());
-		
+
 		if (null == gameboardIdsLinkedToUser || gameboardIdsLinkedToUser.isEmpty()) {
 			return Lists.newArrayList();
 		}
-		
-		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps
-				.newHashMap();
 
-		fieldsToMatch.put(immutableEntry(
-				Constants.BooleanOperator.OR, DB_ID_FIELD), gameboardIdsLinkedToUser);
-		
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
+
+		fieldsToMatch
+				.put(immutableEntry(Constants.BooleanOperator.OR, DB_ID_FIELD), gameboardIdsLinkedToUser);
+
 		List<GameboardDO> gameboardsFromDb = this.gameboardDataManager.find(fieldsToMatch);
-		
-		List<GameboardDTO> gameboardDTOs = this
-				.convertToGameboardDTOs(gameboardsFromDb, false);
+
+		List<GameboardDTO> gameboardDTOs = this.convertToGameboardDTOs(gameboardsFromDb, false);
 
 		// we need to augment each gameboard with its visited date.
 		for (GameboardDTO gameboardDTO : gameboardDTOs) {
 			gameboardDTO.setLastVisited(gameboardLinksToUser.get(gameboardDTO.getId()).getLastVisited());
 		}
-		
+
 		return gameboardDTOs;
 	}
 
 	/**
-	 * Update a gameboard. 
-	 * The gameboard must already exist and have the same id.
-	 * @param gameboard - to update. Note the ID should already exist.
+	 * Update a gameboard. The gameboard must already exist and have the same
+	 * id.
+	 * 
+	 * @param gameboard
+	 *            - to update. Note the ID should already exist.
 	 * @return gameboardDTO
 	 */
 	public GameboardDTO updateGameboard(final GameboardDTO gameboard) {
@@ -253,15 +259,12 @@ public class GameboardPersistenceManager {
 			log.debug("Running gameboard temporary cache eviction as it is of size  "
 					+ this.gameboardNonPersistentStorage.size());
 
-			for (GameboardDO board : this.gameboardNonPersistentStorage
-					.values()) {
-				long duration = new Date().getTime()
-						- board.getCreationDate().getTime();
+			for (GameboardDO board : this.gameboardNonPersistentStorage.values()) {
+				long duration = new Date().getTime() - board.getCreationDate().getTime();
 
 				if (duration >= GAMEBOARD_TTL_HOURS) {
 					this.gameboardNonPersistentStorage.remove(board.getId());
-					log.debug("Deleting temporary board from cache "
-							+ board.getId());
+					log.debug("Deleting temporary board from cache " + board.getId());
 				}
 			}
 		}
@@ -273,12 +276,12 @@ public class GameboardPersistenceManager {
 	 * @param gameboardDOs
 	 *            to convert
 	 * @param populateGameboardItems
-	 *            - true if we should fully populate the gameboard DTO with gameboard items 
-	 *            false if a summary is ok do? 
+	 *            - true if we should fully populate the gameboard DTO with
+	 *            gameboard items false if a summary is ok do?
 	 * @return gameboard DTO
 	 */
-	private List<GameboardDTO> convertToGameboardDTOs(
-			final List<GameboardDO> gameboardDOs, final boolean populateGameboardItems) {
+	private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
+			final boolean populateGameboardItems) {
 		Validate.notNull(gameboardDOs);
 
 		List<GameboardDTO> gameboardDTOs = Lists.newArrayList();
@@ -299,10 +302,10 @@ public class GameboardPersistenceManager {
 	 *            - to convert
 	 * @return gameboard DTO
 	 */
-	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) { 
+	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO) {
 		return this.convertToGameboardDTO(gameboardDO, true);
 	}
-	
+
 	/**
 	 * Convert form a gameboard DO to a Gameboard DTO.
 	 * 
@@ -311,16 +314,17 @@ public class GameboardPersistenceManager {
 	 * @param gameboardDO
 	 *            - to convert
 	 * @param populateGameboardItems
-	 *            - true if we should fully populate the gameboard DTO with gameboard items 
-	 *            false if just the question ids will do? 
+	 *            - true if we should fully populate the gameboard DTO with
+	 *            gameboard items false if just the question ids will do?
 	 * @return gameboard DTO
 	 */
-	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO, final boolean populateGameboardItems) {
+	private GameboardDTO convertToGameboardDTO(final GameboardDO gameboardDO,
+			final boolean populateGameboardItems) {
 		GameboardDTO gameboardDTO = mapper.map(gameboardDO, GameboardDTO.class);
-		
+
 		if (!populateGameboardItems) {
 			List<GameboardItem> listOfSparseGameItems = Lists.newArrayList();
-			
+
 			for (String questionPageId : gameboardDO.getQuestions()) {
 				GameboardItem gameboardItem = new GameboardItem();
 				gameboardItem.setId(questionPageId);
@@ -329,24 +333,20 @@ public class GameboardPersistenceManager {
 			gameboardDTO.setQuestions(listOfSparseGameItems);
 			return gameboardDTO;
 		}
-		
+
 		// build query the db to get full question information
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap 
-			= Maps.newHashMap();
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
-		fieldsToMap.put(immutableEntry(
-				Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
-				gameboardDO.getQuestions());
+		fieldsToMap.put(
+				immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), gameboardDO.getQuestions());
 
-		fieldsToMap.put(immutableEntry(
-				Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME), Arrays
-				.asList(QUESTION_TYPE));
+		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
+				Arrays.asList(QUESTION_TYPE));
 
 		// Search for questions that match the ids.
-		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api
-				.getLiveVersion(), fieldsToMap, 0, gameboardDO.getQuestions()
-				.size());
+		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
+				gameboardDO.getQuestions().size());
 
 		List<ContentDTO> questionsForGameboard = results.getResults();
 
@@ -362,8 +362,7 @@ public class GameboardPersistenceManager {
 		// empty and repopulate the gameboard dto.
 		gameboardDTO.setQuestions(new ArrayList<GameboardItem>());
 		for (String questionid : gameboardDO.getQuestions()) {
-			gameboardDTO.getQuestions().add(
-					gameboardReadyQuestions.get(questionid));
+			gameboardDTO.getQuestions().add(gameboardReadyQuestions.get(questionid));
 		}
 		return gameboardDTO;
 	}
@@ -388,29 +387,31 @@ public class GameboardPersistenceManager {
 
 		return gameboardDO;
 	}
-	
+
 	/**
 	 * Find all gameboardIds that are connected to a given user.
-	 * @param userId to search against.
+	 * 
+	 * @param userId
+	 *            to search against.
 	 * @return A Map of ids to UserGameboardsDO.
+	 * @throws SegueDatabaseException - if there is a problem accessing the database.
 	 */
-	private Map<String, UserGameboardsDO> findLinkedGameboardIdsForUser(final String userId) {
+	private Map<String, UserGameboardsDO> findLinkedGameboardIdsForUser(final String userId)
+		throws SegueDatabaseException {
 		// find all gameboards related to this user.
-		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForGameboardSearch = Maps
-				.newHashMap();
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForGameboardSearch = Maps.newHashMap();
 
-		fieldsToMatchForGameboardSearch.put(immutableEntry(
-				Constants.BooleanOperator.AND, USER_ID_FKEY), Arrays
-				.asList(userId));
+		fieldsToMatchForGameboardSearch.put(immutableEntry(Constants.BooleanOperator.AND, USER_ID_FKEY),
+				Arrays.asList(userId));
 
 		List<UserGameboardsDO> userGameboardsDO = this.userToGameboardMappingsDatabase
 				.find(fieldsToMatchForGameboardSearch);
 
-		Map<String, UserGameboardsDO> resultToReturn = Maps.newHashMap(); 
+		Map<String, UserGameboardsDO> resultToReturn = Maps.newHashMap();
 		for (UserGameboardsDO objectToConvert : userGameboardsDO) {
 			resultToReturn.put(objectToConvert.getGameboardId(), objectToConvert);
 		}
-		
+
 		return resultToReturn;
 	}
 }

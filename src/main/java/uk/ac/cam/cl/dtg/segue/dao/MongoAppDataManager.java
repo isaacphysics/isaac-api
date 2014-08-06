@@ -16,6 +16,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 
 import com.google.inject.Inject;
 import com.mongodb.DB;
+import com.mongodb.MongoException;
 
 /**
  * Implementation that specifically works with MongoDB Content objects.
@@ -51,26 +52,40 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	}
 
 	@Override
-	public final String save(final T objectToSave) {
-		//TODO: raise exceptions if something goes wrong.
+	public final String save(final T objectToSave) throws SegueDatabaseException {
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
 
-		WriteResult<T, String> r = jc.save(objectToSave);
-
+		WriteResult<T, String> r;
+		try {
+			r = jc.save(objectToSave);
+		} catch (MongoException e) {
+			throw new SegueDatabaseException("Mongo exception during save of " + objectToSave.getClass()
+					, e);			
+		}
+		
+		if (r.getError() != null) {
+			log.error("Error detected during database save operation");
+			throw new SegueDatabaseException("Mongo exception during save of " + objectToSave.getClass()
+					+ ". Error: " + r.getError());
+		}
+		
 		return r.getSavedId().toString();
 	}
 
 	@Override
-	public final T getById(final String id) {
+	public final T getById(final String id) throws SegueDatabaseException {
 		Validate.notNull(id);
-		//TODO: raise exceptions if something goes wrong.
-		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(collectionName), typeParamaterClass,
-				String.class);
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getCollection(collectionName),
+				typeParamaterClass, String.class);
 
-		T result = jc.findOneById(id);
+		T result;
+		try {
+			result = jc.findOneById(id);
+		} catch (MongoException e) {
+			throw new SegueDatabaseException("Mongo exception during findById for object id: " + id, e);
+		}
 
 		return result;
 	}
@@ -91,9 +106,9 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 
 	@Override
 	public final List<T> find(
-			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch) {
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch) throws SegueDatabaseException {
 		Validate.notNull(fieldsToMatch);
-		//TODO: raise exceptions if something goes wrong.
+
 		Query query = DBQuery.empty();
 
 		for (Map.Entry<Map.Entry<BooleanOperator, String>, List<String>> pair : fieldsToMatch
@@ -113,10 +128,15 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
-
-		List<T> result = jc.find(query).toArray();
-
-		log.info("Result = " + result.size());
+		
+		List<T> result;
+		
+		try {
+			result = jc.find(query).toArray();
+		} catch (MongoException e) {
+			throw new SegueDatabaseException("Mongo exception during find using query: " + query.toString(), e);
+		}
+		
 		return result;
 	}
 }
