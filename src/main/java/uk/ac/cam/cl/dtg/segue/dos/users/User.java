@@ -1,13 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.mongojack.ObjectId;
 
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -34,8 +32,6 @@ public class User {
 	
 	// Map of questionPage id -> map of question id -> List of questionAttempts information
 	private Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
-	// TODO: move out of segue DTO into isaac one.
-	private List<GameboardDTO> gameBoards;
 
 	// local password - only used for segue local authentication.
 	private String password;
@@ -104,7 +100,6 @@ public class User {
 	 */
 	public User() {
 		this.questionAttempts = Maps.newHashMap();
-		this.gameBoards = new ArrayList<GameboardDTO>();
 	}
 
 	/**
@@ -289,22 +284,6 @@ public class User {
 	public final void setQuestionAttempts(
 			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
 		this.questionAttempts = questionAttempts;
-	}
-
-	/**
-	 * Gets the gameBoards.
-	 * @return the gameBoards
-	 */
-	public final List<GameboardDTO> getGameBoards() {
-		return gameBoards;
-	}
-
-	/**
-	 * Sets the gameBoards.
-	 * @param gameBoards the gameBoards to set
-	 */
-	public final void setGameBoards(final List<GameboardDTO> gameBoards) {
-		this.gameBoards = gameBoards;
 	}
 
 	/**
