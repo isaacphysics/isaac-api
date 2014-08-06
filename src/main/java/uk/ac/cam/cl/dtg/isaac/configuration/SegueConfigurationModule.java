@@ -4,7 +4,14 @@ import java.util.List;
 
 import com.google.api.client.util.Lists;
 
-import uk.ac.cam.cl.dtg.isaac.dos.*;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacConceptPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacMultiChoiceQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 
