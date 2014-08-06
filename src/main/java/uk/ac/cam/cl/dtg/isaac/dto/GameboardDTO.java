@@ -21,6 +21,7 @@ public class GameboardDTO {
 	private String ownerUserId;
 
 	private Integer percentageCompleted;
+	private Date lastVisited;
 	
 	/**
 	 * Default Gameboard Constructor.
@@ -227,5 +228,21 @@ public class GameboardDTO {
 	 */
 	public void setPercentageCompleted(final Integer percentageCompleted) {
 		this.percentageCompleted = percentageCompleted;
+	}
+
+	/**
+	 * Gets the lastVisited.
+	 * @return the lastVisited
+	 */
+	public Date getLastVisited() {
+		return lastVisited;
+	}
+
+	/**
+	 * Sets the lastVisited.
+	 * @param lastVisited the lastVisited to set
+	 */
+	public void setLastVisited(final Date lastVisited) {
+		this.lastVisited = lastVisited;
 	}
 }
