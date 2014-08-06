@@ -275,5 +275,22 @@
 				</resources>
 			</build>
 		</profile>
+		<profile>
+			<id>live</id>
+			<properties>
+				<build.profile.id>live</build.profile.id>
+			</properties>
+			<build>
+				<filters>
+					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
+				</filters>
+				<resources>
+					<resource>
+						<filtering>true</filtering>
+						<directory>src/main/resources</directory>
+					</resource>
+				</resources>
+			</build>
+		</profile>
 	</profiles>
 </project>
