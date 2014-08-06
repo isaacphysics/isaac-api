@@ -52,7 +52,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 
 	@Override
 	public final String save(final T objectToSave) {
-
+		//TODO: raise exceptions if something goes wrong.
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
@@ -65,7 +65,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	@Override
 	public final T getById(final String id) {
 		Validate.notNull(id);
-
+		//TODO: raise exceptions if something goes wrong.
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(collectionName), typeParamaterClass,
 				String.class);
@@ -93,7 +93,7 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 	public final List<T> find(
 			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch) {
 		Validate.notNull(fieldsToMatch);
-
+		//TODO: raise exceptions if something goes wrong.
 		Query query = DBQuery.empty();
 
 		for (Map.Entry<Map.Entry<BooleanOperator, String>, List<String>> pair : fieldsToMatch

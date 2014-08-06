@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.mongojack.ObjectId;
+
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -155,7 +158,6 @@ public class GameboardDO {
 	public final void setWildCardPosition(final Integer wildCardPosition) {
 		this.wildCardPosition = wildCardPosition;
 	}
-	
 
 	/**
 	 * Gets the creationDate.

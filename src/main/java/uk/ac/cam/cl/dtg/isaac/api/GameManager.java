@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import ma.glasnost.orika.MapperFacade;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,15 +197,23 @@ public class GameManager {
 	 * @param gameboardId
 	 *            - to look up.
 	 * @param user
-	 *            - the user (if available) of who wants it. THis allows state
+	 *            - the user (if available) of who wants it. This allows state
 	 *            information to be retrieved.
 	 * @return the gameboard or null.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId,
 			final User user) {
-		return augmentGameboardWithUserInformation(
+		
+		GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
 				user);
+		
+		// decide whether or not to create / update the link to the user and the gameboard.
+		if (null != gameboardFound && null != user) {
+			this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(user.getDbId(), gameboardId);
+		}
+		
+		return gameboardFound;
 	}
 
 	/**
@@ -218,13 +227,21 @@ public class GameManager {
 	 *            - the limit of the number of results to return
 	 * @param showOnly
 	 *            - show only gameboards matching the given state.
-	 * @return a list of gameboards created and owned by the given userId
+	 * @return a list of gameboards (without full question information) which are associated with a given user. 
 	 */
 	public final List<GameboardDTO> getUsersGameboards(final User user, final Integer startIndex, final Integer limit,
 			final GameboardState showOnly) {
+		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
+		
+		if (null == usersGameboards || usersGameboards.isEmpty()) {
+			return Lists.newArrayList();
+		}
+		
 		List<GameboardDTO> resultToReturn = Lists.newArrayList();
+		
+		// filter gameboards based on selection and also clear out unnecessary question data.
 		for (GameboardDTO gameboard : usersGameboards) {
 			this.augmentGameboardWithUserInformation(gameboard, user);
 			gameboard.setQuestions(null);

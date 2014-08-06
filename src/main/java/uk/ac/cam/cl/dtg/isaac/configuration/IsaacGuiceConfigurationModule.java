@@ -1,7 +1,4 @@
 package uk.ac.cam.cl.dtg.isaac.configuration;
-
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_COLLECTION_NAME;
-
 import java.io.IOException;
 
 import javax.annotation.Nullable;
@@ -14,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
+import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
@@ -26,6 +24,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * This class is responsible for injecting configuration values using GUICE.
@@ -152,7 +152,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		if (null == gameboardPersistenceManager) {
 			gameboardPersistenceManager = new GameboardPersistenceManager(
 					api.requestAppDataManager(GAMEBOARD_COLLECTION_NAME,
-							GameboardDO.class), api, mapper);
+							GameboardDO.class), api.requestAppDataManager(USERS_GAMEBOARD_COLLECTION_NAME,
+									UserGameboardsDO.class), api, mapper);
 			log.info("Creating Singleton of GameboardPersistenceManager");
 		}
 

@@ -425,7 +425,7 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
 
-		// tags are and relationships except for subject
+		// tags are 'and' relationships except for subject
 		try {
 			GameboardDTO gameboard = gameManager.getGameboard(gameboardId,
 					api.getCurrentUser(request));
@@ -459,7 +459,7 @@ public class IsaacController {
 	@GET
 	@Path("users/current_user/gameboards")
 	@Produces("application/json")
-	public final Response getGameboardByUser(
+	public final Response getGameboardByCurrentUser(
 			@Context final HttpServletRequest request,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("sort") final String sortInstructions,
@@ -479,7 +479,7 @@ public class IsaacController {
 				startIndexAsInteger = Integer.parseInt(startIndex);	
 			} catch (NumberFormatException e) {
 				return new SegueErrorResponse(Status.BAD_REQUEST,
-						"The number you entered as the startIndex is not valid.").toResponse();
+						"The number you entered as the start_index is not valid.").toResponse();
 			}
 		}
 		
