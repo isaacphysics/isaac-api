@@ -40,6 +40,10 @@ public class User {
 	// local password - only used for segue local authentication.
 	private String password;
 	private String secureSalt;
+
+	// password reset fields - only used for segue local authentication password resets
+	private String resetToken;
+	private Date resetExpiry;
 	
 	/**
 	 * Full constructor for the User object.

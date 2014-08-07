@@ -233,6 +233,7 @@ public final class Constants {
 	// Local authentication specific stuff
 	public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
 	public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
+	public static final String LOCAL_AUTH_RESET_TOKEN_FIELDNAME = "resetToken";
 	
 	// Database properties
 	public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";
