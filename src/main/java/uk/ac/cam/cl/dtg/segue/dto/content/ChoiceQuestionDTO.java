@@ -24,7 +24,7 @@ public class ChoiceQuestionDTO extends QuestionDTO {
 	 * Gets the choices.
 	 * @return the choices
 	 */
-	public final List<ChoiceDTO> getChoices() {
+	public List<ChoiceDTO> getChoices() {
 		return choices;
 	}
 
