@@ -101,7 +101,7 @@ public class GameFilter {
 	 * Sets the subjects.
 	 * @param subjects the subjects to set
 	 */
-	public final void setSubjects(List<String> subjects) {
+	public final void setSubjects(final List<String> subjects) {
 		this.subjects = subjects;
 	}
 
@@ -109,7 +109,7 @@ public class GameFilter {
 	 * Sets the fields.
 	 * @param fields the fields to set
 	 */
-	public final void setFields(List<String> fields) {
+	public final void setFields(final List<String> fields) {
 		this.fields = fields;
 	}
 
@@ -117,7 +117,7 @@ public class GameFilter {
 	 * Sets the topics.
 	 * @param topics the topics to set
 	 */
-	public final void setTopics(List<String> topics) {
+	public final void setTopics(final List<String> topics) {
 		this.topics = topics;
 	}
 
@@ -125,7 +125,7 @@ public class GameFilter {
 	 * Sets the levels.
 	 * @param levels the levels to set
 	 */
-	public final void setLevels(List<Integer> levels) {
+	public final void setLevels(final List<Integer> levels) {
 		this.levels = levels;
 	}
 
@@ -133,7 +133,7 @@ public class GameFilter {
 	 * Sets the concepts.
 	 * @param concepts the concepts to set
 	 */
-	public final void setConcepts(List<String> concepts) {
+	public final void setConcepts(final List<String> concepts) {
 		this.concepts = concepts;
 	}
 }

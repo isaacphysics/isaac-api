@@ -85,6 +85,11 @@ public final class Constants {
 	 */
 	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
 
+	/**
+	 * Constant representing the segue application mode. e.g. either debug or production
+	 */
+	public static final String SEGUE_APP_MODE = "SEGUE_APP_MODE";
+	
 	// HMAC stuff
 	/**
 	 * Constant representing the key for the date signed property - used in HMAC

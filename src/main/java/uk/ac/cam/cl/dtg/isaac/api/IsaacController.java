@@ -62,8 +62,6 @@ public class IsaacController {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacController.class);
 
-	
-
 	private SegueApiFacade api;
 	private PropertiesLoader propertiesLoader;
 	private GameManager gameManager;

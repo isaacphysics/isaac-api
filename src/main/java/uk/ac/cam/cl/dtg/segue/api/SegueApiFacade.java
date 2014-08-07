@@ -704,6 +704,24 @@ public class SegueApiFacade {
 
 		return Response.ok(result).build();
 	}
+	
+	/**
+	 * Gets the current mode that the segue application is running in.
+	 * 
+	 * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("info/segue_mode")
+	public final Response getSegueMode() {
+		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
+				.put("segueMode",
+						this.properties
+								.getProperty(Constants.SEGUE_APP_MODE))
+				.build();
+
+		return Response.ok(result).build();
+	}
 
 	/**
 	 * This method return a json response containing version related
