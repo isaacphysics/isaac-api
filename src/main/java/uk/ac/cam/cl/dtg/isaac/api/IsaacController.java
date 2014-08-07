@@ -545,6 +545,8 @@ public class IsaacController {
 	/**
 	 * REST end point to allow gamesboards to be updated by users.
 	 * 
+	 * Currently we only support updating the title.
+	 * 
 	 * @param request
 	 *            - so that we can find out the currently logged in user
 	 * @param gameboardId
@@ -567,32 +569,57 @@ public class IsaacController {
 		if (null == user) {
 			// user not logged in return not authorized
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to retrieve gameboards.")
+					"User not logged in. Unable to modify gameboards.")
 					.toResponse();
 		}
 		
-		//TODO: check what happens when invalid deserialization happens.
-		//TODO: allow only renaming of gameboards if they are owned by you, otherwise
-		// they need to clone it and then rename it.
-		// TODO: finish this method.
+		if (null == newGameboardObject || null == gameboardId) {
+			// user not logged in return not authorized
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must provide a gameboard object with updates.")
+					.toResponse();			
+		}
+
+		// The id in the path param should match the id of the gameboard object you send me.
+		if (!newGameboardObject.getId().equals(gameboardId)) {
+			// user not logged in return not authorized
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The gameboard ID sent in the request body does not match the end point you used.")
+					.toResponse();			
+		}
 		
 		GameboardDTO existingGameboard;
 		try {
 			existingGameboard = gameManager.getGameboard(gameboardId, user);
+			
+			if (null == existingGameboard) {
+				return new SegueErrorResponse(Status.NOT_FOUND,
+						"No gameboard found with the id: " + gameboardId)
+						.toResponse();
+			}
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 		
-		if (null == existingGameboard) {
-			return new SegueErrorResponse(Status.NOT_FOUND,
-					"No gameboard found with the id: " + gameboardId)
+		if (!existingGameboard.getOwnerUserId().equals(user.getDbId())) {
+			// user not logged in return not authorized
+			return new SegueErrorResponse(Status.FORBIDDEN,
+					"You are not allowed to change another user's gameboard.")
 					.toResponse();
 		}
-
-		// currently we only support setting a title.
 		
-		return Response.serverError().entity("This service has not been implemented yet.").build();
+		// ok so now we can change the title
+		GameboardDTO updatedGameboard;
+		try {
+			updatedGameboard = gameManager.updateGameboardTitle(newGameboardObject);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to update the gameboard.")
+					.toResponse();
+		}
+		
+		return Response.ok(updatedGameboard).build();
 	}
 	
 	/**

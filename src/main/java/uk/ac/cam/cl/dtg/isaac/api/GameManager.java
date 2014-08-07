@@ -346,6 +346,20 @@ public class GameManager {
 		
 		return gameboardDTO;
 	}
+	
+	/**
+	 * Update the gameboards title.
+	 * 
+	 * @param gameboardWithUpdatedTitle
+	 *            - only the title will be updated.
+	 * @return the fully updated gameboard.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem updating the gameboard.
+	 */
+	public final GameboardDTO updateGameboardTitle(final GameboardDTO gameboardWithUpdatedTitle)
+		throws SegueDatabaseException {
+		return this.gameboardPersistenceManager.updateGameboardTitle(gameboardWithUpdatedTitle);
+	}
 
 	/**
 	 * CalculateQuestionState

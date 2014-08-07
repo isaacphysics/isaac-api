@@ -239,18 +239,18 @@ public class GameboardPersistenceManager {
 	}
 
 	/**
-	 * Update a gameboard. The gameboard must already exist and have the same
-	 * id.
+	 * Allows a gameboard title to be updated.
 	 * 
 	 * @param gameboard
-	 *            - to update. Note the ID should already exist.
-	 * @return gameboardDTO
+	 *            - with updated title.
+	 * @return new gameboard after update.
+	 * @throws SegueDatabaseException - if there is a problem setting the title.
 	 */
-	public GameboardDTO updateGameboard(final GameboardDTO gameboard) {
-		// TODO: write this.
-		return null;
+	public GameboardDTO updateGameboardTitle(final GameboardDTO gameboard) throws SegueDatabaseException {
+		return this.convertToGameboardDTO(this.gameboardDataManager.updateField(gameboard.getId(),
+				Constants.TITLE_FIELDNAME, gameboard.getTitle()));
 	}
-
+	
 	/**
 	 * Helper method to tidy temporary gameboard cache.
 	 */
