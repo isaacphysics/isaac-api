@@ -36,10 +36,10 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -117,7 +117,7 @@ public class GameManager {
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
-			final List<String> conceptsList, final User boardOwner) throws NoWildcardException {
+			final List<String> conceptsList, final UserDTO boardOwner) throws NoWildcardException {
 
 		String boardOwnerId = null;
 		if (boardOwner != null) {
@@ -191,7 +191,7 @@ public class GameManager {
 	 * @param userToLinkTo - UserId to link to.
 	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
 	 */
-	public void linkUserToGameboard(final GameboardDTO gameboardToLink, final User userToLinkTo)
+	public void linkUserToGameboard(final GameboardDTO gameboardToLink, final UserDTO userToLinkTo)
 		throws SegueDatabaseException {
 		// if the gameboard has no owner we should add the user who is first linking to it as the owner.
 		if (gameboardToLink.getOwnerUserId() == null) {
@@ -234,7 +234,7 @@ public class GameManager {
 	 *             database or updating the users gameboard link table.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId,
-			final User user) throws SegueDatabaseException {
+			final UserDTO user) throws SegueDatabaseException {
 		
 		GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
@@ -267,11 +267,12 @@ public class GameManager {
 	 *             - if there is a problem retrieving the gameboards from the
 	 *             database.
 	 */
-	public final List<GameboardDTO> getUsersGameboards(final User user, 
+	public final List<GameboardDTO> getUsersGameboards(final UserDTO user, 
 			@Nullable final Integer startIndex, 
 			@Nullable final Integer limit,
 			@Nullable final GameboardState showOnly, 
-			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions) throws SegueDatabaseException {
+			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions)
+		throws SegueDatabaseException {
 		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
@@ -355,7 +356,7 @@ public class GameManager {
 	 * @return Augmented Gameboard
 	 */
 	public final GameboardDTO augmentGameboardWithUserInformation(
-			final GameboardDTO gameboardDTO, final User user) {
+			final GameboardDTO gameboardDTO, final UserDTO user) {
 		if (null == gameboardDTO) {
 			return null;
 		}
@@ -407,10 +408,12 @@ public class GameManager {
 	 * @return The state of the gameboard item.
 	 */
 	private GameboardItemState calculateQuestionState(final String questionPageId,
-			final User user) {
-
-		if (user.getQuestionAttempts() != null
-				&& user.getQuestionAttempts().containsKey(questionPageId)) {
+			final UserDTO user) {
+		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = 
+				api.getQuestionAttemptsByUser(user);
+		
+		if (questionAttemptsFromUser != null
+				&& questionAttemptsFromUser.containsKey(questionPageId)) {
 			// go through each question in the question page
 			ResultsWrapper<ContentDTO> listOfQuestions = api.searchByIdPrefix(
 					api.getLiveVersion(), questionPageId + ID_SEPARATOR);
@@ -424,15 +427,14 @@ public class GameManager {
 				}
 				
 				// get the attempts for this particular question.
-				List<QuestionValidationResponse> questionAttempts = user
-						.getQuestionAttempts().get(questionPageId)
+				List<QuestionValidationResponse> questionAttempts = questionAttemptsFromUser.get(questionPageId)
 						.get(contentDTO.getId());
 				
 				// If we have an entry for the question page and do not have
 				// any attempts for this question then it means that we have
 				// done something on this question but have not yet answered
 				// all parts.
-				if (user.getQuestionAttempts().get(questionPageId) != null
+				if (questionAttemptsFromUser.get(questionPageId) != null
 						&& null == questionAttempts) {
 					return GameboardItemState.IN_PROGRESS;
 				}

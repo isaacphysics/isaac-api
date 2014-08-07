@@ -18,7 +18,7 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -72,7 +72,7 @@ public class IsaacControllerTest {
 						EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<Integer>> anyObject(),
 						EasyMock.<List<String>> anyObject(),
-						EasyMock.<User> anyObject())).andReturn(null)
+						EasyMock.<UserDTO> anyObject())).andReturn(null)
 				.atLeastOnce();
 
 		replay(dummyGameManager);

@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
@@ -441,7 +442,7 @@ public class SegueApiFacade {
 
 	/**
 	 * This method provides a set of all tags for the 
-	 * live version of the content
+	 * live version of the content.
 	 * 
 	 * @return a set of all tags used in the live version
 	 */
@@ -789,7 +790,7 @@ public class SegueApiFacade {
 	@Path("users/current_user")
 	public Response getCurrentUserEndpoint(
 			@Context final HttpServletRequest request) {
-		User currentUser = userManager.getCurrentUser(request);
+		UserDTO currentUser = userManager.getCurrentUser(request);
 
 		if (null == currentUser) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
@@ -797,8 +798,17 @@ public class SegueApiFacade {
 					.toResponse();
 		}
 		
-		return Response.ok(
-				mapper.getAutoMapper().map(currentUser, UserDTO.class)).build();
+		return Response.ok(currentUser).build();
+	}
+	
+	/**
+	 * This is a library method that provides access to a users question attempts.
+	 * @param user - the user to look up.
+	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
+	 */
+	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
+			final UserDTO user) {
+		return this.userManager.getQuestionAttemptsByUser(user);
 	}
 
 	/**
@@ -827,7 +837,7 @@ public class SegueApiFacade {
 		// determine if this is intended to be an update or create.
 		// if it is an update we need to do some security checks.
 		if (userObject.getDbId() != null) {
-			User currentUser = this.getCurrentUser(request);
+			UserDTO currentUser = this.getCurrentUser(request);
 			if (null == currentUser) {
 				return new SegueErrorResponse(Status.UNAUTHORIZED,
 						"You must be logged in to change your user settings.")
@@ -840,10 +850,11 @@ public class SegueApiFacade {
 		}
 
 		try {
-			User savedUser = userManager.createOrUpdateUserObject(userObject);
+			UserDTO savedUser = userManager.createOrUpdateUserObject(userObject);
+			// we need to tell segue that the user who we just created is the one that is logged in.
 			this.userManager.createSession(request, savedUser.getDbId());
 			
-			return Response.ok(mapper.getAutoMapper().map(savedUser, UserDTO.class)).build();
+			return Response.ok(savedUser).build();
 		} catch (InvalidPasswordException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Invalid password. You cannot have an empty password.")
@@ -876,7 +887,7 @@ public class SegueApiFacade {
 	 *            which may contain session information.
 	 * @return User DTO.
 	 */
-	public User getCurrentUser(final HttpServletRequest request) {
+	public UserDTO getCurrentUser(final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
 
@@ -1168,7 +1179,7 @@ public class SegueApiFacade {
 		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
 
-		User user = this.getCurrentUser(request);
+		UserDTO user = this.getCurrentUser(request);
 		if (user != null
 				&& response.getEntity() instanceof QuestionValidationResponseDTO) {
 			userManager.recordUserQuestionInformation(user,

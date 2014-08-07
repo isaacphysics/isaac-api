@@ -9,6 +9,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -102,7 +104,7 @@ public class UserManager {
 
 	/**
 	 * This method will attempt to authenticate the user and provide a user
-	 * object back to the caller.
+	 * DTO back to the caller.
 	 * 
 	 * @param request
 	 *            - http request that we can attach the session to.
@@ -125,7 +127,7 @@ public class UserManager {
 		}
 
 		// get the current user based on their session id information.
-		User currentUser = getCurrentUser(request);
+		UserDTO currentUser = getCurrentUser(request);
 		if (null != currentUser) {
 			try {
 				return Response
@@ -227,10 +229,9 @@ public class UserManager {
 		}
 
 		// get the current user based on their session id information.
-		User currentUser = getCurrentUser(request);
+		UserDTO currentUser = getCurrentUser(request);
 		if (null != currentUser) {
-			UserDTO userDTO = this.dtoMapper.map(currentUser, UserDTO.class);
-			return Response.ok(userDTO).build();
+			return Response.ok(currentUser).build();
 		}
 
 		IAuthenticator authenticator = mapToProvider(provider);
@@ -243,9 +244,8 @@ public class UserManager {
 						.get(Constants.LOCAL_AUTH_PASSWORD_FIELDNAME));
 
 				this.createSession(request, user.getDbId());
-
-				UserDTO userDTO = this.dtoMapper.map(user, UserDTO.class);
-				return Response.ok(userDTO).build();
+				
+				return Response.ok(this.convertUserDOToUserDTO(user)).build();
 
 			} catch (IncorrectCredentialsProvidedException | NoUserException
 					| NoCredentialsAvailableException e) {
@@ -277,7 +277,7 @@ public class UserManager {
 	 */
 	public final Response authenticateCallback(
 			final HttpServletRequest request, final String provider) {
-		User currentUser = getCurrentUser(request);
+		User currentUser = getCurrentUserDO(request);
 
 		if (null != currentUser) {
 			log.info("We already have a cookie set with a valid user. "
@@ -322,6 +322,7 @@ public class UserManager {
 						Status.INTERNAL_SERVER_ERROR,
 						"Unable to map to a known authenticator. The provider: "
 								+ provider + " is unknown");
+				
 				log.error(error.getErrorMessage());
 				return error.toResponse();
 			}
@@ -384,32 +385,19 @@ public class UserManager {
 	/**
 	 * Get the details of the currently logged in user.
 	 * 
+	 * This method will validate the session as well returning null if it is invalid.
+	 * 
 	 * @param request
 	 *            - to retrieve session information from
-	 * @return Returns the current user DTO if we can get it or null if user is
+	 * @return Returns the current UserDTO if we can get it or null if user is
 	 *         not currently logged in
 	 */
-	public final User getCurrentUser(final HttpServletRequest request) {
+	public final UserDTO getCurrentUser(final HttpServletRequest request) {
 		Validate.notNull(request);
 
-		// get the current user based on their session id information.
-		String currentUserId = (String) request.getSession().getAttribute(
-				Constants.SESSION_USER_ID);
-
-		if (null == currentUserId) {
-			log.debug("Current userID is null. Assume they are not logged in.");
-			return null;
-		}
-
-		// check if the users session is validated using our credentials.
-		if (!this.validateUsersSession(request)) {
-			log.info("User session has failed validation. "
-					+ "Assume they are not logged in.");
-			return null;
-		}
-
-		// retrieve the user from database.
-		return database.getById(currentUserId);
+		User user = this.getCurrentUserDO(request);
+		
+		return this.convertUserDOToUserDTO(user);
 	}
 
 	/**
@@ -551,7 +539,7 @@ public class UserManager {
 	 * @param questionResponse
 	 *            - question results.
 	 */
-	public final void recordUserQuestionInformation(final User user,
+	public final void recordUserQuestionInformation(final UserDTO user,
 			final QuestionValidationResponseDTO questionResponse) {
 
 		// We are operating against the convention that the first component of
@@ -560,10 +548,27 @@ public class UserManager {
 		String[] questionPageId = questionResponse.getQuestionId().split(
 				Constants.ESCAPED_ID_SEPARATOR);
 
-		this.database.registerQuestionAttempt(user, questionPageId[0],
+		this.database.registerQuestionAttempt(user.getDbId(), questionPageId[0],
 				questionResponse.getQuestionId(), questionResponse);
 
 		log.info("Question information recorded for user: " + user.getDbId());
+	}
+	
+	/**
+	 * getQuestionAttemptsByUser.
+	 * This method will return all of the question attempts for a given user as a map.
+	 * 
+	 * @param user - user with Id field populated.
+	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
+	 */
+	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
+			final UserDTO user) {
+		Validate.notNull(user);
+		Validate.notNull(user.getDbId());
+		
+		User userFromDb = this.database.getById(user.getDbId());
+		
+		return userFromDb.getQuestionAttempts();
 	}
 
 	/**
@@ -578,7 +583,7 @@ public class UserManager {
 	 *             be saved.
 	 * @return the user object as was saved.
 	 */
-	public User createOrUpdateUserObject(final User user)
+	public UserDTO createOrUpdateUserObject(final User user)
 		throws InvalidPasswordException,
 			MissingRequiredFieldException {
 		User userToSave = null;
@@ -625,7 +630,9 @@ public class UserManager {
 					"This modification would mean that the user"
 							+ " no longer has a way of authenticating. Failing change.");
 		} else {
-			return this.database.updateUser(userToSave);
+			
+			User userToReturn = this.database.updateUser(userToSave);
+			return this.convertUserDOToUserDTO(userToReturn);
 		}
 	}
 
@@ -638,7 +645,8 @@ public class UserManager {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
 	 */
-	public final void resetPasswordRequest(String email) throws InvalidKeySpecException, NoSuchAlgorithmException {
+	public final void resetPasswordRequest(final String email) throws InvalidKeySpecException,
+			NoSuchAlgorithmException {
 		User user = this.findUserByEmail(email);
 
 		if (user == null) {
@@ -1063,5 +1071,50 @@ public class UserManager {
 
 		return isValid;
 	}
+	/**
+	 * Converts the sensitive UserDO into a limited DTO.
+	 * 
+	 * @param user - DO
+	 * @return user - DTO
+	 */
+	private UserDTO convertUserDOToUserDTO(final User user) {
+		MapperFacade mapper = this.dtoMapper;
+		
+		// TODO: we can do augmentation stuff here.
+		return mapper.map(user, UserDTO.class);
+	}
+	
+	
+	/**
+	 * Get the UserDO of the currently logged in user. This is for internal use only.
+	 * 
+	 * This method will validate the session as well returning null if it is invalid.
+	 * 
+	 * @param request
+	 *            - to retrieve session information from
+	 * @return Returns the current UserDTO if we can get it or null if user is
+	 *         not currently logged in
+	 */
+	private User getCurrentUserDO(final HttpServletRequest request) {
+		Validate.notNull(request);
 
+		// get the current user based on their session id information.
+		String currentUserId = (String) request.getSession().getAttribute(
+				Constants.SESSION_USER_ID);
+
+		if (null == currentUserId) {
+			log.debug("Current userID is null. Assume they are not logged in.");
+			return null;
+		}
+
+		// check if the users session is validated using our credentials.
+		if (!this.validateUsersSession(request)) {
+			log.info("User session has failed validation. "
+					+ "Assume they are not logged in.");
+			return null;
+		}
+		
+		// retrieve the user from database.
+		return database.getById(currentUserId);
+	}
 }

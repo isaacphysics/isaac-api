@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 
 /**
  * Test class for the user manager class.
@@ -103,7 +104,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		User u = userManager.getCurrentUser(request);
+		UserDTO u = userManager.getCurrentUser(request);
 
 		// Assert
 		assertTrue(null == u);
@@ -144,14 +145,14 @@ public class UserManagerTest {
 		expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(
 				returnUser);
 		replay(dummyDatabase);
-
+		
+		expect(dummyMapper.map(returnUser, UserDTO.class)).andReturn(new UserDTO()).atLeastOnce();
+		replay(dummyMapper);
 		// Act
-		User returnedUser = null;
-		returnedUser = userManager.getCurrentUser(request);
+		userManager.getCurrentUser(request);
 
 		// Assert
-		verify(dummyDatabase, dummySession, request);
-		assertTrue(returnedUser == returnUser);
+		verify(dummyDatabase, dummySession, request, dummyMapper);
 	}
 
 	/**
