@@ -712,12 +712,12 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Produces("application/json")
-	@Path("info/segue_mode")
-	public final Response getSegueMode() {
+	@Path("info/segue_environment")
+	public final Response getSegueEnvironment() {
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
-				.put("segueMode",
+				.put("segueEnvironment",
 						this.properties
-								.getProperty(Constants.SEGUE_APP_MODE))
+								.getProperty(Constants.SEGUE_APP_ENVIRONMENT))
 				.build();
 
 		return Response.ok(result).build();
