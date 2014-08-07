@@ -1,5 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.List;
+
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -31,6 +33,14 @@ public interface IUserDataManager {
 	 * @return true if we can find at least one linked account, false if we can't.
 	 */
 	boolean hasALinkedAccount(User user);
+	
+	/**
+	 * GetAllLinked Accounts by user.
+	 * 
+	 * @param user - the user DO to search for.
+	 * @return List of authentication providers
+	 */
+	List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user);
 	
 	/**
 	 * Find a user by their linked account information.

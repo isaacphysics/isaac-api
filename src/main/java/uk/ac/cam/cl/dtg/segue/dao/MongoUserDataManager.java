@@ -1,5 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.List;
+
+import org.apache.commons.lang3.Validate;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBUpdate;
@@ -10,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -210,6 +214,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		BasicDBObject query = new BasicDBObject(
 				Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user
 				.getDbId());
+		
 		DBCursor<LinkedAccount> linkAccounts = jc.find(query);
 		
 		if (linkAccounts.size() > 0) {
@@ -219,6 +224,27 @@ public class MongoUserDataManager implements IUserDataManager {
 		return false;
 	}
 
+	@Override
+	public List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user) {
+		Validate.notNull(user);
+		Validate.notEmpty(user.getDbId());
+		
+		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
+				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+						LinkedAccount.class, String.class);
+
+		BasicDBObject query = new BasicDBObject(
+				Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
+		DBCursor<LinkedAccount> linkAccounts = jc.find(query);
+		
+		List<AuthenticationProvider> providersToReturn = Lists.newArrayList();
+		for (LinkedAccount accountLinkRecord : linkAccounts) {
+			providersToReturn.add(accountLinkRecord.getProvider());
+		}
+		
+		return providersToReturn;
+	}
+	
 	/**
 	 * Creates a link record, connecting a local user to an external provider
 	 * for authentication purposes.
