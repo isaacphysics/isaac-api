@@ -573,10 +573,11 @@ public class IsaacController {
 					.toResponse();
 		}
 		
-		if (null == newGameboardObject || null == gameboardId) {
+		if (null == newGameboardObject || null == gameboardId || newGameboardObject.getId() == null) {
 			// user not logged in return not authorized
 			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"You must provide a gameboard object with updates.")
+					"You must provide a gameboard object with updates and the "
+					+ "id of the gameboard object in both the object and the endpoint")
 					.toResponse();			
 		}
 
