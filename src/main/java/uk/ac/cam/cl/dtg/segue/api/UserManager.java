@@ -697,8 +697,8 @@ public class UserManager {
 	 *
 	 * @param token - the password reset token
 	 * @param userObject - the supplied user DO
-	 * @throws InvalidTokenException
-	 * @throws InvalidPasswordException
+	 * @throws InvalidTokenException - If the token provided is invalid.
+	 * @throws InvalidPasswordException - If the password provided is invalid.
 	 */
 	public final void resetPassword(final String token, final User userObject) throws InvalidTokenException,
 			InvalidPasswordException {
