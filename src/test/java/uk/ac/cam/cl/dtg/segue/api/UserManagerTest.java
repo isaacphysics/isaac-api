@@ -126,7 +126,7 @@ public class UserManagerTest {
 		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
 		User returnUser = new User(validUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, "", new Date(), Gender.MALE,
-				new Date(), null, null, null);
+				new Date(), null, null, null, null, null);
 
 		expect(request.getSession()).andReturn(dummySession).times(5);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -310,7 +310,7 @@ public class UserManagerTest {
 		// User object back from provider
 		User providerUser = new User(someProviderUniqueUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, "", new Date(), Gender.MALE,
-				new Date(), null, null, null);
+				new Date(), null, null, null, null, null);
 
 		// Mock get User Information from provider call
 		expect(
@@ -332,7 +332,7 @@ public class UserManagerTest {
 		expect(dummyDatabase.getById(someSegueUserId)).andReturn(
 				new User(someSegueUserId, "TestFirstName", "testLastName", "",
 						Role.STUDENT, "", new Date(), Gender.MALE, new Date(),
-						null, null, null));
+						null, null, null, null, null));
 
 		// Expect a session to be created
 		dummySession.setAttribute(EasyMock.<String> anyObject(),

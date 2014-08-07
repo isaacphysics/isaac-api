@@ -241,7 +241,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		if (userInfo != null && userInfo.getId() != null) {
 			return new User(userInfo.getId(), userInfo.getFirstName(),
 					userInfo.getLastName(), userInfo.getEmail(), null, null,
-					null, null, null, null, null, null);
+					null, null, null, null, null, null, null, null);
 		} else {
 			throw new NoUserException();
 		}
