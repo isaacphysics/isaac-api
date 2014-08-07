@@ -244,7 +244,7 @@ public class IsaacNumericValidator implements IValidator {
 		f1 = roundToSigFigs(f1, SIGNIFICANT_FIGURES);
 		f2 = roundToSigFigs(f2, SIGNIFICANT_FIGURES);
 		
-		return Math.abs(f1 - f2) < 1e-12 * Math.max(f1,  f2);
+		return Math.abs(f1 - f2) < Math.max(1e-12 * Math.max(f1,  f2), 1e-12);
 	}
 	
 	/**
