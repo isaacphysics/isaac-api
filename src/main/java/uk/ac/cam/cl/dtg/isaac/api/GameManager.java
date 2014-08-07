@@ -293,7 +293,7 @@ public class GameManager {
 				resultToReturn.add(gameboard);
 			} else if (gameboard.getPercentageCompleted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
 				resultToReturn.add(gameboard);
-			} else {
+			} else if (gameboard.getPercentageCompleted() > 0 && showOnly.equals(GameboardState.IN_PROGRESS)) {
 				// in_progress
 				resultToReturn.add(gameboard);
 			} 
