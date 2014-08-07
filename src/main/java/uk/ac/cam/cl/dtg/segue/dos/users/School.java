@@ -1,11 +1,14 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * School information POJO.
  * 
  */
 public class School {
 	private String urn;
+	@JsonIgnore
 	private String establishmentNumber;
 	private String name;
 	private String postcode;
@@ -60,6 +63,7 @@ public class School {
 	 * Gets the establishmentNumber.
 	 * @return the establishmentNumber
 	 */
+	@JsonIgnore
 	public String getEstablishmentNumber() {
 		return establishmentNumber;
 	}
