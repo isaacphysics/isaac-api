@@ -78,7 +78,7 @@ public class IsaacControllerTest {
 		replay(dummyGameManager);
 		replay(dummyAPI);
 
-		Response r = isaacController.generateGameboard(dummyRequest, subjects,
+		Response r = isaacController.generateTemporaryGameboard(dummyRequest, subjects,
 				fields, topics, levels, concepts);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());

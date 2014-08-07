@@ -171,6 +171,17 @@ public class GameboardPersistenceManager {
 
 		return gameboard.getId();
 	}
+	
+	/**
+	 * Determine if the gameboard only exists in temporary storage.
+	 * 
+	 * @param gameboardToTest - the gameboard to check the existence of.
+	 * @return true if the gameboard with that id exists in permanent storage false if not.
+	 * @throws SegueDatabaseException if there is a database error.
+	 */
+	public final boolean isPermanentlyStored(final GameboardDTO gameboardToTest) throws SegueDatabaseException {
+		return this.gameboardDataManager.getById(gameboardToTest.getId()) != null;
+	}
 
 	/**
 	 * Find a gameboard by id.
