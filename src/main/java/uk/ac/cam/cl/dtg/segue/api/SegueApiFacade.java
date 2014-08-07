@@ -881,18 +881,16 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * End point that allows a local user to generate a password reset request
+	 * End point that allows a local user to generate a password reset request.
 	 *
-	 * @param request
-	 *            so that we can destroy the associated session
-	 * @param userObject -
+	 * @param userObject - A user object containing the email of the user requesting a reset
 	 * @return a successful response regardless of whether the email exists
 	 *         or an error code if there is a technical fault
 	 */
-	@POST // Should be PUT
+	@POST
 	@Path("users/resetpassword")
 	@Consumes("application/json")
-	public final Response generatePasswordResetToken(@Context final HttpServletRequest request, final User userObject) {
+	public final Response generatePasswordResetToken(final User userObject) {
 		if (null == userObject) {
 			log.debug("User is null");
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -914,17 +912,15 @@ public class SegueApiFacade {
 
 
 	/**
-	 * End point that allows the user to logout - i.e. destroy our cookie.
+	 * End point that verifies whether or not a password reset token is valid.
 	 *
-	 * @param request
-	 *            so that we can destroy the associated session
-	 * @return TODO: User Object
+	 * @param token - A password reset token
+	 * @return Success if the token is valid, otherwise returns not found
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("users/resetpassword/{token}")
-	public final Response validatePasswordResetRequest(@Context final HttpServletRequest request,
-	                                                   @PathParam("token") final String token) {
+	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
 		if (userManager.validatePasswordResetToken(token)) {
 			return Response.ok().build();
 		}
@@ -939,16 +935,14 @@ public class SegueApiFacade {
 	/**
 	 * End point that allows the user to logout - i.e. destroy our cookie.
 	 *
-	 * @param request
-	 *            so that we can destroy the associated session
+	 * @param token - A password reset token
+	 * @param userObject - A user object containing password information.
 	 * @return successful response.
 	 */
 	@POST
-	@Produces("application/json")
 	@Path("users/resetpassword/{token}")
 	@Consumes("application/json")
-	public final Response resetPassword(@Context final HttpServletRequest request,
-	                                            @PathParam("token") final String token, final User userObject) {
+	public final Response resetPassword(@PathParam("token") final String token, final User userObject) {
 		try {
 			userManager.resetPassword(token, userObject);
 		} catch (InvalidTokenException e) {

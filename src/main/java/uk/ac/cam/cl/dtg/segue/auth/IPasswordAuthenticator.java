@@ -45,22 +45,14 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 			NoCredentialsAvailableException;
 
 	/**
-	 * Triggers the lost password work flow.
-	 *
-	 * @param usersEmailAddress - the users email address to send password reset e-mail to.
-	 */
-	void triggerLostPasswordFlow(String usersEmailAddress);
-
-
-	/**
 	 * Hash a string using a hashing function.
 	 *
 	 * @param str  - string to hash
 	 * @param salt - random string to use as a salt.
-	 * @return the hashed string.
+	 * @return base64 encoded hash
 	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
 	 */
 	public String hashString(String str, String salt)
-			throws NoSuchAlgorithmException, InvalidKeySpecException;
+		throws NoSuchAlgorithmException, InvalidKeySpecException;
 }

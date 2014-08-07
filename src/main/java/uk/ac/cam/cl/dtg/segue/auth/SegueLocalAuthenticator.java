@@ -8,6 +8,7 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	private static final String SALTING_ALGORITHM = "SHA1PRNG";
 	private static final Integer ITERATIONS = 1000;
 	private static final Integer KEY_LENGTH = 512;
+	private static final Integer SHORT_KEY_LENGTH = 128;
 	private static final int SALT_SIZE = 16;
 
 	/**
@@ -67,7 +69,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
 		try {
 			String passwordSalt = generateSalt();
-			String hashedPassword = this.hashString(
+			String hashedPassword = this.hashPassword(
 					userWithNewPassword.getPassword(), passwordSalt);
 			userWithNewPassword.setPassword(hashedPassword);
 			userWithNewPassword.setSecureSalt(passwordSalt);
@@ -108,7 +110,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		}
 		
 		try {
-			if (this.hashString(plainTextPassword,
+			if (this.hashPassword(plainTextPassword,
 					localUserAccount.getSecureSalt()).equals(
 					localUserAccount.getPassword())) {
 				return localUserAccount;
@@ -126,24 +128,54 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 
 	@Override
-	public void triggerLostPasswordFlow(final String usersEmailAddress) {
-		// TODO Lost password flow.
-		throw new UnsupportedOperationException(
-				"This method is not implemented yet.");
+	public String hashString(final String str, final String salt)
+			throws NoSuchAlgorithmException, InvalidKeySpecException {
+		return new String(Base64.encodeBase64(computeHash(str, salt, SHORT_KEY_LENGTH)));
 	}
 
-	@Override
-	public String hashString(final String str, final String salt)
-		throws NoSuchAlgorithmException, InvalidKeySpecException {
+	/**
+	 * Hash the password using the preconfigured hashing function.
+	 *
+	 * @param password
+	 *            - password to hash
+	 * @param salt
+	 *            - random string to use as a salt.
+	 * @return the hashed password
+	 * @throws NoSuchAlgorithmException
+	 *             - if the configured algorithm is not valid.
+	 * @throws InvalidKeySpecException
+	 *             - if the preconfigured key spec is invalid.
+	 */
+	private String hashPassword(final String password, final String salt)
+			throws NoSuchAlgorithmException, InvalidKeySpecException {
+		return new BigInteger(computeHash(password, salt, KEY_LENGTH)).toString();
+	}
+
+	/**
+	 * Compute the hash of a string using the preconfigured hashing function.
+	 *
+	 * @param str
+	 *            - string to hash
+	 * @param salt
+	 *            - random string to use as a salt.
+	 * @param keyLength
+	 *            - the key length
+	 * @return a byte array of the hash
+	 * @throws NoSuchAlgorithmException
+	 *             - if the configured algorithm is not valid.
+	 * @throws InvalidKeySpecException
+	 *             - if the preconfigured key spec is invalid.
+	 */
+	private byte[] computeHash(final String str, final String salt, int keyLength)
+			throws NoSuchAlgorithmException, InvalidKeySpecException {
 		char[] strChars = str.toCharArray();
 		byte[] saltBytes = salt.getBytes();
 
 		PBEKeySpec spec = new PBEKeySpec(strChars, saltBytes, ITERATIONS,
-				KEY_LENGTH);
+				keyLength);
 
 		SecretKeyFactory key = SecretKeyFactory.getInstance(CRYPTO_ALOGRITHM);
-		byte[] hashedString = key.generateSecret(spec).getEncoded();
-		return new BigInteger(hashedString).toString();
+		return key.generateSecret(spec).getEncoded();
 	}
 
 	/**
