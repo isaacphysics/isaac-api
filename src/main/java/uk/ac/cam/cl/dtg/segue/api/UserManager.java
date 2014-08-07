@@ -625,6 +625,24 @@ public class UserManager {
 	}
 
 	/**
+	 * This method will test if the specified token is a valid password reset token.
+	 *
+	 * @param token - The token to test
+	 * @return true if the reset token is valid
+	 */
+	public final boolean validatePasswordResetToken(String token) {
+		User user = this.findUserByResetToken(token);
+		// Get today's datetime; this is initialised to the time at which it was allocated,
+		// measured to the nearest millisecond.
+		Date now = new Date();
+
+		if (user != null && user.getresetExpiry().after(now)) {
+			return true;
+		}
+
+		return false;
+	}
+
 	 * Generate an HMAC using a key and the data to sign.
 	 * 
 	 * @param key

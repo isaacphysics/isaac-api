@@ -321,4 +321,36 @@ public class User {
 	public final void setSecureSalt(final String secureSalt) {
 		this.secureSalt = secureSalt;
 	}
+
+	/**
+	 * Gets the resetToken.
+	 * @return the resetToken
+	 */
+	public final String getResetToken() {
+		return resetToken;
+	}
+
+	/**
+	 * Sets the resetToken.
+	 * @param resetToken the resetToken to set
+	 */
+	public final void setResetToken(final String resetToken) {
+		this.resetToken = resetToken;
+	}
+
+	/**
+	 * Gets the resetExpiry.
+	 * @return the resetExpiry
+	 */
+	public final Date getresetExpiry() {
+		return resetExpiry;
+	}
+
+	/**
+	 * Sets the resetExpiry.
+	 * @param resetExpiry the resetExpiry to set
+	 */
+	public final void setResetExpiry(final Date resetExpiry) {
+		this.resetExpiry = resetExpiry;
+	}
 }
