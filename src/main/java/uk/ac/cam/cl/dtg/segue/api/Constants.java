@@ -88,7 +88,7 @@ public final class Constants {
 	/**
 	 * Constant representing the segue application mode. e.g. either debug or production
 	 */
-	public static final String SEGUE_APP_MODE = "SEGUE_APP_MODE";
+	public static final String SEGUE_APP_ENVIRONMENT = "SEGUE_APP_ENVIRONMENT";
 	
 	// HMAC stuff
 	/**

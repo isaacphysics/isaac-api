@@ -30,6 +30,10 @@ public class User {
 	private Date registrationDate;
 	private String schoolId;
 	
+	private String schoolOther;
+	
+	private Integer defaultLevel;
+	
 	// Map of questionPage id -> map of question id -> List of questionAttempts information
 	private Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
 
@@ -271,6 +275,54 @@ public class User {
 	 */
 	public final void setSchoolId(final String schoolId) {
 		this.schoolId = schoolId;
+	}
+
+	/**
+	 * Gets the databaseId.
+	 * @return the databaseId
+	 */
+	public String getDatabaseId() {
+		return databaseId;
+	}
+
+	/**
+	 * Sets the databaseId.
+	 * @param databaseId the databaseId to set
+	 */
+	public void setDatabaseId(final String databaseId) {
+		this.databaseId = databaseId;
+	}
+
+	/**
+	 * Gets the schoolOther.
+	 * @return the schoolOther
+	 */
+	public String getSchoolOther() {
+		return schoolOther;
+	}
+
+	/**
+	 * Sets the schoolOther.
+	 * @param schoolOther the schoolOther to set
+	 */
+	public void setSchoolOther(final String schoolOther) {
+		this.schoolOther = schoolOther;
+	}
+
+	/**
+	 * Gets the defaultLevel.
+	 * @return the defaultLevel
+	 */
+	public Integer getDefaultLevel() {
+		return defaultLevel;
+	}
+
+	/**
+	 * Sets the defaultLevel.
+	 * @param defaultLevel the defaultLevel to set
+	 */
+	public void setDefaultLevel(final Integer defaultLevel) {
+		this.defaultLevel = defaultLevel;
 	}
 
 	/**

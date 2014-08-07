@@ -488,6 +488,8 @@ public class IsaacController {
 				gameboardShowCriteria = GameboardState.COMPLETED;
 			} else if (showCriteria.toLowerCase().contains("in_progress")) {
 				gameboardShowCriteria = GameboardState.IN_PROGRESS;
+			} else if (showCriteria.toLowerCase().contains("not_attempted")) {
+				gameboardShowCriteria = GameboardState.NOT_ATTEMPTED;
 			} else {
 				return new SegueErrorResponse(Status.BAD_REQUEST,
 						"Unable to interpret showOnly criteria specified " + showCriteria).toResponse();				
@@ -506,14 +508,11 @@ public class IsaacController {
 				
 				if (instruction.equals("created")) {
 					parsedSortInstructions.add(immutableEntry(CREATED_DATE_FIELDNAME, s));
-				}
-				
-				if (instruction.equals("visited")) {
+				} else if (instruction.equals("visited")) {
 					parsedSortInstructions.add(immutableEntry(VISITED_DATE_FIELDNAME, s));
-				}
-				
-				if (instruction.equals("level")) {
-					parsedSortInstructions.add(immutableEntry(LEVEL_FIELDNAME, s));
+				} else {
+					return new SegueErrorResponse(Status.BAD_REQUEST,
+							"Sorry we do not recognise the sort instruction " + instruction).toResponse();
 				}
 			}
 		}

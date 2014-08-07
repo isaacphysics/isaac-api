@@ -289,22 +289,26 @@ public class GameManager {
 			
 			if (null == showOnly) {
 				resultToReturn.add(gameboard);
+			} else if (gameboard.getPercentageCompleted() == 0 && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
+				resultToReturn.add(gameboard);
 			} else if (gameboard.getPercentageCompleted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
 				resultToReturn.add(gameboard);
 			} else if (gameboard.getPercentageCompleted() > 0 && showOnly.equals(GameboardState.IN_PROGRESS)) {
+				// in_progress
 				resultToReturn.add(gameboard);
-			}
+			} 
 		}
 		
 		ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
-
+		Comparator<GameboardDTO> defaultComparitor = new Comparator<GameboardDTO>() {
+			public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+				return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
+			}
+		};
+		
 		// assume we want reverse date order for visited date for now.
 		if (null == sortInstructions || sortInstructions.isEmpty()) {
-			comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
-				public int compare(final GameboardDTO o1, final GameboardDTO o2) {
-					return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
-				}
-			});
+			comparatorForSorting.addComparator(defaultComparitor);
 		} else {
 			// we have to use a more complex sorting Comparator.
 			
@@ -329,8 +333,12 @@ public class GameManager {
 				}
 			}
 		}
+
+		if (comparatorForSorting.size() == 0) {
+			comparatorForSorting.addComparator(defaultComparitor);
+		}
 		
-		Collections.sort(resultToReturn, comparatorForSorting);	
+		Collections.sort(resultToReturn, comparatorForSorting);
 		
 		int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
 		
