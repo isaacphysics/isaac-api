@@ -185,13 +185,36 @@ public class GameManager {
 	}
 
 	/**
+	 * linkUserToGameboard.
+	 * Persist the gameboard in permanent storage and also link it to the users account.
+	 * @param gameboardToLink - gameboard to store and use as link.
+	 * @param userToLinkTo - UserId to link to.
+	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
+	 */
+	public void linkUserToGameboard(final GameboardDTO gameboardToLink, final User userToLinkTo)
+		throws SegueDatabaseException {
+		// if the gameboard has no owner we should add the user who is first linking to it as the owner.
+		if (gameboardToLink.getOwnerUserId() == null) {
+			gameboardToLink.setOwnerUserId(userToLinkTo.getDbId());
+		}
+		
+		// determine if we need to permanently store the gameboard
+		if (!this.gameboardPersistenceManager.isPermanentlyStored(gameboardToLink)) {
+			this.permanentlyStoreGameboard(gameboardToLink);	
+		}
+
+		this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getDbId(),
+				gameboardToLink.getId());
+	}
+	
+	/**
 	 * Store a gameboard in a public location.
 	 * 
 	 * @param gameboardToStore
 	 *            - Gameboard object to persist.
 	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
 	 */
-	public final void permanentlyStoreGameboard(
+	private void permanentlyStoreGameboard(
 			final GameboardDTO gameboardToStore) throws SegueDatabaseException {
 		this.gameboardPersistenceManager
 				.saveGameboardToPermanentStorage(gameboardToStore);
@@ -220,6 +243,7 @@ public class GameManager {
 		// decide whether or not to create / update the link to the user and the gameboard.
 		if (null != gameboardFound && null != user) {
 			this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(user.getDbId(), gameboardId);
+			
 		}
 		
 		return gameboardFound;
@@ -345,6 +369,20 @@ public class GameManager {
 		gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
 		
 		return gameboardDTO;
+	}
+	
+	/**
+	 * Update the gameboards title.
+	 * 
+	 * @param gameboardWithUpdatedTitle
+	 *            - only the title will be updated.
+	 * @return the fully updated gameboard.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem updating the gameboard.
+	 */
+	public final GameboardDTO updateGameboardTitle(final GameboardDTO gameboardWithUpdatedTitle)
+		throws SegueDatabaseException {
+		return this.gameboardPersistenceManager.updateGameboardTitle(gameboardWithUpdatedTitle);
 	}
 
 	/**

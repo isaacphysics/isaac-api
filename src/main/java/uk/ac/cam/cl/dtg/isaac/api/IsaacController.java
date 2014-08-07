@@ -315,7 +315,7 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to provide a gameboard.
+	 * REST end point to provide a Temporary Gameboard stored in volatile storage.
 	 * 
 	 * @param request
 	 *            - this allows us to check to see if a user is currently
@@ -336,7 +336,7 @@ public class IsaacController {
 	@GET
 	@Path("gameboards")
 	@Produces("application/json")
-	public final Response generateGameboard(
+	public final Response generateTemporaryGameboard(
 			@Context final HttpServletRequest request,
 			@QueryParam("subjects") final String subjects,
 			@QueryParam("fields") final String fields,
@@ -393,11 +393,6 @@ public class IsaacController {
 						.toResponse();
 			}
 
-			if (gameboard.getOwnerUserId() != null) {
-				// go ahead and persist the gameboard
-				gameManager.permanentlyStoreGameboard(gameboard);
-			}
-
 			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -405,12 +400,9 @@ public class IsaacController {
 		} catch (NoWildcardException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to load the wildcard.").toResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Failed while trying to save your gameboard.", e).toResponse();
 		}
 	}
-
+	
 	/**
 	 * REST end point to retrieve a specific gameboard by Id.
 	 * 
@@ -543,7 +535,13 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to allow gamesboards to be updated by users.
+	 * REST end point to allow gamesboards to be persisted into permanent storage 
+	 * and for the title to be updated by users.
+	 * 
+	 * Currently we only support updating the title and saving the gameboard that exists in 
+	 * temporary storage into permanent storage. No other fields can be updated at the moment.
+	 * 
+	 * TODO: This will need to change if we want to change more than the board title.
 	 * 
 	 * @param request
 	 *            - so that we can find out the currently logged in user
@@ -567,32 +565,75 @@ public class IsaacController {
 		if (null == user) {
 			// user not logged in return not authorized
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to retrieve gameboards.")
+					"User not logged in. Unable to modify gameboards.")
 					.toResponse();
 		}
 		
-		//TODO: check what happens when invalid deserialization happens.
-		//TODO: allow only renaming of gameboards if they are owned by you, otherwise
-		// they need to clone it and then rename it.
-		// TODO: finish this method.
-		
+		if (null == newGameboardObject || null == gameboardId || newGameboardObject.getId() == null) {
+			// Gameboard object must be there and have an id.
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must provide a gameboard object with updates and the "
+					+ "id of the gameboard object in both the object and the endpoint")
+					.toResponse();			
+		}
+
+		// The id in the path param should match the id of the gameboard object you send me.
+		if (!newGameboardObject.getId().equals(gameboardId)) {
+			// user not logged in return not authorized
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The gameboard ID sent in the request body does not match the end point you used.")
+					.toResponse();			
+		}
+
+		// find what the existing gameboard looks like.
 		GameboardDTO existingGameboard;
 		try {
 			existingGameboard = gameManager.getGameboard(gameboardId, user);
+			
+			if (null == existingGameboard) {
+				return new SegueErrorResponse(Status.NOT_FOUND,
+						"No gameboard found with the id: " + gameboardId)
+						.toResponse();
+			}
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 		
-		if (null == existingGameboard) {
-			return new SegueErrorResponse(Status.NOT_FOUND,
-					"No gameboard found with the id: " + gameboardId)
+		// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
+		try {
+			gameManager.linkUserToGameboard(existingGameboard, user);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error while attempting to save the gameboard.")
 					.toResponse();
 		}
 
-		// currently we only support setting a title.
+		// Now determine if the user is trying to change the title and if they have permission.
+		if (!(existingGameboard.getTitle() == null ? newGameboardObject.getTitle() == null : existingGameboard
+				.getTitle().equals(newGameboardObject.getTitle()))) {
+
+			// do they have permission?
+			if (!existingGameboard.getOwnerUserId().equals(user.getDbId())) {
+				// user not logged in return not authorized
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You are not allowed to change another user's gameboard.")
+						.toResponse();
+			}
+
+			// ok so now we can change the title
+			GameboardDTO updatedGameboard;
+			try {
+				updatedGameboard = gameManager.updateGameboardTitle(newGameboardObject);
+			} catch (SegueDatabaseException e) {
+				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						"Error whilst trying to update the gameboard.")
+						.toResponse();
+			}
+			return Response.ok(updatedGameboard).build();
+		}
 		
-		return Response.serverError().entity("This service has not been implemented yet.").build();
+		return Response.ok(existingGameboard).build();
 	}
 	
 	/**

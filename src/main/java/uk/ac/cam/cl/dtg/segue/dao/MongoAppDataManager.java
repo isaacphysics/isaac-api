@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import org.apache.commons.lang3.Validate;
 import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
+import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.slf4j.Logger;
@@ -85,6 +86,25 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 			result = jc.findOneById(id);
 		} catch (MongoException e) {
 			throw new SegueDatabaseException("Mongo exception during findById for object id: " + id, e);
+		}
+
+		return result;
+	}
+	
+	@Override
+	public final T updateField(final String objectId, final String fieldName, final Object value)
+		throws SegueDatabaseException {
+		Validate.notNull(objectId);
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getCollection(collectionName),
+				typeParamaterClass, String.class);
+
+		T result;
+		try {
+			jc.updateById(objectId, DBUpdate.set(fieldName, value));
+			result = this.getById(objectId);
+		} catch (MongoException e) {
+			throw new SegueDatabaseException("Mongo exception during updateField by object id:" + objectId
+					+ " for fieldName " + fieldName, e);
 		}
 
 		return result;

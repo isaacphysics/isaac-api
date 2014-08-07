@@ -49,4 +49,19 @@ public interface IAppDataManager<T> {
 	 *             - when a database error has occurred.
 	 */
 	String save(T objectToSave) throws SegueDatabaseException;
+	
+	/**
+	 * Update a field in a given object by Id.
+	 * 
+	 * @param objectId
+	 *            - the object id to search for.
+	 * @param fieldName
+	 *            - within the object to update.
+	 * @param value
+	 *            - to use as the updated field.
+	 * @return The full object with updates.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem with the update operation.
+	 */
+	T updateField(String objectId, String fieldName, Object value) throws SegueDatabaseException;
 }
