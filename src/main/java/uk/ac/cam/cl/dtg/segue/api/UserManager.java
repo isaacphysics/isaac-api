@@ -422,6 +422,22 @@ public class UserManager {
 		return this.database.getById(userId);
 	}
 
+
+	/**
+	 * Library method that allows the api to locate a user object from the
+	 * database based on a given unique email address.
+	 *
+	 * @param email
+	 *            - to search for.
+	 * @return user or null if we cannot find it.
+	 */
+	public final User findUserByEmail(final String email) {
+		if (null == email) {
+			return null;
+		}
+		return this.database.getByEmail(email);
+	}
+
 	/**
 	 * This method destroys the users current session and may do other clean up
 	 * activities.
