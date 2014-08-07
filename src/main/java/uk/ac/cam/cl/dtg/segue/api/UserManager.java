@@ -641,13 +641,13 @@ public class UserManager {
 	 * an email with a unique token to allow a password reset. This method does not indicate
 	 * whether or not the email actually existed.
 	 *
-	 * @param email - The email address of the account holder to reset the password for
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeySpecException
+	 * @param userObject - A user object containing the email address of the user to reset the password for.
+	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
+	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
 	 */
-	public final void resetPasswordRequest(final String email) throws InvalidKeySpecException,
+	public final void resetPasswordRequest(final User userObject) throws InvalidKeySpecException,
 			NoSuchAlgorithmException {
-		User user = this.findUserByEmail(email);
+		User user = this.findUserByEmail(userObject.getEmail());
 
 		if (user == null) {
 			// Email address does not exist in the DB

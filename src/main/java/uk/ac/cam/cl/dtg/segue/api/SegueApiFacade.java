@@ -909,7 +909,7 @@ public class SegueApiFacade {
 		}
 
 		try {
-			userManager.resetPasswordRequest(userObject.getEmail());
+			userManager.resetPasswordRequest(userObject);
 
 			return Response.ok().build();
 		} catch (Exception e) {
