@@ -4,9 +4,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
@@ -629,11 +633,11 @@ public class UserManager {
 	 * an email with a unique token to allow a password reset. This method does not indicate
 	 * whether or not the email actually existed.
 	 *
-	 * @param request
-	 *            - http request that we can attach the session to.
+	 * @param email - The email address of the account holder to reset the password for
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeySpecException
 	 */
-	public final void resetPasswordRequest(final HttpServletRequest request) {
-		String email = "test2@test.com";
+	public final void resetPasswordRequest(String email) throws InvalidKeySpecException, NoSuchAlgorithmException {
 		User user = this.findUserByEmail(email);
 
 		if (user == null) {
@@ -649,7 +653,24 @@ public class UserManager {
 		}
 
 		// User is valid and authenticated locally, proceed with reset
+		// Generate token
+		IPasswordAuthenticator authenticator =
+				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
+		String token = authenticator.hashString(UUID.randomUUID().toString(), user.getSecureSalt());
+		user.setResetToken(token);
 
+		// Set expiry date
+		// Java is useless at datetime maths
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date()); // Initialises the calendar to the current date/time
+		c.add(Calendar.DATE, 1);
+		user.setResetExpiry(c.getTime());
+
+		// Save user object
+		this.database.updateUser(user);
+
+		// TODO: Send Email
+		log.debug(String.format("Sending email: %s", token));
 	}
 
 	/**
@@ -664,7 +685,7 @@ public class UserManager {
 		// measured to the nearest millisecond.
 		Date now = new Date();
 
-		return user != null && user.getresetExpiry().after(now);
+		return user != null && user.getResetExpiry().after(now);
 	}
 
 	/**

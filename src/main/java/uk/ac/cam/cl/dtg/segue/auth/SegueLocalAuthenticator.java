@@ -67,7 +67,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
 		try {
 			String passwordSalt = generateSalt();
-			String hashedPassword = this.hashPassword(
+			String hashedPassword = this.hashString(
 					userWithNewPassword.getPassword(), passwordSalt);
 			userWithNewPassword.setPassword(hashedPassword);
 			userWithNewPassword.setSecureSalt(passwordSalt);
@@ -108,7 +108,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		}
 		
 		try {
-			if (this.hashPassword(plainTextPassword,
+			if (this.hashString(plainTextPassword,
 					localUserAccount.getSecureSalt()).equals(
 					localUserAccount.getPassword())) {
 				return localUserAccount;
@@ -131,31 +131,19 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}
-	
-	/**
-	 * Hash the password using the preconfigured hashing function.
-	 * 
-	 * @param password
-	 *            - password to hash
-	 * @param salt
-	 *            - random string to use as a salt.
-	 * @return the hashed password.
-	 * @throws NoSuchAlgorithmException
-	 *             - if the configured algorithm is not valid.
-	 * @throws InvalidKeySpecException
-	 *             - if the preconfigured key spec is invalid.
-	 */
-	private String hashPassword(final String password, final String salt)
+
+	@Override
+	public String hashString(final String str, final String salt)
 		throws NoSuchAlgorithmException, InvalidKeySpecException {
-		char[] passwordChars = password.toCharArray();
+		char[] strChars = str.toCharArray();
 		byte[] saltBytes = salt.getBytes();
 
-		PBEKeySpec spec = new PBEKeySpec(passwordChars, saltBytes, ITERATIONS,
+		PBEKeySpec spec = new PBEKeySpec(strChars, saltBytes, ITERATIONS,
 				KEY_LENGTH);
 
 		SecretKeyFactory key = SecretKeyFactory.getInstance(CRYPTO_ALOGRITHM);
-		byte[] hashedPassword = key.generateSecret(spec).getEncoded();
-		return new BigInteger(hashedPassword).toString();
+		byte[] hashedString = key.generateSecret(spec).getEncoded();
+		return new BigInteger(hashedString).toString();
 	}
 
 	/**

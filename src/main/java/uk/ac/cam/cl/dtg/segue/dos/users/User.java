@@ -342,7 +342,7 @@ public class User {
 	 * Gets the resetExpiry.
 	 * @return the resetExpiry
 	 */
-	public final Date getresetExpiry() {
+	public final Date getResetExpiry() {
 		return resetExpiry;
 	}
 
