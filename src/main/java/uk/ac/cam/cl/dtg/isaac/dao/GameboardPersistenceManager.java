@@ -28,9 +28,9 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import static java.util.concurrent.TimeUnit.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -220,7 +220,7 @@ public class GameboardPersistenceManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is an error when accessing the database.
 	 */
-	public final List<GameboardDTO> getGameboardsByUserId(final User user) throws SegueDatabaseException {
+	public final List<GameboardDTO> getGameboardsByUserId(final UserDTO user) throws SegueDatabaseException {
 		// find all gameboards related to this user.
 		Map<String, UserGameboardsDO> gameboardLinksToUser = this.findLinkedGameboardIdsForUser(user
 				.getDbId());

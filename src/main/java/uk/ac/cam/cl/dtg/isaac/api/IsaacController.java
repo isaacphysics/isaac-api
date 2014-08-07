@@ -31,13 +31,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -264,16 +264,18 @@ public class IsaacController {
 					Arrays.asList(questionId));
 		}
 
-		User currentUser = this.api.getCurrentUser(request);
+		UserDTO currentUser = this.api.getCurrentUser(request);
 		Response response = this.findSingleResult(fieldsToMatch);
 		Object unknownResponse = response.getEntity();
 
 		if (currentUser != null) {
 			if (unknownResponse instanceof SeguePageDTO) {
 				SeguePageDTO content = (SeguePageDTO) unknownResponse;
+
 				content = api.getQuestionManager()
 						.augmentQuestionObjectWithAttemptInformation(content,
-								currentUser.getQuestionAttempts());
+								api.getQuestionAttemptsByUser(currentUser));
+
 				return Response.ok(content).build();
 			}
 		}
@@ -463,7 +465,7 @@ public class IsaacController {
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("sort") final String sortInstructions,
 			@QueryParam("show_only") final String showCriteria) {
-		User user = api.getCurrentUser(request);
+		UserDTO user = api.getCurrentUser(request);
 		
 		if (null == user) {
 			// user not logged in return not authorized
@@ -559,7 +561,7 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
-		User user = api.getCurrentUser(request);
+		UserDTO user = api.getCurrentUser(request);
 		
 		if (null == user) {
 			// user not logged in return not authorized

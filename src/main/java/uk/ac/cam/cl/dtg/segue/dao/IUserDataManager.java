@@ -95,8 +95,8 @@ public interface IUserDataManager {
 	/**
 	 * Update a particular field on a user object.
 	 * 
-	 * @param user
-	 *            - the user object containing the users local id.
+	 * @param userId
+	 *            - the user id to try and find.
 	 * @param questionPageId
 	 *            - the high level id of the question page. This may be used for
 	 *            determining whether a page of questions has been completed.
@@ -105,7 +105,7 @@ public interface IUserDataManager {
 	 * @param questionAttempt
 	 *            - the question attempt object recording the users result.
 	 */
-	void registerQuestionAttempt(final User user, final String questionPageId,
+	void registerQuestionAttempt(final String userId, final String questionPageId,
 			final String fullQuestionId, final QuestionValidationResponseDTO questionAttempt);
 
 }

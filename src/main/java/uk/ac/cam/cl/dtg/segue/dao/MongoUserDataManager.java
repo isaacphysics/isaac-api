@@ -161,7 +161,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public void registerQuestionAttempt(final User user,
+	public void registerQuestionAttempt(final String userId,
 			final String questionPageId, final String fullQuestionId,
 			final QuestionValidationResponseDTO questionAttempt) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
@@ -169,7 +169,7 @@ public class MongoUserDataManager implements IUserDataManager {
 				String.class);
 
 		try {
-			WriteResult<User, String> r = jc.updateById(user.getDbId(),
+			WriteResult<User, String> r = jc.updateById(userId,
 					DBUpdate.push(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
 							+ questionPageId + "." + fullQuestionId,
 							questionAttempt));
