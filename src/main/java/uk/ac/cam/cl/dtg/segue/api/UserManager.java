@@ -625,24 +625,59 @@ public class UserManager {
 	}
 
 	/**
+	 * This method will use an email address to check a local user exists and if so, will send
+	 * an email with a unique token to allow a password reset. This method does not indicate
+	 * whether or not the email actually existed.
+	 *
+	 * @param request
+	 *            - http request that we can attach the session to.
+	 */
+	public final void resetPasswordRequest(final HttpServletRequest request) {
+		String email = "test2@test.com";
+		User user = this.findUserByEmail(email);
+
+		if (user == null) {
+			// Email address does not exist in the DB
+			// Fail silently
+			return;
+		}
+
+		if (this.database.hasALinkedAccount(user) && (user.getPassword() == null || user.getPassword().isEmpty())) {
+			// User is not authenticated locally
+			// TODO: Send email saying you need to ask your provider
+			return;
+		}
+
+		// User is valid and authenticated locally, proceed with reset
+
+	}
+
+	/**
 	 * This method will test if the specified token is a valid password reset token.
 	 *
 	 * @param token - The token to test
 	 * @return true if the reset token is valid
 	 */
-	public final boolean validatePasswordResetToken(String token) {
+	public final boolean validatePasswordResetToken(final String token) {
 		User user = this.findUserByResetToken(token);
 		// Get today's datetime; this is initialised to the time at which it was allocated,
 		// measured to the nearest millisecond.
 		Date now = new Date();
 
-		if (user != null && user.getresetExpiry().after(now)) {
-			return true;
-		}
-
-		return false;
+		return user != null && user.getresetExpiry().after(now);
 	}
 
+	/**
+	 * This method will use a unique password reset token to set a new password.
+	 *
+	 * @param request
+	 *            - http request that we can attach the session to.
+	 */
+	public final void setNewPassword(final HttpServletRequest request) {
+
+	}
+
+	/**
 	 * Generate an HMAC using a key and the data to sign.
 	 * 
 	 * @param key
