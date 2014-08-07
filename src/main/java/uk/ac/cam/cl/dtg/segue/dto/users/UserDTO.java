@@ -1,8 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import java.util.Date;
+import java.util.List;
+
 import org.mongojack.ObjectId;
 
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
@@ -29,6 +32,8 @@ public class UserDTO {
 	private String schoolOther;
 	
 	private Integer defaultLevel;
+	
+	private List<AuthenticationProvider> linkedAccounts;
 	
 	/**
 	 * Full constructor for the User object.
@@ -278,5 +283,21 @@ public class UserDTO {
 	 */
 	public void setDefaultLevel(final Integer defaultLevel) {
 		this.defaultLevel = defaultLevel;
+	}
+
+	/**
+	 * Gets the linkedAccounts.
+	 * @return the linkedAccounts
+	 */
+	public List<AuthenticationProvider> getLinkedAccounts() {
+		return linkedAccounts;
+	}
+
+	/**
+	 * Sets the linkedAccounts.
+	 * @param linkedAccounts the linkedAccounts to set
+	 */
+	public void setLinkedAccounts(final List<AuthenticationProvider> linkedAccounts) {
+		this.linkedAccounts = linkedAccounts;
 	}
 }

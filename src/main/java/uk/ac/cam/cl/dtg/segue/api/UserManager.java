@@ -1078,10 +1078,16 @@ public class UserManager {
 	 * @return user - DTO
 	 */
 	private UserDTO convertUserDOToUserDTO(final User user) {
-		MapperFacade mapper = this.dtoMapper;
+		if (null == user) {
+			return null;
+		}
 		
-		// TODO: we can do augmentation stuff here.
-		return mapper.map(user, UserDTO.class);
+		UserDTO userDTO = this.dtoMapper.map(user, UserDTO.class);
+
+		// Augment with linked account information
+		userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
+		
+		return userDTO;
 	}
 	
 	
