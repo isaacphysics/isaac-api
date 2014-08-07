@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -670,7 +671,7 @@ public class UserManager {
 		this.database.updateUser(user);
 
 		// TODO: Send Email
-		log.debug(String.format("Sending email: %s", token));
+		log.info(String.format("Sending email: %s", token));
 	}
 
 	/**
@@ -680,22 +681,52 @@ public class UserManager {
 	 * @return true if the reset token is valid
 	 */
 	public final boolean validatePasswordResetToken(final String token) {
-		User user = this.findUserByResetToken(token);
-		// Get today's datetime; this is initialised to the time at which it was allocated,
-		// measured to the nearest millisecond.
-		Date now = new Date();
-
-		return user != null && user.getResetExpiry().after(now);
+		return isValidResetToken(this.findUserByResetToken(token));
 	}
 
 	/**
 	 * This method will use a unique password reset token to set a new password.
 	 *
-	 * @param request
-	 *            - http request that we can attach the session to.
+	 * @param token - the password reset token
+	 * @param userObject - the supplied user DO
+	 * @throws InvalidTokenException
+	 * @throws InvalidPasswordException
 	 */
-	public final void setNewPassword(final HttpServletRequest request) {
+	public final void resetPassword(final String token, final User userObject) throws InvalidTokenException,
+			InvalidPasswordException {
+		// Ensure new password is valid
+		if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
+			throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
+		}
 
+		// Ensure reset token is valid
+		User user = this.findUserByResetToken(token);
+		if (!this.isValidResetToken(user)) {
+			throw new InvalidTokenException();
+		}
+
+		// Set user's password
+		user.setPassword(userObject.getPassword());
+		IPasswordAuthenticator authenticator =
+				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
+		authenticator.setOrChangeUsersPassword(user);
+
+		// Save user
+		this.database.updateUser(user);
+	}
+
+	/**
+	 * This method will test if the user's reset token is valid reset token.
+	 *
+	 * @param user - The user object to test
+	 * @return true if the reset token is valid
+	 */
+	public final boolean isValidResetToken(final User user) {
+		// Get today's datetime; this is initialised to the time at which it was allocated,
+		// measured to the nearest millisecond.
+		Date now = new Date();
+
+		return user != null && user.getResetExpiry().after(now);
 	}
 
 	/**

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -878,6 +879,93 @@ public class SegueApiFacade {
 	public User getCurrentUser(final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
+
+	/**
+	 * End point that allows a local user to generate a password reset request
+	 *
+	 * @param request
+	 *            so that we can destroy the associated session
+	 * @param userObject -
+	 * @return a successful response regardless of whether the email exists
+	 *         or an error code if there is a technical fault
+	 */
+	@POST // Should be PUT
+	@Path("users/resetpassword")
+	@Consumes("application/json")
+	public final Response generatePasswordResetToken(@Context final HttpServletRequest request, final User userObject) {
+		if (null == userObject) {
+			log.debug("User is null");
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"No user settings provided.").toResponse();
+		}
+
+		try {
+			userManager.resetPasswordRequest(userObject.getEmail());
+
+			return Response.ok().build();
+		} catch (Exception e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.INTERNAL_SERVER_ERROR,
+					"Error generate password reset token.", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		}
+	}
+
+
+	/**
+	 * End point that allows the user to logout - i.e. destroy our cookie.
+	 *
+	 * @param request
+	 *            so that we can destroy the associated session
+	 * @return TODO: User Object
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("users/resetpassword/{token}")
+	public final Response validatePasswordResetRequest(@Context final HttpServletRequest request,
+	                                                   @PathParam("token") final String token) {
+		if (userManager.validatePasswordResetToken(token)) {
+			return Response.ok().build();
+		}
+
+		SegueErrorResponse error = new SegueErrorResponse(
+				Status.NOT_FOUND,
+				"Invalid password reset token.");
+		log.debug(String.format("Invalid password reset token: %s", token));
+		return error.toResponse();
+	}
+
+	/**
+	 * End point that allows the user to logout - i.e. destroy our cookie.
+	 *
+	 * @param request
+	 *            so that we can destroy the associated session
+	 * @return successful response.
+	 */
+	@POST
+	@Produces("application/json")
+	@Path("users/resetpassword/{token}")
+	@Consumes("application/json")
+	public final Response resetPassword(@Context final HttpServletRequest request,
+	                                            @PathParam("token") final String token, final User userObject) {
+		try {
+			userManager.resetPassword(token, userObject);
+		} catch (InvalidTokenException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"Invalid password reset token.");
+			return error.toResponse();
+		} catch (InvalidPasswordException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"No password supplied.");
+			return error.toResponse();
+		}
+
+		return Response.ok().build();
+	}
+
 
 	/**
 	 * This is the initial step of the authentication process.

@@ -67,7 +67,11 @@ public class User {
 	 * @param questionAttempts
 	 *            - the list of question attempts made by the user.
 	 * @param password
-	 *            - password for local segue authentication.            
+	 *            - password for local segue authentication.
+	 * @param resetToken
+	 *            - resetToken for local segue authentication.
+	 * @param resetExpiry
+	 *            - resetExpiry for local segue authentication.
 	 */
 	@JsonCreator
 	public User(
@@ -82,8 +86,9 @@ public class User {
 			@JsonProperty("schoolId") final String schoolId,
 			@JsonProperty("questionAttempts") 
 			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts,
-			@JsonProperty("password") 
-			final String password) {
+			@JsonProperty("password") final String password,
+			@JsonProperty("resetToken") final String resetToken,
+			@JsonProperty("resetExpiry") final Date resetExpiry) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -95,6 +100,8 @@ public class User {
 		this.schoolId = schoolId;
 		this.questionAttempts = questionAttempts;
 		this.password = password;
+		this.resetToken = resetToken;
+		this.resetExpiry = resetExpiry;
 	}
 
 	/**
