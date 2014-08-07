@@ -102,7 +102,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
 		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
 		MongoJackModule.configure(objectMapper);
-				
+
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class, objectMapper);
@@ -111,6 +111,28 @@ public class MongoUserDataManager implements IUserDataManager {
 		// the database once.
 		User user = jc.findOne(new BasicDBObject(
 				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, email.trim()));
+
+		return user;
+	}
+
+	@Override
+	public User getByResetToken(final String token) {
+		if (null == token) {
+			return null;
+		}
+
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it.
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+
+		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), User.class,
+				String.class, objectMapper);
+
+		// Do database query using plain mongodb so we only have to read from
+		// the database once.
+		User user = jc.findOne(new BasicDBObject(
+				Constants.LOCAL_AUTH_RESET_TOKEN_FIELDNAME, token.trim()));
 
 		return user;
 	}

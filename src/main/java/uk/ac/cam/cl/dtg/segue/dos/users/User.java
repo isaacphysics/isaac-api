@@ -38,7 +38,7 @@ public class User {
 	private String secureSalt;
 
 	// password reset fields - only used for segue local authentication password resets
-	private String resetCode;
+	private String resetToken;
 	private Date resetExpiry;
 	
 	/**

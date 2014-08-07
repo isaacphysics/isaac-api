@@ -56,12 +56,21 @@ public interface IUserDataManager {
 
 	/**
 	 * Get a user by email.
-	 * 
+	 *
 	 * @param email
-	 *            - local user id.
+	 *            - local user email address.
 	 * @return A user object.
 	 */
 	User getByEmail(final String email);
+
+	/**
+	 * Get a user by password reset token.
+	 *
+	 * @param token
+	 *            - password reset token
+	 * @return A user object.
+	 */
+	User getByResetToken(final String token);
 
 	/**
 	 * Update user object in the data store.

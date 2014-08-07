@@ -410,7 +410,7 @@ public class UserManager {
 	/**
 	 * Library method that allows the api to locate a user object from the
 	 * database based on a given unique id.
-	 * 
+	 *
 	 * @param userId
 	 *            - to search for.
 	 * @return user or null if we cannot find it.
@@ -421,7 +421,6 @@ public class UserManager {
 		}
 		return this.database.getById(userId);
 	}
-
 
 	/**
 	 * Library method that allows the api to locate a user object from the
@@ -436,6 +435,20 @@ public class UserManager {
 			return null;
 		}
 		return this.database.getByEmail(email);
+	}
+	/**
+	 * Library method that allows the api to locate a user object from the
+	 * database based on a given unique password reset token.
+	 *
+	 * @param token
+	 *            - to search for.
+	 * @return user or null if we cannot find it.
+	 */
+	public final User findUserByResetToken(final String token) {
+		if (null == token) {
+			return null;
+		}
+		return this.database.getByResetToken(token);
 	}
 
 	/**
