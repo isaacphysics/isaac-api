@@ -488,6 +488,8 @@ public class IsaacController {
 				gameboardShowCriteria = GameboardState.COMPLETED;
 			} else if (showCriteria.toLowerCase().contains("in_progress")) {
 				gameboardShowCriteria = GameboardState.IN_PROGRESS;
+			} else if (showCriteria.toLowerCase().contains("not_attempted")) {
+				gameboardShowCriteria = GameboardState.NOT_ATTEMPTED;
 			} else {
 				return new SegueErrorResponse(Status.BAD_REQUEST,
 						"Unable to interpret showOnly criteria specified " + showCriteria).toResponse();				

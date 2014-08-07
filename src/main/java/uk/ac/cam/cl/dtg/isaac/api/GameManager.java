@@ -289,9 +289,12 @@ public class GameManager {
 			
 			if (null == showOnly) {
 				resultToReturn.add(gameboard);
+			} else if (gameboard.getPercentageCompleted() == 0 && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
+				resultToReturn.add(gameboard);
 			} else if (gameboard.getPercentageCompleted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
 				resultToReturn.add(gameboard);
-			} else if (gameboard.getPercentageCompleted() > 0 && showOnly.equals(GameboardState.IN_PROGRESS)) {
+			} else {
+				// in_progress
 				resultToReturn.add(gameboard);
 			}
 		}
