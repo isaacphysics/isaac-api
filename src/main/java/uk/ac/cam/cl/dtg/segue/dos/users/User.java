@@ -24,12 +24,10 @@ public class User {
 	private String familyName;
 	private String email;
 	private Role role;
-	private String school;
 	private Date dateOfBirth;
 	private Gender gender;
 	private Date registrationDate;
 	private String schoolId;
-	
 	private String schoolOther;
 	
 	private Integer defaultLevel;
@@ -58,8 +56,6 @@ public class User {
 	 *            - primary e-mail address
 	 * @param role
 	 *            - role description
-	 * @param school
-	 *            - unique school identifier.
 	 * @param dateOfBirth
 	 *            - date of birth to help with monitoring
 	 * @param gender
@@ -84,7 +80,6 @@ public class User {
 			@JsonProperty("familyName") final String familyName,
 			@JsonProperty("email") final String email,
 			@JsonProperty("role") final Role role,
-			@JsonProperty("school") final String school,
 			@JsonProperty("dateOfBirth") final Date dateOfBirth,
 			@JsonProperty("gender") final Gender gender,
 			@JsonProperty("registrationTime") final Date registrationTime,
@@ -99,7 +94,6 @@ public class User {
 		this.givenName = givenName;
 		this.email = email;
 		this.role = role;
-		this.school = school;
 		this.dateOfBirth = dateOfBirth;
 		this.gender = gender;
 		this.registrationDate = registrationTime;
@@ -202,22 +196,6 @@ public class User {
 	 */
 	public final void setRole(final Role role) {
 		this.role = role;
-	}
-
-	/**
-	 * Gets the school.
-	 * @return the school
-	 */
-	public final String getSchool() {
-		return school;
-	}
-
-	/**
-	 * Sets the school.
-	 * @param school the school to set
-	 */
-	public final void setSchool(final String school) {
-		this.school = school;
 	}
 
 	/**
