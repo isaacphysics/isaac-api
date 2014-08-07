@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -144,6 +145,8 @@ public class UserManagerTest {
 
 		expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(
 				returnUser);
+		expect(dummyDatabase.getAuthenticationProvidersByUser(returnUser)).andReturn(
+				Arrays.asList(AuthenticationProvider.GOOGLE));
 		replay(dummyDatabase);
 		
 		expect(dummyMapper.map(returnUser, UserDTO.class)).andReturn(new UserDTO()).atLeastOnce();
