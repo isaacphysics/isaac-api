@@ -28,7 +28,7 @@ public class ContentDTO extends ContentBaseDTO {
 	protected String value;
 	protected String attribution;
 	protected List<ContentSummaryDTO> relatedContent;
-	protected boolean published;
+	protected Boolean published;
 	protected Integer level;
 	
 	@JsonCreator
@@ -44,7 +44,7 @@ public class ContentDTO extends ContentBaseDTO {
 			@JsonProperty("value") String value,
 			@JsonProperty("attribution") String attribution,
 			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-			@JsonProperty("published") boolean published,
+			@JsonProperty("published") Boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level) {
 		this._id = _id;
@@ -170,6 +170,22 @@ public class ContentDTO extends ContentBaseDTO {
 	
 	public void setChildren(List<ContentBaseDTO> children) {
 		this.children = children;
+	}
+
+	/**
+	 * Gets the published.
+	 * @return the published
+	 */
+	public Boolean getPublished() {
+		return published;
+	}
+
+	/**
+	 * Sets the published.
+	 * @param published the published to set
+	 */
+	public void setPublished(final Boolean published) {
+		this.published = published;
 	}
 
 	public Integer getLevel() {
