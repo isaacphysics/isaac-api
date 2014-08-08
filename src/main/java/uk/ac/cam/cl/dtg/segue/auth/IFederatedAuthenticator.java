@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
 /**
  * Classes that implement this interface must provide some way (via another
@@ -31,7 +31,7 @@ public interface IFederatedAuthenticator extends IAuthenticator {
 	 * @throws IOException
 	 * @throws AuthenticatorSecurityException
 	 */
-	User getUserInfo(String internalProviderReference)
+	UserFromAuthProvider getUserInfo(String internalProviderReference)
 		throws NoUserException, IOException,
 			AuthenticatorSecurityException;
 }

@@ -16,7 +16,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
 import com.google.api.client.auth.oauth2.Credential;
@@ -37,6 +37,12 @@ import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+/**
+ * Google authenticator adapter for Segue.
+ * 
+ * @author Stephen Cummins
+ *
+ */
 public class GoogleAuthenticator implements IOAuth2Authenticator {
 
 	private static final Logger log = LoggerFactory
@@ -53,12 +59,22 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
+	
+	private static final int SALT_SIZE_BITS = 130;
+	private static final int RADIX_FOR_SALT = 32;
 
+	/**
+	 * Construct a google authenticator with all of its required dependencies.
+	 * 
+	 * @param clientSecrets - secret provided by the google service.
+	 * @param callbackUri - The allowed URI for callbacks as registered with google.
+	 * @param requestedScopes - The scopes that will be granted to Segue.
+	 */
 	@Inject
 	public GoogleAuthenticator(
-			GoogleClientSecrets clientSecrets,
-			@Named(Constants.GOOGLE_CALLBACK_URI) String callbackUri,
-			@Named(Constants.GOOGLE_OAUTH_SCOPES) String requestedScopes) {
+			final GoogleClientSecrets clientSecrets,
+			@Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
+			@Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) {
 		this.jsonFactory = new JacksonFactory();
 		this.httpTransport = new NetHttpTransport();
 
@@ -66,12 +82,14 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 		this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
 		this.callbackUri = callbackUri;
 
-		if (null == credentialStore)
+		if (null == credentialStore) {
 			credentialStore = new WeakHashMap<String, Credential>();
+		}
 
-		if (null == tokenVerifier)
+		if (null == tokenVerifier) {
 			tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
-					jsonFactory);
+					jsonFactory);			
+		}
 	}
 
 	@Override
@@ -94,7 +112,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public String extractAuthCode(String url) throws IOException {
+	public String extractAuthCode(final String url) throws IOException {
 		AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(
 				url.toString());
 
@@ -108,13 +126,13 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public synchronized String exchangeCode(String authorizationCode)
-			throws IOException, CodeExchangeException {
+	public synchronized String exchangeCode(final String authorizationCode)
+		throws IOException, CodeExchangeException {
 		try {
 			GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
 					httpTransport, jsonFactory, clientSecrets.getDetails()
 							.getClientId(), clientSecrets.getDetails()
-							.getClientSecret(), authorizationCode, callbackUri)
+								.getClientSecret(), authorizationCode, callbackUri)
 					.execute();
 
 			// I don't really want to use the flow storage but it seems to be
@@ -122,7 +140,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 			GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
 					httpTransport, jsonFactory, clientSecrets.getDetails()
 							.getClientId(), clientSecrets.getDetails()
-							.getClientSecret(), requestedScopes)
+								.getClientSecret(), requestedScopes)
 					.setDataStoreFactory(
 							MemoryDataStoreFactory.getDefaultInstance())
 					.build();
@@ -141,8 +159,8 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public synchronized User getUserInfo(String internalProviderReference)
-			throws NoUserException, IOException,
+	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
+		throws NoUserException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		if (verifyAccessTokenIsValid(credentials)) {
@@ -166,9 +184,9 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 					+ e);
 		}
 		if (userInfo != null && userInfo.getId() != null) {
-			return new User(userInfo.getId(), userInfo.getGivenName(),
+			return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(),
 					userInfo.getFamilyName(), userInfo.getEmail(), null, null,
-					null, null, null, null, null, null, null);
+					null);
 
 		} else {
 			throw new NoUserException();
@@ -177,8 +195,8 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public String getAntiForgeryStateToken() {
-		String antiForgerySalt = new BigInteger(130, new SecureRandom())
-				.toString(32);
+		String antiForgerySalt = new BigInteger(SALT_SIZE_BITS, new SecureRandom())
+				.toString(RADIX_FOR_SALT);
 
 		String antiForgeryStateToken = "google" + antiForgerySalt;
 
@@ -196,10 +214,10 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	 * this check internally - if it does then we can remove this additional
 	 * check.
 	 * 
-	 * @param credentials
+	 * @param credentials - the credential object for the token verification.
 	 * @return true if the token passes our validation false if not.
 	 */
-	private boolean verifyAccessTokenIsValid(Credential credentials) {
+	private boolean verifyAccessTokenIsValid(final Credential credentials) {
 		Validate.notNull(credentials, "Credentials cannot be null");
 
 		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory,

@@ -24,7 +24,7 @@ public interface IUserDataManager {
 	 *            - the provider specific unique user id.
 	 * @return the local users id.
 	 */
-	String register(final User user, final AuthenticationProvider provider,
+	String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
 			final String providerUserId);
 	
 	/**
@@ -54,7 +54,22 @@ public interface IUserDataManager {
 	 */
 	User getByLinkedAccount(final AuthenticationProvider provider,
 			final String providerUserId);
-
+	
+	/**
+	 * Creates a link record, connecting a local user to an external provider
+	 * for authentication purposes.
+	 * 
+	 * @param user
+	 *            - the local user object
+	 * @param provider
+	 *            - the provider that authenticated the user.
+	 * @param providerUserId
+	 *            - the providers unique id for the user.
+	 * @return true if success false if failure.
+	 */
+	boolean linkAuthProviderToAccount(final User user,
+			final AuthenticationProvider provider, final String providerUserId);
+	
 	/**
 	 * Unlink providerFromUser.
 	 * 

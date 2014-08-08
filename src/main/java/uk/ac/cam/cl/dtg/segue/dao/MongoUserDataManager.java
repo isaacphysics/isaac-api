@@ -56,7 +56,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final String register(final User user,
+	public final String registerNewUserWithProvider(final User user,
 			final AuthenticationProvider provider, final String providerUserId) {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
@@ -245,22 +245,6 @@ public class MongoUserDataManager implements IUserDataManager {
 		return providersToReturn;
 	}
 	
-	/**
-	 * Unlink providerFromUser.
-	 * 
-	 * This will delete the entry in the linkedAccounts table and prevent a user
-	 * from authenticating using that linked account in the future.
-	 * 
-	 * Note: It is best practice to make sure the user can login with some other
-	 * means before doing this.
-	 * 
-	 * @param user
-	 *            - The user to use as a search term.
-	 * @param provider
-	 *            - the provider to search for.
-	 * @throws SegueDatabaseException
-	 *             - if we have a problem accessing the database.
-	 */
 	@Override
 	public void unlinkAuthProviderFromUser(final User user, final AuthenticationProvider provider)
 		throws SegueDatabaseException {
@@ -286,19 +270,8 @@ public class MongoUserDataManager implements IUserDataManager {
 		jc.removeById(linkAccountToDelete.getId());
 	}
 	
-	/**
-	 * Creates a link record, connecting a local user to an external provider
-	 * for authentication purposes.
-	 * 
-	 * @param user
-	 *            - the local user object
-	 * @param provider
-	 *            - the provider that authenticated the user.
-	 * @param providerUserId
-	 *            - the providers unique id for the user.
-	 * @return true if success false if failure.
-	 */
-	private boolean linkAuthProviderToAccount(final User user,
+	@Override
+	public boolean linkAuthProviderToAccount(final User user,
 			final AuthenticationProvider provider, final String providerUserId) {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),

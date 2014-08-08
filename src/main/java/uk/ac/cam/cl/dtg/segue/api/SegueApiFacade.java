@@ -898,42 +898,7 @@ public class SegueApiFacade {
 		return userManager.getCurrentUser(request);
 	}
 
-	/**
-	 * End point that allows the user to logout - i.e. destroy our cookie.
-	 * 
-	 * @param request
-	 *            - request so we can authenticate the user.
-	 * @param authProviderAsString
-	 *            - the provider to dis-associate.
-	 * @return successful response.
-	 */
-	@DELETE
-	@Path("users/current_user/authentication_provider/{provider}")
-	@Produces("application/json")
-	public final Response unlinkeUserFromProvider(@Context final HttpServletRequest request,
-			@PathParam("provider") final String authProviderAsString) {
-		UserDTO user = this.getCurrentUser(request);
 
-		if (null == user) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user as no user is currently logged in.")
-					.toResponse();			
-		}
-		
-		try {
-			this.userManager.unlinkUserFromProvider(user, authProviderAsString);
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Unable to remove account do to database issues.", e)
-					.toResponse();	
-		} catch (MissingRequiredFieldException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"Unable to remove account as this will mean that the user cannot login again in the future.", e)
-					.toResponse();	
-		}
-		
-		return Response.status(Status.NO_CONTENT).build();
-	}
 	
 	/**
 	 * End point that allows a local user to generate a password reset request.
@@ -1037,7 +1002,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("auth/{provider}/authenticate")
-	public final Response authenticationInitialisation(
+	public final Response authenticate(
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
 			@QueryParam("redirect") final String redirectUrl) {
@@ -1052,11 +1017,112 @@ public class SegueApiFacade {
 		} else {
 			newRedirectUrl = redirectUrl;
 		}
-
+		
 		// ok we need to hand over to user manager
 		return userManager
 				.authenticate(request, signinProvider, newRedirectUrl);
 	}
+	
+	/**
+	 * Link existing user to provider.
+	 * 
+	 * @param request
+	 *            - the http request of the user wishing to authenticate
+	 * @param authProviderAsString
+	 *            - string representing the supported auth provider so that we
+	 *            know who to redirect the user to.
+	 * @param redirectUrl
+	 *            - optional redirect url after authentication has completed.
+	 * @return a redirect to where the client asked to be redirected to.
+	 */
+	@GET
+	@Path("auth/{provider}/link")
+	@Produces("application/json")	
+	public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
+			@PathParam("provider") final String authProviderAsString,
+			@QueryParam("redirect") final String redirectUrl) {
+		UserDTO user = this.getCurrentUser(request);
+
+		String newRedirectUrl = null;
+		if (null == redirectUrl || !redirectUrl.contains("http://")) {
+			newRedirectUrl = "http://"
+					+ this.properties.getProperty(Constants.HOST_NAME);
+
+			if (redirectUrl != null) {
+				newRedirectUrl += redirectUrl;
+			}
+		} else {
+			newRedirectUrl = redirectUrl;
+		}
+		
+		if (null == user) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"Unable to retrieve the current user as no user is currently logged in.")
+					.toResponse();			
+		}
+		
+		return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString, newRedirectUrl);
+	}
+	
+	/**
+	 * End point that allows the user to logout - i.e. destroy our cookie.
+	 * 
+	 * @param request
+	 *            - request so we can authenticate the user.
+	 * @param authProviderAsString
+	 *            - the provider to dis-associate.
+	 * @return successful response.
+	 */
+	@DELETE
+	@Path("auth/{provider}/link")
+	@Produces("application/json")
+	public final Response unlinkeUserFromProvider(@Context final HttpServletRequest request,
+			@PathParam("provider") final String authProviderAsString) {
+		UserDTO user = this.getCurrentUser(request);
+
+		if (null == user) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"Unable to retrieve the current user as no user is currently logged in.")
+					.toResponse();			
+		}
+		
+		try {
+			this.userManager.unlinkUserFromProvider(user, authProviderAsString);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to remove account do to database issues.", e)
+					.toResponse();	
+		} catch (MissingRequiredFieldException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Unable to remove account as this will mean that the user cannot login again in the future.", e)
+					.toResponse();	
+		}
+		
+		return Response.status(Status.NO_CONTENT).build();
+	}	
+
+	/**
+	 * This is the callback url that auth providers should use to send us
+	 * information about users.
+	 * 
+	 * @param request
+	 *            - http request from user
+	 * @param response
+	 *            - http response from server
+	 * @param signinProvider
+	 *            - requested signing provider string
+	 * @return Redirect response to send the user to the home page.
+	 */
+	@GET
+	@Produces("application/json")
+	@Path("auth/{provider}/callback")
+	public final Response authenticationCallback(
+			@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@PathParam("provider") final String signinProvider) {
+		return userManager.authenticateCallback(request, signinProvider);
+	}
+
 
 	/**
 	 * This is the initial step of the authentication process.
@@ -1084,29 +1150,7 @@ public class SegueApiFacade {
 		// ok we need to hand over to user manager
 		return userManager.authenticate(request, signinProvider, credentials);
 	}
-
-	/**
-	 * This is the callback url that auth providers should use to send us
-	 * information about users.
-	 * 
-	 * @param request
-	 *            - http request from user
-	 * @param response
-	 *            - http response from server
-	 * @param signinProvider
-	 *            - requested signing provider string
-	 * @return Redirect response to send the user to the home page.
-	 */
-	@GET
-	@Produces("application/json")
-	@Path("auth/{provider}/callback")
-	public final Response authenticationCallback(
-			@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
-			@PathParam("provider") final String signinProvider) {
-		return userManager.authenticateCallback(request, signinProvider);
-	}
-
+	
 	/**
 	 * End point that allows the user to logout - i.e. destroy our cookie.
 	 * 

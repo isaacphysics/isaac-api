@@ -17,7 +17,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder;
@@ -158,8 +158,8 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 	}
 
 	@Override
-	public synchronized User getUserInfo(final String internalProviderReference)
-			throws NoUserException, IOException,
+	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
+		throws NoUserException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		twitter.setOAuthAccessToken(new AccessToken(credentials
@@ -169,9 +169,8 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 			twitter4j.User userInfo = twitter.verifyCredentials();
 
 			if (userInfo != null) {
-				return new User(String.valueOf(userInfo.getId()),
-						userInfo.getName(), null, null, null, null, null, null,
-						null, null, null, null, null);
+				return new UserFromAuthProvider(String.valueOf(userInfo.getId()),
+						userInfo.getName(), null, null, null, null, null);
 
 			} else {
 				throw new NoUserException();

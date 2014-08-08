@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookTokenInfo;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder;
@@ -63,10 +63,10 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private final String callbackUri;
 	private final Collection<String> requestedScopes;
 
-	private final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
-	private final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/oauth/access_token";
-	private final String USER_INFO_URL = "https://graph.facebook.com/me";
-	private final String TOKEN_VERIFICATION_URL = "https://graph.facebook.com/debug_token";
+	private static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
+	private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/oauth/access_token";
+	private static final String USER_INFO_URL = "https://graph.facebook.com/me";
+	private static final String TOKEN_VERIFICATION_URL = "https://graph.facebook.com/debug_token";
 
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
@@ -210,7 +210,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	}
 
 	@Override
-	public synchronized User getUserInfo(final String internalProviderReference)
+	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
 			throws NoUserException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
@@ -239,9 +239,8 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		}
 
 		if (userInfo != null && userInfo.getId() != null) {
-			return new User(userInfo.getId(), userInfo.getFirstName(),
-					userInfo.getLastName(), userInfo.getEmail(), null, null,
-					null, null, null, null, null, null, null);
+			return new UserFromAuthProvider(userInfo.getId(), userInfo.getFirstName(),
+					userInfo.getLastName(), userInfo.getEmail(), null, null, null);
 		} else {
 			throw new NoUserException();
 		}

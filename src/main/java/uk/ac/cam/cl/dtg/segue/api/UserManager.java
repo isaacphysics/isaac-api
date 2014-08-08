@@ -18,7 +18,6 @@ import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -56,11 +55,11 @@ import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.Mailer;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * This class is responsible for all low level user management actions e.g.
@@ -121,11 +120,15 @@ public class UserManager {
 	}
 
 	/**
-	 * This method will attempt to authenticate the user and provide a user
-	 * DTO back to the caller.
+	 * This method will start the authentication process and ultimately redirect the user
+	 * either to their final redirect destination or to a 3rd party authenticator who will
+	 * use the callback method after the have authenticated.
+	 * 
+	 * Users who are already logged in will be redirected immediately to their redirectUrl
+	 * and not go via a 3rd party provider.
 	 * 
 	 * @param request
-	 *            - http request that we can attach the session to.
+	 *            - http request that we can attach the session to and save redirect url in.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
 	 * @param redirectUrl
@@ -145,6 +148,7 @@ public class UserManager {
 		}
 
 		// get the current user based on their session id information.
+		// if they are already logged in then we do not want to proceed with this authentication flow.
 		UserDTO currentUser = getCurrentUser(request);
 		if (null != currentUser) {
 			try {
@@ -159,64 +163,185 @@ public class UserManager {
 						.toResponse();
 			}
 		}
+		
+		return this.initiateAuthenticationFlow(request, provider);
+	}
+	
+	/**
+	 * This method will start the authentication process and ultimately redirect the user
+	 * either to their final redirect destination or to a 3rd party authenticator who will
+	 * use the callback method after the have authenticated.
+	 * 
+	 * Users must already be logged in to use this method.
+	 * 
+	 * @param request
+	 *            - http request that we can attach the session to.
+	 * @param provider
+	 *            - the provider the user wishes to authenticate with.
+	 * @param redirectUrl
+	 *            - optional redirect Url for when authentication has completed.
+	 * @return A response redirecting the user to their redirect url or a
+	 *         redirect URI to the authentication provider if authorization /
+	 *         login is required. Alternatively a SegueErrorResponse could be returned.
+	 */
+	public final Response initiateLinkAccountToUserFlow(final HttpServletRequest request,
+			final String provider, @Nullable final String redirectUrl) {
+		// set redirect url as a session attribute so we can pick it up when
+		// call back happens.
+		if (redirectUrl != null) {
+			this.storeRedirectUrl(request, redirectUrl);
+		} else {
+			this.storeRedirectUrl(request, "/");
+		}
 
-		// Ok we don't have a current user so now we have to go ahead and try
-		// and authenticate them.
+		// The user must be logged in to be able to link accounts.
+		UserDTO currentUser = getCurrentUser(request);
+		if (null == currentUser) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You need to be logged in to link accounts.")
+					.toResponse();
+		}
+		
+		return this.initiateAuthenticationFlow(request, provider);
+	}	
+	
+
+	
+	/**
+	 * Authenticate Callback will receive the authentication information from
+	 * the different provider types. (e.g. OAuth 2.0 (IOAuth2Authenticator) or
+	 * bespoke)
+	 * 
+	 * This method will either register a new user and attach the linkedAccount
+	 * or locate the existing account of the user and create a session for that.
+	 * 
+	 * @param request
+	 *            - http request from the user.
+	 * @param provider
+	 *            - the provider who has just authenticated the user.
+	 * @return Response redirecting the user to their redirect url.
+	 *         Alternatively a SegueErrorResponse could be returned.
+	 */
+	public final Response authenticateCallback(
+			final HttpServletRequest request, final String provider) {
+		
+		// If the user is currently logged in this must be a
+		// request to link accounts
+		User currentUser = getCurrentUserDO(request);
+		
 		try {
-			IAuthenticator federatedAuthenticator = mapToProvider(provider);
+			IAuthenticator authenticator = mapToProvider(provider);
+			
+			boolean linkAccountOperation = false;
+			// if we are already logged in - check if we have already got this
+			// provider assigned already?
+			if (null != currentUser) {
+				List<AuthenticationProvider> usersProviders = this.database
+						.getAuthenticationProvidersByUser(currentUser);
 
-			// if we are an OAuthProvider redirect to the provider
-			// authorization url.
-			URI redirectLink = null;
-			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-				IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
-				String antiForgeryTokenFromProvider = oauth2Provider
-						.getAntiForgeryStateToken();
-
-				// Store antiForgeryToken in the users session.
-				request.getSession().setAttribute(Constants.STATE_PARAM_NAME,
-						antiForgeryTokenFromProvider);
-
-				redirectLink = URI.create(oauth2Provider
-						.getAuthorizationUrl(antiForgeryTokenFromProvider));
-			} else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
-				IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
-				OAuth1Token token = oauth1Provider.getRequestToken();
-
-				// Store token and secret in the users session.
-				request.getSession().setAttribute(
-						Constants.OAUTH_TOKEN_PARAM_NAME, token.getToken());
-
-				redirectLink = URI.create(oauth1Provider
-						.getAuthorizationUrl(token));
+				if (null != usersProviders
+						&& usersProviders.contains(authenticator.getAuthenticationProvider())) {
+					// they are already connected to this provider just redirect
+					// them.
+					return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+				} else {
+					// this case means that this user is already authenticated and wants to link
+					// their account to another provider.
+					linkAccountOperation = true;
+				}
+			}
+			
+			IFederatedAuthenticator federatedAuthenticator;
+			if (authenticator instanceof IFederatedAuthenticator) {
+				federatedAuthenticator = (IFederatedAuthenticator) authenticator;
 			} else {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"The authenticator requested does not have a callback function.")
+						.toResponse();
+			}
+
+			// this is a reference that the segue provider can use to look up user details.
+			String providerSpecificUserLookupReference = null;
+
+			// if we are an OAuth2Provider complete next steps of oauth
+			if (federatedAuthenticator instanceof IOAuthAuthenticator) {
+				IOAuthAuthenticator oauthProvider = (IOAuthAuthenticator) federatedAuthenticator;
+
+				providerSpecificUserLookupReference = this
+						.getOauthInternalRefCode(oauthProvider, request);
+			} else {
+				// This should catch any invalid providers
 				SegueErrorResponse error = new SegueErrorResponse(
 						Status.INTERNAL_SERVER_ERROR,
 						"Unable to map to a known authenticator. The provider: "
 								+ provider + " is unknown");
+				
 				log.error(error.getErrorMessage());
 				return error.toResponse();
 			}
+			
+			// Decide if this is a link operation or an authenticate / register operation.
+			if (linkAccountOperation) {
+				log.info("Linking existing user to another provider account.");
+				this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
+						providerSpecificUserLookupReference);
+			} else {
+				// Get the local user object which will be retrieved /
+				// generated by creating a new user based on the federatedProviders details.
+				User segueUserDO = this
+						.getOrCreateUserFromFederatedProvider(federatedAuthenticator,
+								providerSpecificUserLookupReference);		
 
-			return Response.temporaryRedirect(redirectLink)
-					.entity(redirectLink).build();
+				// create a signed session for this user so that we don't need to do
+				// this again for a while.
+				this.createSession(request, segueUserDO.getDbId());
+			}
+
+			return Response.temporaryRedirect(this.loadRedirectUrl(request))
+					.build();
 
 		} catch (IllegalArgumentException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
-					"Error mapping to a known authenticator. The provider: "
+					"Unable to map to a known authenticator. The provider: "
 							+ provider + " is unknown");
-			log.error(error.getErrorMessage(), e);
+			log.warn(error.getErrorMessage());
 			return error.toResponse();
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.INTERNAL_SERVER_ERROR,
-					"IOException when trying to redirect to OAuth provider", e);
+					"Exception while trying to authenticate a user"
+							+ " - during callback step. IO problem.", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
+		} catch (NoUserException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.UNAUTHORIZED, "Unable to locate user information.");
+			log.error("No userID exception received. Unable to locate user.", e);
+			return error.toResponse();
+		} catch (CodeExchangeException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.UNAUTHORIZED, "Security code exchange failed.");
+			log.error("Unable to verify security code.", e);
+			return error.toResponse();
+		} catch (AuthenticatorSecurityException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.UNAUTHORIZED, "Error during security checks.");
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		} catch (AuthenticationCodeException | CrossSiteRequestForgeryException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.UNAUTHORIZED, e.getMessage());
+			log.info(e.getMessage(), e);
+			return error.toResponse();
+		} catch (URISyntaxException e) {
+			log.error("Redirect URL is not valid for provider " + provider, e);
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Bad authentication redirect url received.", e)
+					.toResponse();
 		}
 	}
-
+	
 	/**
 	 * This method will attempt to authenticate the user using the provided
 	 * credentials and if successful will provide a redirect response to the
@@ -280,136 +405,22 @@ public class UserManager {
 			log.error(error.getErrorMessage());
 			return error.toResponse();
 		}
-	}
-
+	}	
+	
 	/**
-	 * Authenticate Callback will receive the authentication information from
-	 * the different provider types. (e.g. OAuth 2.0 (IOAuth2Authenticator) or
-	 * bespoke)
+	 * Unlink User From AuthenticationProvider
 	 * 
-	 * @param request
-	 *            - http request from the user.
-	 * @param provider
-	 *            - the provider who has just authenticated the user.
-	 * @return Response redirecting the user to their redirect url.
-	 */
-	public final Response authenticateCallback(
-			final HttpServletRequest request, final String provider) {
-		User currentUser = getCurrentUserDO(request);
-
-		if (null != currentUser) {
-			log.info("We already have a cookie set with a valid user. "
-					+ "We won't proceed with authentication callback logic.");
-			try {
-				return Response
-						.temporaryRedirect(this.loadRedirectUrl(request))
-						.build();
-			} catch (URISyntaxException e) {
-				log.error("Redirect URL is not valid for provider " + provider,
-						e);
-				return new SegueErrorResponse(Status.BAD_REQUEST,
-						"Bad authentication redirect url received.", e)
-						.toResponse();
-			}
-		}
-
-		// Ok we don't have a current user so now we have to go ahead and try
-		// and authenticate them.
-		try {
-			IAuthenticator authenticator = mapToProvider(provider);
-			IFederatedAuthenticator federatedAuthenticator;
-			if (authenticator instanceof IFederatedAuthenticator) {
-				federatedAuthenticator = (IFederatedAuthenticator) authenticator;
-			} else {
-				return new SegueErrorResponse(Status.BAD_REQUEST,
-						"The authenticator requested does not have a callback function.")
-						.toResponse();
-			}
-
-			String providerSpecificUserLookupReference = null;
-
-			// if we are an OAuth2Provider complete next steps of oauth
-			if (federatedAuthenticator instanceof IOAuthAuthenticator) {
-				IOAuthAuthenticator oauthProvider = (IOAuthAuthenticator) federatedAuthenticator;
-
-				providerSpecificUserLookupReference = this
-						.getOauthInternalRefCode(oauthProvider, request);
-			} else {
-				// This should catch any invalid providers
-				SegueErrorResponse error = new SegueErrorResponse(
-						Status.INTERNAL_SERVER_ERROR,
-						"Unable to map to a known authenticator. The provider: "
-								+ provider + " is unknown");
-				
-				log.error(error.getErrorMessage());
-				return error.toResponse();
-			}
-
-			// Retrieve the local user object which will be retrieved /
-			// generated.
-			User localUserInformation = this
-					.getUserFromFederatedProvider(federatedAuthenticator,
-							providerSpecificUserLookupReference);
-
-			// create a signed session for this user so that we don't need to do
-			// this again for a while.
-			this.createSession(request, localUserInformation.getDbId());
-
-			return Response.temporaryRedirect(this.loadRedirectUrl(request))
-					.build();
-
-		} catch (IllegalArgumentException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"Unable to map to a known authenticator. The provider: "
-							+ provider + " is unknown");
-			log.warn(error.getErrorMessage());
-			return error.toResponse();
-		} catch (IOException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.INTERNAL_SERVER_ERROR,
-					"Exception while trying to authenticate a user"
-							+ " - during callback step. IO problem.", e);
-			log.error(error.getErrorMessage(), e);
-			return error.toResponse();
-		} catch (NoUserException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, "Unable to locate user information.");
-			log.error("No userID exception received. Unable to locate user.", e);
-			return error.toResponse();
-		} catch (CodeExchangeException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, "Security code exchange failed.");
-			log.error("Unable to verify security code.", e);
-			return error.toResponse();
-		} catch (AuthenticatorSecurityException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, "Error during security checks.");
-			log.error(error.getErrorMessage(), e);
-			return error.toResponse();
-		} catch (AuthenticationCodeException | CrossSiteRequestForgeryException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, e.getMessage());
-			log.info(e.getMessage(), e);
-			return error.toResponse();
-		} catch (URISyntaxException e) {
-			log.error("Redirect URL is not valid for provider " + provider, e);
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"Bad authentication redirect url received.", e)
-					.toResponse();
-		}
-	}
-
-	/**
-	 * Unlink User From AuthenticationProvider Removes the link between a user
-	 * and a provider.
+	 * Removes the link between a user and a provider.
 	 * 
 	 * @param user
 	 *            - user to affect.
 	 * @param providerString
 	 *            - provider to unassociated.
-	 * @throws SegueDatabaseException - if there is an error during the database update.
-	 * @throws MissingRequiredFieldException - If the change will mean that the user will be unable to login again.
+	 * @throws SegueDatabaseException
+	 *             - if there is an error during the database update.
+	 * @throws MissingRequiredFieldException
+	 *             - If the change will mean that the user will be unable to
+	 *             login again.
 	 */
 	public void unlinkUserFromProvider(final UserDTO user, final String providerString)
 		throws SegueDatabaseException, MissingRequiredFieldException {
@@ -791,6 +802,68 @@ public class UserManager {
 	}
 
 	/**
+	 * This method will trigger the authentication flow for a 3rd party
+	 * authenticator.
+	 * 
+	 * This method can be used for regular logins, new registrations or for
+	 * linking 3rd party authenticators to an existing Segue user account.
+	 * 
+	 * @param request
+	 *            - http request that we can attach the session to and that
+	 *            already has a redirect url attached.
+	 * @param provider
+	 *            - the provider the user wishes to authenticate with.
+	 * @return A response redirecting the user to their redirect url or a
+	 *         redirect URI to the authentication provider if authorization /
+	 *         login is required. Alternatively a SegueErrorResponse could be returned.
+	 */
+	private Response initiateAuthenticationFlow(final HttpServletRequest request,
+			final String provider) {
+		try {
+			IAuthenticator federatedAuthenticator = mapToProvider(provider);
+
+			// if we are an OAuthProvider redirect to the provider
+			// authorization url.
+			URI redirectLink = null;
+			if (federatedAuthenticator instanceof IOAuth2Authenticator) {
+				IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
+				String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
+
+				// Store antiForgeryToken in the users session.
+				request.getSession().setAttribute(Constants.STATE_PARAM_NAME, antiForgeryTokenFromProvider);
+
+				redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
+			} else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
+				IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
+				OAuth1Token token = oauth1Provider.getRequestToken();
+
+				// Store token and secret in the users session.
+				request.getSession().setAttribute(Constants.OAUTH_TOKEN_PARAM_NAME, token.getToken());
+
+				redirectLink = URI.create(oauth1Provider.getAuthorizationUrl(token));
+			} else {
+				SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						"Unable to map to a known authenticator. The provider: " + provider + " is unknown");
+				log.error(error.getErrorMessage());
+				return error.toResponse();
+			}
+
+			return Response.temporaryRedirect(redirectLink).entity(redirectLink).build();
+
+		} catch (IllegalArgumentException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+					"Error mapping to a known authenticator. The provider: " + provider + " is unknown");
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		} catch (IOException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"IOException when trying to redirect to OAuth provider", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		}
+	}
+	
+	/**
 	 * Generate an HMAC using a key and the data to sign.
 	 * 
 	 * @param key
@@ -917,7 +990,7 @@ public class UserManager {
 	 */
 	private String registerUser(final User user,
 			final AuthenticationProvider provider, final String providerUserId) {
-		String userId = database.register(user, provider, providerUserId);
+		String userId = database.registerNewUserWithProvider(user, provider, providerUserId);
 		return userId;
 	}
 
@@ -944,7 +1017,7 @@ public class UserManager {
 		}
 		return user;
 	}
-
+	
 	/**
 	 * This method should use the provider specific reference to either register
 	 * a new user or retrieve an existing user.
@@ -954,7 +1027,7 @@ public class UserManager {
 	 * @param providerSpecificUserLookupReference
 	 *            - the look up reference provided by the authenticator after
 	 *            any authenticator specific actions have been completed.
-	 * @return a user object that exists in the segue system.
+	 * @return a Segue UserDO that exists in the segue database.
 	 * @throws AuthenticatorSecurityException
 	 *             - error with authenticator.
 	 * @throws NoUserException
@@ -963,16 +1036,13 @@ public class UserManager {
 	 * @throws IOException
 	 *             - if there is an io error.
 	 */
-	private User getUserFromFederatedProvider(
+	private User getOrCreateUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
 		throws AuthenticatorSecurityException, NoUserException,
 			IOException {
 		// get user info from federated provider
-		// note the userid field in this object will contain the providers user
-		// id not ours so we should change this or use auto-mapping between
-		// different DOs.
-		User userFromProvider = federatedAuthenticator
+		UserFromAuthProvider userFromProvider = federatedAuthenticator
 				.getUserInfo(providerSpecificUserLookupReference);
 
 		if (null == userFromProvider) {
@@ -984,24 +1054,20 @@ public class UserManager {
 		log.debug("User with name " + userFromProvider.getEmail()
 				+ " retrieved");
 
-		// this is the providers unique id for the user we should store it for
-		// now
-		String providerId = userFromProvider.getDbId();
-
-		// clear user object id so that it is ready to receive our local one.
-		userFromProvider.setDbId(null);
-
 		User localUserInformation = this.getUserFromLinkedAccount(
-				federatedAuthenticator.getAuthenticationProvider(), providerId);
+				federatedAuthenticator.getAuthenticationProvider(), userFromProvider.getProviderUserId());
 
 		// decide if we need to register a new user or link to an existing
 		// account
 		if (null == localUserInformation) {
 			log.info("New registration - User does not already exist.");
+
+			User newLocalUser = this.dtoMapper.map(userFromProvider, User.class);
+
 			// register user
-			String localUserId = registerUser(userFromProvider,
+			String localUserId = registerUser(newLocalUser,
 					federatedAuthenticator.getAuthenticationProvider(),
-					providerId);
+					userFromProvider.getProviderUserId());
 			localUserInformation = this.database.getById(localUserId);
 
 			if (null == localUserInformation) {
@@ -1018,6 +1084,41 @@ public class UserManager {
 		return localUserInformation;
 	}
 
+	/**
+	 * Link Provider To Existing Account.
+	 * 
+	 * @param currentUser
+	 *            - the current user to link provider to.
+	 * @param federatedAuthenticator
+	 *            the federatedAuthenticator we are using for authentication
+	 * @param providerSpecificUserLookupReference
+	 *            - the look up reference provided by the authenticator after
+	 *            any authenticator specific actions have been completed.
+	 * 
+	 * @throws AuthenticatorSecurityException
+	 *             - If a third party authenticator fails a security check.
+	 * @throws NoUserException
+	 *             - If we are unable to find a user that matches
+	 * @throws IOException
+	 *             - If there is a problem reading from the data source.
+	 */
+	private void linkProviderToExistingAccount(final User currentUser,
+			final IFederatedAuthenticator federatedAuthenticator,
+			final String providerSpecificUserLookupReference) throws AuthenticatorSecurityException,
+			NoUserException, IOException {
+		Validate.notNull(currentUser);
+		Validate.notNull(federatedAuthenticator);
+		Validate.notEmpty(providerSpecificUserLookupReference);
+
+		// get user info from federated provider
+		UserFromAuthProvider userFromProvider = federatedAuthenticator
+				.getUserInfo(providerSpecificUserLookupReference);
+
+		this.database.linkAuthProviderToAccount(currentUser,
+				federatedAuthenticator.getAuthenticationProvider(), userFromProvider.getProviderUserId());
+
+	}
+	
 	/**
 	 * This method is an oauth2 specific method which will ultimately provide an
 	 * internal reference number that the oauth2 provider can use to lookup the
@@ -1040,15 +1141,11 @@ public class UserManager {
 	 * @throws CrossSiteRequestForgeryException
 	 *             - Unable to guarantee no CSRF
 	 */
-	private String getOauthInternalRefCode(
-			final IOAuthAuthenticator oauthProvider,
-			final HttpServletRequest request)
-		throws AuthenticationCodeException, IOException,
-			CodeExchangeException, NoUserException,
-			CrossSiteRequestForgeryException {
+	private String getOauthInternalRefCode(final IOAuthAuthenticator oauthProvider,
+			final HttpServletRequest request) throws AuthenticationCodeException, IOException,
+			CodeExchangeException, NoUserException, CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
-		if (request.getQueryString() == null
-				|| !ensureNoCSRF(request, oauthProvider)) {
+		if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
 			throw new CrossSiteRequestForgeryException("CRSF check failed");
 		}
 
@@ -1063,8 +1160,7 @@ public class UserManager {
 			String internalReference = oauthProvider.exchangeCode(authCode);
 			return internalReference;
 		} else {
-			throw new AuthenticationCodeException(
-					"User denied access to our app.");
+			throw new AuthenticationCodeException("User denied access to our app.");
 		}
 	}
 
@@ -1143,7 +1239,6 @@ public class UserManager {
 		return userDTO;
 	}
 	
-	
 	/**
 	 * Get the UserDO of the currently logged in user. This is for internal use only.
 	 * 
@@ -1184,7 +1279,7 @@ public class UserManager {
 	 * @param user - a user with the givenName, email and token fields set
 	 * @throws MessagingException - if a fault occurred whilst sending the email
 	 */
-	private void sendFederatedAuthenticatorResetEmail(User user) throws MessagingException {
+	private void sendFederatedAuthenticatorResetEmail(final User user) throws MessagingException {
 		// Get the user's federated authenticators
 		List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
 		List<String> providerNames = new ArrayList<>();
@@ -1242,7 +1337,7 @@ public class UserManager {
 	 * @param user - a user with the givenName, email and token fields set
 	 * @throws MessagingException - if a fault occurred whilst sending the email
 	 */
-	private void sendPasswordResetEmail(User user) throws MessagingException {
+	private void sendPasswordResetEmail(final User user) throws MessagingException {
 		// construct a new instance of the mailer object
 		Mailer mailer = new Mailer(MAILER_SMTP_SERVER, MAIL_FROM_ADDRESS);
 

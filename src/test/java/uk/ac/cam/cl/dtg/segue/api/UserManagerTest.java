@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 
 /**
@@ -321,9 +322,8 @@ public class UserManagerTest {
 				AuthenticationProvider.TEST).atLeastOnce();
 
 		// User object back from provider
-		User providerUser = new User(someProviderUniqueUserId, "TestFirstName",
-				"TestLastName", "", Role.STUDENT, new Date(), Gender.MALE,
-				new Date(), null, null, null, null, null);
+		UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
+				"TestLastName", "", Role.STUDENT, new Date(), Gender.MALE);
 
 
 		// Mock get User Information from provider call
@@ -337,16 +337,23 @@ public class UserManagerTest {
 		expect(
 				dummyDatabase.getByLinkedAccount(AuthenticationProvider.TEST,
 						someProviderUniqueUserId)).andReturn(null);
-
+		
+		User mappedUser = new User(null, "TestFirstName", "testLastName", "",
+				Role.STUDENT, new Date(), Gender.MALE, new Date(),
+				null, null, null, null, null);
+		
+		expect(dummyMapper.map(providerUser, User.class)).andReturn(mappedUser).atLeastOnce();
+		replay(dummyMapper);
+		
 		// A main part of the test is to check the below call happens
 		expect(
-				dummyDatabase.register(providerUser,
+				dummyDatabase.registerNewUserWithProvider(mappedUser,
 						AuthenticationProvider.TEST, someProviderUniqueUserId))
 				.andReturn(someSegueUserId).atLeastOnce();
-		expect(dummyDatabase.getById(someSegueUserId)).andReturn(
-				new User(someSegueUserId, "TestFirstName", "testLastName", "",
-						Role.STUDENT, new Date(), Gender.MALE, new Date(),
-						null, null, null, null, null));
+		
+		mappedUser.setDatabaseId(someSegueUserId);
+		
+		expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
 		// Expect a session to be created
 		dummySession.setAttribute(EasyMock.<String> anyObject(),
