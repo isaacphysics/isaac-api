@@ -178,7 +178,8 @@ public class GameManager {
 			this.gameboardPersistenceManager
 					.temporarilyStoreGameboard(gameboardDTO);
 
-			return augmentGameboardWithUserInformation(gameboardDTO, boardOwner);
+			return augmentGameboardWithUserInformation(gameboardDTO, boardOwner,
+					api.getQuestionAttemptsByUser(boardOwner));
 		} else {
 			return null;
 		}
@@ -238,7 +239,7 @@ public class GameManager {
 		
 		GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
-				user);
+				user, api.getQuestionAttemptsByUser(user));
 		
 		return gameboardFound;
 	}
@@ -268,8 +269,10 @@ public class GameManager {
 			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions)
 		throws SegueDatabaseException {
 		Validate.notNull(user);
-		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
+		
+		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = api
+				.getQuestionAttemptsByUser(user);
 		
 		if (null == usersGameboards || usersGameboards.isEmpty()) {
 			return Lists.newArrayList();
@@ -279,7 +282,7 @@ public class GameManager {
 		
 		// filter gameboards based on selection and also clear out unnecessary question data.
 		for (GameboardDTO gameboard : usersGameboards) {
-			this.augmentGameboardWithUserInformation(gameboard, user);
+			this.augmentGameboardWithUserInformation(gameboard, user, questionAttemptsFromUser);
 			gameboard.setQuestions(null);
 			
 			if (null == showOnly) {
@@ -350,10 +353,13 @@ public class GameManager {
 	 * @return Augmented Gameboard
 	 */
 	public final GameboardDTO augmentGameboardWithUserInformation(
-			final GameboardDTO gameboardDTO, final UserDTO user) {
+			final GameboardDTO gameboardDTO,
+			final UserDTO user,
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
 		if (null == gameboardDTO) {
 			return null;
 		}
+		
 		if (null == user) {
 			return gameboardDTO;
 		}
@@ -361,7 +367,7 @@ public class GameManager {
 		int totalCompleted = 0;
 		
 		for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
-			GameboardItemState state = this.calculateQuestionState(gameItem.getId(), user);
+			GameboardItemState state = this.calculateQuestionState(gameItem.getId(), questionAttemptsFromUser);
 			gameItem.setState(state);
 			if (state.equals(GameboardItemState.COMPLETED)) {
 				totalCompleted++;
@@ -396,16 +402,13 @@ public class GameManager {
 	 * 
 	 * @param questionPageId
 	 *            - the gameboard item id.
-	 * @param user
+	 * @param questionAttemptsFromUser
 	 *            - the user that may or may not have attempted questions in the
 	 *            gameboard.
 	 * @return The state of the gameboard item.
 	 */
 	private GameboardItemState calculateQuestionState(final String questionPageId,
-			final UserDTO user) {
-		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = 
-				api.getQuestionAttemptsByUser(user);
-		
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
 		if (questionAttemptsFromUser != null
 				&& questionAttemptsFromUser.containsKey(questionPageId)) {
 			// go through each question in the question page
