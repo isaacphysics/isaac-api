@@ -26,6 +26,18 @@ public final class Constants {
 	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX";
 
 	/**
+	 * Constant representing the key for the MAILER_SMTP_SERVER property
+	 * - Address of the SMTP server
+	 */
+	public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
+
+	/**
+	 * Constant representing the key for the MAIL_FROM_ADDRESS property
+	 * - Email address to send mail from
+	 */
+	public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
+
+	/**
 	 * Constant representing the key for the maximum number of versions to
 	 * cache.
 	 */
