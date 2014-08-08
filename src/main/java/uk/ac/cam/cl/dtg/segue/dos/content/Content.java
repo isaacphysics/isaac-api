@@ -9,7 +9,6 @@ import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -33,7 +32,7 @@ public class Content extends ContentBase {
 	protected String value;
 	protected String attribution;
 	protected List<String> relatedContent;
-	protected boolean published;
+	protected Boolean published;
 	protected Integer level;
 
 	@JsonCreator
@@ -49,7 +48,7 @@ public class Content extends ContentBase {
 			@JsonProperty("value") String value,
 			@JsonProperty("attribution") String attribution,
 			@JsonProperty("relatedContent") List<String> relatedContent,
-			@JsonProperty("published") boolean published,
+			@JsonProperty("published") Boolean published,
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level) {
 		this._id = _id;
@@ -169,12 +168,11 @@ public class Content extends ContentBase {
 		this.relatedContent = relatedContent;
 	}
 
-	@JsonIgnore
-	public boolean getPublished() {
+	public Boolean getPublished() {
 		return published;
 	}
 
-	public void setPublished(boolean published) {
+	public void setPublished(Boolean published) {
 		this.published = published;
 	}
 

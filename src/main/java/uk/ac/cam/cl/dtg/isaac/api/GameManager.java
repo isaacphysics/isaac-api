@@ -240,12 +240,6 @@ public class GameManager {
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
 				user);
 		
-		// decide whether or not to create / update the link to the user and the gameboard.
-		if (null != gameboardFound && null != user) {
-			this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(user.getDbId(), gameboardId);
-			
-		}
-		
 		return gameboardFound;
 	}
 
@@ -347,7 +341,7 @@ public class GameManager {
 	}
 
 	/**
-	 * Attempt to calculate the gameboard state from a users history.
+	 * Augments the gameboards with user information.
 	 * 
 	 * @param gameboardDTO
 	 *            - the DTO of the gameboard

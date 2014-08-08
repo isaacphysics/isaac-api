@@ -56,6 +56,25 @@ public interface IUserDataManager {
 			final String providerUserId);
 
 	/**
+	 * Unlink providerFromUser.
+	 * 
+	 * This will delete the entry in the linkedAccounts table and prevent a user
+	 * from authenticating using that linked account in the future.
+	 * 
+	 * Note: It is best practice to make sure the user can login with some other
+	 * means before doing this.
+	 * 
+	 * @param user
+	 *            - The user to use as a search term.
+	 * @param provider
+	 *            - the provider to search for.
+	 * @throws SegueDatabaseException
+	 *             - if we have a problem accessing the database.
+	 */
+	void unlinkAuthProviderFromUser(final User user, final AuthenticationProvider provider)
+		throws SegueDatabaseException;
+	
+	/**
 	 * Get a user by local Id.
 	 * 
 	 * @param id
