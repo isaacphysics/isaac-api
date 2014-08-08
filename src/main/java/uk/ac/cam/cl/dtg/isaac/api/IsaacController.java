@@ -486,17 +486,18 @@ public class IsaacController {
 		
 		GameboardState gameboardShowCriteria = null;
 		if (showCriteria != null) {
-			if (showCriteria.toLowerCase().contains("completed")) {
+			if (showCriteria.toLowerCase().equals("completed")) {
 				gameboardShowCriteria = GameboardState.COMPLETED;
-			} else if (showCriteria.toLowerCase().contains("in_progress")) {
+			} else if (showCriteria.toLowerCase().equals("in_progress")) {
 				gameboardShowCriteria = GameboardState.IN_PROGRESS;
-			} else if (showCriteria.toLowerCase().contains("not_attempted")) {
+			} else if (showCriteria.toLowerCase().equals("not_attempted")) {
 				gameboardShowCriteria = GameboardState.NOT_ATTEMPTED;
 			} else {
 				return new SegueErrorResponse(Status.BAD_REQUEST,
 						"Unable to interpret showOnly criteria specified " + showCriteria).toResponse();				
 			}
 		}
+		
 		List<Map.Entry<String, SortOrder>> parsedSortInstructions = null;
 		// sort instructions
 		if (sortInstructions != null && !sortInstructions.isEmpty()) {
