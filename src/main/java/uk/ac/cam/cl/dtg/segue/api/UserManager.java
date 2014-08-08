@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -382,6 +383,33 @@ public class UserManager {
 		}
 	}
 
+	/**
+	 * Unlink User From AuthenticationProvider Removes the link between a user
+	 * and a provider.
+	 * 
+	 * @param user
+	 *            - user to affect.
+	 * @param providerString
+	 *            - provider to unassociated.
+	 * @throws SegueDatabaseException - if there is an error during the database update.
+	 * @throws MissingRequiredFieldException - If the change will mean that the user will be unable to login again.
+	 */
+	public void unlinkUserFromProvider(final UserDTO user, final String providerString)
+		throws SegueDatabaseException, MissingRequiredFieldException {
+		User userDO = this.findUserById(user.getDbId());
+		
+		// make sure that the change doesn't prevent the user from logging in again.
+		if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1)
+				|| userDO.getPassword() != null) {
+			this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
+					.getAuthenticationProvider());			
+		} else {
+			throw new MissingRequiredFieldException(
+					"This modification would mean that the user"
+							+ " no longer has a way of authenticating. Failing change.");
+		}
+	}
+	
 	/**
 	 * Get the details of the currently logged in user.
 	 * 

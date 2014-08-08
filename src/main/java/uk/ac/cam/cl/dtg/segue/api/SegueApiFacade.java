@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -39,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -891,6 +893,43 @@ public class SegueApiFacade {
 		return userManager.getCurrentUser(request);
 	}
 
+	/**
+	 * End point that allows the user to logout - i.e. destroy our cookie.
+	 * 
+	 * @param request
+	 *            - request so we can authenticate the user.
+	 * @param authProviderAsString
+	 *            - the provider to dis-associate.
+	 * @return successful response.
+	 */
+	@DELETE
+	@Path("users/current_user/authentication_provider/{provider}")
+	@Produces("application/json")
+	public final Response unlinkeUserFromProvider(@Context final HttpServletRequest request,
+			@PathParam("provider") final String authProviderAsString) {
+		UserDTO user = this.getCurrentUser(request);
+
+		if (null == user) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"Unable to retrieve the current user as no user is currently logged in.")
+					.toResponse();			
+		}
+		
+		try {
+			this.userManager.unlinkUserFromProvider(user, authProviderAsString);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to remove account do to database issues.", e)
+					.toResponse();	
+		} catch (MissingRequiredFieldException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Unable to remove account as this will mean that the user cannot login again in the future.", e)
+					.toResponse();	
+		}
+		
+		return Response.status(Status.NO_CONTENT).build();
+	}
+	
 	/**
 	 * End point that allows a local user to generate a password reset request.
 	 *

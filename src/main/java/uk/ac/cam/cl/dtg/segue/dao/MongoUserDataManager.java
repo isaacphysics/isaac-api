@@ -246,6 +246,47 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 	
 	/**
+	 * Unlink providerFromUser.
+	 * 
+	 * This will delete the entry in the linkedAccounts table and prevent a user
+	 * from authenticating using that linked account in the future.
+	 * 
+	 * Note: It is best practice to make sure the user can login with some other
+	 * means before doing this.
+	 * 
+	 * @param user
+	 *            - The user to use as a search term.
+	 * @param provider
+	 *            - the provider to search for.
+	 * @throws SegueDatabaseException
+	 *             - if we have a problem accessing the database.
+	 */
+	@Override
+	public void unlinkAuthProviderFromUser(final User user, final AuthenticationProvider provider)
+		throws SegueDatabaseException {
+		Validate.notNull(user);
+		Validate.notNull(user.getDbId());
+		Validate.notNull(provider);
+		
+		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
+				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+						LinkedAccount.class, String.class);
+		
+		DBQuery.Query linkAccountToDeleteQuery = DBQuery.and(DBQuery.is(
+				Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider), DBQuery
+				.is(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME,
+						user.getDbId()));
+		
+		LinkedAccount linkAccountToDelete = jc.findOne(linkAccountToDeleteQuery);
+		
+		if (null == linkAccountToDelete) {
+			throw new SegueDatabaseException("Unable to locate linkedAccount for deletion.");
+		}
+		
+		jc.removeById(linkAccountToDelete.getId());
+	}
+	
+	/**
 	 * Creates a link record, connecting a local user to an external provider
 	 * for authentication purposes.
 	 * 
