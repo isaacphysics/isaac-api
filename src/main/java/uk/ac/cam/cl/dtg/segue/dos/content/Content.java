@@ -168,7 +168,7 @@ public class Content extends ContentBase {
 		this.relatedContent = relatedContent;
 	}
 
-	public boolean getPublished() {
+	public Boolean getPublished() {
 		return published;
 	}
 
