@@ -18,7 +18,17 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
  * @author Stephen Cummins
  */
 public interface IContentManager {
-
+	
+	/**
+	 * Sets Index Restrictions.
+	 * 
+	 * @param loadOnlyPublishedContent
+	 *            - True if you only wish to index content where the top level
+	 *            content object is marked as published. False if all valid
+	 *            content should be indexed.
+	 */
+	void setIndexRestriction(boolean loadOnlyPublishedContent);
+	
 	/**
 	 * Save an object to the content manager.
 	 * 

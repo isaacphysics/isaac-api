@@ -190,4 +190,10 @@ public class MongoContentManager implements IContentManager {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet.");
 	}
+
+	@Override
+	public void setIndexRestriction(boolean loadOnlyPublishedContent) {
+		throw new UnsupportedOperationException(
+				"MongoDB Content Manager does not support this operation.");
+	}
 }

@@ -66,6 +66,8 @@ public class GitContentManager implements IContentManager {
 	private final ContentMapper mapper;
 	private final ISearchProvider searchProvider;
 
+	private boolean indexOnlyPublishedParentContent = false;
+	
 	/**
 	 * Constructor for instantiating a new Git Content Manager Object.
 	 * 
@@ -560,9 +562,16 @@ public class GitContentManager implements IContentManager {
 				try {
 					content = (Content) objectMapper.readValue(out.toString(),
 							ContentBase.class);
-					content = this.augmentChildContent(content,
-							treeWalk.getPathString(), null);
 
+					// check if we only want to index published content
+					if (indexOnlyPublishedParentContent && !content.getPublished()) {
+						log.debug("Skipping unpublished content: " + content.getId());
+						continue;
+					}
+					
+					content = this.augmentChildContent(content,
+							treeWalk.getPathString(), null);					
+					
 					if (null != content) {
 						// add children (and parent) from flattened Set to
 						// cache if they have ids
@@ -1032,5 +1041,10 @@ public class GitContentManager implements IContentManager {
 		}
 
 		indexProblemCache.get(version).get(c).add(message.replace("_", "\\_"));
+	}
+
+	@Override
+	public void setIndexRestriction(final boolean loadOnlyPublishedContent) {
+		this.indexOnlyPublishedParentContent = loadOnlyPublishedContent;
 	}
 }

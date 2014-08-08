@@ -51,6 +51,14 @@ public class ContentVersionController {
 			log.info("Setting live version of the site from properties file to "
 					+ liveVersion);
 		}
+		
+		boolean indexOnlyPublishedContent = Boolean.parseBoolean(this.properties
+				.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
+
+		if (indexOnlyPublishedContent) {
+			log.info("Setting content index mode to: Published Content only");
+			this.contentManager.setIndexRestriction(true);
+		}
 	}
 
 	/**
