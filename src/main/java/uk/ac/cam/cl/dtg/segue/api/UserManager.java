@@ -711,7 +711,10 @@ public class UserManager {
 		// Generate token
 		IPasswordAuthenticator authenticator =
 				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
-		String token = authenticator.hashString(UUID.randomUUID().toString(), user.getSecureSalt());
+		// Use the segue authenticator to generate a token with some reasonable degree of entropy
+		// Trim the "=" padding off the end of the base64 encoded token so that the URL that is
+		// eventually generated is correctly parsed in email clients
+		String token = authenticator.hashString(UUID.randomUUID().toString(), user.getSecureSalt()).replace("=", "");
 		user.setResetToken(token);
 
 		// Set expiry date
