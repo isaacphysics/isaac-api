@@ -236,7 +236,7 @@ public class GameManager {
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId,
 			final UserDTO user) throws SegueDatabaseException {
-		
+				
 		GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
 				user, api.getQuestionAttemptsByUser(user));
@@ -350,6 +350,8 @@ public class GameManager {
 	 *            - the DTO of the gameboard
 	 * @param user
 	 *            - that we are using for the augmentation.
+	 * @param questionAttemptsFromUser
+	 *            - the users question data.
 	 * @return Augmented Gameboard
 	 */
 	public final GameboardDTO augmentGameboardWithUserInformation(
@@ -360,7 +362,7 @@ public class GameManager {
 			return null;
 		}
 		
-		if (null == user) {
+		if (null == user || null == questionAttemptsFromUser) {
 			return gameboardDTO;
 		}
 
