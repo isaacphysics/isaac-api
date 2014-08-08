@@ -811,6 +811,10 @@ public class SegueApiFacade {
 	 */
 	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
 			final UserDTO user) {
+		if (null == user) {
+			return null;
+		}
+		
 		return this.userManager.getQuestionAttemptsByUser(user);
 	}
 
