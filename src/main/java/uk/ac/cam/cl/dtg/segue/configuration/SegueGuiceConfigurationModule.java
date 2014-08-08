@@ -124,8 +124,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT,
 				globalProperties);
-		
+
 		this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
+
+		this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
+		this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
+		this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
 	}
 
 	/**
@@ -338,11 +342,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private UserManager getUserManager(
 			final IUserDataManager database,
 			@Named(Constants.HMAC_SALT) final String hmacSalt,
+			@Named(Constants.HOST_NAME) final String hostName,
+			@Named(Constants.MAILER_SMTP_SERVER) final String smtpServer,
+			@Named(Constants.MAIL_FROM_ADDRESS) final String mailFromAddress,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister) {
 
 		if (null == userManager) {
-			userManager = new UserManager(database, hmacSalt,
-					providersToRegister, this.getDOtoDTOMapper());
+			userManager = new UserManager(database, hmacSalt, providersToRegister,
+					this.getDOtoDTOMapper(), hostName, smtpServer, mailFromAddress);
 			log.info("Creating singleton of UserManager");
 		}
 

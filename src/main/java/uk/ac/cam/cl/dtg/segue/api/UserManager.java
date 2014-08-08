@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -56,6 +59,8 @@ import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.util.Mailer;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * This class is responsible for all low level user management actions e.g.
@@ -69,6 +74,10 @@ public class UserManager {
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
 	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
+
+	private final String HOST_NAME;
+	private final String MAILER_SMTP_SERVER;
+	private final String MAIL_FROM_ADDRESS;
 
 	private final IUserDataManager database;
 	private final String hmacSalt;
@@ -91,16 +100,24 @@ public class UserManager {
 	@Inject
 	public UserManager(final IUserDataManager database, @Named(Constants.HMAC_SALT) final String hmacSalt,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-			final MapperFacade dtoMapper) {
+			final MapperFacade dtoMapper, @Named(Constants.HOST_NAME) final String hostName,
+			@Named(Constants.MAILER_SMTP_SERVER) final String smtpServer,
+			@Named(Constants.MAIL_FROM_ADDRESS) final String mailFromAddress) {
 		Validate.notNull(database);
 		Validate.notNull(hmacSalt);
 		Validate.notNull(providersToRegister);
 		Validate.notNull(dtoMapper);
+		Validate.notNull(hostName);
+		Validate.notNull(smtpServer);
+		Validate.notNull(mailFromAddress);
 
 		this.database = database;
 		this.hmacSalt = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;
 		this.dtoMapper = dtoMapper;
+		this.HOST_NAME = hostName;
+		this.MAILER_SMTP_SERVER = smtpServer;
+		this.MAIL_FROM_ADDRESS = mailFromAddress;
 	}
 
 	/**
@@ -672,9 +689,10 @@ public class UserManager {
 	 * @param userObject - A user object containing the email address of the user to reset the password for.
 	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
+	 * @throws MessagingException - if a fault occurred whilst sending the email
 	 */
-	public final void resetPasswordRequest(final User userObject) throws InvalidKeySpecException,
-			NoSuchAlgorithmException {
+	public final void resetPasswordRequest(final UserDTO userObject) throws InvalidKeySpecException,
+			NoSuchAlgorithmException, MessagingException {
 		User user = this.findUserByEmail(userObject.getEmail());
 
 		if (user == null) {
@@ -685,7 +703,7 @@ public class UserManager {
 
 		if (this.database.hasALinkedAccount(user) && (user.getPassword() == null || user.getPassword().isEmpty())) {
 			// User is not authenticated locally
-			// TODO: Send email saying you need to ask your provider
+			this.sendFederatedAuthenticatorResetEmail(user);
 			return;
 		}
 
@@ -706,8 +724,8 @@ public class UserManager {
 		// Save user object
 		this.database.updateUser(user);
 
-		// TODO: Send Email
-		log.info(String.format("Sending email: %s", token));
+		log.info(String.format("Sending password reset email to %s", user.getEmail()));
+		this.sendPasswordResetEmail(user);
 	}
 
 	/**
@@ -746,6 +764,10 @@ public class UserManager {
 		IPasswordAuthenticator authenticator =
 				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
 		authenticator.setOrChangeUsersPassword(user);
+
+		// Nullify reset token
+		user.setResetToken(null);
+		user.setResetExpiry(null);
 
 		// Save user
 		this.database.updateUser(user);
@@ -1150,5 +1172,94 @@ public class UserManager {
 		
 		// retrieve the user from database.
 		return database.getById(currentUserId);
+	}
+
+	/**
+	 * This method will send an email to a user explaining that they only use a
+	 * federated authenticator.
+	 *
+	 * @param user - a user with the givenName, email and token fields set
+	 * @throws MessagingException - if a fault occurred whilst sending the email
+	 */
+	private void sendFederatedAuthenticatorResetEmail(User user) throws MessagingException {
+		// Get the user's federated authenticators
+		List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
+		List<String> providerNames = new ArrayList<>();
+		for (AuthenticationProvider provider : providers) {
+			IAuthenticator authenticator = this.registeredAuthProviders.get(provider);
+			if (!(authenticator instanceof IFederatedAuthenticator)) {
+				continue;
+			}
+
+			String providerName = provider.name().toLowerCase();
+			providerName = providerName.substring(0, 1).toUpperCase() + providerName.substring(1);
+			providerNames.add(providerName);
+		}
+
+		String providersString;
+		if (providerNames.size() == 1) {
+			providersString = providerNames.get(0);
+		} else {
+			StringBuilder providersBuilder = new StringBuilder();
+			for (int i = 0; i < providerNames.size(); i++) {
+				if (i == providerNames.size() - 1) {
+					providersBuilder.append(" and ");
+				} else if (i > 1) {
+					providersBuilder.append(", ");
+				}
+				providersBuilder.append(providerNames.get(i));
+			}
+			providersString = providersBuilder.toString();
+		}
+
+		// construct a new instance of the mailer object
+		Mailer mailer = new Mailer(MAILER_SMTP_SERVER, MAIL_FROM_ADDRESS);
+
+		// TODO: Remove reference to isaac
+		String subject = "Password Reset - Isaac Physics";
+
+		// Construct message
+		StringBuilder message = new StringBuilder();
+		message.append("Hello ");
+		message.append(user.getGivenName());
+		message.append(",\n\n");
+
+		message.append("You requested a password reset however you use ");
+		message.append(providersString);
+		message.append(" to log in to our site. You must go to your authentication providers to reset your password.");
+		message.append("\n\nIsaac Physics");
+
+		// Send email
+		mailer.sendMail(new String[]{user.getEmail()}, MAIL_FROM_ADDRESS, subject, message.toString());
+	}
+
+	/**
+	 * This method will send a password reset email to a user.
+	 *
+	 * @param user - a user with the givenName, email and token fields set
+	 * @throws MessagingException - if a fault occurred whilst sending the email
+	 */
+	private void sendPasswordResetEmail(User user) throws MessagingException {
+		// construct a new instance of the mailer object
+		Mailer mailer = new Mailer(MAILER_SMTP_SERVER, MAIL_FROM_ADDRESS);
+
+		// TODO: Remove reference to isaac
+		String subject = "Password Reset - Isaac Physics";
+
+		// Construct message
+		StringBuilder message = new StringBuilder();
+		message.append("Hello ");
+		message.append(user.getGivenName());
+		message.append(",\n\n");
+
+		message.append("Please follow this link to reset your password: ");
+		message.append("https://");
+		message.append(HOST_NAME);
+		message.append("/resetpassword/");
+		message.append(user.getResetToken());
+		message.append("\n\nIsaac Physics");
+
+		// Send email
+		mailer.sendMail(new String[]{user.getEmail()}, MAIL_FROM_ADDRESS, subject, message.toString());
 	}
 }

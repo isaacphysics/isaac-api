@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
+import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -940,7 +941,7 @@ public class SegueApiFacade {
 	@POST
 	@Path("users/resetpassword")
 	@Consumes("application/json")
-	public final Response generatePasswordResetToken(final User userObject) {
+	public final Response generatePasswordResetToken(final UserDTO userObject) {
 		if (null == userObject) {
 			log.debug("User is null");
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -951,6 +952,12 @@ public class SegueApiFacade {
 			userManager.resetPasswordRequest(userObject);
 
 			return Response.ok().build();
+		} catch (MessagingException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.INTERNAL_SERVER_ERROR,
+					"Error sending reset email.", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
 		} catch (Exception e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.INTERNAL_SERVER_ERROR,

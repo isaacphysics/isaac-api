@@ -43,6 +43,9 @@ public class UserManagerTest {
 	private IUserDataManager dummyDatabase;
 	private String dummyHMACSalt;
 	private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
+	private String dummyHostName;
+	private String dummySmtpServer;
+	private String dummyMailFromAddress;
 	private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
 	private MapperFacade dummyMapper;
@@ -58,6 +61,9 @@ public class UserManagerTest {
 		this.dummyDatabase = createMock(IUserDataManager.class);
 		this.dummyHMACSalt = "BOB";
 		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
+		this.dummyHostName = "bob";
+		this.dummySmtpServer = "smtp.test.com";
+		this.dummyMailFromAddress = "bob@test.com";
 		this.dummyMapper = createMock(MapperFacade.class);
 	}
 
@@ -67,19 +73,22 @@ public class UserManagerTest {
 	@Test
 	public final void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown() {
 		try {
-			new UserManager(null, this.dummyHMACSalt, this.dummyProvidersMap, this.dummyMapper);
+			new UserManager(null, this.dummyHMACSalt, this.dummyProvidersMap, this.dummyMapper,
+					this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
-			new UserManager(this.dummyDatabase, null, this.dummyProvidersMap, this.dummyMapper);
+			new UserManager(this.dummyDatabase, null, this.dummyProvidersMap, this.dummyMapper,
+					this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
-			new UserManager(this.dummyDatabase, this.dummyHMACSalt, null, this.dummyMapper);
+			new UserManager(this.dummyDatabase, this.dummyHMACSalt, null, this.dummyMapper,
+					this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
@@ -555,7 +564,7 @@ public class UserManagerTest {
 			final IFederatedAuthenticator authenticator) {
 		HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
 		providerMap.put(provider, authenticator);
-		return new UserManager(this.dummyDatabase, this.dummyHMACSalt,
-				providerMap, this.dummyMapper);
+		return new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap, this.dummyMapper,
+				this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
 	}
 }
