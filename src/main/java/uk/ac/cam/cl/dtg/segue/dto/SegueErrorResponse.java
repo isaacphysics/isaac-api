@@ -44,6 +44,7 @@ public class SegueErrorResponse implements Serializable {
 	public SegueErrorResponse(final Status errorCode, final String msg, final Exception e) {
 		this(errorCode, msg);
 		this.responseCode = errorCode;
+		this.exception = e;
 	}
 	
 	
