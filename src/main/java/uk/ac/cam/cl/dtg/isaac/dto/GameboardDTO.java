@@ -22,6 +22,9 @@ public class GameboardDTO {
 
 	private Integer percentageCompleted;
 	private Date lastVisited;
+
+	// indicates whether or not a question in this board has at least been marked as in progress
+	private boolean startedQuestion;
 	
 	/**
 	 * Default Gameboard Constructor.
@@ -244,5 +247,21 @@ public class GameboardDTO {
 	 */
 	public void setLastVisited(final Date lastVisited) {
 		this.lastVisited = lastVisited;
+	}
+
+	/**
+	 * Gets the startedQuestion.
+	 * @return the startedQuestion
+	 */
+	public boolean isStartedQuestion() {
+		return startedQuestion;
+	}
+
+	/**
+	 * Sets the startedQuestion.
+	 * @param startedQuestion the startedQuestion to set
+	 */
+	public void setStartedQuestion(final boolean startedQuestion) {
+		this.startedQuestion = startedQuestion;
 	}
 }

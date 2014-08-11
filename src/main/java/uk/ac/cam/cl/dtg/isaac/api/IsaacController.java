@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -521,7 +522,7 @@ public class IsaacController {
 			}
 		}
 
-		List<GameboardDTO> gameboards;
+		GameboardListDTO gameboards;
 		try {
 			gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
 					DEFAULT_RESULTS_LIMIT, gameboardShowCriteria, parsedSortInstructions);

@@ -102,13 +102,13 @@ public class GameboardPersistenceManager {
 			gameboardToSave.getQuestions().add(c.getId());
 		}
 
+		// This operation may not be atomic due to underlying DB. Gameboard create first then link to user view second.
 		String resultId = gameboardDataManager.save(gameboardToSave);
-
-		log.info("Saving gameboard... Gameboard ID: " + gameboard.getId() + " DB id : " + resultId);
+		log.debug("Saving gameboard... Gameboard ID: " + gameboard.getId() + " DB id : " + resultId);
 
 		// add the gameboard to the users myboards list.
 		this.createOrUpdateUserLinkToGameboard(gameboardToSave.getOwnerUserId(), resultId);
-		log.info("Saving gameboard to user relationship...");
+		log.debug("Saving gameboard to user relationship...");
 
 		// make sure that it is not still in temporary storage
 		this.gameboardNonPersistentStorage.remove(gameboard.getId());

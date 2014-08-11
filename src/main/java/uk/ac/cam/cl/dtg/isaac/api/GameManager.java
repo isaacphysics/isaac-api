@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -273,7 +274,7 @@ public class GameManager {
 	 *             - if there is a problem retrieving the gameboards from the
 	 *             database.
 	 */
-	public final List<GameboardDTO> getUsersGameboards(final UserDTO user, 
+	public final GameboardListDTO getUsersGameboards(final UserDTO user, 
 			@Nullable final Integer startIndex, 
 			@Nullable final Integer limit,
 			@Nullable final GameboardState showOnly, 
@@ -286,10 +287,15 @@ public class GameManager {
 				.getQuestionAttemptsByUser(user);
 		
 		if (null == usersGameboards || usersGameboards.isEmpty()) {
-			return Lists.newArrayList();
+			return new GameboardListDTO();
 		}
 		
 		List<GameboardDTO> resultToReturn = Lists.newArrayList();
+		
+
+		Long totalCompleted = 0L;
+		Long totalInProgress = 0L;
+		Long totalNotStarted = 0L;
 		
 		// filter gameboards based on selection and also clear out unnecessary question data.
 		for (GameboardDTO gameboard : usersGameboards) {
@@ -306,6 +312,15 @@ public class GameManager {
 				// in_progress
 				resultToReturn.add(gameboard);
 			} 
+			
+			// counts
+			if (gameboard.getPercentageCompleted() == 0 && !gameboard.isStartedQuestion()) {
+				totalNotStarted++;
+			} else if (gameboard.getPercentageCompleted() == 100) {
+				totalCompleted++;
+			} else if (gameboard.getPercentageCompleted() > 0 || gameboard.isStartedQuestion()) {
+				totalInProgress++;
+			}		
 		}
 		
 		ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
@@ -351,7 +366,10 @@ public class GameManager {
 		
 		int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
 		
-		return resultToReturn.subList(startIndex, toIndex);
+		GameboardListDTO myBoardsResults = new GameboardListDTO(resultToReturn.subList(startIndex, toIndex),
+				(long) resultToReturn.size(), totalNotStarted, totalInProgress, totalCompleted);
+		
+		return myBoardsResults;
 	}
 
 	/**
@@ -384,6 +402,10 @@ public class GameManager {
 			gameItem.setState(state);
 			if (state.equals(GameboardItemState.COMPLETED)) {
 				totalCompleted++;
+			}
+			
+			if (state.equals(GameboardItemState.COMPLETED) || state.equals(GameboardItemState.IN_PROGRESS)) {
+				gameboardDTO.setStartedQuestion(true);
 			}
 		}
 		
