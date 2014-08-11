@@ -74,6 +74,28 @@ public class MongoAppDataManager<T> implements IAppDataManager<T> {
 		
 		return r.getSavedId().toString();
 	}
+	
+	@Override
+	public void delete(final String objectId) throws SegueDatabaseException {
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(collectionName), typeParamaterClass,
+				String.class);
+
+		WriteResult<T, String> r;
+		
+		try {
+			r = jc.removeById(objectId);
+		} catch (MongoException e) {
+			throw new SegueDatabaseException("Mongo exception during delete of " + objectId
+					, e);			
+		}
+		
+		if (r.getError() != null) {
+			log.error("Error detected during database delete operation");
+			throw new SegueDatabaseException("Mongo exception during delete of " + objectId
+					+ ". Error: " + r.getError());
+		}
+	}
 
 	@Override
 	public final T getById(final String id) throws SegueDatabaseException {

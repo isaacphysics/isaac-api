@@ -64,4 +64,14 @@ public interface IAppDataManager<T> {
 	 *             - if there is a problem with the update operation.
 	 */
 	T updateField(String objectId, String fieldName, Object value) throws SegueDatabaseException;
+	
+	/**
+	 * Delete a given object from the database.
+	 * 
+	 * The object should contain an _id field which is used for equality checking.
+	 * 
+	 * @param objectId - the id of the object to remove from the database.
+	 * @throws SegueDatabaseException - if there is a problem removing the item from the database.
+	 */
+	void delete(String objectId) throws SegueDatabaseException;
 }
