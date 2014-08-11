@@ -209,6 +209,17 @@ public class GameManager {
 	}
 	
 	/**
+	 * This method allows a user to gameboard link to be destroyed. 
+	 * @param gameboardToUnlink - the DTO
+	 * @param user - DTO
+	 * @throws SegueDatabaseException - If there is a problem with the operation.
+	 */
+	public void unlinkUserToGameboard(final GameboardDTO gameboardToUnlink, final UserDTO user)
+		throws SegueDatabaseException {		
+		this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getDbId(), gameboardToUnlink.getId());
+	}
+	
+	/**
 	 * Store a gameboard in a public location.
 	 * 
 	 * @param gameboardToStore

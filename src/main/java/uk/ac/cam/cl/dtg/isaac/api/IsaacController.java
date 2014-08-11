@@ -9,6 +9,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -537,7 +538,48 @@ public class IsaacController {
 	}
 
 	/**
-	 * REST end point to allow gamesboards to be persisted into permanent storage 
+	 * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
+	 * 
+	 * This does not delete the gameboard from the system just removes it.
+	 * 
+	 * @param request - So that we can find the user information. 
+	 * @param gameboardId - 
+	 * @return noContent response if successful a SegueErrorResponse if not.
+	 */
+	@DELETE
+	@Path("users/current_user/gameboards/{gameboard_id}")
+	@Produces("application/json")
+	public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
+			@PathParam("gameboard_id") final String gameboardId) {
+		UserDTO user = api.getCurrentUser(request);
+		
+		if (null == user) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"User not logged in. Unable to retrieve delete gameboards.")
+					.toResponse();
+		}
+
+		try {
+			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user);
+			
+			if (null == gameboardDTO) {
+				return new SegueErrorResponse(Status.NOT_FOUND,
+						"Unable to locate the gameboard specified.")
+						.toResponse();
+			}
+			
+			this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to delete a gameboard.", e)
+					.toResponse();
+		}
+		
+		return Response.noContent().build();
+	}
+	
+	/**
+	 * REST end point to allow gameboards to be persisted into permanent storage 
 	 * and for the title to be updated by users.
 	 * 
 	 * Currently we only support updating the title and saving the gameboard that exists in 

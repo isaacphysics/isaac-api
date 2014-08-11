@@ -306,7 +306,7 @@ public class UserDTO {
 	 * Gets the hasSegueAccount.
 	 * @return the hasSegueAccount
 	 */
-	public boolean isHasSegueAccount() {
+	public boolean getHasSegueAccount() {
 		return hasSegueAccount;
 	}
 
@@ -314,7 +314,7 @@ public class UserDTO {
 	 * Sets the hasSegueAccount.
 	 * @param hasSegueAccount the hasSegueAccount to set
 	 */
-	public void setHasSegueAccount(boolean hasSegueAccount) {
+	public void setHasSegueAccount(final boolean hasSegueAccount) {
 		this.hasSegueAccount = hasSegueAccount;
 	}
 }

@@ -154,6 +154,41 @@ public class GameboardPersistenceManager {
 			log.error("Expected one result and found multiple gameboard -  user relationships.");
 		}
 	}
+	
+	/**
+	 * Allows a link between users and a gameboard to be destroyed.
+	 * 
+	 * @param userId - users id.
+	 * @param gameboardId - gameboard's id
+	 * @throws SegueDatabaseException - if there is an error during the delete operation.
+	 */
+	public void removeUserLinkToGameboard(final String userId, final String gameboardId) throws SegueDatabaseException {
+		
+		// verify that the link exists and retrieve the link id.
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
+
+		Map.Entry<BooleanOperator, String> userIdFieldParam = immutableEntry(BooleanOperator.AND, "userId");
+		Map.Entry<BooleanOperator, String> gameboardIdFieldParam = immutableEntry(BooleanOperator.AND,
+				"gameboardId");
+		fieldsToMatch.put(userIdFieldParam, Arrays.asList(userId));
+		fieldsToMatch.put(gameboardIdFieldParam, Arrays.asList(gameboardId));
+
+		List<UserGameboardsDO> userGameboardDOs = this.userToGameboardMappingsDatabase.find(fieldsToMatch);
+		
+		if (userGameboardDOs.size() == 1) {
+			// delete it
+			this.userToGameboardMappingsDatabase.delete(userGameboardDOs.get(0).getId());
+		} else if (userGameboardDOs.size() == 0) {
+			// unable to find it.
+			log.info("Attempted to remove user to gameboard link but there was none to remove.");
+		} else {
+			// too many gameboards found.
+			throw new SegueDatabaseException(
+					"Unable to delete the gameboard as there is more than one "
+					+ "linking that matches the search terms. Found: "
+							+ userGameboardDOs.size());
+		}
+	}
 
 	/**
 	 * Keep generated gameboard in non-persistent storage.

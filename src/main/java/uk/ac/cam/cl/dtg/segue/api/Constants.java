@@ -270,6 +270,7 @@ public final class Constants {
 	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
 	
 	// User persistence model stuff
+	public static final String LINKED_ACCOUNT_USER_DTO_FIELDNAME = "linkedAccounts";
 	public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
 	public static final String LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME = "localUserId";
 	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
