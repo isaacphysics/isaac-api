@@ -85,8 +85,9 @@ public class GameManager {
 	 * @return gameboard containing random problems.
 	 * @throws NoWildcardException
 	 *             - when we are unable to provide you with a wildcard object.
+	 * @throws SegueDatabaseException - 
 	 */
-	public final GameboardDTO generateRandomGameboard() throws NoWildcardException {
+	public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException {
 		return this.generateRandomGameboard(null, null, null, null, null, null);
 	}
 
@@ -114,11 +115,14 @@ public class GameManager {
 	 *         provided.
 	 * @throws NoWildcardException
 	 *             - when we are unable to provide you with a wildcard object.
+	 * @throws SegueDatabaseException
+	 *             - if there is an error contacting the database.
 	 */
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
-			final List<String> conceptsList, final UserDTO boardOwner) throws NoWildcardException {
+			final List<String> conceptsList, final UserDTO boardOwner) 
+		throws NoWildcardException, SegueDatabaseException {
 
 		String boardOwnerId = null;
 		if (boardOwner != null) {
@@ -292,7 +296,6 @@ public class GameManager {
 		
 		List<GameboardDTO> resultToReturn = Lists.newArrayList();
 		
-
 		Long totalCompleted = 0L;
 		Long totalInProgress = 0L;
 		Long totalNotStarted = 0L;

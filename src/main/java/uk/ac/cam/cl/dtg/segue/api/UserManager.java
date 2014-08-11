@@ -604,27 +604,35 @@ public class UserManager {
 		String[] questionPageId = questionResponse.getQuestionId().split(
 				Constants.ESCAPED_ID_SEPARATOR);
 
-		this.database.registerQuestionAttempt(user.getDbId(), questionPageId[0],
-				questionResponse.getQuestionId(), questionResponse);
+		try {
+			this.database.registerQuestionAttempt(user.getDbId(), questionPageId[0],
+					questionResponse.getQuestionId(), questionResponse);
+		} catch (SegueDatabaseException e) {
+			log.error("Unable to to record question attempt.", e);
+		}
 
 		log.info("Question information recorded for user: " + user.getDbId());
 	}
 	
 	/**
-	 * getQuestionAttemptsByUser.
-	 * This method will return all of the question attempts for a given user as a map.
+	 * getQuestionAttemptsByUser. This method will return all of the question
+	 * attempts for a given user as a map.
 	 * 
-	 * @param user - user with Id field populated.
-	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
+	 * @param user
+	 *            - user with Id field populated.
+	 * @return map of question attempts (QuestionPageId -> QuestionID ->
+	 *         [QuestionValidationResponse]
+	 * @throws SegueDatabaseException
+	 *             - if there is a database error.
 	 */
 	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
-			final UserDTO user) {
+			final UserDTO user) throws SegueDatabaseException {
 		Validate.notNull(user);
 		Validate.notNull(user.getDbId());
 		
 		User userFromDb = this.database.getById(user.getDbId());
 		
-		return userFromDb.getQuestionAttempts();
+		return this.database.getQuestionAttempts(userFromDb.getDbId()).getQuestionAttempts();
 	}
 
 	/**

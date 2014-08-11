@@ -1,16 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import org.mongojack.ObjectId;
-
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.api.client.util.Maps;
 
 /**
  * Data Object to represent a user of the system. This object will be persisted
@@ -31,9 +25,6 @@ public class User {
 	private String schoolOther;
 	
 	private Integer defaultLevel;
-	
-	// Map of questionPage id -> map of question id -> List of questionAttempts information
-	private Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
 
 	// local password - only used for segue local authentication.
 	private String password;
@@ -64,8 +55,6 @@ public class User {
 	 *            - date of registration
 	 * @param schoolId
 	 *            - the list of linked authentication provider accounts.
-	 * @param questionAttempts
-	 *            - the list of question attempts made by the user.
 	 * @param password
 	 *            - password for local segue authentication.
 	 * @param resetToken
@@ -84,8 +73,6 @@ public class User {
 			@JsonProperty("gender") final Gender gender,
 			@JsonProperty("registrationTime") final Date registrationTime,
 			@JsonProperty("schoolId") final String schoolId,
-			@JsonProperty("questionAttempts") 
-			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts,
 			@JsonProperty("password") final String password,
 			@JsonProperty("resetToken") final String resetToken,
 			@JsonProperty("resetExpiry") final Date resetExpiry) {
@@ -98,7 +85,6 @@ public class User {
 		this.gender = gender;
 		this.registrationDate = registrationTime;
 		this.schoolId = schoolId;
-		this.questionAttempts = questionAttempts;
 		this.password = password;
 		this.resetToken = resetToken;
 		this.resetExpiry = resetExpiry;
@@ -108,7 +94,7 @@ public class User {
 	 * Default constructor required for Jackson.
 	 */
 	public User() {
-		this.questionAttempts = Maps.newHashMap();
+
 	}
 
 	/**
@@ -309,24 +295,7 @@ public class User {
 	public void setDefaultLevel(final Integer defaultLevel) {
 		this.defaultLevel = defaultLevel;
 	}
-
-	/**
-	 * Gets the questionAttempts.
-	 * @return the questionAttempts
-	 */
-	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttempts() {
-		return questionAttempts;
-	}
-
-	/**
-	 * Sets the questionAttempts.
-	 * @param questionAttempts the questionAttempts to set
-	 */
-	public final void setQuestionAttempts(
-			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts) {
-		this.questionAttempts = questionAttempts;
-	}
-
+	
 	/**
 	 * Gets the password.
 	 * @return the password

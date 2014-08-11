@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.List;
-
 import org.apache.commons.lang3.Validate;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
@@ -21,6 +20,7 @@ import com.mongodb.MongoException;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -40,6 +40,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	
 	private static final String USER_COLLECTION_NAME = "users";
 	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
+	private static final String QUESTION_ATTEMPTS_COLLECTION_NAME = "questionAttempts";
 
 	/**
 	 * Creates a new user data maanger object.
@@ -103,13 +104,9 @@ public class MongoUserDataManager implements IUserDataManager {
 			return null;
 		}
 
-		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
-		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
-		MongoJackModule.configure(objectMapper);
-
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class, objectMapper);
+				String.class);
 
 		// Do database query using plain mongodb so we only have to read from
 		// the database once.
@@ -125,13 +122,9 @@ public class MongoUserDataManager implements IUserDataManager {
 			return null;
 		}
 
-		// Since we are attaching our own auto mapper we have to do MongoJack configure on it.
-		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
-		MongoJackModule.configure(objectMapper);
-
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class, objectMapper);
+				String.class);
 
 		// Do database query using plain mongodb so we only have to read from
 		// the database once.
@@ -143,13 +136,9 @@ public class MongoUserDataManager implements IUserDataManager {
 
 	@Override
 	public final User updateUser(final User user) {
-		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
-		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
-		MongoJackModule.configure(objectMapper);
-				
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class, objectMapper);
+				String.class);
 		
 		WriteResult<User, String> r = jc.save(user);
 
@@ -163,22 +152,89 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Override
 	public void registerQuestionAttempt(final String userId,
 			final String questionPageId, final String fullQuestionId,
-			final QuestionValidationResponseDTO questionAttempt) {
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class);
+			final QuestionValidationResponseDTO questionAttempt) throws SegueDatabaseException {
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+		
+		JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class,
+				String.class, objectMapper);
 
 		try {
-			WriteResult<User, String> r = jc.updateById(userId,
+			BasicDBObject query = new BasicDBObject(
+					Constants.USER_ID_FKEY_FIELDNAME, userId);
+			
+			DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
+			String questionRecordId = null;
+			if (questionAttemptRecord.size() > 1) {
+				// multiple records returned so this is ambiguous.
+				throw new SegueDatabaseException(
+						"Expected to only find one QuestionAttempt for the user, found "
+								+ questionAttemptRecord.size());
+			} else if (questionAttemptRecord.size() == 0) {
+				// create a new QuestionAttemptUserRecord
+				WriteResult<QuestionAttemptUserRecord, String> save = jc.save(new QuestionAttemptUserRecord(
+						null, userId));
+				
+				questionRecordId = save.getSavedId();
+				
+				if (save.getError() != null) {
+					log.error("Error during database update " + save.getError());
+					throw new SegueDatabaseException(
+							"Error occurred whilst trying to create new QuestionAttemptUserRecord: "
+									+ save.getError());
+				}
+			} else {
+				// set the question Record Id so that we can modify it for the update. 
+				questionRecordId = questionAttemptRecord.toArray().get(0).getId();
+			}
+
+			WriteResult<QuestionAttemptUserRecord, String> r = jc.updateById(
+					questionRecordId,
 					DBUpdate.push(Constants.QUESTION_ATTEMPTS_FIELDNAME + "."
 							+ questionPageId + "." + fullQuestionId,
 							questionAttempt));
-
+			
 			if (r.getError() != null) {
 				log.error("Error during database update " + r.getError());
+				throw new SegueDatabaseException(
+						"Error occurred whilst trying to update the users QuestionAttemptUserRecord: "
+								+ r.getError());
 			}
+			
 		} catch (MongoException e) {
 			log.error("MongoDB Database Exception. ", e);
+		}
+	}
+	
+	@Override
+	public QuestionAttemptUserRecord getQuestionAttempts(final String userId)
+		throws SegueDatabaseException {
+		
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+		
+		JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class,
+				String.class, objectMapper);
+
+		try {
+			BasicDBObject query = new BasicDBObject(
+					Constants.USER_ID_FKEY_FIELDNAME, userId);
+			
+			DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
+			
+			if (questionAttemptRecord.size() != 1) {
+				throw new SegueDatabaseException(
+						"Expected to only find one QuestionAttempt for the user, found "
+								+ questionAttemptRecord.size());
+			}
+			return questionAttemptRecord.toArray().get(0);
+		} catch (MongoException e) {
+			log.error("MongoDB Database Exception. ", e);
+			throw new SegueDatabaseException("Database error.", e);
 		}
 	}
 

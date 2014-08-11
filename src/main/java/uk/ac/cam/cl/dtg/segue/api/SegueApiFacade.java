@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -811,9 +810,10 @@ public class SegueApiFacade {
 	 * This is a library method that provides access to a users question attempts.
 	 * @param user - the user to look up.
 	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
+	 * @throws SegueDatabaseException - If there is an error in the database call.
 	 */
 	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
-			final UserDTO user) {
+			final UserDTO user) throws SegueDatabaseException {
 		if (null == user) {
 			return null;
 		}

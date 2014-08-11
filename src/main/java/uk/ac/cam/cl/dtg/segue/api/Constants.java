@@ -265,6 +265,8 @@ public final class Constants {
 	public static final String VALUE_FIELDNAME = "value";
 	public static final String CHILDREN_FIELDNAME = "children";
 	public static final String LEVEL_FIELDNAME = "level";
+	
+	public static final String USER_ID_FKEY_FIELDNAME = "userId";
 
 	public static final String ID_SEPARATOR = "|";
 	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;

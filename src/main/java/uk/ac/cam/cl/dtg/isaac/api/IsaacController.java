@@ -274,9 +274,14 @@ public class IsaacController {
 			if (unknownResponse instanceof SeguePageDTO) {
 				SeguePageDTO content = (SeguePageDTO) unknownResponse;
 
-				content = api.getQuestionManager()
-						.augmentQuestionObjectWithAttemptInformation(content,
-								api.getQuestionAttemptsByUser(currentUser));
+				try {
+					content = api.getQuestionManager()
+							.augmentQuestionObjectWithAttemptInformation(content,
+									api.getQuestionAttemptsByUser(currentUser));
+				} catch (SegueDatabaseException e) {
+					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+							"Database error during retrieval of questionAttempts.").toResponse();	
+				}
 
 				return Response.ok(content).build();
 			}
@@ -404,6 +409,9 @@ public class IsaacController {
 		} catch (NoWildcardException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to load the wildcard.").toResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 	}
 	

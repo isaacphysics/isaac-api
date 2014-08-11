@@ -138,7 +138,7 @@ public class UserManagerTest {
 		String validHMAC = "UEwiXcJvKskSf3jyuQCnNPrXwBU=";
 		User returnUser = new User(validUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, new Date(), Gender.MALE,
-				new Date(), null, null, null, null, null);
+				new Date(), null, null, null, null);
 
 		expect(request.getSession()).andReturn(dummySession).times(5);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -340,7 +340,7 @@ public class UserManagerTest {
 		
 		User mappedUser = new User(null, "TestFirstName", "testLastName", "",
 				Role.STUDENT, new Date(), Gender.MALE, new Date(),
-				null, null, null, null, null);
+				null, null, null, null);
 		
 		expect(dummyMapper.map(providerUser, User.class)).andReturn(mappedUser).atLeastOnce();
 		replay(dummyMapper);
