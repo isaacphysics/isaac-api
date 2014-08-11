@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +57,9 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
@@ -824,7 +827,7 @@ public class SegueApiFacade {
 	 * 
 	 * @param request
 	 *            - the http request of the user wishing to authenticate
-	 * @param userObject
+	 * @param userObjectString
 	 *            - object containing all user account information including
 	 *            passwords.
 	 * @return the updated users object.
@@ -834,7 +837,19 @@ public class SegueApiFacade {
 	@Path("users/")
 	@Consumes("application/json")
 	public final Response createOrUpdateUserSettings(
-			@Context final HttpServletRequest request, final User userObject) {
+			@Context final HttpServletRequest request, final String userObjectString) {
+
+		ObjectMapper tempObjectMapper = new ObjectMapper();
+		tempObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		User userObject;
+		try {
+			userObject = tempObjectMapper.readValue(userObjectString, User.class);
+		} catch (IOException e1) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Unable to parser the user object you provided.")
+					.toResponse();
+		}
+		
 		if (null == userObject) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"No user settings provided.").toResponse();
@@ -897,8 +912,6 @@ public class SegueApiFacade {
 	public UserDTO getCurrentUser(final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
-
-
 	
 	/**
 	 * End point that allows a local user to generate a password reset request.
