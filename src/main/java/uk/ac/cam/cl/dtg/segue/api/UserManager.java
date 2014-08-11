@@ -1236,6 +1236,12 @@ public class UserManager {
 		// Augment with linked account information
 		userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
 		
+		if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+			userDTO.setHasSegueAccount(true);
+		} else {
+			userDTO.setHasSegueAccount(false);
+		}
+		
 		return userDTO;
 	}
 	

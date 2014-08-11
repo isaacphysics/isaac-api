@@ -34,6 +34,7 @@ public class UserDTO {
 	private Integer defaultLevel;
 	
 	private List<AuthenticationProvider> linkedAccounts;
+	private boolean hasSegueAccount;
 	
 	/**
 	 * Full constructor for the User object.
@@ -299,5 +300,21 @@ public class UserDTO {
 	 */
 	public void setLinkedAccounts(final List<AuthenticationProvider> linkedAccounts) {
 		this.linkedAccounts = linkedAccounts;
+	}
+
+	/**
+	 * Gets the hasSegueAccount.
+	 * @return the hasSegueAccount
+	 */
+	public boolean isHasSegueAccount() {
+		return hasSegueAccount;
+	}
+
+	/**
+	 * Sets the hasSegueAccount.
+	 * @param hasSegueAccount the hasSegueAccount to set
+	 */
+	public void setHasSegueAccount(boolean hasSegueAccount) {
+		this.hasSegueAccount = hasSegueAccount;
 	}
 }
