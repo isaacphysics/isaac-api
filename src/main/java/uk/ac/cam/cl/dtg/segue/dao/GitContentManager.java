@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
@@ -775,24 +776,26 @@ public class GitContentManager implements IContentManager {
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
 		Set<String> missingContent = new HashSet<String>();
-
+		
 		Map<String, Content> whoAmI = new HashMap<String, Content>();
 
 		// Build up a set of all content (and content fragments for validation)
 		for (Content c : gitCache.get(sha).values()) {
-			allObjectsSeen.addAll(this.flattenContentObjects(c));
+			if (c instanceof IsaacSymbolicQuestion) {
+				// do not validate these questions for now.
+				continue;
+			}
+			allObjectsSeen.addAll(this.flattenContentObjects(c));	
 		}
 
 		// Start looking for issues in the flattened content data
 		for (Content c : allObjectsSeen) {
-			// add the id to the list of defined ids if one is set for this
-			// content object
+			// add the id to the list of defined ids
 			if (c.getId() != null) {
 				definedIds.add(c.getId());
 			}
 
-			// add the ids to the list of expected ids if we see a list of
-			// referenced content
+			// add the ids to the list of expected ids 
 			if (c.getRelatedContent() != null) {
 				expectedIds.addAll(c.getRelatedContent());
 				// record which content object was referencing which ID
