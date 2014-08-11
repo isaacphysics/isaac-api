@@ -226,11 +226,14 @@ public class MongoUserDataManager implements IUserDataManager {
 			
 			DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
 			
-			if (questionAttemptRecord.size() != 1) {
+			if (questionAttemptRecord.size() > 1) {
 				throw new SegueDatabaseException(
 						"Expected to only find one QuestionAttempt for the user, found "
 								+ questionAttemptRecord.size());
+			} else if (questionAttemptRecord.size() == 0) {
+				return new QuestionAttemptUserRecord();
 			}
+			
 			return questionAttemptRecord.toArray().get(0);
 		} catch (MongoException e) {
 			log.error("MongoDB Database Exception. ", e);
