@@ -410,6 +410,7 @@ public class IsaacController {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to load the wildcard.").toResponse();
 		} catch (SegueDatabaseException e) {
+			log.error("SegueDatabaseException whilst generating a gameboard", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
