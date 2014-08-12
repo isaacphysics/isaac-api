@@ -23,6 +23,8 @@ import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
+import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
+import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
@@ -80,6 +82,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static UserManager userManager = null;
 	private static IUserDataManager userDataManager = null;
 	private static GoogleClientSecrets googleClientSecrets = null;
+
+	private static ICommunicator communicator = null;
 
 	private PropertiesLoader globalProperties = null;
 
@@ -343,19 +347,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			final IUserDataManager database,
 			@Named(Constants.HMAC_SALT) final String hmacSalt,
 			@Named(Constants.HOST_NAME) final String hostName,
-			@Named(Constants.MAILER_SMTP_SERVER) final String smtpServer,
-			@Named(Constants.MAIL_FROM_ADDRESS) final String mailFromAddress,
-			final Map<AuthenticationProvider, IAuthenticator> providersToRegister) {
+			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+			final ICommunicator communicator) {
 
 		if (null == userManager) {
 			userManager = new UserManager(database, hmacSalt, providersToRegister,
-					this.getDOtoDTOMapper(), hostName, smtpServer, mailFromAddress);
+					this.getDOtoDTOMapper(), hostName, communicator);
 			log.info("Creating singleton of UserManager");
 		}
 
 		return userManager;
 	}
-	
+
 	/**
 	 * This provides a singleton of the contentVersionController for the segue
 	 * facade.
@@ -454,6 +457,33 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return mongoDB.getDB();
 	}
+
+
+	/**
+	 * This provides a singleton of the ICommunicator for the segue
+	 * facade.
+	 *
+	 * @param smtpServer
+	 *            - SMTP Server Address
+	 * @param mailFromAddress
+	 *            - The default address emails should be sent from
+	 * @return The singleton instance of EmailCommunicator
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private ICommunicator getCommunicator(
+			@Named(Constants.MAILER_SMTP_SERVER) final String smtpServer,
+			@Named(Constants.MAIL_FROM_ADDRESS) final String mailFromAddress) {
+
+		if (null == communicator) {
+			communicator = new EmailCommunicator(smtpServer, mailFromAddress);
+			log.info("Creating singleton of EmailCommunicator");
+		}
+
+		return communicator;
+	}
+
 
 	/**
 	 * This method will pre-register the mapper class so that content objects

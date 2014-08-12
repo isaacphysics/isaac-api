@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
-import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -36,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
@@ -934,10 +934,10 @@ public class SegueApiFacade {
 			userManager.resetPasswordRequest(userObject);
 
 			return Response.ok().build();
-		} catch (MessagingException e) {
+		} catch (CommunicationException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.INTERNAL_SERVER_ERROR,
-					"Error sending reset email.", e);
+					"Error sending reset message.", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		} catch (Exception e) {

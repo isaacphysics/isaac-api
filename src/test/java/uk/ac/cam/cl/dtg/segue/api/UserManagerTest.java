@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -45,11 +46,10 @@ public class UserManagerTest {
 	private String dummyHMACSalt;
 	private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
 	private String dummyHostName;
-	private String dummySmtpServer;
-	private String dummyMailFromAddress;
 	private static final String CSRF_TEST_VALUE = "CSRFTESTVALUE";
 
 	private MapperFacade dummyMapper;
+	private ICommunicator dummyCommunicator;
 	
 	/**
 	 * Initial configuration of tests.
@@ -63,9 +63,8 @@ public class UserManagerTest {
 		this.dummyHMACSalt = "BOB";
 		this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
 		this.dummyHostName = "bob";
-		this.dummySmtpServer = "smtp.test.com";
-		this.dummyMailFromAddress = "bob@test.com";
 		this.dummyMapper = createMock(MapperFacade.class);
+		this.dummyCommunicator = createMock(ICommunicator.class);
 	}
 
 	/**
@@ -75,21 +74,21 @@ public class UserManagerTest {
 	public final void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown() {
 		try {
 			new UserManager(null, this.dummyHMACSalt, this.dummyProvidersMap, this.dummyMapper,
-					this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
+					this.dummyHostName, this.dummyCommunicator);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
 			new UserManager(this.dummyDatabase, null, this.dummyProvidersMap, this.dummyMapper,
-					this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
+					this.dummyHostName, this.dummyCommunicator);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
 			new UserManager(this.dummyDatabase, this.dummyHMACSalt, null, this.dummyMapper,
-					this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
+					this.dummyHostName, this.dummyCommunicator);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
@@ -572,6 +571,6 @@ public class UserManagerTest {
 		HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
 		providerMap.put(provider, authenticator);
 		return new UserManager(this.dummyDatabase, this.dummyHMACSalt, providerMap, this.dummyMapper,
-				this.dummyHostName, this.dummySmtpServer, this.dummyMailFromAddress);
+				this.dummyHostName, this.dummyCommunicator);
 	}
 }
