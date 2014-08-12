@@ -18,7 +18,7 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.AbstractModule;

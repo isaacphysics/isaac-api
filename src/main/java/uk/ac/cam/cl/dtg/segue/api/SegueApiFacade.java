@@ -40,10 +40,10 @@ import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -275,9 +275,6 @@ public class SegueApiFacade {
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
-			log.info("Finding all content from the api with fields: "
-					+ fieldsToMatch);
-
 			c = contentPersistenceManager.findByFieldNames(version,
 					fieldsToMatch, startIndex, limit);
 		} catch (IllegalArgumentException e) {
@@ -329,9 +326,6 @@ public class SegueApiFacade {
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
-			log.info("Finding all content from the api with fields: "
-					+ fieldsToMatch);
-
 			c = contentPersistenceManager.findByFieldNamesRandomOrder(version,
 					fieldsToMatch, startIndex, limit);
 		} catch (IllegalArgumentException e) {

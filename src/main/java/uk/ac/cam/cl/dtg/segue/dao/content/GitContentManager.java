@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao;
+package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

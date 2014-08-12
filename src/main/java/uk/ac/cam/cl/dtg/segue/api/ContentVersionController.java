@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.dao.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**

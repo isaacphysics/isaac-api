@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao;
+package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,6 +17,9 @@ import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
+import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
+import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;

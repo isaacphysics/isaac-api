@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao;
+package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;

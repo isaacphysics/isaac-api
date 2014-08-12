@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao;
+package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.util.List;
 
@@ -22,6 +22,8 @@ import com.mongodb.MongoException;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -59,7 +61,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final User createOrUpdateUser(final User user) throws DuplicateAccountException, SegueDatabaseException {
+	public final User createOrUpdateUser(final User user) throws SegueDatabaseException {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
@@ -85,7 +87,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	
 	@Override
 	public final String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
-			final String providerUserId) throws DuplicateAccountException, SegueDatabaseException {
+			final String providerUserId) throws SegueDatabaseException {
 		Validate.notNull(user);
 		Validate.notNull(provider);
 		Validate.notNull(providerUserId);

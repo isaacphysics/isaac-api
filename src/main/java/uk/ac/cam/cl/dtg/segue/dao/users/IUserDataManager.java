@@ -1,9 +1,9 @@
-package uk.ac.cam.cl.dtg.segue.dao;
+package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -25,14 +25,11 @@ public interface IUserDataManager {
 	 * @param providerUserId
 	 *            - the provider specific unique user id.
 	 * @return the local users id.
-	 * @throws DuplicateAccountException
-	 *             - If there is an account that already exists in the system
-	 *             with matching indexed fields.
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
 	String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
-			final String providerUserId) throws DuplicateAccountException, SegueDatabaseException;
+			final String providerUserId) throws SegueDatabaseException;
 	
 	/**
 	 * Determine whether the user has at least one linked account. 
@@ -144,13 +141,10 @@ public interface IUserDataManager {
 	 *            - the user object to persist.
 	 * 
 	 * @return user which was saved.
-	 * @throws DuplicateAccountException
-	 *             - If there is an account that already exists in the system
-	 *             with matching indexed fields.
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User createOrUpdateUser(User user) throws DuplicateAccountException, SegueDatabaseException;
+	User createOrUpdateUser(User user) throws SegueDatabaseException;
 
 	/**
 	 * Update a particular field on a user object.

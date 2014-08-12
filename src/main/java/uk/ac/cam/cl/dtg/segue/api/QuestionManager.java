@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
