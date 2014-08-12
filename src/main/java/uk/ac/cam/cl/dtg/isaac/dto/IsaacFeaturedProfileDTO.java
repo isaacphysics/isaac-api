@@ -18,9 +18,8 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
  */
 @JsonType("isaacFeaturedProfile")
 public class IsaacFeaturedProfileDTO extends ContentDTO {
-
-	protected String emailAddress;
-	protected Image image;
+	private String emailAddress;
+	private Image image;
 
 	@JsonCreator
 	public IsaacFeaturedProfileDTO(@JsonProperty("_id") String _id,
@@ -51,25 +50,41 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 	}
 
 	/**
-	 * Default constructor required for Jackson
+	 * Default constructor required for Jackson.
 	 */
 	public IsaacFeaturedProfileDTO() {
 
 	}
 
+	/**
+	 * Gets the emailAddress.
+	 * @return the emailAddress
+	 */
 	public String getEmailAddress() {
 		return emailAddress;
 	}
 
-	public void setEmailAddress(String emailAddress) {
+	/**
+	 * Sets the emailAddress.
+	 * @param emailAddress the emailAddress to set
+	 */
+	public void setEmailAddress(final String emailAddress) {
 		this.emailAddress = emailAddress;
 	}
 
+	/**
+	 * Gets the image.
+	 * @return the image
+	 */
 	public Image getImage() {
 		return image;
 	}
 
-	public void setImage(Image image) {
+	/**
+	 * Sets the image.
+	 * @param image the image to set
+	 */
+	public void setImage(final Image image) {
 		this.image = image;
 	}
 }

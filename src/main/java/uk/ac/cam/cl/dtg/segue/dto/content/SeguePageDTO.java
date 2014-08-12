@@ -22,5 +22,4 @@ public class SeguePageDTO extends ContentDTO {
 	public final void setSummary(final String summary) {
 		this.summary = summary;
 	}
-	
 }

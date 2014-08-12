@@ -24,8 +24,16 @@ public class ContentSummaryDTO {
 		tags = new ArrayList<String>();
 	}
 
-	public ContentSummaryDTO(String id, String title, String type,
-			List<String> tags, String url) {
+	/**
+	 * Full constructor.
+	 * @param id - id
+	 * @param title - title
+	 * @param type - type
+	 * @param tags - tags
+	 * @param url - url
+	 */
+	public ContentSummaryDTO(final String id, final String title, final String type,
+			final List<String> tags, final String url) {
 		this.id = id;
 		this.type = type;
 		this.tags = tags;
@@ -33,19 +41,35 @@ public class ContentSummaryDTO {
 		this.url = url;
 	}
 
+	/**
+	 * Gets the id.
+	 * @return the id
+	 */
 	public String getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	/**
+	 * Sets the id.
+	 * @param id the id to set
+	 */
+	public void setId(final String id) {
 		this.id = id;
 	}
 
+	/**
+	 * Gets the title.
+	 * @return the title
+	 */
 	public String getTitle() {
 		return title;
 	}
 
-	public void setTitle(String title) {
+	/**
+	 * Sets the title.
+	 * @param title the title to set
+	 */
+	public void setTitle(final String title) {
 		this.title = title;
 	}
 
@@ -53,7 +77,7 @@ public class ContentSummaryDTO {
 	 * Gets the summary.
 	 * @return the summary
 	 */
-	public final String getSummary() {
+	public String getSummary() {
 		return summary;
 	}
 
@@ -61,31 +85,55 @@ public class ContentSummaryDTO {
 	 * Sets the summary.
 	 * @param summary the summary to set
 	 */
-	public final void setSummary(final String summary) {
+	public void setSummary(final String summary) {
 		this.summary = summary;
 	}
 
+	/**
+	 * Gets the type.
+	 * @return the type
+	 */
 	public String getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	/**
+	 * Sets the type.
+	 * @param type the type to set
+	 */
+	public void setType(final String type) {
 		this.type = type;
 	}
 
+	/**
+	 * Gets the tags.
+	 * @return the tags
+	 */
 	public List<String> getTags() {
 		return tags;
 	}
 
-	public void setTags(List<String> tags) {
+	/**
+	 * Sets the tags.
+	 * @param tags the tags to set
+	 */
+	public void setTags(final List<String> tags) {
 		this.tags = tags;
 	}
 
+	/**
+	 * Gets the url.
+	 * @return the url
+	 */
 	public String getUrl() {
 		return url;
 	}
 
-	public void setUrl(String url) {
+	/**
+	 * Sets the url.
+	 * @param url the url to set
+	 */
+	public void setUrl(final String url) {
 		this.url = url;
 	}
 }

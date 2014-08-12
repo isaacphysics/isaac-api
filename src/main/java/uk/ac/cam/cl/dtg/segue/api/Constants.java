@@ -27,13 +27,13 @@ public final class Constants {
 
 	/**
 	 * Constant representing the key for the MAILER_SMTP_SERVER property
-	 * - Address of the SMTP server
+	 * - Address of the SMTP server.
 	 */
 	public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
 
 	/**
 	 * Constant representing the key for the MAIL_FROM_ADDRESS property
-	 * - Email address to send mail from
+	 * - Email address to send mail from.
 	 */
 	public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
 
@@ -289,7 +289,6 @@ public final class Constants {
 	public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME_POJO = "establishmentNumber";
 	public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
 	public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
-	
 	
 	/**
 	 * Private constructor to prevent this class being created.

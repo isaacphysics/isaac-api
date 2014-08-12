@@ -3,7 +3,6 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -25,15 +24,19 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
  */
 public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 	private ContentBaseDeserializer contentDeserializer;
-
-	public ChoiceDeserializer(ContentBaseDeserializer contentDeserializer) {
+	/**
+	 * Creates a Choice deserializer that is used by jackson to handle
+	 * polymorphic types.
+	 * 
+	 * @param contentDeserializer - Instance of a contentBase deserializer needed to deserialize nested content.
+	 */
+	public ChoiceDeserializer(final ContentBaseDeserializer contentDeserializer) {
 		this.contentDeserializer = contentDeserializer;
 	}
 
 	@Override
-	public Choice deserialize(JsonParser jsonParser,
-			DeserializationContext deserializationContext) throws IOException,
-			JsonProcessingException, JsonMappingException {
+	public Choice deserialize(final JsonParser jsonParser,
+			final DeserializationContext deserializationContext) throws IOException {
 
 		SimpleModule contentDeserializerModule = new SimpleModule(
 				"ContentDeserializerModule");

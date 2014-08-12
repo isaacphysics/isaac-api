@@ -33,7 +33,8 @@ public class ContentDTO extends ContentBaseDTO {
 	
 	@JsonCreator
 	public ContentDTO(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
+			@JsonProperty("id") String id, 
+			@JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
 			@JsonProperty("author") String author,
@@ -65,30 +66,33 @@ public class ContentDTO extends ContentBaseDTO {
 		this.level = level;
 
 		// useful for when we want to augment this POJO
-		if (null == this.children)
+		if (null == this.children) {
 			this.children = new ArrayList<ContentBaseDTO>();
+		}
 
-		if (null == this.tags)
-			this.tags = new HashSet<String>();
-
+		if (null == this.tags) {
+			this.tags = new HashSet<String>();	
+		}
 	}
 
 	/**
 	 * Basic constructor to allow communication of a simple value.
 	 * 
-	 * @param value
+	 * @param value - value of the content to create.
 	 */
-	public ContentDTO(String value) {
+	public ContentDTO(final String value) {
 		this.value = value;
 		this.type = "content";
 		this.encoding = "markdown";
 
 		// useful for when we want to augment this POJO
-		if (null == this.children)
+		if (null == this.children) {
 			this.children = Lists.newArrayList();
+		}
 
-		if (null == this.tags)
+		if (null == this.tags) {
 			this.tags = Sets.newHashSet();
+		}
 	}
 
 	/**
@@ -192,12 +196,12 @@ public class ContentDTO extends ContentBaseDTO {
 		return level;
 	}
 
-	public void setLevel(Integer level) {
+	public void setLevel(final Integer level) {
 		this.level = level;
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if (null == o || !(o instanceof ContentDTO))
 			return false;
 
@@ -226,14 +230,15 @@ public class ContentDTO extends ContentBaseDTO {
 	public int hashCode() {
 		int hashCode = 0;
 
-		if (this.id != null)
+		if (this.id != null) {
 			hashCode = hashCode + this.id.hashCode();
-
-		if (this.title != null)
+		}
+		if (this.title != null) {
 			hashCode = hashCode + this.title.hashCode();
-
-		if (this.value != null)
+		}
+		if (this.value != null) {
 			hashCode = hashCode + this.value.hashCode();
+		}
 
 		return hashCode;
 	}

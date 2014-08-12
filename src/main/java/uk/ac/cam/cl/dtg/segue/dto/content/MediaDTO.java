@@ -5,7 +5,6 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  * the CMS.
  */
 public abstract class MediaDTO extends ContentDTO {
-
 	protected String src;
 	protected String altText;
 
