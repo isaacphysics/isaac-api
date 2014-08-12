@@ -16,10 +16,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 /**
  * Default quiz validator for ChoiceQuestions.
  * 
- *
+ * This relies on the annotation {@link ValidatesWith} being used.
  */
 public class ChoiceQuestionValidator implements IValidator {
-
 	private static final Logger log = LoggerFactory
 			.getLogger(ChoiceQuestionValidator.class);
 
