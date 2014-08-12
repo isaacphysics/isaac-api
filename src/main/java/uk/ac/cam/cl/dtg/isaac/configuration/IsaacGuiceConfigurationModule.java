@@ -16,6 +16,7 @@ import uk.ac.cam.cl.dtg.segue.api.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
+import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -102,10 +103,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 			@Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
 			final ContentVersionController versionController,
 			final UserManager userManager,
-			final QuestionManager questionManager) {
+			final QuestionManager questionManager,
+			final ICommunicator communicator) {
 		if (null == segueApi) {
 			segueApi = new SegueApiFacade(properties, mapper,
-					segueConfigurationModule, versionController, userManager, questionManager);
+					segueConfigurationModule, versionController, userManager, questionManager, communicator);
 			log.info("Creating Singleton of Segue API");
 		}
 

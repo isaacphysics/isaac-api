@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
+import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ContentMapper;
@@ -83,6 +84,7 @@ public class SegueApiFacade {
 	private UserManager userManager;
 	private QuestionManager questionManager;
 	private PropertiesLoader properties;
+	private ICommunicator communicator;
 
 	/**
 	 * Constructor that allows pre-configuration of the segue api.
@@ -101,6 +103,8 @@ public class SegueApiFacade {
 	 * @param questionManager
 	 *            - A question manager object responsible for managing questions
 	 *            and augmenting questions with user information.
+	 * @param communicator
+	 *            - An implementation of ICommunicator for sending communiques
 	 */
 	@Inject
 	public SegueApiFacade(
@@ -109,10 +113,12 @@ public class SegueApiFacade {
 			@Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
 			final ContentVersionController contentVersionController,
 			final UserManager userManager,
-			final QuestionManager questionManager) {
+			final QuestionManager questionManager,
+			final ICommunicator communicator) {
 
 		this.properties = properties;
 		this.questionManager = questionManager;
+		this.communicator = communicator;
 
 		// We only want to do this if the mapper needs to be changed - I expect
 		// the same instance to be injected from Guice each time.
@@ -1346,6 +1352,60 @@ public class SegueApiFacade {
 				+ errors);
 
 		return Response.ok(c).build();
+	}
+
+	/**
+	 * Endpoint that handles contact us form submissions
+	 *
+	 * @param form - Map containing the message details
+	 * @return - Successful response if no error occurs, otherwise error response
+	 */
+	@POST
+	@Produces("application/json")
+	@Consumes("application/json")
+	@Path("contact/")
+	public Response contactUs(final Map<String, String> form) {
+		if (form.get("firstName") == null || form.get("lastName") == null || form.get("emailAddress") == null
+			|| form.get("subject") == null || form.get("message") == null) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.");
+			return error.toResponse();
+		}
+
+		// Build email
+		StringBuilder builder = new StringBuilder();
+		builder.append("The contact form has been submitted, please see the details below.\n\n");
+
+		builder.append("First Name: ");
+		builder.append(form.get("firstName"));
+		builder.append("\n");
+
+		builder.append("Last Name: ");
+		builder.append(form.get("lastName"));
+		builder.append("\n");
+
+		builder.append("Email Address: ");
+		builder.append(form.get("emailAddress"));
+		builder.append("\n");
+
+		builder.append("Subject: ");
+		builder.append(form.get("subject"));
+		builder.append("\n\n");
+
+		builder.append("Message:\n");
+		builder.append(form.get("message"));
+
+		try {
+			communicator.sendMessage(properties.getProperty("MAIL_RECEIVERS"), "Administrator", "Contact Us Form",
+				builder.toString());
+		} catch (CommunicationException e) {
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.INTERNAL_SERVER_ERROR,
+					"Error sending message.", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		}
+
+		return Response.ok().build();
 	}
 
 	/**
