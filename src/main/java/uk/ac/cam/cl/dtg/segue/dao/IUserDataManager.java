@@ -1,7 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.List;
+
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -23,24 +25,33 @@ public interface IUserDataManager {
 	 * @param providerUserId
 	 *            - the provider specific unique user id.
 	 * @return the local users id.
+	 * @throws DuplicateAccountException
+	 *             - If there is an account that already exists in the system
+	 *             with matching indexed fields.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
-			final String providerUserId);
+			final String providerUserId) throws DuplicateAccountException, SegueDatabaseException;
 	
 	/**
 	 * Determine whether the user has at least one linked account. 
 	 * @param user with a valid id.
 	 * @return true if we can find at least one linked account, false if we can't.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	boolean hasALinkedAccount(User user);
+	boolean hasALinkedAccount(User user) throws SegueDatabaseException;
 	
 	/**
 	 * GetAllLinked Accounts by user.
 	 * 
 	 * @param user - the user DO to search for.
 	 * @return List of authentication providers
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user);
+	List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user) throws SegueDatabaseException;
 	
 	/**
 	 * Find a user by their linked account information.
@@ -51,9 +62,11 @@ public interface IUserDataManager {
 	 *            - the provider specific unique user id.
 	 * @return a full populated user object based on the provider authentication
 	 *         information given.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	User getByLinkedAccount(final AuthenticationProvider provider,
-			final String providerUserId);
+			final String providerUserId) throws SegueDatabaseException;
 	
 	/**
 	 * Creates a link record, connecting a local user to an external provider
@@ -66,9 +79,11 @@ public interface IUserDataManager {
 	 * @param providerUserId
 	 *            - the providers unique id for the user.
 	 * @return true if success false if failure.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	boolean linkAuthProviderToAccount(final User user,
-			final AuthenticationProvider provider, final String providerUserId);
+			final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException;
 	
 	/**
 	 * Unlink providerFromUser.
@@ -95,8 +110,10 @@ public interface IUserDataManager {
 	 * @param id
 	 *            - local user id.
 	 * @return A user object.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	User getById(final String id);
+	User getById(final String id) throws SegueDatabaseException;
 
 	/**
 	 * Get a user by email.
@@ -104,8 +121,10 @@ public interface IUserDataManager {
 	 * @param email
 	 *            - local user email address.
 	 * @return A user object.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	User getByEmail(final String email);
+	User getByEmail(final String email) throws SegueDatabaseException;
 
 	/**
 	 * Get a user by password reset token.
@@ -113,18 +132,25 @@ public interface IUserDataManager {
 	 * @param token
 	 *            - password reset token
 	 * @return A user object.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	User getByResetToken(final String token);
+	User getByResetToken(final String token) throws SegueDatabaseException;
 
 	/**
 	 * Update user object in the data store.
 	 * 
 	 * @param user
 	 *            - the user object to persist.
-	 *            
+	 * 
 	 * @return user which was saved.
+	 * @throws DuplicateAccountException
+	 *             - If there is an account that already exists in the system
+	 *             with matching indexed fields.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	User updateUser(User user);
+	User createOrUpdateUser(User user) throws DuplicateAccountException, SegueDatabaseException;
 
 	/**
 	 * Update a particular field on a user object.

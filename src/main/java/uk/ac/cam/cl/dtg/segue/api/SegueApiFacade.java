@@ -31,6 +31,7 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
@@ -897,12 +898,17 @@ public class SegueApiFacade {
 					"You are missing a required field. "
 					+ "Please make sure you have specified all mandatory fields in your response.")
 					.toResponse();
-		} catch (com.mongodb.MongoException.DuplicateKey e) {
+		} catch (DuplicateAccountException e) {
 			return new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"Duplicate key found. An existing account may "
 					+ "already exist with the e-mail address specified.")
 					.toResponse();
+		} catch (SegueDatabaseException e) {
+			String errorMsg = "Unable to set a password, due to an internal database error.";
+			log.error(errorMsg, e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					errorMsg).toResponse();
 		}
 	}
 
@@ -966,8 +972,16 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("users/resetpassword/{token}")
 	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
-		if (userManager.validatePasswordResetToken(token)) {
-			return Response.ok().build();
+		try {
+			if (userManager.validatePasswordResetToken(token)) {
+				return Response.ok().build();
+			}
+		} catch (SegueDatabaseException e) {
+			log.error("Internal database error, while validating Password Reset Request.", e);
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.INTERNAL_SERVER_ERROR,
+					"Database error has occurred. Unable to access token list.");
+			return error.toResponse();
 		}
 
 		SegueErrorResponse error = new SegueErrorResponse(
@@ -999,6 +1013,13 @@ public class SegueApiFacade {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"No password supplied.");
+			return error.toResponse();
+		} catch (SegueDatabaseException e) {
+			String errorMsg = "Database error has occurred during reset password process. Please try again later"; 
+			log.error(errorMsg, e);
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.INTERNAL_SERVER_ERROR,
+					errorMsg);
 			return error.toResponse();
 		}
 

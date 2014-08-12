@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -123,9 +124,10 @@ public class UserManagerTest {
 
 	/**
 	 * Test that get current user with valid HMAC works correctly.
+	 * @throws SegueDatabaseException 
 	 */
 	@Test
-	public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() {
+	public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() throws SegueDatabaseException {
 		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -258,11 +260,12 @@ public class UserManagerTest {
 	 *             - test exceptions
 	 * @throws AuthenticatorSecurityException
 	 *             - test exceptions
+	 * @throws SegueDatabaseException 
 	 */
 	@Test
 	public final void authenticateCallback_checkNewUserIsAuthenticated_registerUserWithSegue()
 			throws IOException, CodeExchangeException, NoUserException,
-			AuthenticatorSecurityException {
+			AuthenticatorSecurityException, SegueDatabaseException {
 		IOAuth2Authenticator dummyAuth = createMock(FacebookAuthenticator.class);
 		UserManager userManager = buildTestUserManager(
 				AuthenticationProvider.TEST, dummyAuth);

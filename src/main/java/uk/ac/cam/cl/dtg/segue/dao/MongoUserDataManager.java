@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.List;
+
 import org.apache.commons.lang3.Validate;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
@@ -20,6 +21,7 @@ import com.mongodb.MongoException;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
@@ -57,20 +59,41 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final String registerNewUserWithProvider(final User user,
-			final AuthenticationProvider provider, final String providerUserId) {
+	public final User createOrUpdateUser(final User user) throws DuplicateAccountException, SegueDatabaseException {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
 
-		// ensure userId is empty as if this is a registration then it should
-		// get a new id.
-		user.setDbId(null);
-		WriteResult<User, String> r = jc.save(user);
+		try {
+			WriteResult<User, String> r = jc.save(user);
 
-		User localUser = r.getSavedObject();
-		String localUserId = r.getDbObject().get("_id").toString();
+			if (r.getError() != null) {
+				log.error("Error during database update " + r.getError());
+				throw new SegueDatabaseException(
+						"MongoDB encountered an exception while creating a new user account: " + r.getError());
+			}
+			
+			return r.getSavedObject();	
+		} catch (MongoException.DuplicateKey e) {
+			throw new DuplicateAccountException("A user with a duplicate key exists in the database.", e);
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception while attempting to create a user account.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		}
+	}
+	
+	@Override
+	public final String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
+			final String providerUserId) throws DuplicateAccountException, SegueDatabaseException {
+		Validate.notNull(user);
+		Validate.notNull(provider);
+		Validate.notNull(providerUserId);
 
+		// create the users local account.
+		User localUser = this.createOrUpdateUser(user);
+		String localUserId = localUser.getDbId().toString();
+		
 		// link the provider account to the newly created account.
 		this.linkAuthProviderToAccount(localUser, provider, providerUserId);
 
@@ -78,7 +101,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final User getById(final String id) {
+	public final User getById(final String id) throws SegueDatabaseException {
 		if (null == id) {
 			return null;
 		}
@@ -90,16 +113,22 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class, objectMapper);
-		
-		// Do database query using plain mongodb so we only have to read from
-		// the database once.
-		User user = jc.findOneById(id);
-		
-		return user;
+		try {
+			// Do database query using plain mongodb so we only have to read from
+			// the database once.
+			User user = jc.findOneById(id);
+			
+			return user;
+			
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception while attempting to find a user account by id.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		}
 	}
 
 	@Override
-	public User getByEmail(final String email) {
+	public User getByEmail(final String email) throws SegueDatabaseException {
 		if (null == email) {
 			return null;
 		}
@@ -107,17 +136,23 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
+		try {
+			// Do database query using plain mongodb so we only have to read from
+			// the database once.
+			User user = jc.findOne(new BasicDBObject(
+					Constants.LOCAL_AUTH_EMAIL_FIELDNAME, email.trim()));
 
-		// Do database query using plain mongodb so we only have to read from
-		// the database once.
-		User user = jc.findOne(new BasicDBObject(
-				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, email.trim()));
-
-		return user;
+			return user;
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception "
+					+ "while attempting to find a user account by email address.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		}
 	}
 
 	@Override
-	public User getByResetToken(final String token) {
+	public User getByResetToken(final String token) throws SegueDatabaseException {
 		if (null == token) {
 			return null;
 		}
@@ -125,28 +160,19 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), User.class,
 				String.class);
+		try {
+			// Do database query using plain mongodb so we only have to read from
+			// the database once.
+			User user = jc.findOne(new BasicDBObject(
+					Constants.LOCAL_AUTH_RESET_TOKEN_FIELDNAME, token.trim()));
 
-		// Do database query using plain mongodb so we only have to read from
-		// the database once.
-		User user = jc.findOne(new BasicDBObject(
-				Constants.LOCAL_AUTH_RESET_TOKEN_FIELDNAME, token.trim()));
-
-		return user;
-	}
-
-	@Override
-	public final User updateUser(final User user) {
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
-				String.class);
-		
-		WriteResult<User, String> r = jc.save(user);
-
-		if (r.getError() != null) {
-			log.error("Error during database update " + r.getError());
+			return user;
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception "
+					+ "while attempting to find a user account by email address.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
 		}
-
-		return r.getSavedObject();
 	}
 
 	@Override
@@ -243,7 +269,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
 	@Override
 	public final User getByLinkedAccount(final AuthenticationProvider provider,
-			final String providerUserId) {
+			final String providerUserId) throws SegueDatabaseException {
 		if (null == provider || null == providerUserId) {
 			return null;
 		}
@@ -265,7 +291,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public boolean hasALinkedAccount(final User user) {
+	public boolean hasALinkedAccount(final User user) throws SegueDatabaseException {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
@@ -273,35 +299,48 @@ public class MongoUserDataManager implements IUserDataManager {
 		BasicDBObject query = new BasicDBObject(
 				Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user
 				.getDbId());
-		
-		DBCursor<LinkedAccount> linkAccounts = jc.find(query);
-		
-		if (linkAccounts.size() > 0) {
-			return true;
+		try {
+			DBCursor<LinkedAccount> linkAccounts = jc.find(query);
+			
+			if (linkAccounts.size() > 0) {
+				return true;
+			}
+			
+			return false;
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception "
+					+ "while attempting to find a user's linked accounts";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
 		}
-		
-		return false;
 	}
 
 	@Override
-	public List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user) {
+	public List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user)
+		throws SegueDatabaseException {
 		Validate.notNull(user);
 		Validate.notEmpty(user.getDbId());
 		
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
-
-		BasicDBObject query = new BasicDBObject(
-				Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
-		DBCursor<LinkedAccount> linkAccounts = jc.find(query);
-		
-		List<AuthenticationProvider> providersToReturn = Lists.newArrayList();
-		for (LinkedAccount accountLinkRecord : linkAccounts) {
-			providersToReturn.add(accountLinkRecord.getProvider());
+		try {
+			BasicDBObject query = new BasicDBObject(
+					Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
+			DBCursor<LinkedAccount> linkAccounts = jc.find(query);
+			
+			List<AuthenticationProvider> providersToReturn = Lists.newArrayList();
+			for (LinkedAccount accountLinkRecord : linkAccounts) {
+				providersToReturn.add(accountLinkRecord.getProvider());
+			}
+			
+			return providersToReturn;
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception "
+					+ "while attempting to find a user's linked accounts";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
 		}
-		
-		return providersToReturn;
 	}
 	
 	@Override
@@ -331,15 +370,22 @@ public class MongoUserDataManager implements IUserDataManager {
 	
 	@Override
 	public boolean linkAuthProviderToAccount(final User user,
-			final AuthenticationProvider provider, final String providerUserId) {
+			final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
+		try {
+			WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null,
+					user.getDbId(), provider, providerUserId));
 
-		WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null,
-				user.getDbId(), provider, providerUserId));
+			return null == r.getError();
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception "
+					+ "while attempting to link an auth provider to a user account.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		}
 
-		return null == r.getError();
 	}
 
 	/**

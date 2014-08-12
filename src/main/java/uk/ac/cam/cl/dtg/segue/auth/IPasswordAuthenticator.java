@@ -4,6 +4,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedExcept
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 import java.security.NoSuchAlgorithmException;
@@ -39,10 +40,12 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @throws NoUserException                       - if we cannot find the user specified.
 	 * @throws NoCredentialsAvailableException       - No credentials are configured on this account so we cannot
 	 *                                               authenticate the user.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	User authenticate(String usersEmailAddress, String plainTextPassword)
-			throws IncorrectCredentialsProvidedException, NoUserException,
-			NoCredentialsAvailableException;
+		throws IncorrectCredentialsProvidedException, NoUserException,
+			NoCredentialsAvailableException, SegueDatabaseException;
 
 	/**
 	 * Hash a string using a hashing function.
@@ -53,6 +56,6 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
 	 */
-	public String hashString(String str, String salt)
+	String hashString(String str, String salt)
 		throws NoSuchAlgorithmException, InvalidKeySpecException;
 }

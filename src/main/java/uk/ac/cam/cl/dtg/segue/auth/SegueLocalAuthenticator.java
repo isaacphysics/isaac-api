@@ -20,6 +20,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 
 /**
@@ -90,7 +91,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 			final String plainTextPassword)
 		throws IncorrectCredentialsProvidedException, 
 		NoUserException, 
-		NoCredentialsAvailableException {
+		NoCredentialsAvailableException, SegueDatabaseException {
 		if (null == usersEmailAddress) {
 			throw new IllegalArgumentException();
 		}
@@ -129,7 +130,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
 	@Override
 	public String hashString(final String str, final String salt)
-			throws NoSuchAlgorithmException, InvalidKeySpecException {
+		throws NoSuchAlgorithmException, InvalidKeySpecException {
 		return new String(Base64.encodeBase64(computeHash(str, salt, SHORT_KEY_LENGTH)));
 	}
 
@@ -147,7 +148,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	 *             - if the preconfigured key spec is invalid.
 	 */
 	private String hashPassword(final String password, final String salt)
-			throws NoSuchAlgorithmException, InvalidKeySpecException {
+		throws NoSuchAlgorithmException, InvalidKeySpecException {
 		return new BigInteger(computeHash(password, salt, KEY_LENGTH)).toString();
 	}
 
@@ -166,8 +167,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	 * @throws InvalidKeySpecException
 	 *             - if the preconfigured key spec is invalid.
 	 */
-	private byte[] computeHash(final String str, final String salt, int keyLength)
-			throws NoSuchAlgorithmException, InvalidKeySpecException {
+	private byte[] computeHash(final String str, final String salt, final int keyLength)
+		throws NoSuchAlgorithmException, InvalidKeySpecException {
 		char[] strChars = str.toCharArray();
 		byte[] saltBytes = salt.getBytes();
 

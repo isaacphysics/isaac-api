@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
@@ -335,6 +336,16 @@ public class UserManager {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Bad authentication redirect url received.", e)
 					.toResponse();
+		} catch (DuplicateAccountException e) { 
+			log.info("Duplicate user already exists in the database.", e);
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"A user already exists with the e-mail address specified.")
+					.toResponse();
+		} catch (SegueDatabaseException e) { 
+			log.error("Internal Database error during authentication", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Internal database error during authentication.")
+					.toResponse();
 		}
 	}
 	
@@ -391,6 +402,11 @@ public class UserManager {
 				log.debug("Incorrect Credentials Received", e);
 				return new SegueErrorResponse(Status.UNAUTHORIZED,
 						"Incorrect credentials received.").toResponse();
+			} catch (SegueDatabaseException e) {
+				String errorMsg = "Internal Database error has occurred during authentication.";
+				log.error(errorMsg, e);
+				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						errorMsg).toResponse();
 			}
 		} else {
 			SegueErrorResponse error = new SegueErrorResponse(
@@ -454,28 +470,16 @@ public class UserManager {
 
 	/**
 	 * Library method that allows the api to locate a user object from the
-	 * database based on a given unique id.
-	 *
-	 * @param userId
-	 *            - to search for.
-	 * @return user or null if we cannot find it.
-	 */
-	public final User findUserById(final String userId) {
-		if (null == userId) {
-			return null;
-		}
-		return this.database.getById(userId);
-	}
-
-	/**
-	 * Library method that allows the api to locate a user object from the
 	 * database based on a given unique email address.
 	 *
 	 * @param email
 	 *            - to search for.
 	 * @return user or null if we cannot find it.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
+	 * TODO: This should not be public as it exposes a UserDO
 	 */
-	public final User findUserByEmail(final String email) {
+	public final User findUserByEmail(final String email) throws SegueDatabaseException {
 		if (null == email) {
 			return null;
 		}
@@ -488,8 +492,10 @@ public class UserManager {
 	 * @param token
 	 *            - to search for.
 	 * @return user or null if we cannot find it.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	public final User findUserByResetToken(final String token) {
+	public final User findUserByResetToken(final String token) throws SegueDatabaseException {
 		if (null == token) {
 			return null;
 		}
@@ -642,10 +648,12 @@ public class UserManager {
 	 *             - A required field is missing for the user object so cannot
 	 *             be saved.
 	 * @return the user object as was saved.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	public UserDTO createOrUpdateUserObject(final User user)
 		throws InvalidPasswordException,
-			MissingRequiredFieldException {
+			MissingRequiredFieldException, SegueDatabaseException {
 		User userToSave = null;
 
 		MapperFacade mapper = this.dtoMapper;
@@ -691,7 +699,7 @@ public class UserManager {
 							+ " no longer has a way of authenticating. Failing change.");
 		} else {
 			
-			User userToReturn = this.database.updateUser(userToSave);
+			User userToReturn = this.database.createOrUpdateUser(userToSave);
 			return this.convertUserDOToUserDTO(userToReturn);
 		}
 	}
@@ -705,9 +713,11 @@ public class UserManager {
 	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
 	 * @throws CommunicationException - if a fault occurred whilst sending the communique
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	public final void resetPasswordRequest(final UserDTO userObject) throws InvalidKeySpecException,
-			NoSuchAlgorithmException, CommunicationException {
+			NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
 		User user = this.findUserByEmail(userObject.getEmail());
 
 		if (user == null) {
@@ -740,7 +750,7 @@ public class UserManager {
 		user.setResetExpiry(c.getTime());
 
 		// Save user object
-		this.database.updateUser(user);
+		this.database.createOrUpdateUser(user);
 
 		log.info(String.format("Sending password reset message to %s", user.getEmail()));
 		this.sendPasswordResetMessage(user);
@@ -751,8 +761,10 @@ public class UserManager {
 	 *
 	 * @param token - The token to test
 	 * @return true if the reset token is valid
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	public final boolean validatePasswordResetToken(final String token) {
+	public final boolean validatePasswordResetToken(final String token) throws SegueDatabaseException {
 		return isValidResetToken(this.findUserByResetToken(token));
 	}
 
@@ -763,9 +775,11 @@ public class UserManager {
 	 * @param userObject - the supplied user DO
 	 * @throws InvalidTokenException - If the token provided is invalid.
 	 * @throws InvalidPasswordException - If the password provided is invalid.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	public final void resetPassword(final String token, final User userObject) throws InvalidTokenException,
-			InvalidPasswordException {
+			InvalidPasswordException, SegueDatabaseException {
 		// Ensure new password is valid
 		if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
 			throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
@@ -788,7 +802,7 @@ public class UserManager {
 		user.setResetExpiry(null);
 
 		// Save user
-		this.database.updateUser(user);
+		this.database.createOrUpdateUser(user);
 	}
 
 	/**
@@ -805,6 +819,23 @@ public class UserManager {
 		return user != null && user.getResetExpiry().after(now);
 	}
 
+	/**
+	 * Library method that allows the api to locate a user object from the
+	 * database based on a given unique id.
+	 *
+	 * @param userId
+	 *            - to search for.
+	 * @return user or null if we cannot find it.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
+	 */
+	private User findUserById(final String userId) throws SegueDatabaseException {
+		if (null == userId) {
+			return null;
+		}
+		return this.database.getById(userId);
+	}
+	
 	/**
 	 * This method will trigger the authentication flow for a 3rd party
 	 * authenticator.
@@ -991,9 +1022,14 @@ public class UserManager {
 	 * @param providerUserId
 	 *            - unique id of provider.
 	 * @return The localUser account user id of the user after registration.
+	 * @throws DuplicateAccountException
+	 *             - If there is an account that already exists in the system
+	 *             with matching indexed fields.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	private String registerUser(final User user,
-			final AuthenticationProvider provider, final String providerUserId) {
+			final AuthenticationProvider provider, final String providerUserId) throws DuplicateAccountException, SegueDatabaseException {
 		String userId = database.registerNewUserWithProvider(user, provider, providerUserId);
 		return userId;
 	}
@@ -1008,9 +1044,11 @@ public class UserManager {
 	 *            - the unique ID of the user as given to us from the provider.
 	 * @return A user object or null if we were unable to find the user with the
 	 *         information provided.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	private User getUserFromLinkedAccount(
-			final AuthenticationProvider provider, final String providerId) {
+			final AuthenticationProvider provider, final String providerId) throws SegueDatabaseException {
 		Validate.notNull(provider);
 		Validate.notBlank(providerId);
 
@@ -1039,12 +1077,14 @@ public class UserManager {
 	 *             reference provided.
 	 * @throws IOException
 	 *             - if there is an io error.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	private User getOrCreateUserFromFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
 		throws AuthenticatorSecurityException, NoUserException,
-			IOException {
+			IOException, SegueDatabaseException {
 		// get user info from federated provider
 		UserFromAuthProvider userFromProvider = federatedAuthenticator
 				.getUserInfo(providerSpecificUserLookupReference);
@@ -1105,11 +1145,13 @@ public class UserManager {
 	 *             - If we are unable to find a user that matches
 	 * @throws IOException
 	 *             - If there is a problem reading from the data source.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
 	private void linkProviderToExistingAccount(final User currentUser,
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference) throws AuthenticatorSecurityException,
-			NoUserException, IOException {
+			NoUserException, IOException, SegueDatabaseException {
 		Validate.notNull(currentUser);
 		Validate.notNull(federatedAuthenticator);
 		Validate.notEmpty(providerSpecificUserLookupReference);
@@ -1224,6 +1266,7 @@ public class UserManager {
 
 		return isValid;
 	}
+	
 	/**
 	 * Converts the sensitive UserDO into a limited DTO.
 	 * 
@@ -1238,7 +1281,11 @@ public class UserManager {
 		UserDTO userDTO = this.dtoMapper.map(user, UserDTO.class);
 
 		// Augment with linked account information
-		userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
+		try {
+			userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
+		} catch (SegueDatabaseException e) {
+			log.error("Unable to set linked accounts for user due to a database error.");
+		}
 		
 		if (user.getPassword() != null && !user.getPassword().isEmpty()) {
 			userDTO.setHasSegueAccount(true);
@@ -1279,7 +1326,12 @@ public class UserManager {
 		}
 		
 		// retrieve the user from database.
-		return database.getById(currentUserId);
+		try {
+			return database.getById(currentUserId);
+		} catch (SegueDatabaseException e) {
+			log.error("Internal Database error. Failed to resolve current user.", e);
+			return null;
+		}
 	}
 
 	/**
@@ -1288,8 +1340,11 @@ public class UserManager {
 	 *
 	 * @param user - a user with the givenName, email and token fields set
 	 * @throws CommunicationException - if a fault occurred whilst sending the communique
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
 	 */
-	private void sendFederatedAuthenticatorResetMessage(final User user) throws CommunicationException {
+	private void sendFederatedAuthenticatorResetMessage(final User user) throws CommunicationException,
+			SegueDatabaseException {
 		// Get the user's federated authenticators
 		List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
 		List<String> providerNames = new ArrayList<>();
