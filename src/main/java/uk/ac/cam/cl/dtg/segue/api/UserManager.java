@@ -404,7 +404,7 @@ public class UserManager {
 					| NoCredentialsAvailableException e) {
 				log.debug("Incorrect Credentials Received", e);
 				return new SegueErrorResponse(Status.UNAUTHORIZED,
-						"Incorrect credentials received.").toResponse();
+						"Incorrect credentials provided.").toResponse();
 			} catch (SegueDatabaseException e) {
 				String errorMsg = "Internal Database error has occurred during authentication.";
 				log.error(errorMsg, e);
