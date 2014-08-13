@@ -290,6 +290,9 @@ public final class Constants {
 	public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
 	public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
 	
+	// cache settings
+	public static final int MAX_ETAG_CACHE_TIME = 86400;
+	
 	/**
 	 * Private constructor to prevent this class being created.
 	 */
