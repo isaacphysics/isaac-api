@@ -94,7 +94,7 @@ public class UserManager {
 	 * @param providersToRegister
 	 *            - A map of known authentication providers.
 	 * @param dtoMapper
-	 *            - the preconfigured DO to DTO object mapper for user objects.
+	 *            - the preconfigured DO to DTO object mapper for user objects.            
 	 */
 	@Inject
 	public UserManager(final IUserDataManager database, @Named(Constants.HMAC_SALT) final String hmacSalt,
@@ -201,8 +201,6 @@ public class UserManager {
 		
 		return this.initiateAuthenticationFlow(request, provider);
 	}	
-	
-
 	
 	/**
 	 * Authenticate Callback will receive the authentication information from
@@ -467,48 +465,6 @@ public class UserManager {
 		
 		return this.convertUserDOToUserDTO(user);
 	}
-
-	/**
-	 * Library method that allows the api to locate a user object from the
-	 * database based on a given unique email address.
-	 *
-	 * @param email
-	 *            - to search for.
-	 * @return user or null if we cannot find it.
-	 * @throws SegueDatabaseException
-	 *             - If there is an internal database error.
-	 * TODO: This should not be public as it exposes a UserDO
-	 */
-	public final User findUserByEmail(final String email) throws SegueDatabaseException {
-		if (null == email) {
-			return null;
-		}
-		return this.database.getByEmail(email);
-	}
-	/**
-	 * Library method that allows the api to locate a user object from the
-	 * database based on a given unique password reset token.
-	 *
-	 * @param token
-	 *            - to search for.
-	 * @return user or null if we cannot find it.
-	 * @throws SegueDatabaseException
-	 *             - If there is an internal database error.
-	 */
-	public final User findUserByResetToken(final String token) throws SegueDatabaseException {
-		if (null == token) {
-			return null;
-		}
-		return this.database.getByResetToken(token);
-	}
-
-	/**
-	 * This method destroys the users current session and may do other clean up
-	 * activities.
-	 * 
-	 * @param request
-	 *            - from the current user
-	 */
 
 	/**
 	 * Destroy a session attached to the request.
@@ -837,6 +793,40 @@ public class UserManager {
 	}
 	
 	/**
+	 * Library method that allows the api to locate a user object from the
+	 * database based on a given unique email address.
+	 *
+	 * @param email
+	 *            - to search for.
+	 * @return user or null if we cannot find it.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
+	 */
+	private User findUserByEmail(final String email) throws SegueDatabaseException {
+		if (null == email) {
+			return null;
+		}
+		return this.database.getByEmail(email);
+	}
+	
+	/**
+	 * Library method that allows the api to locate a user object from the
+	 * database based on a given unique password reset token.
+	 *
+	 * @param token
+	 *            - to search for.
+	 * @return user or null if we cannot find it.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
+	 */
+	private User findUserByResetToken(final String token) throws SegueDatabaseException {
+		if (null == token) {
+			return null;
+		}
+		return this.database.getByResetToken(token);
+	}	
+	
+	/**
 	 * This method will trigger the authentication flow for a 3rd party
 	 * authenticator.
 	 * 
@@ -1029,7 +1019,8 @@ public class UserManager {
 	 *             - If there is an internal database error.
 	 */
 	private String registerUser(final User user,
-			final AuthenticationProvider provider, final String providerUserId) throws DuplicateAccountException, SegueDatabaseException {
+			final AuthenticationProvider provider,
+			final String providerUserId) throws DuplicateAccountException, SegueDatabaseException {
 		String userId = database.registerNewUserWithProvider(user, provider, providerUserId);
 		return userId;
 	}
