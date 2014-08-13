@@ -21,8 +21,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -455,9 +458,9 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags")
-	public final Response getTagListByLiveVersion() {
+	public final Response getTagListByLiveVersion(@Context Request request) {
 		return this.getTagListByVersion(contentVersionController
-				.getLiveVersion());
+				.getLiveVersion(), request);
 	}
 
 	/**
@@ -465,19 +468,39 @@ public class SegueApiFacade {
 	 * content.
 	 * 
 	 * @param version of the site to provide the tag list from.
+	 * @param request request so that we can determine whether we can make use of caching via etags.
 	 * @return a set of tags used in the specified version
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("content/tags/{version}")
 	public final Response getTagListByVersion(
-			@PathParam("version") final String version) {
+			@PathParam("version") final String version,
+			@Context final Request request) {
+		// Create cache control header
+		CacheControl cc = new CacheControl();
+		// Set max age to one day
+		cc.setMaxAge(Constants.MAX_ETAG_CACHE_TIME);
+		Response.ResponseBuilder rb = null;
+
+		// Calculate the ETag on last modified date of user resource
+		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
+
+		// Verify if it matched with etag available in http request
+		rb = request.evaluatePreconditions(etag);
+
+		// If ETag matches the rb will be non-null;
+		if (rb != null) {
+			// Use the rb to return the response without any further processing
+			return rb.cacheControl(cc).tag(etag).build();
+		}
+		
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
 		Set<String> tags = contentPersistenceManager.getTagsList(version);
 
-		return Response.ok().entity(tags).build();
+		return Response.ok().entity(tags).cacheControl(cc).tag(etag).build();
 	}
 
 	/**
