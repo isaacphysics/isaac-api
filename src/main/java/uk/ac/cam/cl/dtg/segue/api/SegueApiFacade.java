@@ -1205,7 +1205,7 @@ public class SegueApiFacade {
 			final Map<String, String> credentials) {
 
 		// ok we need to hand over to user manager
-		return userManager.authenticate(request, signinProvider, credentials);
+		return userManager.authenticateWithCredentials(request, signinProvider, credentials);
 	}
 	
 	/**
@@ -1393,7 +1393,7 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * Endpoint that handles contact us form submissions
+	 * Endpoint that handles contact us form submissions.
 	 *
 	 * @param form - Map containing the message details
 	 * @return - Successful response if no error occurs, otherwise error response

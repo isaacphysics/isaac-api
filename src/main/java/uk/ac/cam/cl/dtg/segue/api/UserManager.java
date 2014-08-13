@@ -72,7 +72,7 @@ public class UserManager {
 			.getLogger(UserManager.class);
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
-
+	
 	private final String HOST_NAME;
 
 	private final IUserDataManager database;
@@ -359,7 +359,7 @@ public class UserManager {
 	 *            specified in a map
 	 * @return A response containing the UserDTO object or a SegueErrorResponse.
 	 */
-	public final Response authenticate(final HttpServletRequest request,
+	public final Response authenticateWithCredentials(final HttpServletRequest request,
 			final String provider,
 			@Nullable final Map<String, String> credentials) {
 
