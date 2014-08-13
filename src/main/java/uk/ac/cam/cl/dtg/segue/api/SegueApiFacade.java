@@ -34,6 +34,7 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
@@ -929,6 +930,10 @@ public class SegueApiFacade {
 			log.error(errorMsg, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					errorMsg).toResponse();
+		} catch (AuthenticationProviderMappingException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to map to a known authenticator. The provider: is unknown")
+					.toResponse();
 		}
 	}
 
@@ -1167,6 +1172,10 @@ public class SegueApiFacade {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"Unable to retrieve the current user as no user is currently logged in.")
 					.toResponse();		
+		} catch (AuthenticationProviderMappingException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Unable to map to a known authenticator. The provider: " + authProviderAsString
+							+ " is unknown").toResponse();
 		}
 		
 		return Response.status(Status.NO_CONTENT).build();

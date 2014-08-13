@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
@@ -291,13 +292,6 @@ public class UserManager {
 			return Response.temporaryRedirect(this.loadRedirectUrl(request))
 					.build();
 
-		} catch (IllegalArgumentException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"Unable to map to a known authenticator. The provider: "
-							+ provider + " is unknown");
-			log.warn(error.getErrorMessage());
-			return error.toResponse();
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.INTERNAL_SERVER_ERROR,
@@ -340,6 +334,10 @@ public class UserManager {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Internal database error during authentication.")
 					.toResponse();
+		} catch (AuthenticationProviderMappingException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Unable to map to a known authenticator. The provider: " + provider + " is unknown")
+					.toResponse();
 		}
 	}
 	
@@ -378,7 +376,17 @@ public class UserManager {
 			return Response.ok(currentUser).build();
 		}
 
-		IAuthenticator authenticator = mapToProvider(provider);
+		IAuthenticator authenticator;
+		try {
+			authenticator = mapToProvider(provider);
+			
+		} catch (AuthenticationProviderMappingException e) {
+			String errorMsg = "Unable to locate the provider specified";
+			log.error(errorMsg, e);
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					errorMsg).toResponse();
+		}
+		
 		if (authenticator instanceof IPasswordAuthenticator) {
 			IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
 
@@ -427,9 +435,10 @@ public class UserManager {
 	 * @throws MissingRequiredFieldException
 	 *             - If the change will mean that the user will be unable to
 	 *             login again.
+	 * @throws AuthenticationProviderMappingException - if we are unable to locate the authentication provider specified. 
 	 */
 	public void unlinkUserFromProvider(final UserDTO user, final String providerString)
-		throws SegueDatabaseException, MissingRequiredFieldException {
+		throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
 		User userDO = this.findUserById(user.getDbId());
 		
 		// make sure that the change doesn't prevent the user from logging in again.
@@ -621,10 +630,13 @@ public class UserManager {
 	 * @return the user object as was saved.
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
+	 * @throws AuthenticationProviderMappingException
+	 *             - if there is a problem locating the authentication provider.
+	 *             This only applies for changing a password.
 	 */
 	public UserDTO createOrUpdateUserObject(final User user)
 		throws InvalidPasswordException,
-			MissingRequiredFieldException, SegueDatabaseException {
+			MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
 		User userToSave = null;
 
 		MapperFacade mapper = this.dtoMapper;
@@ -890,14 +902,14 @@ public class UserManager {
 
 			return Response.temporaryRedirect(redirectLink).entity(redirectLink).build();
 
-		} catch (IllegalArgumentException e) {
-			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-					"Error mapping to a known authenticator. The provider: " + provider + " is unknown");
-			log.error(error.getErrorMessage(), e);
-			return error.toResponse();
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"IOException when trying to redirect to OAuth provider", e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		} catch (AuthenticationProviderMappingException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+					"Error mapping to a known authenticator. The provider: " + provider + " is unknown");
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
@@ -940,8 +952,9 @@ public class UserManager {
 	 *            - String representation of the provider requested
 	 * @return the FederatedAuthenticator object which can be used to get a
 	 *         user.
+	 * @throws AuthenticationProviderMappingException 
 	 */
-	private IAuthenticator mapToProvider(final String provider) {
+	private IAuthenticator mapToProvider(final String provider) throws AuthenticationProviderMappingException {
 		Validate.notEmpty(provider,
 				"Provider name must not be empty or null if we are going "
 						+ "to map it to an implementation.");
@@ -951,13 +964,13 @@ public class UserManager {
 			enumProvider = AuthenticationProvider.valueOf(provider
 					.toUpperCase());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("The provider requested is "
+			throw new AuthenticationProviderMappingException("The provider requested is "
 					+ "invalid and not a known AuthenticationProvider: "
 					+ provider);
 		}
 
 		if (!registeredAuthProviders.containsKey(enumProvider)) {
-			throw new IllegalArgumentException("This authentication provider"
+			throw new AuthenticationProviderMappingException("This authentication provider"
 					+ " has not been registered / implemented yet: " + provider);
 		}
 
