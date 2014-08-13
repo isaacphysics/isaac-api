@@ -76,7 +76,7 @@ public class UserManager {
 	private final String HOST_NAME;
 
 	private final IUserDataManager database;
-	private final String hmacSalt;
+	private final String hmacRandomValue;
 	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 	private final ICommunicator communicator;
 	
@@ -88,7 +88,7 @@ public class UserManager {
 	 * @param database
 	 *            - an IUserDataManager that will support persistence.
 	 * @param hmacSalt
-	 *            - A random / unique HMAC salt for session authentication.
+	 *            - A cryptographically random HMAC value to be used as part of session authentication.
 	 * @param providersToRegister
 	 *            - A map of known authentication providers.
 	 * @param dtoMapper
@@ -107,7 +107,7 @@ public class UserManager {
 		Validate.notNull(communicator);
 
 		this.database = database;
-		this.hmacSalt = hmacSalt;
+		this.hmacRandomValue = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;
 		this.dtoMapper = dtoMapper;
 		this.HOST_NAME = hostName;
@@ -165,7 +165,7 @@ public class UserManager {
 	/**
 	 * This method will start the authentication process and ultimately redirect the user
 	 * either to their final redirect destination or to a 3rd party authenticator who will
-	 * use the callback method after the have authenticated.
+	 * use the callback method after they have authenticated.
 	 * 
 	 * Users must already be logged in to use this method.
 	 * 
@@ -495,7 +495,7 @@ public class UserManager {
 
 		String currentDate = new Date().toString();
 		String sessionId = request.getSession().getId();
-		String sessionHMAC = this.calculateHMAC(hmacSalt + userId + sessionId
+		String sessionHMAC = this.calculateHMAC(hmacRandomValue + userId + sessionId
 				+ currentDate, userId + sessionId + currentDate);
 
 		request.getSession().setAttribute(Constants.SESSION_USER_ID, userId);
@@ -525,7 +525,7 @@ public class UserManager {
 		String sessionHMAC = (String) request.getSession().getAttribute(
 				Constants.HMAC);
 
-		String ourHMAC = this.calculateHMAC(hmacSalt + userId + sessionId
+		String ourHMAC = this.calculateHMAC(hmacRandomValue + userId + sessionId
 				+ currentDate, userId + sessionId + currentDate);
 
 		if (null == userId) {
