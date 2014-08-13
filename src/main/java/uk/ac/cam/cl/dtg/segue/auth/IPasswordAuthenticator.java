@@ -21,13 +21,17 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 
 	/**
 	 * Registers a new user with the system.
-	 *
-	 * @param user object to register containing all user information to be
-	 *             stored including the plain text password.
-	 * @throws InvalidPasswordException - if the password specified does not meet the complexity
-	 *                                  requirements or is empty.
+	 * 
+	 * @param user
+	 *            object to register containing all user information to be
+	 *            stored including the plain text password.
+	 * @param plainTextPassword
+	 *            - plain text password to be hashed.
+	 * @throws InvalidPasswordException
+	 *             - if the password specified does not meet the complexity
+	 *             requirements or is empty.
 	 */
-	void setOrChangeUsersPassword(User user) throws InvalidPasswordException;
+	void setOrChangeUsersPassword(User user, final String plainTextPassword) throws InvalidPasswordException;
 
 	/**
 	 * authenticate This method authenticates a given user based on the given

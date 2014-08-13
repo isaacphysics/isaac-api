@@ -687,9 +687,13 @@ public class UserManager {
 		if (null != user.getPassword() && !user.getPassword().isEmpty()) {
 			IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
 					.mapToProvider(AuthenticationProvider.SEGUE.name());
-			authenticator.setOrChangeUsersPassword(user);
-			userToSave.setPassword(user.getPassword());
-			userToSave.setSecureSalt(user.getSecureSalt());
+			String plainTextPassword = user.getPassword();
+			
+			// clear reference to plainTextPassword
+			user.setPassword(null);
+
+			// set the new password on the object to be saved.
+			authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
 		}
 
 		// Before save we should validate the user for mandatory fields.
@@ -811,11 +815,13 @@ public class UserManager {
 		}
 
 		// Set user's password
-		user.setPassword(userObject.getPassword());
 		IPasswordAuthenticator authenticator =
 				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
-		authenticator.setOrChangeUsersPassword(user);
+		authenticator.setOrChangeUsersPassword(user, userObject.getPassword());
 
+		// clear plainTextPassword
+		userObject.setPassword(null);
+		
 		// Nullify reset token
 		user.setResetToken(null);
 		user.setResetExpiry(null);

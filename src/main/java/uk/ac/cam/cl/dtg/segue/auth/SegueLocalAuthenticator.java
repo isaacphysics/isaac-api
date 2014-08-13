@@ -60,10 +60,10 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 
 	@Override
-	public void setOrChangeUsersPassword(final User userWithNewPassword)
+	public void setOrChangeUsersPassword(final User userToSetPasswordFor, final String plainTextPassword)
 		throws InvalidPasswordException {
-		if (null == userWithNewPassword.getPassword()
-				|| userWithNewPassword.getPassword().isEmpty()) {
+		if (null == userToSetPasswordFor.getPassword()
+				|| userToSetPasswordFor.getPassword().isEmpty()) {
 			throw new InvalidPasswordException(
 					"Empty passwords are not allowed if using local authentication.");
 		}
@@ -71,9 +71,10 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		try {
 			String passwordSalt = generateSalt();
 			String hashedPassword = this.hashPassword(
-					userWithNewPassword.getPassword(), passwordSalt);
-			userWithNewPassword.setPassword(hashedPassword);
-			userWithNewPassword.setSecureSalt(passwordSalt);
+					plainTextPassword, passwordSalt);
+			
+			userToSetPasswordFor.setPassword(hashedPassword);
+			userToSetPasswordFor.setSecureSalt(passwordSalt);
 
 		} catch (NoSuchAlgorithmException e) {
 			log.error("Error detecting security algorithm", e);
