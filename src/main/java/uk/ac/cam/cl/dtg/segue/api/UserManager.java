@@ -71,7 +71,7 @@ public class UserManager {
 	private static final Logger log = LoggerFactory
 			.getLogger(UserManager.class);
 
-	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
+	private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 	
 	private final String HOST_NAME;
 
