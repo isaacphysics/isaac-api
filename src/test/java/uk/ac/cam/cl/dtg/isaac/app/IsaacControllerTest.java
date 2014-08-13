@@ -18,6 +18,7 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -50,10 +51,11 @@ public class IsaacControllerTest {
 
 	/**
 	 * Verify that when an empty gameboard is noticed a 204 is returned.
+	 * @throws NoUserLoggedInException 
 	 */
 	@Test
-	public final void isaacEndPoint_checkEmptyGameboardCausesError_SegueErrorResponseShouldBeReturned() 
-		throws NoWildcardException, SegueDatabaseException {
+	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned() 
+		throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException {
 		IsaacController isaacController = new IsaacController(dummyAPI,
 				dummyPropertiesLoader, dummyGameManager);
 
@@ -64,7 +66,7 @@ public class IsaacControllerTest {
 		String levels = "2,3,4";
 		String concepts = "newtoni";
 
-		expect(dummyAPI.getCurrentUser(dummyRequest)).andReturn(null)
+		expect(dummyAPI.hasCurrentUser(dummyRequest)).andReturn(false)
 				.atLeastOnce();
 
 		expect(

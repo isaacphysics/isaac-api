@@ -242,6 +242,24 @@ public class GameManager {
 	 * 
 	 * @param gameboardId
 	 *            - to look up.
+	 * @return the gameboard or null.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem retrieving the gameboard in the
+	 *             database or updating the users gameboard link table.
+	 */
+	public final GameboardDTO getGameboard(final String gameboardId) throws SegueDatabaseException {
+				
+		GameboardDTO gameboardFound = 
+				this.gameboardPersistenceManager.getGameboardById(gameboardId);
+		
+		return gameboardFound;
+	}
+	
+	/**
+	 * Get a gameboard by its id and augment with user information.
+	 * 
+	 * @param gameboardId
+	 *            - to look up.
 	 * @param user
 	 *            - the user (if available) of who wants it. This allows state
 	 *            information to be retrieved.

@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -101,7 +102,7 @@ public class UserManagerTest {
 	 * in.
 	 */
 	@Test
-	public final void getCurrentUser_isNotLoggedIn_noUserObjectReturned() {
+	public final void getCurrentUser_isNotLoggedIn_NoUserLoggedInExceptionThrown() {
 		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -115,19 +116,26 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		UserDTO u = userManager.getCurrentUser(request);
+		UserDTO u;
+		try {
+			u = userManager.getCurrentUser(request);
 
-		// Assert
-		assertTrue(null == u);
+			// Assert
+			fail("Expected NoUserLoggedInException");
+		} catch (NoUserLoggedInException e) {
+			// fine
+		}
+
 		verify(dummyDatabase, dummySession, request);
 	}
 
 	/**
 	 * Test that get current user with valid HMAC works correctly.
 	 * @throws SegueDatabaseException 
+	 * @throws NoUserLoggedInException 
 	 */
 	@Test
-	public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() throws SegueDatabaseException {
+	public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() throws SegueDatabaseException, NoUserLoggedInException {
 		UserManager userManager = buildTestUserManager();
 
 		HttpSession dummySession = createMock(HttpSession.class);
@@ -163,9 +171,11 @@ public class UserManagerTest {
 		expect(dummyMapper.map(returnUser, UserDTO.class)).andReturn(new UserDTO()).atLeastOnce();
 		replay(dummyMapper);
 		// Act
-		userManager.getCurrentUser(request);
-
+		UserDTO user = userManager.getCurrentUser(request);
+		
 		// Assert
+		assertTrue(user != null);
+		
 		verify(dummyDatabase, dummySession, request, dummyMapper);
 	}
 
@@ -507,7 +517,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		boolean valid = userManager.validateUsersSession(request);
+		boolean valid = userManager.isValidUsersSession(request);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
@@ -545,7 +555,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		boolean valid = userManager.validateUsersSession(request);
+		boolean valid = userManager.isValidUsersSession(request);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);

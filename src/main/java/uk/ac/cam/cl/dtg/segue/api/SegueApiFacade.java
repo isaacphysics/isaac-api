@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -819,15 +820,14 @@ public class SegueApiFacade {
 	@Path("users/current_user")
 	public Response getCurrentUserEndpoint(
 			@Context final HttpServletRequest request) {
-		UserDTO currentUser = userManager.getCurrentUser(request);
-
-		if (null == currentUser) {
+		try {
+			UserDTO currentUser = userManager.getCurrentUser(request);
+			return Response.ok(currentUser).build();
+		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"Unable to retrieve the current user as no user is currently logged in.")
 					.toResponse();
 		}
-		
-		return Response.ok(currentUser).build();
 	}
 	
 	/**
@@ -883,14 +883,17 @@ public class SegueApiFacade {
 		// determine if this is intended to be an update or create.
 		// if it is an update we need to do some security checks.
 		if (userObject.getDbId() != null) {
-			UserDTO currentUser = this.getCurrentUser(request);
-			if (null == currentUser) {
+			try {
+				UserDTO currentUser = this.getCurrentUser(request);
+				if (!currentUser.getDbId().equals(userObject.getDbId())) {
+					return new SegueErrorResponse(Status.FORBIDDEN,
+							"You cannot change someone elses' user settings.")
+							.toResponse();
+				}
+				
+			} catch (NoUserLoggedInException e) {
 				return new SegueErrorResponse(Status.UNAUTHORIZED,
 						"You must be logged in to change your user settings.")
-						.toResponse();
-			} else if (!currentUser.getDbId().equals(userObject.getDbId())) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You cannot change someone elses' user settings.")
 						.toResponse();
 			}
 		}
@@ -930,16 +933,30 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * Library method to retrieve the current logged in user domain object.
+	 * Library method to retrieve the current logged in user DTO.
 	 * 
 	 * NOTE: This should never be exposed as an endpoint.
 	 * 
 	 * @param request
 	 *            which may contain session information.
 	 * @return User DTO.
+	 * @throws NoUserLoggedInException - User is not logged in.
 	 */
-	public UserDTO getCurrentUser(final HttpServletRequest request) {
+	public UserDTO getCurrentUser(final HttpServletRequest request) throws NoUserLoggedInException {
 		return userManager.getCurrentUser(request);
+	}
+	
+	/**
+	 * Library method to determine if a current user is currently logged in .
+	 * 
+	 * NOTE: This should never be exposed as an endpoint.
+	 * 
+	 * @param request
+	 *            which may contain session information.
+	 * @return True if a user is logged in, false if not.
+	 */
+	public boolean hasCurrentUser(final HttpServletRequest request) {
+		return userManager.isUserLoggedIn(request);
 	}
 	
 	/**
@@ -1098,8 +1115,13 @@ public class SegueApiFacade {
 	public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString,
 			@QueryParam("redirect") final String redirectUrl) {
-		UserDTO user = this.getCurrentUser(request);
 
+		if (!this.hasCurrentUser(request)) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"Unable to retrieve the current user as no user is currently logged in.")
+					.toResponse();			
+		}
+		
 		String newRedirectUrl = null;
 		if (null == redirectUrl || !redirectUrl.contains("http://")) {
 			newRedirectUrl = "http://"
@@ -1111,13 +1133,7 @@ public class SegueApiFacade {
 		} else {
 			newRedirectUrl = redirectUrl;
 		}
-		
-		if (null == user) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user as no user is currently logged in.")
-					.toResponse();			
-		}
-		
+				
 		return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString, newRedirectUrl);
 	}
 	
@@ -1135,15 +1151,9 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	public final Response unlinkeUserFromProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString) {
-		UserDTO user = this.getCurrentUser(request);
-
-		if (null == user) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user as no user is currently logged in.")
-					.toResponse();			
-		}
 		
 		try {
+			UserDTO user = this.getCurrentUser(request);
 			this.userManager.unlinkUserFromProvider(user, authProviderAsString);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -1153,6 +1163,10 @@ public class SegueApiFacade {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Unable to remove account as this will mean that the user cannot login again in the future.", e)
 					.toResponse();	
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"Unable to retrieve the current user as no user is currently logged in.")
+					.toResponse();		
 		}
 		
 		return Response.status(Status.NO_CONTENT).build();
@@ -1330,11 +1344,16 @@ public class SegueApiFacade {
 		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
 
-		UserDTO user = this.getCurrentUser(request);
-		if (user != null
-				&& response.getEntity() instanceof QuestionValidationResponseDTO) {
-			userManager.recordUserQuestionInformation(user,
-					(QuestionValidationResponseDTO) response.getEntity());
+		UserDTO user;
+		try {
+			user = this.getCurrentUser(request);
+			if (user != null
+					&& response.getEntity() instanceof QuestionValidationResponseDTO) {
+				userManager.recordUserQuestionInformation(user,
+						(QuestionValidationResponseDTO) response.getEntity());
+			}
+		} catch (NoUserLoggedInException e) {
+			log.debug("Not able to record question response due to user not being logged in.");
 		}
 
 		return response;

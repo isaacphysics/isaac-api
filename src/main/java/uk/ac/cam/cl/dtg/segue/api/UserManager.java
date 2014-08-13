@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -142,24 +143,22 @@ public class UserManager {
 			this.storeRedirectUrl(request, "/");
 		}
 
-		// get the current user based on their session id information.
-		// if they are already logged in then we do not want to proceed with this authentication flow.
-		UserDTO currentUser = getCurrentUser(request);
-		if (null != currentUser) {
+		if (this.isUserLoggedIn(request)) {
+			// if they are already logged in then we do not want to proceed with
+			// this authentication flow. We can just return the redirect.
+
 			try {
-				return Response
-						.temporaryRedirect(this.loadRedirectUrl(request))
-						.build();
+				return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
 			} catch (URISyntaxException e) {
-				log.error("Redirect URL is not valid for provider " + provider,
-						e);
+				log.error("Redirect URL is not valid for provider " + provider, e);
 				return new SegueErrorResponse(Status.BAD_REQUEST,
-						"Bad authentication redirect url received.", e)
-						.toResponse();
+						"Bad authentication redirect url received.", e).toResponse();
 			}
+		} else {
+			// this is the expected case so we can
+			// start the authenticationFlow.
+			return this.initiateAuthenticationFlow(request, provider);
 		}
-		
-		return this.initiateAuthenticationFlow(request, provider);
 	}
 	
 	/**
@@ -190,8 +189,7 @@ public class UserManager {
 		}
 
 		// The user must be logged in to be able to link accounts.
-		UserDTO currentUser = getCurrentUser(request);
-		if (null == currentUser) {
+		if (this.isUserLoggedIn(request)) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"You need to be logged in to link accounts.")
 					.toResponse();
@@ -375,7 +373,7 @@ public class UserManager {
 		}
 
 		// get the current user based on their session id information.
-		UserDTO currentUser = getCurrentUser(request);
+		UserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentUserDO(request));
 		if (null != currentUser) {
 			return Response.ok(currentUser).build();
 		}
@@ -447,6 +445,21 @@ public class UserManager {
 	}
 	
 	/**
+	 * Determine if there is a user logged in with a valid session.
+	 * 
+	 * @param request
+	 *            - to retrieve session information from
+	 * @return True if the user is logged in and the session is valid, false if not.
+	 */
+	public final boolean isUserLoggedIn(final HttpServletRequest request) {
+		try {
+			return this.getCurrentUser(request) != null;
+		} catch (NoUserLoggedInException e) {
+			return false;
+		}
+	}
+	
+	/**
 	 * Get the details of the currently logged in user.
 	 * 
 	 * This method will validate the session as well returning null if it is invalid.
@@ -455,11 +468,16 @@ public class UserManager {
 	 *            - to retrieve session information from
 	 * @return Returns the current UserDTO if we can get it or null if user is
 	 *         not currently logged in
+	 * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
 	 */
-	public final UserDTO getCurrentUser(final HttpServletRequest request) {
+	public final UserDTO getCurrentUser(final HttpServletRequest request) throws NoUserLoggedInException {
 		Validate.notNull(request);
 
 		User user = this.getCurrentUserDO(request);
+		
+		if (null == user) {
+			throw new NoUserLoggedInException();
+		}
 		
 		return this.convertUserDOToUserDTO(user);
 	}
@@ -513,7 +531,7 @@ public class UserManager {
 	 *            - request containing session information
 	 * @return true if it is still valid, false if not.
 	 */
-	public final boolean validateUsersSession(final HttpServletRequest request) {
+	public final boolean isValidUsersSession(final HttpServletRequest request) {
 		Validate.notNull(request);
 
 		String userId = (String) request.getSession().getAttribute(
@@ -1307,7 +1325,7 @@ public class UserManager {
 		}
 
 		// check if the users session is validated using our credentials.
-		if (!this.validateUsersSession(request)) {
+		if (!this.isValidUsersSession(request)) {
 			log.info("User session has failed validation. "
 					+ "Assume they are not logged in.");
 			return null;

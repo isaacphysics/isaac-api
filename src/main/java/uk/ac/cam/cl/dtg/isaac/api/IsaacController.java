@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -261,32 +262,39 @@ public class IsaacController {
 
 		// options
 		if (null != questionId) {
-			fieldsToMatch.put(ID_FIELDNAME + "."
-					+ UNPROCESSED_SEARCH_FIELD_SUFFIX,
-					Arrays.asList(questionId));
+			fieldsToMatch
+					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		}
 
-		UserDTO currentUser = this.api.getCurrentUser(request);
 		Response response = this.findSingleResult(fieldsToMatch);
-		Object unknownResponse = response.getEntity();
+		
+		// check if a user is currently logged in.
+		if (this.api.hasCurrentUser(request)) {
+			try {
+				Object unknownResponse = response.getEntity();
+				UserDTO currentUser = this.api.getCurrentUser(request);
+				if (unknownResponse instanceof SeguePageDTO) {
+					SeguePageDTO content = (SeguePageDTO) unknownResponse;
 
-		if (currentUser != null) {
-			if (unknownResponse instanceof SeguePageDTO) {
-				SeguePageDTO content = (SeguePageDTO) unknownResponse;
+					try {
+						content = api.getQuestionManager().augmentQuestionObjectWithAttemptInformation(
+								content, api.getQuestionAttemptsByUser(currentUser));
+					} catch (SegueDatabaseException e) {
+						return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+								"Database error during retrieval of questionAttempts.").toResponse();
+					}
 
-				try {
-					content = api.getQuestionManager()
-							.augmentQuestionObjectWithAttemptInformation(content,
-									api.getQuestionAttemptsByUser(currentUser));
-				} catch (SegueDatabaseException e) {
-					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-							"Database error during retrieval of questionAttempts.").toResponse();	
+					// return augmented content.
+					return Response.ok(content).build();
 				}
-
-				return Response.ok(content).build();
+			} catch (NoUserLoggedInException e) {
+				log.error("Despite checking for a current user first the user object has not been retrieved");
+				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						"Unable to retrieve current user information.").toResponse();
 			}
 		}
-
+		
+		// return unaugmented content.
 		return response;
 	}
 
@@ -392,9 +400,22 @@ public class IsaacController {
 		}
 
 		try {
-			GameboardDTO gameboard = gameManager.generateRandomGameboard(
-					subjectsList, fieldsList, topicsList, levelsList,
-					conceptsList, api.getCurrentUser(request));
+			GameboardDTO gameboard;
+			if (api.hasCurrentUser(request)) {
+				try {
+					gameboard = gameManager.generateRandomGameboard(
+							subjectsList, fieldsList, topicsList, levelsList,
+							conceptsList, api.getCurrentUser(request));
+				} catch (NoUserLoggedInException e) {
+					log.error("Despite checking for a current user first the user object has not been retrieved");
+					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+							"Unable to retrieve current user information.").toResponse();
+				}				
+			} else {
+				gameboard = gameManager.generateRandomGameboard(
+						subjectsList, fieldsList, topicsList, levelsList,
+						conceptsList, null);
+			}
 
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NO_CONTENT,
@@ -434,21 +455,33 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
 
-		// tags are 'and' relationships except for subject
 		try {
-			GameboardDTO gameboard = gameManager.getGameboard(gameboardId,
-					api.getCurrentUser(request));
+			GameboardDTO gameboard;
+
+			if (this.api.hasCurrentUser(request)) {
+				try {
+					// attempt to augment the gameboard with user information.
+					gameboard = gameManager.getGameboard(gameboardId, api.getCurrentUser(request));
+				} catch (NoUserLoggedInException e) {
+					log.error("Despite checking for a current user first the user object has not been retrieved");
+					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+							"Unable to retrieve current user information.").toResponse();
+				}
+
+			} else {
+				// if we have no user then just get the gameboard.
+				gameboard = gameManager.getGameboard(gameboardId);
+			}
 
 			if (null == gameboard) {
-				return new SegueErrorResponse(Status.NOT_FOUND,
-						"No Gameboard found for the id specified.")
+				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
 						.toResponse();
 			}
 
 			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"Your gameboard filter request is invalid.").toResponse();
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.")
+					.toResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
@@ -476,13 +509,13 @@ public class IsaacController {
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("sort") final String sortInstructions,
 			@QueryParam("show_only") final String showCriteria) {
-		UserDTO user = api.getCurrentUser(request);
-		
-		if (null == user) {
-			// user not logged in return not authorized
+		UserDTO user;
+		try {
+			user = api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e1) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to retrieve gameboards.")
-					.toResponse();
+					"Unable to retrieve the current user's gameboards as no user is currently logged in.")
+					.toResponse();		
 		}
 		
 		Integer startIndexAsInteger = 0;
@@ -561,15 +594,10 @@ public class IsaacController {
 	@Produces("application/json")
 	public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
-		UserDTO user = api.getCurrentUser(request);
-		
-		if (null == user) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to retrieve delete gameboards.")
-					.toResponse();
-		}
 
 		try {
+			UserDTO user = api.getCurrentUser(request);
+			
 			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user);
 			
 			if (null == gameboardDTO) {
@@ -582,6 +610,10 @@ public class IsaacController {
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to delete a gameboard.", e)
+					.toResponse();
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"User not logged in. Unable to retrieve delete gameboards.")
 					.toResponse();
 		}
 		
@@ -614,10 +646,11 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
-		UserDTO user = api.getCurrentUser(request);
 		
-		if (null == user) {
-			// user not logged in return not authorized
+		UserDTO user;
+		try {
+			user = api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e1) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"User not logged in. Unable to modify gameboards.")
 					.toResponse();
