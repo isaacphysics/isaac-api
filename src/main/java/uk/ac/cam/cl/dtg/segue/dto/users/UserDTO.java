@@ -7,8 +7,6 @@ import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -23,7 +21,7 @@ public class UserDTO {
 	private String givenName;
 	private String familyName;
 	private String email;
-	private Role role;
+
 	private Date dateOfBirth;
 	private Gender gender;
 	private Date registrationDate;
@@ -64,7 +62,6 @@ public class UserDTO {
 			@JsonProperty("givenName") final String givenName,
 			@JsonProperty("familyName") final String familyName,
 			@JsonProperty("email") final String email,
-			@JsonProperty("role") final Role role,
 			@JsonProperty("dateOfBirth") final Date dateOfBirth,
 			@JsonProperty("gender") final Gender gender,
 			@JsonProperty("registrationTime") final Date registrationTime,
@@ -73,7 +70,6 @@ public class UserDTO {
 		this.familyName = familyName;
 		this.givenName = givenName;
 		this.email = email;
-		this.role = role;
 		this.dateOfBirth = dateOfBirth;
 		this.gender = gender;
 		this.registrationDate = registrationTime;
@@ -156,22 +152,6 @@ public class UserDTO {
 	 */
 	public final void setEmail(final String email) {
 		this.email = email;
-	}
-
-	/**
-	 * Gets the role.
-	 * @return the role
-	 */
-	public final Role getRole() {
-		return role;
-	}
-
-	/**
-	 * Sets the role.
-	 * @param role the role to set
-	 */
-	public final void setRole(final Role role) {
-		this.role = role;
 	}
 
 	/**
