@@ -75,6 +75,7 @@
     </module>
     <module name="MissingSwitchDefault"/>
     <module name="RedundantThrows">
+      <property name="severity" value="info"/>
       <property name="suppressLoadErrors" value="true"/>
     </module>
     <module name="SimplifyBooleanExpression"/>
