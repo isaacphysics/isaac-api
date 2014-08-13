@@ -52,14 +52,24 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 			NoCredentialsAvailableException, SegueDatabaseException;
 
 	/**
-	 * Hash a string using a hashing function.
-	 *
-	 * @param str  - string to hash
-	 * @param salt - random string to use as a salt.
-	 * @return base64 encoded hash
+	 * Creates a password reset token and attaches it to the UserDO ready to be
+	 * persisted.
+	 * 
+	 * @param userToAttachToken - the user which should have token information added.
+	 *            -
+	 * @return UserDO which has the associated password reset details attached.
+	 *         This user still needs to be persisted.
 	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
 	 */
-	String hashString(String str, String salt)
-		throws NoSuchAlgorithmException, InvalidKeySpecException;
+	User createPasswordResetTokenForUser(User userToAttachToken) throws NoSuchAlgorithmException,
+			InvalidKeySpecException;
+	
+	/**
+	 * This method will test if the user's reset token is valid reset token.
+	 *
+	 * @param user - The user object to test
+	 * @return true if the reset token is valid
+	 */
+	boolean isValidResetToken(final User user);
 }

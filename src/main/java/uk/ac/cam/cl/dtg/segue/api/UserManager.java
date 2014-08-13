@@ -7,12 +7,9 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -745,18 +742,8 @@ public class UserManager {
 		// Generate token
 		IPasswordAuthenticator authenticator =
 				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
-		// Use the segue authenticator to generate a token with some reasonable degree of entropy
-		// Trim the "=" padding off the end of the base64 encoded token so that the URL that is
-		// eventually generated is correctly parsed in email clients
-		String token = authenticator.hashString(UUID.randomUUID().toString(), user.getSecureSalt()).replace("=", "");
-		user.setResetToken(token);
-
-		// Set expiry date
-		// Java is useless at datetime maths
-		Calendar c = Calendar.getInstance();
-		c.setTime(new Date()); // Initialises the calendar to the current date/time
-		c.add(Calendar.DATE, 1);
-		user.setResetExpiry(c.getTime());
+		
+		user = authenticator.createPasswordResetTokenForUser(user);
 
 		// Save user object
 		this.database.createOrUpdateUser(user);
@@ -767,28 +754,20 @@ public class UserManager {
 
 	/**
 	 * This method will test if the specified token is a valid password reset token.
-	 *
+	 * 
+	 * TODO: Do we need this method here? The user manager can access it from the authenticator.
+	 * 
 	 * @param token - The token to test
 	 * @return true if the reset token is valid
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
 	public final boolean validatePasswordResetToken(final String token) throws SegueDatabaseException {
-		return isValidResetToken(this.findUserByResetToken(token));
-	}
-
-	/**
-	 * This method will test if the user's reset token is valid reset token.
-	 *
-	 * @param user - The user object to test
-	 * @return true if the reset token is valid
-	 */
-	public final boolean isValidResetToken(final User user) {
-		// Get today's datetime; this is initialised to the time at which it was allocated,
-		// measured to the nearest millisecond.
-		Date now = new Date();
-
-		return user != null && user.getResetExpiry().after(now);
+		// Set user's password
+		IPasswordAuthenticator authenticator =
+				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
+		
+		return authenticator.isValidResetToken(this.findUserByResetToken(token));
 	}
 	
 	/**
@@ -808,15 +787,16 @@ public class UserManager {
 			throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
 		}
 
+		IPasswordAuthenticator authenticator =
+				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
+		
 		// Ensure reset token is valid
 		User user = this.findUserByResetToken(token);
-		if (!this.isValidResetToken(user)) {
+		if (!authenticator.isValidResetToken(user)) {
 			throw new InvalidTokenException();
 		}
 
 		// Set user's password
-		IPasswordAuthenticator authenticator =
-				(IPasswordAuthenticator) this.registeredAuthProviders.get(AuthenticationProvider.SEGUE);
 		authenticator.setOrChangeUsersPassword(user, userObject.getPassword());
 
 		// clear plainTextPassword

@@ -4,11 +4,15 @@ import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,13 +130,36 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		}
 	}
 
-	//TODO: remove this and / or replace it with the reset password functionality.
 	@Override
-	public String hashString(final String str, final String salt)
+	public User createPasswordResetTokenForUser(final User userToAttachToken)
 		throws NoSuchAlgorithmException, InvalidKeySpecException {
-		return new String(Base64.encodeBase64(computeHash(str, salt, SHORT_KEY_LENGTH)));
-	}
+		Validate.notNull(userToAttachToken);
+		// Trim the "=" padding off the end of the base64 encoded token so that the URL that is
+		// eventually generated is correctly parsed in email clients
+		String token = new String(Base64.encodeBase64(computeHash(UUID.randomUUID().toString(),
+				userToAttachToken.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "");
+		
+		userToAttachToken.setResetToken(token);
 
+		// Set expiry date
+		// Java is useless at datetime maths
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date()); // Initialises the calendar to the current date/time
+		c.add(Calendar.DATE, 1);
+		userToAttachToken.setResetExpiry(c.getTime());
+		
+		return userToAttachToken;
+	}
+	
+	@Override
+	public boolean isValidResetToken(final User user) {
+		// Get today's datetime; this is initialised to the time at which it was allocated,
+		// measured to the nearest millisecond.
+		Date now = new Date();
+
+		return user != null && user.getResetExpiry().after(now);
+	}
+	
 	/**
 	 * Hash the password using the preconfigured hashing function.
 	 *
