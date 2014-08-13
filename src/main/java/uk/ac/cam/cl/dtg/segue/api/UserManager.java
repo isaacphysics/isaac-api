@@ -750,6 +750,20 @@ public class UserManager {
 	}
 
 	/**
+	 * This method will test if the user's reset token is valid reset token.
+	 *
+	 * @param user - The user object to test
+	 * @return true if the reset token is valid
+	 */
+	public final boolean isValidResetToken(final User user) {
+		// Get today's datetime; this is initialised to the time at which it was allocated,
+		// measured to the nearest millisecond.
+		Date now = new Date();
+
+		return user != null && user.getResetExpiry().after(now);
+	}
+	
+	/**
 	 * This method will use a unique password reset token to set a new password.
 	 *
 	 * @param token - the password reset token
@@ -784,20 +798,6 @@ public class UserManager {
 
 		// Save user
 		this.database.createOrUpdateUser(user);
-	}
-
-	/**
-	 * This method will test if the user's reset token is valid reset token.
-	 *
-	 * @param user - The user object to test
-	 * @return true if the reset token is valid
-	 */
-	public final boolean isValidResetToken(final User user) {
-		// Get today's datetime; this is initialised to the time at which it was allocated,
-		// measured to the nearest millisecond.
-		Date now = new Date();
-
-		return user != null && user.getResetExpiry().after(now);
 	}
 
 	/**
