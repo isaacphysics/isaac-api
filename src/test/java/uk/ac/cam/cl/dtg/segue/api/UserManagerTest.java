@@ -144,7 +144,7 @@ public class UserManagerTest {
 		String validUserId = "533ee66842f639e95ce35e29";
 		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
 		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
-		String validHMAC = "AcFuOiKbVMKFHlvqWwzx1NQel/IibXbJicxWSaQYF8U=";
+		String validHMAC = "Z5CyayGxQg10Lx0DIb8IafCLuO9wJSBpGtMy2rXVL4k=";
 		User returnUser = new User(validUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, new Date(), Gender.MALE,
 				new Date(), null, null, null, null);
@@ -500,7 +500,7 @@ public class UserManagerTest {
 		String validUserId = "533ee66842f639e95ce35e29";
 		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
 		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
-		String validHMAC = "AcFuOiKbVMKFHlvqWwzx1NQel/IibXbJicxWSaQYF8U=";
+		String validHMAC = "Z5CyayGxQg10Lx0DIb8IafCLuO9wJSBpGtMy2rXVL4k=";
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(

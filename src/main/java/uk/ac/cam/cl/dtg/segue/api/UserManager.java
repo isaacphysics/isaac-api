@@ -78,7 +78,7 @@ public class UserManager {
 	private final String HOST_NAME;
 
 	private final IUserDataManager database;
-	private final String hmacRandomValue;
+	private final String hmacKey;
 	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 	private final ICommunicator communicator;
 	
@@ -109,7 +109,7 @@ public class UserManager {
 		Validate.notNull(communicator);
 
 		this.database = database;
-		this.hmacRandomValue = hmacSalt;
+		this.hmacKey = hmacSalt;
 		this.registeredAuthProviders = providersToRegister;
 		this.dtoMapper = dtoMapper;
 		this.HOST_NAME = hostName;
@@ -522,8 +522,7 @@ public class UserManager {
 
 		String currentDate = new Date().toString();
 		String sessionId = request.getSession().getId();
-		String sessionHMAC = this.calculateHMAC(hmacRandomValue + userId + sessionId
-				+ currentDate, userId + sessionId + currentDate);
+		String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionId, currentDate);
 
 		request.getSession().setAttribute(Constants.SESSION_USER_ID, userId);
 		request.getSession().setAttribute(Constants.SESSION_ID, sessionId);
@@ -552,8 +551,7 @@ public class UserManager {
 		String sessionHMAC = (String) request.getSession().getAttribute(
 				Constants.HMAC);
 
-		String ourHMAC = this.calculateHMAC(hmacRandomValue + userId + sessionId
-				+ currentDate, userId + sessionId + currentDate);
+		String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionId, currentDate);
 
 		if (null == userId) {
 			log.debug("No session set so not validating user identity.");
@@ -913,6 +911,10 @@ public class UserManager {
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
+	}
+	
+	private String calculateSessionHMAC(String key, String userId, String sessionId, String currentDate) {
+		return this.calculateHMAC(key, userId + "|" + sessionId + "|" + currentDate);
 	}
 	
 	/**
