@@ -62,8 +62,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	@Override
 	public void setOrChangeUsersPassword(final User userToSetPasswordFor, final String plainTextPassword)
 		throws InvalidPasswordException {
-		if (null == userToSetPasswordFor.getPassword()
-				|| userToSetPasswordFor.getPassword().isEmpty()) {
+		if (null == plainTextPassword || plainTextPassword.isEmpty()) {
 			throw new InvalidPasswordException(
 					"Empty passwords are not allowed if using local authentication.");
 		}
@@ -93,11 +92,9 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		throws IncorrectCredentialsProvidedException, 
 		NoUserException, 
 		NoCredentialsAvailableException, SegueDatabaseException {
-		if (null == usersEmailAddress) {
-			throw new IllegalArgumentException();
-		}
-		if (null == plainTextPassword) {
-			throw new IllegalArgumentException();
+		
+		if (null == usersEmailAddress || null == plainTextPassword) {
+			throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
 		}
 
 		User localUserAccount = userDataManager.getByEmail(usersEmailAddress);
@@ -118,7 +115,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 				return localUserAccount;
 			} else {
 				throw new IncorrectCredentialsProvidedException(
-						"Incorrect password");
+						"Incorrect credentials provided.");
 			}
 		} catch (NoSuchAlgorithmException e) {
 			log.error("Error detecting security algorithm", e);
@@ -129,6 +126,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		}
 	}
 
+	//TODO: remove this and / or replace it with the reset password functionality.
 	@Override
 	public String hashString(final String str, final String salt)
 		throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -142,7 +140,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	 *            - password to hash
 	 * @param salt
 	 *            - random string to use as a salt.
-	 * @return the hashed password
+	 * @return the Base64 encoded hashed password
 	 * @throws NoSuchAlgorithmException
 	 *             - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException
@@ -150,7 +148,10 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	 */
 	private String hashPassword(final String password, final String salt)
 		throws NoSuchAlgorithmException, InvalidKeySpecException {
-		return new BigInteger(computeHash(password, salt, KEY_LENGTH)).toString();
+		
+		BigInteger hashedPassword = new BigInteger(computeHash(password, salt, KEY_LENGTH));
+		
+		return new String(Base64.encodeBase64(hashedPassword.toByteArray()));
 	}
 
 	/**
@@ -181,16 +182,18 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 
 	/**
-	 * Helper method to generate a salt.
+	 * Helper method to generate a base64 encoded salt.
 	 * 
-	 * @return generate a secure salt.
+	 * @return generate a base64 encoded secure salt.
 	 * @throws NoSuchAlgorithmException
 	 *             - problem locating the algorithm.
 	 */
 	private static String generateSalt() throws NoSuchAlgorithmException {
 		SecureRandom sr = SecureRandom.getInstance(SALTING_ALGORITHM);
+		
 		byte[] salt = new byte[SALT_SIZE];
 		sr.nextBytes(salt);
-		return salt.toString();
+		
+		return new String(Base64.encodeBase64(salt));
 	}
 }
