@@ -454,13 +454,13 @@ public class SegueApiFacade {
 	/**
 	 * This method provides a set of all tags for the 
 	 * live version of the content.
-	 * 
+	 * @param request so that we can determine whether we can make use of caching via etags.
 	 * @return a set of all tags used in the live version
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("content/tags")
-	public final Response getTagListByLiveVersion(@Context Request request) {
+	public final Response getTagListByLiveVersion(@Context final Request request) {
 		return this.getTagListByVersion(contentVersionController
 				.getLiveVersion(), request);
 	}
@@ -470,7 +470,7 @@ public class SegueApiFacade {
 	 * content.
 	 * 
 	 * @param version of the site to provide the tag list from.
-	 * @param request request so that we can determine whether we can make use of caching via etags.
+	 * @param request so that we can determine whether we can make use of caching via etags.
 	 * @return a set of tags used in the specified version
 	 */
 	@GET
@@ -624,9 +624,9 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method will allow the live version served by the site to be changed
-	 * TODO: Maybe some security???!
+	 * This method will allow the live version served by the site to be changed.
 	 * 
+	 * @param request - to help determine access rights.
 	 * @param version
 	 *            - version to use as updated version of content store.
 	 * @return Success shown by returning the new liveSHA or failed message
@@ -636,27 +636,41 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("admin/live_version/{version}")
 	public final synchronized Response changeLiveVersion(
+			@Context final HttpServletRequest request,
 			@PathParam("version") final String version) {
-		IContentManager contentPersistenceManager = contentVersionController
-				.getContentManager();
 
-		List<String> availableVersions = contentPersistenceManager
-				.listAvailableVersions();
+		try {
+			if (this.userManager.isUserAnAdmin(request)) {
+				IContentManager contentPersistenceManager = contentVersionController
+						.getContentManager();
 
-		if (!availableVersions.contains(version)) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.BAD_REQUEST, "Invalid version selected: " + version);
-			log.warn(error.getErrorMessage());
-			return error.toResponse();
+				List<String> availableVersions = contentPersistenceManager
+						.listAvailableVersions();
+
+				if (!availableVersions.contains(version)) {
+					SegueErrorResponse error = new SegueErrorResponse(
+							Status.BAD_REQUEST, "Invalid version selected: " + version);
+					log.warn(error.getErrorMessage());
+					return error.toResponse();
+				}
+
+				String newVersion = contentVersionController.triggerSyncJob(version);
+
+				contentVersionController.setLiveVersion(newVersion);
+				log.info("Live version of the site changed to: " + newVersion);
+
+				return Response.ok().entity("live Version changed to " + version)
+						.build();
+			} else {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.")
+						.toResponse();
+			}
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in to access this function.")
+					.toResponse();
 		}
-
-		String newVersion = contentVersionController.triggerSyncJob(version);
-
-		contentVersionController.setLiveVersion(newVersion);
-		log.info("Live version of the site changed to: " + newVersion);
-
-		return Response.ok().entity("live Version changed to " + version)
-				.build();
 	}
 
 	/**
@@ -1086,7 +1100,7 @@ public class SegueApiFacade {
 			@PathParam("provider") final String signinProvider,
 			@QueryParam("redirect") final String redirectUrl) {
 		String newRedirectUrl = null;
-		if (null == redirectUrl || !redirectUrl.startsWith("http://")) {
+		if (null == redirectUrl || !redirectUrl.startsWith("http://") || !redirectUrl.startsWith("https://")) {
 			newRedirectUrl = "http://"
 					+ this.properties.getProperty(Constants.HOST_NAME);
 
@@ -1128,7 +1142,7 @@ public class SegueApiFacade {
 		}
 		
 		String newRedirectUrl = null;
-		if (null == redirectUrl || !redirectUrl.startsWith("http://")) {
+		if (null == redirectUrl || !redirectUrl.startsWith("http://") || !redirectUrl.startsWith("https://")) {
 			newRedirectUrl = "http://"
 					+ this.properties.getProperty(Constants.HOST_NAME);
 
@@ -1267,7 +1281,7 @@ public class SegueApiFacade {
 	 * This method will delete all cached data from the CMS and any search
 	 * indices.
 	 * 
-	 * TODO: Needs security.
+	 * @param request - containing user session information.
 	 * 
 	 * @return the latest version id that will be cached if content is
 	 *         requested.
@@ -1275,17 +1289,30 @@ public class SegueApiFacade {
 	@POST
 	@Produces("application/json")
 	@Path("admin/clear_caches")
-	public final synchronized Response clearCaches() {
-		IContentManager contentPersistenceManager = contentVersionController
-				.getContentManager();
+	public final synchronized Response clearCaches(@Context final HttpServletRequest request) {
+		try {
+			if (this.userManager.isUserAnAdmin(request)) {
+				IContentManager contentPersistenceManager = contentVersionController
+						.getContentManager();
 
-		log.info("Clearing all caches...");
-		contentPersistenceManager.clearCache();
+				log.info("Clearing all caches...");
+				contentPersistenceManager.clearCache();
 
-		ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>()
-				.put("result", "success").build();
+				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>()
+						.put("result", "success").build();
 
-		return Response.ok(response).build();
+				return Response.ok(response).build();				
+			} else {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an administrator to use this function.")
+						.toResponse();
+			}
+			
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in to access this function.")
+					.toResponse();
+		}		
 	}
 
 	/**

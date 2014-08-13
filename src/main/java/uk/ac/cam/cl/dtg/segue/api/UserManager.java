@@ -57,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.User;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -435,7 +436,9 @@ public class UserManager {
 	 * @throws MissingRequiredFieldException
 	 *             - If the change will mean that the user will be unable to
 	 *             login again.
-	 * @throws AuthenticationProviderMappingException - if we are unable to locate the authentication provider specified. 
+	 * @throws AuthenticationProviderMappingException
+	 *             - if we are unable to locate the authentication provider
+	 *             specified.
 	 */
 	public void unlinkUserFromProvider(final UserDTO user, final String providerString)
 		throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
@@ -466,6 +469,27 @@ public class UserManager {
 		} catch (NoUserLoggedInException e) {
 			return false;
 		}
+	}
+	
+	/**
+	 * Is the current user an admin.
+	 * 
+	 * @param request - with session information
+	 * @return true if user is logged in as an admin, false otherwise.
+	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
+	 */
+	public final boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
+		User user = this.getCurrentUserDO(request);
+		
+		if (null == user) {
+			throw new NoUserLoggedInException();
+		}
+		
+		if (user.getRole() != null && user.getRole().equals(Role.ADMIN)) {
+			return true;
+		} 
+		
+		return false;
 	}
 	
 	/**
@@ -913,7 +937,16 @@ public class UserManager {
 		}
 	}
 	
-	private String calculateSessionHMAC(String key, String userId, String sessionId, String currentDate) {
+	/**
+	 * Calculate the session HMAC value based on the properties of interest.
+	 * @param key - secret key.
+	 * @param userId - User Id
+	 * @param sessionId - Session Id
+	 * @param currentDate - Current date
+	 * @return HMAC signature.
+	 */
+	private String calculateSessionHMAC(final String key, final String userId, final String sessionId,
+			final String currentDate) {
 		return this.calculateHMAC(key, userId + "|" + sessionId + "|" + currentDate);
 	}
 	
