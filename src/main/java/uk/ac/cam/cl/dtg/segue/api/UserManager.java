@@ -6,7 +6,6 @@ import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -73,7 +72,6 @@ public class UserManager {
 			.getLogger(UserManager.class);
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA1";
-	private static final String DATE_FORMAT = "EEE, d MMM yyyy HH:mm:ss z";
 
 	private final String HOST_NAME;
 
@@ -495,8 +493,7 @@ public class UserManager {
 		Validate.notNull(request);
 		Validate.notBlank(userId);
 
-		String currentDate = new SimpleDateFormat(DATE_FORMAT)
-				.format(new Date());
+		String currentDate = new Date().toString();
 		String sessionId = request.getSession().getId();
 		String sessionHMAC = this.calculateHMAC(hmacSalt + userId + sessionId
 				+ currentDate, userId + sessionId + currentDate);
