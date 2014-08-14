@@ -7,7 +7,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
  *
  */
 @JsonType("isaacSymbolicQuestion")
-public class IsaacSymbolicQuestionDTO extends IsaacQuestionDTO {
+public class IsaacSymbolicQuestionDTO extends IsaacQuestionBaseDTO {
 	public IsaacSymbolicQuestionDTO() {
 		super();
 	}

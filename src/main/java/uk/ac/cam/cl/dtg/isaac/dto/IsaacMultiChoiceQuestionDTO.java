@@ -12,7 +12,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
  *
  */
 @JsonType("isaacMultiChoiceQuestion")
-public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionDTO {
+public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionBaseDTO {
 	
 	/**
 	 * We would like the choices to appear in a different order each time.

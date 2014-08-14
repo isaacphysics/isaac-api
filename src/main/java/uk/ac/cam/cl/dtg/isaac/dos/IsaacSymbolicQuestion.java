@@ -10,6 +10,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
  */
 @DTOMapping(IsaacSymbolicQuestionDTO.class)
 @JsonType("isaacSymbolicQuestion")
-public class IsaacSymbolicQuestion extends IsaacQuestion {
+public class IsaacSymbolicQuestion extends IsaacQuestionBase {
 
 }

@@ -4,12 +4,12 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 
 /**
- * Common DO superclass for isaac Questions.
+ * Common DTO superclass for isaac Questions.
  *
  */
-@JsonType("isaacQuestion")
-public class IsaacQuestionDTO extends ChoiceQuestionDTO {
-	public IsaacQuestionDTO() {
+@JsonType("isaacQuestionBase")
+public class IsaacQuestionBaseDTO extends ChoiceQuestionDTO {
+	public IsaacQuestionBaseDTO() {
 		super();
 	}
 }

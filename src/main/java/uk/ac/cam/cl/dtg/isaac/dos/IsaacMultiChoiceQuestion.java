@@ -10,6 +10,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
  */
 @DTOMapping(IsaacMultiChoiceQuestionDTO.class)
 @JsonType("isaacMultiChoiceQuestion")
-public class IsaacMultiChoiceQuestion extends IsaacQuestion {
+public class IsaacMultiChoiceQuestion extends IsaacQuestionBase {
 	
 }

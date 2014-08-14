@@ -8,8 +8,9 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacConceptPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacMultiChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -26,7 +27,8 @@ public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 	public List<Class<? extends Content>> getContentDataTransferObjectMap() {
 		List<Class<? extends Content>> supplementaryContentDTOs = Lists.newArrayList();
 		
-		supplementaryContentDTOs.add(IsaacQuestion.class);
+		supplementaryContentDTOs.add(IsaacQuickQuestion.class);
+		supplementaryContentDTOs.add(IsaacQuestionBase.class);
 		supplementaryContentDTOs.add(IsaacMultiChoiceQuestion.class);
 		supplementaryContentDTOs.add(IsaacNumericQuestion.class);
 		supplementaryContentDTOs.add(IsaacSymbolicQuestion.class);
