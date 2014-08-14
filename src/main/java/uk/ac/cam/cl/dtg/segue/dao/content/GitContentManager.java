@@ -399,8 +399,16 @@ public class GitContentManager implements IContentManager {
 					if (database.verifyCommitExists(version)) {
 						log.info("Rebuilding cache as sha does not exist in hashmap");
 						buildGitContentIndex(version);
+						
+						// may as well spawn a new thread to do the validation work now.
+						Thread validationJob = new Thread() {
+							public void run() {
+								validateReferentialIntegrity(version);
+							}
+						};
+						validationJob.start();
+						
 						buildSearchIndexFromLocalGitIndex(version);
-						validateReferentialIntegrity(version);
 					} else {
 						log.warn("Unable find the commit (" + version
 								+ ") in git to ensure the cache");
@@ -771,6 +779,7 @@ public class GitContentManager implements IContentManager {
 	 *         False if there is something wrong.
 	 */
 	private boolean validateReferentialIntegrity(final String sha) {
+		log.info("Starting content Validation.");
 		Set<Content> allObjectsSeen = new HashSet<Content>();
 
 		Set<String> expectedIds = new HashSet<String>();
@@ -826,9 +835,6 @@ public class GitContentManager implements IContentManager {
 
 				if (f.getSrc() != null && !f.getSrc().startsWith("http")
 						&& !database.verifyGitObject(sha, f.getSrc())) {
-					log.warn("Unable to find Image: " + f.getSrc()
-							+ " in Git. Could the reference be incorrect? SourceFile is "
-							+ c.getCanonicalSourceFile());
 					this.registerContentProblem(
 							sha,
 							c,
@@ -841,8 +847,6 @@ public class GitContentManager implements IContentManager {
 
 				// check that there is some alt text.
 				if (f.getAltText() == null || f.getAltText().isEmpty()) {
-					log.warn("No altText attribute set for media element: " + f.getSrc()
-							+ " in Git source file " + c.getCanonicalSourceFile());
 
 					this.registerContentProblem(sha, c,
 							"No altText attribute set for media element: " + f.getSrc()
@@ -915,10 +919,13 @@ public class GitContentManager implements IContentManager {
 						+ "ID cannot be found.");
 			}
 
-			log.error("Referential integrity broken for (" + expectedIds.size() + ") related Content items. "
+			log.error("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
 					+ "The following ids are referenced but do not exist: " + expectedIds.toString());
-			return false;
 		}
+		log.info("Validation processing complete. There are " + this.indexProblemCache.get(sha).size()
+				+ " files with content problems");
+		
+		return false;
 	}
 
 	/**
