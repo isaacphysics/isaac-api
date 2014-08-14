@@ -63,7 +63,7 @@ public class IsaacNumericValidator implements IValidator {
 
 			return new QuantityValidationResponseDTO(question.getId(),
 					answerFromUser, false, new Content(
-							"You did not provide a complete answer."), false,
+							"You did not provide an answer."), false,
 					false, new Date());
 
 		} else if (null == answerFromUser.getUnits()
@@ -71,7 +71,7 @@ public class IsaacNumericValidator implements IValidator {
 
 			return new QuantityValidationResponseDTO(question.getId(),
 					answerFromUser, false, new Content(
-							"You did not provide any units."), false, false, new Date());
+							"You did not provide any units."), null, false, new Date());
 		}
 
 		if (isaacNumericQuestion.getRequireUnits()) {
