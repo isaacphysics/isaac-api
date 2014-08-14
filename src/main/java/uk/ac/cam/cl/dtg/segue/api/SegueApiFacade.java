@@ -1100,8 +1100,8 @@ public class SegueApiFacade {
 			@PathParam("provider") final String signinProvider,
 			@QueryParam("redirect") final String redirectUrl) {
 		String newRedirectUrl = null;
-		if (null == redirectUrl || !redirectUrl.startsWith("http://") || !redirectUrl.startsWith("https://")) {
-			newRedirectUrl = "http://"
+		if (null == redirectUrl || !(redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
+			newRedirectUrl = "https://"
 					+ this.properties.getProperty(Constants.HOST_NAME);
 
 			if (redirectUrl != null) {
@@ -1142,8 +1142,8 @@ public class SegueApiFacade {
 		}
 		
 		String newRedirectUrl = null;
-		if (null == redirectUrl || !redirectUrl.startsWith("http://") || !redirectUrl.startsWith("https://")) {
-			newRedirectUrl = "http://"
+		if (null == redirectUrl || !(redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
+			newRedirectUrl = "https://"
 					+ this.properties.getProperty(Constants.HOST_NAME);
 
 			if (redirectUrl != null) {

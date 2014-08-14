@@ -56,7 +56,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	private final String callbackUri;
 	private final Collection<String> requestedScopes;
 
-	// weak cache for mapping userInformation to credentials
+	// weak cache for mapping userInformation to credentials temporarily
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
 	
@@ -117,9 +117,9 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 				url.toString());
 
 		if (authResponse.getError() == null) {
-			log.info("User granted access to our app.");
+			log.debug("User granted access to our app.");
 		} else {
-			log.info("User denied access to our app.");
+			log.debug("User denied access to our app.");
 		}
 
 		return authResponse.getCode();
