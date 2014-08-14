@@ -173,10 +173,7 @@ public class SegueApiFacade {
 	// }
 
 	/**
-	 * GetContentById from the database.
-	 * 
-	 * Routing endpoint: this method will either return results from one of the
-	 * following: getContentByTags getContentByType
+	 * Get Content List By version from the database.
 	 * 
 	 * @param version
 	 *            - version of the content to use.
@@ -194,7 +191,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/{version}")
-	public final Response getContentList(
+	public final Response getContentListByVersion(
 			@PathParam("version") final String version,
 			@QueryParam("tags") final String tags,
 			@QueryParam("type") final String type,
@@ -452,9 +449,12 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method provides a set of all tags for the 
-	 * live version of the content.
-	 * @param request so that we can determine whether we can make use of caching via etags.
+	 * This method provides a set of all tags for the live version of the
+	 * content.
+	 * 
+	 * @param request
+	 *            so that we can determine whether we can make use of caching
+	 *            via etags.
 	 * @return a set of all tags used in the live version
 	 */
 	@GET
@@ -469,8 +469,11 @@ public class SegueApiFacade {
 	 * This method provides a set of all tags for a given version of the
 	 * content.
 	 * 
-	 * @param version of the site to provide the tag list from.
-	 * @param request so that we can determine whether we can make use of caching via etags.
+	 * @param version
+	 *            of the site to provide the tag list from.
+	 * @param request
+	 *            so that we can determine whether we can make use of caching
+	 *            via etags.
 	 * @return a set of tags used in the specified version
 	 */
 	@GET
@@ -479,22 +482,14 @@ public class SegueApiFacade {
 	public final Response getTagListByVersion(
 			@PathParam("version") final String version,
 			@Context final Request request) {
-		// Create cache control header
-		CacheControl cc = new CacheControl();
-		// Set max age to one day
-		cc.setMaxAge(Constants.MAX_ETAG_CACHE_TIME);
-		Response.ResponseBuilder rb = null;
-
-		// Calculate the ETag on last modified date of user resource
-		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
-
-		// Verify if it matched with etag available in http request
-		rb = request.evaluatePreconditions(etag);
-
-		// If ETag matches the rb will be non-null;
-		if (rb != null) {
-			// Use the rb to return the response without any further processing
-			return rb.cacheControl(cc).tag(etag).build();
+		// Calculate the ETag on last modified date of tags list
+		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode()
+				+ "tagList".hashCode() + "");
+		
+		Response cachedResponse = generateCachedResponse(request, etag);
+		
+		if (cachedResponse != null) {
+			return cachedResponse;
 		}
 		
 		IContentManager contentPersistenceManager = contentVersionController
@@ -502,7 +497,7 @@ public class SegueApiFacade {
 
 		Set<String> tags = contentPersistenceManager.getTagsList(version);
 
-		return Response.ok().entity(tags).cacheControl(cc).tag(etag).build();
+		return Response.ok().entity(tags).cacheControl(getCacheControl()).tag(etag).build();
 	}
 
 	/**
@@ -511,34 +506,48 @@ public class SegueApiFacade {
 	 * 
 	 * TODO: This is isaac-specific, so should not be in segue.
 	 * 
+	 * @param request - so that we can set cache headers.
 	 * @return a set of all units used in the live version
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("content/units")
-	public final Response getAllUnitsByLiveVersion() {
-		return this.getAllUnitsByVersion(contentVersionController
+	public final Response getAllUnitsByLiveVersion(@Context final Request request) {
+		return this.getAllUnitsByVersion(request, contentVersionController
 				.getLiveVersion());
 	}	
 	
 	/**
-	 * @param version of the site to provide the unit list from.
+	 * This method provides a set of all units for a given version.
 	 * 
 	 * TODO: This is isaac-specific, so should not be in segue.
 	 * 
+	 * @param request - so that we can set cache headers.
+	 * @param version of the site to provide the unit list from.
 	 * @return a set of units used in the specified version of the site
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("content/units/{version}")
 	public final Response getAllUnitsByVersion(
+			@Context final Request request,
 			@PathParam("version") final String version) {
+		// Calculate the ETag on last modified date of tags list
+		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode()
+				+ "unitsList".hashCode() + "");
+		
+		Response cachedResponse = generateCachedResponse(request, etag);
+		
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
 		Set<String> units = contentPersistenceManager.getAllUnits(version);
 
-		return Response.ok().entity(units).build();
+		return Response.ok().entity(units).tag(etag).cacheControl(getCacheControl()).build();
 	}
 
 	/**
@@ -550,20 +559,28 @@ public class SegueApiFacade {
 	 * This is a temporary method for serving image files directly from git with
 	 * a view that we can have a CDN cache these for us.
 	 * 
+	 * This method will use etags to try and reduce load on the system and
+	 * utilise browser caches.
+	 * 
+	 * @param request
+	 *            - so that we can do some caching.
 	 * @param version
 	 *            number - e.g. a sha
 	 * @param path
 	 *            - path of the image file
 	 * @return Response object containing the serialized content object. (with
-	 *         no levels of recursion into the content) or containing a SegueErrorResponse
+	 *         no levels of recursion into the content) or containing a
+	 *         SegueErrorResponse
 	 */
 	@GET
 	@Produces("*/*")
 	@Path("content/file_content/{version}/{path:.*}")
 	@Cache
 	public final Response getImageFileContent(
+			@Context final Request request,
 			@PathParam("version") final String version,
 			@PathParam("path") final String path) {
+		
 		if (null == version || null == path
 				|| Files.getFileExtension(path).isEmpty()) {
 			SegueErrorResponse error = new SegueErrorResponse(
@@ -572,6 +589,14 @@ public class SegueApiFacade {
 			log.debug(error.getErrorMessage());
 			return error.toResponse();
 		}
+		
+		// determine if we can use the cache if so return cached response.
+		EntityTag etag = new EntityTag(version.hashCode() + path.hashCode() + "");
+		Response cachedResponse = generateCachedResponse(request, etag);
+		
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}		
 
 		IContentManager gcm = contentVersionController.getContentManager();
 
@@ -619,8 +644,8 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		return Response.ok().type(mimeType).entity(fileContent.toByteArray())
-				.build();
+		return Response.ok(fileContent.toByteArray()).type(mimeType).tag(etag)
+				.cacheControl(getCacheControl()).build();
 	}
 
 	/**
@@ -1598,5 +1623,53 @@ public class SegueApiFacade {
 			final ContentDTO contentToAugment) {
 		return this.contentVersionController.getContentManager()
 				.populateContentSummaries(version, contentToAugment);
+	}
+	
+	/**
+	 * generateCachedResponse This method will accept a request and an entity
+	 * tag and determine whether the entity tag is the same.
+	 * 
+	 * If the entity tag is the same a response will be returned which is ready
+	 * to be sent to the client as we do not need to resent anything.
+	 * 
+	 * @param request
+	 *            - clients request
+	 * @param etag
+	 *            - the entity tag we have computed for the resource being
+	 *            requested.
+	 * @return if the resource etag provided is the same as the one sent by the
+	 *         client then a Response will be returned. This can be sent
+	 *         directly to the client. If not (i.e. if the resource has changed
+	 *         since the client last requested it) a null value is returned.
+	 *         This indicates that we need to send a new version of the
+	 *         resource.
+	 */
+	public static Response generateCachedResponse(final Request request, final EntityTag etag) {
+		Response.ResponseBuilder rb = null;
+
+		// Verify if it matched with etag available in http request
+		rb = request.evaluatePreconditions(etag);
+
+		// If ETag matches the rb will be non-null;
+		if (rb != null) {
+			// Use the rb to return the response without any further processing
+			log.info("This resource is unchanged. Serving empty request with etag.");
+			return rb.cacheControl(getCacheControl()).tag(etag).build();
+		}
+		// the resource must have changed as the etags are different.
+		return null;
+	}
+	
+	/**
+	 * Helper to get cache control information for response objects that can be cached. 
+	 * @return a CacheControl object configured with a MaxAge.
+	 */
+	public static CacheControl getCacheControl() {
+		// Create cache control header
+		CacheControl cc = new CacheControl();
+		// Set max age to one day
+		cc.setMaxAge(Constants.MAX_ETAG_CACHE_TIME);
+		
+		return cc;
 	}
 }

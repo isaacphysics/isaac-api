@@ -17,7 +17,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -116,6 +118,10 @@ public class IsaacController {
 	/**
 	 * REST end point to provide a list of concepts.
 	 * 
+	 * Uses ETag caching to attempt to reduce load on the server.
+	 *
+	 * @param request
+	 *            - used to determine if we can return a cache response. 
 	 * @param ids
 	 *            - the ids of the concepts to request.
 	 * @param tags
@@ -132,18 +138,23 @@ public class IsaacController {
 	@GET
 	@Path("pages/concepts")
 	@Produces("application/json")
-	public final Response getConceptList(@QueryParam("ids") final String ids,
+	public final Response getConceptList(
+			@Context final Request request,
+			@QueryParam("ids") final String ids,
 			@QueryParam("tags") final String tags,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("limit") final String limit) {
-
+		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
+		StringBuilder etagCodeBuilder = new StringBuilder();
+		
 		String newLimit = null;
-
+		
 		if (limit != null) {
 			newLimit = limit;
+			etagCodeBuilder.append(limit);
 		}
 
 		// options
@@ -151,13 +162,27 @@ public class IsaacController {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
 			newLimit = String.valueOf(idsList.size());
+			etagCodeBuilder.append(ids);
 		}
 
 		if (tags != null) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+			etagCodeBuilder.append(tags);
+		}
+		
+		// Calculate the ETag on last modified date of tags list
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+				+ "" + etagCodeBuilder.toString().hashCode());
+		
+		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		
+		if (cachedResponse != null) {
+			return cachedResponse;
 		}
 
-		return listContentObjects(fieldsToMatch, startIndex, newLimit);
+		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
+				.cacheControl(SegueApiFacade.getCacheControl()).build();
 	}
 
 	/**
@@ -188,6 +213,8 @@ public class IsaacController {
 	/**
 	 * REST end point to provide a list of questions.
 	 * 
+	 * @param request
+	 *            - used to determine if we can return a cache response. 
 	 * @param ids
 	 *            - the ids of the concepts to request.
 	 * @param tags
@@ -207,15 +234,20 @@ public class IsaacController {
 	@GET
 	@Path("pages/questions")
 	@Produces("application/json")
-	public final Response getQuestionList(@QueryParam("ids") final String ids,
+	public final Response getQuestionList(
+			@Context final Request request,
+			@QueryParam("ids") final String ids,
 			@QueryParam("tags") final String tags,
 			@QueryParam("levels") final String level,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("limit") final String limit) {
-
+		StringBuilder etagCodeBuilder = new StringBuilder();
+		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
-
+		etagCodeBuilder.append(QUESTION_TYPE);
+		
 		String newLimit = null;
 
 		// options
@@ -227,17 +259,32 @@ public class IsaacController {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
 			newLimit = String.valueOf(idsList.size());
+			etagCodeBuilder.append(ids);
 		}
 
 		if (tags != null) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+			etagCodeBuilder.append(tags);
 		}
 
 		if (level != null) {
 			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
+			etagCodeBuilder.append(level);
 		}
 
-		return listContentObjects(fieldsToMatch, startIndex, newLimit);
+		// Calculate the ETag on last modified date of tags list
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+				+ "" + etagCodeBuilder.toString().hashCode());
+		
+		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
+		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
+				.cacheControl(SegueApiFacade.getCacheControl()).build();
 	}
 
 	/**
@@ -775,17 +822,19 @@ public class IsaacController {
 	/**
 	 * Rest end point to allow images to be requested from the database.
 	 * 
+	 * @param request
+	 *            - used for intelligent cache responses.
 	 * @param path
 	 *            of image in the database
-	 * @return a Response containing the image file contents or containing
-	 *         a SegueErrorResponse.
+	 * @return a Response containing the image file contents or containing a
+	 *         SegueErrorResponse.
 	 */
 	@GET
 	@Produces("*/*")
 	@Path("images/{path:.*}")
 	@Cache
-	public final Response getImageByPath(@PathParam("path") final String path) {
-		return api.getImageFileContent(api.getLiveVersion(), path);
+	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
+		return api.getImageFileContent(request, api.getLiveVersion(), path);
 	}
 
 	// @POST
@@ -1025,6 +1074,8 @@ public class IsaacController {
 	/**
 	 * Helper method to query segue for a list of content objects.
 	 * 
+	 * This method will only use the latest version of the content.
+	 * 
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
 	 *            match
@@ -1032,10 +1083,10 @@ public class IsaacController {
 	 *            - the initial index for the first result.
 	 * @param limit
 	 *            - the maximums number of results to return
-	 * @return Response containing a list of content summary objects or containing
+	 * @return Response builder containing a list of content summary objects or containing
 	 *         a SegueErrorResponse
 	 */
-	private Response listContentObjects(
+	private Response.ResponseBuilder listContentObjects(
 			final Map<String, List<String>> fieldsToMatch,
 			final String startIndex, final String limit) {
 		ResultsWrapper<ContentDTO> c;
@@ -1060,8 +1111,7 @@ public class IsaacController {
 					Status.BAD_REQUEST,
 					"Unable to convert one of the integer parameters provided "
 							+ "into numbers (null is ok). Params provided were: limit "
-							+ limit + " and startIndex " + startIndex, e)
-					.toResponse();
+							+ limit + " and startIndex " + startIndex, e).toResponseBuilder();
 		}
 
 		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
@@ -1069,6 +1119,6 @@ public class IsaacController {
 						propertiesLoader.getProperty(PROXY_PATH)),
 				c.getTotalResults());
 
-		return Response.ok(summarizedContent).build();
+		return Response.ok(summarizedContent);
 	}
 }

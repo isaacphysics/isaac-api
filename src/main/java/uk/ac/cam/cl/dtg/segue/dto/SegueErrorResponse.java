@@ -97,12 +97,22 @@ public class SegueErrorResponse implements Serializable {
 	}
 	
 	/**
+	 * Returns the response builder preconfigured with this SegueErrorMessage.
+	 * 
+	 * This allows you to attach cache control headers or anything else that you may want to do.
+	 * @return preconfigured reponse builder.
+	 */
+	public final Response.ResponseBuilder toResponseBuilder() {
+		return Response.status(responseCode).entity(this)
+				.type("application/json");
+	}
+	
+	/**
 	 * Convert this object into a Response object ready for the client.
 	 * @return Response object.
 	 */
 	public final Response toResponse() {
-		return Response.status(responseCode).entity(this)
-				.type("application/json").build();
+		return this.toResponseBuilder().build();
 	}
 
 	@Override
