@@ -16,6 +16,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -39,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
@@ -217,10 +219,22 @@ public class ElasticSearchProvider implements ISearchProvider {
 			client.admin().indices().delete(new DeleteIndexRequest(index))
 					.actionGet();
 		} catch (ElasticsearchException e) {
-			e.printStackTrace();
+			log.error("ElasticSearch exception while trying to delete index " + index);
 			return false;
 		}
 
+		return true;
+	}
+
+	@Override
+	public final boolean expungeIndexTypeFromSearchCache(final String index, final String indexType) {
+		try {
+			DeleteMappingRequest deleteMapping = new DeleteMappingRequest(index).types(indexType);
+			client.admin().indices().deleteMapping(deleteMapping).actionGet();
+		} catch (ElasticsearchException e) {
+			log.error("ElasticSearch exception while trying to delete index " + index + " type " + indexType);
+			return false;
+		}
 		return true;
 	}
 

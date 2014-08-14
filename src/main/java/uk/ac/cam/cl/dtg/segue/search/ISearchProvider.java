@@ -174,10 +174,23 @@ public interface ISearchProvider {
 	/**
 	 * Instruct the search provider to delete all data from all indices.
 	 * 
+	 * This is a Nuclear option and will affect all indices in the cluster.
+	 * 
 	 * @return true if successful false if not.
 	 */
 	boolean expungeEntireSearchCache();
 
+	/**
+	 * Clear a specific index type from the search providers cache.
+	 * 
+	 * @param index
+	 *            the index containing the type you wish to delete.
+	 * @param indexType
+	 *            the index type to delete from the search providers cache.
+	 * @return true if successful false if not.
+	 */
+	boolean expungeIndexTypeFromSearchCache(String index, String indexType);
+	
 	/**
 	 * Register the names of fields that should have clones created (which are
 	 * not affected by the search processor e.g. stemming and ignoring
