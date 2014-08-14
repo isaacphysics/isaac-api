@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -474,8 +475,8 @@ public class GameManager {
 			// go through all of the questions that make up this gameboard item.
 			boolean allQuestionsCorrect = true;
 			for (ContentDTO contentDTO : listOfQuestions.getResults()) {
-				if (!(contentDTO instanceof QuestionDTO)) {
-					// we are not interested if this is not a question.
+				if (!(contentDTO instanceof QuestionDTO) || contentDTO instanceof IsaacQuickQuestionDTO) {
+					// we are not interested if this is not a question or if it is a quick question.
 					continue;
 				}
 				
