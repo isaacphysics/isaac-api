@@ -361,7 +361,7 @@ public class UserManager {
 		// sent in the json response.
 		if (null == credentials
 				|| credentials.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME) == null
-				|| credentials.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME) == null) {
+				|| credentials.get(Constants.LOCAL_AUTH_PASSWORD_FIELDNAME) == null) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"You must specify credentials email and password to use this authentication provider.");
