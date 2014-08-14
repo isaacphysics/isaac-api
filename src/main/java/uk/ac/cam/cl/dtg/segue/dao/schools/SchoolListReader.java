@@ -87,6 +87,72 @@ public class SchoolListReader {
 	}
 
 	/**
+	 * Trigger a thread to index the schools list. If needed.
+	 */
+	public synchronized void prepareSchoolList() {
+		// if the search provider has the index just return.
+		if (searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
+			return;
+		} 
+
+		Thread thread = new Thread() {
+			public void run() {
+				log.info("Starting a new thread to index schools list.");
+				try {
+					indexSchoolsWithSearchProvider();
+				} catch (UnableToIndexSchoolsException e) {
+					log.error("Unable to index the schools list.");
+				}
+			}
+		};
+		
+		thread.start();
+	}
+	
+	/**
+	 * Ensure School List has been generated.
+	 * 
+	 * @return true if we have an index or false if not. If false we cannot
+	 *         guarantee a response.
+	 * @throws UnableToIndexSchoolsException
+	 *             - If there is a problem indexing.
+	 */
+	private boolean ensureSchoolList() throws UnableToIndexSchoolsException {
+		if (searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
+			return true;
+		} else {
+			this.indexSchoolsWithSearchProvider();
+		}
+
+		return searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX);
+	}
+
+	/**
+	 * Build the index for the search schools provider.
+	 * 
+	 * @throws UnableToIndexSchoolsException
+	 *             - when there is a problem building the index of schools.
+	 */
+	private synchronized void indexSchoolsWithSearchProvider() throws UnableToIndexSchoolsException {
+		if (!searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
+			log.info("Creating schools index with search provider.");
+			List<School> schoolList = this.loadAndBuildSchoolList();
+
+			for (School school : schoolList) {
+				try {
+					searchProvider.indexObject(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
+							mapper.writeValueAsString(school));
+				} catch (JsonProcessingException e) {
+					log.error("Unable to serialize the school object into json.", e);
+				}
+			}
+			log.info("School list indexing complete.");
+		} else {
+			log.info("Cancelling school search index operation as another thread has already done it.");
+		}
+	}
+	
+	/**
 	 * Loads the school list from the preconfigured filename.
 	 * 
 	 * @return the list of schools.
@@ -147,48 +213,5 @@ public class SchoolListReader {
 		}
 
 		return schools;
-	}
-
-	/**
-	 * Ensure School List has been generated.
-	 * 
-	 * @return true if we have an index or false if not. If false we cannot
-	 *         guarantee a response.
-	 * @throws UnableToIndexSchoolsException
-	 *             - If there is a problem indexing.
-	 */
-	private boolean ensureSchoolList() throws UnableToIndexSchoolsException {
-		if (searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
-			return true;
-		} else {
-			this.indexSchoolsWithSearchProvider();
-		}
-
-		return searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX);
-	}
-
-	/**
-	 * Build the index for the search schools provider.
-	 * 
-	 * @throws UnableToIndexSchoolsException
-	 *             - when there is a problem building the index of schools.
-	 */
-	private synchronized void indexSchoolsWithSearchProvider() throws UnableToIndexSchoolsException {
-		if (!searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
-			log.info("Creating schools index with search provider.");
-			List<School> schoolList = this.loadAndBuildSchoolList();
-
-			for (School school : schoolList) {
-				try {
-					searchProvider.indexObject(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-							mapper.writeValueAsString(school));
-				} catch (JsonProcessingException e) {
-					log.error("Unable to serialize the school object into json.", e);
-				}
-			}
-
-		} else {
-			log.info("Cancelling school search index operation as another thread has already done it.");
-		}
 	}
 }

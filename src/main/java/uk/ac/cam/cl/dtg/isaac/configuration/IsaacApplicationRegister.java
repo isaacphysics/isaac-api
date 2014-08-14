@@ -37,7 +37,11 @@ public class IsaacApplicationRegister extends Application {
 		Injector injector = Guice.createInjector(
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
+		
+		// invoke schoolList initialisation
+		this.singletons.add(injector.getInstance(SchoolLookupFacade.class));
 		this.singletons.add(injector.getInstance(SegueApiFacade.class));
+
 		return this.singletons;
 	}
 
@@ -47,7 +51,6 @@ public class IsaacApplicationRegister extends Application {
 		result.add(IsaacController.class);
 		result.add(APIOverviewResource.class);
 		result.add(RestEasyJacksonConfiguration.class);
-		result.add(SchoolLookupFacade.class);
 		return result;
 	}
 }

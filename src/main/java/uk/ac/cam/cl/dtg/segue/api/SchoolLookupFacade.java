@@ -12,14 +12,12 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
 
 /**
  * Segue School Lookup service.
@@ -29,11 +27,18 @@ import com.google.inject.Injector;
 public class SchoolLookupFacade {
 	private static final Logger log = LoggerFactory.getLogger(SchoolLookupFacade.class);
 
+	private SchoolListReader schoolListReader;
+	
 	/**
-	 * SchoolLookupService default constructor.
+	 * Injectable constructor.
+	 * @param schoolListReader - Instance of schools list Reader to initialise. 
 	 */
-	public SchoolLookupFacade() {
-
+	@Inject
+	public SchoolLookupFacade(final SchoolListReader schoolListReader) {
+		this.schoolListReader = schoolListReader;
+		
+		// initialise schools list.
+		this.schoolListReader.prepareSchoolList();
 	}
 
 	/**
@@ -54,12 +59,9 @@ public class SchoolLookupFacade {
 					.toResponse();
 		}
 
-		Injector injector = Guice.createInjector(new SegueGuiceConfigurationModule());
-		SchoolListReader reader = injector.getInstance(SchoolListReader.class);
-
 		List<School> list;
 		try {
-			list = reader.findSchoolByNameOrPostCode(searchQuery);
+			list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);
 		} catch (UnableToIndexSchoolsException e) {
 			String message = "Unable to create / access the index of schools for the schools service.";
 			log.error(message, e);
