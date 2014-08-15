@@ -3,6 +3,11 @@ package uk.ac.cam.cl.dtg.segue.api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Worker class to orchestrate content indexing jobs.
+ * @author Stephen Cummins
+ *
+ */
 public class ContentSynchronisationWorker implements Runnable {
 	private static final Logger log = LoggerFactory
 			.getLogger(ContentSynchronisationWorker.class);
@@ -10,14 +15,23 @@ public class ContentSynchronisationWorker implements Runnable {
 	private ContentVersionController contentVersionController;
 	private String version; // null for latest, set for a particular version
 
+	/**
+	 * Create a synch worker providing a conntentVersionController and a version to index.
+	 * @param contentVersionController - the object providing access to high level sync methods.
+	 * @param version - the version of the content to attempt to index.
+	 */
 	public ContentSynchronisationWorker(
-			ContentVersionController contentVersionController, String version) {
+			final ContentVersionController contentVersionController, final String version) {
 		this.contentVersionController = contentVersionController;
 		this.version = version;
 	}
-
+	/**
+	 * Create a synch worker providing a conntentVersionController.
+	 * This constructor assumes that the latest version of the content available should be indexed.
+	 * @param contentVersionController - the object providing access to high level sync methods.
+	 */
 	public ContentSynchronisationWorker(
-			ContentVersionController contentVersionController) {
+			final ContentVersionController contentVersionController) {
 		this(contentVersionController, null);
 	}
 

@@ -163,7 +163,7 @@ public class SegueApiFacade {
 				.getProperty(Constants.FOLLOW_GIT_VERSION))) {
 			log.info("Segue just initialized - Sending content index request "
 					+ "so that we can service some content requests.");
-			this.synchroniseDataStores();
+			this.contentVersionController.triggerSyncJob();
 		}
 	}
 

@@ -397,7 +397,7 @@ public class GitContentManager implements IContentManager {
 			synchronized (this) {
 				if (!gitCache.containsKey(version)) {
 					if (database.verifyCommitExists(version)) {
-						log.info("Rebuilding cache as sha does not exist in hashmap");
+						log.debug("Rebuilding cache as sha does not exist in hashmap");
 						buildGitContentIndex(version);
 						
 						// may as well spawn a new thread to do the validation work now.
