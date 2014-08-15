@@ -771,8 +771,6 @@ public class GitContentManager implements IContentManager {
 	 * This method will attempt to traverse the cache to ensure that all content
 	 * references are valid.
 	 * 
-	 * TODO: add a property to bypass this method on live?
-	 * 
 	 * @param sha
 	 *            version to validate integrity of.
 	 * @return True if we are happy with the integrity of the git repository,
