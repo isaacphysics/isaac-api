@@ -37,7 +37,7 @@ public class SchoolLookupFacade {
 	public SchoolLookupFacade(final SchoolListReader schoolListReader) {
 		this.schoolListReader = schoolListReader;
 		
-		// initialise schools list.
+		// initialise schools list asynchronously.
 		this.schoolListReader.prepareSchoolList();
 	}
 

@@ -422,8 +422,6 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * This is useful if we want to query the original data without
 	 * ElasticSearch having messed with it.
 	 * 
-	 * TODO: this method should be made more generic and less segue specific.
-	 * 
 	 * @param index
 	 *            - index to send the mapping corrections to.
 	 * @param indexType

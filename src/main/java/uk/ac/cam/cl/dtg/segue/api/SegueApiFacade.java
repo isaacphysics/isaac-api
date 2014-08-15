@@ -1054,7 +1054,6 @@ public class SegueApiFacade {
 		}
 	}
 
-
 	/**
 	 * End point that verifies whether or not a password reset token is valid.
 	 *
@@ -1118,7 +1117,6 @@ public class SegueApiFacade {
 
 		return Response.ok().build();
 	}
-
 
 	/**
 	 * This is the initial step of the authentication process.

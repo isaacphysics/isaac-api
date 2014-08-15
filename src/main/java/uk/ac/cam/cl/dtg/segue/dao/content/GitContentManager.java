@@ -624,11 +624,10 @@ public class GitContentManager implements IContentManager {
 								// content is the same therefore it is just
 								// reuse of a content object so that is
 								// fine.
-								log.info("Resource (" + content.getId()
+								log.debug("Resource (" + content.getId()
 										+ ") already seen in cache. Skipping "
 										+ treeWalk.getPathString());
-								continue; // our work here is done (reduces
-											// nesting compared to else)
+								continue; 
 							}
 
 							// Otherwise, duplicate IDs with different content,
