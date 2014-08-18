@@ -14,15 +14,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * TODO: should this be converted into some kind of throwable?
  */
 public class SegueErrorResponse implements Serializable {
-
 	@JsonIgnore
 	private static final long serialVersionUID = 2310360688716715820L;
-
+	
 	@JsonIgnore
 	private Exception exception;
 
 	private Status responseCode;
-
 	private String errorMessage;
 
 	/**

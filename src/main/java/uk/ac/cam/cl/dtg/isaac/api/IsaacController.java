@@ -542,6 +542,8 @@ public class IsaacController {
 	 *            - so that we can find out the currently logged in user
 	 * @param startIndex
 	 *            - the first board index to return.
+	 * @param limit
+	 *            - the number of gameboards to return. 
 	 * @param sortInstructions
 	 *            - the criteria to use for sorting. Default is reverse chronological by created date.
 	 * @param showCriteria
@@ -554,6 +556,7 @@ public class IsaacController {
 	public final Response getGameboardByCurrentUser(
 			@Context final HttpServletRequest request,
 			@QueryParam("start_index") final String startIndex,
+			@QueryParam("limit") final String limit,
 			@QueryParam("sort") final String sortInstructions,
 			@QueryParam("show_only") final String showCriteria) {
 		UserDTO user;
@@ -563,6 +566,16 @@ public class IsaacController {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"Unable to retrieve the current user's gameboards as no user is currently logged in.")
 					.toResponse();		
+		}
+		
+		Integer gameboardLimit = Constants.DEFAULT_GAMEBOARDS_RESULTS_LIMIT;
+		if (limit != null) {
+			try {
+				gameboardLimit = Integer.parseInt(limit);	
+			} catch (NumberFormatException e) {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"The number you entered as the results limit is not valid.").toResponse();
+			}
 		}
 		
 		Integer startIndexAsInteger = 0;
@@ -614,7 +627,7 @@ public class IsaacController {
 		GameboardListDTO gameboards;
 		try {
 			gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
-					DEFAULT_RESULTS_LIMIT, gameboardShowCriteria, parsedSortInstructions);
+					gameboardLimit, gameboardShowCriteria, parsedSortInstructions);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();

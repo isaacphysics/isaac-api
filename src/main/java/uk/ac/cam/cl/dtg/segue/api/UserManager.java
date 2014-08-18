@@ -63,9 +63,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
 
 /**
  * This class is responsible for all low level user management actions e.g.
- * authentication and registration. TODO: Split authentication functionality
- * into another class and let this one focus on maintaining our segue user
- * state.
+ * authentication and registration. 
  */
 public class UserManager {
 	private static final Logger log = LoggerFactory

@@ -284,7 +284,6 @@ public class UserManagerTest {
 		HttpSession dummySession = createMock(HttpSession.class);
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 
-		// TODO: What do these strings actually need to be?
 		String someDomain = "http://www.somedomain.com/";
 		String someClientId = "someClientId";
 		String someAuthCode = "someAuthCode";

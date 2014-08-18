@@ -397,7 +397,7 @@ public class GitContentManager implements IContentManager {
 			synchronized (this) {
 				if (!gitCache.containsKey(version)) {
 					if (database.verifyCommitExists(version)) {
-						log.info("Rebuilding cache as sha does not exist in hashmap");
+						log.debug("Rebuilding cache as sha does not exist in hashmap");
 						buildGitContentIndex(version);
 						
 						// may as well spawn a new thread to do the validation work now.
@@ -624,11 +624,10 @@ public class GitContentManager implements IContentManager {
 								// content is the same therefore it is just
 								// reuse of a content object so that is
 								// fine.
-								log.info("Resource (" + content.getId()
+								log.debug("Resource (" + content.getId()
 										+ ") already seen in cache. Skipping "
 										+ treeWalk.getPathString());
-								continue; // our work here is done (reduces
-											// nesting compared to else)
+								continue; 
 							}
 
 							// Otherwise, duplicate IDs with different content,
@@ -770,8 +769,6 @@ public class GitContentManager implements IContentManager {
 	/**
 	 * This method will attempt to traverse the cache to ensure that all content
 	 * references are valid.
-	 * 
-	 * TODO: add a property to bypass this method on live?
 	 * 
 	 * @param sha
 	 *            version to validate integrity of.
