@@ -1551,26 +1551,18 @@ public class SegueApiFacade {
 	/**
 	 * Add default response for OPTIONS HTTP requests on all api requests.
 	 * TODO: we may want to change this in the future. 
-	 * @param requestMethod - The method the client wants to check for.
-	 * @param requestHeaders - The request Headers the client wants to check for.
-	 * @return A response allowing everything the client has requested..
+
+	 * @return A response allowing everything.
 	 */
 	@OPTIONS
 	@Path("/{path:.*}")
-	public Response handleCORSRequest(
-	        @HeaderParam("Access-Control-Request-Method") final String requestMethod,
-	        @HeaderParam("Access-Control-Request-Headers") final String requestHeaders) {
+	public Response handleCORSRequest() {
 	    final ResponseBuilder responseToReturn = Response.ok();
 
-	    if (requestHeaders != null) {
-	    	responseToReturn.header("Access-Control-Allow-Headers", requestHeaders);
-	    }
-	        
+    	responseToReturn.header("Access-Control-Allow-Headers", "origin, x-requested-with, content-type");
 
-	    if (requestMethod != null) {
-	    	responseToReturn.header("Access-Control-Allow-Methods", requestMethod);
-	    }
-	    
+	    responseToReturn.header("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS");
+
 	    responseToReturn.header("Access-Control-Allow-Origin", "*");
 
 	    return responseToReturn.build();
