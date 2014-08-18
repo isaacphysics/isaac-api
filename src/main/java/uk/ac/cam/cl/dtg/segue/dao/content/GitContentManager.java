@@ -993,14 +993,18 @@ public class GitContentManager implements IContentManager {
 	private synchronized void registerUnitsWithVersion(final String version, 
 			final IsaacNumericQuestion q) {		
 		
-		Set<String> newUnits = Sets.newHashSet();
+		HashMap<String, String> newUnits = Maps.newHashMap();
 		
 		for (Choice c: q.getChoices()) {
 			if (c instanceof Quantity) {
 				Quantity quantity = (Quantity) c;
 				
-				if (!quantity.getUnits().equals("")) {
-					newUnits.add(quantity.getUnits());
+				if (!quantity.getUnits().isEmpty()) {
+					String units = quantity.getUnits();
+					String cleanKey = units.replace("\t", "").replace("\n", "").replace(" ", "");
+
+					// May overwrite previous entry, doesn't matter as there is no mechanism by which to choose a winner
+					newUnits.put(cleanKey, units);
 				}
 			}
 		}
@@ -1014,7 +1018,7 @@ public class GitContentManager implements IContentManager {
 			allUnits.put(version, new HashSet<String>());
 		}
 		
-		allUnits.get(version).addAll(newUnits);
+		allUnits.get(version).addAll(newUnits.values());
 	}
 
 	/**
