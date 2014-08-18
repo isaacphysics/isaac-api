@@ -45,6 +45,8 @@ public final class Constants {
 	public static final String CREATED_DATE_FIELDNAME = "created";
 	public static final String VISITED_DATE_FIELDNAME = "lastVisited";
 	
+	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
+	
 	/**
 	 * Private constructor to prevent this class being created.
 	 */
