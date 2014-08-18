@@ -536,9 +536,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			final String databaseName, final Class<T> classType) {
 		Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
 
-		// TODO: fix possible problem in that mongoDB may not have been
-		// initialized at the point that we want to execute this.
-		// for now this only returns mongodb typed objects.
 		return new MongoAppDataManager<T>(mongoDB.getDB(), databaseName,
 				classType);
 	}

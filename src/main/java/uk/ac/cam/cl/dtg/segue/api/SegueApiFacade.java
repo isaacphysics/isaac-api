@@ -1020,6 +1020,8 @@ public class SegueApiFacade {
 	
 	/**
 	 * End point that allows a local user to generate a password reset request.
+	 * 
+	 * Step 1 of password reset process - send user an e-mail
 	 *
 	 * @param userObject - A user object containing the email of the user requesting a reset
 	 * @return a successful response regardless of whether the email exists
@@ -1056,7 +1058,9 @@ public class SegueApiFacade {
 
 	/**
 	 * End point that verifies whether or not a password reset token is valid.
-	 *
+	 * 
+	 * Optional Step 2 - validate token is correct
+	 * 
 	 * @param token - A password reset token
 	 * @return Success if the token is valid, otherwise returns not found
 	 */
@@ -1085,7 +1089,9 @@ public class SegueApiFacade {
 
 	/**
 	 * End point that allows the user to logout - i.e. destroy our cookie.
-	 *
+	 * 
+	 * Final step of password reset process. Change password.
+	 * 
 	 * @param token - A password reset token
 	 * @param userObject - A user object containing password information.
 	 * @return successful response.
