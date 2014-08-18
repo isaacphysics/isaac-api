@@ -1549,28 +1549,6 @@ public class SegueApiFacade {
 	}
 	
 	/**
-	 * Add default response for OPTIONS HTTP requests on all api requests.
-	 * TODO: we may want to change this in the future. 
-
-	 * @return A response allowing everything.
-	 */
-	@OPTIONS
-	@Path("/{path:.*}")
-	public Response handleCORSRequest() {
-	    final ResponseBuilder responseToReturn = Response.ok();
-
-    	responseToReturn.header("Access-Control-Allow-Headers", "origin, x-requested-with, content-type");
-
-	    responseToReturn.header("Allow", "GET, HEAD, POST, PUT, DELETE, OPTIONS");
-    	
-	    responseToReturn.header("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS");
-
-	    responseToReturn.header("Access-Control-Allow-Origin", "*");
-
-	    return responseToReturn.build();
-	}	
-
-	/**
 	 * Helper method to generate field to match requirements for search queries.
 	 * 
 	 * Assumes that everything is AND queries

@@ -649,6 +649,7 @@ public class IsaacController {
 	 * @param gameboardId - 
 	 * @return noContent response if successful a SegueErrorResponse if not.
 	 */
+	
 	@DELETE
 	@Path("users/current_user/gameboards/{gameboard_id}")
 	@Produces("application/json")
