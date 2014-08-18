@@ -30,6 +30,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -42,6 +44,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.elasticsearch.common.collect.Lists;
@@ -1544,6 +1547,34 @@ public class SegueApiFacade {
 
 		return Response.ok().build();
 	}
+	
+	/**
+	 * Add default response for OPTIONS HTTP requests on all api requests.
+	 * TODO: we may want to change this in the future. 
+	 * @param requestMethod - The method the client wants to check for.
+	 * @param requestHeaders - The request Headers the client wants to check for.
+	 * @return A response allowing everything the client has requested..
+	 */
+	@OPTIONS
+	@Path("/{path:.*}")
+	public Response handleCORSRequest(
+	        @HeaderParam("Access-Control-Request-Method") final String requestMethod,
+	        @HeaderParam("Access-Control-Request-Headers") final String requestHeaders) {
+	    final ResponseBuilder responseToReturn = Response.ok();
+
+	    if (requestHeaders != null) {
+	    	responseToReturn.header("Access-Control-Allow-Headers", requestHeaders);
+	    }
+	        
+
+	    if (requestMethod != null) {
+	    	responseToReturn.header("Access-Control-Allow-Methods", requestMethod);
+	    }
+	    
+	    responseToReturn.header("Access-Control-Allow-Origin", "*");
+
+	    return responseToReturn.build();
+	}	
 
 	/**
 	 * Helper method to generate field to match requirements for search queries.
