@@ -1561,6 +1561,8 @@ public class SegueApiFacade {
 
     	responseToReturn.header("Access-Control-Allow-Headers", "origin, x-requested-with, content-type");
 
+	    responseToReturn.header("Allow", "GET, HEAD, POST, PUT, DELETE, OPTIONS");
+    	
 	    responseToReturn.header("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS");
 
 	    responseToReturn.header("Access-Control-Allow-Origin", "*");
