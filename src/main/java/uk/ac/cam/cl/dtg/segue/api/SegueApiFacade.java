@@ -634,6 +634,10 @@ public class SegueApiFacade {
 				mimeType = "image/jpeg";
 				break;
 				
+			case "png":
+				mimeType = "image/png";
+				break;
+	
 			default:
 				// if it is an unknown type return an error as they shouldn't be
 				// using this endpoint.
