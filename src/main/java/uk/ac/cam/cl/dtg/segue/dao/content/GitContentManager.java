@@ -31,6 +31,7 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
@@ -754,6 +755,14 @@ public class GitContentManager implements IContentManager {
 								newParentId);
 					}
 				}
+			}
+		}
+		
+		// TODO: we need to fix this as this is an isaac thing in segue land.
+		if (content instanceof IsaacFeaturedProfile) {
+			IsaacFeaturedProfile profile = (IsaacFeaturedProfile) content;
+			if (profile.getImage() != null) {
+				this.augmentChildContent(profile.getImage(), canonicalSourceFile, newParentId);
 			}
 		}
 
