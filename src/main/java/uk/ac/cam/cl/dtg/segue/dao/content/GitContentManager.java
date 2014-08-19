@@ -864,7 +864,8 @@ public class GitContentManager implements IContentManager {
 			}
 
 			// TODO: remove reference to isaac specific types from here.
-			if (c instanceof ChoiceQuestion && !(c.getType().equals("isaacQuestion"))) {
+			if (c instanceof ChoiceQuestion
+					&& !(c.getType().equals("isaacQuestion") || c.getType().equals("isaacSymbolicQuestion"))) {
 				ChoiceQuestion question = (ChoiceQuestion) c;
 
 				if (question.getChoices() == null || question.getChoices().isEmpty()) {
