@@ -681,6 +681,7 @@ public class IsaacController {
 		return Response.noContent().build();
 	}
 	
+	
 	/**
 	 * REST end point to allow gameboards to be persisted into permanent storage 
 	 * and for the title to be updated by users.
@@ -791,6 +792,7 @@ public class IsaacController {
 	 *            as a string
 	 * @return A Response object containing a page object or containing a SegueErrorResponse.
 	 */
+	
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
@@ -815,6 +817,7 @@ public class IsaacController {
 	 * @return A Response object containing a page fragment object or containing
 	 *         a SegueErrorResponse.
 	 */
+	
 	@GET
 	@Path("pages/fragments/{fragment_id}")
 	@Produces("application/json")
@@ -843,6 +846,7 @@ public class IsaacController {
 	 * @return a Response containing the image file contents or containing a
 	 *         SegueErrorResponse.
 	 */
+	
 	@GET
 	@Produces("*/*")
 	@Path("images/{path:.*}")
@@ -851,71 +855,7 @@ public class IsaacController {
 		return api.getImageFileContent(request, api.getLiveVersion(), path);
 	}
 
-	// @POST
-	// @Consumes({"application/x-www-form-urlencoded"})
-	// @Path("contact-us/sendContactUsMessage")
-	// public ImmutableMap<String, String> postContactUsMessage(
-	// @FormParam("full-name") final String fullName,
-	// @FormParam("email") final String email,
-	// @FormParam("subject") final String subject,
-	// @FormParam("message-text") final String messageText,
-	// @Context final HttpServletRequest request) {
-	//
-	// // construct a new instance of the mailer object
-	// Mailer contactUsMailer = new Mailer(
-	// propertiesLoader.getProperty(MAILER_SMTP_SERVER),
-	// propertiesLoader.getProperty(MAIL_FROM_ADDRESS));
-	//
-	// if (StringUtils.isBlank(fullName) && StringUtils.isBlank(email)
-	// && StringUtils.isBlank(subject)
-	// && StringUtils.isBlank(messageText)) {
-	// log.debug("Contact us required field validation error ");
-	// return ImmutableMap
-	// .of("result",
-	// "message not sent - Missing required field - Validation Error");
-	// }
-	//
-	// // Get IpAddress of client
-	// String ipAddress = request.getHeader("X-FORWARDED-FOR");
-	//
-	// if (ipAddress == null) {
-	// ipAddress = request.getRemoteAddr();
-	// }
-	//
-	// // Construct message
-	// StringBuilder message = new StringBuilder();
-	// message.append("- Sender Details - " + "\n");
-	// message.append("From: " + fullName + "\n");
-	// message.append("E-mail: " + email + "\n");
-	// message.append("IP address: " + ipAddress + "\n");
-	// message.append("Message Subject: " + subject + "\n");
-	// message.append("- Message - " + "\n");
-	// message.append(messageText);
-	//
-	// try {
-	// // attempt to send the message via the smtp server
-	// contactUsMailer.sendMail(
-	// propertiesLoader.getProperty(MAIL_RECEIVERS).split(","),
-	// email, subject, message.toString());
-	// log.info("Contact Us - E-mail sent to "
-	// + propertiesLoader.getProperty(MAIL_RECEIVERS) + " "
-	// + email + " " + subject + " " + message.toString());
-	//
-	// } catch (AddressException e) {
-	// log.warn("E-mail Address validation error " + e.toString());
-	// return ImmutableMap.of("result",
-	// "message not sent - E-mail address malformed - Validation Error \n "
-	// + e.toString());
-	//
-	// } catch (MessagingException e) {
-	// log.error("Messaging error " + e.toString());
-	// return ImmutableMap.of(
-	// "result",
-	// "message not sent - Unknown Messaging error\n "
-	// + e.toString());
-	// }
-	//
-	// return ImmutableMap.of("result", "success");
+
 	// }
 
 	/**
@@ -968,6 +908,7 @@ public class IsaacController {
 	 *            - the path prefix used for augmentation of urls
 	 * @return ContentSummaryDTO.
 	 */
+	
 	private ContentSummaryDTO extractContentSummary(final ContentDTO content,
 			final String proxyPath) {
 		if (null == content) {
@@ -997,6 +938,7 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter ContentSummaryDTO objects.
 	 */
+	
 	private List<ContentSummaryDTO> extractContentSummaryFromList(
 			final List<ContentDTO> contentList, final String proxyPath) {
 		if (null == contentList) {
@@ -1025,6 +967,7 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter ContentSummaryDTO objects.
 	 */
+	
 	private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
 			final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
 		if (null == contentList) {
@@ -1058,6 +1001,7 @@ public class IsaacController {
 	 * @return A Response containing a single conceptPage or containing
 	 *         a SegueErrorResponse.
 	 */
+	
 	private Response findSingleResult(
 			final Map<String, List<String>> fieldsToMatch) {
 		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(
@@ -1084,6 +1028,7 @@ public class IsaacController {
 
 		return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
 	}
+	
 
 	/**
 	 * Helper method to query segue for a list of content objects.

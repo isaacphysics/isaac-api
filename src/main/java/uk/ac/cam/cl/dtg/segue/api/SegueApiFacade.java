@@ -1088,8 +1088,6 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * End point that allows the user to logout - i.e. destroy our cookie.
-	 * 
 	 * Final step of password reset process. Change password.
 	 * 
 	 * @param token - A password reset token
