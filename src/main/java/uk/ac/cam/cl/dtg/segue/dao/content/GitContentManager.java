@@ -743,6 +743,18 @@ public class GitContentManager implements IContentManager {
 							newParentId);
 				}
 			}
+
+			// Augment question answers
+			if (question.getAnswer() != null) {
+				Content answer = (Content) question.getAnswer();
+				if (answer.getChildren() != null) {
+					for (ContentBase cb : answer.getChildren()) {
+						Content c = (Content) cb;
+						this.augmentChildContent(c, canonicalSourceFile,
+								newParentId);
+					}
+				}
+			}
 		}
 
 		// TODO Improve Hack to convert image source into something that the api
