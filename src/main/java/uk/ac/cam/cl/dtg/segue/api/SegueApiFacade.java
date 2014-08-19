@@ -61,6 +61,7 @@ import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -106,6 +107,7 @@ public class SegueApiFacade {
 	private QuestionManager questionManager;
 	private PropertiesLoader properties;
 	private ICommunicator communicator;
+	private ILogManager logManager;
 
 	/**
 	 * Constructor that allows pre-configuration of the segue api.
@@ -126,6 +128,8 @@ public class SegueApiFacade {
 	 *            and augmenting questions with user information.
 	 * @param communicator
 	 *            - An implementation of ICommunicator for sending communiques
+	 * @param logManager
+	 *            - An instance of the log manager used for recording usage of the CMS.          
 	 */
 	@Inject
 	public SegueApiFacade(
@@ -135,7 +139,8 @@ public class SegueApiFacade {
 			final ContentVersionController contentVersionController,
 			final UserManager userManager,
 			final QuestionManager questionManager,
-			final ICommunicator communicator) {
+			final ICommunicator communicator,
+			final ILogManager logManager) {
 
 		this.properties = properties;
 		this.questionManager = questionManager;
@@ -157,6 +162,8 @@ public class SegueApiFacade {
 		this.contentVersionController = contentVersionController;
 		this.userManager = userManager;
 
+		this.logManager = logManager;
+		
 		// Check if we want to get the latest from git each time a request is
 		// made from segue. - Will add overhead
 		if (Boolean.parseBoolean(this.properties
@@ -626,7 +633,7 @@ public class SegueApiFacade {
 			case "jpg":
 				mimeType = "image/jpeg";
 				break;
-	
+				
 			default:
 				// if it is an unknown type return an error as they shouldn't be
 				// using this endpoint.
@@ -1342,7 +1349,7 @@ public class SegueApiFacade {
 
 				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>()
 						.put("result", "success").build();
-
+				
 				return Response.ok(response).build();				
 			} else {
 				return new SegueErrorResponse(Status.FORBIDDEN,
@@ -1429,11 +1436,14 @@ public class SegueApiFacade {
 					&& response.getEntity() instanceof QuestionValidationResponseDTO) {
 				userManager.recordUserQuestionInformation(user,
 						(QuestionValidationResponseDTO) response.getEntity());
-			}
+				
+				this.logManager.logEvent(user, request, Constants.ANSWER_QUESTION, response.getEntity());
+			} 
 		} catch (NoUserLoggedInException e) {
 			log.debug("Not able to record question response due to user not being logged in.");
+			this.logManager.logEvent(request, Constants.ANSWER_QUESTION, response.getEntity());
 		}
-
+		
 		return response;
 	}
 
@@ -1640,6 +1650,15 @@ public class SegueApiFacade {
 			final ContentDTO contentToAugment) {
 		return this.contentVersionController.getContentManager()
 				.populateContentSummaries(version, contentToAugment);
+	}
+	
+	/**
+	 * Library method to provide access to the Segue Log Manager.
+	 * 
+	 * @return an instance of the log manager.
+	 */
+	public ILogManager getLogManager() {
+		return this.logManager;
 	}
 	
 	/**

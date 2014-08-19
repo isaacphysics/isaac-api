@@ -47,6 +47,9 @@ public final class Constants {
 	
 	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
 	
+	// Log events
+	public static final String VIEW_QUESTION = "VIEW_QUESTION";
+	
 	/**
 	 * Private constructor to prevent this class being created.
 	 */

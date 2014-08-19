@@ -25,6 +25,7 @@ import javax.ws.rs.core.Response.Status;
 
 import ma.glasnost.orika.MapperFacade;
 
+import org.elasticsearch.common.collect.MapBuilder;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -85,15 +87,6 @@ public class IsaacController {
 		api = injector.getInstance(SegueApiFacade.class);
 		propertiesLoader = injector.getInstance(PropertiesLoader.class);
 		gameManager = injector.getInstance(GameManager.class);
-
-		// test of user registration - this is just a snippet for future
-		// reference as I didn't know where else to put it.
-		// User user = api.getCurrentUser(req);
-		// // example of requiring user to be logged in.
-		// if(null == user)
-		// return api.authenticationInitialisation(req, "google");
-		// else
-		// log.info("User Logged in: " + user.getEmail());
 	}
 
 	/**
@@ -315,30 +308,48 @@ public class IsaacController {
 
 		Response response = this.findSingleResult(fieldsToMatch);
 		
-		// check if a user is currently logged in.
-		if (this.api.hasCurrentUser(request)) {
-			try {
-				Object unknownResponse = response.getEntity();
-				UserDTO currentUser = this.api.getCurrentUser(request);
-				if (unknownResponse instanceof SeguePageDTO) {
-					SeguePageDTO content = (SeguePageDTO) unknownResponse;
+		if (response.getEntity() instanceof SeguePageDTO) {
+			SeguePageDTO content = (SeguePageDTO) response.getEntity();
+			
+			Map<String, String> logEntry = ImmutableMap.of("questionId", content.getId(), "contentVersion",
+					api.getLiveVersion());
+			
+			// check if a user is currently logged in.
+			if (this.api.hasCurrentUser(request)) {
+				try {
+					Object unknownResponse = response.getEntity();
+					UserDTO currentUser = this.api.getCurrentUser(request);
+					if (unknownResponse instanceof SeguePageDTO) {
 
-					try {
-						content = api.getQuestionManager().augmentQuestionObjectWithAttemptInformation(
-								content, api.getQuestionAttemptsByUser(currentUser));
-					} catch (SegueDatabaseException e) {
-						return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-								"Database error during retrieval of questionAttempts.").toResponse();
+						try {
+							content = api.getQuestionManager().augmentQuestionObjectWithAttemptInformation(
+									content, api.getQuestionAttemptsByUser(currentUser));
+						} catch (SegueDatabaseException e) {
+							return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+									"Database error during retrieval of questionAttempts.").toResponse();
+						}
+						
+						this.api.getLogManager().logEvent(
+								currentUser,
+								request,
+								Constants.VIEW_QUESTION,
+								logEntry);
+						
+						// return augmented content.
+						return Response.ok(content).build();
 					}
-
-					// return augmented content.
-					return Response.ok(content).build();
+				} catch (NoUserLoggedInException e) {
+					log.error("Despite checking for a current user first the user object has not been retrieved");
+					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+							"Unable to retrieve current user information.").toResponse();
 				}
-			} catch (NoUserLoggedInException e) {
-				log.error("Despite checking for a current user first the user object has not been retrieved");
-				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-						"Unable to retrieve current user information.").toResponse();
-			}
+			} else {
+				// anonymously log
+				this.api.getLogManager().logEvent(
+						request,
+						Constants.VIEW_QUESTION,
+						logEntry);
+			}			
 		}
 		
 		// return unaugmented content.

@@ -107,7 +107,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 			throw new NoUserException();
 		}
 		if (null == localUserAccount.getPassword() || null == localUserAccount.getSecureSalt()) {
-			log.info("No credentials available for this account");
+			log.debug("No credentials available for this account");
 			throw new NoCredentialsAvailableException("This user does not have any"
 					+ " local credentials setup.");
 		}

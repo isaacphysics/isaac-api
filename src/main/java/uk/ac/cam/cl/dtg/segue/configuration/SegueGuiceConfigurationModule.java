@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LogManager;
+import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -134,6 +134,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
 		this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
 		this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
+		
+		this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
 	}
 
 	/**
@@ -225,8 +227,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		// Allows GitDb to take over content Management
 		bind(IContentManager.class).to(GitContentManager.class);
 
-		// TODO: the log manager needs redoing.
-		bind(ILogManager.class).to(LogManager.class);
+		bind(ILogManager.class).to(MongoLogManager.class);
 	}
 
 	/**

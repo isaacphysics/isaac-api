@@ -252,6 +252,11 @@ public final class Constants {
 	public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
 	public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
 	
+	// Logging component
+	public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
+	public static final String LOG_TABLE_NAME = "loggedEvents";
+	public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
+	
 	/*
 	 * Default values.
 	 */

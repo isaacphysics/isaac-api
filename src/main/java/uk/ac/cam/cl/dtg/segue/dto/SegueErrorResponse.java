@@ -45,7 +45,6 @@ public class SegueErrorResponse implements Serializable {
 		this.exception = e;
 	}
 	
-	
 	/**
 	 * Get the error code of this object.
 	 * @return the error code as an integer.
