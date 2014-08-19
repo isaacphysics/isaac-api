@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.inject.AbstractModule;
@@ -86,6 +87,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static ICommunicator communicator = null;
 
 	private PropertiesLoader globalProperties = null;
+
+	private static ILogManager logManager;
 
 	/**
 	 * Create a SegueGuiceConfigurationModule.
@@ -227,7 +230,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		// Allows GitDb to take over content Management
 		bind(IContentManager.class).to(GitContentManager.class);
 
-		bind(ILogManager.class).to(MongoLogManager.class);
+		//bind(ILogManager.class).to(MongoLogManager.class);
 	}
 
 	/**
@@ -309,6 +312,36 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 
 		return contentManager;
+	}
+	
+	/**
+	 * This provides a singleton of the LogManager for the Segue
+	 * facade.
+	 * 
+	 * @param database
+	 *            - database reference
+	 * @param userManager - A user manager so that we can resolve user objects
+	 * @param objectMapper - A configured object mapper so that we can serialize objects logged.
+	 * @param loggingEnabled - boolean to determine if we should persist log messages.
+	 * @return A fully configured LogManager
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private ILogManager getLogManager(final DB database, final UserManager userManager, final ObjectMapper objectMapper,
+			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
+		if (null == logManager) {
+			logManager = new MongoLogManager(database, userManager,
+					objectMapper, loggingEnabled);
+			log.info("Creating singleton of LogManager");
+			if (loggingEnabled) {
+				log.info("Log manager configured to record logging.");
+			} else {
+				log.info("Log manager configured NOT to record logging.");
+			}
+		}
+
+		return logManager;
 	}
 
 	/**

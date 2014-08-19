@@ -61,10 +61,6 @@ public class MongoLogManager implements ILogManager {
 		this.userManager = userManager;
 		this.objectMapper = objectMapper;
 		this.loggingEnabled = loggingEnabled;
-		
-		if (this.loggingEnabled) {
-			log.info("Log manager created - Logging is now enabled.");
-		}
 	}
 
 	@Override
