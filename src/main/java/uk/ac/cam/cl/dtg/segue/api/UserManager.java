@@ -186,7 +186,7 @@ public class UserManager {
 		}
 
 		// The user must be logged in to be able to link accounts.
-		if (this.isUserLoggedIn(request)) {
+		if (!this.isUserLoggedIn(request)) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"You need to be logged in to link accounts.")
 					.toResponse();
