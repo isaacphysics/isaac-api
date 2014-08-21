@@ -49,7 +49,9 @@ public final class Constants {
 	
 	// Log events
 	public static final String VIEW_QUESTION = "VIEW_QUESTION";
-	
+	public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
+	public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
+	public static final String GET_GAMEBOARD_BY_ID = "GET_GAMEBOARD_BY_ID";
 	/**
 	 * Private constructor to prevent this class being created.
 	 */

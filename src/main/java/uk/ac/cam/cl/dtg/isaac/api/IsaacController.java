@@ -345,7 +345,6 @@ public class IsaacController {
 			return response;			
 		}
 	}
-	
 
 	/**
 	 * Rest end point that searches the api for some search string.
@@ -508,7 +507,9 @@ public class IsaacController {
 				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
 						.toResponse();
 			}
-
+			
+			this.api.getLogManager().logEvent(request, GET_GAMEBOARD_BY_ID, gameboard.getId());
+			
 			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.")
@@ -518,7 +519,6 @@ public class IsaacController {
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 	}
-	
 
 	/**
 	 * REST end point to find all of a user's gameboards. The My Boards endpoint.
@@ -655,6 +655,8 @@ public class IsaacController {
 			}
 			
 			this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
+			this.api.getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
+
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to delete a gameboard.", e)
@@ -736,9 +738,10 @@ public class IsaacController {
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 		
-		// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
 		try {
+			// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
 			gameManager.linkUserToGameboard(existingGameboard, user);
+			this.api.getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error while attempting to save the gameboard.")
