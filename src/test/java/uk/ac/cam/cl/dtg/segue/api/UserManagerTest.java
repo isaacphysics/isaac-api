@@ -20,6 +20,8 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.api.client.util.Maps;
+
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -373,6 +375,9 @@ public class UserManagerTest {
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
 		dummySession.removeAttribute(EasyMock.<String> anyObject());
 
+		expect(dummySession.getAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS)).andReturn(Maps.newHashMap())
+				.anyTimes();
+		
 		replay(dummySession, request, dummyAuth, dummyDatabase);
 
 		// Act
