@@ -1,8 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -18,6 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -136,12 +139,46 @@ public class QuestionManager {
 	}
 	
 	/**
-	 * Modify a question objects in a page such that it contains bestAttempt
-	 * information if we can provide it.
+	 * This method will ensure any user question attempt information available is used to augment this question object.
+	 * 
+	 * It will also ensure that any personalisation of questions is affected (e.g. randomised multichoice elements).
 	 * 
 	 * @param page
 	 *            - to augment - this object may be mutated as a result of this
 	 *            method. i.e BestAttempt field set on question DTOs.
+	 * @param userId
+	 *            - to allow us to provide a per user experience of question configuration.
+	 * @param usersQuestionAttempts
+	 *            - as a map of QuestionPageId to Map of QuestionId to
+	 *            QuestionValidationResponseDO
+	 * @return augmented page - the return result is by convenience as the page
+	 *         provided as a parameter will be mutated.
+	 */
+	public SeguePageDTO augmentQuestionObjects(final SeguePageDTO page,
+			final String userId,
+			final Map<String, Map<String, List<QuestionValidationResponse>>> 
+			usersQuestionAttempts) {
+		
+		List<QuestionDTO> questionsToAugment = QuestionManager
+				.extractQuestionObjectsRecursively(page,
+						new ArrayList<QuestionDTO>());
+		
+		this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
+
+		shuffleChoiceQuestionsChoices(userId, questionsToAugment);
+		
+		return page;
+	}
+	
+	/**
+	 * Modify a question objects in a page such that it contains bestAttempt
+	 * information if we can provide it.
+	 * 
+	 * @param page
+	 *            - the page this object may be mutated as a result of this
+	 *            method. i.e BestAttempt field set on question DTOs.
+	 * @param questionsToAugment
+	 *            - The flattened list of questions which should be augmented.
 	 * @param usersQuestionAttempts
 	 *            - as a map of QuestionPageId to Map of QuestionId to
 	 *            QuestionValidationResponseDO
@@ -150,16 +187,13 @@ public class QuestionManager {
 	 */
 	public SeguePageDTO augmentQuestionObjectWithAttemptInformation(
 			final SeguePageDTO page,
+			final List<QuestionDTO> questionsToAugment,
 			final Map<String, Map<String, List<QuestionValidationResponse>>> 
 			usersQuestionAttempts) {
 		
 		if (null == usersQuestionAttempts) {
 			return page;
 		}
-		
-		List<QuestionDTO> questionsToAugment = QuestionManager
-				.extractQuestionObjectsRecursively(page,
-						new ArrayList<QuestionDTO>());
 		
 		for (QuestionDTO question : questionsToAugment) {
 			if (!usersQuestionAttempts.containsKey(page.getId())) {
@@ -227,5 +261,24 @@ public class QuestionManager {
 		}
 		
 		return result;
+	}
+	
+	/**
+	 * This is a helper method that will shuffle multiple choice questions based on a user specified seed.
+	 * @param seed - Randomness 
+	 * @param questions - questions which may have choices to shuffle.
+	 */
+	private void shuffleChoiceQuestionsChoices(final String seed, final List<QuestionDTO> questions) {
+		if (null == questions) {
+			return;
+		}
+		
+		// shuffle all choices based on the seed provided.
+		for (QuestionDTO question : questions) {
+			if (question instanceof ChoiceQuestionDTO) {
+				ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+				Collections.shuffle(choiceQuestion.getChoices(), new Random(seed.hashCode()));
+			}
+		}
 	}
 }

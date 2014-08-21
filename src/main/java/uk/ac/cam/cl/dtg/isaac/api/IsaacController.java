@@ -313,8 +313,16 @@ public class IsaacController {
 			Map<String, String> logEntry = ImmutableMap.of("questionId", content.getId(), "contentVersion",
 					api.getLiveVersion());
 
+			
+			String userId;
 			try {
-				content = api.getQuestionManager().augmentQuestionObjectWithAttemptInformation(content,
+				userId = api.getCurrentUser(request).getDbId();
+			} catch (NoUserLoggedInException e) {
+				userId = request.getSession().getId();
+			}
+			
+			try {
+				content = api.getQuestionManager().augmentQuestionObjects(content, userId,
 						api.getQuestionAttemptsBySession(request));
 
 			} catch (SegueDatabaseException e) {
