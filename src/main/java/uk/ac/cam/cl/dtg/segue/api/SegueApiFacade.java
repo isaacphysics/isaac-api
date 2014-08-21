@@ -69,13 +69,14 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -887,7 +888,7 @@ public class SegueApiFacade {
 	public Response getCurrentUserEndpoint(
 			@Context final HttpServletRequest request) {
 		try {
-			UserDTO currentUser = userManager.getCurrentUser(request);
+			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 			return Response.ok(currentUser).build();
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
@@ -913,15 +914,14 @@ public class SegueApiFacade {
 
 	/**
 	 * This is a library method that provides access to a users question attempts.
-	 * @param request - containing session information .
+	 * @param user - Anonymous user or registered user.
 	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
 	 * @throws SegueDatabaseException - If there is an error in the database call.
 	 */
 	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsBySession(
-			final HttpServletRequest request) throws SegueDatabaseException {
-		// TODO: I don't like this I want it to be by user and if user happens
-		// to be anonymous then we should deal with it.
-		return this.userManager.getQuestionAttemptsByUser(request);
+			final AbstractSegueUserDTO user) throws SegueDatabaseException {
+
+		return this.userManager.getQuestionAttemptsByUser(user);
 	}
 
 	
@@ -945,9 +945,9 @@ public class SegueApiFacade {
 
 		ObjectMapper tempObjectMapper = new ObjectMapper();
 		tempObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		User userObject;
+		RegisteredUser userObject;
 		try {
-			userObject = tempObjectMapper.readValue(userObjectString, User.class);
+			userObject = tempObjectMapper.readValue(userObjectString, RegisteredUser.class);
 		} catch (IOException e1) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Unable to parser the user object you provided.")
@@ -964,7 +964,7 @@ public class SegueApiFacade {
 		// if it is an update we need to do some security checks.
 		if (userObject.getDbId() != null) {
 			try {
-				UserDTO currentUser = this.getCurrentUser(request);
+				RegisteredUserDTO currentUser = this.getCurrentUser(request);
 				if (!currentUser.getDbId().equals(userObject.getDbId())) {
 					return new SegueErrorResponse(Status.FORBIDDEN,
 							"You cannot change someone elses' user settings.")
@@ -979,7 +979,7 @@ public class SegueApiFacade {
 		}
 
 		try {
-			UserDTO savedUser = userManager.createOrUpdateUserObject(userObject);
+			RegisteredUserDTO savedUser = userManager.createOrUpdateUserObject(userObject);
 			// we need to tell segue that the user who we just created is the one that is logged in.
 			this.userManager.createSession(request, savedUser.getDbId());
 			
@@ -1026,7 +1026,20 @@ public class SegueApiFacade {
 	 * @return User DTO.
 	 * @throws NoUserLoggedInException - User is not logged in.
 	 */
-	public UserDTO getCurrentUser(final HttpServletRequest request) throws NoUserLoggedInException {
+	public RegisteredUserDTO getCurrentUser(final HttpServletRequest request) throws NoUserLoggedInException {
+		return userManager.getCurrentRegisteredUser(request);
+	}
+	
+	/**
+	 * Library method to retrieve the current logged in AbstractSegueUser DTO.
+	 * 
+	 * NOTE: This should never be exposed as an endpoint.
+	 * 
+	 * @param request
+	 *            which may contain session information.
+	 * @return User DTO.
+	 */
+	public AbstractSegueUserDTO getCurrentUserIdentifier(final HttpServletRequest request) {
 		return userManager.getCurrentUser(request);
 	}
 	
@@ -1040,7 +1053,7 @@ public class SegueApiFacade {
 	 * @return True if a user is logged in, false if not.
 	 */
 	public boolean hasCurrentUser(final HttpServletRequest request) {
-		return userManager.isUserLoggedIn(request);
+		return userManager.isRegisteredUserLoggedIn(request);
 	}
 	
 	/**
@@ -1055,7 +1068,7 @@ public class SegueApiFacade {
 	@POST
 	@Path("users/resetpassword")
 	@Consumes("application/json")
-	public final Response generatePasswordResetToken(final UserDTO userObject) {
+	public final Response generatePasswordResetToken(final RegisteredUserDTO userObject) {
 		if (null == userObject) {
 			log.debug("User is null");
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -1122,7 +1135,7 @@ public class SegueApiFacade {
 	@POST
 	@Path("users/resetpassword/{token}")
 	@Consumes("application/json")
-	public final Response resetPassword(@PathParam("token") final String token, final User userObject) {
+	public final Response resetPassword(@PathParam("token") final String token, final RegisteredUser userObject) {
 		try {
 			userManager.resetPassword(token, userObject);
 		} catch (InvalidTokenException e) {
@@ -1239,7 +1252,7 @@ public class SegueApiFacade {
 			@PathParam("provider") final String authProviderAsString) {
 		
 		try {
-			UserDTO user = this.getCurrentUser(request);
+			RegisteredUserDTO user = this.getCurrentUser(request);
 			this.userManager.unlinkUserFromProvider(user, authProviderAsString);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -1404,6 +1417,9 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@PathParam("question_id") final String questionId,
 			final String jsonAnswer) {
+		
+		AbstractSegueUserDTO user = this.getCurrentUserIdentifier(request);
+		
 		Content contentBasedOnId = contentVersionController.getContentManager()
 				.getById(questionId, contentVersionController.getLiveVersion());
 
@@ -1449,7 +1465,7 @@ public class SegueApiFacade {
 
 
 		if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-			userManager.recordQuestionAttempt(request,
+			userManager.recordQuestionAttempt(user,
 					(QuestionValidationResponseDTO) response.getEntity());
 		}
 		

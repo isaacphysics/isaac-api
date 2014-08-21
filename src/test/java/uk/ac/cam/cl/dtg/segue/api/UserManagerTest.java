@@ -19,8 +19,7 @@ import ma.glasnost.orika.MapperFacade;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.api.client.util.Maps;
+import org.powermock.reflect.Whitebox;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -36,9 +35,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * Test class for the user manager class.
@@ -118,9 +118,9 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		UserDTO u;
+		RegisteredUserDTO u;
 		try {
-			u = userManager.getCurrentUser(request);
+			u = userManager.getCurrentRegisteredUser(request);
 
 			// Assert
 			fail("Expected NoUserLoggedInException");
@@ -147,7 +147,7 @@ public class UserManagerTest {
 		String validDateString = "Mon, 7 Apr 2014 11:21:13 BST";
 		String validSessionId = "5AC7F3523043FB791DFF97DA81350D22";
 		String validHMAC = "Z5CyayGxQg10Lx0DIb8IafCLuO9wJSBpGtMy2rXVL4k=";
-		User returnUser = new User(validUserId, "TestFirstName",
+		RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, new Date(), Gender.MALE,
 				new Date(), null, null, null, null);
 
@@ -170,10 +170,10 @@ public class UserManagerTest {
 				Arrays.asList(AuthenticationProvider.GOOGLE));
 		replay(dummyDatabase);
 		
-		expect(dummyMapper.map(returnUser, UserDTO.class)).andReturn(new UserDTO()).atLeastOnce();
+		expect(dummyMapper.map(returnUser, RegisteredUserDTO.class)).andReturn(new RegisteredUserDTO()).atLeastOnce();
 		replay(dummyMapper);
 		// Act
-		UserDTO user = userManager.getCurrentUser(request);
+		RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 		
 		// Assert
 		assertTrue(user != null);
@@ -351,11 +351,11 @@ public class UserManagerTest {
 				dummyDatabase.getByLinkedAccount(AuthenticationProvider.TEST,
 						someProviderUniqueUserId)).andReturn(null);
 		
-		User mappedUser = new User(null, "TestFirstName", "testLastName", "",
+		RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "",
 				Role.STUDENT, new Date(), Gender.MALE, new Date(),
 				null, null, null, null);
 		
-		expect(dummyMapper.map(providerUser, User.class)).andReturn(mappedUser).atLeastOnce();
+		expect(dummyMapper.map(providerUser, RegisteredUser.class)).andReturn(mappedUser).atLeastOnce();
 		replay(dummyMapper);
 		
 		// A main part of the test is to check the below call happens
@@ -364,7 +364,7 @@ public class UserManagerTest {
 						AuthenticationProvider.TEST, someProviderUniqueUserId))
 				.andReturn(someSegueUserId).atLeastOnce();
 		
-		mappedUser.setDatabaseId(someSegueUserId);
+		mappedUser.setDbId(someSegueUserId);
 		
 		expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
@@ -375,8 +375,8 @@ public class UserManagerTest {
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
 		dummySession.removeAttribute(EasyMock.<String> anyObject());
 
-		expect(dummySession.getAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS)).andReturn(Maps.newHashMap())
-				.anyTimes();
+		expect(dummySession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(
+				new AnonymousUserDTO("someAnonymousSessionID")).anyTimes();
 		
 		replay(dummySession, request, dummyAuth, dummyDatabase);
 
@@ -492,9 +492,10 @@ public class UserManagerTest {
 	 * Verify that a correct HMAC response works correctly.
 	 * 
 	 * This method is dependent on the crypto algorithm used.
+	 * @throws Exception 
 	 */
 	@Test
-	public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() {
+	public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() throws Exception {
 		UserManager userManager = buildTestUserManager();
 
 		// method param setup for method under test
@@ -521,7 +522,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		boolean valid = userManager.isValidUsersSession(request);
+		boolean valid = Whitebox.<Boolean> invokeMethod(userManager,"isValidUsersSession", request);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
@@ -530,9 +531,10 @@ public class UserManagerTest {
 
 	/**
 	 * Verify that a bad user session is detected as invalid.
+	 * @throws Exception 
 	 */
 	@Test
-	public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() {
+	public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() throws Exception {
 		UserManager userManager = buildTestUserManager();
 
 		// method param setup for method under test
@@ -559,7 +561,7 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		boolean valid = userManager.isValidUsersSession(request);
+		boolean valid = Whitebox.<Boolean> invokeMethod(userManager,"isValidUsersSession", request);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);

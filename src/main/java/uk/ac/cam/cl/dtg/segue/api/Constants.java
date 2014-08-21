@@ -298,7 +298,7 @@ public final class Constants {
 	// cache settings
 	public static final int MAX_ETAG_CACHE_TIME = 86400;
 
-	public static final String ANONYMOUS_QUESTION_ATTEMPTS = "ANONYMOUS_QUESTION_ATTEMPTS";
+	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
 	
 	/**
 	 * Private constructor to prevent this class being created.

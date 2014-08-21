@@ -13,7 +13,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 
 /**
  * Test class for the SegueLocalAuthenticator class.
@@ -39,7 +39,7 @@ public class SegueLocalAuthenticatorTest {
 	 */
 	@Test
 	public final void segueLocalAuthenticator_setOrChangeUsersPasswordEmptyPassword_exceptionsShouldBeThrown() {
-		User someUser = new User();
+		RegisteredUser someUser = new RegisteredUser();
 		someUser.setEmail("test@test.com");
 		someUser.setDbId("533ee66842f639e95ce35e29");
 		
@@ -70,7 +70,7 @@ public class SegueLocalAuthenticatorTest {
 	 */
 	@Test
 	public final void segueLocalAuthenticator_setOrChangeUsersPasswordValidPassword_passwordAndHashShouldBePopulatedAsBase64() {
-		User someUser = new User();
+		RegisteredUser someUser = new RegisteredUser();
 		someUser.setEmail("test@test.com");
 		someUser.setDbId("533ee66842f639e95ce35e29");
 		String somePassword = "test5eguePassw0rd";
@@ -108,13 +108,13 @@ public class SegueLocalAuthenticatorTest {
 		String someCorrectSecureSaltFromDB = "P77Fhqu2/SAVGDCtu9IkHg==";
 		String usersEmailAddress = "test@test.com";
 		
-		User userFromDatabase = new User();
+		RegisteredUser userFromDatabase = new RegisteredUser();
 		userFromDatabase.setDbId("533ee66842f639e95ce35e29");
 		userFromDatabase.setEmail(usersEmailAddress);
 		userFromDatabase.setPassword(someCorrectPasswordHashFromDB);
 		userFromDatabase.setSecureSalt(someCorrectSecureSaltFromDB);
 		
-		User someUser = new User();
+		RegisteredUser someUser = new RegisteredUser();
 		someUser.setEmail("test@test.com");
 		someUser.setDbId("533ee66842f639e95ce35e29");
 		String someIncorrectPassword = "password";
@@ -125,7 +125,7 @@ public class SegueLocalAuthenticatorTest {
 		
 		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
 		try {
-			User authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someIncorrectPassword);
+			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someIncorrectPassword);
 			fail("This should fail as a bad password has been provided.");
 			
 		} catch (IncorrectCredentialsProvidedException e) {
@@ -150,7 +150,7 @@ public class SegueLocalAuthenticatorTest {
 		String someCorrectSecureSaltFromDB = "P77Fhqu2/SAVGDCtu9IkHg==";
 		String usersEmailAddress = "test@test.com";
 		
-		User userFromDatabase = new User();
+		RegisteredUser userFromDatabase = new RegisteredUser();
 		userFromDatabase.setDbId("533ee66842f639e95ce35e29");
 		userFromDatabase.setEmail(usersEmailAddress);
 		userFromDatabase.setPassword(someCorrectPasswordHashFromDB);
@@ -165,7 +165,7 @@ public class SegueLocalAuthenticatorTest {
 		
 		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
 		try {
-			User authenticatedUser = segueAuthenticator.authenticate(someBadEmail, someIncorrectPassword);
+			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(someBadEmail, someIncorrectPassword);
 			fail("This should fail as a bad email and password has been provided.");
 			
 		} catch (NoUserException e) {
@@ -188,7 +188,7 @@ public class SegueLocalAuthenticatorTest {
 		String someCorrectPasswordPlainText = "test5eguePassw0rd";
 		String usersEmailAddress = "test@test.com";
 		
-		User userFromDatabase = new User();
+		RegisteredUser userFromDatabase = new RegisteredUser();
 		userFromDatabase.setDbId("533ee66842f639e95ce35e29");
 		userFromDatabase.setEmail(usersEmailAddress);
 				
@@ -203,7 +203,7 @@ public class SegueLocalAuthenticatorTest {
 			segueAuthenticator.setOrChangeUsersPassword(userFromDatabase, someCorrectPasswordPlainText);
 			
 			// now try and authenticate using the password we just created.
-			User authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someCorrectPasswordPlainText);
+			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someCorrectPasswordPlainText);
 			
 			assertTrue(authenticatedUser.getPassword().equals(userFromDatabase.getPassword()));
 		} catch (NoUserException e) {

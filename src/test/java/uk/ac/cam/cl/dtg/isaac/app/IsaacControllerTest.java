@@ -20,7 +20,8 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -73,9 +74,11 @@ public class IsaacControllerTest {
 						EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<Integer>> anyObject(),
 						EasyMock.<List<String>> anyObject(),
-						EasyMock.<HttpServletRequest> anyObject())).andReturn(null)
+						EasyMock.<AbstractSegueUserDTO> anyObject())).andReturn(null)
 				.atLeastOnce();
 
+		expect(dummyAPI.getCurrentUserIdentifier(dummyRequest)).andReturn(new AnonymousUserDTO("testID")).atLeastOnce();
+		
 		replay(dummyGameManager);
 		replay(dummyAPI);
 

@@ -11,8 +11,6 @@ import java.util.Random;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.collections4.comparators.ComparatorChain;
@@ -36,14 +34,14 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -124,16 +122,14 @@ public class GameManager {
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
-			final List<String> conceptsList, final HttpServletRequest request) 
+			final List<String> conceptsList, final AbstractSegueUserDTO boardOwner) 
 		throws NoWildcardException, SegueDatabaseException {
 
-		UserDTO boardOwner;
-		String boardOwnerId = null;
-		try {
-			boardOwner = api.getCurrentUser(request);
-			boardOwnerId = boardOwner.getDbId();
-		} catch (NoUserLoggedInException e) {
-			boardOwner = null;
+		String boardOwnerId;
+		if (boardOwner instanceof RegisteredUserDTO) {
+			boardOwnerId = ((RegisteredUserDTO) boardOwner).getDbId();
+		} else {
+			boardOwnerId = null;
 		}
 
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps
@@ -191,7 +187,7 @@ public class GameManager {
 					.temporarilyStoreGameboard(gameboardDTO);
 
 			return augmentGameboardWithQuestionAttemptInformation(gameboardDTO, 
-					api.getQuestionAttemptsBySession(request));
+					api.getQuestionAttemptsBySession(boardOwner));
 		} else {
 			// TODO: this should be an exception.
 			return null;
@@ -205,7 +201,7 @@ public class GameManager {
 	 * @param userToLinkTo - UserId to link to.
 	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
 	 */
-	public void linkUserToGameboard(final GameboardDTO gameboardToLink, final UserDTO userToLinkTo)
+	public void linkUserToGameboard(final GameboardDTO gameboardToLink, final RegisteredUserDTO userToLinkTo)
 		throws SegueDatabaseException {
 		// if the gameboard has no owner we should add the user who is first linking to it as the owner.
 		if (gameboardToLink.getOwnerUserId() == null) {
@@ -227,7 +223,7 @@ public class GameManager {
 	 * @param user - DTO
 	 * @throws SegueDatabaseException - If there is a problem with the operation.
 	 */
-	public void unlinkUserToGameboard(final GameboardDTO gameboardToUnlink, final UserDTO user)
+	public void unlinkUserToGameboard(final GameboardDTO gameboardToUnlink, final RegisteredUserDTO user)
 		throws SegueDatabaseException {		
 		this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getDbId(), gameboardToUnlink.getId());
 	}
@@ -268,20 +264,19 @@ public class GameManager {
 	 * 
 	 * @param gameboardId
 	 *            - to look up.
-	 * @param request
-	 *            - containing session information of the user (if available) of who wants it. This allows state
-	 *            information to be retrieved.
+	 * @param user
+	 *            - This allows state information to be retrieved.
 	 * @return the gameboard or null.
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboard in the
 	 *             database or updating the users gameboard link table.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId,
-			final HttpServletRequest request) throws SegueDatabaseException {
+			final AbstractSegueUserDTO user) throws SegueDatabaseException {
 				
 		GameboardDTO gameboardFound = augmentGameboardWithQuestionAttemptInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
-				api.getQuestionAttemptsBySession(request));
+				api.getQuestionAttemptsBySession(user));
 		
 		return gameboardFound;
 	}
@@ -289,8 +284,8 @@ public class GameManager {
 	/**
 	 * Lookup gameboards belonging to a current user.
 	 * 
-	 * @param request
-	 *            - containing the session information for the request.
+	 * @param user
+	 *            - containing so that we can augment the response with personalised information
 	 * @param startIndex
 	 *            - the initial index to return.
 	 * @param limit
@@ -304,25 +299,18 @@ public class GameManager {
 	 *             - if there is a problem retrieving the gameboards from the
 	 *             database.
 	 */
-	public final GameboardListDTO getUsersGameboards(final HttpServletRequest request, 
+	public final GameboardListDTO getUsersGameboards(final RegisteredUserDTO user, 
 			@Nullable final Integer startIndex, 
 			@Nullable final Integer limit,
 			@Nullable final GameboardState showOnly, 
 			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions)
 		throws SegueDatabaseException {
-		Validate.notNull(request);
-		
-		UserDTO user;
-		try {
-			user = api.getCurrentUser(request);
-		} catch (NoUserLoggedInException e) {
-			throw new NullPointerException("The user must be logged in for this method to work correctly");
-		}
+		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
 		
 		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = api
-				.getQuestionAttemptsBySession(request);
+				.getQuestionAttemptsBySession(user);
 		
 		if (null == usersGameboards || usersGameboards.isEmpty()) {
 			return new GameboardListDTO();

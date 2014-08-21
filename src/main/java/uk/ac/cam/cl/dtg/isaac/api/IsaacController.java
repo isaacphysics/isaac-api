@@ -42,7 +42,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -313,17 +315,18 @@ public class IsaacController {
 			Map<String, String> logEntry = ImmutableMap.of("questionId", content.getId(), "contentVersion",
 					api.getLiveVersion());
 
+			AbstractSegueUserDTO user = api.getCurrentUserIdentifier(request);
 			
 			String userId;
-			try {
-				userId = api.getCurrentUser(request).getDbId();
-			} catch (NoUserLoggedInException e) {
-				userId = request.getSession().getId();
+			if (user instanceof AnonymousUserDTO) {
+				userId = ((AnonymousUserDTO) user).getSessionId();
+			} else {
+				userId = ((RegisteredUserDTO) user).getDbId();
 			}
 			
 			try {
 				content = api.getQuestionManager().augmentQuestionObjects(content, userId,
-						api.getQuestionAttemptsBySession(request));
+						api.getQuestionAttemptsBySession(user));
 
 			} catch (SegueDatabaseException e) {
 				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -445,12 +448,14 @@ public class IsaacController {
 		if (null != concepts && !concepts.isEmpty()) {
 			conceptsList = Arrays.asList(concepts.split(","));
 		}
-
+		
+		AbstractSegueUserDTO boardOwner = this.api.getCurrentUserIdentifier(request);
+		
 		try {
 			GameboardDTO gameboard;
 
 			gameboard = gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList,
-					conceptsList, request);
+					conceptsList, boardOwner);
 			
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NO_CONTENT,
@@ -493,9 +498,11 @@ public class IsaacController {
 
 		try {
 			GameboardDTO gameboard;
-
+			
+			AbstractSegueUserDTO randomUser = this.api.getCurrentUserIdentifier(request);
+			
 			// attempt to augment the gameboard with user information.
-			gameboard = gameManager.getGameboard(gameboardId, request);
+			gameboard = gameManager.getGameboard(gameboardId, randomUser);
 
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
@@ -538,11 +545,14 @@ public class IsaacController {
 			@QueryParam("sort") final String sortInstructions,
 			@QueryParam("show_only") final String showCriteria) {
 		
-		if (!api.hasCurrentUser(request)) {
+		RegisteredUserDTO currentUser;
+		
+		try {
+			currentUser = api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e1) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"Unable to retrieve the current user's gameboards as no user is currently logged in.")
 					.toResponse();		
-			
 		}
 		
 		Integer gameboardLimit = Constants.DEFAULT_GAMEBOARDS_RESULTS_LIMIT;
@@ -603,7 +613,7 @@ public class IsaacController {
 
 		GameboardListDTO gameboards;
 		try {
-			gameboards = gameManager.getUsersGameboards(request, startIndexAsInteger,
+			gameboards = gameManager.getUsersGameboards(currentUser, startIndexAsInteger,
 					gameboardLimit, gameboardShowCriteria, parsedSortInstructions);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -634,9 +644,9 @@ public class IsaacController {
 			@PathParam("gameboard_id") final String gameboardId) {
 
 		try {
-			UserDTO user = api.getCurrentUser(request);
+			RegisteredUserDTO user = api.getCurrentUser(request);
 			
-			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, request);
+			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user);
 			
 			if (null == gameboardDTO) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
@@ -686,7 +696,7 @@ public class IsaacController {
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
 		
-		UserDTO user;
+		RegisteredUserDTO user;
 		try {
 			user = api.getCurrentUser(request);
 		} catch (NoUserLoggedInException e1) {
@@ -714,7 +724,7 @@ public class IsaacController {
 		// find what the existing gameboard looks like.
 		GameboardDTO existingGameboard;
 		try {
-			existingGameboard = gameManager.getGameboard(gameboardId, request);
+			existingGameboard = gameManager.getGameboard(gameboardId, user);
 			
 			if (null == existingGameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND,

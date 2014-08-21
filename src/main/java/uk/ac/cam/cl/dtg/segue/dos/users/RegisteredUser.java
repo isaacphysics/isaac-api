@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.dos.users;
 
 import java.util.Date;
+
 import org.mongojack.ObjectId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -11,8 +12,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * in the database.
  * 
  */
-public class User {
+public class RegisteredUser extends AbstractSegueUser {
 	@JsonProperty("_id")
+	@ObjectId
 	private String databaseId;
 	private String givenName;
 	private String familyName;
@@ -63,7 +65,7 @@ public class User {
 	 *            - resetExpiry for local segue authentication.
 	 */
 	@JsonCreator
-	public User(
+	public RegisteredUser(
 			@JsonProperty("_id") final String databaseId,
 			@JsonProperty("givenName") final String givenName,
 			@JsonProperty("familyName") final String familyName,
@@ -93,7 +95,7 @@ public class User {
 	/**
 	 * Default constructor required for Jackson.
 	 */
-	public User() {
+	public RegisteredUser() {
 
 	}
 
@@ -104,7 +106,7 @@ public class User {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public final String getDbId() {
+	public String getDbId() {
 		return databaseId;
 	}
 
@@ -116,10 +118,10 @@ public class User {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public final void setDbId(final String id) {
+	public void setDbId(final String id) {
 		this.databaseId = id;
 	}
-
+	
 	/**
 	 * Gets the givenName.
 	 * @return the givenName
@@ -246,22 +248,6 @@ public class User {
 	 */
 	public final void setSchoolId(final String schoolId) {
 		this.schoolId = schoolId;
-	}
-
-	/**
-	 * Gets the databaseId.
-	 * @return the databaseId
-	 */
-	public String getDatabaseId() {
-		return databaseId;
-	}
-
-	/**
-	 * Sets the databaseId.
-	 * @param databaseId the databaseId to set
-	 */
-	public void setDatabaseId(final String databaseId) {
-		this.databaseId = databaseId;
 	}
 
 	/**

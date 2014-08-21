@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 
 /**
  * Segue Local Authenticator. This provides a mechanism for users to create an
@@ -64,7 +64,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 
 	@Override
-	public void setOrChangeUsersPassword(final User userToSetPasswordFor, final String plainTextPassword)
+	public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
 		throws InvalidPasswordException {
 		if (null == plainTextPassword || plainTextPassword.isEmpty()) {
 			throw new InvalidPasswordException(
@@ -91,7 +91,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 
 	@Override
-	public User authenticate(final String usersEmailAddress,
+	public RegisteredUser authenticate(final String usersEmailAddress,
 			final String plainTextPassword)
 		throws IncorrectCredentialsProvidedException, 
 		NoUserException, 
@@ -101,7 +101,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 			throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
 		}
 
-		User localUserAccount = userDataManager.getByEmail(usersEmailAddress);
+		RegisteredUser localUserAccount = userDataManager.getByEmail(usersEmailAddress);
 
 		if (null == localUserAccount) {
 			throw new NoUserException();
@@ -131,7 +131,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 
 	@Override
-	public User createPasswordResetTokenForUser(final User userToAttachToken)
+	public RegisteredUser createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
 		throws NoSuchAlgorithmException, InvalidKeySpecException {
 		Validate.notNull(userToAttachToken);
 		// Trim the "=" padding off the end of the base64 encoded token so that the URL that is
@@ -152,7 +152,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 	}
 	
 	@Override
-	public boolean isValidResetToken(final User user) {
+	public boolean isValidResetToken(final RegisteredUser user) {
 		// Get today's datetime; this is initialised to the time at which it was allocated,
 		// measured to the nearest millisecond.
 		Date now = new Date();

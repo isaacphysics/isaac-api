@@ -2,7 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import javax.servlet.http.HttpServletRequest;
 
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * Interface for logging components.
@@ -35,5 +35,5 @@ public interface ILogManager {
 	 *            - Additional information associated with the event - this is
 	 *            expected to be a json deserializable object
 	 */
-	void logEvent(UserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
+	void logEvent(RegisteredUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
 }

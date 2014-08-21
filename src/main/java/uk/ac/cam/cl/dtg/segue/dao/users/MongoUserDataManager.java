@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
@@ -61,13 +61,13 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final User createOrUpdateUser(final User user) throws SegueDatabaseException {
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
+	public final RegisteredUser createOrUpdateUser(final RegisteredUser user) throws SegueDatabaseException {
+		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 
 		try {
-			WriteResult<User, String> r = jc.save(user);
+			WriteResult<RegisteredUser, String> r = jc.save(user);
 
 			if (r.getError() != null) {
 				log.error("Error during database update " + r.getError());
@@ -86,14 +86,14 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 	
 	@Override
-	public final String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
+	public final String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
 			final String providerUserId) throws SegueDatabaseException {
 		Validate.notNull(user);
 		Validate.notNull(provider);
 		Validate.notNull(providerUserId);
 
 		// create the users local account.
-		User localUser = this.createOrUpdateUser(user);
+		RegisteredUser localUser = this.createOrUpdateUser(user);
 		String localUserId = localUser.getDbId().toString();
 		
 		// link the provider account to the newly created account.
@@ -103,7 +103,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final User getById(final String id) throws SegueDatabaseException {
+	public final RegisteredUser getById(final String id) throws SegueDatabaseException {
 		if (null == id) {
 			return null;
 		}
@@ -112,13 +112,13 @@ public class MongoUserDataManager implements IUserDataManager {
 		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
 		MongoJackModule.configure(objectMapper);
 				
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
+		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class, objectMapper);
 		try {
 			// Do database query using plain mongodb so we only have to read from
 			// the database once.
-			User user = jc.findOneById(id);
+			RegisteredUser user = jc.findOneById(id);
 			
 			return user;
 			
@@ -130,18 +130,18 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public User getByEmail(final String email) throws SegueDatabaseException {
+	public RegisteredUser getByEmail(final String email) throws SegueDatabaseException {
 		if (null == email) {
 			return null;
 		}
 
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
+		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 		try {
 			// Do database query using plain mongodb so we only have to read from
 			// the database once.
-			User user = jc.findOne(new BasicDBObject(
+			RegisteredUser user = jc.findOne(new BasicDBObject(
 					Constants.LOCAL_AUTH_EMAIL_FIELDNAME, email.trim()));
 
 			return user;
@@ -154,18 +154,18 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public User getByResetToken(final String token) throws SegueDatabaseException {
+	public RegisteredUser getByResetToken(final String token) throws SegueDatabaseException {
 		if (null == token) {
 			return null;
 		}
 
-		JacksonDBCollection<User, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), User.class,
+		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 		try {
 			// Do database query using plain mongodb so we only have to read from
 			// the database once.
-			User user = jc.findOne(new BasicDBObject(
+			RegisteredUser user = jc.findOne(new BasicDBObject(
 					Constants.LOCAL_AUTH_RESET_TOKEN_FIELDNAME, token.trim()));
 
 			return user;
@@ -270,7 +270,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final User getByLinkedAccount(final AuthenticationProvider provider,
+	public final RegisteredUser getByLinkedAccount(final AuthenticationProvider provider,
 			final String providerUserId) throws SegueDatabaseException {
 		if (null == provider || null == providerUserId) {
 			return null;
@@ -293,7 +293,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public boolean hasALinkedAccount(final User user) throws SegueDatabaseException {
+	public boolean hasALinkedAccount(final RegisteredUser user) throws SegueDatabaseException {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
@@ -318,7 +318,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user)
+	public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
 		throws SegueDatabaseException {
 		Validate.notNull(user);
 		Validate.notEmpty(user.getDbId());
@@ -346,7 +346,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 	
 	@Override
-	public void unlinkAuthProviderFromUser(final User user, final AuthenticationProvider provider)
+	public void unlinkAuthProviderFromUser(final RegisteredUser user, final AuthenticationProvider provider)
 		throws SegueDatabaseException {
 		Validate.notNull(user);
 		Validate.notNull(user.getDbId());
@@ -371,7 +371,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 	
 	@Override
-	public boolean linkAuthProviderToAccount(final User user,
+	public boolean linkAuthProviderToAccount(final RegisteredUser user,
 			final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),

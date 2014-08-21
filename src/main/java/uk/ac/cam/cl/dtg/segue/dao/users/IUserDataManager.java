@@ -5,7 +5,7 @@ import java.util.List;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
@@ -28,7 +28,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	String registerNewUserWithProvider(final User user, final AuthenticationProvider provider,
+	String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
 			final String providerUserId) throws SegueDatabaseException;
 	
 	/**
@@ -38,7 +38,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	boolean hasALinkedAccount(User user) throws SegueDatabaseException;
+	boolean hasALinkedAccount(RegisteredUser user) throws SegueDatabaseException;
 	
 	/**
 	 * GetAllLinked Accounts by user.
@@ -48,7 +48,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	List<AuthenticationProvider> getAuthenticationProvidersByUser(final User user) throws SegueDatabaseException;
+	List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user) throws SegueDatabaseException;
 	
 	/**
 	 * Find a user by their linked account information.
@@ -62,7 +62,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User getByLinkedAccount(final AuthenticationProvider provider,
+	RegisteredUser getByLinkedAccount(final AuthenticationProvider provider,
 			final String providerUserId) throws SegueDatabaseException;
 	
 	/**
@@ -79,7 +79,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	boolean linkAuthProviderToAccount(final User user,
+	boolean linkAuthProviderToAccount(final RegisteredUser user,
 			final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException;
 	
 	/**
@@ -98,7 +98,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - if we have a problem accessing the database.
 	 */
-	void unlinkAuthProviderFromUser(final User user, final AuthenticationProvider provider)
+	void unlinkAuthProviderFromUser(final RegisteredUser user, final AuthenticationProvider provider)
 		throws SegueDatabaseException;
 	
 	/**
@@ -110,7 +110,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User getById(final String id) throws SegueDatabaseException;
+	RegisteredUser getById(final String id) throws SegueDatabaseException;
 
 	/**
 	 * Get a user by email.
@@ -121,7 +121,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User getByEmail(final String email) throws SegueDatabaseException;
+	RegisteredUser getByEmail(final String email) throws SegueDatabaseException;
 
 	/**
 	 * Get a user by password reset token.
@@ -132,7 +132,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User getByResetToken(final String token) throws SegueDatabaseException;
+	RegisteredUser getByResetToken(final String token) throws SegueDatabaseException;
 
 	/**
 	 * Update user object in the data store.
@@ -144,7 +144,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User createOrUpdateUser(User user) throws SegueDatabaseException;
+	RegisteredUser createOrUpdateUser(RegisteredUser user) throws SegueDatabaseException;
 
 	/**
 	 * Update a particular field on a user object.

@@ -5,7 +5,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.users.User;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -31,7 +31,7 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 *             - if the password specified does not meet the complexity
 	 *             requirements or is empty.
 	 */
-	void setOrChangeUsersPassword(User user, final String plainTextPassword) throws InvalidPasswordException;
+	void setOrChangeUsersPassword(RegisteredUser user, final String plainTextPassword) throws InvalidPasswordException;
 
 	/**
 	 * authenticate This method authenticates a given user based on the given
@@ -47,7 +47,7 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	User authenticate(String usersEmailAddress, String plainTextPassword)
+	RegisteredUser authenticate(String usersEmailAddress, String plainTextPassword)
 		throws IncorrectCredentialsProvidedException, NoUserException,
 			NoCredentialsAvailableException, SegueDatabaseException;
 
@@ -62,7 +62,7 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @throws NoSuchAlgorithmException - if the configured algorithm is not valid.
 	 * @throws InvalidKeySpecException  - if the preconfigured key spec is invalid.
 	 */
-	User createPasswordResetTokenForUser(User userToAttachToken) throws NoSuchAlgorithmException,
+	RegisteredUser createPasswordResetTokenForUser(RegisteredUser userToAttachToken) throws NoSuchAlgorithmException,
 			InvalidKeySpecException;
 	
 	/**
@@ -71,5 +71,5 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 	 * @param user - The user object to test
 	 * @return true if the reset token is valid
 	 */
-	boolean isValidResetToken(final User user);
+	boolean isValidResetToken(final RegisteredUser user);
 }

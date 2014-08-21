@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * in the database.
  * 
  */
-public class UserDTO {
+public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	@JsonProperty("_id")
 	private String databaseId;
 	private String givenName;
@@ -45,8 +45,6 @@ public class UserDTO {
 	 *            - Equivalent to second name
 	 * @param email
 	 *            - primary e-mail address
-	 * @param role
-	 *            - role description
 	 * @param dateOfBirth
 	 *            - date of birth to help with monitoring
 	 * @param gender
@@ -57,7 +55,7 @@ public class UserDTO {
 	 *            - the list of linked authentication provider accounts.         
 	 */
 	@JsonCreator
-	public UserDTO(
+	public RegisteredUserDTO(
 			@JsonProperty("_id") final String databaseId,
 			@JsonProperty("givenName") final String givenName,
 			@JsonProperty("familyName") final String familyName,
@@ -79,7 +77,7 @@ public class UserDTO {
 	/**
 	 * Default constructor required for Jackson.
 	 */
-	public UserDTO() {
+	public RegisteredUserDTO() {
 		
 	}
 

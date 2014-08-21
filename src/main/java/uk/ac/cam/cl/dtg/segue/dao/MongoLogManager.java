@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -64,7 +64,7 @@ public class MongoLogManager implements ILogManager {
 	}
 
 	@Override
-	public void logEvent(final UserDTO user, final HttpServletRequest httpRequest,
+	public void logEvent(final RegisteredUserDTO user, final HttpServletRequest httpRequest,
 			final String eventType, final Object eventDetails) {
 		Validate.notNull(user);
 
@@ -78,10 +78,10 @@ public class MongoLogManager implements ILogManager {
 	@Override
 	public void logEvent(final HttpServletRequest httpRequest, final String eventType,
 			final Object eventDetails) {
-		UserDTO userToLog;
+		RegisteredUserDTO userToLog;
 		
 		try {
-			userToLog = userManager.getCurrentUser(httpRequest);
+			userToLog = userManager.getCurrentRegisteredUser(httpRequest);
 			this.logEvent(userToLog, httpRequest, eventType, eventDetails);
 		} catch (NoUserLoggedInException e) {
 			try {

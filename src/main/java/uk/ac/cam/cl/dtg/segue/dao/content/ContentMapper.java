@@ -387,14 +387,15 @@ public class ContentMapper {
 					this);
 			ChoiceOrikaConverter choiceConverter = new ChoiceOrikaConverter();
 			
-			QuestionValidationResponseOrikaConverter questionConverter = new QuestionValidationResponseOrikaConverter();
+			QuestionValidationResponseOrikaConverter questionValidationResponseConverter 
+				= new QuestionValidationResponseOrikaConverter();
 			
 			ConverterFactory converterFactory = mapperFactory
 					.getConverterFactory();
 			
 			converterFactory.registerConverter(contentConverter);
 			converterFactory.registerConverter(choiceConverter);
-			converterFactory.registerConverter(questionConverter);
+			converterFactory.registerConverter(questionValidationResponseConverter);
 			
 			
 			this.autoMapper = mapperFactory.getMapperFacade();
