@@ -567,7 +567,7 @@ public class SegueApiFacade {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
-		Set<String> units = contentPersistenceManager.getAllUnits(version);
+		Collection<String> units = contentPersistenceManager.getAllUnits(version);
 
 		return Response.ok().entity(units).tag(etag).cacheControl(getCacheControl()).build();
 	}

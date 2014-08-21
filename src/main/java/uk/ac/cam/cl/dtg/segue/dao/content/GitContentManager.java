@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +63,7 @@ public class GitContentManager implements IContentManager {
 	private final Map<String, Map<String, Content>> gitCache;
 	private final Map<String, Map<Content, List<String>>> indexProblemCache;
 	private final Map<String, Set<String>> tagsList;
-	private final Map<String, Set<String>> allUnits;					
+	private final Map<String, Map<String, String>> allUnits;
 
 	private final GitDb database;
 	private final ContentMapper mapper;
@@ -92,7 +93,7 @@ public class GitContentManager implements IContentManager {
 		this.gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-		this.allUnits = new ConcurrentHashMap<String, Set<String>>();
+		this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
 
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
@@ -127,7 +128,7 @@ public class GitContentManager implements IContentManager {
 		this.gitCache = gitCache;
 		this.indexProblemCache = indexProblemCache;
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-		this.allUnits = new ConcurrentHashMap<String, Set<String>>();
+		this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
 		
 		searchProvider.registerRawStringFields(Lists.newArrayList(
 				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
@@ -375,7 +376,7 @@ public class GitContentManager implements IContentManager {
 	}
 	
 	@Override
-	public final Set<String> getAllUnits(final String version) {
+	public final Collection<String> getAllUnits(final String version) {
 		Validate.notBlank(version);
 
 		this.ensureCache(version);
@@ -385,7 +386,7 @@ public class GitContentManager implements IContentManager {
 			return null;
 		}
 
-		return allUnits.get(version);
+		return allUnits.get(version).values();
 	}
 
 	@Override
@@ -1037,10 +1038,10 @@ public class GitContentManager implements IContentManager {
 		}
 		
 		if (!allUnits.containsKey(version)) {
-			allUnits.put(version, new HashSet<String>());
+			allUnits.put(version, new HashMap<String, String>());
 		}
 		
-		allUnits.get(version).addAll(newUnits.values());
+		allUnits.get(version).putAll(newUnits);
 	}
 
 	/**

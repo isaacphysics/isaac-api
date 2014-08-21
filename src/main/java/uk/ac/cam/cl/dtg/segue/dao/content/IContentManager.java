@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -204,7 +205,7 @@ public interface IContentManager {
 	 * @return A set of units that have been already used in a particular version
 	 *         of the content
 	 */
-	Set<String> getAllUnits(String version);
+	Collection<String> getAllUnits(String version);
 
 	/**
 	 * Provides a Set of currently indexed and cached versions.
