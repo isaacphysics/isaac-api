@@ -277,7 +277,9 @@ public class QuestionManager {
 		for (QuestionDTO question : questions) {
 			if (question instanceof ChoiceQuestionDTO) {
 				ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
-				Collections.shuffle(choiceQuestion.getChoices(), new Random(seed.hashCode()));
+				if (choiceQuestion.getChoices() != null) {
+					Collections.shuffle(choiceQuestion.getChoices(), new Random(seed.hashCode()));	
+				}
 			}
 		}
 	}
