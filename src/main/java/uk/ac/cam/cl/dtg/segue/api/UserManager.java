@@ -8,8 +8,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -25,6 +27,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -547,6 +550,13 @@ public class UserManager {
 		request.getSession().setAttribute(Constants.SESSION_ID, sessionId);
 		request.getSession().setAttribute(Constants.DATE_SIGNED, currentDate);
 		request.getSession().setAttribute(Constants.HMAC, sessionHMAC);
+		
+		// merge any anonymous information collected with this user.
+		try {
+			this.mergeAnonymousQuestionInformationWithUserRecord(request);
+		} catch (NoUserLoggedInException | SegueDatabaseException e) {
+			log.error("Unable to merge anonymously collected data with stored user object.", e);
+		}
 	}
 
 	/**
@@ -587,51 +597,66 @@ public class UserManager {
 	}
 
 	/**
-	 * Record that a user has answered a question.
+	 * Record that someone has answered a question.
 	 * 
-	 * @param user
-	 *            - user who answered the question
+	 * If the user is anonymous the question record will be added as a temporary session variable. 
+	 * This will enable merging later if the user registers.
+	 * 
+	 * @param request
+	 *            - containing session information of who answered the question
 	 * @param questionResponse
 	 *            - question results.
 	 */
-	public final void recordUserQuestionInformation(final UserDTO user,
+	public final void recordQuestionAttempt(final HttpServletRequest request,
 			final QuestionValidationResponseDTO questionResponse) {
-
+		
 		// We are operating against the convention that the first component of
 		// an id is the question page
 		// and that the id separator is |
 		String[] questionPageId = questionResponse.getQuestionId().split(
 				Constants.ESCAPED_ID_SEPARATOR);
-
+		
+		UserDTO user;
 		try {
-			this.database.registerQuestionAttempt(user.getDbId(), questionPageId[0],
+			user = this.getCurrentUser(request);
+			
+			try {
+				this.database.registerQuestionAttempt(user.getDbId(), questionPageId[0],
+						questionResponse.getQuestionId(), questionResponse);
+				log.info("Question information recorded for user: " + user.getDbId());
+			} catch (SegueDatabaseException e) {
+				log.error("Unable to to record question attempt.", e);
+			}
+			
+		} catch (NoUserLoggedInException e1) {
+			// record this as an anonymous question
+			this.recordAnonymousUserQuestionInformation(request, questionPageId[0],
 					questionResponse.getQuestionId(), questionResponse);
-		} catch (SegueDatabaseException e) {
-			log.error("Unable to to record question attempt.", e);
 		}
-
-		log.info("Question information recorded for user: " + user.getDbId());
 	}
 	
 	/**
 	 * getQuestionAttemptsByUser. This method will return all of the question
 	 * attempts for a given user as a map.
 	 * 
-	 * @param user
-	 *            - user with Id field populated.
+	 * @param request
+	 *            - with the session information included.
 	 * @return map of question attempts (QuestionPageId -> QuestionID ->
-	 *         [QuestionValidationResponse]
+	 *         [QuestionValidationResponse] or an empty map.
 	 * @throws SegueDatabaseException
 	 *             - if there is a database error.
 	 */
 	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
-			final UserDTO user) throws SegueDatabaseException {
-		Validate.notNull(user);
-		Validate.notNull(user.getDbId());
+			final HttpServletRequest request) throws SegueDatabaseException {
+		User userFromDb = this.getCurrentUserDO(request);
 		
-		User userFromDb = this.database.getById(user.getDbId());
-		
-		return this.database.getQuestionAttempts(userFromDb.getDbId()).getQuestionAttempts();
+		if (userFromDb != null) {
+			return this.database.getQuestionAttempts(userFromDb.getDbId()).getQuestionAttempts();	
+		} else {
+
+			// assume that we want the anonymous attempts
+			return this.getAnonymousUserQuestionInformation(request);
+		}
 	}
 
 	/**
@@ -1442,5 +1467,107 @@ public class UserManager {
 
 		// Send message
 		communicator.sendMessage(user.getEmail(), user.getGivenName(), subject, message);
+	}
+	
+	/**
+	 * Temporarily Record Anonymous User Question Information.
+	 * 
+	 * @param request
+	 *            - request containing the session information.
+	 * @param questionPageId - page id to record
+	 * @param questionId - question id to record
+	 * @param questionResponse
+	 *            - response to temporarily record.
+	 */
+	private void recordAnonymousUserQuestionInformation(final HttpServletRequest request,
+			final String questionPageId, final String questionId,
+			final QuestionValidationResponseDTO questionResponse) {
+		if (request.getSession().getAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS) == null) {
+			request.getSession().setAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS, Maps.newHashMap());
+		}
+
+		@SuppressWarnings("unchecked")
+		Map<String, Map<String, List<QuestionValidationResponse>>> anonymousResponses = 
+			(Map<String, Map<String, List<QuestionValidationResponse>>>) request
+				.getSession().getAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS);
+
+		if (!anonymousResponses.containsKey(questionPageId)) {
+			anonymousResponses.put(questionPageId, new HashMap<String, List<QuestionValidationResponse>>());
+		}
+
+		if (!anonymousResponses.get(questionPageId).containsKey(questionId)) {
+			anonymousResponses.get(questionPageId).put(questionId,
+					new ArrayList<QuestionValidationResponse>());
+		}
+
+		QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
+				QuestionValidationResponse.class);
+		// add the response to the session
+		anonymousResponses.get(questionPageId).get(questionId).add(questionResponseDO);
+
+		log.debug("Recording anonymous question attempt in session as user is not logged in.");
+	}
+	
+	/**
+	 * Retrieves anonymous user question information if it is available. 
+	 * @param request - request containing session information.
+	 * @return A list containing the anonymous question attempts.
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String, Map<String, List<QuestionValidationResponse>>> getAnonymousUserQuestionInformation(
+			final HttpServletRequest request) {
+		if (request.getSession().getAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS) == null) {
+			return Maps.newHashMap();
+		}
+		
+		if (request.getSession().getAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS) instanceof Map) {
+			return (Map<String, Map<String, List<QuestionValidationResponse>>>) request.getSession().getAttribute(
+					Constants.ANONYMOUS_QUESTION_ATTEMPTS);
+		}
+		
+		// this means that someone has put the wrong type in to the session variable.
+		throw new ClassCastException("Unable to get map of QuestionValidationResponses from session.");
+	}
+	
+	/**
+	 * Merges any question data stored in the session (this will only happen for
+	 * anonymous users).
+	 * 
+	 * @param request
+	 *            - the request containing the session information.
+	 * @throws NoUserLoggedInException
+	 *             - Unable to merge as the user is still anonymous.
+	 * @throws SegueDatabaseException
+	 *             - if we are unable to locate the questions attempted by this
+	 *             user already.
+	 */
+	private void mergeAnonymousQuestionInformationWithUserRecord(final HttpServletRequest request)
+		throws NoUserLoggedInException, SegueDatabaseException {
+		
+		Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = this
+				.getAnonymousUserQuestionInformation(request);
+		
+		if (anonymouslyAnsweredQuestions.isEmpty()) {
+			return;
+		}
+
+		// ensure the user is logged in. This will throw an exception if not.
+		this.getCurrentUser(request);
+		
+		log.info("Merging anonymous questions with known user account");
+		
+		for (String questionPageId : anonymouslyAnsweredQuestions.keySet()) {
+			for (String questionId : anonymouslyAnsweredQuestions.get(questionPageId).keySet()) {
+				for (QuestionValidationResponse questionResponse : anonymouslyAnsweredQuestions.get(
+						questionPageId).get(questionId)) {
+					QuestionValidationResponseDTO questionRespnseDTO = this.dtoMapper.map(questionResponse,
+							QuestionValidationResponseDTO.class);
+					this.recordQuestionAttempt(request, questionRespnseDTO);
+				}
+			}
+		}
+		
+		// delete the session attribute as merge has completed.
+		request.getSession().removeAttribute(Constants.ANONYMOUS_QUESTION_ATTEMPTS);
 	}
 }

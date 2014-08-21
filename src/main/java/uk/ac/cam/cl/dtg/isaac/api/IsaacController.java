@@ -25,7 +25,6 @@ import javax.ws.rs.core.Response.Status;
 
 import ma.glasnost.orika.MapperFacade;
 
-import org.elasticsearch.common.collect.MapBuilder;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -307,54 +306,35 @@ public class IsaacController {
 		}
 
 		Response response = this.findSingleResult(fieldsToMatch);
-		
+
 		if (response.getEntity() instanceof SeguePageDTO) {
 			SeguePageDTO content = (SeguePageDTO) response.getEntity();
-			
+
 			Map<String, String> logEntry = ImmutableMap.of("questionId", content.getId(), "contentVersion",
 					api.getLiveVersion());
-			
-			// check if a user is currently logged in.
-			if (this.api.hasCurrentUser(request)) {
-				try {
-					Object unknownResponse = response.getEntity();
-					UserDTO currentUser = this.api.getCurrentUser(request);
-					if (unknownResponse instanceof SeguePageDTO) {
 
-						try {
-							content = api.getQuestionManager().augmentQuestionObjectWithAttemptInformation(
-									content, api.getQuestionAttemptsByUser(currentUser));
-						} catch (SegueDatabaseException e) {
-							return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-									"Database error during retrieval of questionAttempts.").toResponse();
-						}
-						
-						this.api.getLogManager().logEvent(
-								currentUser,
-								request,
-								Constants.VIEW_QUESTION,
-								logEntry);
-						
-						// return augmented content.
-						return Response.ok(content).build();
-					}
-				} catch (NoUserLoggedInException e) {
-					log.error("Despite checking for a current user first the user object has not been retrieved");
-					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-							"Unable to retrieve current user information.").toResponse();
-				}
-			} else {
-				// anonymously log
-				this.api.getLogManager().logEvent(
-						request,
-						Constants.VIEW_QUESTION,
-						logEntry);
-			}			
+			try {
+				content = api.getQuestionManager().augmentQuestionObjectWithAttemptInformation(content,
+						api.getQuestionAttemptsBySession(request));
+
+			} catch (SegueDatabaseException e) {
+				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						"Database error during retrieval of questionAttempts.").toResponse();
+			}
+
+			// the request log
+			this.api.getLogManager().logEvent(request, Constants.VIEW_QUESTION, logEntry);
+
+			// return augmented content.
+			return Response.ok(content).build();
+			
+		} else {
+			// this is not a segue page so something probably went wrong.
+			log.info("This is not a segue question page so just returning it as is.");
+			return response;			
 		}
-		
-		// return unaugmented content.
-		return response;
 	}
+	
 
 	/**
 	 * Rest end point that searches the api for some search string.
@@ -388,6 +368,7 @@ public class IsaacController {
 				this.extractContentSummaryFromResultsWrapper(searchResults,
 						propertiesLoader.getProperty(PROXY_PATH))).build();
 	}
+	
 
 	/**
 	 * REST end point to provide a Temporary Gameboard stored in volatile storage.
@@ -459,22 +440,10 @@ public class IsaacController {
 
 		try {
 			GameboardDTO gameboard;
-			if (api.hasCurrentUser(request)) {
-				try {
-					gameboard = gameManager.generateRandomGameboard(
-							subjectsList, fieldsList, topicsList, levelsList,
-							conceptsList, api.getCurrentUser(request));
-				} catch (NoUserLoggedInException e) {
-					log.error("Despite checking for a current user first the user object has not been retrieved");
-					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-							"Unable to retrieve current user information.").toResponse();
-				}				
-			} else {
-				gameboard = gameManager.generateRandomGameboard(
-						subjectsList, fieldsList, topicsList, levelsList,
-						conceptsList, null);
-			}
 
+			gameboard = gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList,
+					conceptsList, request);
+			
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NO_CONTENT,
 						"We cannot find any questions based on your filter criteria.")
@@ -494,6 +463,7 @@ public class IsaacController {
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 	}
+	
 	
 	/**
 	 * REST end point to retrieve a specific gameboard by Id.
@@ -516,20 +486,8 @@ public class IsaacController {
 		try {
 			GameboardDTO gameboard;
 
-			if (this.api.hasCurrentUser(request)) {
-				try {
-					// attempt to augment the gameboard with user information.
-					gameboard = gameManager.getGameboard(gameboardId, api.getCurrentUser(request));
-				} catch (NoUserLoggedInException e) {
-					log.error("Despite checking for a current user first the user object has not been retrieved");
-					return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-							"Unable to retrieve current user information.").toResponse();
-				}
-
-			} else {
-				// if we have no user then just get the gameboard.
-				gameboard = gameManager.getGameboard(gameboardId);
-			}
+			// attempt to augment the gameboard with user information.
+			gameboard = gameManager.getGameboard(gameboardId, request);
 
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
@@ -545,6 +503,7 @@ public class IsaacController {
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 	}
+	
 
 	/**
 	 * REST end point to find all of a user's gameboards. The My Boards endpoint.
@@ -570,13 +529,12 @@ public class IsaacController {
 			@QueryParam("limit") final String limit,
 			@QueryParam("sort") final String sortInstructions,
 			@QueryParam("show_only") final String showCriteria) {
-		UserDTO user;
-		try {
-			user = api.getCurrentUser(request);
-		} catch (NoUserLoggedInException e1) {
+		
+		if (!api.hasCurrentUser(request)) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"Unable to retrieve the current user's gameboards as no user is currently logged in.")
 					.toResponse();		
+			
 		}
 		
 		Integer gameboardLimit = Constants.DEFAULT_GAMEBOARDS_RESULTS_LIMIT;
@@ -637,7 +595,7 @@ public class IsaacController {
 
 		GameboardListDTO gameboards;
 		try {
-			gameboards = gameManager.getUsersGameboards(user, startIndexAsInteger,
+			gameboards = gameManager.getUsersGameboards(request, startIndexAsInteger,
 					gameboardLimit, gameboardShowCriteria, parsedSortInstructions);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -650,6 +608,7 @@ public class IsaacController {
 
 		return Response.ok(gameboards).build();
 	}
+	
 
 	/**
 	 * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
@@ -660,7 +619,6 @@ public class IsaacController {
 	 * @param gameboardId - 
 	 * @return noContent response if successful a SegueErrorResponse if not.
 	 */
-	
 	@DELETE
 	@Path("users/current_user/gameboards/{gameboard_id}")
 	@Produces("application/json")
@@ -670,7 +628,7 @@ public class IsaacController {
 		try {
 			UserDTO user = api.getCurrentUser(request);
 			
-			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user);
+			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, request);
 			
 			if (null == gameboardDTO) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
@@ -748,7 +706,7 @@ public class IsaacController {
 		// find what the existing gameboard looks like.
 		GameboardDTO existingGameboard;
 		try {
-			existingGameboard = gameManager.getGameboard(gameboardId, user);
+			existingGameboard = gameManager.getGameboard(gameboardId, request);
 			
 			if (null == existingGameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
@@ -796,6 +754,7 @@ public class IsaacController {
 		return Response.ok(existingGameboard).build();
 	}
 	
+	
 	/**
 	 * Rest end point that gets a single page based on a given id.
 	 * 
@@ -803,7 +762,6 @@ public class IsaacController {
 	 *            as a string
 	 * @return A Response object containing a page object or containing a SegueErrorResponse.
 	 */
-	
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
@@ -820,6 +778,7 @@ public class IsaacController {
 		return this.findSingleResult(fieldsToMatch);
 	}
 
+	
 	/**
 	 * Rest end point that gets a single page fragment based on a given id.
 	 * 
@@ -828,7 +787,6 @@ public class IsaacController {
 	 * @return A Response object containing a page fragment object or containing
 	 *         a SegueErrorResponse.
 	 */
-	
 	@GET
 	@Path("pages/fragments/{fragment_id}")
 	@Produces("application/json")
@@ -847,6 +805,7 @@ public class IsaacController {
 		return this.findSingleResult(fieldsToMatch);
 	}
 
+
 	/**
 	 * Rest end point to allow images to be requested from the database.
 	 * 
@@ -857,7 +816,6 @@ public class IsaacController {
 	 * @return a Response containing the image file contents or containing a
 	 *         SegueErrorResponse.
 	 */
-	
 	@GET
 	@Produces("*/*")
 	@Path("images/{path:.*}")
@@ -866,8 +824,6 @@ public class IsaacController {
 		return api.getImageFileContent(request, api.getLiveVersion(), path);
 	}
 
-
-	// }
 
 	/**
 	 * Generate a URI that will enable us to find an object again.
@@ -909,6 +865,7 @@ public class IsaacController {
 		return resourceUrl;
 	}
 
+	
 	/**
 	 * This method will extract basic information from a content object so the
 	 * lighter ContentInfo object can be sent to the client instead.
@@ -919,7 +876,6 @@ public class IsaacController {
 	 *            - the path prefix used for augmentation of urls
 	 * @return ContentSummaryDTO.
 	 */
-	
 	private ContentSummaryDTO extractContentSummary(final ContentDTO content,
 			final String proxyPath) {
 		if (null == content) {
@@ -939,6 +895,7 @@ public class IsaacController {
 		return contentInfo;
 	}
 
+	
 	/**
 	 * Utility method to convert a list of content objects into a list of
 	 * ContentSummaryDTO Objects.
@@ -949,7 +906,6 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter ContentSummaryDTO objects.
 	 */
-	
 	private List<ContentSummaryDTO> extractContentSummaryFromList(
 			final List<ContentDTO> contentList, final String proxyPath) {
 		if (null == contentList) {
@@ -968,6 +924,7 @@ public class IsaacController {
 		return listOfContentInfo;
 	}
 
+
 	/**
 	 * Utility method to convert a ResultsWrapper of content objects into one
 	 * with ContentSummaryDTO objects.
@@ -978,7 +935,6 @@ public class IsaacController {
 	 *            - the path used for augmentation of urls.
 	 * @return list of shorter ContentSummaryDTO objects.
 	 */
-	
 	private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
 			final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
 		if (null == contentList) {
@@ -1000,6 +956,7 @@ public class IsaacController {
 		return contentSummaryResults;
 	}
 
+	
 	/**
 	 * For use when we expect to only find a single result.
 	 * 
@@ -1012,7 +969,6 @@ public class IsaacController {
 	 * @return A Response containing a single conceptPage or containing
 	 *         a SegueErrorResponse.
 	 */
-	
 	private Response findSingleResult(
 			final Map<String, List<String>> fieldsToMatch) {
 		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(

@@ -66,9 +66,6 @@ public class IsaacControllerTest {
 		String levels = "2,3,4";
 		String concepts = "newtoni";
 
-		expect(dummyAPI.hasCurrentUser(dummyRequest)).andReturn(false)
-				.atLeastOnce();
-
 		expect(
 				dummyGameManager.generateRandomGameboard(
 						EasyMock.<List<String>> anyObject(),
@@ -76,7 +73,7 @@ public class IsaacControllerTest {
 						EasyMock.<List<String>> anyObject(),
 						EasyMock.<List<Integer>> anyObject(),
 						EasyMock.<List<String>> anyObject(),
-						EasyMock.<UserDTO> anyObject())).andReturn(null)
+						EasyMock.<HttpServletRequest> anyObject())).andReturn(null)
 				.atLeastOnce();
 
 		replay(dummyGameManager);

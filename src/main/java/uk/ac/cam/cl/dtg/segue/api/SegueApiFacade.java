@@ -896,21 +896,35 @@ public class SegueApiFacade {
 		}
 	}
 	
+//	/**
+//	 * This is a library method that provides access to a users question attempts.
+//	 * @param user - the user to look up.
+//	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
+//	 * @throws SegueDatabaseException - If there is an error in the database call.
+//	 */
+//	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
+//			final HttpServletRequest user) throws SegueDatabaseException {
+//		if (null == user) {
+//			return null;
+//		}
+//		
+//		return this.userManager.getQuestionAttemptsByUser(request);
+//	}
+
 	/**
 	 * This is a library method that provides access to a users question attempts.
-	 * @param user - the user to look up.
+	 * @param request - containing session information .
 	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
 	 * @throws SegueDatabaseException - If there is an error in the database call.
 	 */
-	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
-			final UserDTO user) throws SegueDatabaseException {
-		if (null == user) {
-			return null;
-		}
-		
-		return this.userManager.getQuestionAttemptsByUser(user);
+	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsBySession(
+			final HttpServletRequest request) throws SegueDatabaseException {
+		// TODO: I don't like this I want it to be by user and if user happens
+		// to be anonymous then we should deal with it.
+		return this.userManager.getQuestionAttemptsByUser(request);
 	}
 
+	
 	/**
 	 * This method allows users to create a local account or update their
 	 * settings.
@@ -1433,20 +1447,14 @@ public class SegueApiFacade {
 		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
 
-		UserDTO user;
-		try {
-			user = this.getCurrentUser(request);
-			if (user != null
-					&& response.getEntity() instanceof QuestionValidationResponseDTO) {
-				userManager.recordUserQuestionInformation(user,
-						(QuestionValidationResponseDTO) response.getEntity());
-				
-				this.logManager.logEvent(user, request, Constants.ANSWER_QUESTION, response.getEntity());
-			} 
-		} catch (NoUserLoggedInException e) {
-			log.debug("Not able to record question response due to user not being logged in.");
-			this.logManager.logEvent(request, Constants.ANSWER_QUESTION, response.getEntity());
+
+		if (response.getEntity() instanceof QuestionValidationResponseDTO) {
+			userManager.recordQuestionAttempt(request,
+					(QuestionValidationResponseDTO) response.getEntity());
 		}
+		
+		this.logManager.logEvent(request, Constants.ANSWER_QUESTION, response.getEntity());
+
 		
 		return response;
 	}
