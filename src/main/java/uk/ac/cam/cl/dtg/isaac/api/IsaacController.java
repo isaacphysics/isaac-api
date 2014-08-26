@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -40,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
@@ -844,48 +842,6 @@ public class IsaacController {
 	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
 		return api.getImageFileContent(request, api.getLiveVersion(), path);
 	}
-
-
-	/**
-	 * Generate a URI that will enable us to find an object again.
-	 * 
-	 * @param content
-	 *            the content object of interest
-	 * @return null if we are unable to generate the URL or a string that
-	 *         represents the url combined with any proxypath information
-	 *         required.
-	 */
-	public static String generateApiUrl(final ContentDTO content) {
-		Injector injector = Guice.createInjector(
-				new IsaacGuiceConfigurationModule(),
-				new SegueGuiceConfigurationModule());
-		String proxyPath = injector.getInstance(PropertiesLoader.class)
-				.getProperty(PROXY_PATH);
-
-		String resourceUrl = null;
-		try {
-			// TODO fix this stuff to be less horrid
-			if (content instanceof ImageDTO) {
-				resourceUrl = proxyPath + "/api/images/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			} else if (content.getType().toLowerCase().contains("question")) {
-				resourceUrl = proxyPath + "/api/pages/questions/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			} else if (content.getType().toLowerCase().contains("concept")) {
-				resourceUrl = proxyPath + "/api/pages/concepts/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			} else {
-				resourceUrl = proxyPath + "/api/pages/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			}
-		} catch (UnsupportedEncodingException e) {
-			log.error("Url generation for resource id " + content.getId()
-					+ " failed. ", e);
-		}
-
-		return resourceUrl;
-	}
-
 	
 	/**
 	 * This method will extract basic information from a content object so the
@@ -911,7 +867,7 @@ public class IsaacController {
 
 		ContentSummaryDTO contentInfo = mapper.map(content,
 				ContentSummaryDTO.class);
-		contentInfo.setUrl(generateApiUrl(content));
+		contentInfo.setUrl(URIManager.generateApiUrl(content));
 
 		return contentInfo;
 	}

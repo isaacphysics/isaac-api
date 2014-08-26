@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -26,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.URIManager;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -401,7 +401,7 @@ public class GameboardPersistenceManager {
 
 		for (ContentDTO c : questionsForGameboard) {
 			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-			questionInfo.setUri(IsaacController.generateApiUrl(c));
+			questionInfo.setUri(URIManager.generateApiUrl(c));
 			gameboardReadyQuestions.put(c.getId(), questionInfo);
 		}
 

@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
+
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.collections4.comparators.ComparatorChain;
@@ -34,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import uk.ac.cam.cl.dtg.segue.api.URIManager;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -172,7 +174,7 @@ public class GameManager {
 			// Map each Content object into an IsaacQuestionInfo object
 			for (ContentDTO c : questionsForGameboard) {
 				GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-				questionInfo.setUri(IsaacController.generateApiUrl(c));
+				questionInfo.setUri(URIManager.generateApiUrl(c));
 				gameboardReadyQuestions.add(questionInfo);
 			}
 
