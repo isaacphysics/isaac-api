@@ -334,7 +334,7 @@ public class UserManager {
 		} catch (AuthenticationCodeException | CrossSiteRequestForgeryException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.UNAUTHORIZED, e.getMessage());
-			log.info(e.getMessage(), e);
+			log.info("Error detected during authentication: " + e.getClass().toString(), e);
 			return error.toResponse();
 		} catch (URISyntaxException e) {
 			log.error("Redirect URL is not valid for provider " + provider, e);
