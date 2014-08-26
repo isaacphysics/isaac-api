@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1295,7 +1296,20 @@ public class SegueApiFacade {
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			@PathParam("provider") final String signinProvider) {
-		return userManager.authenticateCallback(request, signinProvider);
+		
+		Response result = userManager.authenticateCallback(request, signinProvider);
+		
+		if (result.getEntity() instanceof SegueErrorResponse) {
+			log.error("Error during authentication initialisation. " + result.getEntity());
+			try {
+				return Response.temporaryRedirect(URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_ERROR))
+						.entity(result.getEntity()).build();
+			} catch (URISyntaxException e) {
+				log.error("Malformed uri detected, while trying to use redirect url provided by URI Manager.", e);
+			}
+		}
+		
+		return result;
 	}
 
 	/**
@@ -1310,7 +1324,7 @@ public class SegueApiFacade {
 	 *            - optional field for local authentication only. Credentials
 	 *            should be specified within a user object. e.g. email and
 	 *            password.
-	 * @return The users DTO 
+	 * @return The users DTO or a SegueErrorResponse
 	 */
 	@POST
 	@Produces("application/json")
@@ -1330,7 +1344,7 @@ public class SegueApiFacade {
 	 * 
 	 * @param request
 	 *            so that we can destroy the associated session
-	 * @return successful response.
+	 * @return successful response to indicate any cookies were destroyed.
 	 */
 	@POST
 	@Produces("application/json")
