@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1168,8 +1169,12 @@ public class SegueApiFacade {
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
-	 * @param redirectUrl
-	 *            - optional redirect url after authentication has completed.
+	 * @param redirectExistingUser
+	 *            - optional redirect url after authentication has completed for existing users.
+	 * @param redirectNewUser
+	 *            - optional redirect url after authentication has completed for new users.
+	 * @param redirectError
+	 *            - optional redirect url after authentication has completed for error situations.
 	 * @return Redirect response to the auth providers site.
 	 */
 	@GET
@@ -1178,22 +1183,26 @@ public class SegueApiFacade {
 	public final Response authenticate(
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
-			@QueryParam("redirect") final String redirectUrl) {
-		String newRedirectUrl = null;
-		if (null == redirectUrl || !(redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
-			newRedirectUrl = "https://"
-					+ this.properties.getProperty(Constants.HOST_NAME);
-
-			if (redirectUrl != null) {
-				newRedirectUrl += redirectUrl;
-			}
-		} else {
-			newRedirectUrl = redirectUrl;
-		}
+			@QueryParam("redirect_existing") final String redirectExistingUser,
+			@QueryParam("redirect_new") final String redirectNewUser,
+			@QueryParam("redirect_error") final String redirectError) {
 		
-		// ok we need to hand over to user manager
-		return userManager
-				.authenticate(request, signinProvider, newRedirectUrl);
+		Map<String, String> redirectUrls = new ImmutableMap.Builder<String, String>()
+				.put(Constants.REDIRECT_URL_EXISTING_USER, this.prepareRedirectURL(redirectExistingUser))
+				.put(Constants.REDIRECT_URL_NEW_REGISTRATION, this.prepareRedirectURL(redirectNewUser))
+				.put(Constants.REDIRECT_URL_ERROR, this.prepareRedirectURL(redirectError)).build();
+
+		// ok we need to hand over to user manager		
+		Response result = userManager
+				.authenticate(request, signinProvider, redirectUrls);
+		
+		if (result.getEntity() instanceof SegueErrorResponse) {
+			log.error("Error during authentication initialisation. " + result.getEntity());
+			return Response.temporaryRedirect(URI.create(redirectUrls.get(Constants.REDIRECT_URL_ERROR)))
+					.entity(result.getEntity()).build();
+		}
+
+		return result;
 	}
 	
 	/**
@@ -1206,6 +1215,7 @@ public class SegueApiFacade {
 	 *            know who to redirect the user to.
 	 * @param redirectUrl
 	 *            - optional redirect url after authentication has completed.
+	 *            
 	 * @return a redirect to where the client asked to be redirected to.
 	 */
 	@GET
@@ -1221,19 +1231,10 @@ public class SegueApiFacade {
 					.toResponse();			
 		}
 		
-		String newRedirectUrl = null;
-		if (null == redirectUrl || !(redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
-			newRedirectUrl = "https://"
-					+ this.properties.getProperty(Constants.HOST_NAME);
-
-			if (redirectUrl != null) {
-				newRedirectUrl += redirectUrl;
-			}
-		} else {
-			newRedirectUrl = redirectUrl;
-		}
+		Map<String, String> redirectUrls = new ImmutableMap.Builder<String, String>()
+				.put(Constants.REDIRECT_URL_EXISTING_USER, this.prepareRedirectURL(redirectUrl)).build();
 				
-		return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString, newRedirectUrl);
+		return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString, redirectUrls);
 	}
 	
 	/**
@@ -1297,7 +1298,6 @@ public class SegueApiFacade {
 		return userManager.authenticateCallback(request, signinProvider);
 	}
 
-
 	/**
 	 * This is the initial step of the authentication process.
 	 * 
@@ -1310,7 +1310,7 @@ public class SegueApiFacade {
 	 *            - optional field for local authentication only. Credentials
 	 *            should be specified within a user object. e.g. email and
 	 *            password.
-	 * @return Redirect response to the auth providers site.
+	 * @return The users DTO 
 	 */
 	@POST
 	@Produces("application/json")
@@ -1735,5 +1735,25 @@ public class SegueApiFacade {
 		cc.setMaxAge(Constants.MAX_ETAG_CACHE_TIME);
 		
 		return cc;
+	}
+	
+	/**
+	 * Helper function to treat redirect urls.
+	 * @param redirectUrl - redirect url - if this is null then we will return a default url.
+	 * @return new redirect url that has been sanity checked.
+	 */
+	private String prepareRedirectURL(final String redirectUrl) {
+		String newRedirectUrl = null;
+		if (null == redirectUrl || !(redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
+			newRedirectUrl = "https://"
+					+ this.properties.getProperty(Constants.HOST_NAME);
+
+			if (redirectUrl != null) {
+				newRedirectUrl += redirectUrl;
+			}
+		} else {
+			newRedirectUrl = redirectUrl;
+		}
+		return newRedirectUrl;
 	}
 }

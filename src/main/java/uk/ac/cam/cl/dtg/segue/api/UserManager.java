@@ -119,39 +119,41 @@ public class UserManager {
 	}
 
 	/**
-	 * This method will start the authentication process and ultimately redirect the user
-	 * either to their final redirect destination or to a 3rd party authenticator who will
-	 * use the callback method after the have authenticated.
+	 * This method will start the authentication process and ultimately redirect
+	 * the user either to their final redirect destination or to a 3rd party
+	 * authenticator who will use the callback method after the have
+	 * authenticated.
 	 * 
-	 * Users who are already logged in will be redirected immediately to their redirectUrl
-	 * and not go via a 3rd party provider.
+	 * Users who are already logged in will be redirected immediately to their
+	 * redirectUrl and not go via a 3rd party provider.
 	 * 
 	 * @param request
-	 *            - http request that we can attach the session to and save redirect url in.
+	 *            - http request that we can attach the session to and save
+	 *            redirect url in.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @param redirectUrl
-	 *            - optional redirect Url for when authentication has completed.
+	 * @param redirectUrls
+	 *            - a map of redirect urls that must contain at least one key
+	 *            value mapping for Constants.REDIRECT_URL_EXISTING_USER
 	 * @return A response redirecting the user to their redirect url or a
 	 *         redirect URI to the authentication provider if authorization /
 	 *         login is required.
 	 */
-	public final Response authenticate(final HttpServletRequest request,
-			final String provider, @Nullable final String redirectUrl) {
+	public final Response authenticate(final HttpServletRequest request, final String provider,
+			final Map<String, String> redirectUrls) {
 		// set redirect url as a session attribute so we can pick it up when
 		// call back happens.
-		if (redirectUrl != null) {
-			this.storeRedirectUrl(request, redirectUrl);
-		} else {
-			this.storeRedirectUrl(request, "/");
-		}
+		if (redirectUrls != null) {
+			URIManager.storeRedirectUrl(request, redirectUrls);
+		} 
 
 		if (this.isRegisteredUserLoggedIn(request)) {
 			// if they are already logged in then we do not want to proceed with
 			// this authentication flow. We can just return the redirect.
 
 			try {
-				return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+				return Response.temporaryRedirect(
+						URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER)).build();
 			} catch (URISyntaxException e) {
 				log.error("Redirect URL is not valid for provider " + provider, e);
 				return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -175,20 +177,19 @@ public class UserManager {
 	 *            - http request that we can attach the session to.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @param redirectUrl
-	 *            - optional redirect Url for when authentication has completed.
+	 * @param redirectUrls
+	 *            - a map of redirect urls that must contain at least one key
+	 *            value mapping for Constants.REDIRECT_URL_EXISTING_USER
 	 * @return A response redirecting the user to their redirect url or a
 	 *         redirect URI to the authentication provider if authorization /
 	 *         login is required. Alternatively a SegueErrorResponse could be returned.
 	 */
 	public final Response initiateLinkAccountToUserFlow(final HttpServletRequest request,
-			final String provider, @Nullable final String redirectUrl) {
+			final String provider, final Map<String, String> redirectUrls) {
 		// set redirect url as a session attribute so we can pick it up when
 		// call back happens.
-		if (redirectUrl != null) {
-			this.storeRedirectUrl(request, redirectUrl);
-		} else {
-			this.storeRedirectUrl(request, "/");
+		if (redirectUrls != null) {
+			URIManager.storeRedirectUrl(request, redirectUrls);
 		}
 
 		// The user must be logged in to be able to link accounts.
@@ -237,7 +238,8 @@ public class UserManager {
 						&& usersProviders.contains(authenticator.getAuthenticationProvider())) {
 					// they are already connected to this provider just redirect
 					// them.
-					return Response.temporaryRedirect(this.loadRedirectUrl(request)).build();
+					return Response.temporaryRedirect(
+							URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER)).build();
 				} else {
 					// this case means that this user is already authenticated and wants to link
 					// their account to another provider.
@@ -274,25 +276,38 @@ public class UserManager {
 				return error.toResponse();
 			}
 			
-			// Decide if this is a link operation or an authenticate / register operation.
+			// Decide if this is a link operation or an authenticate / register
+			// operation.
 			if (linkAccountOperation) {
 				log.info("Linking existing user to another provider account.");
 				this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
 						providerSpecificUserLookupReference);
+				return Response.temporaryRedirect(
+						URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER)).build();
 			} else {
-				// Get the local user object which will be retrieved /
-				// generated by creating a new user based on the federatedProviders details.
-				RegisteredUser segueUserDO = this
-						.getOrCreateUserFromFederatedProvider(federatedAuthenticator,
-								providerSpecificUserLookupReference);		
 
-				// create a signed session for this user so that we don't need to do
+				// decide if this is a registration or an existing user.
+				// Get the local user object which will be retrieved /
+				// generated by creating a new user based on the
+				// federatedProviders details.
+				RegisteredUser segueUserDO = this.getUserFromFederatedProvider(federatedAuthenticator,
+						providerSpecificUserLookupReference);
+				URI redirectUrl = null;
+				if (null == segueUserDO) {
+					// new user
+					segueUserDO = this.registerUserWithFederatedProvider(federatedAuthenticator,
+							providerSpecificUserLookupReference);
+					redirectUrl = URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_NEW_REGISTRATION);
+				} else {
+					redirectUrl = URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER);
+				}
+				
+				// create a signed session for this user so that we don't need
+				// to do
 				// this again for a while.
 				this.createSession(request, segueUserDO.getDbId());
+				return Response.temporaryRedirect(redirectUrl).build();
 			}
-
-			return Response.temporaryRedirect(this.loadRedirectUrl(request))
-					.build();
 
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
@@ -1149,6 +1164,43 @@ public class UserManager {
 	}
 	
 	/**
+	 * Gets an existing Segue user from a 3rd party authenticator.
+	 * 
+	 * @param federatedAuthenticator
+	 *            the federatedAuthenticator we are using for authentication
+	 * @param providerSpecificUserLookupReference
+	 *            - the look up reference provided by the authenticator after
+	 *            any authenticator specific actions have been completed.
+	 * @return a Segue UserDO that exists in the segue database.
+	 * @throws AuthenticatorSecurityException
+	 *             - error with authenticator.
+	 * @throws NoUserException
+	 *             - If we are unable to locate the user id based on the lookup
+	 *             reference provided.
+	 * @throws IOException
+	 *             - if there is an io error.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
+	 */
+	private RegisteredUser getUserFromFederatedProvider(final IFederatedAuthenticator federatedAuthenticator,
+			final String providerSpecificUserLookupReference) throws SegueDatabaseException, NoUserException,
+			IOException, AuthenticatorSecurityException {
+		UserFromAuthProvider userFromProvider = federatedAuthenticator
+				.getUserInfo(providerSpecificUserLookupReference);
+
+		if (null == userFromProvider) {
+			log.warn("Unable to create user for the provider "
+					+ federatedAuthenticator.getAuthenticationProvider().name());
+			throw new NoUserException();
+		}
+
+		log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
+
+		return this.getUserFromLinkedAccount(federatedAuthenticator.getAuthenticationProvider(),
+				userFromProvider.getProviderUserId());
+	}
+	
+	/**
 	 * This method should use the provider specific reference to either register
 	 * a new user or retrieve an existing user.
 	 * 
@@ -1168,32 +1220,29 @@ public class UserManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	private RegisteredUser getOrCreateUserFromFederatedProvider(
+	private RegisteredUser registerUserWithFederatedProvider(
 			final IFederatedAuthenticator federatedAuthenticator,
 			final String providerSpecificUserLookupReference)
 		throws AuthenticatorSecurityException, NoUserException,
-			IOException, SegueDatabaseException {
+			IOException, SegueDatabaseException {		
 		// get user info from federated provider
-		UserFromAuthProvider userFromProvider = federatedAuthenticator
-				.getUserInfo(providerSpecificUserLookupReference);
-
-		if (null == userFromProvider) {
-			log.warn("Unable to create user for the provider "
-					+ federatedAuthenticator.getAuthenticationProvider().name());
-			throw new NoUserException();
-		}
-
-		log.debug("User with name " + userFromProvider.getEmail()
-				+ " retrieved");
-
-		RegisteredUser localUserInformation = this.getUserFromLinkedAccount(
-				federatedAuthenticator.getAuthenticationProvider(), userFromProvider.getProviderUserId());
+		RegisteredUser localUserInformation = this.getUserFromFederatedProvider(federatedAuthenticator,
+				providerSpecificUserLookupReference);
 
 		// decide if we need to register a new user or link to an existing
 		// account
 		if (null == localUserInformation) {
 			log.info("New registration - User does not already exist.");
 
+			UserFromAuthProvider userFromProvider = federatedAuthenticator
+					.getUserInfo(providerSpecificUserLookupReference);
+
+			if (null == userFromProvider) {
+				log.warn("Unable to create user for the provider "
+						+ federatedAuthenticator.getAuthenticationProvider().name());
+				throw new NoUserException();
+			}
+			
 			RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
 
 			// register user
@@ -1209,8 +1258,8 @@ public class UserManager {
 				throw new NoUserException();
 			}
 		} else {
-			log.debug("Returning user detected"
-					+ localUserInformation.getDbId());
+			log.error("Returning user detected"
+					+ localUserInformation.getDbId() + " unable to create a new segue user.");
 		}
 
 		return localUserInformation;
@@ -1296,44 +1345,6 @@ public class UserManager {
 		} else {
 			throw new AuthenticationCodeException("User denied access to our app.");
 		}
-	}
-
-	/**
-	 * Helper method to store a redirect url for a user going through external
-	 * authentication.
-	 * 
-	 * @param request
-	 *            - the request to store the session variable in.
-	 * @param url
-	 *            - the url that the user wishes to be redirected to.
-	 */
-	private void storeRedirectUrl(final HttpServletRequest request,
-			final String url) {
-		request.getSession().setAttribute(Constants.REDIRECT_URL_PARAM_NAME,
-				url);
-	}
-
-	/**
-	 * Helper method to retrieve the users redirect url from their session.
-	 * 
-	 * @param request
-	 *            - the request where the redirect url is stored (session
-	 *            variable).
-	 * @return the URI containing the users desired uri. If URL is null then
-	 *         returns /
-	 * @throws URISyntaxException
-	 *             - if the session retrieved is an invalid URI.
-	 */
-	private URI loadRedirectUrl(final HttpServletRequest request)
-		throws URISyntaxException {
-		String url = (String) request.getSession().getAttribute(
-				Constants.REDIRECT_URL_PARAM_NAME);
-		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);
-		if (null == url) {
-			return new URI("/");
-		}
-
-		return new URI(url);
 	}
 
 	/**

@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
+import com.google.common.collect.ImmutableMap;
+
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
@@ -206,8 +208,9 @@ public class UserManagerTest {
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager
-				.authenticate(request, someInvalidProvider, "/");
+		Response r = userManager.authenticate(request, someInvalidProvider,
+				new ImmutableMap.Builder<String, String>().put(Constants.REDIRECT_URL_EXISTING_USER, "/")
+						.build());
 
 		// Assert
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
@@ -253,7 +256,7 @@ public class UserManagerTest {
 
 		// Act
 		Response r = userManager.authenticate(request, someValidProviderString,
-				"/");
+				new ImmutableMap.Builder<String, String>().put(Constants.REDIRECT_URL_EXISTING_USER, "/").build());
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
@@ -306,8 +309,9 @@ public class UserManagerTest {
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
 				null).atLeastOnce();
-		expect(dummySession.getAttribute("auth_redirect")).andReturn("/")
-				.atLeastOnce();
+		expect(dummySession.getAttribute("auth_redirect")).andReturn(
+				new ImmutableMap.Builder<String, String>().put(Constants.REDIRECT_URL_EXISTING_USER, "/")
+						.build()).atLeastOnce();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
@@ -327,7 +331,7 @@ public class UserManagerTest {
 
 		// Mock exchange code for token call
 		expect(dummyAuth.exchangeCode(someAuthCode)).andReturn(
-				someProviderGeneratedLookupValue);
+				someProviderGeneratedLookupValue).atLeastOnce();
 
 		expect(
 				((IFederatedAuthenticator) dummyAuth)
@@ -343,13 +347,13 @@ public class UserManagerTest {
 		expect(
 				((IFederatedAuthenticator) dummyAuth)
 						.getUserInfo(someProviderGeneratedLookupValue))
-				.andReturn(providerUser);
+				.andReturn(providerUser).atLeastOnce();
 
 		// Expect this to be a new user and to register them (i.e. return null
 		// from database)
 		expect(
 				dummyDatabase.getByLinkedAccount(AuthenticationProvider.TEST,
-						someProviderUniqueUserId)).andReturn(null);
+						someProviderUniqueUserId)).andReturn(null).atLeastOnce();
 		
 		RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "",
 				Role.STUDENT, new Date(), Gender.MALE, new Date(),
