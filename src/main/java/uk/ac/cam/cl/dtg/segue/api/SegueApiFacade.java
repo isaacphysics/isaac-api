@@ -1216,6 +1216,8 @@ public class SegueApiFacade {
 	 *            know who to redirect the user to.
 	 * @param redirectUrl
 	 *            - optional redirect url after authentication has completed.
+	 * @param redirectError
+	 *            - optional redirect url after authentication has completed for error situations.
 	 *            
 	 * @return a redirect to where the client asked to be redirected to.
 	 */
@@ -1224,7 +1226,8 @@ public class SegueApiFacade {
 	@Produces("application/json")	
 	public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString,
-			@QueryParam("redirect") final String redirectUrl) {
+			@QueryParam("redirect") final String redirectUrl,
+			@QueryParam("redirect_error") final String redirectError) {
 
 		if (!this.hasCurrentUser(request)) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
@@ -1233,9 +1236,17 @@ public class SegueApiFacade {
 		}
 		
 		Map<String, String> redirectUrls = new ImmutableMap.Builder<String, String>()
-				.put(Constants.REDIRECT_URL_EXISTING_USER, this.prepareRedirectURL(redirectUrl)).build();
-				
-		return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString, redirectUrls);
+				.put(Constants.REDIRECT_URL_EXISTING_USER, this.prepareRedirectURL(redirectUrl))
+				.put(Constants.REDIRECT_URL_ERROR, this.prepareRedirectURL(redirectError)).build();
+		
+		Response result = this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString, redirectUrls); 
+		
+		if (result.getEntity() instanceof SegueErrorResponse) {
+			return Response.temporaryRedirect(URI.create(redirectUrls.get(Constants.REDIRECT_URL_ERROR)))
+					.entity(result.getEntity()).build();
+		}
+		
+		return result;
 	}
 	
 	/**
