@@ -331,23 +331,23 @@ public class GameManager {
 			
 			if (null == showOnly) {
 				resultToReturn.add(gameboard);
-			} else if (gameboard.getPercentageCompleted() == 0 && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
+			} else if (gameboard.isStartedQuestion() && showOnly.equals(GameboardState.IN_PROGRESS)) {
+				// in_progress
+				resultToReturn.add(gameboard);
+			} else if (!gameboard.isStartedQuestion() && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
 				resultToReturn.add(gameboard);
 			} else if (gameboard.getPercentageCompleted() == 100 && showOnly.equals(GameboardState.COMPLETED)) {
 				resultToReturn.add(gameboard);
-			} else if (gameboard.getPercentageCompleted() > 0 && showOnly.equals(GameboardState.IN_PROGRESS)) {
-				// in_progress
-				resultToReturn.add(gameboard);
-			} 
+			}  
 			
 			// counts
-			if (gameboard.getPercentageCompleted() == 0 && !gameboard.isStartedQuestion()) {
+			if (!gameboard.isStartedQuestion()) {
 				totalNotStarted++;
 			} else if (gameboard.getPercentageCompleted() == 100) {
 				totalCompleted++;
-			} else if (gameboard.getPercentageCompleted() > 0 || gameboard.isStartedQuestion()) {
+			} else if (gameboard.isStartedQuestion()) {
 				totalInProgress++;
-			}		
+			}
 		}
 		
 		ComparatorChain<GameboardDTO> comparatorForSorting = new ComparatorChain<GameboardDTO>();
@@ -427,8 +427,8 @@ public class GameManager {
 			if (state.equals(GameboardItemState.COMPLETED)) {
 				totalCompleted++;
 			}
-			
-			if (state.equals(GameboardItemState.COMPLETED) || state.equals(GameboardItemState.IN_PROGRESS)) {
+
+			if (!state.equals(GameboardItemState.NOT_ATTEMPTED) && !gameboardDTO.isStartedQuestion()) {
 				gameboardDTO.setStartedQuestion(true);
 			}
 		}
