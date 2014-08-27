@@ -895,21 +895,6 @@ public class SegueApiFacade {
 					.toResponse();
 		}
 	}
-	
-//	/**
-//	 * This is a library method that provides access to a users question attempts.
-//	 * @param user - the user to look up.
-//	 * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse]
-//	 * @throws SegueDatabaseException - If there is an error in the database call.
-//	 */
-//	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
-//			final HttpServletRequest user) throws SegueDatabaseException {
-//		if (null == user) {
-//			return null;
-//		}
-//		
-//		return this.userManager.getQuestionAttemptsByUser(request);
-//	}
 
 	/**
 	 * This is a library method that provides access to a users question attempts.

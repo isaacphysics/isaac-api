@@ -44,7 +44,7 @@ public interface IUserDataManager {
 	 * GetAllLinked Accounts by user.
 	 * 
 	 * @param user - the user DO to search for.
-	 * @return List of authentication providers
+	 * @return List of authentication providers or an empty list.
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
