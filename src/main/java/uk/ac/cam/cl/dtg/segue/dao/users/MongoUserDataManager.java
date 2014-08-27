@@ -296,7 +296,7 @@ public class MongoUserDataManager implements IUserDataManager {
 			log.info("Deleting linked accounts and trying to search again.");
 			// this means that a user has been deleted and the link record remains.
 			// we should delete the link record as well as any others partaining to this user.
-			this.cleanupLinkedAccounts(linkAccount.getLocalUserId());
+			this.cleanupOrphanedLinkedAccounts(linkAccount.getLocalUserId());
 			// Try to find the account again.
 			registeredUser = getByLinkedAccount(provider, providerUserId);
 		}
@@ -388,7 +388,17 @@ public class MongoUserDataManager implements IUserDataManager {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
-		try {
+		try {			
+			DBQuery.Query existingLinkAccount = DBQuery.and(
+					DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, providerUserId),
+					DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider));
+			
+			LinkedAccount account = jc.findOne(existingLinkAccount);
+			
+			if (account != null && this.getById(account.getLocalUserId()) == null) {
+				this.cleanupOrphanedLinkedAccounts(account.getLocalUserId());
+			}
+			
 			WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null,
 					user.getDbId(), provider, providerUserId));
 
@@ -421,7 +431,6 @@ public class MongoUserDataManager implements IUserDataManager {
 		
 		database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME).ensureIndex(linkedAccountIndex,
 				"LinkedAccountIndex", true);
-
 	}
 	
 	/**
@@ -430,8 +439,18 @@ public class MongoUserDataManager implements IUserDataManager {
 	 * 
 	 * @param userId - all linked accounts with this user id will be deleted.
 	 */
-	private void cleanupLinkedAccounts(final String userId) {
+	private void cleanupOrphanedLinkedAccounts(final String userId) {
 		Validate.notBlank(userId);
+		
+		// verify that the user does not exist
+		try {
+			if (this.getById(userId) != null) {
+				log.error("Unable to clean up accounts as the user is still here.");
+				return;
+			}
+		} catch (SegueDatabaseException e) {
+			log.error("Database error during clean up activity.");
+		}
 		
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
 				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
