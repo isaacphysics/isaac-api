@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
@@ -311,6 +312,11 @@ public class UserManager {
 			log.info("Duplicate user already exists in the database.", e);
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"A user already exists with the e-mail address specified.")
+					.toResponse();
+		} catch (AccountAlreadyLinkedException e) { 
+			log.error("Internal Database error during authentication", e);
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The account you are trying to link is already attached to a user of this system.")
 					.toResponse();
 		} catch (SegueDatabaseException e) { 
 			log.error("Internal Database error during authentication", e);
@@ -1125,7 +1131,7 @@ public class UserManager {
 
 		RegisteredUser user = database.getByLinkedAccount(provider, providerId);
 		if (null == user) {
-			log.info("Unable to locate user based on provider "
+			log.debug("Unable to locate user based on provider "
 					+ "information provided.");
 		}
 		return user;

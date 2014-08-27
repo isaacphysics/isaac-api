@@ -21,6 +21,7 @@ import com.mongodb.MongoException;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -392,12 +393,15 @@ public class MongoUserDataManager implements IUserDataManager {
 					user.getDbId(), provider, providerUserId));
 
 			return null == r.getError();
+		} catch (MongoException.DuplicateKey e) {
+			throw new AccountAlreadyLinkedException(
+					"This account has already been linked to a local user for the provider " + provider);
 		} catch (MongoException e) {
 			String errorMessage = "MongoDB encountered an exception "
 					+ "while attempting to link an auth provider to a user account.";
 			log.error(errorMessage, e);
 			throw new SegueDatabaseException(errorMessage, e);
-		}
+		} 
 
 	}
 
@@ -410,6 +414,14 @@ public class MongoUserDataManager implements IUserDataManager {
 		database.getCollection(USER_COLLECTION_NAME).ensureIndex(
 				new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, 1),
 				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, true);
+		
+		BasicDBObject linkedAccountIndex = new BasicDBObject();
+		linkedAccountIndex.put(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, 1);
+		linkedAccountIndex.put(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, 1);
+		
+		database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME).ensureIndex(linkedAccountIndex,
+				"LinkedAccountIndex", true);
+
 	}
 	
 	/**
