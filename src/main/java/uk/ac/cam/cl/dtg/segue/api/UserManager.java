@@ -449,6 +449,11 @@ public class UserManager {
 	public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
 		throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
 		RegisteredUser userDO = this.findUserById(user.getDbId());
+		// check if the provider is there to delete in the first place. If not just return.
+		if (!this.database.getAuthenticationProvidersByUser(userDO).contains(
+				this.mapToProvider(providerString).getAuthenticationProvider())) {
+			return;
+		}
 		
 		// make sure that the change doesn't prevent the user from logging in again.
 		if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1)

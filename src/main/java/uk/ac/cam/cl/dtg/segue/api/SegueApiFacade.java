@@ -1202,7 +1202,7 @@ public class SegueApiFacade {
 	@DELETE
 	@Path("auth/{provider}/link")
 	@Produces("application/json")
-	public final Response unlinkeUserFromProvider(@Context final HttpServletRequest request,
+	public final Response unlinkUserFromProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString) {
 		
 		try {
@@ -1210,7 +1210,7 @@ public class SegueApiFacade {
 			this.userManager.unlinkUserFromProvider(user, authProviderAsString);
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Unable to remove account do to database issues.", e)
+					"Unable to remove account due to a problem with the database.", e)
 					.toResponse();	
 		} catch (MissingRequiredFieldException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
