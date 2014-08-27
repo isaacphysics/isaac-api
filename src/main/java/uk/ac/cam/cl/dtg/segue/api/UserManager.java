@@ -121,10 +121,11 @@ public class UserManager {
 	/**
 	 * This method will start the authentication process and ultimately provide
 	 * a url for the client to redirect the user to. This url will be for a 3rd party
-	 * authenticator who will use the callback method after they have
+	 * authenticator who will use the callback method provided after they have
 	 * authenticated.
 	 * 
-	 * Users who are already logged already will be returned their UserDTO
+	 * Users who are already logged already will be returned their UserDTO without 
+	 * going through the authentication process.
 	 * 
 	 * @param request
 	 *            - http request that we can attach the session to and save
@@ -156,11 +157,13 @@ public class UserManager {
 	}
 	
 	/**
-	 * This method will start the authentication process and ultimately redirect the user
-	 * either to their final redirect destination or to a 3rd party authenticator who will
-	 * use the callback method after they have authenticated.
+	 * This method will start the authentication process for linking a user to a
+	 * 3rd party provider. It will ultimately provide a url for the client to
+	 * redirect the user to. This url will be for a 3rd party authenticator who
+	 * will use the callback method provided after they have authenticated.
 	 * 
-	 * Users must already be logged in to use this method.
+	 * Users must already be logged in to use this method otherwise a 401 will
+	 * be returned.
 	 * 
 	 * @param request
 	 *            - http request that we can attach the session to.
@@ -168,7 +171,8 @@ public class UserManager {
 	 *            - the provider the user wishes to authenticate with.
 	 * @return A response redirecting the user to their redirect url or a
 	 *         redirect URI to the authentication provider if authorization /
-	 *         login is required. Alternatively a SegueErrorResponse could be returned.
+	 *         login is required. Alternatively a SegueErrorResponse could be
+	 *         returned.
 	 */
 	public final Response initiateLinkAccountToUserFlow(final HttpServletRequest request,
 			final String provider) {
@@ -180,7 +184,7 @@ public class UserManager {
 		}
 		
 		return this.initiateAuthenticationFlow(request, provider);
-	}	
+	}
 	
 	/**
 	 * Authenticate Callback will receive the authentication information from
@@ -191,7 +195,7 @@ public class UserManager {
 	 * or locate the existing account of the user and create a session for that.
 	 * 
 	 * @param request
-	 *            - http request from the user.
+	 *            - http request from the user - should contain url encoded token details.
 	 * @param provider
 	 *            - the provider who has just authenticated the user.
 	 * @return Response containing the user object.
@@ -199,9 +203,6 @@ public class UserManager {
 	 */
 	public final Response authenticateCallback(
 			final HttpServletRequest request, final String provider) {
-		// If the user is currently logged in this must be a
-		// request to link accounts
-		RegisteredUser currentUser = getCurrentUserDO(request);
 		
 		try {
 			IAuthenticator authenticator = mapToProvider(provider);
@@ -234,6 +235,10 @@ public class UserManager {
 				log.error(error.getErrorMessage());
 				return error.toResponse();
 			}
+			
+			// If the user is currently logged in this must be a
+			// request to link accounts
+			RegisteredUser currentUser = getCurrentUserDO(request);
 			
 			// if we are already logged in - check if we have already got this
 			// provider assigned already? If not this is probably a link request.

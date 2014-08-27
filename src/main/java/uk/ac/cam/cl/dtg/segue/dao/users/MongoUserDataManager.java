@@ -288,8 +288,19 @@ public class MongoUserDataManager implements IUserDataManager {
 		if (null == linkAccount) {
 			return null;
 		}
-
-		return this.getById(linkAccount.getLocalUserId());
+		
+		RegisteredUser registeredUser = this.getById(linkAccount.getLocalUserId());
+		
+		if (null == registeredUser) {
+			log.info("Deleting linked accounts and trying to search again.");
+			// this means that a user has been deleted and the link record remains.
+			// we should delete the link record as well as any others partaining to this user.
+			this.cleanupLinkedAccounts(linkAccount.getLocalUserId());
+			// Try to find the account again.
+			registeredUser = getByLinkedAccount(provider, providerUserId);
+		}
+		
+		return registeredUser;
 	}
 
 	@Override
@@ -399,5 +410,24 @@ public class MongoUserDataManager implements IUserDataManager {
 		database.getCollection(USER_COLLECTION_NAME).ensureIndex(
 				new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, 1),
 				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, true);
+	}
+	
+	/**
+	 * This helper method will attempt to remove all linked accounts for a given user id.
+	 * It is expected that this will only be used when a user is deleted.
+	 * 
+	 * @param userId - all linked accounts with this user id will be deleted.
+	 */
+	private void cleanupLinkedAccounts(final String userId) {
+		Validate.notBlank(userId);
+		
+		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
+				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+						LinkedAccount.class, String.class);
+		
+		DBQuery.Query linkAccountToDeleteQuery = DBQuery.is(
+				Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, userId);
+		
+		jc.remove(linkAccountToDeleteQuery);
 	}
 }

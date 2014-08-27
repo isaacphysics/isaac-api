@@ -839,7 +839,7 @@ public class SegueApiFacade {
 				.put("latestKnownVersion",
 						contentPersistenceManager.getLatestVersionId()).build();
 
-		return Response.ok().entity(result).build();
+		return Response.ok(result).build();
 	}
 
 	/**
@@ -861,7 +861,7 @@ public class SegueApiFacade {
 						contentPersistenceManager.getCachedVersionList())
 				.build();
 
-		return Response.ok().entity(result).build();
+		return Response.ok(result).build();
 	}
 
 	/**
