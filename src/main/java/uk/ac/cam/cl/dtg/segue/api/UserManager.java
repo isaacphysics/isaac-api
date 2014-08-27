@@ -205,24 +205,6 @@ public class UserManager {
 		
 		try {
 			IAuthenticator authenticator = mapToProvider(provider);
-			// TODO: refactor now that we don't have redirect urls.
-			boolean linkAccountOperation = false;
-			// if we are already logged in - check if we have already got this
-			// provider assigned already?
-			if (null != currentUser) {
-				List<AuthenticationProvider> usersProviders = this.database
-						.getAuthenticationProvidersByUser(currentUser);
-
-				if (null != usersProviders
-						&& usersProviders.contains(authenticator.getAuthenticationProvider())) {
-					// they are already connected to this provider just return the user object
-					return Response.ok(currentUser).build();
-				} else {
-					// this case means that this user is already authenticated and wants to link
-					// their account to another provider.
-					linkAccountOperation = true;
-				}
-			}
 			
 			IFederatedAuthenticator federatedAuthenticator;
 			if (authenticator instanceof IFederatedAuthenticator) {
@@ -232,7 +214,7 @@ public class UserManager {
 						"The authenticator requested does not have a callback function.")
 						.toResponse();
 			}
-
+			
 			// this is a reference that the segue provider can use to look up user details.
 			String providerSpecificUserLookupReference = null;
 
@@ -253,34 +235,45 @@ public class UserManager {
 				return error.toResponse();
 			}
 			
-			// Decide if this is a link operation or an authenticate / register
-			// operation.
-			if (linkAccountOperation) {
-				log.debug("Linking existing user to another provider account.");
-				this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
-						providerSpecificUserLookupReference);
-				return Response.ok(this.convertUserDOToUserDTO(this.getCurrentUserDO(request))).build();
-			} else {
-				RegisteredUser segueUserDO = this.getUserFromFederatedProvider(federatedAuthenticator,
-						providerSpecificUserLookupReference);
-				RegisteredUserDTO segueUserDTO = null;
-				// decide if this is a registration or an existing user.
-				if (null == segueUserDO) {
-					// new user
-					segueUserDO = this.registerUserWithFederatedProvider(federatedAuthenticator,
-							providerSpecificUserLookupReference);
-					segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
-					segueUserDTO.setFirstLogin(true);
+			// if we are already logged in - check if we have already got this
+			// provider assigned already? If not this is probably a link request.
+			if (null != currentUser) {
+				List<AuthenticationProvider> usersProviders = this.database
+						.getAuthenticationProvidersByUser(currentUser);
+
+				if (null != usersProviders
+						&& usersProviders.contains(authenticator.getAuthenticationProvider())) {
+					// they are already connected to this provider just return the user object
+					return Response.ok(currentUser).build();
 				} else {
-					// existing user
-					segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
+					// Decide if this is a link operation or an authenticate / register
+					// operation.
+					log.info("Linking existing user to another provider account.");
+					this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
+							providerSpecificUserLookupReference);
+					return Response.ok(this.convertUserDOToUserDTO(this.getCurrentUserDO(request))).build();
 				}
-				
-				// create a signed session for this user so that we don't need
-				// to do this again for a while.
-				this.createSession(request, segueUserDO.getDbId());
-				return Response.ok(segueUserDTO).build();
 			}
+			
+			RegisteredUser segueUserDO = this.getUserFromFederatedProvider(federatedAuthenticator,
+					providerSpecificUserLookupReference);
+			RegisteredUserDTO segueUserDTO = null;
+			// decide if this is a registration or an existing user.
+			if (null == segueUserDO) {
+				// new user
+				segueUserDO = this.registerUserWithFederatedProvider(federatedAuthenticator,
+						providerSpecificUserLookupReference);
+				segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
+				segueUserDTO.setFirstLogin(true);
+			} else {
+				// existing user
+				segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
+			}
+
+			// create a signed session for this user so that we don't need
+			// to do this again for a while.
+			this.createSession(request, segueUserDO.getDbId());
+			return Response.ok(segueUserDTO).build();
 
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
