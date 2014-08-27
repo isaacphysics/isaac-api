@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -27,6 +26,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -119,50 +119,39 @@ public class UserManager {
 	}
 
 	/**
-	 * This method will start the authentication process and ultimately redirect
-	 * the user either to their final redirect destination or to a 3rd party
-	 * authenticator who will use the callback method after the have
+	 * This method will start the authentication process and ultimately provide
+	 * a url for the client to redirect the user to. This url will be for a 3rd party
+	 * authenticator who will use the callback method after they have
 	 * authenticated.
 	 * 
-	 * Users who are already logged in will be redirected immediately to their
-	 * redirectUrl and not go via a 3rd party provider.
+	 * Users who are already logged already will be returned their UserDTO
 	 * 
 	 * @param request
 	 *            - http request that we can attach the session to and save
 	 *            redirect url in.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @param redirectUrls
-	 *            - a map of redirect urls that must contain at least one key
-	 *            value mapping for Constants.REDIRECT_URL_EXISTING_USER
-	 * @return A response redirecting the user to their redirect url or a
+	 * @return A response containing either an object containing a
 	 *         redirect URI to the authentication provider if authorization /
-	 *         login is required.
+	 *         login is required or the user object if the user is already logged in.
 	 */
-	public final Response authenticate(final HttpServletRequest request, final String provider,
-			final Map<String, String> redirectUrls) {
-		// set redirect url as a session attribute so we can pick it up when
-		// call back happens.
-		if (redirectUrls != null) {
-			URIManager.storeRedirectUrl(request, redirectUrls);
-		} 
-
-		if (this.isRegisteredUserLoggedIn(request)) {
-			// if they are already logged in then we do not want to proceed with
-			// this authentication flow. We can just return the redirect.
-
-			try {
-				return Response.temporaryRedirect(
-						URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER)).build();
-			} catch (URISyntaxException e) {
-				log.error("Redirect URL is not valid for provider " + provider, e);
-				return new SegueErrorResponse(Status.BAD_REQUEST,
-						"Bad authentication redirect url received.", e).toResponse();
-			}
-		} else {
+	public final Response authenticate(final HttpServletRequest request, final String provider) {
+		if (!this.isRegisteredUserLoggedIn(request)) {
 			// this is the expected case so we can
 			// start the authenticationFlow.
 			return this.initiateAuthenticationFlow(request, provider);
+		} else {
+			try {
+				// if they are already logged in then we do not want to proceed with
+				// this authentication flow. We can just return the user object.
+				return Response.ok(this.getCurrentRegisteredUser(request)).build();
+			} catch (NoUserLoggedInException e1) {
+				// this should never happen due to the check above.
+				log.error("Unable to verify session information after initial check - this should not happen.");
+				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						"Unable to validate session.")
+						.toResponse();
+			}			
 		}
 	}
 	
@@ -177,21 +166,12 @@ public class UserManager {
 	 *            - http request that we can attach the session to.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @param redirectUrls
-	 *            - a map of redirect urls that must contain at least one key
-	 *            value mapping for Constants.REDIRECT_URL_EXISTING_USER
 	 * @return A response redirecting the user to their redirect url or a
 	 *         redirect URI to the authentication provider if authorization /
 	 *         login is required. Alternatively a SegueErrorResponse could be returned.
 	 */
 	public final Response initiateLinkAccountToUserFlow(final HttpServletRequest request,
-			final String provider, final Map<String, String> redirectUrls) {
-		// set redirect url as a session attribute so we can pick it up when
-		// call back happens.
-		if (redirectUrls != null) {
-			URIManager.storeRedirectUrl(request, redirectUrls);
-		}
-
+			final String provider) {
 		// The user must be logged in to be able to link accounts.
 		if (!this.isRegisteredUserLoggedIn(request)) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
@@ -214,19 +194,18 @@ public class UserManager {
 	 *            - http request from the user.
 	 * @param provider
 	 *            - the provider who has just authenticated the user.
-	 * @return Response redirecting the user to their redirect url.
+	 * @return Response containing the user object.
 	 *         Alternatively a SegueErrorResponse could be returned.
 	 */
 	public final Response authenticateCallback(
 			final HttpServletRequest request, final String provider) {
-		
 		// If the user is currently logged in this must be a
 		// request to link accounts
 		RegisteredUser currentUser = getCurrentUserDO(request);
 		
 		try {
 			IAuthenticator authenticator = mapToProvider(provider);
-			
+			// TODO: refactor now that we don't have redirect urls.
 			boolean linkAccountOperation = false;
 			// if we are already logged in - check if we have already got this
 			// provider assigned already?
@@ -236,10 +215,8 @@ public class UserManager {
 
 				if (null != usersProviders
 						&& usersProviders.contains(authenticator.getAuthenticationProvider())) {
-					// they are already connected to this provider just redirect
-					// them.
-					return Response.temporaryRedirect(
-							URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER)).build();
+					// they are already connected to this provider just return the user object
+					return Response.ok(currentUser).build();
 				} else {
 					// this case means that this user is already authenticated and wants to link
 					// their account to another provider.
@@ -279,34 +256,30 @@ public class UserManager {
 			// Decide if this is a link operation or an authenticate / register
 			// operation.
 			if (linkAccountOperation) {
-				log.info("Linking existing user to another provider account.");
+				log.debug("Linking existing user to another provider account.");
 				this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
 						providerSpecificUserLookupReference);
-				return Response.temporaryRedirect(
-						URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER)).build();
+				return Response.ok(this.convertUserDOToUserDTO(this.getCurrentUserDO(request))).build();
 			} else {
-
-				// decide if this is a registration or an existing user.
-				// Get the local user object which will be retrieved /
-				// generated by creating a new user based on the
-				// federatedProviders details.
 				RegisteredUser segueUserDO = this.getUserFromFederatedProvider(federatedAuthenticator,
 						providerSpecificUserLookupReference);
-				URI redirectUrl = null;
+				RegisteredUserDTO segueUserDTO = null;
+				// decide if this is a registration or an existing user.
 				if (null == segueUserDO) {
 					// new user
 					segueUserDO = this.registerUserWithFederatedProvider(federatedAuthenticator,
 							providerSpecificUserLookupReference);
-					redirectUrl = URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_NEW_REGISTRATION);
+					segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
+					segueUserDTO.setFirstLogin(true);
 				} else {
-					redirectUrl = URIManager.loadRedirectUrl(request, Constants.REDIRECT_URL_EXISTING_USER);
+					// existing user
+					segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
 				}
 				
 				// create a signed session for this user so that we don't need
-				// to do
-				// this again for a while.
+				// to do this again for a while.
 				this.createSession(request, segueUserDO.getDbId());
-				return Response.temporaryRedirect(redirectUrl).build();
+				return Response.ok(segueUserDTO).build();
 			}
 
 		} catch (IOException e) {
@@ -336,11 +309,6 @@ public class UserManager {
 					Status.UNAUTHORIZED, e.getMessage());
 			log.info("Error detected during authentication: " + e.getClass().toString(), e);
 			return error.toResponse();
-		} catch (URISyntaxException e) {
-			log.error("Redirect URL is not valid for provider " + provider, e);
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"Bad authentication redirect url received.", e)
-					.toResponse();
 		} catch (DuplicateAccountException e) { 
 			log.info("Duplicate user already exists in the database.", e);
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -899,8 +867,7 @@ public class UserManager {
 	 *            already has a redirect url attached.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
-	 * @return A response redirecting the user to their redirect url or a
-	 *         redirect URI to the authentication provider if authorization /
+	 * @return A json response containing a URI to the authentication provider if authorization /
 	 *         login is required. Alternatively a SegueErrorResponse could be returned.
 	 */
 	private Response initiateAuthenticationFlow(final HttpServletRequest request,
@@ -933,8 +900,11 @@ public class UserManager {
 				log.error(error.getErrorMessage());
 				return error.toResponse();
 			}
-
-			return Response.temporaryRedirect(redirectLink).entity(redirectLink).build();
+			
+			Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>().put(Constants.REDIRECT_URL,
+					redirectLink).build();
+			
+			return Response.ok(redirectResponse).build();
 
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -1299,7 +1269,7 @@ public class UserManager {
 
 		this.database.linkAuthProviderToAccount(currentUser,
 				federatedAuthenticator.getAuthenticationProvider(), userFromProvider.getProviderUserId());
-
+		
 	}
 	
 	/**

@@ -301,11 +301,9 @@ public final class Constants {
 	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
 
 	/**
-	 * Keys to look up stored values for REDIRECT_URLS used for 3rd party authentication.
+	 * Redirect response field name.
 	 */
-	public static final String REDIRECT_URL_NEW_REGISTRATION = "REDIRECT_URL_NEW_REGISTRATION";
-	public static final String REDIRECT_URL_EXISTING_USER = "REDIRECT_URL_EXISTING_USER";
-	public static final String REDIRECT_URL_ERROR = "REDIRECT_URL_ERROR";
+	public static final String REDIRECT_URL = "redirectUrl";
 	
 	/**
 	 * Private constructor to prevent this class being created.

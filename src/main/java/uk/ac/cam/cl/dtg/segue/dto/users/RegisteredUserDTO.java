@@ -34,6 +34,8 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	private List<AuthenticationProvider> linkedAccounts;
 	private boolean hasSegueAccount;
 	
+	private boolean firstLogin = false;
+	
 	/**
 	 * Full constructor for the User object.
 	 * 
@@ -294,5 +296,21 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 */
 	public void setHasSegueAccount(final boolean hasSegueAccount) {
 		this.hasSegueAccount = hasSegueAccount;
+	}
+
+	/**
+	 * Gets the firstLogin.
+	 * @return the firstLogin
+	 */
+	public boolean isFirstLogin() {
+		return firstLogin;
+	}
+
+	/**
+	 * Sets the firstLogin.
+	 * @param firstLogin the firstLogin to set
+	 */
+	public void setFirstLogin(final boolean firstLogin) {
+		this.firstLogin = firstLogin;
 	}
 }

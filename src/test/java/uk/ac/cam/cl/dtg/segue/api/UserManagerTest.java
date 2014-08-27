@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,11 +18,10 @@ import static org.easymock.EasyMock.*;
 import ma.glasnost.orika.MapperFacade;
 
 import org.easymock.EasyMock;
+import org.elasticsearch.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import com.google.common.collect.ImmutableMap;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -199,18 +199,13 @@ public class UserManagerTest {
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
 				null).atLeastOnce();
-		dummySession.setAttribute(EasyMock.<String> anyObject(),
-				EasyMock.<String> anyObject());
-		expectLastCall().atLeastOnce();
 
 		replay(dummySession);
 		replay(request);
 		replay(dummyDatabase);
 
 		// Act
-		Response r = userManager.authenticate(request, someInvalidProvider,
-				new ImmutableMap.Builder<String, String>().put(Constants.REDIRECT_URL_EXISTING_USER, "/")
-						.build());
+		Response r = userManager.authenticate(request, someInvalidProvider);
 
 		// Assert
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
@@ -235,7 +230,7 @@ public class UserManagerTest {
 		HttpServletRequest request = createMock(HttpServletRequest.class);
 		String exampleRedirectUrl = "https://accounts.google.com/o/oauth2/auth?client_id=267566420063-jalcbiffcpmteh42cib5hmgb16upspc0.apps.googleusercontent.com&redirect_uri=http://localhost:8080/rutherford-server/segue/api/auth/google/callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
 		String someValidProviderString = "test";
-		Status expectedResponseCode = Status.TEMPORARY_REDIRECT;
+		Status expectedResponseCode = Status.OK;
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -255,12 +250,14 @@ public class UserManagerTest {
 		replay(dummyAuth);
 
 		// Act
-		Response r = userManager.authenticate(request, someValidProviderString,
-				new ImmutableMap.Builder<String, String>().put(Constants.REDIRECT_URL_EXISTING_USER, "/").build());
+		Response r = userManager.authenticate(request, someValidProviderString);
 
 		// Assert
 		verify(dummyDatabase, dummySession, request);
-		assertTrue(r.getEntity().toString().equals(exampleRedirectUrl));
+		
+		Map<String, URI> result = (Map<String, URI>) r.getEntity();
+		
+		assertTrue(result.get(Constants.REDIRECT_URL).toString().equals(exampleRedirectUrl));
 		assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
 	}
 
@@ -309,9 +306,6 @@ public class UserManagerTest {
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
 				null).atLeastOnce();
-		expect(dummySession.getAttribute("auth_redirect")).andReturn(
-				new ImmutableMap.Builder<String, String>().put(Constants.REDIRECT_URL_EXISTING_USER, "/")
-						.build()).atLeastOnce();
 
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
@@ -358,8 +352,14 @@ public class UserManagerTest {
 		RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "",
 				Role.STUDENT, new Date(), Gender.MALE, new Date(),
 				null, null, null, null);
+
+		expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
+				Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();
+		
+		RegisteredUserDTO mappedUserDTO = new RegisteredUserDTO();
 		
 		expect(dummyMapper.map(providerUser, RegisteredUser.class)).andReturn(mappedUser).atLeastOnce();
+		expect(dummyMapper.map(mappedUser, RegisteredUserDTO.class)).andReturn(mappedUserDTO).atLeastOnce();
 		replay(dummyMapper);
 		
 		// A main part of the test is to check the below call happens
@@ -377,7 +377,6 @@ public class UserManagerTest {
 				EasyMock.<String> anyObject());
 		expectLastCall().atLeastOnce();
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
-		dummySession.removeAttribute(EasyMock.<String> anyObject());
 
 		expect(dummySession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(
 				new AnonymousUserDTO("someAnonymousSessionID")).anyTimes();
@@ -390,7 +389,7 @@ public class UserManagerTest {
 
 		// Assert
 		verify(dummySession, request, dummyAuth, dummyDatabase);
-		assertTrue(r.getStatusInfo().equals(Status.TEMPORARY_REDIRECT));
+		assertTrue(r.getStatusInfo().equals(Status.OK));
 	}
 
 	/**
