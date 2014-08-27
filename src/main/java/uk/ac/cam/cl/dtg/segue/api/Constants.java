@@ -181,6 +181,11 @@ public final class Constants {
 	public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
 
 	/**
+	 * This constant will be used to determine if we are expecting a link account request or not.
+	 */
+	public static final String LINK_ACCOUNT_PARAM_NAME = "LINK_ACCOUNT_PARAM_NAME";
+
+	/**
 	 * This constant is used for matching against url params to prevent CSRF.
 	 */
 	public static final String STATE_PARAM_NAME = "state";

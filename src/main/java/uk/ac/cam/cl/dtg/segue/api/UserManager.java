@@ -184,6 +184,9 @@ public class UserManager {
 					.toResponse();
 		}
 		
+		// record our intention to link an account.
+		request.getSession().setAttribute(Constants.LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
+		
 		return this.initiateAuthenticationFlow(request, provider);
 	}
 	
@@ -207,7 +210,7 @@ public class UserManager {
 		
 		try {
 			IAuthenticator authenticator = mapToProvider(provider);
-			
+
 			IFederatedAuthenticator federatedAuthenticator;
 			if (authenticator instanceof IFederatedAuthenticator) {
 				federatedAuthenticator = (IFederatedAuthenticator) authenticator;
@@ -252,6 +255,21 @@ public class UserManager {
 					// they are already connected to this provider just return the user object
 					return Response.ok(currentUser).build();
 				} else {
+					// This extra check is to prevent callbacks to this method from merging accounts unexpectedly
+					Boolean intentionToLinkRegistered = (Boolean) request.getSession()
+							.getAttribute(Constants.LINK_ACCOUNT_PARAM_NAME);
+					if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
+						SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+								"User is already authenticated - "
+								+ "expected request to link accounts but none was found.");
+
+						log.error(error.getErrorMessage());
+						return error.toResponse();
+					}
+
+					// clear link accounts intention until next time
+					request.removeAttribute(Constants.LINK_ACCOUNT_PARAM_NAME);
+					
 					// Decide if this is a link operation or an authenticate / register
 					// operation.
 					log.info("Linking existing user to another provider account.");

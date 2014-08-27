@@ -416,7 +416,7 @@ public class UserManagerTest {
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
-				null).atLeastOnce();
+				null).anyTimes();
 
 		// Mock URL params extract stuff
 		// Return any non-null string
@@ -427,6 +427,7 @@ public class UserManagerTest {
 		// Mock CSRF checks
 		expect(dummySession.getAttribute(Constants.STATE_PARAM_NAME))
 				.andReturn(CSRF_TEST_VALUE).atLeastOnce();
+		
 		expect(request.getParameter(Constants.STATE_PARAM_NAME)).andReturn(
 				someInvalidCSRFValue).atLeastOnce();
 
@@ -467,7 +468,7 @@ public class UserManagerTest {
 
 		expect(request.getSession()).andReturn(dummySession).atLeastOnce();
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
-				null).atLeastOnce();
+				null).anyTimes();
 
 		// Mock URL params extract stuff
 		expect(request.getQueryString()).andReturn("").atLeastOnce();
