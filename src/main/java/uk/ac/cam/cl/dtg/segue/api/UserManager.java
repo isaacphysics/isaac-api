@@ -135,7 +135,7 @@ public class UserManager {
 	 *            - the provider the user wishes to authenticate with.
 	 * @return A response containing either an object containing a
 	 *         redirect URI to the authentication provider if authorization /
-	 *         login is required or the user object if the user is already logged in.
+	 *         login is required or an error response if the user is already logged in.
 	 */
 	public final Response authenticate(final HttpServletRequest request, final String provider) {
 		if (!this.isRegisteredUserLoggedIn(request)) {
@@ -143,17 +143,10 @@ public class UserManager {
 			// start the authenticationFlow.
 			return this.initiateAuthenticationFlow(request, provider);
 		} else {
-			try {
-				// if they are already logged in then we do not want to proceed with
-				// this authentication flow. We can just return the user object.
-				return Response.ok(this.getCurrentRegisteredUser(request)).build();
-			} catch (NoUserLoggedInException e1) {
-				// this should never happen due to the check above.
-				log.error("Unable to verify session information after initial check - this should not happen.");
-				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-						"Unable to validate session.")
-						.toResponse();
-			}			
+			// if they are already logged in then we do not want to proceed with
+			// this authentication flow. We can just return an error response
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The user is already logged in. You cannot authenticate again.").toResponse();
 		}
 	}
 	
