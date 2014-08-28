@@ -174,25 +174,35 @@ public class SegueApiFacade {
 		}
 	}
 
-	// @POST
-	// @Path("log")
-	// @Produces("application/json")
-	// public ImmutableMap<String, Boolean> postLog(
-	// @Context final HttpServletRequest req,
-	// @FormParam("sessionId") final String sessionId,
-	// @FormParam("cookieId") final String cookieId,
-	// @FormParam("event") final String eventJSON) {
-	//
-	// Injector injector = Guice
-	// .createInjector(new SegueGuiceConfigurationModule());
-	// ILogManager logPersistenceManager = injector
-	// .getInstance(ILogManager.class);
-	//
-	// boolean success = logPersistenceManager.log(sessionId, cookieId,
-	// eventJSON);
-	//
-	// return ImmutableMap.of("success", success);
-	// }
+	/**
+	 * Method to allow clients to log frontend specific behaviour in the backend.
+	 * 
+	 * @param httpRequest - to enable retrieval of session information.
+	 * @param eventJSON - the event information to record as a json map <String, String>.
+	 * @return 200 for success or 400 for failure.
+	 */
+	@POST
+	@Path("log")
+	@Consumes("application/json")
+	public Response postLog(@Context final HttpServletRequest httpRequest,
+			final Map<String, String> eventJSON) {
+		
+		if (null == eventJSON || eventJSON.get(Constants.TYPE_FIELDNAME) == null) {
+			log.error("Error during log operation, no event type specified. Event: " + eventJSON);
+			SegueErrorResponse error = new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"Unable to record log message as the log has no " + Constants.TYPE_FIELDNAME + " property.");
+			return error.toResponse();
+		}
+		
+		String eventType = eventJSON.get(Constants.TYPE_FIELDNAME);
+		// remove the type information as we don't need it.
+		eventJSON.remove(Constants.TYPE_FIELDNAME);
+		
+		this.logManager.logEvent(httpRequest, eventType, eventJSON);
+
+		return Response.ok().build();
+	}
 
 	/**
 	 * Get Content List By version from the database.
