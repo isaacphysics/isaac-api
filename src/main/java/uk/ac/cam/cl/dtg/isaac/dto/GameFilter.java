@@ -136,4 +136,15 @@ public class GameFilter {
 	public final void setConcepts(final List<String> concepts) {
 		this.concepts = concepts;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("subjects: " + subjects);
+		sb.append("fields: " + fields);
+		sb.append("topics: " + topics);
+		sb.append("levels: " + levels);
+		sb.append("concepts: " + concepts);
+		return sb.toString();
+	}
 }
