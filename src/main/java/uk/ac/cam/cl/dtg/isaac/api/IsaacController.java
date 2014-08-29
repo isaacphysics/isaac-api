@@ -164,7 +164,7 @@ public class IsaacController {
 		// Calculate the ETag on last modified date of tags list
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ "" + etagCodeBuilder.toString().hashCode());
+				+ etagCodeBuilder.toString().hashCode() + "");
 		
 		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
 		
@@ -199,7 +199,7 @@ public class IsaacController {
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ "" + conceptId.hashCode());
+				+ conceptId.hashCode() + "");
 		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
@@ -297,7 +297,7 @@ public class IsaacController {
 		// Calculate the ETag on last modified date of tags list
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ "" + etagCodeBuilder.toString().hashCode());
+				+ etagCodeBuilder.toString().hashCode() + "");
 		
 		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
 		
@@ -399,7 +399,7 @@ public class IsaacController {
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ "" + searchString.hashCode() + types.hashCode());
+				+ searchString.hashCode() + types.hashCode() + "");
 		
 		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
@@ -846,7 +846,7 @@ public class IsaacController {
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ "" + pageId.hashCode());
+				+ pageId.hashCode() + "");
 		
 		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
@@ -897,7 +897,7 @@ public class IsaacController {
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ "" + fragmentId.hashCode());
+				+ fragmentId.hashCode() + "");
 		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
