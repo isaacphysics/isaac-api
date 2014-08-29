@@ -48,6 +48,7 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
@@ -1357,7 +1358,7 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * Answer a question.
+	 * Record that a user has answered a question.
 	 * 
 	 * @param request
 	 *            - the servlet request so we can find out if it is a known
@@ -1372,13 +1373,12 @@ public class SegueApiFacade {
 	 */
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("questions/{question_id}/answer")
 	public final Response answerQuestion(
 			@Context final HttpServletRequest request,
 			@PathParam("question_id") final String questionId,
 			final String jsonAnswer) {
-		
 		AbstractSegueUserDTO user = this.getCurrentUserIdentifier(request);
 		
 		Content contentBasedOnId = contentVersionController.getContentManager()
@@ -1431,7 +1431,6 @@ public class SegueApiFacade {
 		}
 		
 		this.logManager.logEvent(request, Constants.ANSWER_QUESTION, response.getEntity());
-
 		
 		return response;
 	}
@@ -1452,6 +1451,11 @@ public class SegueApiFacade {
 				.getContentManager().getProblemMap(
 						contentVersionController.getLiveVersion());
 
+		if (this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
+			return Response.status(Status.SERVICE_UNAVAILABLE)
+					.entity("This page is only available in DEBUG mode.").build();
+		}
+		
 		if (null == problemMap) {
 			return Response.ok(new Content("No problems found.")).build();
 		}
@@ -1697,24 +1701,4 @@ public class SegueApiFacade {
 		
 		return cc;
 	}
-	
-//	/**
-//	 * Helper function to treat redirect urls.
-//	 * @param redirectUrl - redirect url - if this is null then we will return a default url.
-//	 * @return new redirect url that has been sanity checked.
-//	 */
-//	private String prepareRedirectURL(final String redirectUrl) {
-//		String newRedirectUrl = null;
-//		if (null == redirectUrl || !(redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
-//			newRedirectUrl = "https://"
-//					+ this.properties.getProperty(Constants.HOST_NAME);
-//
-//			if (redirectUrl != null) {
-//				newRedirectUrl += redirectUrl;
-//			}
-//		} else {
-//			newRedirectUrl = redirectUrl;
-//		}
-//		return newRedirectUrl;
-//	}
 }

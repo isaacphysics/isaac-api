@@ -103,6 +103,11 @@ public final class Constants {
 	 * Constant representing the segue application mode. e.g. either debug or production
 	 */
 	public static final String SEGUE_APP_ENVIRONMENT = "SEGUE_APP_ENVIRONMENT";
+
+	/**
+	 * Enum to describe types of server environment / profile.
+	 */
+	public enum EnvironmentType { PROD, DEV };
 	
 	// HMAC stuff
 	/**
