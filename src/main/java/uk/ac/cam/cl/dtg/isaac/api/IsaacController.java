@@ -178,7 +178,8 @@ public class IsaacController {
 
 	/**
 	 * Rest end point that gets a single concept based on a given id.
-	 * @param request - so we can extract user information for logging.
+	 * @param request - so we can deal with caching and ETags.
+	 * @param servletRequest - so we can extract user information for logging.
 	 * @param conceptId
 	 *            as a string
 	 * @return A Response object containing a concept object.
@@ -187,8 +188,22 @@ public class IsaacController {
 	@Path("pages/concepts/{concept_page_id}")
 	@Produces("application/json")
 	public final Response getConcept(
-			@Context final HttpServletRequest request,
+			@Context final Request request,
+			@Context final HttpServletRequest servletRequest,
 			@PathParam("concept_page_id") final String conceptId) {
+		if (null == conceptId || conceptId.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.")
+					.toResponse();
+		}
+		
+		// Calculate the ETag on current live version of the content
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+				+ "" + conceptId.hashCode());
+		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
 		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
@@ -201,16 +216,20 @@ public class IsaacController {
 		}
 		
 		Response result = this.findSingleResult(fieldsToMatch);
+
 		if (result.getEntity() instanceof SeguePageDTO) {
 			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
 					.put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
 					.put(CONTENT_VERSION, api.getLiveVersion()).build();
 					
 			// the request log
-			this.api.getLogManager().logEvent(request, Constants.VIEW_CONCEPT, logEntry);
+			this.api.getLogManager().logEvent(servletRequest, Constants.VIEW_CONCEPT, logEntry);
 		}
-
-		return result;
+		
+		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+				.cacheControl(SegueApiFacade.getCacheControl()).tag(etag).build();
+		
+		return cachableResult;
 	}
 
 	/**
@@ -358,7 +377,8 @@ public class IsaacController {
 	/**
 	 * Rest end point that searches the api for some search string.
 	 * 
-	 * @param request - so we can extract user information for logging.
+	 * @param request - so that we can handle caching of search responses.
+	 * @param httpServletRequest - so we can extract user information for logging.
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param types
@@ -371,9 +391,21 @@ public class IsaacController {
 	@Produces("application/json")
 	@Path("search/{searchString}")
 	public final Response search(
-			@Context final HttpServletRequest request,
+			@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("searchString") final String searchString,
 			@QueryParam("types") final String types) {
+		
+		// Calculate the ETag on current live version of the content
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+				+ "" + searchString.hashCode() + types.hashCode());
+		
+		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
 		ResultsWrapper<ContentDTO> searchResults = null;
 
 		Response unknownApiResult = api.search(searchString,
@@ -389,11 +421,12 @@ public class IsaacController {
 				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
 				.put(CONTENT_VERSION, api.getLiveVersion()).build();
 		
-		this.api.getLogManager().logEvent(request, GLOBAL_SITE_SEARCH, logMap);
+		this.api.getLogManager().logEvent(httpServletRequest, GLOBAL_SITE_SEARCH, logMap);
 		
-		return Response.ok(
-				this.extractContentSummaryFromResultsWrapper(searchResults,
-						propertiesLoader.getProperty(PROXY_PATH))).build();
+		return Response
+				.ok(this.extractContentSummaryFromResultsWrapper(searchResults,
+						propertiesLoader.getProperty(PROXY_PATH))).tag(etag)
+				.cacheControl(SegueApiFacade.getCacheControl()).build();
 	}
 	
 
@@ -797,7 +830,8 @@ public class IsaacController {
 	/**
 	 * Rest end point that gets a single page based on a given id.
 	 * 
-	 * @param request - so that we can extract user information.
+	 * @param request - so we can deal with caching.
+	 * @param httpServletRequest - so that we can extract user information.
 	 * @param pageId
 	 *            as a string
 	 * @return A Response object containing a page object or containing a SegueErrorResponse.
@@ -805,8 +839,20 @@ public class IsaacController {
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
-	public final Response getPage(@Context final HttpServletRequest request,
+	public final Response getPage(
+			@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("page") final String pageId) {
+		// Calculate the ETag on current live version of the content
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+				+ "" + pageId.hashCode());
+		
+		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
 
@@ -824,16 +870,18 @@ public class IsaacController {
 					.put(CONTENT_VERSION, api.getLiveVersion()).build();
 					
 			// the request log
-			this.api.getLogManager().logEvent(request, Constants.VIEW_PAGE, logEntry);			
+			this.api.getLogManager().logEvent(httpServletRequest, Constants.VIEW_PAGE, logEntry);			
 		}
 		
-		return result;
+		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+				.cacheControl(SegueApiFacade.getCacheControl()).tag(etag).build();
+		return cachableResult;
 	}
 
 	
 	/**
 	 * Rest end point that gets a single page fragment based on a given id.
-	 * 
+	 * @param request - so that we can deal with caching.
 	 * @param fragmentId
 	 *            as a string
 	 * @return A Response object containing a page fragment object or containing
@@ -843,7 +891,18 @@ public class IsaacController {
 	@Path("pages/fragments/{fragment_id}")
 	@Produces("application/json")
 	public final Response getPageFragment(
+			@Context final Request request,
 			@PathParam("fragment_id") final String fragmentId) {
+		
+		// Calculate the ETag on current live version of the content
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+				+ "" + fragmentId.hashCode());
+		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
 
@@ -853,8 +912,12 @@ public class IsaacController {
 					+ UNPROCESSED_SEARCH_FIELD_SUFFIX,
 					Arrays.asList(fragmentId));
 		}
-
-		return this.findSingleResult(fieldsToMatch);
+		Response result = this.findSingleResult(fieldsToMatch);
+		
+		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+				.cacheControl(SegueApiFacade.getCacheControl()).tag(etag).build();
+		
+		return cachableResult;
 	}
 
 
