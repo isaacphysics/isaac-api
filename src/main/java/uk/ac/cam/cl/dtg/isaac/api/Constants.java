@@ -43,15 +43,26 @@ public final class Constants {
 	public enum GameboardState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED }
 	// GameboardDTO field names
 	public static final String CREATED_DATE_FIELDNAME = "created";
-	public static final String VISITED_DATE_FIELDNAME = "lastVisited";
+	public static final String VISITED_DATE_FIELDNAME = "lastVisited";	
 	
 	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
 	
 	// Log events
 	public static final String VIEW_QUESTION = "VIEW_QUESTION";
+	public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
 	public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
 	public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
-	public static final String GET_GAMEBOARD_BY_ID = "GET_GAMEBOARD_BY_ID";
+	public static final String GLOBAL_SITE_SEARCH = "GLOBAL_SITE_SEARCH";
+	public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
+	public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
+	public static final String VIEW_PAGE = "VIEW_PAGE";
+	public static final String PAGE_ID_FIELDNAME = "CONCEPT_ID";
+	public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
+	
+	public static final String GENERATE_RANDOM_GAMEBOARD = "GENERATE_RANDOM_GAMEBOARD";
+	public static final String GAMEBOARD_LOG_FIELDNAME = "GAMEBOARD_LOG_FIELDNAME";
+	public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
+	
 	/**
 	 * Private constructor to prevent this class being created.
 	 */

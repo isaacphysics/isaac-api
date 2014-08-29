@@ -136,7 +136,6 @@ public class IsaacController {
 			@QueryParam("tags") final String tags,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("limit") final String limit) {
-		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
@@ -179,7 +178,7 @@ public class IsaacController {
 
 	/**
 	 * Rest end point that gets a single concept based on a given id.
-	 * 
+	 * @param request - so we can extract user information for logging.
 	 * @param conceptId
 	 *            as a string
 	 * @return A Response object containing a concept object.
@@ -188,7 +187,9 @@ public class IsaacController {
 	@Path("pages/concepts/{concept_page_id}")
 	@Produces("application/json")
 	public final Response getConcept(
+			@Context final HttpServletRequest request,
 			@PathParam("concept_page_id") final String conceptId) {
+		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
@@ -198,8 +199,18 @@ public class IsaacController {
 					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
 							Arrays.asList(conceptId));
 		}
+		
+		Response result = this.findSingleResult(fieldsToMatch);
+		if (result.getEntity() instanceof SeguePageDTO) {
+			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+					.put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
+					.put(CONTENT_VERSION, api.getLiveVersion()).build();
+					
+			// the request log
+			this.api.getLogManager().logEvent(request, Constants.VIEW_CONCEPT, logEntry);
+		}
 
-		return this.findSingleResult(fieldsToMatch);
+		return result;
 	}
 
 	/**
@@ -310,7 +321,7 @@ public class IsaacController {
 		if (response.getEntity() instanceof SeguePageDTO) {
 			SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
-			Map<String, String> logEntry = ImmutableMap.of("questionId", content.getId(), "contentVersion",
+			Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(), "contentVersion",
 					api.getLiveVersion());
 
 			AbstractSegueUserDTO user = api.getCurrentUserIdentifier(request);
@@ -347,6 +358,7 @@ public class IsaacController {
 	/**
 	 * Rest end point that searches the api for some search string.
 	 * 
+	 * @param request - so we can extract user information for logging.
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param types
@@ -359,6 +371,7 @@ public class IsaacController {
 	@Produces("application/json")
 	@Path("search/{searchString}")
 	public final Response search(
+			@Context final HttpServletRequest request,
 			@PathParam("searchString") final String searchString,
 			@QueryParam("types") final String types) {
 		ResultsWrapper<ContentDTO> searchResults = null;
@@ -371,7 +384,13 @@ public class IsaacController {
 		} else {
 			return unknownApiResult;
 		}
-
+		
+		ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
+				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
+				.put(CONTENT_VERSION, api.getLiveVersion()).build();
+		
+		this.api.getLogManager().logEvent(request, GLOBAL_SITE_SEARCH, logMap);
+		
 		return Response.ok(
 				this.extractContentSummaryFromResultsWrapper(searchResults,
 						propertiesLoader.getProperty(PROXY_PATH))).build();
@@ -407,11 +426,9 @@ public class IsaacController {
 			@QueryParam("topics") final String topics,
 			@QueryParam("levels") final String levels,
 			@QueryParam("concepts") final String concepts) {
-		// tags are and relationships except for subject
 		List<String> subjectsList = null;
 		List<String> fieldsList = null;
 		List<String> topicsList = null;
-
 		List<Integer> levelsList = null;
 		List<String> conceptsList = null;
 
@@ -460,6 +477,12 @@ public class IsaacController {
 						.toResponse();
 			}
 
+			ImmutableMap<String, Object> logMap = new ImmutableMap.Builder<String, Object>()
+					.put(GAMEBOARD_LOG_FIELDNAME, gameboard)
+					.put(CONTENT_VERSION, api.getLiveVersion()).build();
+			
+			this.api.getLogManager().logEvent(request, GENERATE_RANDOM_GAMEBOARD, logMap);
+			
 			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -473,7 +496,6 @@ public class IsaacController {
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
 		}
 	}
-	
 	
 	/**
 	 * REST end point to retrieve a specific gameboard by Id.
@@ -492,7 +514,6 @@ public class IsaacController {
 	public final Response getGameboard(
 			@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
-
 		try {
 			GameboardDTO gameboard;
 			
@@ -506,8 +527,7 @@ public class IsaacController {
 						.toResponse();
 			}
 			
-			this.api.getLogManager().logEvent(request, GET_GAMEBOARD_BY_ID, gameboard.getId());
-			
+			// We decided not to log this on the backend as the front end uses this lots.
 			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.")
@@ -542,7 +562,6 @@ public class IsaacController {
 			@QueryParam("limit") final String limit,
 			@QueryParam("sort") final String sortInstructions,
 			@QueryParam("show_only") final String showCriteria) {
-		
 		RegisteredUserDTO currentUser;
 		
 		try {
@@ -621,10 +640,11 @@ public class IsaacController {
 		if (null == gameboards) {
 			return Response.noContent().build();
 		}
-
+		
+		this.api.getLogManager().logEvent(request, VIEW_MY_BOARDS_PAGE, null);
+		
 		return Response.ok(gameboards).build();
 	}
-	
 
 	/**
 	 * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
@@ -777,6 +797,7 @@ public class IsaacController {
 	/**
 	 * Rest end point that gets a single page based on a given id.
 	 * 
+	 * @param request - so that we can extract user information.
 	 * @param pageId
 	 *            as a string
 	 * @return A Response object containing a page object or containing a SegueErrorResponse.
@@ -784,7 +805,8 @@ public class IsaacController {
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
-	public final Response getPage(@PathParam("page") final String pageId) {
+	public final Response getPage(@Context final HttpServletRequest request,
+			@PathParam("page") final String pageId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
 
@@ -793,8 +815,19 @@ public class IsaacController {
 			fieldsToMatch.put(ID_FIELDNAME + "."
 					+ UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
 		}
-
-		return this.findSingleResult(fieldsToMatch);
+		
+		Response result = this.findSingleResult(fieldsToMatch);
+		
+		if (result.getEntity() instanceof SeguePageDTO) {
+			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+					.put(PAGE_ID_LOG_FIELDNAME, pageId)
+					.put(CONTENT_VERSION, api.getLiveVersion()).build();
+					
+			// the request log
+			this.api.getLogManager().logEvent(request, Constants.VIEW_PAGE, logEntry);			
+		}
+		
+		return result;
 	}
 
 	
@@ -840,6 +873,7 @@ public class IsaacController {
 	@Path("images/{path:.*}")
 	@Cache
 	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
+		// entity tags etc are already added by segue
 		return api.getImageFileContent(request, api.getLiveVersion(), path);
 	}
 	
@@ -859,7 +893,7 @@ public class IsaacController {
 			return null;
 		}
 
-		// try auto-mapping with dozer
+		// try auto-mapping
 		Injector injector = Guice.createInjector(
 				new IsaacGuiceConfigurationModule(),
 				new SegueGuiceConfigurationModule());
@@ -872,7 +906,6 @@ public class IsaacController {
 		return contentInfo;
 	}
 
-	
 	/**
 	 * Utility method to convert a list of content objects into a list of
 	 * ContentSummaryDTO Objects.

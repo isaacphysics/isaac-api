@@ -96,6 +96,8 @@ public final class Constants {
 	 * Constant representing the segue application version.
 	 */
 	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
+	
+	public static final String CONTENT_VERSION = "CONTENT_VERSION";
 
 	/**
 	 * Constant representing the segue application mode. e.g. either debug or production
