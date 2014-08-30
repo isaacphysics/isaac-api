@@ -817,19 +817,27 @@ public class SegueApiFacade {
 	/**
 	 * Gets the current mode that the segue application is running in.
 	 * 
+	 * @param request - for cache control purposes.
 	 * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
 	 */
 	@GET
 	@Produces("application/json")
 	@Path("info/segue_environment")
-	public final Response getSegueEnvironment() {
+	public final Response getSegueEnvironment(@Context final Request request) {
+		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
+		Response cachedResponse = generateCachedResponse(request, etag);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
 				.put("segueEnvironment",
 						this.properties
 								.getProperty(Constants.SEGUE_APP_ENVIRONMENT))
 				.build();
 
-		return Response.ok(result).build();
+		return Response.ok(result).cacheControl(this.getCacheControl(Constants.CACHE_FOR_ONE_DAY)).tag(etag)
+				.build();
 	}
 
 	/**

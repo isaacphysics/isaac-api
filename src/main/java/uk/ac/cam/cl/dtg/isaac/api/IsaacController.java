@@ -199,7 +199,7 @@ public class IsaacController {
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ conceptId.hashCode() + "");
+				+ "byId".hashCode() + conceptId.hashCode() + "");
 		Response cachedResponse = api.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
