@@ -682,7 +682,7 @@ public class SegueApiFacade {
 		}
 
 		return Response.ok(fileContent.toByteArray()).type(mimeType).tag(etag)
-				.cacheControl(getCacheControl()).build();
+				.cacheControl(getCacheControl(Constants.CACHE_FOR_ONE_DAY)).build();
 	}
 
 	/**
@@ -1673,7 +1673,7 @@ public class SegueApiFacade {
 	 *         This indicates that we need to send a new version of the
 	 *         resource.
 	 */
-	public static Response generateCachedResponse(final Request request, final EntityTag etag) {
+	public Response generateCachedResponse(final Request request, final EntityTag etag) {
 		Response.ResponseBuilder rb = null;
 
 		// Verify if it matched with etag available in http request
@@ -1682,7 +1682,7 @@ public class SegueApiFacade {
 		// If ETag matches the rb will be non-null;
 		if (rb != null) {
 			// Use the rb to return the response without any further processing
-			log.info("This resource is unchanged. Serving empty request with etag.");
+			log.debug("This resource is unchanged. Serving empty request with etag.");
 			return rb.cacheControl(getCacheControl()).tag(etag).build();
 		}
 		// the resource must have changed as the etags are different.
@@ -1690,14 +1690,32 @@ public class SegueApiFacade {
 	}
 	
 	/**
+	 * Set the max age to the server default.
+	 * @return preconfigured cache control.
+	 */
+	public CacheControl getCacheControl() {
+		return this.getCacheControl(null);
+	}
+	
+	/**
 	 * Helper to get cache control information for response objects that can be cached. 
+	 * 
+	 * @param maxAge in seconds for the returned object to remain fresh.
 	 * @return a CacheControl object configured with a MaxAge.
 	 */
-	public static CacheControl getCacheControl() {
+	public CacheControl getCacheControl(final Integer maxAge) {
 		// Create cache control header
 		CacheControl cc = new CacheControl();
-		// Set max age to one day
-		cc.setMaxAge(Constants.MAX_ETAG_CACHE_TIME);
+		
+		Integer maxCacheAge;
+		if (null == maxAge) {
+			// set max age to server default.
+			maxCacheAge = Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME));	
+		} else {
+			maxCacheAge = maxAge;
+		}
+		
+		cc.setMaxAge(maxCacheAge);
 		
 		return cc;
 	}

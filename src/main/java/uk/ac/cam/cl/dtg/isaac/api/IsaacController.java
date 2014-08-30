@@ -166,14 +166,14 @@ public class IsaacController {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ etagCodeBuilder.toString().hashCode() + "");
 		
-		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		Response cachedResponse = api.generateCachedResponse(request, etag);
 		
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
 
 		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-				.cacheControl(SegueApiFacade.getCacheControl()).build();
+				.cacheControl(api.getCacheControl()).build();
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class IsaacController {
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ conceptId.hashCode() + "");
-		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		Response cachedResponse = api.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -227,7 +227,7 @@ public class IsaacController {
 		}
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(SegueApiFacade.getCacheControl()).tag(etag).build();
+				.cacheControl(api.getCacheControl()).tag(etag).build();
 		
 		return cachableResult;
 	}
@@ -299,14 +299,14 @@ public class IsaacController {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ etagCodeBuilder.toString().hashCode() + "");
 		
-		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		Response cachedResponse = api.generateCachedResponse(request, etag);
 		
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
 		
 		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-				.cacheControl(SegueApiFacade.getCacheControl()).build();
+				.cacheControl(api.getCacheControl()).build();
 	}
 
 	/**
@@ -401,7 +401,7 @@ public class IsaacController {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ searchString.hashCode() + types.hashCode() + "");
 		
-		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		Response cachedResponse = api.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -426,7 +426,7 @@ public class IsaacController {
 		return Response
 				.ok(this.extractContentSummaryFromResultsWrapper(searchResults,
 						propertiesLoader.getProperty(PROXY_PATH))).tag(etag)
-				.cacheControl(SegueApiFacade.getCacheControl()).build();
+				.cacheControl(api.getCacheControl()).build();
 	}
 	
 
@@ -848,8 +848,9 @@ public class IsaacController {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ pageId.hashCode() + "");
 		
-		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		Response cachedResponse = api.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
+			log.info("cached page " + pageId);
 			return cachedResponse;
 		}
 		
@@ -874,7 +875,7 @@ public class IsaacController {
 		}
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(SegueApiFacade.getCacheControl()).tag(etag).build();
+				.cacheControl(api.getCacheControl()).tag(etag).build();
 		return cachableResult;
 	}
 
@@ -898,7 +899,7 @@ public class IsaacController {
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ fragmentId.hashCode() + "");
-		Response cachedResponse = SegueApiFacade.generateCachedResponse(request, etag);
+		Response cachedResponse = api.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -915,7 +916,7 @@ public class IsaacController {
 		Response result = this.findSingleResult(fieldsToMatch);
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(SegueApiFacade.getCacheControl()).tag(etag).build();
+				.cacheControl(api.getCacheControl()).tag(etag).build();
 		
 		return cachableResult;
 	}

@@ -308,7 +308,8 @@ public final class Constants {
 	public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
 	
 	// cache settings
-	public static final int MAX_ETAG_CACHE_TIME = 86400;
+	public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
+	public static final int CACHE_FOR_ONE_DAY = 86400;
 
 	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
 
