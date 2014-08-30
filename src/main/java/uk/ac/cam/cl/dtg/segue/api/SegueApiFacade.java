@@ -916,7 +916,6 @@ public class SegueApiFacade {
 			EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.hashCode() + "");
 			Response cachedResponse = generateCachedResponse(request, etag);
 			if (cachedResponse != null) {
-				log.info("returning cached user");
 				return cachedResponse;
 			}
 			

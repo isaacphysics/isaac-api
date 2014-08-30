@@ -679,7 +679,12 @@ public class IsaacController {
 			return Response.noContent().build();
 		}
 		
-		this.api.getLogManager().logEvent(request, VIEW_MY_BOARDS_PAGE, null);
+		this.api.getLogManager().logEvent(request, VIEW_MY_BOARDS_PAGE,
+				ImmutableMap.builder().put("totalBoards", gameboards.getTotalResults())
+						.put("notStartedTotal", gameboards.getTotalNotStarted())
+						.put("completedTotal", gameboards.getTotalCompleted())
+						.put("inProgressTotal", gameboards.getTotalInProgress())
+						.build());
 		
 		return Response.ok(gameboards).build();
 	}
