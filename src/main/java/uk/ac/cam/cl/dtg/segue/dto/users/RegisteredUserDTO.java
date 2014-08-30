@@ -36,6 +36,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	private boolean hasSegueAccount;
 	
 	private boolean firstLogin = false;
+	private Date lastUpdated;
 	
 	/**
 	 * Full constructor for the User object.
@@ -315,6 +316,22 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 		this.firstLogin = firstLogin;
 	}
 
+	/**
+	 * Gets the lastUpdated.
+	 * @return the lastUpdated
+	 */
+	public Date getLastUpdated() {
+		return lastUpdated;
+	}
+
+	/**
+	 * Sets the lastUpdated.
+	 * @param lastUpdated the lastUpdated to set
+	 */
+	public void setLastUpdated(final Date lastUpdated) {
+		this.lastUpdated = lastUpdated;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -330,6 +347,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 		result = prime * result + ((registrationDate == null) ? 0 : registrationDate.hashCode());
 		result = prime * result + ((schoolId == null) ? 0 : schoolId.hashCode());
 		result = prime * result + ((schoolOther == null) ? 0 : schoolOther.hashCode());
+		result = prime * result + ((lastUpdated == null) ? 0 : lastUpdated.hashCode());
 		return result;
 	}	
 }

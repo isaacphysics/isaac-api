@@ -151,7 +151,7 @@ public class UserManagerTest {
 		String validHMAC = "Z5CyayGxQg10Lx0DIb8IafCLuO9wJSBpGtMy2rXVL4k=";
 		RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName",
 				"TestLastName", "", Role.STUDENT, new Date(), Gender.MALE,
-				new Date(), null, null, null, null);
+				new Date(), null, null, null, null, new Date());
 
 		expect(request.getSession()).andReturn(dummySession).times(5);
 		expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(
@@ -351,7 +351,7 @@ public class UserManagerTest {
 		
 		RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "",
 				Role.STUDENT, new Date(), Gender.MALE, new Date(),
-				null, null, null, null);
+				null, null, null, null, new Date());
 
 		expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
 				Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();

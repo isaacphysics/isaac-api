@@ -36,6 +36,8 @@ public class RegisteredUser extends AbstractSegueUser {
 	private String resetToken;
 	private Date resetExpiry;
 	
+	private Date lastUpdated;
+	
 	/**
 	 * Full constructor for the User object.
 	 * 
@@ -63,6 +65,8 @@ public class RegisteredUser extends AbstractSegueUser {
 	 *            - resetToken for local segue authentication.
 	 * @param resetExpiry
 	 *            - resetExpiry for local segue authentication.
+	 * @param lastUpdated
+	 *            - the date this user was last updated.
 	 */
 	@JsonCreator
 	public RegisteredUser(
@@ -77,7 +81,8 @@ public class RegisteredUser extends AbstractSegueUser {
 			@JsonProperty("schoolId") final String schoolId,
 			@JsonProperty("password") final String password,
 			@JsonProperty("resetToken") final String resetToken,
-			@JsonProperty("resetExpiry") final Date resetExpiry) {
+			@JsonProperty("resetExpiry") final Date resetExpiry,
+			@JsonProperty("lastUpdated") final Date lastUpdated) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
 		this.givenName = givenName;
@@ -90,6 +95,7 @@ public class RegisteredUser extends AbstractSegueUser {
 		this.password = password;
 		this.resetToken = resetToken;
 		this.resetExpiry = resetExpiry;
+		this.lastUpdated = lastUpdated;
 	}
 
 	/**
@@ -344,5 +350,21 @@ public class RegisteredUser extends AbstractSegueUser {
 	 */
 	public final void setResetExpiry(final Date resetExpiry) {
 		this.resetExpiry = resetExpiry;
+	}
+
+	/**
+	 * Gets the lastUpdated.
+	 * @return the lastUpdated
+	 */
+	public Date getLastUpdated() {
+		return lastUpdated;
+	}
+
+	/**
+	 * Sets the lastUpdated.
+	 * @param lastUpdated the lastUpdated to set
+	 */
+	public void setLastUpdated(final Date lastUpdated) {
+		this.lastUpdated = lastUpdated;
 	}
 }

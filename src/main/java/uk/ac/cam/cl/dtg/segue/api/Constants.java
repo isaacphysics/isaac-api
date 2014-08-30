@@ -310,6 +310,7 @@ public final class Constants {
 	// cache settings
 	public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
 	public static final int CACHE_FOR_ONE_DAY = 86400;
+	public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
 
 	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
 

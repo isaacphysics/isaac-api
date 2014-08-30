@@ -44,6 +44,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.elasticsearch.common.collect.Lists;
+import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -895,7 +896,8 @@ public class SegueApiFacade {
 	/**
 	 * Get the details of the currently logged in user.
 	 * 
-	 * @param request
+	 * @param request - request information used for caching.
+	 * @param httpServletRequest
 	 *            - the request which may contain session information.
 	 * @return Returns the current user DTO if we can get it or null response if
 	 *         we can't. It will be a 204 No Content
@@ -903,11 +905,23 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("users/current_user")
+	@GZIP
 	public Response getCurrentUserEndpoint(
-			@Context final HttpServletRequest request) {
+			@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest) {		
 		try {
-			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-			return Response.ok(currentUser).build();
+			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+			
+			// Calculate the ETag based on User we just retrieved from the DB
+			EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.hashCode() + "");
+			Response cachedResponse = generateCachedResponse(request, etag);
+			if (cachedResponse != null) {
+				log.info("returning cached user");
+				return cachedResponse;
+			}
+			
+			return Response.ok(currentUser).tag(etag)
+					.cacheControl(this.getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"Unable to retrieve the current user as no user is currently logged in.")
@@ -926,7 +940,6 @@ public class SegueApiFacade {
 
 		return this.userManager.getQuestionAttemptsByUser(user);
 	}
-
 	
 	/**
 	 * This method allows users to create a local account or update their
@@ -995,7 +1008,7 @@ public class SegueApiFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to set a password.").toResponse();
 		} catch (MissingRequiredFieldException e) {
-			log.error("Missing field during update operation. ", e);
+			log.warn("Missing field during update operation. ", e);
 			return new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"You are missing a required field. "

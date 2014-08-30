@@ -693,6 +693,8 @@ public class UserManager {
 			// This is a new registration
 			userToSave = mapper.map(userDTOContainingUpdates, RegisteredUser.class);
 		}
+		
+		userToSave.setLastUpdated(new Date());
 
 		// do we need to do local password storage using the segue
 		// authenticator? I.e. is the password changing?
@@ -719,7 +721,6 @@ public class UserManager {
 					"This modification would mean that the user"
 							+ " no longer has a way of authenticating. Failing change.");
 		} else {
-			
 			RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
 			return this.convertUserDOToUserDTO(userToReturn);
 		}
