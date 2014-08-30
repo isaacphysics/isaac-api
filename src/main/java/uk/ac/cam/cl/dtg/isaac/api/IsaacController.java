@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response.Status;
 
 import ma.glasnost.orika.MapperFacade;
 
+import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,6 +188,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/concepts/{concept_page_id}")
 	@Produces("application/json")
+	@GZIP
 	public final Response getConcept(
 			@Context final Request request,
 			@Context final HttpServletRequest servletRequest,
@@ -324,6 +326,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/questions/{question_page_id}")
 	@Produces("application/json")
+	@GZIP
 	public final Response getQuestion(@Context final HttpServletRequest request,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
@@ -544,6 +547,7 @@ public class IsaacController {
 	@GET
 	@Path("gameboards/{gameboard_id}")
 	@Produces("application/json")
+	@GZIP
 	public final Response getGameboard(
 			@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
@@ -589,6 +593,7 @@ public class IsaacController {
 	@GET
 	@Path("users/current_user/gameboards")
 	@Produces("application/json")
+	@GZIP
 	public final Response getGameboardByCurrentUser(
 			@Context final HttpServletRequest request,
 			@QueryParam("start_index") final String startIndex,
@@ -839,6 +844,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/{page}")
 	@Produces("application/json")
+	@GZIP
 	public final Response getPage(
 			@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
@@ -936,6 +942,7 @@ public class IsaacController {
 	@Produces("*/*")
 	@Path("images/{path:.*}")
 	@Cache
+	@GZIP
 	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
 		// entity tags etc are already added by segue
 		return api.getImageFileContent(request, api.getLiveVersion(), path);
