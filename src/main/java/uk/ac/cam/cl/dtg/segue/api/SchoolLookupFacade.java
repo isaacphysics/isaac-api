@@ -9,6 +9,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,7 @@ public class SchoolLookupFacade {
 	@GET
 	@Produces("application/json")
 	@Path("schools")
+	@GZIP
 	public Response schoolSearch(@QueryParam("query") final String searchQuery) {
 		if (null == searchQuery || searchQuery.isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query")
