@@ -861,7 +861,6 @@ public class IsaacController {
 		
 		Response cachedResponse = api.generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
-			log.info("cached page " + pageId);
 			return cachedResponse;
 		}
 		

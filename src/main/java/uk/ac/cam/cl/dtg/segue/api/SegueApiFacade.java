@@ -626,7 +626,7 @@ public class SegueApiFacade {
 		
 		// determine if we can use the cache if so return cached response.
 		EntityTag etag = new EntityTag(version.hashCode() + path.hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag, Constants.CACHE_FOR_ONE_DAY);
 		
 		if (cachedResponse != null) {
 			return cachedResponse;
@@ -682,8 +682,9 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		return Response.ok(fileContent.toByteArray()).type(mimeType).tag(etag)
-				.cacheControl(getCacheControl(Constants.CACHE_FOR_ONE_DAY)).build();
+		return Response.ok(fileContent.toByteArray()).type(mimeType)
+				.cacheControl(getCacheControl(Constants.CACHE_FOR_ONE_DAY)).tag(etag)
+				.build();
 	}
 
 	/**
@@ -1712,6 +1713,30 @@ public class SegueApiFacade {
 	 *         resource.
 	 */
 	public Response generateCachedResponse(final Request request, final EntityTag etag) {
+		return this.generateCachedResponse(request, etag, null);
+	}
+	
+	/**
+	 * generateCachedResponse This method will accept a request and an entity
+	 * tag and determine whether the entity tag is the same.
+	 * 
+	 * If the entity tag is the same a response will be returned which is ready
+	 * to be sent to the client as we do not need to resent anything.
+	 * 
+	 * @param request
+	 *            - clients request
+	 * @param etag
+	 *            - the entity tag we have computed for the resource being
+	 *            requested.
+	 * @param maxAge - this allows you to set the time at which the cache response will go stale.
+	 * @return if the resource etag provided is the same as the one sent by the
+	 *         client then a Response will be returned. This can be sent
+	 *         directly to the client. If not (i.e. if the resource has changed
+	 *         since the client last requested it) a null value is returned.
+	 *         This indicates that we need to send a new version of the
+	 *         resource.
+	 */
+	public Response generateCachedResponse(final Request request, final EntityTag etag, final Integer maxAge) {
 		Response.ResponseBuilder rb = null;
 
 		// Verify if it matched with etag available in http request
@@ -1721,7 +1746,7 @@ public class SegueApiFacade {
 		if (rb != null) {
 			// Use the rb to return the response without any further processing
 			log.debug("This resource is unchanged. Serving empty request with etag.");
-			return rb.cacheControl(getCacheControl()).tag(etag).build();
+			return rb.cacheControl(getCacheControl(maxAge)).tag(etag).build();
 		}
 		// the resource must have changed as the etags are different.
 		return null;
