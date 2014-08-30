@@ -7,6 +7,7 @@ import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -313,4 +314,22 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	public void setFirstLogin(final boolean firstLogin) {
 		this.firstLogin = firstLogin;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((databaseId == null) ? 0 : databaseId.hashCode());
+		result = prime * result + ((dateOfBirth == null) ? 0 : dateOfBirth.hashCode());
+		result = prime * result + ((defaultLevel == null) ? 0 : defaultLevel.hashCode());
+		result = prime * result + ((email == null) ? 0 : email.hashCode());
+		result = prime * result + ((familyName == null) ? 0 : familyName.hashCode());
+		result = prime * result + ((gender == null) ? 0 : gender.hashCode());
+		result = prime * result + ((givenName == null) ? 0 : givenName.hashCode());
+		result = prime * result + ((linkedAccounts == null) ? 0 : linkedAccounts.hashCode());
+		result = prime * result + ((registrationDate == null) ? 0 : registrationDate.hashCode());
+		result = prime * result + ((schoolId == null) ? 0 : schoolId.hashCode());
+		result = prime * result + ((schoolOther == null) ? 0 : schoolOther.hashCode());
+		return result;
+	}	
 }
