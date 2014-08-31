@@ -1478,6 +1478,8 @@ public class SegueApiFacade {
 	 * Rest end point to allow content editors to see the content which failed
 	 * to import into segue.
 	 * 
+	 * @param request - to identify if the user is authorised. 
+	 * 
 	 * @return a content object, such that the content object has children. The
 	 *         children represent each source file in error and the grand
 	 *         children represent each error.
@@ -1485,14 +1487,22 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("admin/content_problems")
-	public final Response getContentProblems() {
+	public final Response getContentProblems(@Context final HttpServletRequest request) {
 		Map<Content, List<String>> problemMap = contentVersionController
 				.getContentManager().getProblemMap(
 						contentVersionController.getLiveVersion());
 
 		if (this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
-			return Response.status(Status.SERVICE_UNAVAILABLE)
-					.entity("This page is only available in DEBUG mode.").build();
+			try {
+				if (!this.userManager.isUserAnAdmin(request)) {
+					return Response.status(Status.FORBIDDEN)
+							.entity("This page is only available to administrators in PROD mode.").build();
+
+				}
+			} catch (NoUserLoggedInException e) {
+				return Response.status(Status.UNAUTHORIZED)
+						.entity("You must be logged in to view this page in PROD mode.").build();
+			}
 		}
 		
 		if (null == problemMap) {
