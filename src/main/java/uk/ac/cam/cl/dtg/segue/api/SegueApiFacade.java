@@ -915,7 +915,7 @@ public class SegueApiFacade {
 			
 			// Calculate the ETag based on User we just retrieved from the DB
 			EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.hashCode() + "");
-			Response cachedResponse = generateCachedResponse(request, etag);
+			Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
 			if (cachedResponse != null) {
 				return cachedResponse;
 			}
