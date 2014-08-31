@@ -169,14 +169,10 @@ public class SegueApiFacade {
 
 		this.logManager = logManager;
 		
-		// Check if we want to get the latest from git each time a request is
-		// made from segue. - Will add overhead
-		if (Boolean.parseBoolean(this.properties
-				.getProperty(Constants.FOLLOW_GIT_VERSION))) {
-			log.info("Segue just initialized - Sending content index request "
-					+ "so that we can service some content requests.");
-			this.contentVersionController.triggerSyncJob();
-		}
+		// We need to do this to make sure we have an up to date content repo.
+		log.info("Segue just initialized - Sending content index request "
+				+ "so that we can service some content requests.");
+		this.contentVersionController.triggerSyncJob();		
 	}
 
 	/**
