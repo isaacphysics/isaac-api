@@ -1,3 +1,18 @@
+/**
+ * Copyright 2014 Stephen Cummins
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * 		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package uk.ac.cam.cl.dtg.util;
 
 import java.util.Properties;
@@ -13,9 +28,9 @@ import javax.mail.internet.MimeMessage;
 
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or
- * notifications
+ * notifications.
  * 
- * @author sac92
+ * @author Stephen Cummins
  */
 public class Mailer {
 
@@ -24,7 +39,7 @@ public class Mailer {
 	private String smtpPort;
 
 	/**
-	 * Mailer Class
+	 * Mailer Class.
 	 * 
 	 * @param smtpAddress
 	 *            The address of the smtp server - this implementation assumes
@@ -33,14 +48,14 @@ public class Mailer {
 	 *            The mail address of the sending account - used for
 	 *            authentication sometimes.
 	 */
-	public Mailer(String smtpAddress, String mailAddress) {
+	public Mailer(final String smtpAddress, final String mailAddress) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
 	}
 
 	/**
 	 * SendMail Utility Method Sends e-mail to a given recipient using the
-	 * hard-coded MAIL_ADDRESS and SMTP details
+	 * hard-coded MAIL_ADDRESS and SMTP details.
 	 * 
 	 * @param recipient
 	 *            - string array of recipients that the message should be sent
@@ -52,11 +67,11 @@ public class Mailer {
 	 *            - The message subject
 	 * @param contents
 	 *            - The message body
-	 * @throws MessagingException
-	 * @throws AddressException
+	 * @throws MessagingException - if we cannot send the message for some reason.
+	 * @throws AddressException - if the address is not valid.
 	 */
-	public void sendMail(String[] recipient, String from, String subject,
-			String contents) throws MessagingException, AddressException {
+	public void sendMail(final String[] recipient, final String from, final String subject,
+			final String contents) throws MessagingException, AddressException {
 
 		Properties p = new Properties();
 		p.put("mail.smtp.host", smtpAddress);
@@ -91,27 +106,51 @@ public class Mailer {
 		}
 	}
 
+	/**
+	 * Gets the smtpAddress.
+	 * @return the smtpAddress
+	 */
 	public String getSmtpAddress() {
 		return smtpAddress;
 	}
 
-	public void setSmtpAddress(String smtpAddress) {
+	/**
+	 * Sets the smtpAddress.
+	 * @param smtpAddress the smtpAddress to set
+	 */
+	public void setSmtpAddress(final String smtpAddress) {
 		this.smtpAddress = smtpAddress;
 	}
 
+	/**
+	 * Gets the mailAddress.
+	 * @return the mailAddress
+	 */
 	public String getMailAddress() {
 		return mailAddress;
 	}
 
-	public void setMailAddress(String mailAddress) {
+	/**
+	 * Sets the mailAddress.
+	 * @param mailAddress the mailAddress to set
+	 */
+	public void setMailAddress(final String mailAddress) {
 		this.mailAddress = mailAddress;
 	}
 
+	/**
+	 * Gets the smtpPort.
+	 * @return the smtpPort
+	 */
 	public String getSmtpPort() {
 		return smtpPort;
 	}
 
-	public void setSmtpPort(String smtpPort) {
+	/**
+	 * Sets the smtpPort.
+	 * @param smtpPort the smtpPort to set
+	 */
+	public void setSmtpPort(final String smtpPort) {
 		this.smtpPort = smtpPort;
 	}
 }
