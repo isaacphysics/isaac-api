@@ -49,6 +49,7 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
@@ -88,6 +89,8 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
+
+import static com.google.common.collect.Maps.immutableEntry;
 
 /**
  * Segue Api Facade
@@ -235,12 +238,12 @@ public class SegueApiFacade {
 				.newHashMap();
 
 		if (null != type) {
-			fieldsToMatch.put(com.google.common.collect.Maps.immutableEntry(
+			fieldsToMatch.put(immutableEntry(
 					Constants.BooleanOperator.AND, Constants.TYPE_FIELDNAME),
 					Arrays.asList(type.split(",")));
 		}
 		if (null != tags) {
-			fieldsToMatch.put(com.google.common.collect.Maps.immutableEntry(
+			fieldsToMatch.put(immutableEntry(
 					Constants.BooleanOperator.AND, Constants.TAGS_FIELDNAME),
 					Arrays.asList(tags.split(",")));
 		}
@@ -1605,20 +1608,20 @@ public class SegueApiFacade {
 	 *            match
 	 * @return A map ready to be passed to a content provider
 	 */
-	public static Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
+	public static Map<Map.Entry<BooleanOperator, String>, List<String>> 
 	generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps
 				.newHashMap();
 
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
-			Map.Entry<Constants.BooleanOperator, String> newEntry = null;
+			Map.Entry<BooleanOperator, String> newEntry = null;
 			if (pair.getKey().equals(Constants.ID_FIELDNAME)) {
-				newEntry = com.google.common.collect.Maps.immutableEntry(
-						Constants.BooleanOperator.OR, pair.getKey());
+				newEntry = immutableEntry(
+						BooleanOperator.OR, pair.getKey());
 
 			} else {
-				newEntry = com.google.common.collect.Maps.immutableEntry(
+				newEntry = immutableEntry(
 						Constants.BooleanOperator.AND, pair.getKey());
 			}
 
