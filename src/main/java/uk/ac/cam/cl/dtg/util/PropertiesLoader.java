@@ -65,7 +65,7 @@ public class PropertiesLoader {
 	 * @param key - that the property is listed under.
 	 * @return value as a String
 	 */
-	public final String getProperty(final String key) {
+	public String getProperty(final String key) {
 		if (null == key) {
 			log.error("Property key requested cannot be null");
 			throw new NullPointerException();

@@ -43,8 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -80,6 +78,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * This class is responsible for all low level user management actions e.g.
@@ -91,46 +90,51 @@ public class UserManager {
 
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
-	// TODO: inject property loader instead
-	private final String HOST_NAME;
-
 	private final IUserDataManager database;
-	// TODO: inject property loader instead
-	private final String hmacKey;
-	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
-	private final ICommunicator communicator;
 	
+	private final String hmacKey;
+	
+	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 	private final MapperFacade dtoMapper;
+	
+	private final ICommunicator communicator;
+	// TODO: This still shouldn't be here
+	private final String hostName;
 
 	/**
 	 * Create an instance of the user manager class.
 	 * 
 	 * @param database
 	 *            - an IUserDataManager that will support persistence.
-	 * @param hmacSalt
-	 *            - A cryptographically random HMAC value to be used as part of session authentication.
+	 * @param properties
+	 *            - A property loader
 	 * @param providersToRegister
 	 *            - A map of known authentication providers.
 	 * @param dtoMapper
-	 *            - the preconfigured DO to DTO object mapper for user objects.            
+	 *            - the preconfigured DO to DTO object mapper for user objects.
+	 * @param communicator
+	 *            - the preconfigured communicator manager for sending e-mails.   
 	 */
 	@Inject
-	public UserManager(final IUserDataManager database, @Named(Constants.HMAC_SALT) final String hmacSalt,
+	public UserManager(final IUserDataManager database, final PropertiesLoader properties,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-			final MapperFacade dtoMapper, @Named(Constants.HOST_NAME) final String hostName,
+			final MapperFacade dtoMapper,
 			final ICommunicator communicator) {
 		Validate.notNull(database);
-		Validate.notNull(hmacSalt);
+		Validate.notNull(properties);
 		Validate.notNull(providersToRegister);
 		Validate.notNull(dtoMapper);
-		Validate.notNull(hostName);
 		Validate.notNull(communicator);
 
 		this.database = database;
-		this.hmacKey = hmacSalt;
+		this.hmacKey = properties.getProperty(Constants.HMAC_SALT);
+		Validate.notNull(this.hmacKey);
+		
 		this.registeredAuthProviders = providersToRegister;
 		this.dtoMapper = dtoMapper;
-		this.HOST_NAME = hostName;
+		this.hostName = properties.getProperty(Constants.HOST_NAME);
+		Validate.notNull(this.hostName);
+		
 		this.communicator = communicator;
 	}
 
@@ -1505,7 +1509,7 @@ public class UserManager {
 
 		// Construct message
 		String message = String.format("Please follow this link to reset your password: https://%s/resetpassword/%s",
-				this.HOST_NAME, user.getResetToken());
+				this.hostName, user.getResetToken());
 
 		// Send message
 		communicator.sendMessage(user.getEmail(), user.getGivenName(), subject, message);

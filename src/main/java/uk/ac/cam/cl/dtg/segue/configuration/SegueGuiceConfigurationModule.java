@@ -383,10 +383,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * 
 	 * @param database
 	 *            - IUserManager
-	 * @param hmacSalt
-	 *            - the salt for the hmac
+	 * @param properties
+	 *            - properties loader
 	 * @param providersToRegister
 	 *            - list of known providers.
+	 * @param communicator - so that we can send e-mails.
 	 * @return Content version controller with associated dependencies.
 	 */
 	@Inject
@@ -394,14 +395,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Singleton
 	private UserManager getUserManager(
 			final IUserDataManager database,
-			@Named(Constants.HMAC_SALT) final String hmacSalt,
-			@Named(Constants.HOST_NAME) final String hostName,
+			final PropertiesLoader properties,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
 			final ICommunicator communicator) {
 
 		if (null == userManager) {
-			userManager = new UserManager(database, hmacSalt, providersToRegister,
-					this.getDOtoDTOMapper(), hostName, communicator);
+			userManager = new UserManager(database, properties, providersToRegister,
+					this.getDOtoDTOMapper(), communicator);
 			log.info("Creating singleton of UserManager");
 		}
 

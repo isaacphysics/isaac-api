@@ -108,6 +108,10 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 *            - The user manager instance for segue.
 	 * @param questionManager
 	 *            - The Question Manager object for segue.
+	 * @param communicator
+	 *            - The communication Manager object for segue.
+	 * @param logManager
+	 *            - The log Manager object for segue.            
 	 * @return segueApi - The live instance of the segue api.
 	 */
 	@Inject
