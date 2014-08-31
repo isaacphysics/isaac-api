@@ -539,9 +539,7 @@ public class SegueApiFacade {
 
 	/**
 	 * This method provides a set of all units for the 
-	 * live version of the content
-	 * 
-	 * TODO: This is isaac-specific, so should not be in segue.
+	 * live version of the content.
 	 * 
 	 * @param request - so that we can set cache headers.
 	 * @return a set of all units used in the live version
@@ -556,8 +554,6 @@ public class SegueApiFacade {
 	
 	/**
 	 * This method provides a set of all units for a given version.
-	 * 
-	 * TODO: This is isaac-specific, so should not be in segue.
 	 * 
 	 * @param request - so that we can set cache headers.
 	 * @param version of the site to provide the unit list from.

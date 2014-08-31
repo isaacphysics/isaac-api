@@ -225,10 +225,6 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	 * This check is intended to mitigate against the confused deputy problem;
 	 * although I suspect the google client might already do this.
 	 * 
-	 * TODO: Verify that the google server client library doesn't already do
-	 * this check internally - if it does then we can remove this additional
-	 * check.
-	 * 
 	 * @param credentials - the credential object for the token verification.
 	 * @return true if the token passes our validation false if not.
 	 */

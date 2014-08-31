@@ -782,8 +782,6 @@ public class GitContentManager implements IContentManager {
 			}
 		}
 
-		// TODO Improve Hack to convert image source into something that the api
-		// can use to locate the specific image in the repository.
 		if (content instanceof Media) {
 			Media media = (Media) content;
 			if (media.getSrc() != null && !media.getSrc().startsWith("http")) {

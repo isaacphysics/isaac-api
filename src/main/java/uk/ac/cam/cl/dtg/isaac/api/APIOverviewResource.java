@@ -49,7 +49,7 @@ public class APIOverviewResource {
 
 	/**
 	 * POJO to represent Method information collected using reflection and rest
-	 * easy registry
+	 * easy registry.
 	 * 
 	 */
 	public static final class MethodDescription implements Serializable {
@@ -59,11 +59,22 @@ public class APIOverviewResource {
 		private String produces;
 		private String consumes;
 		private boolean deprecated;
-
+		
+		/**
+		 * Default Constructor.
+		 */
 		public MethodDescription() {
 
 		}
-
+		
+		/**
+		 * Full Constructor.
+		 * @param method - 
+		 * @param fullPath -
+		 * @param produces -
+		 * @param consumes -
+		 * @param deprecated -
+		 */
 		public MethodDescription(String method, String fullPath,
 				String produces, String consumes, boolean deprecated) {
 			super();
@@ -73,7 +84,7 @@ public class APIOverviewResource {
 			this.consumes = consumes;
 			this.deprecated = deprecated;
 		}
-
+		
 		public String getMethod() {
 			return method;
 		}
@@ -125,7 +136,10 @@ public class APIOverviewResource {
 		private static final long serialVersionUID = 4692040940508432363L;
 		private String basePath;
 		private List<MethodDescription> calls;
-
+		
+		/**
+		 * Default Constructor.
+		 */
 		public ResourceDescription() {
 
 		}
