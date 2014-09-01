@@ -1012,8 +1012,7 @@ public class SegueApiFacade {
 		} catch (DuplicateAccountException e) {
 			return new SegueErrorResponse(
 					Status.BAD_REQUEST,
-					"Duplicate key found. An existing account may "
-					+ "already exist with the e-mail address specified.")
+					"An account already exists with the e-mail address specified.")
 					.toResponse();
 		} catch (SegueDatabaseException e) {
 			String errorMsg = "Unable to set a password, due to an internal database error.";
