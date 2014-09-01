@@ -160,12 +160,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
 		Long seed = this.randomNumberGenerator.nextLong();
 
-		log.debug("Randomised Query, with seed: " + seed
-				+ ", to be sent to elasticsearch is : " + query);
-
 		query = QueryBuilders.functionScoreQuery(query,
 				ScoreFunctionBuilders.randomFunction(seed));
 
+		log.debug("Randomised Query, with seed: " + seed
+				+ ", to be sent to elasticsearch is : " + query);
+		
 		SearchRequestBuilder searchRequest = client.prepareSearch(index)
 				.setTypes(indexType).setQuery(query).setSize(limit)
 				.setFrom(startIndex);
