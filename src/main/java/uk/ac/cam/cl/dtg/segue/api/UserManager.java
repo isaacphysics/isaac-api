@@ -708,9 +708,11 @@ public class UserManager {
             	.mapNulls(false).build().getMapperFacade();
 
 			mergeMapper.map(userDTOContainingUpdates, userToSave);
+			userToSave.setRegistrationDate(existingUser.getRegistrationDate());
 		} else {
 			// This is a new registration
 			userToSave = mapper.map(userDTOContainingUpdates, RegisteredUser.class);
+			userToSave.setRegistrationDate(new Date());
 		}
 		
 		userToSave.setLastUpdated(new Date());
@@ -1254,7 +1256,8 @@ public class UserManager {
 			}
 			
 			RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
-
+			newLocalUser.setRegistrationDate(new Date());
+			
 			// register user
 			String localUserId = registerUser(newLocalUser,
 					federatedAuthenticator.getAuthenticationProvider(),
