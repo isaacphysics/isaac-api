@@ -164,10 +164,10 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			Content result = gitCache.get(version).get(id);
 			if (null == result) {
-				log.info("Failed to locate the content (" + id
+				log.error("Failed to locate the content (" + id
 						+ ") in the cache for version " + version);
 			} else {
-				log.info("Loading content from cache: " + id);
+				log.debug("Loading content from cache: " + id);
 			}
 			return result;
 		} else {
