@@ -201,7 +201,6 @@ public class QuestionManager {
 	 * @return augmented page - the return result is by convenience as the page
 	 *         provided as a parameter will be mutated.
 	 */
-	@SuppressWarnings("unchecked")
 	public SeguePageDTO augmentQuestionObjectWithAttemptInformation(
 			final SeguePageDTO page,
 			final List<QuestionDTO> questionsToAugment,
@@ -239,16 +238,32 @@ public class QuestionManager {
 				}
 			}
 
-			// Determine what kind of ValidationResponse to turn it in to.
-			DTOMapping dtoMapping = bestAnswer.getClass().getAnnotation(DTOMapping.class);
-			if (QuestionValidationResponseDTO.class.isAssignableFrom(dtoMapping.value())) {
-				question.setBestAttempt(mapper.getAutoMapper().map(bestAnswer,
-						(Class<? extends QuestionValidationResponseDTO>) dtoMapping.value()));				
-			} else {
-				log.error("Unable to set best attempt as we cannot match the answer to a DTO type.");
-			}
+			question.setBestAttempt(this.convertQuestionValidationResponseToDTO(bestAnswer));				
+			
 		}
 		return page;
+	}
+	
+	/**
+	 * Converts a QuestionValidationResponse into a
+	 * QuestionValidationResponseDTO.
+	 * 
+	 * @param questionValidationResponse - the thing to convert.
+	 * @return QuestionValidationResponseDTO
+	 */
+	@SuppressWarnings("unchecked")
+	public QuestionValidationResponseDTO convertQuestionValidationResponseToDTO(
+			final QuestionValidationResponse questionValidationResponse) {
+		// Determine what kind of ValidationResponse to turn it in to.
+		DTOMapping dtoMapping = questionValidationResponse.getClass().getAnnotation(DTOMapping.class);
+		if (QuestionValidationResponseDTO.class.isAssignableFrom(dtoMapping.value())) {
+			return mapper.getAutoMapper().map(questionValidationResponse,
+					(Class<? extends QuestionValidationResponseDTO>) dtoMapping.value());
+		} else {
+			log.error("Unable to set best attempt as we cannot match the answer to a DTO type.");
+			throw new ClassCastException("Unable to cast " + questionValidationResponse.getClass()
+					+ " to a QuestionValidationResponse.");
+		}
 	}
 
 	/**
