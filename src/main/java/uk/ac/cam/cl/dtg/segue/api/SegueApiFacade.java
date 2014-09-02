@@ -691,7 +691,7 @@ public class SegueApiFacade {
 	 * @return Success shown by returning the new liveSHA or failed message
 	 *         "Invalid version selected".
 	 */
-	@PUT
+	@POST
 	@Produces("application/json")
 	@Path("admin/live_version/{version}")
 	public final synchronized Response changeLiveVersion(

@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.PropertiesManager;
 
 /**
  * ContentVersionController This Class is responsible for talking to the content
@@ -35,6 +37,8 @@ public class ContentVersionController {
 			.getLogger(ContentVersionController.class);
 
 	private static volatile String liveVersion;
+	
+	private final PropertiesManager versionPropertiesManager; 
 
 	private final PropertiesLoader properties;
 	private final IContentManager contentManager;
@@ -42,15 +46,17 @@ public class ContentVersionController {
 	/**
 	 * Creates a content version controller. Usually you only need one.
 	 * 
-	 * @param properties
+	 * @param generalProperties
 	 *            - properties loader for segue.
+	 * @param versionPropertiesManager - allows the CVM to read and write the current initial version.           
 	 * @param contentManager
 	 *            - content manager that knows how to retrieve content.
 	 */
 	@Inject
-	public ContentVersionController(final PropertiesLoader properties,
+	public ContentVersionController(final PropertiesLoader generalProperties, 
+			final PropertiesManager versionPropertiesManager,  
 			final IContentManager contentManager) {
-		this.properties = properties;
+		this.properties = generalProperties;
 		this.contentManager = contentManager;
 		
 		// Check on object creation if we need to clear caches.
@@ -59,10 +65,11 @@ public class ContentVersionController {
 			contentManager.clearCache();
 		}
 		
+		this.versionPropertiesManager = versionPropertiesManager;			
+		
 		// we want to make sure we have set a default liveVersion number
-		if (null == liveVersion) {
-			liveVersion = this.properties
-					.getProperty(Constants.INITIAL_LIVE_VERSION);
+		if (null == liveVersion) {			
+			liveVersion = versionPropertiesManager.getProperty(Constants.INITIAL_LIVE_VERSION);
 			log.info("Setting live version of the site from properties file to "
 					+ liveVersion);
 		}
@@ -199,6 +206,14 @@ public class ContentVersionController {
 		synchronized (liveVersion) {
 			log.info("Changing live version from " + this.getLiveVersion()
 					+ " to " + newLiveVersion);
+
+			// assume we always want to modify the initial version too.
+			try {
+				this.versionPropertiesManager.saveProperty(Constants.INITIAL_LIVE_VERSION, newLiveVersion);
+			} catch (IOException e) {
+				log.error("Unable to save new version to properties file.", e);
+			}
+			
 			liveVersion = newLiveVersion;
 		}
 	}

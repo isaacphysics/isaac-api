@@ -63,6 +63,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Video;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.PropertiesManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -282,20 +283,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * This provides a singleton of the contentVersionController for the segue
 	 * facade.
 	 * 
-	 * @param properties
+	 * @param generalProperties
 	 *            - properties loader
 	 * @param contentManager
 	 *            - content manager (with associated persistence links).
 	 * @return Content version controller with associated dependencies.
+	 * @throws IOException - if we can't load the properties file for live version.
 	 */
 	@Inject
 	@Provides
 	@Singleton
 	private static ContentVersionController getContentVersionController(
-			final PropertiesLoader properties,
-			final IContentManager contentManager) {
+			final PropertiesLoader generalProperties,
+			final IContentManager contentManager) throws IOException {
+		
+		PropertiesManager versionPropertiesLoader = new PropertiesManager(
+				generalProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
+		
 		if (null == contentVersionController) {
-			contentVersionController = new ContentVersionController(properties,
+			contentVersionController = new ContentVersionController(generalProperties, versionPropertiesLoader,
 					contentManager);
 			log.info("Creating singleton of ContentVersionController");
 		}

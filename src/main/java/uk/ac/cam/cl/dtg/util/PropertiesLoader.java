@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.util;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -32,6 +34,7 @@ import com.google.inject.Inject;
 public class PropertiesLoader {
 	private static final Logger log = LoggerFactory
 			.getLogger(PropertiesLoader.class);
+	
 	private final Properties loadedProperties;
 	private final String propertiesFile;
 
@@ -53,8 +56,19 @@ public class PropertiesLoader {
 			log.error("Properties file cannot be null");
 			throw new NullPointerException();
 		} else {
-			loadedProperties.load(getClass().getClassLoader()
-					.getResourceAsStream(this.propertiesFile));
+			// check to see if this a resource or a file somewhere else
+			if (getClass().getClassLoader()
+					.getResourceAsStream(this.propertiesFile) == null) {
+				File file = new File(this.propertiesFile);
+				FileInputStream ioStream = new FileInputStream(file);
+
+				// then we have to look further a field
+				loadedProperties.load(ioStream);
+			} else {
+				loadedProperties.load(getClass().getClassLoader()
+						.getResourceAsStream(this.propertiesFile));				
+			}
+			
 			log.debug("Properties file read successfully " + propertiesFile);
 		}
 	}
@@ -79,4 +93,21 @@ public class PropertiesLoader {
 
 		return value;
 	}
+
+	/**
+	 * Gets the loadedProperties.
+	 * @return the loadedProperties
+	 */
+	protected Properties getLoadedProperties() {
+		return loadedProperties;
+	}
+
+	/**
+	 * Gets the propertiesFile.
+	 * @return the propertiesFile
+	 */
+	protected String getPropertiesFile() {
+		return propertiesFile;
+	}
+	
 }
