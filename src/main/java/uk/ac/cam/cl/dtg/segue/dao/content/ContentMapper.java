@@ -227,15 +227,16 @@ public class ContentMapper {
 	 * @param cls
 	 *            - the class to extract the jsontype value from.
 	 */
+	@SuppressWarnings("unchecked")
 	public synchronized void registerDTOMapping(
 			final Class<? extends Content> cls) {
 		Validate.notNull(cls, "Class cannot be null.");
 
 		DTOMapping dtoMapping = cls.getAnnotation(DTOMapping.class);
-		if (dtoMapping != null) {
-			this.mapOfDOsToDTOs.put(cls, dtoMapping.value());
+		if (dtoMapping != null && ContentDTO.class.isAssignableFrom(dtoMapping.value())) {
+			this.mapOfDOsToDTOs.put(cls, (Class<? extends ContentDTO>) dtoMapping.value());
 		} else {
-			log.warn("The DTO mapping provided is null or the annotation is not present"
+			log.error("The DTO mapping provided is null or the annotation is not present"
 					+ " for the class "
 					+ cls
 					+ ". This class cannot be auto mapped from DO to DTO.");

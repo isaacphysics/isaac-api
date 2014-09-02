@@ -19,12 +19,15 @@ import java.util.Date;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
+import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponseDTO;
 
 /**
  * The DO which can be used to inform clients of the result of an answered
  * question.
  * 
  */
+@DTOMapping(QuantityValidationResponseDTO.class)
 public class QuantityValidationResponse extends QuestionValidationResponse {
 	private Boolean correctValue;
 	private Boolean correctUnits;

@@ -31,6 +31,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -200,6 +201,7 @@ public class QuestionManager {
 	 * @return augmented page - the return result is by convenience as the page
 	 *         provided as a parameter will be mutated.
 	 */
+	@SuppressWarnings("unchecked")
 	public SeguePageDTO augmentQuestionObjectWithAttemptInformation(
 			final SeguePageDTO page,
 			final List<QuestionDTO> questionsToAugment,
@@ -237,8 +239,14 @@ public class QuestionManager {
 				}
 			}
 
-			question.setBestAttempt(mapper.getAutoMapper().map(bestAnswer,
-					QuestionValidationResponseDTO.class));
+			// Determine what kind of ValidationResponse to turn it in to.
+			DTOMapping dtoMapping = bestAnswer.getClass().getAnnotation(DTOMapping.class);
+			if (QuestionValidationResponseDTO.class.isAssignableFrom(dtoMapping.value())) {
+				question.setBestAttempt(mapper.getAutoMapper().map(bestAnswer,
+						(Class<? extends QuestionValidationResponseDTO>) dtoMapping.value()));				
+			} else {
+				log.error("Unable to set best attempt as we cannot match the answer to a DTO type.");
+			}
 		}
 		return page;
 	}

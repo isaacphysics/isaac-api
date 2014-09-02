@@ -20,7 +20,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 
 /**
- * Content DO for isaacMultiChoiceQuestions.
+ * Content DO for IsaacMultiChoiceQuestions.
  *
  */
 @DTOMapping(IsaacMultiChoiceQuestionDTO.class)
