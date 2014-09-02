@@ -527,12 +527,6 @@ public class IsaacController {
 						"We cannot find any questions based on your filter criteria.")
 						.toResponse();
 			}
-
-			ImmutableMap<String, Object> logMap = new ImmutableMap.Builder<String, Object>()
-					.put(GAMEBOARD_LOG_FIELDNAME, gameboard)
-					.put(CONTENT_VERSION, api.getLiveVersion()).build();
-			
-			this.api.getLogManager().logEvent(request, GENERATE_RANDOM_GAMEBOARD, logMap);
 			
 			return Response.ok(gameboard).build();
 		} catch (IllegalArgumentException e) {
