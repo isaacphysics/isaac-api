@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Maps;
 
@@ -113,4 +114,43 @@ public class AnonymousUser extends AbstractSegueUser {
 	public void setDateCreated(final Date dateCreated) {
 		this.dateCreated = dateCreated;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((dateCreated == null) ? 0 : dateCreated.hashCode());
+		result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof AnonymousUser)) {
+			return false;
+		}
+		AnonymousUser other = (AnonymousUser) obj;
+		if (dateCreated == null) {
+			if (other.dateCreated != null) {
+				return false;
+			}
+		} else if (!dateCreated.equals(other.dateCreated)) {
+			return false;
+		}
+		if (sessionId == null) {
+			if (other.sessionId != null) {
+				return false;
+			}
+		} else if (!sessionId.equals(other.sessionId)) {
+			return false;
+		}
+		return true;
+	}
+	
 }
