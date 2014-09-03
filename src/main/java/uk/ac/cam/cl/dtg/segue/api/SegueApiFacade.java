@@ -821,7 +821,7 @@ public class SegueApiFacade {
 	@Path("info/segue_environment")
 	public final Response getSegueEnvironment(@Context final Request request) {
 		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag, Constants.CACHE_FOR_THIRTY_DAY);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -832,7 +832,7 @@ public class SegueApiFacade {
 								.getProperty(Constants.SEGUE_APP_ENVIRONMENT))
 				.build();
 
-		return Response.ok(result).cacheControl(this.getCacheControl(Constants.CACHE_FOR_ONE_DAY)).tag(etag)
+		return Response.ok(result).cacheControl(this.getCacheControl(Constants.CACHE_FOR_THIRTY_DAY)).tag(etag)
 				.build();
 	}
 
