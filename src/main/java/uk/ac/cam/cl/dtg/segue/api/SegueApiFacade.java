@@ -185,7 +185,7 @@ public class SegueApiFacade {
 	@Path("log")
 	@Consumes("application/json")
 	public Response postLog(@Context final HttpServletRequest httpRequest,
-			final Map<String, String> eventJSON) {
+			final Map<String, Object> eventJSON) {
 		
 		if (null == eventJSON || eventJSON.get(Constants.TYPE_FIELDNAME) == null) {
 			log.error("Error during log operation, no event type specified. Event: " + eventJSON);
@@ -195,7 +195,7 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 		
-		String eventType = eventJSON.get(Constants.TYPE_FIELDNAME);
+		String eventType = (String) eventJSON.get(Constants.TYPE_FIELDNAME);
 		// remove the type information as we don't need it.
 		eventJSON.remove(Constants.TYPE_FIELDNAME);
 		
