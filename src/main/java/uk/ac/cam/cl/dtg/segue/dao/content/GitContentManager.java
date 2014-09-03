@@ -686,8 +686,8 @@ public class GitContentManager implements IContentManager {
 			// add all of the work we have done to the git cache.
 			gitCache.put(sha, shaCache);
 			repository.close();
-			log.info("Tags available " + tagsList);
-			log.info("All units: " + allUnits);
+			log.debug("Tags available " + tagsList);
+			log.debug("All units: " + allUnits);
 			log.info("Git content cache population for " + sha + " completed!");
 		} catch (IOException e) {
 			log.error("IOException while trying to access git repository. ", e);

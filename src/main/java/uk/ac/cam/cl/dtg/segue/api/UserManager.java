@@ -294,7 +294,7 @@ public class UserManager {
 					
 					// Decide if this is a link operation or an authenticate / register
 					// operation.
-					log.info("Linking existing user to another provider account.");
+					log.debug("Linking existing user to another provider account.");
 					this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
 							providerSpecificUserLookupReference);
 					return Response.ok(this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request))).build();
