@@ -813,7 +813,6 @@ public class GitContentManager implements IContentManager {
 	private boolean validateReferentialIntegrity(final String sha) {
 		log.info("Starting content Validation.");
 		Set<Content> allObjectsSeen = new HashSet<Content>();
-
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
 		Set<String> missingContent = new HashSet<String>();
@@ -951,9 +950,10 @@ public class GitContentManager implements IContentManager {
 						+ whoAmI.get(id).getCanonicalSourceFile() + " but the content with that "
 						+ "ID cannot be found.");
 			}
-
-			log.error("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
-					+ "The following ids are referenced but do not exist: " + expectedIds.toString());
+			if (missingContent.size() > 0) {
+				log.warn("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
+						+ "The following ids are referenced but do not exist: " + expectedIds.toString());				
+			}
 		}
 		log.info("Validation processing complete. There are " + this.indexProblemCache.get(sha).size()
 				+ " files with content problems");
