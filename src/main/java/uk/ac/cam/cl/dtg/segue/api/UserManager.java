@@ -723,14 +723,17 @@ public class UserManager {
 
 			mergeMapper.map(userDTOContainingUpdates, userToSave);
 			userToSave.setRegistrationDate(existingUser.getRegistrationDate());
+			// make sure they can't change their role.
+			userToSave.setRole(existingUser.getRole());
 		} else {
 			// This is a new registration
 			userToSave = mapper.map(userDTOContainingUpdates, RegisteredUser.class);
 			userToSave.setRegistrationDate(new Date());
+			userToSave.setRole(null);
 		}
 		
 		userToSave.setLastUpdated(new Date());
-
+		
 		// do we need to do local password storage using the segue
 		// authenticator? I.e. is the password changing?
 		if (null != user.getPassword() && !user.getPassword().isEmpty()) {

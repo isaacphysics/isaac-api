@@ -70,7 +70,7 @@ public class RegisteredUser extends AbstractSegueUser {
 	 *            - date of birth to help with monitoring
 	 * @param gender
 	 *            - gender of the user
-	 * @param registrationTime
+	 * @param registrationDate
 	 *            - date of registration
 	 * @param schoolId
 	 *            - the list of linked authentication provider accounts.
@@ -92,7 +92,7 @@ public class RegisteredUser extends AbstractSegueUser {
 			@JsonProperty("role") final Role role,
 			@JsonProperty("dateOfBirth") final Date dateOfBirth,
 			@JsonProperty("gender") final Gender gender,
-			@JsonProperty("registrationTime") final Date registrationTime,
+			@JsonProperty("registrationDate") final Date registrationDate,
 			@JsonProperty("schoolId") final String schoolId,
 			@JsonProperty("password") final String password,
 			@JsonProperty("resetToken") final String resetToken,
@@ -105,7 +105,7 @@ public class RegisteredUser extends AbstractSegueUser {
 		this.role = role;
 		this.dateOfBirth = dateOfBirth;
 		this.gender = gender;
-		this.registrationDate = registrationTime;
+		this.registrationDate = registrationDate;
 		this.schoolId = schoolId;
 		this.password = password;
 		this.resetToken = resetToken;

@@ -22,6 +22,7 @@ import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,7 +38,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	private String givenName;
 	private String familyName;
 	private String email;
-
+	private Role role;
 	private Date dateOfBirth;
 	private Gender gender;
 	private Date registrationDate;
@@ -68,7 +69,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 *            - date of birth to help with monitoring
 	 * @param gender
 	 *            - gender of the user
-	 * @param registrationTime
+	 * @param registrationDate
 	 *            - date of registration
 	 * @param schoolId
 	 *            - the list of linked authentication provider accounts.         
@@ -81,7 +82,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 			@JsonProperty("email") final String email,
 			@JsonProperty("dateOfBirth") final Date dateOfBirth,
 			@JsonProperty("gender") final Gender gender,
-			@JsonProperty("registrationTime") final Date registrationTime,
+			@JsonProperty("registrationDate") final Date registrationDate,
 			@JsonProperty("schoolId") final String schoolId) {
 		this.databaseId = databaseId;
 		this.familyName = familyName;
@@ -89,7 +90,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 		this.email = email;
 		this.dateOfBirth = dateOfBirth;
 		this.gender = gender;
-		this.registrationDate = registrationTime;
+		this.registrationDate = registrationDate;
 		this.schoolId = schoolId;
 	}
 
@@ -170,6 +171,23 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	public final void setEmail(final String email) {
 		this.email = email;
 	}
+
+	/**
+	 * Gets the role.
+	 * @return the role
+	 */
+	public Role getRole() {
+		return role;
+	}
+
+	/**
+	 * Sets the role.
+	 * @param role the role to set
+	 */
+	public void setRole(final Role role) {
+		this.role = role;
+	}
+	
 
 	/**
 	 * Gets the dateOfBirth.
