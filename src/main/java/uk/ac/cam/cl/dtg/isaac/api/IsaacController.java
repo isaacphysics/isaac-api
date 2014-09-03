@@ -146,6 +146,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/concepts")
 	@Produces("application/json")
+	@GZIP
 	public final Response getConceptList(
 			@Context final Request request,
 			@QueryParam("ids") final String ids,
@@ -273,6 +274,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/questions")
 	@Produces("application/json")
+	@GZIP
 	public final Response getQuestionList(
 			@Context final Request request,
 			@QueryParam("ids") final String ids,
@@ -408,6 +410,7 @@ public class IsaacController {
 	@GET
 	@Produces("application/json")
 	@Path("search/{searchString}")
+	@GZIP
 	public final Response search(
 			@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
@@ -470,6 +473,7 @@ public class IsaacController {
 	@GET
 	@Path("gameboards")
 	@Produces("application/json")
+	@GZIP
 	public final Response generateTemporaryGameboard(
 			@Context final HttpServletRequest request,
 			@QueryParam("subjects") final String subjects,
@@ -910,6 +914,7 @@ public class IsaacController {
 	@GET
 	@Path("pages/fragments/{fragment_id}")
 	@Produces("application/json")
+	@GZIP
 	public final Response getPageFragment(
 			@Context final Request request,
 			@PathParam("fragment_id") final String fragmentId) {
