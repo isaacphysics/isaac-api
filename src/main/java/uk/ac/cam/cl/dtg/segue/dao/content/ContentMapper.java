@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
+import uk.ac.cam.cl.dtg.segue.dao.users.AnonymousUserQuestionAttemptsOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseDeserializer;
 import uk.ac.cam.cl.dtg.segue.dao.users.QuestionValidationResponseOrikaConverter;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -41,8 +42,10 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -406,13 +409,21 @@ public class ContentMapper {
 			QuestionValidationResponseOrikaConverter questionValidationResponseConverter 
 				= new QuestionValidationResponseOrikaConverter();
 			
+			AnonymousUserQuestionAttemptsOrikaConverter anonymousUserOrikaConverter 
+				= new AnonymousUserQuestionAttemptsOrikaConverter();
+			
 			ConverterFactory converterFactory = mapperFactory
 					.getConverterFactory();
 			
 			converterFactory.registerConverter(contentConverter);
 			converterFactory.registerConverter(choiceConverter);
 			converterFactory.registerConverter(questionValidationResponseConverter);
+			converterFactory.registerConverter("anonymousUserAttemptsToDTOConverter", anonymousUserOrikaConverter);
 			
+			// special rules
+			mapperFactory.classMap(AnonymousUser.class, AnonymousUserDTO.class)
+					.fieldMap("temporaryQuestionAttempts").converter("anonymousUserAttemptsToDTOConverter")
+					.add().byDefault().register();
 			
 			this.autoMapper = mapperFactory.getMapperFacade();
 		}

@@ -52,15 +52,15 @@ public class ContentBaseOrikaConverter extends
 	}
 
 	@Override
-	public ContentBaseDTO convert(final ContentBase arg0,
-			final Type<? extends ContentBaseDTO> arg1) {
+	public ContentBaseDTO convert(final ContentBase source,
+			final Type<? extends ContentBaseDTO> destinationType) {
 
-		if (null == arg0) {
+		if (null == source) {
 			return null;
 		}
 
 		Class<? extends Content> contentClass = contentMapper
-				.getClassByType(arg0.getType());
+				.getClassByType(source.getType());
 
 		if (contentClass == null) {
 			// if we cannot figure out what content object default to content.
@@ -75,7 +75,7 @@ public class ContentBaseOrikaConverter extends
 			return null;
 		}
 
-		return super.mapperFacade.map(arg0, destinationClass);
+		return super.mapperFacade.map(source, destinationClass);
 	}
 
 }

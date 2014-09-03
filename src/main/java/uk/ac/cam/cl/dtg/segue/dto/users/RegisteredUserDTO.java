@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Data Object to represent a user of the system. This object will be persisted
+ * Data Transfer Object to represent a user of the system. This object will be persisted
  * in the database.
  * 
  */

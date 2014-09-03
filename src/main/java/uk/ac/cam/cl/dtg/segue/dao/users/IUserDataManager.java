@@ -20,8 +20,8 @@ import java.util.List;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
  * Interface for managing and persisting user specific data in segue.
@@ -63,7 +63,8 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user) throws SegueDatabaseException;
+	List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user) 
+		throws SegueDatabaseException;
 	
 	/**
 	 * Find a user by their linked account information.
@@ -176,7 +177,7 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException - if there is an error during the database operation.            
 	 */
 	void registerQuestionAttempt(final String userId, final String questionPageId,
-			final String fullQuestionId, final QuestionValidationResponseDTO questionAttempt)
+			final String fullQuestionId, final QuestionValidationResponse questionAttempt)
 		throws SegueDatabaseException;
 
 	/**

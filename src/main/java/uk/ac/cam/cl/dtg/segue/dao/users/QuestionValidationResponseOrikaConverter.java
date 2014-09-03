@@ -19,7 +19,7 @@ import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import ma.glasnost.orika.CustomConverter;
+import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
 /**
@@ -30,7 +30,7 @@ import ma.glasnost.orika.metadata.Type;
  * 
  */
 public class QuestionValidationResponseOrikaConverter extends
-		CustomConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
+	BidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
 
 	/**
 	 * Constructs an Orika Converter specialises in selecting the correct
@@ -42,8 +42,8 @@ public class QuestionValidationResponseOrikaConverter extends
 	}
 
 	@Override
-	public QuestionValidationResponseDTO convert(final QuestionValidationResponse source,
-			final Type<? extends QuestionValidationResponseDTO> destinationType) {
+	public QuestionValidationResponseDTO convertTo(final QuestionValidationResponse source,
+			final Type<QuestionValidationResponseDTO> destinationType) {
 		if (null == source) {
 			return null;
 		}
@@ -56,6 +56,24 @@ public class QuestionValidationResponseOrikaConverter extends
 			QuestionValidationResponseDTO questionValidationResponseDTO = new QuestionValidationResponseDTO();
 			super.mapperFacade.map(source, questionValidationResponseDTO);
 			return questionValidationResponseDTO;
+		}
+	}
+
+	@Override
+	public QuestionValidationResponse convertFrom(final QuestionValidationResponseDTO source,
+			final Type<QuestionValidationResponse> destinationType) {
+		if (null == source) {
+			return null;
+		}
+
+		if (source instanceof QuantityValidationResponseDTO) {
+			return super.mapperFacade.map(source, QuantityValidationResponse.class);
+		} else {
+			// I would have expected this to cause an infinite loop / stack
+			// overflow but apparently it doesn't.
+			QuestionValidationResponse questionValidationResponse = new QuestionValidationResponse();
+			super.mapperFacade.map(source, questionValidationResponse);
+			return questionValidationResponse;
 		}
 	}
 }

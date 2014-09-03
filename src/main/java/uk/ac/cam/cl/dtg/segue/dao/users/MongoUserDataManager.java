@@ -41,9 +41,9 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -196,7 +196,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Override
 	public void registerQuestionAttempt(final String userId,
 			final String questionPageId, final String fullQuestionId,
-			final QuestionValidationResponseDTO questionAttempt) throws SegueDatabaseException {
+			final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
 		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
 		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
 		MongoJackModule.configure(objectMapper);

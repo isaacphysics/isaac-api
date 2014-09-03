@@ -19,7 +19,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
-import ma.glasnost.orika.CustomConverter;
+import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
 /**
@@ -29,7 +29,7 @@ import ma.glasnost.orika.metadata.Type;
  * Responsible for converting Choice objects to their correct subtype.
  * 
  */
-public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
+public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceDTO> {
 
 	/**
 	 * Constructs an Orika Converter specialises in selecting the correct
@@ -41,8 +41,7 @@ public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
 	}
 
 	@Override
-	public ChoiceDTO convert(final Choice source,
-			final Type<? extends ChoiceDTO> destinationType) {
+	public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType) {
 		if (null == source) {
 			return null;
 		}
@@ -55,6 +54,23 @@ public class ChoiceOrikaConverter extends CustomConverter<Choice, ChoiceDTO> {
 			ChoiceDTO choiceDTO = new ChoiceDTO();
 			super.mapperFacade.map(source, choiceDTO);
 			return choiceDTO;
+		}
+	}
+
+	@Override
+	public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType) {
+		if (null == source) {
+			return null;
+		}
+
+		if (source instanceof QuantityDTO) {
+			return super.mapperFacade.map(source, Quantity.class);
+		} else {
+			// I would have expected this to cause an infinite loop / stack
+			// overflow but apparently it doesn't.
+			Choice choice = new Choice();
+			super.mapperFacade.map(source, choice);
+			return choice;
 		}
 	}
 }

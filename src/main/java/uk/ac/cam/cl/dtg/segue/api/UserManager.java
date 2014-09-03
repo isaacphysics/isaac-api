@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
@@ -41,8 +42,11 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -70,6 +74,7 @@ import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
@@ -91,6 +96,7 @@ public class UserManager {
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
 	private final IUserDataManager database;
+	private final Cache<String, AnonymousUser> temporaryUserCache;
 	
 	private final String hmacKey;
 	
@@ -127,6 +133,10 @@ public class UserManager {
 		Validate.notNull(communicator);
 
 		this.database = database;
+		this.temporaryUserCache = CacheBuilder.newBuilder()
+				.expireAfterAccess(Constants.SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
+				.<String, AnonymousUser>build();
+
 		this.hmacKey = properties.getProperty(Constants.HMAC_SALT);
 		Validate.notNull(this.hmacKey);
 		
@@ -254,7 +264,7 @@ public class UserManager {
 			
 			// If the user is currently logged in this must be a
 			// request to link accounts
-			RegisteredUser currentUser = getCurrentUserDO(request);
+			RegisteredUser currentUser = getCurrentRegisteredUserDO(request);
 			
 			// if we are already logged in - check if we have already got this
 			// provider assigned already? If not this is probably a link request.
@@ -287,7 +297,7 @@ public class UserManager {
 					log.info("Linking existing user to another provider account.");
 					this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
 							providerSpecificUserLookupReference);
-					return Response.ok(this.convertUserDOToUserDTO(this.getCurrentUserDO(request))).build();
+					return Response.ok(this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request))).build();
 				}
 			}
 			
@@ -390,7 +400,7 @@ public class UserManager {
 		}
 
 		// get the current user based on their session id information.
-		RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentUserDO(request));
+		RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
 		if (null != currentUser) {
 			return Response.ok(currentUser).build();
 		}
@@ -487,7 +497,7 @@ public class UserManager {
 	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
 	 */
 	public final boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
-		RegisteredUser user = this.getCurrentUserDO(request);
+		RegisteredUser user = this.getCurrentRegisteredUserDO(request);
 		
 		if (null == user) {
 			throw new NoUserLoggedInException();
@@ -530,7 +540,7 @@ public class UserManager {
 		throws NoUserLoggedInException {
 		Validate.notNull(request);
 
-		RegisteredUser user = this.getCurrentUserDO(request);
+		RegisteredUser user = this.getCurrentRegisteredUserDO(request);
 		
 		if (null == user) {
 			throw new NoUserLoggedInException();
@@ -611,14 +621,16 @@ public class UserManager {
 	 * If the user is anonymous the question record will be added as a temporary session variable. 
 	 * This will enable merging later if the user registers.
 	 * 
-	 * @param user
+	 * @param request
 	 *            - containing either a registered or anonymous user.
 	 * @param questionResponse
 	 *            - question results.
 	 */
-	public final void recordQuestionAttempt(final AbstractSegueUserDTO user,
+	public final void recordQuestionAttempt(final HttpServletRequest request,
 			final QuestionValidationResponseDTO questionResponse) {
-		
+		QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
+				QuestionValidationResponse.class);
+		AbstractSegueUserDTO user = this.getCurrentUser(request);
 		// We are operating against the convention that the first component of
 		// an id is the question page
 		// and that the id separator is |
@@ -629,16 +641,16 @@ public class UserManager {
 			RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
 			try {
 				this.database.registerQuestionAttempt(registeredUser.getDbId(), questionPageId[0],
-						questionResponse.getQuestionId(), questionResponse);
+						questionResponse.getQuestionId(), questionResponseDO);
 				log.info("Question information recorded for user: " + registeredUser.getDbId());
 			} catch (SegueDatabaseException e) {
 				log.error("Unable to to record question attempt.", e);
 			}
-		} else if (user instanceof AnonymousUserDTO) {
-			AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
 			
-			// record this as an anonymous question
-			this.recordAnonymousUserQuestionInformation(anonymousUser, questionPageId[0],
+		} else if (user instanceof AnonymousUserDTO) {
+			AnonymousUser anonymousUserDO = this.getAnonymousUserDO(request);
+			
+			this.recordAnonymousUserQuestionInformation(anonymousUserDO, questionPageId[0],
 					questionResponse.getQuestionId(), questionResponse);
 		} else {
 			log.error("Unexpected user type. Unable to record question response");
@@ -659,12 +671,14 @@ public class UserManager {
 	public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
 			final AbstractSegueUserDTO user) throws SegueDatabaseException {
 		Validate.notNull(user);
-		
+
 		if (user instanceof RegisteredUserDTO) {
-			RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+			RegisteredUser registeredUser = this.findUserById(((RegisteredUserDTO) user).getDbId());
+			
 			return this.database.getQuestionAttempts(registeredUser.getDbId()).getQuestionAttempts();	
 		} else {
-			AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
+			AnonymousUser anonymousUser = this.temporaryUserCache.getIfPresent(((AnonymousUserDTO) user)
+					.getSessionId());
 			// since no user is logged in assume that we want to use any anonymous attempts			
 			return anonymousUser.getTemporaryQuestionAttempts();
 		}
@@ -1418,7 +1432,7 @@ public class UserManager {
 	 * @return Returns the current UserDTO if we can get it or null if user is
 	 *         not currently logged in / there is an invalid session
 	 */
-	private RegisteredUser getCurrentUserDO(final HttpServletRequest request) {
+	private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
 		Validate.notNull(request);
 
 		// get the current user based on their session id information.
@@ -1531,10 +1545,12 @@ public class UserManager {
 	 * @param questionResponse
 	 *            - response to temporarily record.
 	 */
-	private void recordAnonymousUserQuestionInformation(final AnonymousUserDTO anonymousUser,
+	private void recordAnonymousUserQuestionInformation(final AnonymousUser anonymousUser,
 			final String questionPageId, final String questionId,
 			final QuestionValidationResponseDTO questionResponse) {
 
+		QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
+				QuestionValidationResponse.class);
 		
 		Map<String, Map<String, List<QuestionValidationResponse>>> anonymousResponses = 
 				anonymousUser.getTemporaryQuestionAttempts();
@@ -1547,10 +1563,9 @@ public class UserManager {
 			anonymousResponses.get(questionPageId).put(questionId,
 					new ArrayList<QuestionValidationResponse>());
 		}
-
-		QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
-				QuestionValidationResponse.class);
 		
+		// we could really create a specialised orika deserializer for this.
+
 		// add the response to the session object
 		anonymousResponses.get(questionPageId).get(questionId).add(questionResponseDO);
 
@@ -1563,24 +1578,34 @@ public class UserManager {
 	 * @return An anonymous user containing any anonymous question attempts (which could be none)
 	 */
 	private AnonymousUserDTO getAnonymousUser(final HttpServletRequest request) {
+		return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
+	}
+	
+	/**
+	 * Retrieves anonymous user information if it is available. 
+	 * @param request - request containing session information.
+	 * @return An anonymous user containing any anonymous question attempts (which could be none)
+	 */
+	private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) {
+		AnonymousUser user;
 		// no session exists so create one.
 		if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) == null) {
-			AnonymousUserDTO user = new AnonymousUserDTO(request.getSession().getId());
-
+			user = new AnonymousUser(request.getSession().getId());
+			user.setDateCreated(new Date());
 			// add the user reference to the session
 			request.getSession().setAttribute(Constants.ANONYMOUS_USER, user);
-			
-			return user;
-		}
-
-		// reuse existing one
-		if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) instanceof AnonymousUserDTO) {
-			return (AnonymousUserDTO) request.getSession().getAttribute(
-					Constants.ANONYMOUS_USER);
+			this.temporaryUserCache.put(user.getSessionId(), user);
 		} else {
-			// this means that someone has put the wrong type in to the session variable.
-			throw new ClassCastException("Unable to get AnonymousUser from session.");			
+			// reuse existing one
+			if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) instanceof AnonymousUser) {
+				user = (AnonymousUser) request.getSession().getAttribute(
+						Constants.ANONYMOUS_USER);
+			} else {
+				// this means that someone has put the wrong type in to the session variable.
+				throw new ClassCastException("Unable to get AnonymousUser from session.");			
+			}			
 		}
+		return user;
 	}
 	
 	/**
@@ -1598,15 +1623,17 @@ public class UserManager {
 	private void mergeAnonymousQuestionInformationWithUserRecord(final HttpServletRequest request)
 		throws NoUserLoggedInException, SegueDatabaseException {
 		
-		Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = this
-				.getAnonymousUser(request).getTemporaryQuestionAttempts();
+		AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
+		
+		Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = anonymousUser
+				.getTemporaryQuestionAttempts();
 		
 		if (anonymouslyAnsweredQuestions.isEmpty()) {
 			return;
 		}
 
 		// ensure the user is logged in. This will throw an exception if not.
-		RegisteredUserDTO user = this.getCurrentRegisteredUser(request);
+		this.getCurrentRegisteredUser(request);
 		
 		log.info("Merging anonymous questions with known user account");
 		
@@ -1616,12 +1643,13 @@ public class UserManager {
 						questionPageId).get(questionId)) {
 					QuestionValidationResponseDTO questionRespnseDTO = this.dtoMapper.map(questionResponse,
 							QuestionValidationResponseDTO.class);
-					this.recordQuestionAttempt(user, questionRespnseDTO);
+					this.recordQuestionAttempt(request, questionRespnseDTO);
 				}
 			}
 		}
 		
 		// delete the session attribute as merge has completed.
 		request.getSession().removeAttribute(Constants.ANONYMOUS_USER);
+		this.temporaryUserCache.invalidate(anonymousUser.getSessionId());
 	}
 }
