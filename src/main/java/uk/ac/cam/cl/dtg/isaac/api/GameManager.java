@@ -483,6 +483,9 @@ public class GameManager {
 	 */
 	private GameboardItemState calculateQuestionState(final String questionPageId,
 			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
+		Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
+		Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
+		
 		if (questionAttemptsFromUser != null
 				&& questionAttemptsFromUser.containsKey(questionPageId)) {
 			// go through each question in the question page
