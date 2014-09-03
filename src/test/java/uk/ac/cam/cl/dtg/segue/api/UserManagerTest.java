@@ -50,6 +50,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
@@ -376,7 +377,7 @@ public class UserManagerTest {
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
 
 		expect(dummySession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(
-				new AnonymousUserDTO("someAnonymousSessionID")).anyTimes();
+				new AnonymousUser("someAnonymousSessionID")).anyTimes();
 
 		replay(dummySession, request, dummyAuth, dummyDatabase);
 
