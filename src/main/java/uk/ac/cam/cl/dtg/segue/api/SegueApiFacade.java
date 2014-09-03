@@ -386,6 +386,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/{version}/{id}")
+	@GZIP
 	public final Response getContentById(
 			@PathParam("version") String version,
 			@PathParam("id") final String id) {
@@ -436,6 +437,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/search/{version}/{searchString}")
+	@GZIP
 	public final Response search(
 			@PathParam("searchString") final String searchString,
 			@PathParam("version") final String version,
@@ -473,6 +475,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/search/{searchString}")
+	@GZIP
 	public final Response search(
 			@PathParam("searchString") final String searchString,
 			@QueryParam("types") final String types) {
@@ -492,6 +495,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags")
+	@GZIP
 	public final Response getTagListByLiveVersion(@Context final Request request) {
 		return this.getTagListByVersion(contentVersionController
 				.getLiveVersion(), request);
@@ -511,6 +515,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/tags/{version}")
+	@GZIP
 	public final Response getTagListByVersion(
 			@PathParam("version") final String version,
 			@Context final Request request) {
@@ -542,6 +547,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/units")
+	@GZIP
 	public final Response getAllUnitsByLiveVersion(@Context final Request request) {
 		return this.getAllUnitsByVersion(request, contentVersionController
 				.getLiveVersion());
@@ -557,6 +563,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("content/units/{version}")
+	@GZIP
 	public final Response getAllUnitsByVersion(
 			@Context final Request request,
 			@PathParam("version") final String version) {
@@ -604,6 +611,7 @@ public class SegueApiFacade {
 	@Produces("*/*")
 	@Path("content/file_content/{version}/{path:.*}")
 	@Cache
+	@GZIP
 	public final Response getImageFileContent(
 			@Context final Request request,
 			@PathParam("version") final String version,
@@ -744,6 +752,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/content_versions")
+	@GZIP
 	public final Response getVersionsList(
 			@QueryParam("limit") final String limit) {
 		// try to parse the integer
@@ -819,6 +828,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("info/segue_environment")
+	@GZIP
 	public final Response getSegueEnvironment(@Context final Request request) {
 		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
 		Response cachedResponse = generateCachedResponse(request, etag, Constants.CACHE_FOR_THIRTY_DAY);
@@ -950,6 +960,7 @@ public class SegueApiFacade {
 	@Produces("application/json")
 	@Path("users/")
 	@Consumes("application/json")
+	@GZIP
 	public final Response createOrUpdateUserSettings(
 			@Context final HttpServletRequest request, final String userObjectString) {
 
@@ -1077,6 +1088,7 @@ public class SegueApiFacade {
 	@POST
 	@Path("users/resetpassword")
 	@Consumes("application/json")
+	@GZIP
 	public final Response generatePasswordResetToken(final RegisteredUserDTO userObject) {
 		if (null == userObject) {
 			log.debug("User is null");
@@ -1114,6 +1126,7 @@ public class SegueApiFacade {
 	@GET
 	@Produces("application/json")
 	@Path("users/resetpassword/{token}")
+	@GZIP
 	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
 		try {
 			if (userManager.validatePasswordResetToken(token)) {
@@ -1144,6 +1157,7 @@ public class SegueApiFacade {
 	@POST
 	@Path("users/resetpassword/{token}")
 	@Consumes("application/json")
+	@GZIP
 	public final Response resetPassword(@PathParam("token") final String token, final RegisteredUser userObject) {
 		try {
 			userManager.resetPassword(token, userObject);
@@ -1407,6 +1421,7 @@ public class SegueApiFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("questions/{question_id}/answer")
+	@GZIP
 	public final Response answerQuestion(
 			@Context final HttpServletRequest request,
 			@PathParam("question_id") final String questionId,
