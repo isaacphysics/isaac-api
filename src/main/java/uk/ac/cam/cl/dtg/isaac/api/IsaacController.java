@@ -335,6 +335,8 @@ public class IsaacController {
 	 * @param questionId
 	 *            to find as a string
 	 * @param request
+	 *            - so that we can do etag and cache resolution.
+	 * @param httpServletRequest
 	 *            - so that we can try and determine if the user is logged in.
 	 *            This will allow us to augment the question objects with any
 	 *            recorded state.
@@ -345,7 +347,9 @@ public class IsaacController {
 	@Path("pages/questions/{question_page_id}")
 	@Produces("application/json")
 	@GZIP
-	public final Response getQuestion(@Context final HttpServletRequest request,
+	public final Response getQuestion(
+			@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE));
@@ -355,7 +359,25 @@ public class IsaacController {
 			fieldsToMatch
 					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		}
-
+		AbstractSegueUserDTO user = api.getCurrentUserIdentifier(httpServletRequest);
+		Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
+		
+		try {
+			userQuestionAttempts = api.getQuestionAttemptsBySession(user);
+		} catch (SegueDatabaseException e) {
+			log.error("SegueDatabaseException whilst trying to retrieve user question data", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access the user question information in the database.", e).toResponse();
+		}
+	
+		// Calculate the ETag 
+		EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
+		
+		Response cachedResponse = api.generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
 		Response response = this.findSingleResult(fieldsToMatch);
 
 		if (response.getEntity() instanceof SeguePageDTO) {
@@ -363,8 +385,6 @@ public class IsaacController {
 
 			Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(), "contentVersion",
 					api.getLiveVersion());
-
-			AbstractSegueUserDTO user = api.getCurrentUserIdentifier(request);
 			
 			String userId;
 			if (user instanceof AnonymousUserDTO) {
@@ -373,20 +393,15 @@ public class IsaacController {
 				userId = ((RegisteredUserDTO) user).getDbId();
 			}
 			
-			try {
-				content = api.getQuestionManager().augmentQuestionObjects(content, userId,
-						api.getQuestionAttemptsBySession(user));
-
-			} catch (SegueDatabaseException e) {
-				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-						"Database error during retrieval of questionAttempts.").toResponse();
-			}
+			content = api.getQuestionManager().augmentQuestionObjects(content, userId,
+						userQuestionAttempts);
 
 			// the request log
-			this.api.getLogManager().logEvent(request, Constants.VIEW_QUESTION, logEntry);
+			this.api.getLogManager().logEvent(httpServletRequest, Constants.VIEW_QUESTION, logEntry);
 
 			// return augmented content.
-			return Response.ok(content).build();
+			return Response.ok(content).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
+					.tag(etag).build();
 			
 		} else {
 			// this is not a segue page so something probably went wrong.
