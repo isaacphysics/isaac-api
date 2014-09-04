@@ -261,6 +261,8 @@ public class GameManager {
 	/**
 	 * Get a gameboard by its id.
 	 * 
+	 * Note: This gameboard will not be augmented with user information.
+	 * 
 	 * @param gameboardId
 	 *            - to look up.
 	 * @return the gameboard or null.
@@ -283,17 +285,19 @@ public class GameManager {
 	 *            - to look up.
 	 * @param user
 	 *            - This allows state information to be retrieved.
+	 * @param userQuestionAttempts - so that we can augment the gameboard.           
 	 * @return the gameboard or null.
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboard in the
 	 *             database or updating the users gameboard link table.
 	 */
-	public final GameboardDTO getGameboard(final String gameboardId,
-			final AbstractSegueUserDTO user) throws SegueDatabaseException {
+	public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
+			final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
+		throws SegueDatabaseException {
 				
 		GameboardDTO gameboardFound = augmentGameboardWithQuestionAttemptInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
-				api.getQuestionAttemptsBySession(user));
+				userQuestionAttempts);
 		
 		return gameboardFound;
 	}

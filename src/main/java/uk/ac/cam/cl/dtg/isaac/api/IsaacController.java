@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.api.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -568,9 +569,11 @@ public class IsaacController {
 			GameboardDTO gameboard;
 			
 			AbstractSegueUserDTO randomUser = this.api.getCurrentUserIdentifier(request);
+			Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+					api.getQuestionAttemptsBySession(randomUser);
 			
 			// attempt to augment the gameboard with user information.
-			gameboard = gameManager.getGameboard(gameboardId, randomUser);
+			gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
 
 			if (null == gameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
@@ -720,7 +723,10 @@ public class IsaacController {
 		try {
 			RegisteredUserDTO user = api.getCurrentUser(request);
 			
-			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user);
+			Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
+					api.getQuestionAttemptsBySession(user);
+			
+			GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user, userQuestionAttempts);
 			
 			if (null == gameboardDTO) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
@@ -800,7 +806,7 @@ public class IsaacController {
 		// find what the existing gameboard looks like.
 		GameboardDTO existingGameboard;
 		try {
-			existingGameboard = gameManager.getGameboard(gameboardId, user);
+			existingGameboard = gameManager.getGameboard(gameboardId);
 			
 			if (null == existingGameboard) {
 				return new SegueErrorResponse(Status.NOT_FOUND,
