@@ -816,7 +816,6 @@ public class GitContentManager implements IContentManager {
 		Set<String> expectedIds = new HashSet<String>();
 		Set<String> definedIds = new HashSet<String>();
 		Set<String> missingContent = new HashSet<String>();
-		
 		Map<String, Content> whoAmI = new HashMap<String, Content>();
 
 		// Build up a set of all content (and content fragments for validation)
@@ -872,19 +871,21 @@ public class GitContentManager implements IContentManager {
 							"Unable to find Image: " + f.getSrc()
 									+ " in Git. Could the reference be incorrect? SourceFile is "
 									+ c.getCanonicalSourceFile());
-				} else {
-					log.debug("Verified image " + f.getSrc() + " exists in git.");
-				}
+				} 
 
 				// check that there is some alt text.
 				if (f.getAltText() == null || f.getAltText().isEmpty()) {
-
 					this.registerContentProblem(sha, c,
 							"No altText attribute set for media element: " + f.getSrc()
 									+ " in Git source file " + c.getCanonicalSourceFile());
 				}
 			}
-
+			if (c instanceof Question && c.getId() == null) {
+				this.registerContentProblem(sha, c, "Question: " + c.getTitle() + " in "
+						+ c.getCanonicalSourceFile() + " found without a unqiue id. "
+						+ "This question cannot be logged correctly.");
+			}
+			
 			// TODO: remove reference to isaac specific types from here.
 			if (c instanceof ChoiceQuestion
 					&& !(c.getType().equals("isaacQuestion") || c.getType().equals("isaacSymbolicQuestion"))) {
@@ -931,7 +932,6 @@ public class GitContentManager implements IContentManager {
 
 			}
 
-			// check if level is valid.
 			if (c instanceof IsaacQuestionPage && (c.getLevel() == null || c.getLevel() == 0)) {
 				this.registerContentProblem(sha, c,
 						"Level error! - Question: " + c.getId() + " in " + c.getCanonicalSourceFile()
