@@ -137,4 +137,11 @@ public class QuestionValidationResponse {
 	public void setDateAttempted(final Date dateAttempted) {
 		this.dateAttempted = dateAttempted;
 	}
+
+	@Override
+	public String toString() {
+		return "QuestionValidationResponse [questionId=" + questionId + ", answer=" + answer + ", correct="
+				+ correct + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + "]";
+	}
+	
 }

@@ -87,5 +87,9 @@ public class QuantityValidationResponseDTO extends QuestionValidationResponseDTO
 		this.correctUnits = correctUnits;
 	}
 
-
+	@Override
+	public String toString() {
+		return "QuantityValidationResponseDTO [correctValue=" + correctValue + ", correctUnits="
+				+ correctUnits + "]";
+	}
 }

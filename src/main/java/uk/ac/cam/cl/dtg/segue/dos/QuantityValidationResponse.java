@@ -89,4 +89,10 @@ public class QuantityValidationResponse extends QuestionValidationResponse {
 	public final void setCorrectUnits(final Boolean correctUnits) {
 		this.correctUnits = correctUnits;
 	}
+
+	@Override
+	public String toString() {
+		return "QuantityValidationResponse [correctValue=" + correctValue + ", correctUnits=" + correctUnits
+				+ "]";
+	}
 }

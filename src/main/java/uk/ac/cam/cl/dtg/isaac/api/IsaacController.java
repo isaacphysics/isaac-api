@@ -551,7 +551,9 @@ public class IsaacController {
 	 * REST end point to retrieve a specific gameboard by Id.
 	 * 
 	 * @param request
-	 *            - so that wer can extract the users session information if
+	 *            - so that we can deal with caching and etags.
+	 * @param httpServletRequest
+	 *            - so that we can extract the users session information if
 	 *            available.
 	 * @param gameboardId
 	 *            - the unique id of the gameboard to be requested
@@ -563,14 +565,23 @@ public class IsaacController {
 	@Produces("application/json")
 	@GZIP
 	public final Response getGameboard(
-			@Context final HttpServletRequest request,
+			@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("gameboard_id") final String gameboardId) {
 		try {
 			GameboardDTO gameboard;
 			
-			AbstractSegueUserDTO randomUser = this.api.getCurrentUserIdentifier(request);
+			AbstractSegueUserDTO randomUser = this.api.getCurrentUserIdentifier(httpServletRequest);
 			Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
 					api.getQuestionAttemptsBySession(randomUser);
+		
+			// Calculate the ETag 
+			EntityTag etag = new EntityTag(gameboardId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
+			
+			Response cachedResponse = api.generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
 			
 			// attempt to augment the gameboard with user information.
 			gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
@@ -581,7 +592,8 @@ public class IsaacController {
 			}
 			
 			// We decided not to log this on the backend as the front end uses this lots.
-			return Response.ok(gameboard).build();
+			return Response.ok(gameboard).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
+					.tag(etag).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.")
 					.toResponse();
@@ -610,7 +622,7 @@ public class IsaacController {
 	@Path("users/current_user/gameboards")
 	@Produces("application/json")
 	@GZIP
-	public final Response getGameboardByCurrentUser(
+	public final Response getGameboardsByCurrentUser(
 			@Context final HttpServletRequest request,
 			@QueryParam("start_index") final String startIndex,
 			@QueryParam("limit") final String limit,
