@@ -41,7 +41,7 @@ sudo service tomcat7 start
 # Unpack isaac-app into apache root.
 echo "Unpacking Isaac App distribution."
 sudo rm -rf $ISAAC_APP_DEPLOY_FOLDER/*
-sudo tar -zxf $ISAAC_APP_DEPLOY_FILE $ISAAC_APP_DEPLOY_FOLDER
+sudo tar -C $ISAAC_APP_DEPLOY_FOLDER -zxf $ISAAC_APP_DEPLOY_FILE 
 
 echo "Resetting permissions for isaac-app so that apache can use it."
 sudo chown -R tomcat7 $ISAAC_APP_DEPLOY_FOLDER
