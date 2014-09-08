@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -66,7 +65,7 @@ import static com.google.common.collect.Maps.*;
 public class GameManager {
 	private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
-	private static final int MAX_QUESTIONS_TO_SEARCH = 50;
+	private static final int MAX_QUESTIONS_TO_SEARCH = 30;
 
 	private final SegueApiFacade api;
 	private final GameboardPersistenceManager gameboardPersistenceManager;
@@ -146,51 +145,27 @@ public class GameManager {
 		if (boardOwner instanceof RegisteredUserDTO) {
 			boardOwnerId = ((RegisteredUserDTO) boardOwner).getDbId();
 		} else {
+			// anonymous users do not get to own a board so just mark it as unowned.
 			boardOwnerId = null;
 		}
-
-		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps
-				.newHashMap();
-
-		fieldsToMap.put(
-				immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME),
-				Arrays.asList(QUESTION_TYPE));
-
+		
+		Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = api
+				.getQuestionAttemptsBySession(boardOwner);
+		
 		GameFilter gameFilter = new GameFilter(subjectsList, fieldsList,
 				topicsList, levelsList, conceptsList);
 
-		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
+		List<GameboardItem> selectionOfGameboardQuestions = this.getSelectedGameboardQuestions(gameFilter,
+				usersQuestionAttempts);
 		
-		int startIndex = 0;
-		// Search for questions that match the fields to map variable.
-		ResultsWrapper<ContentDTO> results = api
-				.findMatchingContentRandomOrder(api.getLiveVersion(),
-						fieldsToMap, startIndex, MAX_QUESTIONS_TO_SEARCH);
-
-		if (!results.getResults().isEmpty()) {
+		if (!selectionOfGameboardQuestions.isEmpty()) {
 			String uuid = UUID.randomUUID().toString();
-
-			Integer sizeOfGameboard = GAME_BOARD_TARGET_SIZE;
-			if (GAME_BOARD_TARGET_SIZE > results.getResults().size()) {
-				sizeOfGameboard = results.getResults().size();
-			}
-
-			List<ContentDTO> questionsForGameboard = results.getResults()
-					.subList(0, sizeOfGameboard);
-
-			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
-
-			// Map each Content object into an IsaacQuestionInfo object
-			for (ContentDTO c : questionsForGameboard) {
-				GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-				questionInfo.setUri(URIManager.generateApiUrl(c));
-				gameboardReadyQuestions.add(questionInfo);
-			}
-
+			
+			// filter game board ready questions to make up a decent game board.
 			log.debug("Created gameboard " + uuid);
 
 			GameboardDTO gameboardDTO = new GameboardDTO(uuid, null,
-					gameboardReadyQuestions, getRandomWildcard(mapper),
+					selectionOfGameboardQuestions, getRandomWildcard(mapper),
 					generateRandomWildCardPosition(), new Date(), gameFilter,
 					boardOwnerId);
 
@@ -198,7 +173,7 @@ public class GameManager {
 					.temporarilyStoreGameboard(gameboardDTO);
 
 			return augmentGameboardWithQuestionAttemptInformation(gameboardDTO, 
-					api.getQuestionAttemptsBySession(boardOwner));
+					usersQuestionAttempts);
 		} else {
 			// TODO: this should be an exception.
 			return null;
@@ -467,6 +442,109 @@ public class GameManager {
 	}
 
 	/**
+	 * This method aims to (somewhat) intelligently select some useful gameboard
+	 * questions.
+	 * 
+	 * @param gameFilter
+	 *            - the filter query that should be used to make up the
+	 *            gameboard.
+	 * @param usersQuestionAttempts
+	 *            - the users question attempt information if available.
+	 * @return Gameboard questions
+	 */
+	private List<GameboardItem> getSelectedGameboardQuestions(final GameFilter gameFilter,
+			final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+		
+		Long seed = new Random().nextLong();
+		int searchIndex = 0;
+		List<GameboardItem> selectionOfGameboardQuestions = this.getNextQuestionsForFilter(gameFilter,
+				searchIndex, seed);
+		
+		if (selectionOfGameboardQuestions.isEmpty()) {
+			// no questions found just return an empty list.
+			return Lists.newArrayList();			
+		}
+	
+		List<GameboardItem> gameboardReadyQuestions = Lists.newArrayList();
+		List<GameboardItem> completedQuestions = Lists.newArrayList();
+		// choose the gameboard questions to include.
+		while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE
+				&& !selectionOfGameboardQuestions.isEmpty()) {
+			for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
+				if (this.calculateQuestionState(gameboardItem.getId(), usersQuestionAttempts).equals(
+						GameboardItemState.COMPLETED)) {
+					completedQuestions.add(gameboardItem);
+				} else if (!gameboardReadyQuestions.contains(gameboardItem)) {
+					gameboardReadyQuestions.add(gameboardItem);
+				}
+
+				// stop inner loop if we have reached our target
+				if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
+					break;
+				}
+			}
+			
+			if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
+				break;
+			}
+			
+			// increment search start index to see if we can get more questions for the given criteria.
+			searchIndex = searchIndex + selectionOfGameboardQuestions.size();
+			
+			// we couldn't fill it up on the last round of questions so lets get more if no more this will be empty
+			selectionOfGameboardQuestions = this.getNextQuestionsForFilter(gameFilter, searchIndex, seed);
+		}
+		
+		// Try and make up the difference with completed ones if we haven't reached our target size
+		if (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !completedQuestions.isEmpty()) {
+			for (GameboardItem completedQuestion : completedQuestions) {
+				if (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE) {
+					gameboardReadyQuestions.add(completedQuestion);
+				} else if (gameboardReadyQuestions.size() == GAME_BOARD_TARGET_SIZE) {
+					break;
+				}
+			}
+		}
+
+		// randomise the questions again as we may have injected some completed questions.
+		Collections.shuffle(gameboardReadyQuestions);
+		
+		return gameboardReadyQuestions;
+	}
+	
+	/**
+	 * Gets you the next set of questions that match the given filter.
+	 * @param gameFilter - to enable search
+	 * @param index - the starting index of the query.
+	 * @param randomSeed - so that we can use search pagination and not repeat ourselves.
+	 * @return a list of gameboard items.
+	 */
+	private List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
+			final Long randomSeed) {
+		// get some questions
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+		fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE));
+		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
+		
+		// Search for questions that match the fields to map variable.
+		ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(api.getLiveVersion(),
+				fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
+
+		List<ContentDTO> questionsForGameboard = results.getResults();
+
+		List<GameboardItem> selectionOfGameboardQuestions = Lists.newArrayList();
+
+		// Map each Content object into an IsaacQuestionInfo object
+		for (ContentDTO c : questionsForGameboard) {
+			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
+			questionInfo.setUri(URIManager.generateApiUrl(c));
+			selectionOfGameboardQuestions.add(questionInfo);
+		}
+		
+		return selectionOfGameboardQuestions;
+	}
+	
+	/**
 	 * CalculateQuestionState
 	 * 
 	 * This method will calculate the question state for use in gameboards based
@@ -567,7 +645,10 @@ public class GameManager {
 				.asList(WILDCARD_TYPE));
 
 		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
-
+		
+		// try to increase randomness of wildcard results.
+		Collections.shuffle(wildcardResults.getResults());
+		
 		if (wildcardResults.getTotalResults() == 0) {
 			throw new NoWildcardException();
 		}
@@ -728,5 +809,4 @@ public class GameManager {
 		}
 		return true;
 	}
-
 }

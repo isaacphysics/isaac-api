@@ -199,4 +199,11 @@ public class MongoContentManager implements IContentManager {
 	public void setIndexRestriction(final boolean loadOnlyPublishedContent) {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
+
+	@Override
+	public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, final Integer startIndex,
+			final Integer limit, final Long randomSeed) {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
 }

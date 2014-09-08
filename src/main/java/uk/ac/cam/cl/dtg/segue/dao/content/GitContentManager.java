@@ -259,12 +259,25 @@ public class GitContentManager implements IContentManager {
 			final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) {
+		return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
+	}
+	
+	@Override
+	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
+			final String version,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Integer startIndex, final Integer limit, final Long randomSeed) {		
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
 		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchHits = searchProvider
-					.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
-							fieldsToMatch, startIndex, limit);
+			ResultsWrapper<String> searchHits;
+			if (null == randomSeed) {
+				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
+						fieldsToMatch, startIndex, limit);
+			} else {
+				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
+						fieldsToMatch, startIndex, limit, randomSeed);				
+			}
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism

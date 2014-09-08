@@ -319,6 +319,13 @@ public class SegueApiFacade {
 		return c;
 	}
 
+	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
+			@Nullable String version,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			Integer startIndex, Integer limit) {
+		return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
+	}
+	
 	/**
 	 * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
 	 * Providing the results in a randomised order.
@@ -340,7 +347,7 @@ public class SegueApiFacade {
 	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
 			@Nullable String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			Integer startIndex, Integer limit) {
+			Integer startIndex, Integer limit, final Long randomSeed) {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
 
@@ -361,7 +368,7 @@ public class SegueApiFacade {
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
 			c = contentPersistenceManager.findByFieldNamesRandomOrder(version,
-					fieldsToMatch, startIndex, limit);
+					fieldsToMatch, startIndex, limit, randomSeed);
 		} catch (IllegalArgumentException e) {
 			log.error("Unable to map content object.", e);
 			throw e;

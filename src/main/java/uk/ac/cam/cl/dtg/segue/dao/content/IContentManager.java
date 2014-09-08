@@ -20,9 +20,13 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -118,7 +122,27 @@ public interface IContentManager {
 			String version,
 			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit);
-
+	
+	/**
+	 * The same as findByFieldNames but the results list is returned in a
+	 * randomised order.
+	 * 
+	 * @param version
+	 *            - version of the content to search.
+	 * @param fieldsToMatch
+	 *            - Map which is used for field matching.
+	 * @param startIndex
+	 *            - the index of the first item to return.
+	 * @param limit
+	 *            - the maximum number of results to return.
+	 * @param randomSeed
+	 *            - random seed.
+	 * @return Results Wrapper containing results of the search.
+	 */
+	ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
+			Integer limit, @Nullable Long randomSeed);
+	
 	/**
 	 * Allows fullText search using the internal search provider.
 	 * 
