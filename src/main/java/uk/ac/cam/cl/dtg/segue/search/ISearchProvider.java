@@ -18,8 +18,10 @@ package uk.ac.cam.cl.dtg.segue.search;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 /**
@@ -158,6 +160,30 @@ public interface ISearchProvider {
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			int startIndex, int limit);
 
+	/**
+	 * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the
+	 * results are returned in a random order.
+	 * 
+	 * @see paginatedMatchSearch
+	 * @param index
+	 *            index that the content is stored in
+	 * @param indexType
+	 *            - type of index as registered with search provider.
+	 * @param fieldsToMatch
+	 *            - Map of Map<Map.Entry<Constants.BooleanOperator, String>,
+	 *            List<String>>
+	 * @param startIndex
+	 *            - start index for results
+	 * @param limit
+	 *            - the maximum number of results to return.
+	 * @param randomSeed
+	 *            - random seed.
+	 * @return results in a random order for a given match search.
+	 */
+	ResultsWrapper<String> randomisedPaginatedMatchSearch(String index, String indexType,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, int startIndex, int limit,
+			Long randomSeed);
+	
 	/**
 	 * Query for a list of Results that match a given id prefix.
 	 * 

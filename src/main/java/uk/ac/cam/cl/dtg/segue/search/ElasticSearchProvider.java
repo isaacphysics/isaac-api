@@ -156,9 +156,19 @@ public class ElasticSearchProvider implements ISearchProvider {
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit) {
+		Long seed = this.randomNumberGenerator.nextLong();
+		return this.randomisedPaginatedMatchSearch(index, indexType, fieldsToMatch, startIndex, limit, seed);
+	}
+	
+	@Override
+	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(
+			final String index,
+			final String indexType,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final int startIndex, final int limit, final Long randomSeed) {
 		// build up the query from the fieldsToMatch map
 		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
-		Long seed = this.randomNumberGenerator.nextLong();
+		Long seed = randomSeed;
 
 		query = QueryBuilders.functionScoreQuery(query,
 				ScoreFunctionBuilders.randomFunction(seed));
