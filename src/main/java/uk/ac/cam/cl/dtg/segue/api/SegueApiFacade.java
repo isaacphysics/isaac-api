@@ -716,11 +716,22 @@ public class SegueApiFacade {
 			if (this.userManager.isUserAnAdmin(request)) {
 				IContentManager contentPersistenceManager = contentVersionController
 						.getContentManager();
-
-				String newVersion = contentVersionController.triggerSyncJob(version);
+				String newVersion;
+				if (!contentPersistenceManager.isValidVersion(version)) {
+					SegueErrorResponse error = new SegueErrorResponse(
+							Status.BAD_REQUEST, "Invalid version selected: " + version);
+					log.warn(error.getErrorMessage());
+					return error.toResponse();
+				}
 				
-				List<String> availableVersions = contentPersistenceManager
-						.listAvailableVersions();
+				if (!contentPersistenceManager.getCachedVersionList().contains(version)) {
+					newVersion = contentVersionController.triggerSyncJob(version);
+				} else {
+					newVersion = version;
+				}
+				
+				Collection<String> availableVersions = contentPersistenceManager
+						.getCachedVersionList();
 				
 				if (!availableVersions.contains(version)) {
 					SegueErrorResponse error = new SegueErrorResponse(
@@ -730,7 +741,8 @@ public class SegueApiFacade {
 				}
 
 				contentVersionController.setLiveVersion(newVersion);
-				log.info("Live version of the site changed to: " + newVersion);
+				log.info("Live version of the site changed to: " + newVersion + " by user: "
+						+ this.userManager.getCurrentRegisteredUser(request).getEmail());
 
 				return Response.ok().entity("live Version changed to " + version)
 						.build();
@@ -1341,7 +1353,9 @@ public class SegueApiFacade {
 	/**
 	 * This method will try to bring the live version that Segue is using to
 	 * host content up-to-date with the latest in the database.
-	 * @param request - to enable security checking.
+	 * 
+	 * @param request
+	 *            - to enable security checking.
 	 * @return a response to indicate the synchronise job has triggered.
 	 */
 	@POST
@@ -1350,25 +1364,23 @@ public class SegueApiFacade {
 	public final synchronized Response synchroniseDataStores(@Context final HttpServletRequest request) {
 		try {
 			// check if we are authorized to do this operation.
-			// no authorisation required in DEV mode, but in PROD we need to be an admin.
+			// no authorisation required in DEV mode, but in PROD we need to be
+			// an admin.
 			if (!this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
 					Constants.EnvironmentType.PROD.name())
 					|| this.userManager.isUserAnAdmin(request)) {
-				log.info("Informed of content change; "
-						+ "so triggering new synchronisation job.");
+				log.info("Informed of content change; " + "so triggering new synchronisation job.");
 				contentVersionController.triggerSyncJob();
 				return Response.ok("success - job started").build();
 			} else {
 				log.warn("Unable to trigger synch job as not an admin.");
 				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an administrator to use this function.")
-						.toResponse();
+						"You must be an administrator to use this function.").toResponse();
 			}
 		} catch (NoUserLoggedInException e) {
 			log.warn("Unable to trigger synch job as not logged in.");
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.")
-					.toResponse();
+					"You must be logged in to access this function.").toResponse();
 		}
 	}
 
