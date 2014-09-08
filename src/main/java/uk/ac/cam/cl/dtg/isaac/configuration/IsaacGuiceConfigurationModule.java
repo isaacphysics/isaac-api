@@ -143,15 +143,18 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 * @param gameboardPersistenceManager
 	 *            - a persistence manager that deals with storing and retrieving
 	 *            gameboards.
+	 * @param mapper
+	 *            - allows mapping between DO and DTO object types.
 	 * @return Game manager object.
 	 */
 	@Inject
 	@Provides
 	@Singleton
 	private static GameManager getGameManager(final SegueApiFacade api,
-			final GameboardPersistenceManager gameboardPersistenceManager) {
+			final GameboardPersistenceManager gameboardPersistenceManager,
+			final MapperFacade mapper) {
 		if (null == gameManager) {
-			gameManager = new GameManager(api, gameboardPersistenceManager);
+			gameManager = new GameManager(api, gameboardPersistenceManager, mapper);
 			log.info("Creating Singleton of Game Manager");
 		}
 

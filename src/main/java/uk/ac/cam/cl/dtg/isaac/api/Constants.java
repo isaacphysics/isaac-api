@@ -43,7 +43,7 @@ public final class Constants {
 	/**
 	 * Game specific variables.
 	 */
-	public static final int GAME_BOARD_SIZE = 10;
+	public static final int GAME_BOARD_TARGET_SIZE = 10;
 	
 	/**
 	 * GameboardItemState

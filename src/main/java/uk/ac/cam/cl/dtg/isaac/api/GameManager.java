@@ -36,11 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
-
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
@@ -51,7 +47,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.URIManager;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -71,11 +66,12 @@ import static com.google.common.collect.Maps.*;
 public class GameManager {
 	private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
-	private static final int MAX_QUESTIONS_TO_SEARCH = 20;
+	private static final int MAX_QUESTIONS_TO_SEARCH = 50;
 
 	private final SegueApiFacade api;
 	private final GameboardPersistenceManager gameboardPersistenceManager;
 	private final Random randomGenerator;
+	private final MapperFacade mapper;
 
 	/**
 	 * Creates a game manager that operates using the provided api.
@@ -85,15 +81,19 @@ public class GameManager {
 	 * @param gameboardPersistenceManager
 	 *            - the gameboardPersistenceManager that handles storage and
 	 *            retrieval of gameboards.
+	 * @param mapper
+	 *            - An instance of an object automapper so that DOs can be transformed into DTOs.
 	 */
 	@Inject
 	public GameManager(final SegueApiFacade api,
-			final GameboardPersistenceManager gameboardPersistenceManager) {
+			final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper) {
 		this.api = api;
 
 		this.gameboardPersistenceManager = gameboardPersistenceManager;
 
 		this.randomGenerator = new Random();
+		
+		this.mapper = mapper;
 	}
 
 	/**
@@ -160,29 +160,23 @@ public class GameManager {
 				topicsList, levelsList, conceptsList);
 
 		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
-
+		
+		int startIndex = 0;
 		// Search for questions that match the fields to map variable.
 		ResultsWrapper<ContentDTO> results = api
 				.findMatchingContentRandomOrder(api.getLiveVersion(),
-						fieldsToMap, 0, MAX_QUESTIONS_TO_SEARCH);
+						fieldsToMap, startIndex, MAX_QUESTIONS_TO_SEARCH);
 
 		if (!results.getResults().isEmpty()) {
 			String uuid = UUID.randomUUID().toString();
 
-			Integer sizeOfGameboard = GAME_BOARD_SIZE;
-			if (GAME_BOARD_SIZE > results.getResults().size()) {
+			Integer sizeOfGameboard = GAME_BOARD_TARGET_SIZE;
+			if (GAME_BOARD_TARGET_SIZE > results.getResults().size()) {
 				sizeOfGameboard = results.getResults().size();
 			}
 
 			List<ContentDTO> questionsForGameboard = results.getResults()
 					.subList(0, sizeOfGameboard);
-			// TODO: we should probably inject this properly.
-			// build gameboard using automapper
-			Injector injector = Guice.createInjector(
-					new IsaacGuiceConfigurationModule(),
-					new SegueGuiceConfigurationModule());
-
-			MapperFacade mapper = injector.getInstance(MapperFacade.class);
 
 			List<GameboardItem> gameboardReadyQuestions = new ArrayList<GameboardItem>();
 
@@ -553,7 +547,7 @@ public class GameManager {
 	 * @return integer between one and GAME_BOARD_SIZE+1
 	 */
 	private Integer generateRandomWildCardPosition() {
-		return randomGenerator.nextInt(GAME_BOARD_SIZE + 1);
+		return randomGenerator.nextInt(GAME_BOARD_TARGET_SIZE + 1);
 	}
 
 	/**
