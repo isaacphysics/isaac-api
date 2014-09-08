@@ -710,17 +710,17 @@ public class SegueApiFacade {
 				IContentManager contentPersistenceManager = contentVersionController
 						.getContentManager();
 
+				String newVersion = contentVersionController.triggerSyncJob(version);
+				
 				List<String> availableVersions = contentPersistenceManager
 						.listAvailableVersions();
-
+				
 				if (!availableVersions.contains(version)) {
 					SegueErrorResponse error = new SegueErrorResponse(
 							Status.BAD_REQUEST, "Invalid version selected: " + version);
 					log.warn(error.getErrorMessage());
 					return error.toResponse();
 				}
-
-				String newVersion = contentVersionController.triggerSyncJob(version);
 
 				contentVersionController.setLiveVersion(newVersion);
 				log.info("Live version of the site changed to: " + newVersion);
