@@ -744,8 +744,7 @@ public class SegueApiFacade {
 				log.info("Live version of the site changed to: " + newVersion + " by user: "
 						+ this.userManager.getCurrentRegisteredUser(request).getEmail());
 
-				return Response.ok().entity("live Version changed to " + version)
-						.build();
+				return Response.ok().build();
 			} else {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.")
