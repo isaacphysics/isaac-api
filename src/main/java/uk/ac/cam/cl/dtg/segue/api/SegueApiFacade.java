@@ -56,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -71,6 +72,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -319,10 +321,28 @@ public class SegueApiFacade {
 		return c;
 	}
 
+	/**
+	 * This method will return a ResultsWrapper<ContentDTO> based on the parameters supplied.
+	 * Providing the results in a randomised order.
+	 * 
+	 * @param version
+	 *            - the version of the content to search. If null it will
+	 *            default to the current live version.
+	 * @param fieldsToMatch
+	 *            - Map representing fieldName -> field value mappings to search
+	 *            for. Note: tags is a special field name and the list will be
+	 *            split by commas.
+	 * @param startIndex
+	 *            - the start index for the search results.
+	 * @param limit
+	 *            - the max number of results to return.
+	 * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing
+	 *         null if none found.
+	 */
 	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(
-			@Nullable String version,
+			@Nullable final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			Integer startIndex, Integer limit) {
+			final Integer startIndex, final Integer limit) {
 		return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
 	}
 	
@@ -341,6 +361,7 @@ public class SegueApiFacade {
 	 *            - the start index for the search results.
 	 * @param limit
 	 *            - the max number of results to return.
+	 * @param randomSeed - to allow some control over the random order of the results.            
 	 * @return Response containing a ResultsWrapper<ContentDTO> or a Response containing
 	 *         null if none found.
 	 */
@@ -998,7 +1019,6 @@ public class SegueApiFacade {
 					"No user settings provided.").toResponse();
 		}
 
-
 		// determine if this is intended to be an update or create.
 		// if it is an update we need to do some security checks.
 		if (userObject.getDbId() != null) {
@@ -1050,6 +1070,44 @@ public class SegueApiFacade {
 		} catch (AuthenticationProviderMappingException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to map to a known authenticator. The provider: is unknown")
+					.toResponse();
+		}
+	}
+	
+	/**
+	 * Find user by id or email.
+	 * 
+	 * @param httpServletRequest - for checking permissions
+	 * @param userId - if searching by id
+	 * @param email - if searching by e-mail
+	 * @return a userDTO or a segue error response
+	 */
+	@GET
+	@Path("/admin/users")
+	@Produces("application/json")
+	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
+			@QueryParam("id") final String userId, @QueryParam("email") final String email) {
+		try {
+			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.")
+						.toResponse();
+			}
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in order to use this endpoint.")
+					.toResponse();
+		}
+		
+		try {
+			RegisteredUserDTO userPrototype = new RegisteredUserDTO();
+			userPrototype.setDbId(userId);
+			userPrototype.setEmail(email);
+			
+			return Response.ok(this.userManager.findUsers(userPrototype)).build();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error while looking up user information.")
 					.toResponse();
 		}
 	}

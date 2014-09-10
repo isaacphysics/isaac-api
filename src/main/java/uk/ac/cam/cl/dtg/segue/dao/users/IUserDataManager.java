@@ -138,6 +138,14 @@ public interface IUserDataManager {
 	 *             - If there is an internal database error.
 	 */
 	RegisteredUser getByEmail(final String email) throws SegueDatabaseException;
+	
+	/**
+	 * Find users by a prototype.
+	 * @param prototype - a user prototype that can be used for matching fields.
+	 * @return list of users
+	 * @throws SegueDatabaseException if there is a database error.
+	 */
+	List<RegisteredUser> findUser(RegisteredUser prototype) throws SegueDatabaseException;
 
 	/**
 	 * Get a user by password reset token.

@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.Validate;
@@ -27,6 +28,7 @@ import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -167,6 +169,28 @@ public class MongoUserDataManager implements IUserDataManager {
 			log.error(errorMessage, e);
 			throw new SegueDatabaseException(errorMessage, e);
 		}
+	}
+	
+	@Override 
+	public List<RegisteredUser> findUser(final RegisteredUser prototype) throws SegueDatabaseException {
+		if (null == prototype) {
+			return null;
+		}
+		
+		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				String.class);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		MongoJackModule.configure(mapper);
+		
+		BasicDBObject query = new BasicDBObject(mapper.convertValue(
+				prototype, HashMap.class));
+		
+		DBCursor<RegisteredUser> users = jc.find(query);
+		
+		return users.toArray();		
 	}
 
 	@Override
