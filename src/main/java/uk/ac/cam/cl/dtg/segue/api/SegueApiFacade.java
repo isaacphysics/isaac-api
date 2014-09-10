@@ -221,8 +221,8 @@ public class SegueApiFacade {
 	 * @return Response object containing a ResultsWrapper
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/{version}")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getContentListByVersion(
 			@PathParam("version") final String version,
 			@QueryParam("tags") final String tags,
@@ -410,8 +410,8 @@ public class SegueApiFacade {
 	 *         no levels of recursion into the content)
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/{version}/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getContentById(
 			@PathParam("version") String version,
@@ -445,7 +445,7 @@ public class SegueApiFacade {
 			return error.toResponse();
 		}
 
-		return Response.ok().entity(c).build();
+		return Response.ok(c).build();
 	}
 
 	/**
@@ -461,8 +461,8 @@ public class SegueApiFacade {
 	 *         empty list.
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/search/{version}/{searchString}")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response search(
 			@PathParam("searchString") final String searchString,
@@ -499,8 +499,8 @@ public class SegueApiFacade {
 	 *         empty list.
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/search/{searchString}")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response search(
 			@PathParam("searchString") final String searchString,
@@ -519,8 +519,8 @@ public class SegueApiFacade {
 	 * @return a set of all tags used in the live version
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/tags")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getTagListByLiveVersion(@Context final Request request) {
 		return this.getTagListByVersion(contentVersionController
@@ -539,8 +539,8 @@ public class SegueApiFacade {
 	 * @return a set of tags used in the specified version
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/tags/{version}")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getTagListByVersion(
 			@PathParam("version") final String version,
@@ -571,8 +571,8 @@ public class SegueApiFacade {
 	 * @return a set of all units used in the live version
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/units")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getAllUnitsByLiveVersion(@Context final Request request) {
 		return this.getAllUnitsByVersion(request, contentVersionController
@@ -587,8 +587,8 @@ public class SegueApiFacade {
 	 * @return a set of units used in the specified version of the site
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/units/{version}")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getAllUnitsByVersion(
 			@Context final Request request,
@@ -634,8 +634,8 @@ public class SegueApiFacade {
 	 *         SegueErrorResponse
 	 */
 	@GET
-	@Produces("*/*")
 	@Path("content/file_content/{version}/{path:.*}")
+	@Produces("*/*")
 	@Cache
 	@GZIP
 	public final Response getImageFileContent(
@@ -725,8 +725,8 @@ public class SegueApiFacade {
 	 *         "Invalid version selected".
 	 */
 	@POST
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("admin/live_version/{version}")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final synchronized Response changeLiveVersion(
 			@Context final HttpServletRequest request,
 			@PathParam("version") final String version) {
@@ -787,8 +787,8 @@ public class SegueApiFacade {
 	 * @return a Response containing an immutable map version_list: [x..y..]
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/content_versions")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getVersionsList(
 			@QueryParam("limit") final String limit) {
@@ -844,8 +844,8 @@ public class SegueApiFacade {
 	 * @return segue version as a string wrapped in a response.
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/segue_version")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getSegueAppVersion() {
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
 				.put("segueVersion",
@@ -863,8 +863,8 @@ public class SegueApiFacade {
 	 * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/segue_environment")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getSegueEnvironment(@Context final Request request) {
 		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
@@ -890,8 +890,8 @@ public class SegueApiFacade {
 	 * @return a version info as json response
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/content_versions/live_version")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getLiveVersionInfo() {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
@@ -911,8 +911,8 @@ public class SegueApiFacade {
 	 * @return a version info as json response
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/content_versions/cached")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getCachedVersions() {
 		IContentManager contentPersistenceManager = contentVersionController
 				.getContentManager();
@@ -945,8 +945,8 @@ public class SegueApiFacade {
 	 *         we can't. It will be a 204 No Content
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("users/current_user")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public Response getCurrentUserEndpoint(
 			@Context final Request request,
@@ -994,8 +994,8 @@ public class SegueApiFacade {
 	 * @return the updated users object.
 	 */
 	@POST
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("users/")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response createOrUpdateUserSettings(
@@ -1198,8 +1198,8 @@ public class SegueApiFacade {
 	 * @return Success if the token is valid, otherwise returns not found
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("users/resetpassword/{token}")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
 		try {
@@ -1268,8 +1268,8 @@ public class SegueApiFacade {
 	 * @return Redirect response to the auth providers site.
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("auth/{provider}/authenticate")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response authenticate(
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider) {
@@ -1377,8 +1377,8 @@ public class SegueApiFacade {
 	 * @return The users DTO or a SegueErrorResponse
 	 */
 	@POST
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("auth/{provider}/authenticate")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public final Response authenticateWithCredentials(
 			@Context final HttpServletRequest request,
@@ -1492,9 +1492,9 @@ public class SegueApiFacade {
 	 *         containing a SegueErrorResponse .
 	 */
 	@POST
+	@Path("questions/{question_id}/answer")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@Path("questions/{question_id}/answer")
 	@GZIP
 	public final Response answerQuestion(
 			@Context final HttpServletRequest request,
@@ -1565,8 +1565,8 @@ public class SegueApiFacade {
 	 *         children represent each error.
 	 */
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
 	@Path("admin/content_problems")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getContentProblems(@Context final HttpServletRequest request) {
 		Map<Content, List<String>> problemMap = contentVersionController
 				.getContentManager().getProblemMap(
@@ -1628,9 +1628,9 @@ public class SegueApiFacade {
 	 * @return - Successful response if no error occurs, otherwise error response
 	 */
 	@POST
+	@Path("contact/")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Path("contact/")
 	public Response contactUs(final Map<String, String> form) {
 		if (form.get("firstName") == null || form.get("lastName") == null || form.get("emailAddress") == null
 			|| form.get("subject") == null || form.get("message") == null) {
