@@ -146,7 +146,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("pages/concepts")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getConceptList(
 			@Context final Request request,
@@ -204,7 +204,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("pages/concepts/{concept_page_id}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getConcept(
 			@Context final Request request,
@@ -274,7 +274,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("pages/questions")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getQuestionList(
 			@Context final Request request,
@@ -345,7 +345,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("pages/questions/{question_page_id}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getQuestion(
 			@Context final Request request,
@@ -424,7 +424,7 @@ public class IsaacController {
 	 */
 	@SuppressWarnings("unchecked")
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search/{searchString}")
 	@GZIP
 	public final Response search(
@@ -488,7 +488,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("gameboards")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response generateTemporaryGameboard(
 			@Context final HttpServletRequest request,
@@ -577,7 +577,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("gameboards/{gameboard_id}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getGameboard(
 			@Context final Request request,
@@ -635,7 +635,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("users/current_user/gameboards")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getGameboardsByCurrentUser(
 			@Context final HttpServletRequest request,
@@ -743,7 +743,7 @@ public class IsaacController {
 	 */
 	@DELETE
 	@Path("users/current_user/gameboards/{gameboard_id}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response unlinkUserFromGameboard(@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
 
@@ -798,7 +798,7 @@ public class IsaacController {
 	 */
 	@POST
 	@Path("gameboards/{id}/")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public final Response updateGameboard(
 			@Context final HttpServletRequest request,
@@ -894,7 +894,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("pages/{page}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getPage(
 			@Context final Request request,
@@ -946,7 +946,7 @@ public class IsaacController {
 	 */
 	@GET
 	@Path("pages/fragments/{fragment_id}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getPageFragment(
 			@Context final Request request,

@@ -56,7 +56,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -72,7 +71,6 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -185,7 +183,7 @@ public class SegueApiFacade {
 	 */
 	@POST
 	@Path("log")
-	@Consumes("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postLog(@Context final HttpServletRequest httpRequest,
 			final Map<String, Object> eventJSON) {
 		
@@ -223,7 +221,7 @@ public class SegueApiFacade {
 	 * @return Response object containing a ResultsWrapper
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/{version}")
 	public final Response getContentListByVersion(
 			@PathParam("version") final String version,
@@ -412,7 +410,7 @@ public class SegueApiFacade {
 	 *         no levels of recursion into the content)
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/{version}/{id}")
 	@GZIP
 	public final Response getContentById(
@@ -463,7 +461,7 @@ public class SegueApiFacade {
 	 *         empty list.
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/search/{version}/{searchString}")
 	@GZIP
 	public final Response search(
@@ -501,7 +499,7 @@ public class SegueApiFacade {
 	 *         empty list.
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/search/{searchString}")
 	@GZIP
 	public final Response search(
@@ -521,7 +519,7 @@ public class SegueApiFacade {
 	 * @return a set of all tags used in the live version
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/tags")
 	@GZIP
 	public final Response getTagListByLiveVersion(@Context final Request request) {
@@ -541,7 +539,7 @@ public class SegueApiFacade {
 	 * @return a set of tags used in the specified version
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/tags/{version}")
 	@GZIP
 	public final Response getTagListByVersion(
@@ -573,7 +571,7 @@ public class SegueApiFacade {
 	 * @return a set of all units used in the live version
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/units")
 	@GZIP
 	public final Response getAllUnitsByLiveVersion(@Context final Request request) {
@@ -589,7 +587,7 @@ public class SegueApiFacade {
 	 * @return a set of units used in the specified version of the site
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("content/units/{version}")
 	@GZIP
 	public final Response getAllUnitsByVersion(
@@ -727,7 +725,7 @@ public class SegueApiFacade {
 	 *         "Invalid version selected".
 	 */
 	@POST
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("admin/live_version/{version}")
 	public final synchronized Response changeLiveVersion(
 			@Context final HttpServletRequest request,
@@ -789,7 +787,7 @@ public class SegueApiFacade {
 	 * @return a Response containing an immutable map version_list: [x..y..]
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/content_versions")
 	@GZIP
 	public final Response getVersionsList(
@@ -846,7 +844,7 @@ public class SegueApiFacade {
 	 * @return segue version as a string wrapped in a response.
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/segue_version")
 	public final Response getSegueAppVersion() {
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
@@ -865,7 +863,7 @@ public class SegueApiFacade {
 	 * @return segue mode as a string wrapped in a response. e.g {segueMode:DEV}
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/segue_environment")
 	@GZIP
 	public final Response getSegueEnvironment(@Context final Request request) {
@@ -892,7 +890,7 @@ public class SegueApiFacade {
 	 * @return a version info as json response
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/content_versions/live_version")
 	public final Response getLiveVersionInfo() {
 		IContentManager contentPersistenceManager = contentVersionController
@@ -913,7 +911,7 @@ public class SegueApiFacade {
 	 * @return a version info as json response
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("info/content_versions/cached")
 	public final Response getCachedVersions() {
 		IContentManager contentPersistenceManager = contentVersionController
@@ -947,7 +945,7 @@ public class SegueApiFacade {
 	 *         we can't. It will be a 204 No Content
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("users/current_user")
 	@GZIP
 	public Response getCurrentUserEndpoint(
@@ -996,9 +994,9 @@ public class SegueApiFacade {
 	 * @return the updated users object.
 	 */
 	@POST
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("users/")
-	@Consumes("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response createOrUpdateUserSettings(
 			@Context final HttpServletRequest request, final String userObjectString) {
@@ -1084,7 +1082,7 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Path("/admin/users")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
 			@QueryParam("id") final String userId, @QueryParam("email") final String email) {
 		try {
@@ -1163,7 +1161,7 @@ public class SegueApiFacade {
 	 */
 	@POST
 	@Path("users/resetpassword")
-	@Consumes("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response generatePasswordResetToken(final RegisteredUserDTO userObject) {
 		if (null == userObject) {
@@ -1200,7 +1198,7 @@ public class SegueApiFacade {
 	 * @return Success if the token is valid, otherwise returns not found
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("users/resetpassword/{token}")
 	@GZIP
 	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
@@ -1232,7 +1230,7 @@ public class SegueApiFacade {
 	 */
 	@POST
 	@Path("users/resetpassword/{token}")
-	@Consumes("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response resetPassword(@PathParam("token") final String token, final RegisteredUser userObject) {
 		try {
@@ -1270,7 +1268,7 @@ public class SegueApiFacade {
 	 * @return Redirect response to the auth providers site.
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("auth/{provider}/authenticate")
 	public final Response authenticate(
 			@Context final HttpServletRequest request,
@@ -1292,7 +1290,7 @@ public class SegueApiFacade {
 	 */
 	@GET
 	@Path("auth/{provider}/link")
-	@Produces("application/json")	
+	@Produces(MediaType.APPLICATION_JSON)	
 	public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString) {
 
@@ -1316,7 +1314,7 @@ public class SegueApiFacade {
 	 */
 	@DELETE
 	@Path("auth/{provider}/link")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response unlinkUserFromProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString) {
 		
@@ -1355,7 +1353,7 @@ public class SegueApiFacade {
 	 * @return Redirect response to send the user to the home page.
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("auth/{provider}/callback")
 	public final Response authenticationCallback(
 			@Context final HttpServletRequest request,
@@ -1379,9 +1377,9 @@ public class SegueApiFacade {
 	 * @return The users DTO or a SegueErrorResponse
 	 */
 	@POST
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("auth/{provider}/authenticate")
-	@Consumes("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public final Response authenticateWithCredentials(
 			@Context final HttpServletRequest request,
 			@PathParam("provider") final String signinProvider,
@@ -1399,7 +1397,7 @@ public class SegueApiFacade {
 	 * @return successful response to indicate any cookies were destroyed.
 	 */
 	@POST
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("auth/logout")
 	public final Response userLogout(@Context final HttpServletRequest request) {
 		userManager.logUserOut(request);
@@ -1416,7 +1414,7 @@ public class SegueApiFacade {
 	 * @return a response to indicate the synchronise job has triggered.
 	 */
 	@POST
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("admin/synchronise_datastores")
 	public final synchronized Response synchroniseDataStores(@Context final HttpServletRequest request) {
 		try {
@@ -1451,7 +1449,7 @@ public class SegueApiFacade {
 	 *         requested.
 	 */
 	@POST
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("admin/clear_caches")
 	public final synchronized Response clearCaches(@Context final HttpServletRequest request) {
 		try {
@@ -1567,7 +1565,7 @@ public class SegueApiFacade {
 	 *         children represent each error.
 	 */
 	@GET
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	@Path("admin/content_problems")
 	public final Response getContentProblems(@Context final HttpServletRequest request) {
 		Map<Content, List<String>> problemMap = contentVersionController
@@ -1630,8 +1628,8 @@ public class SegueApiFacade {
 	 * @return - Successful response if no error occurs, otherwise error response
 	 */
 	@POST
-	@Produces("application/json")
-	@Consumes("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("contact/")
 	public Response contactUs(final Map<String, String> form) {
 		if (form.get("firstName") == null || form.get("lastName") == null || form.get("emailAddress") == null
