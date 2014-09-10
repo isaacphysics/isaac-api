@@ -42,6 +42,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Lists;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -547,6 +548,42 @@ public class UserManager {
 		}
 		
 		return this.convertUserDOToUserDTO(user);
+	}
+	
+	/**
+	 * Find a list of users based on some user prototype.
+	 * @param prototype - partially completed user object to base search on
+	 * @return list of registered user dtos.
+	 * @throws SegueDatabaseException - if there is a database error.
+	 */
+	public final List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
+		List<RegisteredUser> registeredUsersDOs = this.database.findUser(this.dtoMapper.map(prototype,
+				RegisteredUser.class));
+		
+		return this.convertUserDOToUserDTOList(registeredUsersDOs);
+	}
+	
+	/**
+	 * This function can be used to find user information about a user when given an id.
+	 * @param id - the id of the user to search for.
+	 * @return the userDTO
+	 * @throws NoUserException - If we cannot find a valid user with the email address provided. 
+	 * @throws SegueDatabaseException - If there is another database error
+	 */
+	public final RegisteredUserDTO getUserDTOById(final String id) throws NoUserException, SegueDatabaseException {
+		return this.convertUserDOToUserDTO(this.findUserById(id));
+	}
+	
+	/**
+	 * This function can be used to find user information about a user when given an email.
+	 * @param email - the e-mail address of the user to search for
+	 * @return the userDTO
+	 * @throws NoUserException - If we cannot find a valid user with the email address provided. 
+	 * @throws SegueDatabaseException - If there is another database error
+	 */
+	public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException,
+			SegueDatabaseException {
+		return this.convertUserDOToUserDTO(this.findUserByEmail(email));
 	}
 	
 	/**
@@ -1423,6 +1460,19 @@ public class UserManager {
 		}
 		
 		return userDTO;
+	}
+	
+	/**
+	 * Converts a list of userDOs into a List of userDTOs.
+	 * @param listToConvert - list of DOs to convert
+	 * @return the list of user dtos.
+	 */
+	private List<RegisteredUserDTO> convertUserDOToUserDTOList(final List<RegisteredUser> listToConvert) {
+		List<RegisteredUserDTO> result = Lists.newArrayList();
+		for (RegisteredUser user : listToConvert) {
+			result.add(this.convertUserDOToUserDTO(user));
+		}
+		return result;
 	}
 	
 	/**
