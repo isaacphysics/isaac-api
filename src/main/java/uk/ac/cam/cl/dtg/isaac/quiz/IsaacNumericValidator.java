@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import org.slf4j.Logger;
@@ -37,8 +38,6 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 public class IsaacNumericValidator implements IValidator {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacNumericValidator.class);
-
-	private static final int SIGNIFICANT_FIGURES = 3; 
 	
 	@Override
 	public final QuestionValidationResponseDTO validateQuestionResponse(
@@ -123,8 +122,9 @@ public class IsaacNumericValidator implements IValidator {
 				}
 
 				// match known choices
-				if (numericValuesMatch(answerFromUser.getValue(),
-						quantityFromQuestion.getValue())
+				if (numericValuesMatch(quantityFromQuestion.getValue(), 
+						answerFromUser.getValue(),
+						isaacNumericQuestion.getSignificantFigures())
 						&& answerFromUser.getUnits().equals(
 								quantityFromQuestion.getUnits())) {
 					// exact match
@@ -136,8 +136,8 @@ public class IsaacNumericValidator implements IValidator {
 							quantityFromQuestion.isCorrect(), new Date());
 
 					break;
-				} else if (numericValuesMatch(answerFromUser.getValue(),
-						quantityFromQuestion.getValue())
+				} else if (numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
+						isaacNumericQuestion.getSignificantFigures())
 						&& !answerFromUser.getUnits().equals(
 								quantityFromQuestion.getUnits())
 						&& quantityFromQuestion.isCorrect()) {
@@ -146,8 +146,8 @@ public class IsaacNumericValidator implements IValidator {
 							isaacNumericQuestion.getId(), answerFromUser,
 							false, new Content("Check your units."), true,
 							false, new Date());
-				} else if (!numericValuesMatch(answerFromUser.getValue(),
-						quantityFromQuestion.getValue())
+				} else if (!numericValuesMatch(quantityFromQuestion.getValue(), 
+						answerFromUser.getValue(), isaacNumericQuestion.getSignificantFigures())
 						&& answerFromUser.getUnits().equals(
 								quantityFromQuestion.getUnits())
 						&& quantityFromQuestion.isCorrect()) {
@@ -194,8 +194,8 @@ public class IsaacNumericValidator implements IValidator {
 				Quantity quantityFromQuestion = (Quantity) c;
 
 				// match known choices
-				if (numericValuesMatch(answerFromUser.getValue(),
-						quantityFromQuestion.getValue())) {
+				if (numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
+						isaacNumericQuestion.getSignificantFigures())) {
 					// value match
 					bestResponse = new QuantityValidationResponseDTO(
 							isaacNumericQuestion.getId(), answerFromUser,
@@ -229,37 +229,42 @@ public class IsaacNumericValidator implements IValidator {
 	/**
 	 * Test whether two quantity values match. Parse the strings as doubles,
 	 * supporting notation of 3x10^12 to mean 3e12, then test that they match
-	 * to 3 s.f.
+	 * to N s.f.
 	 * 
-	 * @param v1
+	 * @param trustedValue
 	 * 			- first number
-	 * @param v2
+	 * @param untrustedValue
 	 * 			- second number
+	 * @param significantFiguresRequired - the number of significant figures that the answer provided should match
 	 * @return true when the numbers match
 	 */
-	private boolean numericValuesMatch(String v1, String v2) {
+	private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
+			final int significantFiguresRequired) {
+		double trustedDouble, untrustedDouble;
 		
-		// First replace "x10^" with "e";
+		// Replace "x10^" with "e";
+		String untrustedParsedValue = untrustedValue.replace("x10^", "e");
 		
-		v1 = v1.replace("x10^", "e");
-		v2 = v2.replace("x10^", "e");
-		
-		double f1, f2;
+		// check significant figures match
+		int untrustedValueSigfigs = this.calculateSignificantDigits(new BigDecimal(untrustedParsedValue));
+		if (untrustedParsedValue.contains(".") && untrustedValueSigfigs != significantFiguresRequired) {
+			return false;
+		}
 		
 		try {
-			f1 = Double.parseDouble(v1);
-			f2 = Double.parseDouble(v2);
+			trustedDouble = Double.parseDouble(trustedValue.replace("x10^", "e"));
+			untrustedDouble = Double.parseDouble(untrustedParsedValue);
 		} catch (NumberFormatException e) {
 			// One of the values was not a valid float.
 			return false;
 		}
 		
-		// Round to 3 s.f.
+		// Round to N s.f. for trusted value
+		trustedDouble = roundToSigFigs(trustedDouble, significantFiguresRequired);
+		untrustedDouble = roundToSigFigs(untrustedDouble, significantFiguresRequired);
 		
-		f1 = roundToSigFigs(f1, SIGNIFICANT_FIGURES);
-		f2 = roundToSigFigs(f2, SIGNIFICANT_FIGURES);
-		
-		return Math.abs(f1 - f2) < Math.max(1e-12 * Math.max(f1,  f2), 1e-12);
+		return Math.abs(trustedDouble - untrustedDouble) < Math.max(
+				1e-12 * Math.max(trustedDouble, untrustedDouble), 1e-12);
 	}
 	
 	/**
@@ -278,5 +283,19 @@ public class IsaacNumericValidator implements IValidator {
 		double normalised = f / Math.pow(10, mag);
 				
 		return Math.round(normalised * Math.pow(10, sigFigs - 1)) * Math.pow(10, mag) / Math.pow(10, sigFigs - 1);
+	}
+	
+	/**
+	 * Calculate the number of significant figures provided by an input.
+	 * 
+	 * @param input as a big decimal (probably constructed using a string)
+	 * @return an integer representing the number of significant figures provided.
+	 */
+	private int calculateSignificantDigits(final BigDecimal input) {
+		if (input.scale() <= 0) {
+	    	return input.precision() + input.stripTrailingZeros().scale();
+	    } else {
+	    	return input.precision();
+	    }
 	}
 }
