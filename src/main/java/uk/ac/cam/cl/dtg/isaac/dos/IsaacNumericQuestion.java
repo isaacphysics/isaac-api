@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestion extends IsaacQuestionBase {
 	private Boolean requireUnits;
+	private Integer significantFigures;
 
 	/**
 	 * Gets the requireUnits.
@@ -49,5 +50,24 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
 	 */
 	public final void setRequireUnits(final Boolean requireUnits) {
 		this.requireUnits = requireUnits;
+	}
+	
+	/**
+	 * Gets the expected number of significant figures.
+	 * @return the number of sig figs.
+	 */
+	public int getSignificantFigures() {
+		if (null == significantFigures) {
+			return 2;
+		}
+		return significantFigures;
+	}
+
+	/**
+	 * Sets the required number of significant figures.
+	 * @param significantFigures - number of significant figures expected
+	 */
+	public void setSignificantFigures(final Integer significantFigures) {
+		this.significantFigures = significantFigures;
 	}
 }
