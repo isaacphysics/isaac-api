@@ -42,6 +42,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 /**
  * Class responsible for reading the local school list csv file.
  * 
+ * This class is threadsafe providing that the ISearchProvider given as a
+ * dependency is not given to another instance of this class. Normally this
+ * class should be treated as a singleton to ensure the ISearchProvider is not
+ * shared with another instance of this class.
  */
 public class SchoolListReader {
 	private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
@@ -84,9 +88,9 @@ public class SchoolListReader {
 		}
 
 		List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_SEARCH_INDEX,
-				SCHOOLS_SEARCH_TYPE, searchQuery, null, Constants.SCHOOL_URN_FIELDNAME_POJO, 
-				Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO,
-				Constants.SCHOOL_POSTCODE_FIELDNAME_POJO).getResults();
+				SCHOOLS_SEARCH_TYPE, searchQuery, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
+				Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, Constants.SCHOOL_POSTCODE_FIELDNAME_POJO)
+				.getResults();
 
 		List<School> resultList = Lists.newArrayList();
 		for (String schoolString : schoolSearchResults) {
@@ -108,7 +112,7 @@ public class SchoolListReader {
 		// if the search provider has the index just return.
 		if (searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
 			return;
-		} 
+		}
 
 		Thread thread = new Thread() {
 			public void run() {
@@ -120,10 +124,10 @@ public class SchoolListReader {
 				}
 			}
 		};
-		
+
 		thread.start();
 	}
-	
+
 	/**
 	 * Ensure School List has been generated.
 	 * 
@@ -166,7 +170,7 @@ public class SchoolListReader {
 			log.info("Cancelling school search index operation as another thread has already done it.");
 		}
 	}
-	
+
 	/**
 	 * Loads the school list from the preconfigured filename.
 	 * 
@@ -194,8 +198,10 @@ public class SchoolListReader {
 			// we expect the columns to have the followings:
 			// SCHOOL URN | EstablishmentNumber | EstablishmentName | Town
 			// Postcode
-			while ((line = reader.readLine()) != null && !line.isEmpty()) {
-				// we have to remove the quotes from the string as the source file is ugly.
+			line = reader.readLine();
+			while (line != null && !line.isEmpty()) {
+				// we have to remove the quotes from the string as the source
+				// file is ugly.
 				line = line.replace("\"", "");
 				String[] schoolArray = line.split(",");
 				try {
@@ -218,6 +224,7 @@ public class SchoolListReader {
 					log.warn("Unable to load the following school into the school list due to missing required fields. "
 							+ line);
 				}
+				line = reader.readLine();
 			}
 			reader.close();
 		} catch (FileNotFoundException e) {

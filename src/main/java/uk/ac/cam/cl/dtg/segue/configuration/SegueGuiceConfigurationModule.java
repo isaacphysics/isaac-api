@@ -150,8 +150,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT,
 				globalProperties);
 
-		this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
-
 		this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
 		this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
 		this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
