@@ -330,6 +330,17 @@ public class APIOverviewResource {
 		List<ResourceDescription> descriptions = ResourceDescription
 				.fromBoundResourceInvokers(registry.getBounded().entrySet());
 
+		// sort the list to make it easier for me to find things
+		Collections.sort(descriptions, new Comparator<ResourceDescription>() {
+
+			@Override
+			public int compare(final ResourceDescription o1,
+					final ResourceDescription o2) {
+				return o1.getBasePath().compareToIgnoreCase(o2.getBasePath());
+			}
+
+		});
+		
 		sb.append("<h1>").append("REST interface overview").append("</h1>");
 
 		for (ResourceDescription resource : descriptions) {
