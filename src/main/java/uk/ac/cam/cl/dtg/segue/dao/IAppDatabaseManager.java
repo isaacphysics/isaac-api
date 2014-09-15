@@ -31,6 +31,17 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
  */
 public interface IAppDatabaseManager<T> extends IAppDataManager<T> {
 	/**
+	 * Persist an object in the database.
+	 * 
+	 * @param objectToSave
+	 *            - the object that should be persisted.
+	 * @return the database unique id of the object saved.
+	 * @throws SegueDatabaseException
+	 *             - when a database error has occurred.
+	 */
+	String save(T objectToSave) throws SegueDatabaseException;
+	
+	/**
 	 * Find a database record using the map parameter.
 	 * 
 	 * @param fieldsToMatch

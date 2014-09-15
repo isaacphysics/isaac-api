@@ -25,6 +25,7 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
+import uk.ac.cam.cl.dtg.segue.api.MathsRenderingServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SchoolLookupFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
@@ -56,7 +57,8 @@ public class IsaacApplicationRegister extends Application {
 		// invoke schoolList initialisation
 		this.singletons.add(injector.getInstance(SchoolLookupFacade.class));
 		this.singletons.add(injector.getInstance(SegueApiFacade.class));
-
+		this.singletons.add(injector.getInstance(MathsRenderingServiceFacade.class));
+		
 		return this.singletons;
 	}
 

@@ -99,6 +99,11 @@ public final class Constants {
 	public static final String LIVE_VERSION_CONFIG_LOCATION = "LIVE_VERSION_CONFIG_LOCATION";
 	
 	/**
+	 * The location to put rendered maths pngs for caching.
+	 */
+	public static final String MATHS_CACHE_LOCATION = "MATHS_CACHE_LOCATION";
+	
+	/**
 	 * Constant representing the key for the property id that represents whether
 	 * segue should track and load all git changes as they arrive on the
 	 * repository.

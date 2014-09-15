@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
+import uk.ac.cam.cl.dtg.segue.dao.FileAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
@@ -47,6 +48,7 @@ import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.MathsContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -170,6 +172,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				globalProperties);
 		this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
 		this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
+		
+		this.bindConstantToProperty(Constants.MATHS_CACHE_LOCATION, globalProperties);
 
 		// GitDb
 		bind(GitDb.class)
@@ -537,6 +541,25 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		}
 
 		return communicator;
+	}
+
+
+	/**
+	 * This provides a singleton of the MathsContent Manager for the segue.
+	 *
+	 * @param fileCacheLocation - the location that cached math images should be stored.
+	 * @return the content manager that knows how to render / cache maths content.
+	 * @throws IOException
+	 */
+	@Inject
+	@Provides
+	private MathsContentManager getMathsContentManager(
+			@Named(Constants.MATHS_CACHE_LOCATION) final String fileCacheLocation) throws IOException {
+		MathsContentManager mcm;
+
+		mcm = new MathsContentManager(new FileAppDataManager(fileCacheLocation));
+
+		return mcm;
 	}
 
 

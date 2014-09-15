@@ -1675,15 +1675,6 @@ public class SegueApiFacade {
 		return Response.ok().build();
 	}
 	
-	@GET
-	@Path("content/maths/{mathsContent}")
-	@Produces("*/*")
-	public Response renderMathsAsPng(@PathParam("mathsContent") final String mathsContent) {
-		
-		log.info("Starting server side math rendering for mathsContent " + mathsContent);
-		return Response.ok().build();
-	}
-	
 	/**
 	 * Helper method to generate field to match requirements for search queries.
 	 * 

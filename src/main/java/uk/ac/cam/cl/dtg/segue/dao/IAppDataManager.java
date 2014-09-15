@@ -37,13 +37,16 @@ public interface IAppDataManager<T> {
 	/**
 	 * Persist an object in the database.
 	 * 
+	 * @param preferredId
+	 *            - Allows you to express a preference of what ID the object
+	 *            should be saved under. This can be ignored. The return result is the id that was used.
 	 * @param objectToSave
 	 *            - the object that should be persisted.
 	 * @return the database unique id of the object saved.
 	 * @throws SegueDatabaseException
 	 *             - when a database error has occurred.
 	 */
-	String save(T objectToSave) throws SegueDatabaseException;
+	String save(String preferredId, T objectToSave) throws SegueDatabaseException;
 	
 	/**
 	 * Delete a given object from the database.

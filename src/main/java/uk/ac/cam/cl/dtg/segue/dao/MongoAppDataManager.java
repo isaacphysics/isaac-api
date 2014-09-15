@@ -68,6 +68,12 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	}
 
 	@Override
+	public final String save(final String id, final T objectToSave) throws SegueDatabaseException {
+		log.warn("This provider does not allow an id to be set in advance of saving. Generating a random one instead.");
+		return this.save(objectToSave);
+	}
+	
+	@Override
 	public final String save(final T objectToSave) throws SegueDatabaseException {
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(collectionName), typeParamaterClass,
