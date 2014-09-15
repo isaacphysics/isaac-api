@@ -716,67 +716,6 @@ public class SegueApiFacade {
 	}
 
 	/**
-	 * This method will allow the live version served by the site to be changed.
-	 * 
-	 * @param request - to help determine access rights.
-	 * @param version
-	 *            - version to use as updated version of content store.
-	 * @return Success shown by returning the new liveSHA or failed message
-	 *         "Invalid version selected".
-	 */
-	@POST
-	@Path("admin/live_version/{version}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public final synchronized Response changeLiveVersion(
-			@Context final HttpServletRequest request,
-			@PathParam("version") final String version) {
-
-		try {
-			if (this.userManager.isUserAnAdmin(request)) {
-				IContentManager contentPersistenceManager = contentVersionController
-						.getContentManager();
-				String newVersion;
-				if (!contentPersistenceManager.isValidVersion(version)) {
-					SegueErrorResponse error = new SegueErrorResponse(
-							Status.BAD_REQUEST, "Invalid version selected: " + version);
-					log.warn(error.getErrorMessage());
-					return error.toResponse();
-				}
-				
-				if (!contentPersistenceManager.getCachedVersionList().contains(version)) {
-					newVersion = contentVersionController.triggerSyncJob(version);
-				} else {
-					newVersion = version;
-				}
-				
-				Collection<String> availableVersions = contentPersistenceManager
-						.getCachedVersionList();
-				
-				if (!availableVersions.contains(version)) {
-					SegueErrorResponse error = new SegueErrorResponse(
-							Status.BAD_REQUEST, "Invalid version selected: " + version);
-					log.warn(error.getErrorMessage());
-					return error.toResponse();
-				}
-
-				contentVersionController.setLiveVersion(newVersion);
-				log.info("Live version of the site changed to: " + newVersion + " by user: "
-						+ this.userManager.getCurrentRegisteredUser(request).getEmail());
-
-				return Response.ok().build();
-			} else {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be logged in as an admin to access this function.")
-						.toResponse();
-			}
-		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.")
-					.toResponse();
-		}
-	}
-
-	/**
 	 * This method returns all versions as an immutable map version_list.
 	 * 
 	 * @param limit
