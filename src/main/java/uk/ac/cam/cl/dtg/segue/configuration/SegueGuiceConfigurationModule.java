@@ -40,7 +40,7 @@ import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
-import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
@@ -587,7 +587,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 *            the type that can be managed by this App Manager.
 	 * @return the application manager ready to use.
 	 */
-	public static <T> IAppDataManager<T> getAppDataManager(
+	public static <T> IAppDatabaseManager<T> getAppDataManager(
 			final String databaseName, final Class<T> classType) {
 		Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
 

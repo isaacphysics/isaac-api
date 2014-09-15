@@ -40,7 +40,7 @@ import com.mongodb.MongoException;
  * @param <T>
  *            the type that this App Data Manager looks after.
  */
-public class MongoAppDataManager<T> implements IAppDataManager<T> {
+public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	private static final Logger log = LoggerFactory
 			.getLogger(MongoAppDataManager.class);
 

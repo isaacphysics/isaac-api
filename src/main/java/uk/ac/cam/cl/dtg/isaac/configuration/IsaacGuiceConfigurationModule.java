@@ -185,5 +185,4 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
 		return gameboardPersistenceManager;
 	}
-
 }

@@ -41,7 +41,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.URIManager;
-import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -62,8 +62,8 @@ public class GameboardPersistenceManager {
 	private static final String USER_ID_FKEY = "userId";
 	private static final String DB_ID_FIELD = "_id";
 
-	private final IAppDataManager<GameboardDO> gameboardDataManager;
-	private final IAppDataManager<UserGameboardsDO> userToGameboardMappingsDatabase;
+	private final IAppDatabaseManager<GameboardDO> gameboardDataManager;
+	private final IAppDatabaseManager<UserGameboardsDO> userToGameboardMappingsDatabase;
 
 	private final MapperFacade mapper;
 	private final SegueApiFacade api;
@@ -86,8 +86,8 @@ public class GameboardPersistenceManager {
 	 *            and from GameboardDOs and DTOs.
 	 */
 	@Inject
-	public GameboardPersistenceManager(final IAppDataManager<GameboardDO> database,
-			final IAppDataManager<UserGameboardsDO> userToGameboardMappings, final SegueApiFacade api,
+	public GameboardPersistenceManager(final IAppDatabaseManager<GameboardDO> database,
+			final IAppDatabaseManager<UserGameboardsDO> userToGameboardMappings, final SegueApiFacade api,
 			final MapperFacade mapper) {
 		this.gameboardDataManager = database;
 		this.userToGameboardMappingsDatabase = userToGameboardMappings;

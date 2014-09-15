@@ -217,7 +217,6 @@ public class GitContentManager implements IContentManager {
 			log.error("Unable to ensure cache for requested version" + version);
 			return null;
 		}
-
 	}
 
 	@Override
@@ -432,6 +431,7 @@ public class GitContentManager implements IContentManager {
 						
 						// may as well spawn a new thread to do the validation work now.
 						Thread validationJob = new Thread() {
+							@Override
 							public void run() {
 								validateReferentialIntegrity(version);
 							}

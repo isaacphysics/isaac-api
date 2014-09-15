@@ -61,7 +61,7 @@ import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.IAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -1675,6 +1675,15 @@ public class SegueApiFacade {
 		return Response.ok().build();
 	}
 	
+	@GET
+	@Path("content/maths/{mathsContent}")
+	@Produces("*/*")
+	public Response renderMathsAsPng(@PathParam("mathsContent") final String mathsContent) {
+		
+		log.info("Starting server side math rendering for mathsContent " + mathsContent);
+		return Response.ok().build();
+	}
+	
 	/**
 	 * Helper method to generate field to match requirements for search queries.
 	 * 
@@ -1727,7 +1736,7 @@ public class SegueApiFacade {
 	 * @return IAppDataManager where <T> is the type the manager is responsible
 	 *         for.
 	 */
-	public final <T> IAppDataManager<T> requestAppDataManager(
+	public final <T> IAppDatabaseManager<T> requestAppDataManager(
 			final String databaseName, final Class<T> classType) {
 		return SegueGuiceConfigurationModule.getAppDataManager(databaseName,
 				classType);
