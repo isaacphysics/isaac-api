@@ -125,11 +125,68 @@ public class APIOverviewResource {
 			this.deprecated = deprecated;
 		}
 
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((consumes == null) ? 0 : consumes.hashCode());
+			result = prime * result + (deprecated ? 1231 : 1237);
+			result = prime * result + ((fullPath == null) ? 0 : fullPath.hashCode());
+			result = prime * result + ((method == null) ? 0 : method.hashCode());
+			result = prime * result + ((produces == null) ? 0 : produces.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof MethodDescription)) {
+				return false;
+			}
+			MethodDescription other = (MethodDescription) obj;
+			if (consumes == null) {
+				if (other.consumes != null) {
+					return false;
+				}
+			} else if (!consumes.equals(other.consumes)) {
+				return false;
+			}
+			if (deprecated != other.deprecated) {
+				return false;
+			}
+			if (fullPath == null) {
+				if (other.fullPath != null) {
+					return false;
+				}
+			} else if (!fullPath.equals(other.fullPath)) {
+				return false;
+			}
+			if (method == null) {
+				if (other.method != null) {
+					return false;
+				}
+			} else if (!method.equals(other.method)) {
+				return false;
+			}
+			if (produces == null) {
+				if (other.produces != null) {
+					return false;
+				}
+			} else if (!produces.equals(other.produces)) {
+				return false;
+			}
+			return true;
+		}
 	}
 
 	/**
 	 * POJO to represent Resource information collected using reflection and
-	 * rest easy registry
+	 * rest easy registry.
 	 * 
 	 */
 	public static final class ResourceDescription implements Serializable {
@@ -159,9 +216,20 @@ public class APIOverviewResource {
 						.getConsumes()));
 
 				for (String verb : method.getHttpMethods()) {
-					calls.add(new MethodDescription(verb, path, produces,
+					MethodDescription md = new MethodDescription(verb, path, produces,
 							consumes, method.getMethod().isAnnotationPresent(
-									Deprecated.class)));
+									Deprecated.class));
+					
+					if (!calls.contains(md)) {
+						calls.add(md);	
+					} else {
+						// This will happen when the same method signature is
+						// registered with more than one method invoker. It
+						// could be a sign of something wrong especially if you
+						// think they are supposed to be singletons.
+						log.error("Duplicate interceptor detected. Check your application register. "
+								+ md.getMethod() + " " + md.getFullPath());
+					}
 				}
 			}
 		}
