@@ -725,7 +725,7 @@ public class UserManager {
 	 * Method to update a user object in our database.
 	 * 
 	 * @param user
-	 *            - the user to update.
+	 *            - the user DO to use for updates - must not contain a user id.
 	 * @throws InvalidPasswordException
 	 *             - the password provided does not meet our requirements.
 	 * @throws MissingRequiredFieldException
@@ -738,9 +738,71 @@ public class UserManager {
 	 *             - if there is a problem locating the authentication provider.
 	 *             This only applies for changing a password.
 	 */
-	public RegisteredUserDTO createOrUpdateUserObject(final RegisteredUser user)
+	public RegisteredUserDTO createUserObject(final RegisteredUser user)
 		throws InvalidPasswordException,
 			MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
+		Validate.isTrue(user.getDbId() == null || user.getDbId().isEmpty(),
+				"When creating a new user the user id must not be set.");
+		
+		RegisteredUser userToSave = null;
+
+		MapperFacade mapper = this.dtoMapper;
+
+		// We want to map to DTO first to make sure that the user cannot
+		// change fields that aren't exposed to them
+		RegisteredUserDTO userDtoForNewUser = mapper.map(user, RegisteredUserDTO.class);
+
+		// This is a new registration
+		userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
+		
+		// default role is unset
+		userToSave.setRole(null);		
+		
+		userToSave.setRegistrationDate(new Date());
+		userToSave.setLastUpdated(new Date());
+		
+		this.checkForSeguePasswordChange(user, userToSave);
+
+		// Before save we should validate the user for mandatory fields.
+		if (!this.isUserValid(userToSave)) {
+			throw new MissingRequiredFieldException(
+					"The user provided is missing a mandatory field");
+		} else if (!this.database.hasALinkedAccount(userToSave)
+				&& userToSave.getPassword() == null) {
+			// a user must have a way of logging on.
+			throw new MissingRequiredFieldException(
+					"This modification would mean that the user"
+							+ " no longer has a way of authenticating. Reverting change.");
+		}
+		
+		// save the user
+		RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+		// return it to the caller.
+		return this.convertUserDOToUserDTO(userToReturn);
+	}
+	
+	/**
+	 * Method to update a user object in our database.
+	 * 
+	 * @param user
+	 *            - the user to update - must contain a user id
+	 * @throws InvalidPasswordException
+	 *             - the password provided does not meet our requirements.
+	 * @throws MissingRequiredFieldException
+	 *             - A required field is missing for the user object so cannot
+	 *             be saved.
+	 * @return the user object as was saved.
+	 * @throws SegueDatabaseException
+	 *             - If there is an internal database error.
+	 * @throws AuthenticationProviderMappingException
+	 *             - if there is a problem locating the authentication provider.
+	 *             This only applies for changing a password.
+	 */
+	public RegisteredUserDTO updateUserObject(final RegisteredUser user)
+		throws InvalidPasswordException,
+			MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
+		Validate.notBlank(user.getDbId());
+		
 		RegisteredUser userToSave = null;
 
 		MapperFacade mapper = this.dtoMapper;
@@ -749,41 +811,23 @@ public class UserManager {
 		// change fields that aren't exposed to them
 		RegisteredUserDTO userDTOContainingUpdates = mapper.map(user, RegisteredUserDTO.class);
 
-		if (user.getDbId() != null && !user.getDbId().isEmpty()) {
-			// This is an update operation.
-			RegisteredUser existingUser = this.findUserById(user.getDbId());
-
-			userToSave = existingUser;
-
-			MapperFacade mergeMapper = new DefaultMapperFactory.Builder()
-            	.mapNulls(false).build().getMapperFacade();
-
-			mergeMapper.map(userDTOContainingUpdates, userToSave);
-			userToSave.setRegistrationDate(existingUser.getRegistrationDate());
-			// make sure they can't change their role.
-			userToSave.setRole(existingUser.getRole());
-		} else {
-			// This is a new registration
-			userToSave = mapper.map(userDTOContainingUpdates, RegisteredUser.class);
-			userToSave.setRegistrationDate(new Date());
-			userToSave.setRole(null);
+		if (user.getDbId() == null && user.getDbId().isEmpty()) {
+			throw new IllegalArgumentException(
+					"The user object specified has an id. Users cannot created with a specific id already set.");
 		}
-		
+			
+		// This is an update operation.
+		RegisteredUser existingUser = this.findUserById(user.getDbId());
+		userToSave = existingUser;
+
+		MapperFacade mergeMapper = new DefaultMapperFactory.Builder()
+        	.mapNulls(false).build().getMapperFacade();
+
+		mergeMapper.map(userDTOContainingUpdates, userToSave);
+		userToSave.setRegistrationDate(existingUser.getRegistrationDate());		
 		userToSave.setLastUpdated(new Date());
 		
-		// do we need to do local password storage using the segue
-		// authenticator? I.e. is the password changing?
-		if (null != user.getPassword() && !user.getPassword().isEmpty()) {
-			IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
-					.mapToProvider(AuthenticationProvider.SEGUE.name());
-			String plainTextPassword = user.getPassword();
-			
-			// clear reference to plainTextPassword
-			user.setPassword(null);
-
-			// set the new password on the object to be saved.
-			authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
-		}
+		this.checkForSeguePasswordChange(user, userToSave);
 
 		// Before save we should validate the user for mandatory fields.
 		if (!this.isUserValid(userToSave)) {
@@ -795,11 +839,44 @@ public class UserManager {
 			throw new MissingRequiredFieldException(
 					"This modification would mean that the user"
 							+ " no longer has a way of authenticating. Failing change.");
-		} else {
-			RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
-			return this.convertUserDOToUserDTO(userToReturn);
+		}
+		
+		// save the user
+		RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+		// return it to the caller
+		return this.convertUserDOToUserDTO(userToReturn);
+	}
+
+	/**
+	 * Helper method to handle the setting of segue passwords when user objects are updated.
+	 * 
+	 * This method will mutate the password fields in both parameters.
+	 * 
+	 * @param userContainingPlainTextPassword - the object to extract the plain text password from (and then nullify it)
+	 * @param userToSave - the object to store the hashed credentials prior to saving.
+	 * 
+	 * @throws AuthenticationProviderMappingException - if we can't map to a valid authenticator.
+	 * @throws InvalidPasswordException - if the password is not valid.
+	 */
+	private void checkForSeguePasswordChange(final RegisteredUser userContainingPlainTextPassword,
+			final RegisteredUser userToSave) throws AuthenticationProviderMappingException,
+			InvalidPasswordException {
+		// do we need to do local password storage using the segue
+		// authenticator? I.e. is the password changing?
+		if (null != userContainingPlainTextPassword.getPassword()
+				&& !userContainingPlainTextPassword.getPassword().isEmpty()) {
+			IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
+					.mapToProvider(AuthenticationProvider.SEGUE.name());
+			String plainTextPassword = userContainingPlainTextPassword.getPassword();
+
+			// clear reference to plainTextPassword
+			userContainingPlainTextPassword.setPassword(null);
+
+			// set the new password on the object to be saved.
+			authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
 		}
 	}
+	
 
 	/**
 	 * This method will use an email address to check a local user exists and if so, will send

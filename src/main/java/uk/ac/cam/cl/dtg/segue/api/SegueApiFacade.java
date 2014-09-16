@@ -42,6 +42,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.Cache;
@@ -55,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -70,6 +72,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -924,6 +927,8 @@ public class SegueApiFacade {
 	 * This method allows users to create a local account or update their
 	 * settings.
 	 * 
+	 * It will also allow administrators to change any user settings.
+	 * 
 	 * @param request
 	 *            - the http request of the user wishing to authenticate
 	 * @param userObjectString
@@ -936,77 +941,29 @@ public class SegueApiFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response createOrUpdateUserSettings(
-			@Context final HttpServletRequest request, final String userObjectString) {
+	public final Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
+			final String userObjectString) {
 
-		ObjectMapper tempObjectMapper = new ObjectMapper();
-		tempObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		RegisteredUser userObject;
+		RegisteredUser userObjectFromClient;
 		try {
-			userObject = tempObjectMapper.readValue(userObjectString, RegisteredUser.class);
+			ObjectMapper tempObjectMapper = new ObjectMapper();
+			tempObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+			userObjectFromClient = tempObjectMapper.readValue(userObjectString, RegisteredUser.class);
+
+			if (null == userObjectFromClient) {
+				return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
+			}
 		} catch (IOException e1) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"Unable to parser the user object you provided.")
-					.toResponse();
-		}
-		
-		if (null == userObject) {
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"No user settings provided.").toResponse();
+					"Unable to parse the user object you provided.", e1).toResponse();
 		}
 
-		// determine if this is intended to be an update or create.
-		// if it is an update we need to do some security checks.
-		if (userObject.getDbId() != null) {
-			try {
-				RegisteredUserDTO currentUser = this.getCurrentUser(request);
-				if (!currentUser.getDbId().equals(userObject.getDbId())) {
-					return new SegueErrorResponse(Status.FORBIDDEN,
-							"You cannot change someone elses' user settings.")
-							.toResponse();
-				}
-				
-			} catch (NoUserLoggedInException e) {
-				return new SegueErrorResponse(Status.UNAUTHORIZED,
-						"You must be logged in to change your user settings.")
-						.toResponse();
-			}
-		}
-
-		try {
-			RegisteredUserDTO savedUser = userManager.createOrUpdateUserObject(userObject);
-			// we need to tell segue that the user who we just created is the one that is logged in.
-			this.userManager.createSession(request, savedUser.getDbId());
-			
-			return Response.ok(savedUser).build();
-		} catch (InvalidPasswordException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"Invalid password. You cannot have an empty password.")
-					.toResponse();
-		} catch (FailedToHashPasswordException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Unable to set a password.").toResponse();
-		} catch (MissingRequiredFieldException e) {
-			log.warn("Missing field during update operation. ", e);
-			return new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"You are missing a required field. "
-					+ "Please make sure you have specified all mandatory fields in your response.")
-					.toResponse();
-		} catch (DuplicateAccountException e) {
-			return new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"An account already exists with the e-mail address specified.")
-					.toResponse();
-		} catch (SegueDatabaseException e) {
-			String errorMsg = "Unable to set a password, due to an internal database error.";
-			log.error(errorMsg, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					errorMsg).toResponse();
-		} catch (AuthenticationProviderMappingException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Unable to map to a known authenticator. The provider: is unknown")
-					.toResponse();
+		// determine if this is intended to be an update or create operation.
+		if (userObjectFromClient.getDbId() != null) {
+			return this.updateUserObject(request, userObjectFromClient);
+		} else {
+			return this.createUserObject(request, userObjectFromClient);
 		}
 	}
 
@@ -1468,7 +1425,7 @@ public class SegueApiFacade {
 
 		return fieldsToMatchOutput;
 	}
-
+	
 	/**
 	 * Library method to allow applications to access a segue persistence
 	 * manager. This allows applications to save data using the segue database.
@@ -1632,5 +1589,124 @@ public class SegueApiFacade {
 		cc.setMaxAge(maxCacheAge);
 		
 		return cc;
+	}
+	
+	/**
+	 * Update a user object.
+	 * 
+	 * This method does all of the necessary security checks to determine who is allowed to edit what.
+	 * 
+	 * @param request - so that we can identify the user
+	 * @param userObjectFromClient - the new user object from the clients perspective.
+	 * @return the updated user object.
+	 */
+	private Response updateUserObject(final HttpServletRequest request,
+			final RegisteredUser userObjectFromClient) {
+		Validate.notBlank(userObjectFromClient.getDbId());
+
+		// this is an update as the user has an id
+		// security checks
+		try {
+			// check that the current user has permissions to change this users
+			// details.
+			RegisteredUserDTO currentlyLoggedInUser = this.getCurrentUser(request);
+			if (!currentlyLoggedInUser.getDbId().equals(userObjectFromClient.getDbId())
+					&& currentlyLoggedInUser.getRole() != Role.ADMIN) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You cannot change someone elses' user settings.").toResponse();
+			}
+
+			// check that any changes to protected fields being made are
+			// allowed.
+			RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
+					.getDbId());
+			// check that the user is allowed to change the role of another user
+			// if that is what they are doing.
+			if (currentlyLoggedInUser.getRole() != Role.ADMIN 
+					&& userObjectFromClient.getRole() != null
+					&& !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You do not have permission to change a users role.").toResponse();
+			}
+
+			RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
+			
+			return Response.ok(updatedUser).build();
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in to change your user settings.").toResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND, "The user specified does not exist.")
+					.toResponse();
+		} catch (DuplicateAccountException e) {
+			return new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"An account already exists with the e-mail address specified.")
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			log.error("Unable to modify user", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error while modifying the user")
+					.toResponse();
+		} catch (InvalidPasswordException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Invalid password. You cannot have an empty password.").toResponse();
+		} catch (MissingRequiredFieldException e) {
+			log.warn("Missing field during update operation. ", e);
+			return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
+					+ "Please make sure you have specified all mandatory fields in your response.")
+					.toResponse();
+		} catch (AuthenticationProviderMappingException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to map to a known authenticator. The provider: is unknown").toResponse();
+		}
+	}
+	
+	/**
+	 * Create a user object.
+	 * This method allows new user objects to be created.
+	 * 
+	 * @param request - so that we can identify the user
+	 * @param userObjectFromClient - the new user object from the clients perspective.
+	 * @return the updated user object.
+	 */
+	private Response createUserObject(final HttpServletRequest request,
+			final RegisteredUser userObjectFromClient) {
+		try {
+			RegisteredUserDTO savedUser = userManager.createUserObject(userObjectFromClient);
+			
+			// we need to tell segue that the user who we just created is the one that is logged in.
+			this.userManager.createSession(request, savedUser.getDbId());
+			
+			return Response.ok(savedUser).build();
+		} catch (InvalidPasswordException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Invalid password. You cannot have an empty password.")
+					.toResponse();
+		} catch (FailedToHashPasswordException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to set a password.").toResponse();
+		} catch (MissingRequiredFieldException e) {
+			log.warn("Missing field during update operation. ", e);
+			return new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"You are missing a required field. "
+					+ "Please make sure you have specified all mandatory fields in your response.")
+					.toResponse();
+		} catch (DuplicateAccountException e) {
+			return new SegueErrorResponse(
+					Status.BAD_REQUEST,
+					"An account already exists with the e-mail address specified.")
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			String errorMsg = "Unable to set a password, due to an internal database error.";
+			log.error(errorMsg, e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					errorMsg).toResponse();
+		} catch (AuthenticationProviderMappingException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to map to a known authenticator. The provider: is unknown")
+					.toResponse();
+		}
 	}
 }
