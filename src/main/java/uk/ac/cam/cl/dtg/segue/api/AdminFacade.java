@@ -47,25 +47,28 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
+ * Admin facade for segue.
+ * 
  * @author Stephen Cummins
- *
+ * 
  */
 @Path("/admin")
 public class AdminFacade {
 	private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
-	
+
 	private final UserManager userManager;
 	private final ContentVersionController contentVersionController;
 	private final PropertiesLoader properties;
 
 	/**
 	 * Create an instance of the administrators facade.
+	 * 
 	 * @param properties
 	 *            - the fully configured properties loader for the api.
 	 * @param userManager
 	 *            - The manager object responsible for users.
 	 * @param contentVersionController
-	 *            - The content version controller used by the api.        
+	 *            - The content version controller used by the api.
 	 */
 	@Inject
 	public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
@@ -74,11 +77,12 @@ public class AdminFacade {
 		this.userManager = userManager;
 		this.contentVersionController = contentVersionController;
 	}
-	
+
 	/**
 	 * This method will allow the live version served by the site to be changed.
 	 * 
-	 * @param request - to help determine access rights.
+	 * @param request
+	 *            - to help determine access rights.
 	 * @param version
 	 *            - version to use as updated version of content store.
 	 * @return Success shown by returning the new liveSHA or failed message
@@ -87,34 +91,31 @@ public class AdminFacade {
 	@POST
 	@Path("/live_version/{version}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public final synchronized Response changeLiveVersion(
-			@Context final HttpServletRequest request,
+	public final synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
 			@PathParam("version") final String version) {
 
 		try {
 			if (this.userManager.isUserAnAdmin(request)) {
-				IContentManager contentPersistenceManager = contentVersionController
-						.getContentManager();
+				IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 				String newVersion;
 				if (!contentPersistenceManager.isValidVersion(version)) {
-					SegueErrorResponse error = new SegueErrorResponse(
-							Status.BAD_REQUEST, "Invalid version selected: " + version);
+					SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+							"Invalid version selected: " + version);
 					log.warn(error.getErrorMessage());
 					return error.toResponse();
 				}
-				
+
 				if (!contentPersistenceManager.getCachedVersionList().contains(version)) {
 					newVersion = contentVersionController.triggerSyncJob(version);
 				} else {
 					newVersion = version;
 				}
-				
-				Collection<String> availableVersions = contentPersistenceManager
-						.getCachedVersionList();
-				
+
+				Collection<String> availableVersions = contentPersistenceManager.getCachedVersionList();
+
 				if (!availableVersions.contains(version)) {
-					SegueErrorResponse error = new SegueErrorResponse(
-							Status.BAD_REQUEST, "Invalid version selected: " + version);
+					SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+							"Invalid version selected: " + version);
 					log.warn(error.getErrorMessage());
 					return error.toResponse();
 				}
@@ -126,16 +127,14 @@ public class AdminFacade {
 				return Response.ok().build();
 			} else {
 				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be logged in as an admin to access this function.")
-						.toResponse();
+						"You must be logged in as an admin to access this function.").toResponse();
 			}
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.")
-					.toResponse();
+					"You must be logged in to access this function.").toResponse();
 		}
 	}
-	
+
 	/**
 	 * This method will try to bring the live version that Segue is using to
 	 * host content up-to-date with the latest in the database.
@@ -169,12 +168,13 @@ public class AdminFacade {
 					"You must be logged in to access this function.").toResponse();
 		}
 	}
-	
+
 	/**
 	 * This method will delete all cached data from the CMS and any search
 	 * indices.
 	 * 
-	 * @param request - containing user session information.
+	 * @param request
+	 *            - containing user session information.
 	 * 
 	 * @return the latest version id that will be cached if content is
 	 *         requested.
@@ -185,34 +185,32 @@ public class AdminFacade {
 	public final synchronized Response clearCaches(@Context final HttpServletRequest request) {
 		try {
 			if (this.userManager.isUserAnAdmin(request)) {
-				IContentManager contentPersistenceManager = contentVersionController
-						.getContentManager();
+				IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 				log.info("Clearing all caches...");
 				contentPersistenceManager.clearCache();
 
-				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>()
-						.put("result", "success").build();
-				
-				return Response.ok(response).build();				
+				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put(
+						"result", "success").build();
+
+				return Response.ok(response).build();
 			} else {
 				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an administrator to use this function.")
-						.toResponse();
+						"You must be an administrator to use this function.").toResponse();
 			}
-			
+
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.")
-					.toResponse();
-		}		
+					"You must be logged in to access this function.").toResponse();
+		}
 	}
-	
+
 	/**
 	 * Rest end point to allow content editors to see the content which failed
 	 * to import into segue.
 	 * 
-	 * @param request - to identify if the user is authorised. 
+	 * @param request
+	 *            - to identify if the user is authorised.
 	 * 
 	 * @return a content object, such that the content object has children. The
 	 *         children represent each source file in error and the grand
@@ -222,9 +220,8 @@ public class AdminFacade {
 	@Path("/content_problems")
 	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getContentProblems(@Context final HttpServletRequest request) {
-		Map<Content, List<String>> problemMap = contentVersionController
-				.getContentManager().getProblemMap(
-						contentVersionController.getLiveVersion());
+		Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
+				contentVersionController.getLiveVersion());
 
 		if (this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
 			try {
@@ -238,7 +235,7 @@ public class AdminFacade {
 						.entity("You must be logged in to view this page in PROD mode.").build();
 			}
 		}
-		
+
 		if (null == problemMap) {
 			return Response.ok(new Content("No problems found.")).build();
 		}
@@ -258,8 +255,7 @@ public class AdminFacade {
 			for (String s : pair.getValue()) {
 				Content erroredContentObject = new Content(s);
 
-				erroredContentObject.setId(pair.getKey().getId() + "_error_"
-						+ errors);
+				erroredContentObject.setId(pair.getKey().getId() + "_error_" + errors);
 
 				child.getChildren().add(erroredContentObject);
 
@@ -269,18 +265,20 @@ public class AdminFacade {
 			child.setId(pair.getKey().getId() + "_problem_report_" + errors);
 		}
 
-		c.setSubtitle("Total Broken files: " + brokenFiles + " Total errors : "
-				+ errors);
+		c.setSubtitle("Total Broken files: " + brokenFiles + " Total errors : " + errors);
 
 		return Response.ok(c).build();
 	}
-	
+
 	/**
 	 * Find user by id or email.
 	 * 
-	 * @param httpServletRequest - for checking permissions
-	 * @param userId - if searching by id
-	 * @param email - if searching by e-mail
+	 * @param httpServletRequest
+	 *            - for checking permissions
+	 * @param userId
+	 *            - if searching by id
+	 * @param email
+	 *            - if searching by e-mail
 	 * @return a userDTO or a segue error response
 	 */
 	@GET
@@ -291,25 +289,22 @@ public class AdminFacade {
 		try {
 			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be logged in as an admin to access this function.")
-						.toResponse();
+						"You must be logged in as an admin to access this function.").toResponse();
 			}
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in order to use this endpoint.")
-					.toResponse();
+					"You must be logged in order to use this endpoint.").toResponse();
 		}
-		
+
 		try {
 			RegisteredUserDTO userPrototype = new RegisteredUserDTO();
 			userPrototype.setDbId(userId);
 			userPrototype.setEmail(email);
-			
+
 			return Response.ok(this.userManager.findUsers(userPrototype)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error while looking up user information.")
-					.toResponse();
+					"Database error while looking up user information.").toResponse();
 		}
 	}
 }
