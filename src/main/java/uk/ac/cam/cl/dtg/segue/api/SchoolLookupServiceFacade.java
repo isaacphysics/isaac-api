@@ -40,7 +40,7 @@ import com.google.inject.Inject;
  * Segue School Lookup service.
  * 
  */
-@Path("/")
+@Path("/schools")
 public class SchoolLookupServiceFacade {
 	private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
 
@@ -68,8 +68,8 @@ public class SchoolLookupServiceFacade {
 	 *         SegueErrorResponse.
 	 */
 	@GET
+	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
-	@Path("schools")
 	@GZIP
 	public Response schoolSearch(@QueryParam("query") final String searchQuery) {
 		if (null == searchQuery || searchQuery.isEmpty()) {

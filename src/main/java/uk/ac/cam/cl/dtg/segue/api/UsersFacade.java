@@ -58,6 +58,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
 /**
+ * User facade.
  * @author Stephen Cummins
  * 
  */
