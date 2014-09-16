@@ -26,9 +26,11 @@ import com.google.inject.Injector;
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
+import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.MathsRenderingServiceFacade;
-import uk.ac.cam.cl.dtg.segue.api.SchoolLookupFacade;
+import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
@@ -60,11 +62,13 @@ public class IsaacApplicationRegister extends Application {
 					new SegueGuiceConfigurationModule());
 			
 			// invoke optional service initialisation
-			this.singletons.add(injector.getInstance(SchoolLookupFacade.class));
+			this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
 			this.singletons.add(injector.getInstance(MathsRenderingServiceFacade.class));			
 			
 			// initialise segue framework. 
 			this.singletons.add(injector.getInstance(SegueApiFacade.class));
+			this.singletons.add(injector.getInstance(UsersFacade.class));
+			this.singletons.add(injector.getInstance(AuthenticationFacade.class));
 			this.singletons.add(injector.getInstance(AdminFacade.class));
 		}
 

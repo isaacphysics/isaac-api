@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.api.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.api.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;

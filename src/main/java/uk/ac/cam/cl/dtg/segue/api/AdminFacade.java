@@ -38,6 +38,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
+import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;

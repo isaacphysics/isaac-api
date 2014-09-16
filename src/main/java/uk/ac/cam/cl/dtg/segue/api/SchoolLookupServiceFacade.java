@@ -41,8 +41,8 @@ import com.google.inject.Inject;
  * 
  */
 @Path("/")
-public class SchoolLookupFacade {
-	private static final Logger log = LoggerFactory.getLogger(SchoolLookupFacade.class);
+public class SchoolLookupServiceFacade {
+	private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
 
 	private SchoolListReader schoolListReader;
 	
@@ -51,7 +51,7 @@ public class SchoolLookupFacade {
 	 * @param schoolListReader - Instance of schools list Reader to initialise. 
 	 */
 	@Inject
-	public SchoolLookupFacade(final SchoolListReader schoolListReader) {
+	public SchoolLookupServiceFacade(final SchoolListReader schoolListReader) {
 		this.schoolListReader = schoolListReader;
 		
 		// initialise schools list asynchronously.

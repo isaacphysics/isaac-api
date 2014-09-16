@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.api;
+package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
