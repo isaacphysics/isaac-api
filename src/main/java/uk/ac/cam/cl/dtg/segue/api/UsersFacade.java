@@ -62,7 +62,7 @@ import com.google.inject.Inject;
  * @author Stephen Cummins
  * 
  */
-@Path("/users")
+@Path("/")
 public class UsersFacade extends AbstractSegueFacade {
 	private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
 
@@ -93,7 +93,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *         we can't. It will be a 204 No Content
 	 */
 	@GET
-	@Path("/current_user")
+	@Path("users/current_user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public Response getCurrentUserEndpoint(@Context final Request request,
@@ -131,7 +131,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * @return the updated users object.
 	 */
 	@POST
-	@Path("/")
+	@Path("users")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
@@ -173,7 +173,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *         an error code if there is a technical fault
 	 */
 	@POST
-	@Path("/resetpassword")
+	@Path("users/resetpassword")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response generatePasswordResetToken(final RegisteredUserDTO userObject) {
@@ -209,7 +209,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * @return Success if the token is valid, otherwise returns not found
 	 */
 	@GET
-	@Path("/resetpassword/{token}")
+	@Path("users/resetpassword/{token}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
@@ -239,7 +239,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * @return successful response.
 	 */
 	@POST
-	@Path("/resetpassword/{token}")
+	@Path("users/resetpassword/{token}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response resetPassword(@PathParam("token") final String token,
