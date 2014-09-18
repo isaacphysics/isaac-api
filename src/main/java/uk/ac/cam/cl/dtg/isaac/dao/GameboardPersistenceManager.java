@@ -423,7 +423,15 @@ public class GameboardPersistenceManager {
 		// empty and repopulate the gameboard dto.
 		gameboardDTO.setQuestions(new ArrayList<GameboardItem>());
 		for (String questionid : gameboardDO.getQuestions()) {
-			gameboardDTO.getQuestions().add(gameboardReadyQuestions.get(questionid));
+			// There is a possibility that the question cannot be found any more for some reason
+			// In this case we will simply pretend it isn't there.
+			GameboardItem item = gameboardReadyQuestions.get(questionid);
+			if (item != null) {
+				gameboardDTO.getQuestions().add(item);	
+			} else {
+				log.warn("The gameboard: " + gameboardDTO.getId() + " has a reference to a question ("
+						+ questionid + ") that we cannot find. Removing it from the DTO.");
+			}
 		}
 		return gameboardDTO;
 	}
