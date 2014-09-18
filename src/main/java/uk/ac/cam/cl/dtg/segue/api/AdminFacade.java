@@ -40,6 +40,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -273,7 +274,7 @@ public class AdminFacade {
 	}
 
 	/**
-	 * Find user by id or email.
+	 * List users by id or email.
 	 * 
 	 * @param httpServletRequest
 	 *            - for checking permissions
@@ -300,13 +301,53 @@ public class AdminFacade {
 
 		try {
 			RegisteredUserDTO userPrototype = new RegisteredUserDTO();
-			userPrototype.setDbId(userId);
-			userPrototype.setEmail(email);
+			if (null != userId && !userId.isEmpty()) {
+				userPrototype.setDbId(userId);	
+			}
+			
+			if (null != email && !email.isEmpty()) {
+				userPrototype.setEmail(email);	
+			}
 
 			return Response.ok(this.userManager.findUsers(userPrototype)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while looking up user information.").toResponse();
+		}
+	}
+	
+	/**
+	 * Get a user by id or email.
+	 * 
+	 * @param httpServletRequest
+	 *            - for checking permissions
+	 * @param userId
+	 *            - if searching by id
+	 * @return a userDTO or a segue error response
+	 */
+	@GET
+	@Path("/users/{user_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
+			@PathParam("user_id") final String userId) {
+		try {
+			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.").toResponse();
+			}
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in order to use this endpoint.").toResponse();
+		}
+
+		try {
+			return Response.ok(this.userManager.getUserDTOById(userId)).build();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error while looking up user information.").toResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND,
+					"Unable to locate the user with the requested id: " + userId).toResponse();
 		}
 	}
 }
