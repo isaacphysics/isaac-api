@@ -378,7 +378,7 @@ public class UserManagerTest {
 		expect(dummySession.getId()).andReturn("sessionid").atLeastOnce();
 
 		expect(dummySession.getAttribute(Constants.ANONYMOUS_USER)).andReturn(
-				new AnonymousUser("someAnonymousSessionID")).anyTimes();
+				null).anyTimes();
 
 		replay(dummySession, request, dummyAuth, dummyDatabase);
 
@@ -390,6 +390,8 @@ public class UserManagerTest {
 		assertTrue(r.getStatusInfo().equals(Status.OK));
 	}
 
+	//TODO: Write a test to check what happens with anonymous users and merges.
+	
 	/**
 	 * Verify that a bad CSRF response from the authentication provider causes
 	 * an error response.

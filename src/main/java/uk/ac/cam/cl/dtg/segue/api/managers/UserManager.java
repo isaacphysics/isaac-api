@@ -1724,13 +1724,23 @@ public class UserManager {
 			user = new AnonymousUser(request.getSession().getId());
 			user.setDateCreated(new Date());
 			// add the user reference to the session
-			request.getSession().setAttribute(Constants.ANONYMOUS_USER, user);
+			request.getSession().setAttribute(Constants.ANONYMOUS_USER, user.getSessionId());
 			this.temporaryUserCache.put(user.getSessionId(), user);
 		} else {
 			// reuse existing one
-			if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) instanceof AnonymousUser) {
-				user = (AnonymousUser) request.getSession().getAttribute(
+			if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) instanceof String) {
+				String userId = (String) request.getSession().getAttribute(
 						Constants.ANONYMOUS_USER);
+				user = this.temporaryUserCache.getIfPresent(userId);
+				
+				if (null == user) {
+					// the session must have expired. Create a new user and run this method again.
+					// this probably won't happen often as the session expiry and the cache should be timed correctly.
+					request.getSession().removeAttribute(Constants.ANONYMOUS_USER);
+					log.warn("Anonymous user session expired so creating a"
+							+ " new one - this should not happen if cache settings are correct.");
+					return this.getAnonymousUserDO(request);
+				}
 			} else {
 				// this means that someone has put the wrong type in to the session variable.
 				throw new ClassCastException("Unable to get AnonymousUser from session.");			
