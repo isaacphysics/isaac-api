@@ -680,7 +680,7 @@ public class UserManager {
 			try {
 				this.database.registerQuestionAttempt(registeredUser.getDbId(), questionPageId[0],
 						questionResponse.getQuestionId(), questionResponseDO);
-				log.info("Question information recorded for user: " + registeredUser.getDbId());
+				log.debug("Question information recorded for user: " + registeredUser.getDbId());
 			} catch (SegueDatabaseException e) {
 				log.error("Unable to to record question attempt.", e);
 			}
