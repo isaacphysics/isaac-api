@@ -56,7 +56,7 @@ public class IsaacNumericValidator implements IValidator {
 		IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
 		QuantityDTO answerFromUser = (QuantityDTO) answer;
 		if (null == isaacNumericQuestion.getChoices() || isaacNumericQuestion.getChoices().isEmpty()) {
-			log.warn("Question does not have any answers. " + question.getId() + " src: "
+			log.error("Question does not have any answers. " + question.getId() + " src: "
 					+ question.getCanonicalSourceFile());
 
 			return new QuantityValidationResponseDTO(question.getId(), null, false, new Content(""), false,
@@ -64,12 +64,10 @@ public class IsaacNumericValidator implements IValidator {
 		}
 
 		if (null == answerFromUser.getValue()) {
-
 			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
 					"You did not provide an answer."), false, false, new Date());
 
 		} else if (null == answerFromUser.getUnits() && (isaacNumericQuestion.getRequireUnits())) {
-
 			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
 					"You did not provide any units."), null, false, new Date());
 		} else if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
