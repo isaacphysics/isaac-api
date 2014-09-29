@@ -86,8 +86,15 @@ public class IsaacNumericValidator implements IValidator {
 			return new QuantityValidationResponseDTO(question.getId(),
 					answerFromUser, false, new Content(
 							"You did not provide any units."), null, false, new Date());
+		} else if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
+				isaacNumericQuestion.getSignificantFigures())) {
+			// make sure that the answer is to the right number of sig figs before we proceed.
+			
+			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
+					"Please provide your answer to the correct number of significant figures."), false, null,
+					new Date());
 		}
-
+		
 		if (isaacNumericQuestion.getRequireUnits()) {
 			return this.validateWithUnits(isaacNumericQuestion, answerFromUser);
 		} else {
@@ -244,13 +251,7 @@ public class IsaacNumericValidator implements IValidator {
 		
 		// Replace "x10^" with "e";
 		String untrustedParsedValue = untrustedValue.replace("x10^", "e");
-		
-		// check significant figures match
-		int untrustedValueSigfigs = this.calculateSignificantDigits(new BigDecimal(untrustedParsedValue));
-		if (untrustedParsedValue.contains(".") && untrustedValueSigfigs != significantFiguresRequired) {
-			return false;
-		}
-		
+				
 		try {
 			trustedDouble = Double.parseDouble(trustedValue.replace("x10^", "e"));
 			untrustedDouble = Double.parseDouble(untrustedParsedValue);
@@ -297,5 +298,25 @@ public class IsaacNumericValidator implements IValidator {
 	    } else {
 	    	return input.precision();
 	    }
+	}
+	
+	/**
+	 * Helper method to verify if the answer given is to the correct number of significant figures.
+	 * 
+	 * @param valueToCheck - the value as a string from the user to check.
+	 * @param significantFigures - the number of significant figures that is expected for the answer to be correct.
+	 * @return true if yes false if not.
+	 */
+	private boolean verifyCorrectNumberofSignificantFigures(final String valueToCheck, final int significantFigures) {
+		// Replace "x10^" with "e";
+		String untrustedParsedValue = valueToCheck.replace("x10^", "e");
+		
+		// check significant figures match
+		int untrustedValueSigfigs = this.calculateSignificantDigits(new BigDecimal(untrustedParsedValue));
+		if (untrustedParsedValue.contains(".") && untrustedValueSigfigs != significantFigures) {
+			return false;
+		}
+		
+		return true;
 	}
 }
