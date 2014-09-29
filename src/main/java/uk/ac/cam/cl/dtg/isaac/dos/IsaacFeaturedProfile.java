@@ -38,6 +38,7 @@ public class IsaacFeaturedProfile extends Content {
 
 	protected String emailAddress;
 	protected Image image;
+	protected String homepage;
 
 	@JsonCreator
 	public IsaacFeaturedProfile(@JsonProperty("_id") String _id,
@@ -58,13 +59,15 @@ public class IsaacFeaturedProfile extends Content {
 			@JsonProperty("src") String src,
 			@JsonProperty("altText") String altText,
 			@JsonProperty("emailAddress") String emailAddress,
-			@JsonProperty("image") Image image) {
+			@JsonProperty("image") Image image,
+			@JsonProperty("homepage") String homepage) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 
 		this.emailAddress = emailAddress;
 		this.image = image;
+		this.homepage = homepage;
 	}
 
 	/**
@@ -74,19 +77,51 @@ public class IsaacFeaturedProfile extends Content {
 
 	}
 
+	/**
+	 * Gets the e-mail address.
+	 * @return the email
+	 */
 	public String getEmailAddress() {
 		return emailAddress;
 	}
-
-	public void setEmailAddress(String emailAddress) {
+	
+	/**
+	 * Sets the email address.
+	 * @param emailAddress to set
+	 */
+	public void setEmailAddress(final String emailAddress) {
 		this.emailAddress = emailAddress;
 	}
 
+	/**
+	 * Get the profile image.
+	 * @return the image
+	 */
 	public Image getImage() {
 		return image;
 	}
-
-	public void setImage(Image image) {
+	
+	/**
+	 * Set the image for the profile. 
+	 * @param image the image to set
+	 */
+	public void setImage(final Image image) {
 		this.image = image;
+	}
+
+	/**
+	 * Gets the homepage.
+	 * @return the homepage
+	 */
+	public String getHomepage() {
+		return homepage;
+	}
+
+	/**
+	 * Sets the homepage.
+	 * @param homepage the homepage to set
+	 */
+	public void setHomepage(final String homepage) {
+		this.homepage = homepage;
 	}
 }

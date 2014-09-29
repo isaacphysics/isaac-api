@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 public class IsaacFeaturedProfileDTO extends ContentDTO {
 	private String emailAddress;
 	private Image image;
+	private String homepage;
 
 	@JsonCreator
 	public IsaacFeaturedProfileDTO(@JsonProperty("_id") String _id,
@@ -55,7 +56,8 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 			@JsonProperty("src") String src,
 			@JsonProperty("altText") String altText,
 			@JsonProperty("emailAddress") String emailAddress,
-			@JsonProperty("image") Image image) {
+			@JsonProperty("image") Image image,
+			@JsonProperty("homepage") String homepage) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
@@ -102,4 +104,20 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 	public void setImage(final Image image) {
 		this.image = image;
 	}
+	
+	/**
+	 * Gets the homepage.
+	 * @return the homepage
+	 */
+	public String getHomepage() {
+		return homepage;
+	}
+
+	/**
+	 * Sets the homepage.
+	 * @param homepage the homepage to set
+	 */
+	public void setHomepage(final String homepage) {
+		this.homepage = homepage;
+	}	
 }
