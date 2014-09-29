@@ -63,7 +63,7 @@ public class IsaacNumericValidator implements IValidator {
 					false, new Date());
 		}
 
-		if (null == answerFromUser.getValue()) {
+		if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
 			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
 					"You did not provide an answer."), false, false, new Date());
 
