@@ -172,7 +172,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 	
 	@Override 
-	public List<RegisteredUser> findUser(final RegisteredUser prototype) throws SegueDatabaseException {
+	public List<RegisteredUser> findUsers(final RegisteredUser prototype) throws SegueDatabaseException {
 		if (null == prototype) {
 			return null;
 		}

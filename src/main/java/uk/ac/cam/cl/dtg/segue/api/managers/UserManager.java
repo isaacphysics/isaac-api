@@ -558,7 +558,7 @@ public class UserManager {
 	 * @throws SegueDatabaseException - if there is a database error.
 	 */
 	public final List<RegisteredUserDTO> findUsers(final RegisteredUserDTO prototype) throws SegueDatabaseException {
-		List<RegisteredUser> registeredUsersDOs = this.database.findUser(this.dtoMapper.map(prototype,
+		List<RegisteredUser> registeredUsersDOs = this.database.findUsers(this.dtoMapper.map(prototype,
 				RegisteredUser.class));
 		
 		return this.convertUserDOToUserDTOList(registeredUsersDOs);
