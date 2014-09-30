@@ -404,7 +404,7 @@ public class GameManager {
 			return null;
 		}
 		
-		if (null == questionAttemptsFromUser) {
+		if (null == questionAttemptsFromUser || gameboardDTO.getQuestions().size() == 0) {
 			return gameboardDTO;
 		}
 
