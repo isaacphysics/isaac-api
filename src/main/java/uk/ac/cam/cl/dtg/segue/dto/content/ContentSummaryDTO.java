@@ -29,6 +29,7 @@ public class ContentSummaryDTO {
 	private String title;
 	private String summary;
 	private String type;
+	private String level;
 	private List<String> tags;
 	private String url;
 
@@ -44,13 +45,15 @@ public class ContentSummaryDTO {
 	 * @param id - id
 	 * @param title - title
 	 * @param type - type
+	 * @param level - level
 	 * @param tags - tags
 	 * @param url - url
 	 */
 	public ContentSummaryDTO(final String id, final String title, final String type,
-			final List<String> tags, final String url) {
+			final String level, final List<String> tags, final String url) {
 		this.id = id;
 		this.type = type;
+		this.level = level;
 		this.tags = tags;
 		this.title = title;
 		this.url = url;
@@ -134,6 +137,23 @@ public class ContentSummaryDTO {
 	 */
 	public void setTags(final List<String> tags) {
 		this.tags = tags;
+	}
+
+	/**
+	 * Gets the level.
+	 * @return the level
+	 */
+	public String getLevel() {
+		return level;
+	}
+	
+
+	/**
+	 * Sets the level.
+	 * @param level the level to set
+	 */
+	public void setLevel(final String level) {
+		this.level = level;
 	}
 
 	/**

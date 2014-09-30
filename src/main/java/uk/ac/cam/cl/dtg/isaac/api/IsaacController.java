@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -287,7 +288,7 @@ public class IsaacController {
 		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 		etagCodeBuilder.append(QUESTION_TYPE);
 		
 		String newLimit = null;
@@ -352,7 +353,7 @@ public class IsaacController {
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE));
+		//fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
 		// options
 		if (null != questionId) {
@@ -380,7 +381,7 @@ public class IsaacController {
 		
 		Response response = this.findSingleResult(fieldsToMatch);
 
-		if (response.getEntity() instanceof SeguePageDTO) {
+		if (response.getEntity() instanceof IsaacQuestionPageDTO) {
 			SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
 			Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(), "contentVersion",

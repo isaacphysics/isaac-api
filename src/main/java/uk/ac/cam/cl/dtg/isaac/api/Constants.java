@@ -31,6 +31,7 @@ public final class Constants {
 	 */
 	public static final String CONCEPT_TYPE = "isaacConceptPage";
 	public static final String QUESTION_TYPE = "isaacQuestionPage";
+	public static final String FAST_TRACK_QUESTION_TYPE = "isaacFastTrackQuestionPage";
 	public static final String WILDCARD_TYPE = "isaacWildcard";
 	public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
 	public static final String PAGE_TYPE = "page";
