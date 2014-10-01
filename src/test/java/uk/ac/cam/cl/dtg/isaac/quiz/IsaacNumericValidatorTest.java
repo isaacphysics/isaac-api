@@ -80,6 +80,33 @@ public class IsaacNumericValidatorTest {
 	 * 
 	 */
 	@Test
+	public final void isaacNumericValidator_CheckCorrectIntegerAnswer_CorrectResponseShouldHappen() {
+		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+		someNumericQuestion.setRequireUnits(false);
+				
+		List<Choice> answerList = Lists.newArrayList();
+		Quantity someCorrectAnswer = new Quantity();
+		someCorrectAnswer.setValue("42");
+		someCorrectAnswer.setCorrect(true);
+		answerList.add(someCorrectAnswer);
+		
+		someNumericQuestion.setChoices(answerList);
+		
+		// setup users answer
+		QuantityDTO q = new QuantityDTO();
+		q.setValue("42");
+		
+		IsaacNumericValidator validator = new IsaacNumericValidator();
+		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		
+		assertTrue(response.isCorrect());
+	}	
+	
+	/**
+	 * Check that the numericValidator works correctly.
+	 * 
+	 */
+	@Test
 	public final void isaacNumericValidator_CheckCorrectAnswerWithExponentIncorrectSigFigs_CorrectResponseShouldHappen() {
 		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
 		someNumericQuestion.setRequireUnits(false);
