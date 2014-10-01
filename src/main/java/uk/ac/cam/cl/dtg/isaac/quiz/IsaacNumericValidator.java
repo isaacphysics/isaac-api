@@ -234,9 +234,10 @@ public class IsaacNumericValidator implements IValidator {
 		// Round to N s.f. for trusted value
 		trustedDouble = roundToSigFigs(trustedDouble, significantFiguresRequired);
 		untrustedDouble = roundToSigFigs(untrustedDouble, significantFiguresRequired);
-
+		double epsilon = 1e-50;
+		
 		return Math.abs(trustedDouble - untrustedDouble) < Math.max(
-				1e-12 * Math.max(trustedDouble, untrustedDouble), 1e-12);
+				epsilon * Math.max(trustedDouble, untrustedDouble), epsilon);
 	}
 
 	/**
@@ -267,11 +268,12 @@ public class IsaacNumericValidator implements IValidator {
 	 *         provided.
 	 */
 	private int calculateSignificantDigits(final BigDecimal input) {
-		if (input.scale() <= 0) {
-			return input.precision() + input.stripTrailingZeros().scale();
-		} else {
-			return input.precision();
-		}
+//		if (input.scale() <= 0) {
+//			return input.precision() - input.stripTrailingZeros().scale();
+//		} else {
+//			return input.precision();
+//		}
+		return input.precision();
 	}
 
 	/**
