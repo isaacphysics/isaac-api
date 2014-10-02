@@ -47,7 +47,7 @@ public class SegueContextNotifier implements ServletContextListener {
 	
 	@Override
 	public void contextInitialized(final ServletContextEvent sce) {
-		log.info("Segue Application Starting up.");
+		log.info("Segue Application Informed of server start up. Registering listeners.");
 		for (ServletContextListener listener : listeners) {
 			listener.contextInitialized(sce);
 		}
@@ -55,7 +55,7 @@ public class SegueContextNotifier implements ServletContextListener {
 
 	@Override
 	public void contextDestroyed(final ServletContextEvent sce) {
-		log.info("Segue Application Shutting down.");
+		log.info("Segue Application Informed of Shut down - Informing listeners.");
 		for (ServletContextListener listener : listeners) {
 			listener.contextDestroyed(sce);
 		}
