@@ -62,21 +62,27 @@ public class IsaacNumericValidator implements IValidator {
 			return new QuantityValidationResponseDTO(question.getId(), null, false, new Content(""), false,
 					false, new Date());
 		}
+		
+		try {
+			if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
+				return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false,
+						new Content("You did not provide an answer."), false, false, new Date());
+			} else if (null == answerFromUser.getUnits() && (isaacNumericQuestion.getRequireUnits())) {
+				return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false,
+						new Content("You did not provide any units."), null, false, new Date());
 
-		if (null == answerFromUser.getValue() || answerFromUser.getValue().isEmpty()) {
+			} else if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
+					isaacNumericQuestion.getSignificantFigures())) {
+				// make sure that the answer is to the right number of sig figs
+				// before we proceed.
+				return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false,
+						new Content(
+								"Please provide your answer to the correct number of significant figures."),
+						false, null, new Date());
+			}
+		} catch (NumberFormatException e) {
 			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
-					"You did not provide an answer."), false, false, new Date());
-
-		} else if (null == answerFromUser.getUnits() && (isaacNumericQuestion.getRequireUnits())) {
-			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
-					"You did not provide any units."), null, false, new Date());
-		} else if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
-				isaacNumericQuestion.getSignificantFigures())) {
-			// make sure that the answer is to the right number of sig figs
-			// before we proceed.
-
-			return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
-					"Please provide your answer to the correct number of significant figures."), false, null,
+					"The answer you provided is not a valid number."), false, false,
 					new Date());
 		}
 
@@ -85,7 +91,6 @@ public class IsaacNumericValidator implements IValidator {
 		} else {
 			return this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
 		}
-
 	}
 
 	/**
