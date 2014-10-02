@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -97,7 +98,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	private ContentVersionController contentVersionController;
 	private UserManager userManager;
 	private QuestionManager questionManager;
-	// private PropertiesLoader properties;
+
 	private ICommunicator communicator;
 	private ILogManager logManager;
 
@@ -152,10 +153,15 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		this.logManager = logManager;
 
-		// We need to do this to make sure we have an up to date content repo.
-		log.info("Segue just initialized - Sending content index request "
-				+ "so that we can service some content requests.");
-		this.contentVersionController.triggerSyncJob();
+		try {
+			// We need to do this to make sure we have an up to date content repo.
+			log.info("Segue just initialized - Sending content index request "
+					+ "so that we can service some content requests.");
+			
+			this.contentVersionController.triggerSyncJob().get();
+		} catch (InterruptedException | ExecutionException e) {
+			log.error("Initial segue initialisation failure.");
+		}
 	}
 
 	/**

@@ -15,78 +15,83 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.util.concurrent.Callable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Worker class to orchestrate content indexing jobs.
+ * 
  * @author Stephen Cummins
- *
+ * 
  */
-public class ContentSynchronisationWorker implements Runnable {
-	private static final Logger log = LoggerFactory
-			.getLogger(ContentSynchronisationWorker.class);
+public class ContentSynchronisationWorker implements Callable<String> {
+	private static final Logger log = LoggerFactory.getLogger(ContentSynchronisationWorker.class);
 
 	private ContentVersionController contentVersionController;
 	private String version; // null for latest, set for a particular version
 
 	/**
-	 * Create a synch worker providing a conntentVersionController and a version to index.
-	 * @param contentVersionController - the object providing access to high level sync methods.
-	 * @param version - the version of the content to attempt to index.
+	 * Create a synch worker providing a conntentVersionController and a version
+	 * to index.
+	 * 
+	 * @param contentVersionController
+	 *            - the object providing access to high level sync methods.
+	 * @param version
+	 *            - the version of the content to attempt to index.
 	 */
-	public ContentSynchronisationWorker(
-			final ContentVersionController contentVersionController, final String version) {
+	public ContentSynchronisationWorker(final ContentVersionController contentVersionController,
+			final String version) {
 		this.contentVersionController = contentVersionController;
 		this.version = version;
 	}
+
 	/**
-	 * Create a synch worker providing a conntentVersionController.
-	 * This constructor assumes that the latest version of the content available should be indexed.
-	 * @param contentVersionController - the object providing access to high level sync methods.
+	 * Create a synch worker providing a conntentVersionController. This
+	 * constructor assumes that the latest version of the content available
+	 * should be indexed.
+	 * 
+	 * @param contentVersionController
+	 *            - the object providing access to high level sync methods.
 	 */
-	public ContentSynchronisationWorker(
-			final ContentVersionController contentVersionController) {
+	public ContentSynchronisationWorker(final ContentVersionController contentVersionController) {
 		this(contentVersionController, null);
 	}
 
 	@Override
-	public void run() {
+	public String call() {
 		// Verify with Content manager that we can sync to the version requested
 		// / get the latest one
-		log.info("Starting synchronisation task for the content repository.");
+		log.info("Starting synchronisation task (" + version + ") for the content repository.");
 
 		if (null == version) {
 			// assume we are just trying to get the latest version when we have
 			// a null version field.
-			version = contentVersionController.getContentManager()
-					.getLatestVersionId();
+			version = contentVersionController.getContentManager().getLatestVersionId();
 		}
 
-		if (contentVersionController.getContentManager()
-				.isValidVersion(version)) {
+		if (contentVersionController.getContentManager().isValidVersion(version)) {
 			// trigger index operation with content Manager.
-			log.info("Triggering index operation as a result of Content Synchronisation job.");
+			log.debug("Triggering index operation as a result of Content Synchronisation job.");
 
-			if (this.contentVersionController.getContentManager().ensureCache(
-					version)) {
-				// successful indexing complete.
+			if (this.contentVersionController.getContentManager().ensureCache(version)) {
+				// successful indexing operation.
 				// Call the content controller to tell them we have finished our
 				// job and they may like to do something.
 				contentVersionController.syncJobCompleteCallback(version, true);
 
-				log.info("Content synchronisation job complete");
-				return;
+				log.info("Content synchronisation job completed for " + version + ".");
+				return version;
 			}
 		}
 
-		log.error("Error while trying to run index operation for version: "
-				+ version + " . Terminating Sync Job.");
+		log.error("Error while trying to run index operation for version: " + version
+				+ " . Terminating Sync Job.");
 		// call the content controller to tell them we failed to sync the
 		// version requested
 		contentVersionController.syncJobCompleteCallback(version, false);
 
-		return;
+		return null;
 	}
-
 }
