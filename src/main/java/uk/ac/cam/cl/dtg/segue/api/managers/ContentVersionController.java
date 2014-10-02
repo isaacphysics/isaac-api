@@ -355,5 +355,6 @@ public class ContentVersionController implements ServletContextListener {
 	public void contextDestroyed(final ServletContextEvent sce) {
 		log.info("Informed of imminent context destruction. Killing indexer.");
 		this.indexer.shutdownNow();
+		contentManager.clearCache();
 	}
 }
