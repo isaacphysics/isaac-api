@@ -18,6 +18,9 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import java.io.IOException;
 import java.util.List;
 
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +36,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesManager;
  * manager and tracking what version of content should be issued to users.
  * 
  */
-public class ContentVersionController {
+public class ContentVersionController implements ServletContextListener{
 	private static final Logger log = LoggerFactory
 			.getLogger(ContentVersionController.class);
 
@@ -298,5 +301,15 @@ public class ContentVersionController {
 	public synchronized void deleteAllCacheData() {
 		log.info("Clearing all caches and search indices.");
 		contentManager.clearCache();
+	}
+
+	@Override
+	public void contextInitialized(final ServletContextEvent sce) {
+		// we can't do anything until something initialises us anyway.
+	}
+
+	@Override
+	public void contextDestroyed(final ServletContextEvent sce) {
+		log.info("Informed of imminent context destruction. ");
 	}
 }

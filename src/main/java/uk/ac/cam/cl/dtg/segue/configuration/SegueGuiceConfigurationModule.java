@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Map;
+
+import javax.servlet.ServletContextListener;
 
 import ma.glasnost.orika.MapperFacade;
 
@@ -70,6 +73,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
@@ -380,6 +384,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		if (null == mapper) {
 			mapper = new ContentMapper();
 			this.buildDefaultJsonTypeMap();
+			log.info("Initialising Content Mapper");
 		}
 
 		return mapper;
@@ -547,7 +552,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 *
 	 * @param fileCacheLocation - the location that cached math images should be stored.
 	 * @return the content manager that knows how to render / cache maths content.
-	 * @throws IOException
+	 * @throws IOException - when we can't read from the file cache location.
 	 */
 	@Inject
 	@Provides
@@ -595,6 +600,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 				propertyLoader.getProperty(propertyLabel));
 	}
 
+	/**
+	 * Gets the segue classes that should be registered as context listeners.
+	 * 
+	 * TODO: we probably want to make this so that apps can register things too.
+	 * @return the list of context listener classes (these should all be singletons).
+	 */
+	public static List<Class <? extends ServletContextListener>> getRegisteredContextListenerClasses() {
+		List<Class <? extends ServletContextListener>> contextListeners = Lists.newArrayList();
+		contextListeners.add(ContentVersionController.class);
+		return contextListeners;
+	}
+	
 	/**
 	 * Segue utility method for providing a new instance of an application
 	 * manager.
