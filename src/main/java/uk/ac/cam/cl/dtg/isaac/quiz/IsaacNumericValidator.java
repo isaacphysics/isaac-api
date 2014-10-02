@@ -260,23 +260,6 @@ public class IsaacNumericValidator implements IValidator {
 	}
 
 	/**
-	 * Calculate the number of significant figures provided by an input.
-	 * 
-	 * @param input
-	 *            as a big decimal (probably constructed using a string)
-	 * @return an integer representing the number of significant figures
-	 *         provided.
-	 */
-	private int calculateSignificantDigits(final BigDecimal input) {
-//		if (input.scale() <= 0) {
-//			return input.precision() - input.stripTrailingZeros().scale();
-//		} else {
-//			return input.precision();
-//		}
-		return input.precision();
-	}
-
-	/**
 	 * Helper method to verify if the answer given is to the correct number of
 	 * significant figures.
 	 * 
@@ -293,11 +276,28 @@ public class IsaacNumericValidator implements IValidator {
 		String untrustedParsedValue = valueToCheck.replace("x10^", "e");
 
 		// check significant figures match
-		int untrustedValueSigfigs = this.calculateSignificantDigits(new BigDecimal(untrustedParsedValue));
-		if (untrustedParsedValue.contains(".") && untrustedValueSigfigs != significantFigures) {
-			return false;
+		BigDecimal bd = new BigDecimal(untrustedParsedValue);
+		
+		int untrustedValueSigfigs = bd.precision();
+		if (untrustedParsedValue.contains(".")) {
+			
+			// if it contains a decimal we can be more confident of the significant figures.
+			return untrustedValueSigfigs == significantFigures;
+		} else {
+			// if not we have to be flexible as integer values have undefined significant figure rules.
+			char[] unscaledValueToCheck = bd.unscaledValue().toString().toCharArray();
+			
+			// count trailing zeroes 
+			int trailingZeroes = 0;
+			for (int i = unscaledValueToCheck.length - 1; i >= 0; i--) {
+				if (unscaledValueToCheck[i] == '0') {
+					trailingZeroes++;
+				} else {
+					break;
+				}
+			}
+			
+			return bd.precision() - trailingZeroes <= significantFigures && bd.precision() >= significantFigures;
 		}
-
-		return true;
 	}
 }

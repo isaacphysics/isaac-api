@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
@@ -324,17 +325,45 @@ public class IsaacNumericValidatorTest {
 	}
 	
 	/**
-	 * Check that the numericValidator works correctly.
+	 * Check that the significant figure code works correctly.
 	 * @throws Exception 
 	 * 
 	 */
 	@Test
-	public final void isaacNumericValidator_CheckSignificantFiguresCalculationWorks_multipleTests() throws Exception {
-		IsaacNumericValidator test = new IsaacNumericValidator();
-		assertTrue(Whitebox.<Integer> invokeMethod(test, "calculateSignificantDigits", new BigDecimal("4.2599e-12")) == 5);
-		assertTrue(Whitebox.<Integer> invokeMethod(test, "calculateSignificantDigits", new BigDecimal("4e-12")) == 1);
-		assertTrue(Whitebox.<Integer> invokeMethod(test, "calculateSignificantDigits", new BigDecimal("4000.00")) == 6);
-		assertTrue(Whitebox.<Integer> invokeMethod(test, "calculateSignificantDigits", new BigDecimal("4012.001")) == 7);
+	public final void isaacNumericValidator_CheckSignificantFiguresCalculationWorks_multipleTests() throws Exception {		
+		verifyCorrectNumberOfSigFigs(Arrays.asList("5000", "5000e3"), Arrays.asList(1,2,3,4), Arrays.asList(5));
+		
+		verifyCorrectNumberOfSigFigs(Arrays.asList("5300", "5300e3"), Arrays.asList(2,3,4), Arrays.asList(1,5));
+		
+		verifyCorrectNumberOfSigFigs(Arrays.asList("50300"), Arrays.asList(3,4,5), Arrays.asList(1,2,6));
+		
+		verifyCorrectNumberOfSigFigs(Arrays.asList("0"), Arrays.asList(1), Arrays.asList(2));
+		
+		verifyCorrectNumberOfSigFigs(Arrays.asList("0000100"), Arrays.asList(1,2,3), Arrays.asList(4,5,6,7));
+		
+		verifyCorrectNumberOfSigFigs(Arrays.asList("0000100.00"), Arrays.asList(5), Arrays.asList(4,6,7));
 	}
 
+	/**
+	 * Helper to launch multiple sig fig tests on given numbers.
+	 * @param numbersToTest the numbers to feed into the validator
+	 * @param sigFigsToPass - the number of significant figures we expect the aforementioned numbers return a pass for
+	 * @param sigFigsToFail - the number of significant figures we expect the aforementioned numbers return a fail for
+	 * @throws Exception - if we can't execute the private method.
+	 */
+	private final void verifyCorrectNumberOfSigFigs(List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) throws Exception {
+		IsaacNumericValidator test = new IsaacNumericValidator();
+		for (String number : numbersToTest) {
+			
+			for(Integer sigFig : sigFigsToPass) {
+				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberofSignificantFigures", number, sigFig);				
+				assertTrue("Verifying sigfig success failed " + number + " " + sigFig, validate);
+			}
+			
+			for(Integer sigFig : sigFigsToFail) {
+				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberofSignificantFigures", number, sigFig); 
+				assertFalse("Verifying sigfig failures failed " + number + " " + sigFig, validate);
+			}
+		}
+	}
 }
