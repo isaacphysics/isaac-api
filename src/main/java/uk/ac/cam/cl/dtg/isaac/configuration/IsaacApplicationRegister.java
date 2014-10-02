@@ -27,7 +27,6 @@ import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
-import uk.ac.cam.cl.dtg.segue.api.MathsRenderingServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
@@ -63,7 +62,7 @@ public class IsaacApplicationRegister extends Application {
 			
 			// invoke optional service initialisation
 			this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
-			this.singletons.add(injector.getInstance(MathsRenderingServiceFacade.class));			
+			//this.singletons.add(injector.getInstance(MathsRenderingServiceFacade.class));			
 			
 			// initialise segue framework. 
 			this.singletons.add(injector.getInstance(SegueApiFacade.class));
