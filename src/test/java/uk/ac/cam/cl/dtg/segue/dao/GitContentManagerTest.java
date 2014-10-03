@@ -43,6 +43,7 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -394,6 +395,7 @@ public class GitContentManagerTest {
 	 * 
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unchecked")
 	@Test
 	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
 			throws Exception {
@@ -419,10 +421,9 @@ public class GitContentManagerTest {
 				.once();
 		expect(objectMapper.writeValueAsString(content)).andReturn(
 				uniqueObjectHash).once();
-		expect(
-				searchProvider.indexObject(eq(INITIAL_VERSION), anyString(),
-						eq(uniqueObjectHash), eq(uniqueObjectId))).andReturn(
-				true).once();
+	
+		searchProvider.bulkIndex(eq(INITIAL_VERSION), anyString(), (List<Map.Entry<String, String>>) anyObject());
+		expectLastCall().once();
 		
 		replay(searchProvider, contentMapper, objectMapper);
 

@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import static com.google.common.collect.Maps.immutableEntry;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -64,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -535,22 +538,26 @@ public class GitContentManager implements IContentManager {
 		}
 
 		log.info("Building search index for: " + sha);
-		for (Content content : gitCache.get(sha).values()) {
-			// setup object mapper to use pre-configured deserializer module.
-			// Required to deal with type polymorphism
-			ObjectMapper objectMapper = mapper.getContentObjectMapper();
 
+		// setup object mapper to use pre-configured deserializer module.
+		// Required to deal with type polymorphism
+		List<Map.Entry<String, String>> thingsToIndex = Lists.newArrayList();
+		ObjectMapper objectMapper = mapper.getContentObjectMapper();
+		for (Content content : gitCache.get(sha).values()) {
 			try {
-				this.searchProvider.indexObject(sha, CONTENT_TYPE,
-						objectMapper.writeValueAsString(content),
-						content.getId());
+				thingsToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
 			} catch (JsonProcessingException e) {
 				log.error("Unable to serialize content object "
-						+ "for indexing with the search provider.");
-				e.printStackTrace();
+						+ "for indexing with the search provider.", e);
 			}
 		}
-		log.info("Search index built for: " + sha);
+		
+		try {
+			this.searchProvider.bulkIndex(sha, CONTENT_TYPE, thingsToIndex);
+			log.info("Search index request sent for: " + sha);
+		} catch (SegueSearchOperationException e) {
+			log.error("Error whilst trying to perform bulk index operation.", e);
+		}
 	}
 
 	/**

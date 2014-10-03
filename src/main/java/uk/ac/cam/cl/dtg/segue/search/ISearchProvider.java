@@ -41,10 +41,10 @@ public interface ISearchProvider {
 	 * @param content
 	 *            - The json string representation of the entire document to be
 	 *            indexed.
-	 * @return True if successful false if there is an error
+	 * @throws SegueSearchOperationException - if there is an error whilst trying to index the document.
 	 */
-	boolean indexObject(final String index, final String indexType,
-			final String content);
+	void indexObject(final String index, final String indexType,
+			final String content) throws SegueSearchOperationException;
 
 	/**
 	 * Indexes an object with the search provider.
@@ -58,11 +58,24 @@ public interface ISearchProvider {
 	 *            indexed.
 	 * @param uniqueId
 	 *            - A unique id for the document being indexed if available.
-	 * @return True if successful false if there is an error
+	 * @throws SegueSearchOperationException - if there is an error whilst trying to index the document.
 	 */
-	boolean indexObject(final String index, final String indexType,
-			final String content, final String uniqueId);
+	void indexObject(final String index, final String indexType,
+			final String content, final String uniqueId) throws SegueSearchOperationException;
 
+	/**
+	 * Bulk Index operations are useful for indexing large numbers of documents with one 
+	 * request to the search provider.
+	 * @param index
+	 *            - the name of the index
+	 * @param indexType
+	 *            - the name of the type of document being indexed
+	 * @param dataToIndex - A list of Entries <Key(id), ContentToIndex>
+	 * @throws SegueSearchOperationException - if there is an error whilst trying to index the document.
+	 */
+	void bulkIndex(final String index, final String indexType,
+			final List<Map.Entry<String, String>> dataToIndex) throws SegueSearchOperationException;
+	
 	/**
 	 * Verifies the existence of a given index.
 	 * 

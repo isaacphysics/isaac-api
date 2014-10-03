@@ -37,7 +37,10 @@ import com.google.inject.name.Named;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
+
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static com.google.common.collect.Maps.*;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -156,16 +159,22 @@ public class SchoolListReader {
 		if (!searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
 			log.info("Creating schools index with search provider.");
 			List<School> schoolList = this.loadAndBuildSchoolList();
-
+			List<Map.Entry<String, String>> indexList = Lists.newArrayList();
+			
 			for (School school : schoolList) {
 				try {
-					searchProvider.indexObject(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-							mapper.writeValueAsString(school));
+					indexList.add(immutableEntry(school.getUrn(), mapper.writeValueAsString(school)));
 				} catch (JsonProcessingException e) {
 					log.error("Unable to serialize the school object into json.", e);
 				}
 			}
-			log.info("School list indexing complete.");
+			
+			try {
+				searchProvider.bulkIndex(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE, indexList);
+				log.info("School list index request complete.");
+			} catch (SegueSearchOperationException e) {
+				log.error("Unable to complete bulk index operation for schools list.", e);
+			}
 		} else {
 			log.info("Cancelling school search index operation as another thread has already done it.");
 		}

@@ -32,6 +32,9 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -67,8 +70,7 @@ import com.google.inject.Inject;
  * 
  */
 public class ElasticSearchProvider implements ISearchProvider {
-	private static final Logger log = LoggerFactory
-			.getLogger(ElasticSearchProvider.class);
+	private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
 
 	private final Client client;
 	private final List<String> rawFieldsList;
@@ -89,47 +91,70 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final boolean indexObject(final String index,
-			final String indexType, final String content) {
-		return indexObject(index, indexType, content, null);
+	public final void indexObject(final String index, final String indexType, final String content)
+		throws SegueSearchOperationException {
+		indexObject(index, indexType, content, null);
 	}
 
 	@Override
-	public final boolean indexObject(final String index,
-			final String indexType, final String content, final String uniqueId) {
+	public final void bulkIndex(final String index, final String indexType,
+			final List<Map.Entry<String, String>> dataToIndex) throws SegueSearchOperationException {
+		// check index already exists if not execute any initialisation steps.
+		if (!this.hasIndex(index)) {
+			this.sendMappingCorrections(index, indexType);
+		}
+
+		// build bulk request
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		for (Map.Entry<String, String> itemToIndex : dataToIndex) {
+			bulkRequest.add(client.prepareIndex(index, indexType, itemToIndex.getKey()).setSource(
+					itemToIndex.getValue()));
+		}
+
+		try {
+			// execute bulk request
+			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+			if (bulkResponse.hasFailures()) {
+				// process failures by iterating through each bulk response item
+				for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
+					log.error("Unable to index the following item: " + itemResponse.getFailureMessage());
+				}
+			}
+		} catch (ElasticsearchException e) {
+			throw new SegueSearchOperationException("Error during bulk index operation.", e);
+		}
+	}
+
+	@Override
+	public final void indexObject(final String index, final String indexType, final String content,
+			final String uniqueId) throws SegueSearchOperationException {
 		// check index already exists if not execute any initialisation steps.
 		if (!this.hasIndex(index)) {
 			this.sendMappingCorrections(index, indexType);
 		}
 
 		try {
-			IndexResponse indexResponse = client
-					.prepareIndex(index, indexType, uniqueId)
-					.setSource(content).execute().actionGet();
+			IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content)
+					.execute().actionGet();
 			log.debug("Document: " + indexResponse.getId() + " indexed.");
 
-			return true;
 		} catch (ElasticsearchException e) {
-			log.error("Elastic Search Exception detected.", e);
-			return false;
+			throw new SegueSearchOperationException("Error during index operation.", e);
 		}
 	}
 
 	@Override
-	public final ResultsWrapper<String> paginatedMatchSearch(
-			final String index,
-			final String indexType,
+	public final ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			final int startIndex, final int limit,
-			final Map<String, Constants.SortOrder> sortInstructions) {
+			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions) {
 
 		// build up the query from the fieldsToMatch map
 		BoolQueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
 
 		log.debug("Query to be sent to elasticsearch is : " + query);
 
-		SearchRequestBuilder searchRequest = client.prepareSearch(index)
-				.setTypes(indexType).setQuery(query).setFrom(startIndex);
+		SearchRequestBuilder searchRequest = client.prepareSearch(index).setTypes(indexType).setQuery(query)
+				.setFrom(startIndex);
 
 		if (limit > 0) {
 			searchRequest.setSize(limit);
@@ -140,8 +165,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 			// this is a restriction on elastic search.
 			log.warn("Setting limit to be the size of the result set... "
 					+ "Unlimited search may cause performance issues");
-			int largerlimit = this.executeQuery(searchRequest)
-					.getTotalResults().intValue();
+			int largerlimit = this.executeQuery(searchRequest).getTotalResults().intValue();
 			searchRequest.setSize(largerlimit);
 		}
 
@@ -151,18 +175,16 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(
-			final String index,
+	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit) {
 		Long seed = this.randomNumberGenerator.nextLong();
 		return this.randomisedPaginatedMatchSearch(index, indexType, fieldsToMatch, startIndex, limit, seed);
 	}
-	
+
 	@Override
-	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(
-			final String index,
+	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit, final Long randomSeed) {
@@ -170,62 +192,50 @@ public class ElasticSearchProvider implements ISearchProvider {
 		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
 		Long seed = randomSeed;
 
-		query = QueryBuilders.functionScoreQuery(query,
-				ScoreFunctionBuilders.randomFunction(seed));
+		query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction(seed));
 
-		log.debug("Randomised Query, with seed: " + seed
-				+ ", to be sent to elasticsearch is : " + query);
-		
-		SearchRequestBuilder searchRequest = client.prepareSearch(index)
-				.setTypes(indexType).setQuery(query).setSize(limit)
-				.setFrom(startIndex);
+		log.debug("Randomised Query, with seed: " + seed + ", to be sent to elasticsearch is : " + query);
+
+		SearchRequestBuilder searchRequest = client.prepareSearch(index).setTypes(indexType).setQuery(query)
+				.setSize(limit).setFrom(startIndex);
 
 		return this.executeQuery(searchRequest);
 	}
 
 	@Override
-	public final ResultsWrapper<String> fuzzySearch(final String index,
-			final String indexType, final String searchString,
-			@Nullable final Map<String, List<String>> fieldsThatMustMatch,
+	public final ResultsWrapper<String> fuzzySearch(final String index, final String indexType,
+			final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
 			final String... fields) {
-		if (null == index || null == indexType || null == searchString
-				|| null == fields) {
+		if (null == index || null == indexType || null == searchString || null == fields) {
 			log.warn("A required field is missing. Unable to execute search.");
 			return null;
 		}
 
 		BoolQueryBuilder query;
 		if (null != fieldsThatMustMatch) {
-			query = this.generateBoolMatchQuery(this
-					.convertToBoolMap(fieldsThatMustMatch));
+			query = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
 		} else {
 			query = QueryBuilders.boolQuery();
 		}
 
-		QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields)
-				.likeText(searchString);
+		QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
 		query.must(fuzzyQuery);
 
-		ResultsWrapper<String> resultList = this.executeBasicQuery(index,
-				indexType, query);
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query);
 
 		return resultList;
 	}
 
 	@Override
-	public final ResultsWrapper<String> termSearch(final String index,
-			final String indexType, final Collection<String> searchTerms,
-			final String field) {
-		if (null == index || null == indexType || null == searchTerms
-				|| null == field) {
+	public final ResultsWrapper<String> termSearch(final String index, final String indexType,
+			final Collection<String> searchTerms, final String field) {
+		if (null == index || null == indexType || null == searchTerms || null == field) {
 			log.warn("A required field is missing. Unable to execute search.");
 			return null;
 		}
 
-		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms)
-				.minimumMatch(searchTerms.size());
-		ResultsWrapper<String> resultList = this.executeBasicQuery(index,
-				indexType, query);
+		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query);
 		return resultList;
 	}
 
@@ -239,10 +249,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 		Validate.notBlank(index);
 
 		try {
-			log.info("Sending delete request to ElasticSearch for search index: "
-					+ index);
-			client.admin().indices().delete(new DeleteIndexRequest(index))
-					.actionGet();
+			log.info("Sending delete request to ElasticSearch for search index: " + index);
+			client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
 		} catch (ElasticsearchException e) {
 			log.error("ElasticSearch exception while trying to delete index " + index);
 			return false;
@@ -275,13 +283,10 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 *            - port that the cluster is running on.
 	 * @return Defaults to http client creation.
 	 */
-	public static Client getTransportClient(final String clusterName,
-			final String address, final int port) {
-		Settings settings = ImmutableSettings.settingsBuilder()
-				.put("cluster.name", clusterName).build();
+	public static Client getTransportClient(final String clusterName, final String address, final int port) {
+		Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName).build();
 		TransportClient transportClient = new TransportClient(settings);
-		InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(
-				address, port);
+		InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(address, port);
 		transportClient = transportClient.addTransportAddress(transportAddress);
 		return transportClient;
 	}
@@ -289,18 +294,17 @@ public class ElasticSearchProvider implements ISearchProvider {
 	@Override
 	public boolean hasIndex(final String index) {
 		Validate.notNull(index);
-		return client.admin().indices().exists(new IndicesExistsRequest(index))
-				.actionGet().isExists();
+		return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
 	}
 
 	@Override
 	public void registerRawStringFields(final List<String> fieldNames) {
 		this.rawFieldsList.addAll(fieldNames);
 	}
-	
+
 	@Override
-	public ResultsWrapper<String> findByPrefix(final String index,
-			final String indexType, final String fieldname, final String prefix) {
+	public ResultsWrapper<String> findByPrefix(final String index, final String indexType,
+			final String fieldname, final String prefix) {
 		ResultsWrapper<String> resultList;
 
 		PrefixQueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
@@ -320,22 +324,20 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 *            - the instructions to augment.
 	 * @return the augmented search request with sort instructions included.
 	 */
-	private SearchRequestBuilder addSortInstructions(
-			final SearchRequestBuilder searchRequest,
+	private SearchRequestBuilder addSortInstructions(final SearchRequestBuilder searchRequest,
 			final Map<String, Constants.SortOrder> sortInstructions) {
 		// deal with sorting of results
-		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions
-				.entrySet()) {
+		for (Map.Entry<String, Constants.SortOrder> entry : sortInstructions.entrySet()) {
 			String sortField = entry.getKey();
 			Constants.SortOrder sortOrder = entry.getValue();
 
 			if (sortOrder == Constants.SortOrder.ASC) {
-				searchRequest.addSort(SortBuilders.fieldSort(sortField)
-						.order(SortOrder.ASC).missing("_last"));
+				searchRequest
+						.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.ASC).missing("_last"));
 
 			} else {
-				searchRequest.addSort(SortBuilders.fieldSort(sortField)
-						.order(SortOrder.DESC).missing("_last"));
+				searchRequest.addSort(SortBuilders.fieldSort(sortField).order(SortOrder.DESC)
+						.missing("_last"));
 			}
 		}
 
@@ -357,27 +359,21 @@ public class ElasticSearchProvider implements ISearchProvider {
 		// This Set will allow us to calculate the minimum should match value -
 		// it is assumed that for each or'd field there should be a match
 		Set<String> shouldMatchSet = Sets.newHashSet();
-		for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> 
-		pair : fieldsToMatch
+		for (Map.Entry<Map.Entry<Constants.BooleanOperator, String>, List<String>> pair : fieldsToMatch
 				.entrySet()) {
 			// extract the MapEntry which contains a key value pair of the
 			// operator and the list of operands to match against.
-			Constants.BooleanOperator operatorForThisField = pair.getKey()
-					.getKey();
+			Constants.BooleanOperator operatorForThisField = pair.getKey().getKey();
 
 			// go through each operand and add it to the query
 			if (pair.getValue() != null) {
 				for (String queryItem : pair.getValue()) {
-					if (operatorForThisField
-							.equals(Constants.BooleanOperator.OR)) {
+					if (operatorForThisField.equals(Constants.BooleanOperator.OR)) {
 						shouldMatchSet.add(pair.getKey().getValue());
-						query.should(
-								QueryBuilders.matchQuery(pair.getKey()
-										.getValue(), queryItem))
+						query.should(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem))
 								.minimumNumberShouldMatch(shouldMatchSet.size());
 					} else {
-						query.must(QueryBuilders.matchQuery(pair.getKey()
-								.getValue(), queryItem));
+						query.must(QueryBuilders.matchQuery(pair.getKey().getValue(), queryItem));
 					}
 				}
 
@@ -405,12 +401,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * 
 	 * @return list of the search results
 	 */
-	private ResultsWrapper<String> executeBasicQuery(final String index,
-			final String indexType, final QueryBuilder query) {
+	private ResultsWrapper<String> executeBasicQuery(final String index, final String indexType,
+			final QueryBuilder query) {
 		log.debug("Building Query: " + query);
 
-		SearchRequestBuilder configuredSearchRequestBuilder = client
-				.prepareSearch(index).setTypes(indexType).setQuery(query);
+		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType)
+				.setQuery(query);
 
 		return executeQuery(configuredSearchRequestBuilder);
 	}
@@ -422,10 +418,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 *            - the search request to send to the cluster.
 	 * @return List of the search results.
 	 */
-	private ResultsWrapper<String> executeQuery(
-			final SearchRequestBuilder configuredSearchRequestBuilder) {
-		SearchResponse response = configuredSearchRequestBuilder.execute()
-				.actionGet();
+	private ResultsWrapper<String> executeQuery(final SearchRequestBuilder configuredSearchRequestBuilder) {
+		SearchResponse response = configuredSearchRequestBuilder.execute().actionGet();
 
 		List<SearchHit> hitAsList = Arrays.asList(response.getHits().getHits());
 		List<String> resultList = new ArrayList<String>();
@@ -436,8 +430,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 			resultList.add(item.getSourceAsString());
 		}
 
-		return new ResultsWrapper<String>(resultList, response.getHits()
-				.getTotalHits());
+		return new ResultsWrapper<String>(resultList, response.getHits().getTotalHits());
 	}
 
 	/**
@@ -452,25 +445,21 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * @param indexType
 	 *            - type to send the mapping corrections to.
 	 */
-	private void sendMappingCorrections(final String index,
-			final String indexType) {
+	private void sendMappingCorrections(final String index, final String indexType) {
 		try {
-			CreateIndexRequestBuilder indexBuilder = client.admin().indices()
-					.prepareCreate(index);
+			CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
 
-			final XContentBuilder mappingBuilder = XContentFactory
-					.jsonBuilder().startObject().startObject(indexType)
-					.startObject("properties");
+			final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject()
+					.startObject(indexType).startObject("properties");
 
 			for (String fieldName : this.rawFieldsList) {
-				log.debug("Sending raw mapping correction for " + fieldName
-						+ "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+				log.debug("Sending raw mapping correction for " + fieldName + "."
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
 
-				mappingBuilder.startObject(fieldName).field("type", "string")
-						.field("index", "analyzed").startObject("fields")
-						.startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-						.field("type", "string").field("index", "not_analyzed")
-						.endObject().endObject().endObject();
+				mappingBuilder.startObject(fieldName).field("type", "string").field("index", "analyzed")
+						.startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
+						.field("type", "string").field("index", "not_analyzed").endObject().endObject()
+						.endObject();
 			}
 			// close off json structure
 			mappingBuilder.endObject().endObject().endObject();
@@ -480,8 +469,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 			indexBuilder.execute().actionGet();
 
 		} catch (IOException e) {
-			log.error("Error while sending mapping correction "
-					+ "instructions to the ElasticSearch Server", e);
+			log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server",
+					e);
 		}
 	}
 
@@ -500,11 +489,9 @@ public class ElasticSearchProvider implements ISearchProvider {
 			return null;
 		}
 
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> result = Maps
-				.newHashMap();
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> result = Maps.newHashMap();
 
-		for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch
-				.entrySet()) {
+		for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch.entrySet()) {
 			Map.Entry<Constants.BooleanOperator, String> mapEntry = com.google.common.collect.Maps
 					.immutableEntry(Constants.BooleanOperator.OR, pair.getKey());
 
