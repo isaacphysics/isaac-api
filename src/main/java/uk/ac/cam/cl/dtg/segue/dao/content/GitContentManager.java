@@ -73,8 +73,7 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
  * 
  */
 public class GitContentManager implements IContentManager {
-	private static final Logger log = LoggerFactory
-			.getLogger(GitContentManager.class);
+	private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
 
 	private static final String CONTENT_TYPE = "content";
 
@@ -88,7 +87,7 @@ public class GitContentManager implements IContentManager {
 	private final ISearchProvider searchProvider;
 
 	private boolean indexOnlyPublishedParentContent = false;
-	
+
 	/**
 	 * Constructor for instantiating a new Git Content Manager Object.
 	 * 
@@ -101,8 +100,7 @@ public class GitContentManager implements IContentManager {
 	 *            - The utility class for mapping content objects.
 	 */
 	@Inject
-	public GitContentManager(final GitDb database,
-			final ISearchProvider searchProvider,
+	public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
 			final ContentMapper contentMapper) {
 		this.database = database;
 		this.mapper = contentMapper;
@@ -113,8 +111,8 @@ public class GitContentManager implements IContentManager {
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
 		this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
 
-		searchProvider.registerRawStringFields(Lists.newArrayList(
-				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
+		searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME,
+				Constants.TITLE_FIELDNAME));
 	}
 
 	/**
@@ -134,10 +132,8 @@ public class GitContentManager implements IContentManager {
 	 *            - A manually constructed indexProblemCache for testing
 	 *            purposes
 	 */
-	public GitContentManager(final GitDb database,
-			final ISearchProvider searchProvider,
-			final ContentMapper contentMapper,
-			final Map<String, Map<String, Content>> gitCache,
+	public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
+			final ContentMapper contentMapper, final Map<String, Map<String, Content>> gitCache,
 			final Map<String, Map<Content, List<String>>> indexProblemCache) {
 		this.database = database;
 		this.mapper = contentMapper;
@@ -147,9 +143,9 @@ public class GitContentManager implements IContentManager {
 		this.indexProblemCache = indexProblemCache;
 		this.tagsList = new ConcurrentHashMap<String, Set<String>>();
 		this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
-		
-		searchProvider.registerRawStringFields(Lists.newArrayList(
-				Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
+
+		searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME,
+				Constants.TITLE_FIELDNAME));
 	}
 
 	@Override
@@ -167,8 +163,7 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			Content result = gitCache.get(version).get(id);
 			if (null == result) {
-				log.error("Failed to locate the content (" + id
-						+ ") in the cache for version " + version);
+				log.error("Failed to locate the content (" + id + ") in the cache for version " + version);
 			} else {
 				log.debug("Loading content from cache: " + id);
 			}
@@ -179,19 +174,14 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix,
-			final String version) {
+	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final String version) {
 		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchHits = this.searchProvider
-					.findByPrefix(version, CONTENT_TYPE, Constants.ID_FIELDNAME
-							+ "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-							idPrefix);
+			ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
+					Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix);
 
-			List<Content> searchResults = mapper
-					.mapFromStringListToContentList(searchHits.getResults());
+			List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-			return new ResultsWrapper<ContentDTO>(
-					mapper.getDTOByDOList(searchResults),
+			return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
 					searchHits.getTotalResults());
 		} else {
 			log.error("Unable to ensure cache for requested version" + version);
@@ -200,21 +190,16 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> searchForContent(
-			final String version, final String searchString,
+	public final ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
 			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
 		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(
-					version, CONTENT_TYPE, searchString, fieldsThatMustMatch,
-					Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
-					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
-					Constants.CHILDREN_FIELDNAME);
+			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE,
+					searchString, fieldsThatMustMatch, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
+					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
 
-			List<Content> searchResults = mapper
-					.mapFromStringListToContentList(searchHits.getResults());
+			List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-			return new ResultsWrapper<ContentDTO>(
-					mapper.getDTOByDOList(searchResults),
+			return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
 					searchHits.getTotalResults());
 		} else {
 			log.error("Unable to ensure cache for requested version" + version);
@@ -223,8 +208,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> findByFieldNames(
-			final String version,
+	public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) {
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
@@ -232,43 +216,36 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			// TODO: Fix to allow sort order to be changed, currently it is hard
 			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions = Maps
-					.newHashMap();
+			Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
 
-			sortInstructions.put(Constants.TITLE_FIELDNAME + "."
-					+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
 					Constants.SortOrder.ASC);
 
-			ResultsWrapper<String> searchHits = searchProvider
-					.paginatedMatchSearch(version, CONTENT_TYPE, fieldsToMatch,
-							startIndex, limit, sortInstructions);
+			ResultsWrapper<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE,
+					fieldsToMatch, startIndex, limit, sortInstructions);
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<Content> result = mapper
-					.mapFromStringListToContentList(searchHits.getResults());
+			List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
 			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults,
-					searchHits.getTotalResults());
+			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
 		}
 
 		return finalResults;
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-			final String version,
+	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) {
 		return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
 	}
-	
+
 	@Override
-	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-			final String version,
+	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			final Integer startIndex, final Integer limit, final Long randomSeed) {		
+			final Integer startIndex, final Integer limit, final Long randomSeed) {
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
 		if (this.ensureCache(version)) {
@@ -278,26 +255,24 @@ public class GitContentManager implements IContentManager {
 						fieldsToMatch, startIndex, limit);
 			} else {
 				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
-						fieldsToMatch, startIndex, limit, randomSeed);				
+						fieldsToMatch, startIndex, limit, randomSeed);
 			}
 
 			// setup object mapper to use preconfigured deserializer module.
 			// Required to deal with type polymorphism
-			List<Content> result = mapper
-					.mapFromStringListToContentList(searchHits.getResults());
+			List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
 
 			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults,
-					searchHits.getTotalResults());
+			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
 		}
 
 		return finalResults;
 	}
 
 	@Override
-	public final ByteArrayOutputStream getFileBytes(final String version,
-			final String filename) throws IOException {
+	public final ByteArrayOutputStream getFileBytes(final String version, final String filename)
+		throws IOException {
 		return database.getFileByCommitSHA(version, filename);
 	}
 
@@ -366,27 +341,22 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> getContentByTags(
-			final String version, final Set<String> tags) {
+	public final ResultsWrapper<ContentDTO> getContentByTags(final String version, final Set<String> tags) {
 		if (null == version || null == tags) {
 			return null;
 		}
 
 		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchResults = this.searchProvider
-					.termSearch(version, CONTENT_TYPE, tags, "tags");
+			ResultsWrapper<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE,
+					tags, "tags");
 
-			List<Content> contentResults = mapper
-					.mapFromStringListToContentList(searchResults.getResults());
+			List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults.getResults());
 
-			List<ContentDTO> contentDTOResults = mapper
-					.getDTOByDOList(contentResults);
+			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(contentResults);
 
-			return new ResultsWrapper<ContentDTO>(contentDTOResults,
-					searchResults.getTotalResults());
+			return new ResultsWrapper<ContentDTO>(contentDTOResults, searchResults.getTotalResults());
 		} else {
-			log.error("Cache not found. Failed to build cache with version: "
-					+ version);
+			log.error("Cache not found. Failed to build cache with version: " + version);
 			return null;
 		}
 	}
@@ -404,7 +374,7 @@ public class GitContentManager implements IContentManager {
 
 		return tagsList.get(version);
 	}
-	
+
 	@Override
 	public final Collection<String> getAllUnits(final String version) {
 		Validate.notBlank(version);
@@ -431,8 +401,9 @@ public class GitContentManager implements IContentManager {
 					if (database.verifyCommitExists(version)) {
 						log.debug("Rebuilding cache as sha does not exist in hashmap");
 						buildGitContentIndex(version);
-						
-						// may as well spawn a new thread to do the validation work now.
+
+						// may as well spawn a new thread to do the validation
+						// work now.
 						Thread validationJob = new Thread() {
 							@Override
 							public void run() {
@@ -440,11 +411,10 @@ public class GitContentManager implements IContentManager {
 							}
 						};
 						validationJob.start();
-						
+
 						buildSearchIndexFromLocalGitIndex(version);
 					} else {
-						log.warn("Unable find the commit (" + version
-								+ ") in git to ensure the cache");
+						log.warn("Unable find the commit (" + version + ") in git to ensure the cache");
 						return false;
 					}
 				}
@@ -453,8 +423,7 @@ public class GitContentManager implements IContentManager {
 
 		boolean searchIndexed = searchProvider.hasIndex(version);
 		if (!searchIndexed) {
-			log.warn("Search does not have a valid index for the " + version
-					+ " version of the content");
+			log.warn("Search does not have a valid index for the " + version + " version of the content");
 			synchronized (this) {
 				this.buildSearchIndexFromLocalGitIndex(version);
 			}
@@ -481,10 +450,8 @@ public class GitContentManager implements IContentManager {
 	 * @return fully populated contentDTO.
 	 */
 	@Override
-	public ContentDTO populateContentSummaries(final String version,
-			final ContentDTO contentDTO) {
-		if (contentDTO.getRelatedContent() == null
-				|| contentDTO.getRelatedContent().isEmpty()) {
+	public ContentDTO populateContentSummaries(final String version, final ContentDTO contentDTO) {
+		if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
 			return contentDTO;
 		}
 
@@ -497,19 +464,18 @@ public class GitContentManager implements IContentManager {
 			relatedContentIds.add(summary.getId());
 		}
 
-		fieldsToMap.put(Maps.immutableEntry(Constants.BooleanOperator.OR,
-				Constants.ID_FIELDNAME + '.'
-						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX),
-				relatedContentIds);
+		fieldsToMap.put(
+				Maps.immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), relatedContentIds);
 
-		ResultsWrapper<ContentDTO> results = this.findByFieldNames(version,
-				fieldsToMap, 0, relatedContentIds.size());
+		ResultsWrapper<ContentDTO> results = this.findByFieldNames(version, fieldsToMap, 0,
+				relatedContentIds.size());
 
 		List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
 		for (ContentDTO relatedContent : results.getResults()) {
-			ContentSummaryDTO summary = this.mapper.getAutoMapper().map(
-					relatedContent, ContentSummaryDTO.class);
+			ContentSummaryDTO summary = this.mapper.getAutoMapper().map(relatedContent,
+					ContentSummaryDTO.class);
 			relatedContentDTOs.add(summary);
 		}
 
@@ -547,11 +513,10 @@ public class GitContentManager implements IContentManager {
 			try {
 				thingsToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
 			} catch (JsonProcessingException e) {
-				log.error("Unable to serialize content object "
-						+ "for indexing with the search provider.", e);
+				log.error("Unable to serialize content object " + "for indexing with the search provider.", e);
 			}
 		}
-		
+
 		try {
 			this.searchProvider.bulkIndex(sha, CONTENT_TYPE, thingsToIndex);
 			log.info("Search index request sent for: " + sha);
@@ -583,16 +548,14 @@ public class GitContentManager implements IContentManager {
 			ObjectId commitId = repository.resolve(sha);
 
 			if (null == commitId) {
-				log.error("Failed to buildGitIndex - Unable to locate resource with SHA: "
-						+ sha);
+				log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
 				return;
 			}
 
 			Map<String, Content> shaCache = new HashMap<String, Content>();
 
 			TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
-			log.info("Populating git content cache based on sha " + sha
-					+ " ...");
+			log.info("Populating git content cache based on sha " + sha + " ...");
 
 			// Traverse the git repository looking for the .json files
 			while (treeWalk.next()) {
@@ -606,23 +569,20 @@ public class GitContentManager implements IContentManager {
 
 				Content content = null;
 				try {
-					content = (Content) objectMapper.readValue(out.toString(),
-							ContentBase.class);
+					content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 
 					// check if we only want to index published content
 					if (indexOnlyPublishedParentContent && !content.getPublished()) {
 						log.debug("Skipping unpublished content: " + content.getId());
 						continue;
 					}
-					
-					content = this.augmentChildContent(content,
-							treeWalk.getPathString(), null);					
-					
+
+					content = this.augmentChildContent(content, treeWalk.getPathString(), null);
+
 					if (null != content) {
 						// add children (and parent) from flattened Set to
 						// cache if they have ids
-						for (Content flattenedContent : this
-								.flattenContentObjects(content)) {
+						for (Content flattenedContent : this.flattenContentObjects(content)) {
 							if (flattenedContent.getId() == null) {
 								continue;
 							}
@@ -632,74 +592,52 @@ public class GitContentManager implements IContentManager {
 							// again
 							if (!shaCache.containsKey(flattenedContent.getId())) {
 								// It must be new so we can add it
-								log.debug("Loading into cache: "
-										+ flattenedContent.getId() + "("
-										+ flattenedContent.getType() + ")"
-										+ " from " + treeWalk.getPathString());
-								shaCache.put(flattenedContent.getId(),
-										flattenedContent);
-								registerTagsWithVersion(sha,
-										flattenedContent.getTags());
-								
-								
-								// If this is a numeric question, extract any 
+								log.debug("Loading into cache: " + flattenedContent.getId() + "("
+										+ flattenedContent.getType() + ")" + " from "
+										+ treeWalk.getPathString());
+								shaCache.put(flattenedContent.getId(), flattenedContent);
+								registerTagsWithVersion(sha, flattenedContent.getTags());
+
+								// If this is a numeric question, extract any
 								// units from its answers.
-								
+
 								if (flattenedContent instanceof IsaacNumericQuestion) {
-									registerUnitsWithVersion(sha, 
-											(IsaacNumericQuestion) flattenedContent);									
+									registerUnitsWithVersion(sha, (IsaacNumericQuestion) flattenedContent);
 								}
-									
+
 								continue; // our work here is done (reduces
 											// nesting compared to else)
 							}
 
 							// shaCache contains key already, compare the
 							// content
-							if (shaCache.get(flattenedContent.getId()).equals(
-									flattenedContent)) {
+							if (shaCache.get(flattenedContent.getId()).equals(flattenedContent)) {
 								// content is the same therefore it is just
 								// reuse of a content object so that is
 								// fine.
 								log.debug("Resource (" + content.getId()
-										+ ") already seen in cache. Skipping "
-										+ treeWalk.getPathString());
-								continue; 
+										+ ") already seen in cache. Skipping " + treeWalk.getPathString());
+								continue;
 							}
 
 							// Otherwise, duplicate IDs with different content,
 							// therefore log an error
-							log.warn("Resource with duplicate ID ("
-									+ content.getId()
-									+ ") detected in cache. Skipping "
-									+ treeWalk.getPathString());
-							this.registerContentProblem(
-									sha,
-									flattenedContent,
-									"Index failure - Duplicate ID found in file "
-											+ treeWalk.getPathString()
+							log.warn("Resource with duplicate ID (" + content.getId()
+									+ ") detected in cache. Skipping " + treeWalk.getPathString());
+							this.registerContentProblem(sha, flattenedContent,
+									"Index failure - Duplicate ID found in file " + treeWalk.getPathString()
 											+ " and "
-											+ shaCache.get(
-													flattenedContent.getId())
-													.getCanonicalSourceFile());
+											+ shaCache.get(flattenedContent.getId()).getCanonicalSourceFile());
 						}
 					}
 				} catch (JsonMappingException e) {
-					log.warn(
-							"Unable to parse the json file found "
-									+ treeWalk.getPathString()
-									+ " as a content object. Skipping file...",
-							e);
+					log.warn("Unable to parse the json file found " + treeWalk.getPathString()
+							+ " as a content object. Skipping file...", e);
 					Content dummyContent = new Content();
-					dummyContent.setCanonicalSourceFile(treeWalk
-							.getPathString());
-					this.registerContentProblem(
-							sha,
-							dummyContent,
-							"Index failure - Unable to parse json file found - "
-									+ treeWalk.getPathString()
-									+ ". The following error occurred: "
-									+ e.getMessage());
+					dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
+					this.registerContentProblem(sha, dummyContent,
+							"Index failure - Unable to parse json file found - " + treeWalk.getPathString()
+									+ ". The following error occurred: " + e.getMessage());
 				}
 			}
 
@@ -731,8 +669,8 @@ public class GitContentManager implements IContentManager {
 	 *            - used to construct nested ids for child elements.
 	 * @return Content object with new reference
 	 */
-	private Content augmentChildContent(final Content content,
-			final String canonicalSourceFile, @Nullable final String parentId) {
+	private Content augmentChildContent(final Content content, final String canonicalSourceFile,
+			@Nullable final String parentId) {
 		if (null == content) {
 			return null;
 		}
@@ -740,8 +678,7 @@ public class GitContentManager implements IContentManager {
 		// If this object is of type question then we need to give it a random
 		// id if it doesn't have one.
 		if (content instanceof Question && content.getId() == null) {
-			log.warn("Found question without id " + content.getTitle() + " "
-					+ canonicalSourceFile);
+			log.warn("Found question without id " + content.getTitle() + " " + canonicalSourceFile);
 		}
 
 		// Try to figure out the parent ids.
@@ -750,8 +687,7 @@ public class GitContentManager implements IContentManager {
 			newParentId = content.getId();
 		} else {
 			if (content.getId() != null) {
-				newParentId = parentId + Constants.ID_SEPARATOR
-						+ content.getId();
+				newParentId = parentId + Constants.ID_SEPARATOR + content.getId();
 			} else {
 				newParentId = parentId;
 			}
@@ -764,8 +700,7 @@ public class GitContentManager implements IContentManager {
 				if (cb instanceof Content) {
 					Content c = (Content) cb;
 
-					this.augmentChildContent(c, canonicalSourceFile,
-							newParentId);
+					this.augmentChildContent(c, canonicalSourceFile, newParentId);
 				}
 			}
 		}
@@ -776,8 +711,7 @@ public class GitContentManager implements IContentManager {
 			if (question.getHints() != null) {
 				for (ContentBase cb : question.getHints()) {
 					Content c = (Content) cb;
-					this.augmentChildContent(c, canonicalSourceFile,
-							newParentId);
+					this.augmentChildContent(c, canonicalSourceFile, newParentId);
 				}
 			}
 
@@ -787,13 +721,12 @@ public class GitContentManager implements IContentManager {
 				if (answer.getChildren() != null) {
 					for (ContentBase cb : answer.getChildren()) {
 						Content c = (Content) cb;
-						this.augmentChildContent(c, canonicalSourceFile,
-								newParentId);
+						this.augmentChildContent(c, canonicalSourceFile, newParentId);
 					}
 				}
 			}
 		}
-		
+
 		// TODO: we need to fix this as this is an isaac thing in segue land.
 		if (content instanceof IsaacFeaturedProfile) {
 			IsaacFeaturedProfile profile = (IsaacFeaturedProfile) content;
@@ -806,8 +739,7 @@ public class GitContentManager implements IContentManager {
 			Media media = (Media) content;
 			if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
 				String newPath = FilenameUtils.normalize(
-						FilenameUtils.getPath(canonicalSourceFile)
-								+ media.getSrc(), true);
+						FilenameUtils.getPath(canonicalSourceFile) + media.getSrc(), true);
 				media.setSrc(newPath);
 			}
 		}
@@ -844,7 +776,7 @@ public class GitContentManager implements IContentManager {
 				// do not validate these questions for now.
 				continue;
 			}
-			allObjectsSeen.addAll(this.flattenContentObjects(c));	
+			allObjectsSeen.addAll(this.flattenContentObjects(c));
 		}
 
 		// Start looking for issues in the flattened content data
@@ -854,7 +786,7 @@ public class GitContentManager implements IContentManager {
 				definedIds.add(c.getId());
 			}
 
-			// add the ids to the list of expected ids 
+			// add the ids to the list of expected ids
 			if (c.getRelatedContent() != null) {
 				expectedIds.addAll(c.getRelatedContent());
 				// record which content object was referencing which ID
@@ -891,7 +823,7 @@ public class GitContentManager implements IContentManager {
 							"Unable to find Image: " + f.getSrc()
 									+ " in Git. Could the reference be incorrect? SourceFile is "
 									+ c.getCanonicalSourceFile());
-				} 
+				}
 
 				// check that there is some alt text.
 				if (f.getAltText() == null || f.getAltText().isEmpty()) {
@@ -901,11 +833,11 @@ public class GitContentManager implements IContentManager {
 				}
 			}
 			if (c instanceof Question && c.getId() == null) {
-				this.registerContentProblem(sha, c, "Question: " + c.getTitle() + " in "
-						+ c.getCanonicalSourceFile() + " found without a unqiue id. "
-						+ "This question cannot be logged correctly.");
+				this.registerContentProblem(sha, c,
+						"Question: " + c.getTitle() + " in " + c.getCanonicalSourceFile()
+								+ " found without a unqiue id. "
+								+ "This question cannot be logged correctly.");
 			}
-			
 			// TODO: remove reference to isaac specific types from here.
 			if (c instanceof ChoiceQuestion
 					&& !(c.getType().equals("isaacQuestion") || c.getType().equals("isaacSymbolicQuestion"))) {
@@ -970,13 +902,14 @@ public class GitContentManager implements IContentManager {
 						+ "ID cannot be found.");
 			}
 			if (missingContent.size() > 0) {
-				log.warn("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
-						+ "The following ids are referenced but do not exist: " + expectedIds.toString());				
+				log.warn("Referential integrity broken for (" + missingContent.size()
+						+ ") related Content items. " + "The following ids are referenced but do not exist: "
+						+ expectedIds.toString());
 			}
 		}
 		log.info("Validation processing complete. There are " + this.indexProblemCache.get(sha).size()
 				+ " files with content problems");
-		
+
 		return false;
 	}
 
@@ -996,8 +929,7 @@ public class GitContentManager implements IContentManager {
 
 			for (ContentBase child : children) {
 				setOfContentObjects.add((Content) child);
-				setOfContentObjects
-						.addAll(flattenContentObjects((Content) child));
+				setOfContentObjects.addAll(flattenContentObjects((Content) child));
 			}
 		}
 
@@ -1014,8 +946,7 @@ public class GitContentManager implements IContentManager {
 	 * @param tags
 	 *            - set of tags to register.
 	 */
-	private synchronized void registerTagsWithVersion(final String version,
-			final Set<String> tags) {
+	private synchronized void registerTagsWithVersion(final String version, final Set<String> tags) {
 		Validate.notBlank(version);
 
 		if (null == tags || tags.isEmpty()) {
@@ -1035,44 +966,44 @@ public class GitContentManager implements IContentManager {
 
 		tagsList.get(version).addAll(newTagSet);
 	}
-	
+
 	/**
-	 * Helper function to accumulate the set of all units used in
-	 * numeric question answers.
+	 * Helper function to accumulate the set of all units used in numeric
+	 * question answers.
 	 * 
 	 * @param version
-	 * 			- version to register the units for.
+	 *            - version to register the units for.
 	 * @param q
-	 * 			- numeric question from which to extract units.
+	 *            - numeric question from which to extract units.
 	 */
-	private synchronized void registerUnitsWithVersion(final String version, 
-			final IsaacNumericQuestion q) {		
-		
+	private synchronized void registerUnitsWithVersion(final String version, final IsaacNumericQuestion q) {
+
 		HashMap<String, String> newUnits = Maps.newHashMap();
-		
-		for (Choice c: q.getChoices()) {
+
+		for (Choice c : q.getChoices()) {
 			if (c instanceof Quantity) {
 				Quantity quantity = (Quantity) c;
-				
+
 				if (!quantity.getUnits().isEmpty()) {
 					String units = quantity.getUnits();
 					String cleanKey = units.replace("\t", "").replace("\n", "").replace(" ", "");
 
-					// May overwrite previous entry, doesn't matter as there is no mechanism by which to choose a winner
+					// May overwrite previous entry, doesn't matter as there is
+					// no mechanism by which to choose a winner
 					newUnits.put(cleanKey, units);
 				}
 			}
 		}
-		
+
 		if (newUnits.isEmpty()) {
 			// This question contained no units.
 			return;
 		}
-		
+
 		if (!allUnits.containsKey(version)) {
 			allUnits.put(version, new HashMap<String, String>());
 		}
-		
+
 		allUnits.get(version).putAll(newUnits);
 	}
 
@@ -1087,19 +1018,17 @@ public class GitContentManager implements IContentManager {
 	 * @param message
 	 *            - Error message to associate with the problem file / content.
 	 */
-	private synchronized void registerContentProblem(final String version,
-			final Content c, final String message) {
+	private synchronized void registerContentProblem(final String version, final Content c,
+			final String message) {
 		Validate.notNull(c);
 
 		// try and make sure each dummy content object has a title
 		if (c.getTitle() == null) {
-			c.setTitle(Paths.get(c.getCanonicalSourceFile()).getFileName()
-					.toString());
+			c.setTitle(Paths.get(c.getCanonicalSourceFile()).getFileName().toString());
 		}
 
 		if (!indexProblemCache.containsKey(version)) {
-			indexProblemCache
-					.put(version, new HashMap<Content, List<String>>());
+			indexProblemCache.put(version, new HashMap<Content, List<String>>());
 		}
 
 		if (!indexProblemCache.get(version).containsKey(c)) {
