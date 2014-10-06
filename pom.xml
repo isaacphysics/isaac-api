@@ -27,10 +27,12 @@
 	</repositories>
 	<dependencies>
 		<dependency>
-			<groupId>org.eclipse.jgit</groupId>
-			<artifactId>org.eclipse.jgit</artifactId>
-			<version>3.2.0.201312181205-r</version>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.0.1</version>
+			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
@@ -43,16 +45,44 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-multipart-provider</artifactId>
+			<version>${resteasy.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>resteasy-jaxrs</artifactId>
+					<groupId>org.jboss.resteasy</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-cache-core</artifactId>
 			<version>${resteasy.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>jaxrs-api</artifactId>
+					<groupId>org.jboss.resteasy</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
-		   <groupId>ma.glasnost.orika</groupId>
-		   <artifactId>orika-core</artifactId>
-		   <version>1.4.5</version>
-		</dependency>	
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit</artifactId>
+			<version>3.2.0.201312181205-r</version>
+		</dependency>
 
+		<dependency>
+			<groupId>ma.glasnost.orika</groupId>
+			<artifactId>orika-core</artifactId>
+			<version>1.4.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.inject.extensions</groupId>
+			<artifactId>guice-multibindings</artifactId>
+			<version>3.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
@@ -67,6 +97,12 @@
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client-servlet</artifactId>
 			<version>1.17.0-rc</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>servlet-api</artifactId>
+					<groupId>javax.servlet</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.google.http-client</groupId>
@@ -78,6 +114,7 @@
 			<artifactId>google-api-services-oauth2</artifactId>
 			<version>v2-rev64-1.17.0-rc</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.twitter4j</groupId>
 			<artifactId>twitter4j-core</artifactId>
@@ -91,24 +128,11 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-multipart-provider</artifactId>
-			<version>${resteasy.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>3.0.1</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.0</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
@@ -125,12 +149,6 @@
 			<artifactId>powermock-api-easymock</artifactId>
 			<version>${powermock.version}</version>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.google.inject.extensions</groupId>
-			<artifactId>guice-multibindings</artifactId>
-			<version>3.0</version>
 		</dependency>
 
 		<dependency>
@@ -153,7 +171,7 @@
 			<artifactId>commons-collections4</artifactId>
 			<version>4.0</version>
 		</dependency>
-		
+
 
 		<dependency>
 			<groupId>org.mongodb</groupId>
@@ -165,6 +183,7 @@
 			<artifactId>mongojack</artifactId>
 			<version>2.0.0</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
