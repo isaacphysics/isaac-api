@@ -192,8 +192,8 @@ public class IsaacNumericValidator implements IValidator {
 							new Date());
 				}
 			} else {
-				log.error("Isaac Numeric Validator "
-						+ "expected there to be a Quantity. Instead it found a Choice.");
+				log.error("Isaac Numeric Validator expected there to be a Quantity in ("
+						+ isaacNumericQuestion.getCanonicalSourceFile() + ") Instead it found a Choice.");
 			}
 		}
 

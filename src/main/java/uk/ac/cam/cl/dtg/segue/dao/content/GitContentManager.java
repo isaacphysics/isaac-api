@@ -605,8 +605,7 @@ public class GitContentManager implements IContentManager {
 									registerUnitsWithVersion(sha, (IsaacNumericQuestion) flattenedContent);
 								}
 
-								continue; // our work here is done (reduces
-											// nesting compared to else)
+								continue; // our work here is done
 							}
 
 							// shaCache contains key already, compare the
@@ -878,6 +877,10 @@ public class GitContentManager implements IContentManager {
 									+ c.getCanonicalSourceFile()
 									+ ". Users will never be able to give a correct answer.");
 						}
+					} else if (q.getRequireUnits()) {
+						this.registerContentProblem(sha, c, "Choice found (" + choice.getValue()
+								+ ") in a numeric question. This should be a quantity as required units is selected. "
+								+ c.getCanonicalSourceFile());
 					}
 				}
 
