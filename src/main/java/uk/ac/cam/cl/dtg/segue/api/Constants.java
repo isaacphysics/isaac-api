@@ -153,6 +153,8 @@ public final class Constants {
 	 */
 	public static final String HMAC = "HMAC";
 
+	public static final String SESSION_EXPIRY_SECONDS = "SESSION_EXPIRY_SECONDS";
+	
 	/**
 	 * Constant representing the key for the SESSION USER ID - used in HMAC
 	 * calculations.
@@ -336,7 +338,7 @@ public final class Constants {
 	public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
 	public static final int CACHE_FOR_ONE_DAY = 86400;
 	public static final int CACHE_FOR_THIRTY_DAY = 2592000;
-	public static final int SESSION_DURATION_IN_MINUTES = 40;
+	public static final int ANONYMOUS_SESSION_DURATION_IN_MINUTES = 40;
 	public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
 
 	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
@@ -345,6 +347,10 @@ public final class Constants {
 	 * Redirect response field name.
 	 */
 	public static final String REDIRECT_URL = "redirectUrl";
+
+	public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
+
+
 	
 	/**
 	 * Private constructor to prevent this class being created.

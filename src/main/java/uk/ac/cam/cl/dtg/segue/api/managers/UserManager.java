@@ -136,7 +136,7 @@ public class UserManager {
 
 		this.database = database;
 		this.temporaryUserCache = CacheBuilder.newBuilder()
-				.expireAfterAccess(Constants.SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
+				.expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
 				.<String, AnonymousUser>build();
 
 		this.hmacKey = properties.getProperty(Constants.HMAC_SALT);
