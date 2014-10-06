@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -151,6 +152,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            - http request from user
+	 * @param response
+	 *            to tell the browser to store the session in our own segue cookie if successful.
 	 * @param signinProvider
 	 *            - requested signing provider string
 	 * @return Redirect response to send the user to the home page.
@@ -159,9 +162,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/{provider}/callback")
 	public final Response authenticationCallback(@Context final HttpServletRequest request,
-			@PathParam("provider") final String signinProvider) {
-
-		return userManager.authenticateCallback(request, signinProvider);
+			@Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
+		return userManager.authenticateCallback(request, response, signinProvider);
 	}
 
 	/**
@@ -169,6 +171,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            - the http request of the user wishing to authenticate
+	 * @param response
+	 *            to tell the browser to store the session in our own segue cookie if successful.
 	 * @param signinProvider
 	 *            - string representing the supported auth provider so that we
 	 *            know who to redirect the user to.
@@ -183,10 +187,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
 			@PathParam("provider") final String signinProvider, final Map<String, String> credentials) {
-
 		// ok we need to hand over to user manager
-		return userManager.authenticateWithCredentials(request, signinProvider, credentials);
+		return userManager.authenticateWithCredentials(request, response, signinProvider, credentials);
 	}
 
 	/**
@@ -194,13 +198,16 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            so that we can destroy the associated session
+	 * @param response
+	 *            to tell the browser to delete the session for segue.
 	 * @return successful response to indicate any cookies were destroyed.
 	 */
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/logout")
-	public final Response userLogout(@Context final HttpServletRequest request) {
-		userManager.logUserOut(request);
+	public final Response userLogout(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response) {
+		userManager.logUserOut(request, response);
 
 		return Response.ok().build();
 	}

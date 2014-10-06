@@ -20,7 +20,10 @@ import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +33,9 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -42,6 +47,8 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -66,6 +73,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -101,6 +109,8 @@ public class UserManager {
 	private final Cache<String, AnonymousUser> temporaryUserCache;
 	
 	private final String hmacKey;
+	private final Integer sessionExpiryTimeInSeconds;
+	private final SimpleDateFormat sessionDateFormat; 
 	
 	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 	private final MapperFacade dtoMapper;
@@ -109,6 +119,8 @@ public class UserManager {
 	// TODO: This still shouldn't be here
 	private final String hostName;
 
+	private final ObjectMapper serializationMapper;
+	
 	/**
 	 * Create an instance of the user manager class.
 	 * 
@@ -128,28 +140,60 @@ public class UserManager {
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
 			final MapperFacade dtoMapper,
 			final ICommunicator communicator) {
+		this(database, properties, providersToRegister, dtoMapper, communicator,
+				CacheBuilder.newBuilder()
+						.expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
+						.<String, AnonymousUser> build());
+	}
+
+	/**
+	 * Fully injectable constructor.
+	 * 
+	 * @param database
+	 *            - an IUserDataManager that will support persistence.
+	 * @param properties
+	 *            - A property loader
+	 * @param providersToRegister
+	 *            - A map of known authentication providers.
+	 * @param dtoMapper
+	 *            - the preconfigured DO to DTO object mapper for user objects.
+	 * @param communicator
+	 *            - the preconfigured communicator manager for sending e-mails.   
+	 * @param temporaryUserCache
+	 *            - the preconfigured communicator manager for sending e-mails.   
+	 */
+	public UserManager(final IUserDataManager database, final PropertiesLoader properties,
+			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+			final MapperFacade dtoMapper, final ICommunicator communicator,
+			final Cache<String, AnonymousUser> temporaryUserCache) {
 		Validate.notNull(database);
 		Validate.notNull(properties);
 		Validate.notNull(providersToRegister);
 		Validate.notNull(dtoMapper);
 		Validate.notNull(communicator);
+		Validate.notNull(temporaryUserCache);
 
 		this.database = database;
-		this.temporaryUserCache = CacheBuilder.newBuilder()
-				.expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-				.<String, AnonymousUser>build();
+		this.temporaryUserCache = temporaryUserCache;
 
 		this.hmacKey = properties.getProperty(Constants.HMAC_SALT);
 		Validate.notNull(this.hmacKey);
-		
+
+		this.sessionExpiryTimeInSeconds = Integer.parseInt(properties
+				.getProperty(Constants.SESSION_EXPIRY_SECONDS));
+		Validate.notNull(sessionExpiryTimeInSeconds);
+
+		this.sessionDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+
 		this.registeredAuthProviders = providersToRegister;
 		this.dtoMapper = dtoMapper;
 		this.hostName = properties.getProperty(Constants.HOST_NAME);
 		Validate.notNull(this.hostName);
-		
-		this.communicator = communicator;
-	}
 
+		this.communicator = communicator;
+		this.serializationMapper = new ObjectMapper();
+	}
+	
 	/**
 	 * This method will start the authentication process and ultimately provide
 	 * a url for the client to redirect the user to. This url will be for a 3rd party
@@ -223,15 +267,17 @@ public class UserManager {
 	 * or locate the existing account of the user and create a session for that.
 	 * 
 	 * @param request
-	 *            - http request from the user - should contain url encoded token details.
+	 *            - http request from the user - should contain url encoded
+	 *            token details.
+	 * @param response
+	 *            to store the session in our own segue cookie.
 	 * @param provider
 	 *            - the provider who has just authenticated the user.
-	 * @return Response containing the user object.
-	 *         Alternatively a SegueErrorResponse could be returned.
+	 * @return Response containing the user object. Alternatively a
+	 *         SegueErrorResponse could be returned.
 	 */
-	public final Response authenticateCallback(
-			final HttpServletRequest request, final String provider) {
-		
+	public final Response authenticateCallback(final HttpServletRequest request,
+			final HttpServletResponse response, final String provider) {
 		try {
 			IAuthenticator authenticator = mapToProvider(provider);
 
@@ -244,7 +290,7 @@ public class UserManager {
 						.toResponse();
 			}
 			
-			// this is a reference that the segue provider can use to look up user details.
+			// this is a reference that the provider can use to look up user details.
 			String providerSpecificUserLookupReference = null;
 
 			// if we are an OAuth2Provider complete next steps of oauth
@@ -320,7 +366,7 @@ public class UserManager {
 
 			// create a signed session for this user so that we don't need
 			// to do this again for a while.
-			this.createSession(request, segueUserDO.getDbId());
+			this.createSession(request, response, segueUserDO);
 			return Response.ok(segueUserDTO).build();
 
 		} catch (IOException e) {
@@ -379,6 +425,8 @@ public class UserManager {
 	 * 
 	 * @param request
 	 *            - http request that we can attach the session to.
+	 * @param response
+	 *            to store the session in our own segue cookie.
 	 * @param provider
 	 *            - the provider the user wishes to authenticate with.
 	 * @param credentials
@@ -387,7 +435,7 @@ public class UserManager {
 	 * @return A response containing the UserDTO object or a SegueErrorResponse.
 	 */
 	public final Response authenticateWithCredentials(final HttpServletRequest request,
-			final String provider,
+			final HttpServletResponse response, final String provider,
 			@Nullable final Map<String, String> credentials) {
 
 		// in this case we expect a username and password to have been
@@ -426,7 +474,7 @@ public class UserManager {
 						.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME), credentials
 						.get(Constants.LOCAL_AUTH_PASSWORD_FIELDNAME));
 
-				this.createSession(request, user.getDbId());
+				this.createSession(request, response, user);
 				
 				return Response.ok(this.convertUserDOToUserDTO(user)).build();
 
@@ -611,47 +659,27 @@ public class UserManager {
 	 * Destroy a session attached to the request.
 	 * 
 	 * @param request
-	 *            containing the session to destroy
+	 *            containing the tomcat session to destroy
+	 * @param response
+	 *            to destroy the segue cookie.
 	 */
-	public final void logUserOut(final HttpServletRequest request) {
+	public final void logUserOut(final HttpServletRequest request, final HttpServletResponse response) {
 		Validate.notNull(request);
 		try {
 			request.getSession().invalidate();
+			Cookie logoutCookie = new Cookie(Constants.SEGUE_AUTH_COOKIE, "");
+			logoutCookie.setPath("/");
+			logoutCookie.setMaxAge(0);
+			logoutCookie.setHttpOnly(true);
+
+			response.addCookie(logoutCookie);
 		} catch (IllegalStateException e) {
 			log.info("The session has already been invalidated. "
 					+ "Unable to logout again...", e);
 		}
 	}
 
-	/**
-	 * Create a session and attach it to the request provided.
-	 * 
-	 * @param request
-	 *            to store the session
-	 * @param userId
-	 *            to associate the session with
-	 */
-	public final void createSession(final HttpServletRequest request,
-			final String userId) {
-		Validate.notNull(request);
-		Validate.notBlank(userId);
 
-		String currentDate = new Date().toString();
-		String sessionId = request.getSession().getId();
-		String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionId, currentDate);
-
-		request.getSession().setAttribute(Constants.SESSION_USER_ID, userId);
-		request.getSession().setAttribute(Constants.SESSION_ID, sessionId);
-		request.getSession().setAttribute(Constants.DATE_SIGNED, currentDate);
-		request.getSession().setAttribute(Constants.HMAC, sessionHMAC);
-		
-		// merge any anonymous information collected with this user.
-		try {
-			this.mergeAnonymousQuestionInformationWithUserRecord(request);
-		} catch (NoUserLoggedInException | SegueDatabaseException e) {
-			log.error("Unable to merge anonymously collected data with stored user object.", e);
-		}
-	}
 
 	/**
 	 * Record that someone has answered a question.
@@ -659,16 +687,16 @@ public class UserManager {
 	 * If the user is anonymous the question record will be added as a temporary session variable. 
 	 * This will enable merging later if the user registers.
 	 * 
-	 * @param request
+	 * @param user - AbstractSegueUserDTO either registered or anonymous.
 	 *            - containing either a registered or anonymous user.
 	 * @param questionResponse
 	 *            - question results.
 	 */
-	public final void recordQuestionAttempt(final HttpServletRequest request,
+	public final void recordQuestionAttempt(final AbstractSegueUserDTO user,
 			final QuestionValidationResponseDTO questionResponse) {
 		QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
 				QuestionValidationResponse.class);
-		AbstractSegueUserDTO user = this.getCurrentUser(request);
+
 		// We are operating against the convention that the first component of
 		// an id is the question page
 		// and that the id separator is |
@@ -686,9 +714,10 @@ public class UserManager {
 			}
 			
 		} else if (user instanceof AnonymousUserDTO) {
-			AnonymousUser anonymousUserDO = this.getAnonymousUserDO(request);
+			AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
 			
-			this.recordAnonymousUserQuestionInformation(anonymousUserDO, questionPageId[0],
+			this.recordAnonymousUserQuestionInformation(
+					this.findAnonymousUserDOBySessionId(anonymousUserDTO.getSessionId()), questionPageId[0],
 					questionResponse.getQuestionId(), questionResponse);
 		} else {
 			log.error("Unexpected user type. Unable to record question response");
@@ -723,8 +752,12 @@ public class UserManager {
 	}
 
 	/**
-	 * Method to update a user object in our database.
+	 * Method to create a user object in our database.
 	 * 
+	 * @param request
+	 *            to enable access to anonymous user information.
+	 * @param response
+	 *            to store the session in our own segue cookie.
 	 * @param user
 	 *            - the user DO to use for updates - must not contain a user id.
 	 * @throws InvalidPasswordException
@@ -739,7 +772,8 @@ public class UserManager {
 	 *             - if there is a problem locating the authentication provider.
 	 *             This only applies for changing a password.
 	 */
-	public RegisteredUserDTO createUserObject(final RegisteredUser user)
+	public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
+			final HttpServletResponse response, final RegisteredUser user)
 		throws InvalidPasswordException,
 			MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
 		Validate.isTrue(user.getDbId() == null || user.getDbId().isEmpty(),
@@ -778,6 +812,9 @@ public class UserManager {
 		
 		// save the user
 		RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+		
+		this.createSession(request, response, userToReturn);
+		
 		// return it to the caller.
 		return this.convertUserDOToUserDTO(userToReturn);
 	}
@@ -811,7 +848,6 @@ public class UserManager {
 		// We want to map to DTO first to make sure that the user cannot
 		// change fields that aren't exposed to them
 		RegisteredUserDTO userDTOContainingUpdates = mapper.map(user, RegisteredUserDTO.class);
-
 		if (user.getDbId() == null && user.getDbId().isEmpty()) {
 			throw new IllegalArgumentException(
 					"The user object specified has an id. Users cannot created with a specific id already set.");
@@ -848,6 +884,56 @@ public class UserManager {
 		return this.convertUserDOToUserDTO(userToReturn);
 	}
 
+	/**
+	 * Create a session and attach it to the request provided.
+	 * 
+	 * @param request
+	 *            to enable access to anonymous user information.
+	 * @param response
+	 *            to store the session in our own segue cookie.
+	 * @param user
+	 *            account to associate the session with.
+	 */
+	private void createSession(final HttpServletRequest request, final HttpServletResponse response,
+			final RegisteredUser user) {
+		Validate.notNull(response);
+		Validate.notNull(user);
+		Validate.notBlank(user.getDbId());
+		
+		String userId = user.getDbId();
+		
+		try {
+			String currentDate = sessionDateFormat.format(new Date());
+			String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, currentDate);
+			
+			Map<String, String> sessionInformation = ImmutableMap.of(
+					Constants.SESSION_USER_ID, userId, 
+					Constants.DATE_SIGNED, currentDate,
+					Constants.HMAC, sessionHMAC);
+			
+			Cookie authCookie = new Cookie(Constants.SEGUE_AUTH_COOKIE, serializationMapper
+					.writeValueAsString(sessionInformation));
+			authCookie.setMaxAge(this.sessionExpiryTimeInSeconds);
+			authCookie.setPath("/");
+			authCookie.setHttpOnly(true);
+			
+			response.addCookie(authCookie);
+			
+			AnonymousUser anonymousUser = this.findAnonymousUserDOBySessionId(this.getAnonymousUser(request)
+					.getSessionId());
+			if (anonymousUser != null) {
+				// merge any anonymous information collected with this user.
+				try {
+					this.mergeAnonymousQuestionInformationWithUserRecord(anonymousUser, user);
+				} catch (NoUserLoggedInException | SegueDatabaseException e) {
+					log.error("Unable to merge anonymously collected data with stored user object.", e);
+				}				
+			}
+		} catch (JsonProcessingException e1) {
+			log.error("Unable to save cookie.", e1);
+		}
+	}
+	
 	/**
 	 * Helper method to handle the setting of segue passwords when user objects are updated.
 	 * 
@@ -1098,34 +1184,44 @@ public class UserManager {
 	 * 
 	 * Checks include verifying the HMAC and the session creation date.
 	 * 
-	 * @param request
-	 *            - request containing session information
+	 * @param sessionInformation
+	 *            - map containing session information retrieved from the cookie.
 	 * @return true if it is still valid, false if not.
 	 */
-	private boolean isValidUsersSession(final HttpServletRequest request) {
-		Validate.notNull(request);
+	private boolean isValidUsersSession(final Map<String, String> sessionInformation) {
+		Validate.notNull(sessionInformation);
 
-		String userId = (String) request.getSession().getAttribute(
-				Constants.SESSION_USER_ID);
-		String currentDate = (String) request.getSession().getAttribute(
-				Constants.DATE_SIGNED);
-		String sessionId = (String) request.getSession().getAttribute(
-				Constants.SESSION_ID);
-		String sessionHMAC = (String) request.getSession().getAttribute(
-				Constants.HMAC);
+		String userId = sessionInformation.get(Constants.SESSION_USER_ID);
+		String sessionCreationDate = sessionInformation.get(Constants.DATE_SIGNED);
+		String sessionHMAC = sessionInformation.get(Constants.HMAC);
 
-		String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionId, currentDate);
+		String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionCreationDate);
 
 		if (null == userId) {
 			log.debug("No session set so not validating user identity.");
 			return false;
 		}
-
+		
+		// check it hasn't expired
+		Calendar sessionExpiryDate = Calendar.getInstance(); 
+		try {
+			sessionExpiryDate.setTime(sessionDateFormat.parse(sessionCreationDate));
+			sessionExpiryDate.add(Calendar.SECOND, this.sessionExpiryTimeInSeconds);
+			
+			if (new Date().after(sessionExpiryDate.getTime())) {
+				log.debug("Session expired");
+				return false;
+			}
+		} catch (ParseException e) {
+			return false;
+		}
+		
+		// check no one has tampered with the session.
 		if (ourHMAC.equals(sessionHMAC)) {
 			log.debug("Valid user session continuing...");
 			return true;
 		} else {
-			log.info("Invalid user session detected");
+			log.info("Invalid HMAC detected for user id " + userId);
 			return false;
 		}
 	}
@@ -1134,13 +1230,12 @@ public class UserManager {
 	 * Calculate the session HMAC value based on the properties of interest.
 	 * @param key - secret key.
 	 * @param userId - User Id
-	 * @param sessionId - Session Id
 	 * @param currentDate - Current date
 	 * @return HMAC signature.
 	 */
-	private String calculateSessionHMAC(final String key, final String userId, final String sessionId,
+	private String calculateSessionHMAC(final String key, final String userId,
 			final String currentDate) {
-		return this.calculateHMAC(key, userId + "|" + sessionId + "|" + currentDate);
+		return this.calculateHMAC(key, userId + "|" + currentDate);
 	}
 	
 	/**
@@ -1566,21 +1661,29 @@ public class UserManager {
 	private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
 		Validate.notNull(request);
 
-		// get the current user based on their session id information.
-		String currentUserId = (String) request.getSession().getAttribute(
-				Constants.SESSION_USER_ID);
-
-		if (null == currentUserId) {
-			log.debug("Current userID is null. Assume they are not logged in.");
+		Map<String, String> currentSessionInformation;
+		try {
+			currentSessionInformation = this.getSegueSessionFromRequest(request);
+		} catch (IOException e1) {
+			log.error("Error parsing session information ");
+			return null;
+		} catch (InvalidSessionException e) {
+			log.debug("We cannot read the session information. It probably doesn't exist");
+			// assuming that no user is logged in.
 			return null;
 		}
-
-		// check if the users session is validated using our credentials.
-		if (!this.isValidUsersSession(request)) {
-			log.info("User session has failed validation. "
-					+ "Assume they are not logged in.");
+		
+		// check if the users session is valid.
+		if (!this.isValidUsersSession(currentSessionInformation)) {
+			log.debug("User session has failed validation. Assume they are not logged in. Session: "
+					+ currentSessionInformation);
 			return null;
 		}
+		
+		// get the current user based on their session id information
+		String currentUserId = currentSessionInformation.get(Constants.SESSION_USER_ID);
+		// should be ok as isValidUser checks this.
+		Validate.notBlank(currentUserId);
 		
 		// retrieve the user from database.
 		try {
@@ -1750,21 +1853,32 @@ public class UserManager {
 	}
 	
 	/**
+	 * Returns the anonymousUser if present in our cache.
+	 * @param id - users id
+	 * @return AnonymousUser or null.
+	 */
+	private AnonymousUser findAnonymousUserDOBySessionId(final String id) {
+		return this.temporaryUserCache.getIfPresent(id);
+	}
+	
+	/**
 	 * Merges any question data stored in the session (this will only happen for
 	 * anonymous users).
 	 * 
-	 * @param request
-	 *            - the request containing the session information.
+	 * @param anonymousUser
+	 *            - containing the question attempts.
+	 * @param registeredUser - the account to merge with.
 	 * @throws NoUserLoggedInException
 	 *             - Unable to merge as the user is still anonymous.
 	 * @throws SegueDatabaseException
 	 *             - if we are unable to locate the questions attempted by this
 	 *             user already.
 	 */
-	private void mergeAnonymousQuestionInformationWithUserRecord(final HttpServletRequest request)
+	private void mergeAnonymousQuestionInformationWithUserRecord(final AnonymousUser anonymousUser,
+			final RegisteredUser registeredUser)
 		throws NoUserLoggedInException, SegueDatabaseException {
-		
-		AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
+		Validate.notNull(anonymousUser, "Anonymous user must not be null when merging anonymousQuestion info");
+		Validate.notNull(registeredUser, "Registered user must not be null when merging anonymousQuestion info");
 		
 		Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = anonymousUser
 				.getTemporaryQuestionAttempts();
@@ -1772,9 +1886,6 @@ public class UserManager {
 		if (anonymouslyAnsweredQuestions.isEmpty()) {
 			return;
 		}
-
-		// ensure the user is logged in. This will throw an exception if not.
-		this.getCurrentRegisteredUser(request);
 		
 		log.info("Merging anonymous questions with known user account");
 		
@@ -1784,13 +1895,49 @@ public class UserManager {
 						questionPageId).get(questionId)) {
 					QuestionValidationResponseDTO questionRespnseDTO = this.dtoMapper.map(questionResponse,
 							QuestionValidationResponseDTO.class);
-					this.recordQuestionAttempt(request, questionRespnseDTO);
+					this.recordQuestionAttempt(this.dtoMapper.map(registeredUser, RegisteredUserDTO.class),
+							questionRespnseDTO);
 				}
 			}
 		}
 		
 		// delete the session attribute as merge has completed.
-		request.getSession().removeAttribute(Constants.ANONYMOUS_USER);
 		this.temporaryUserCache.invalidate(anonymousUser.getSessionId());
+	}
+	
+	/**
+	 * This method will extract the segue session information from a given
+	 * request.
+	 * 
+	 * @param request
+	 *            - possibly containing a segue cookie.
+	 * @return The segue session information (unchecked or validated)
+	 * @throws IOException
+	 *             - problem parsing session information.
+	 * @throws InvalidSessionException
+	 *             - if there is no session set or if it is not valid.
+	 */
+	private Map<String, String> getSegueSessionFromRequest(final HttpServletRequest request)
+		throws IOException, InvalidSessionException {
+		Cookie segueAuthCookie = null;
+		if (request.getCookies() == null) {
+			throw new InvalidSessionException("There are no cookies set.");
+		}
+		
+		for (Cookie c : request.getCookies()) {
+			if (c.getName().equals(Constants.SEGUE_AUTH_COOKIE)) {
+				segueAuthCookie = c;
+			}
+		}
+		
+		if (null == segueAuthCookie) {
+			throw new InvalidSessionException("There are no cookies set.");
+		}
+		
+		@SuppressWarnings("unchecked")
+		Map<String, String> sessionInformation = (HashMap<String, String>) this.serializationMapper
+				.readValue(segueAuthCookie.getValue(), HashMap.class);
+		
+		return sessionInformation;
 	}
 }

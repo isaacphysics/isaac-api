@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -125,6 +126,8 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            - the http request of the user wishing to authenticate
+	 * @param response
+	 *            to tell the browser to store the session in our own segue cookie.
 	 * @param userObjectString
 	 *            - object containing all user account information including
 	 *            passwords.
@@ -136,6 +139,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
 			final String userObjectString) {
 
 		RegisteredUser userObjectFromClient;
@@ -157,7 +161,7 @@ public class UsersFacade extends AbstractSegueFacade {
 		if (userObjectFromClient.getDbId() != null) {
 			return this.updateUserObject(request, userObjectFromClient);
 		} else {
-			return this.createUserObject(request, userObjectFromClient);
+			return this.createUserObjectAndLogIn(request, response, userObjectFromClient);
 		}
 	}
 
@@ -338,19 +342,18 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            - so that we can identify the user
+	 * @param response
+	 *            to tell the browser to store the session in our own segue cookie.
 	 * @param userObjectFromClient
 	 *            - the new user object from the clients perspective.
 	 * @return the updated user object.
 	 */
-	private Response createUserObject(final HttpServletRequest request,
+	private Response createUserObjectAndLogIn(final HttpServletRequest request,
+			final HttpServletResponse response,
 			final RegisteredUser userObjectFromClient) {
 		try {
-			RegisteredUserDTO savedUser = userManager.createUserObject(userObjectFromClient);
-
-			// we need to tell segue that the user who we just created is the
-			// one that is logged in.
-			this.userManager.createSession(request, savedUser.getDbId());
-
+			RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
+					userObjectFromClient);
 			return Response.ok(savedUser).build();
 		} catch (InvalidPasswordException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,

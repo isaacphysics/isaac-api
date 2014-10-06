@@ -16,11 +16,26 @@
 package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
- * An exception to indicate that we cannot find a user matching the reset token provided.
+ * An exception to indicate that we cannot find a valid session for the current user.
  * 
- * @author nr378
+ * @author Stephen Cummins
  * 
  */
 public class InvalidSessionException extends Exception {
 	private static final long serialVersionUID = -7076860992181969046L;
+	
+	/**
+	 * Default constructor.
+	 */
+	public InvalidSessionException() {
+		
+	}
+	
+	/**
+	 * Constructor with message.
+	 * @param message - error message
+	 */
+	public InvalidSessionException(final String message) {
+		super(message);
+	}
 }

@@ -938,7 +938,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 				Lists.newArrayList(answersFromClient));
 
 		if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-			userManager.recordQuestionAttempt(request, (QuestionValidationResponseDTO) response.getEntity());
+			userManager.recordQuestionAttempt(this.userManager.getCurrentUser(request),
+					(QuestionValidationResponseDTO) response.getEntity());
 		}
 
 		this.logManager.logEvent(request, Constants.ANSWER_QUESTION, response.getEntity());
