@@ -27,11 +27,13 @@ import org.junit.runner.RunWith;
 
 
 import org.powermock.api.easymock.PowerMock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.legacy.PowerMockRunner;
  
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Git.class)
+@PowerMockIgnore({"javax.ws.*"})
 public class GitDbTest {
 
 	@Test

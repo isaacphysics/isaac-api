@@ -27,6 +27,7 @@ import static org.junit.Assert.*;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.isaac.api.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
@@ -70,6 +71,7 @@ public class IsaacControllerTest {
 	 * @throws NoUserLoggedInException 
 	 */
 	@Test
+	@PowerMockIgnore({"javax.ws.*"})
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned() 
 		throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException {
 		IsaacController isaacController = new IsaacController(dummyAPI,

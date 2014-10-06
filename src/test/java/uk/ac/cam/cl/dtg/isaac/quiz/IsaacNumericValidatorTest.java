@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 
 import com.google.api.client.util.Lists;
@@ -38,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
  * Test class for the user manager class.
  * 
  */
+@PowerMockIgnore({"javax.ws.*"})
 public class IsaacNumericValidatorTest {
 
 	/**

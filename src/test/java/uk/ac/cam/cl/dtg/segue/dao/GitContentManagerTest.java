@@ -40,10 +40,10 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -59,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
  * Test class for the GitContentManager class.
  * 
  */
+@PowerMockIgnore({"javax.ws.*"})
 public class GitContentManagerTest {
 	private GitDb database;
 	private ISearchProvider searchProvider;
