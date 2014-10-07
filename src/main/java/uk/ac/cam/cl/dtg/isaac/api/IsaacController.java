@@ -288,7 +288,7 @@ public class IsaacController {
 		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 		etagCodeBuilder.append(QUESTION_TYPE);
 		
 		String newLimit = null;
