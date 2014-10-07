@@ -586,7 +586,19 @@ public class GitContentManager implements IContentManager {
 							if (flattenedContent.getId() == null) {
 								continue;
 							}
-
+							
+							if (flattenedContent.getId().contains(".")) {
+								// Otherwise, duplicate IDs with different content,
+								// therefore log an error
+								log.warn("Resource with invalid ID (" + content.getId()
+										+ ") detected in cache. Skipping " + treeWalk.getPathString());
+								
+								this.registerContentProblem(sha, flattenedContent,
+										"Index failure - Invalid ID found in file " + treeWalk.getPathString()
+												+ ". Must not contain restricted characters.");
+								continue;
+							}
+							
 							// check if we have seen this key before if
 							// we have then we don't want to add it
 							// again
