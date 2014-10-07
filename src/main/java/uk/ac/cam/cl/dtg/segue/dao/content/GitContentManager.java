@@ -594,8 +594,9 @@ public class GitContentManager implements IContentManager {
 										+ ") detected in cache. Skipping " + treeWalk.getPathString());
 								
 								this.registerContentProblem(sha, flattenedContent,
-										"Index failure - Invalid ID found in file " + treeWalk.getPathString()
-												+ ". Must not contain restricted characters.");
+										"Index failure - Invalid ID " + flattenedContent.getId() 
+										+ " found in file " + treeWalk.getPathString()
+										+ ". Must not contain restricted characters.");
 								continue;
 							}
 							
