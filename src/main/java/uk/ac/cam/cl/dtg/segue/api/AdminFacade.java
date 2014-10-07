@@ -420,6 +420,8 @@ public class AdminFacade {
 			}
 			
 			this.userManager.deleteUserAccount(userId);
+			log.info("Admin User: " + this.userManager.getCurrentRegisteredUser(httpServletRequest).getEmail()
+					+ " has just deleted the user account with id: " + userId);
 			
 			return Response.noContent().build();
 		} catch (NoUserLoggedInException e) {
