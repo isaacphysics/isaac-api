@@ -419,8 +419,14 @@ public class AdminFacade {
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
 			
+			RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
+			if (currentlyLoggedInUser.getDbId().equals(userId)) {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"You are not allowed to delete yourself.").toResponse();
+			}
+			
 			this.userManager.deleteUserAccount(userId);
-			log.info("Admin User: " + this.userManager.getCurrentRegisteredUser(httpServletRequest).getEmail()
+			log.info("Admin User: " + currentlyLoggedInUser.getEmail()
 					+ " has just deleted the user account with id: " + userId);
 			
 			return Response.noContent().build();
