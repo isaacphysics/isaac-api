@@ -122,7 +122,7 @@ public interface IUserDataManager {
 	 * 
 	 * @param id
 	 *            - local user id.
-	 * @return A user object.
+	 * @return A user object or null if we can't find one.
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
@@ -170,6 +170,14 @@ public interface IUserDataManager {
 	 */
 	RegisteredUser createOrUpdateUser(RegisteredUser user) throws SegueDatabaseException;
 
+	/**
+	 * Delete a user account by id.
+	 * 
+	 * @param id - the user account id to remove.
+	 * @throws SegueDatabaseException if an error occurs
+	 */
+	void deleteUserAccount(final String id) throws SegueDatabaseException;
+	
 	/**
 	 * Update a particular field on a user object.
 	 * 

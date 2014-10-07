@@ -883,6 +883,25 @@ public class UserManager {
 		// return it to the caller
 		return this.convertUserDOToUserDTO(userToReturn);
 	}
+	
+	/**
+	 * This method facilitates the removal of personal user data 
+	 * from Segue.
+	 * 
+	 * @param userId - the user to delete.
+	 * @throws SegueDatabaseException - if a general database error has occurred.
+	 * @throws NoUserException - if we cannot find the user account specified
+	 */
+	public void deleteUserAccount(final String userId) throws NoUserException,
+			SegueDatabaseException {
+		Validate.notNull(userId);
+		
+		// check the user exists
+		this.getUserDTOById(userId); 
+
+		// delete the user.
+		this.database.deleteUserAccount(userId);
+	}
 
 	/**
 	 * Create a session and attach it to the request provided.
@@ -1841,7 +1860,7 @@ public class UserManager {
 					// this probably won't happen often as the session expiry and the cache should be timed correctly.
 					request.getSession().removeAttribute(Constants.ANONYMOUS_USER);
 					log.warn("Anonymous user session expired so creating a"
-							+ " new one - this should not happen if cache settings are correct.");
+							+ " new one - this should not happen often if cache settings are correct.");
 					return this.getAnonymousUserDO(request);
 				}
 			} else {

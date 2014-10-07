@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -389,6 +390,41 @@ public class AdminFacade {
 
 		try {
 			return Response.ok(this.userManager.getUserDTOById(userId)).build();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error while looking up user information.").toResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND,
+					"Unable to locate the user with the requested id: " + userId).toResponse();
+		}
+	}
+	
+	/**
+	 * Delete all user data for a particular user account.
+	 * 
+	 * @param httpServletRequest
+	 *            - for checking permissions
+	 * @param userId
+	 *            - the id of the user to delete.
+	 * @return a userDTO or a segue error response
+	 */
+	@DELETE
+	@Path("/users/{user_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteUserAccount(@Context final HttpServletRequest httpServletRequest,
+			@PathParam("user_id") final String userId) {
+		try {
+			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.").toResponse();
+			}
+			
+			this.userManager.deleteUserAccount(userId);
+			
+			return Response.status(Status.GONE).build();
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in order to use this endpoint.").toResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while looking up user information.").toResponse();

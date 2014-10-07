@@ -382,5 +382,113 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 		result = prime * result + ((schoolOther == null) ? 0 : schoolOther.hashCode());
 		result = prime * result + ((lastUpdated == null) ? 0 : lastUpdated.hashCode());
 		return result;
-	}	
+	}
+	
+	/**
+	 * A method that tests if each field in the object is equal to each in the other.
+	 * @param obj - to check
+	 * @return true if the same false if not.
+	 */
+	public boolean strictEquals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof RegisteredUserDTO)) {
+			return false;
+		}
+		RegisteredUserDTO other = (RegisteredUserDTO) obj;
+		if (databaseId == null) {
+			if (other.databaseId != null) {
+				return false;
+			}
+		} else if (!databaseId.equals(other.databaseId)) {
+			return false;
+		}
+		if (dateOfBirth == null) {
+			if (other.dateOfBirth != null) {
+				return false;
+			}
+		} else if (!dateOfBirth.equals(other.dateOfBirth)) {
+			return false;
+		}
+		if (defaultLevel == null) {
+			if (other.defaultLevel != null) {
+				return false;
+			}
+		} else if (!defaultLevel.equals(other.defaultLevel)) {
+			return false;
+		}
+		if (email == null) {
+			if (other.email != null) {
+				return false;
+			}
+		} else if (!email.equals(other.email)) {
+			return false;
+		}
+		if (familyName == null) {
+			if (other.familyName != null) {
+				return false;
+			}
+		} else if (!familyName.equals(other.familyName)) {
+			return false;
+		}
+		if (firstLogin != other.firstLogin) {
+			return false;
+		}
+		if (gender != other.gender) {
+			return false;
+		}
+		if (givenName == null) {
+			if (other.givenName != null) {
+				return false;
+			}
+		} else if (!givenName.equals(other.givenName)) {
+			return false;
+		}
+		if (hasSegueAccount != other.hasSegueAccount) {
+			return false;
+		}
+		if (lastUpdated == null) {
+			if (other.lastUpdated != null) {
+				return false;
+			}
+		} else if (!lastUpdated.equals(other.lastUpdated)) {
+			return false;
+		}
+		if (linkedAccounts == null) {
+			if (other.linkedAccounts != null) {
+				return false;
+			}
+		} else if (!linkedAccounts.equals(other.linkedAccounts)) {
+			return false;
+		}
+		if (registrationDate == null) {
+			if (other.registrationDate != null) {
+				return false;
+			}
+		} else if (!registrationDate.equals(other.registrationDate)) {
+			return false;
+		}
+		if (role != other.role) {
+			return false;
+		}
+		if (schoolId == null) {
+			if (other.schoolId != null) {
+				return false;
+			}
+		} else if (!schoolId.equals(other.schoolId)) {
+			return false;
+		}
+		if (schoolOther == null) {
+			if (other.schoolOther != null) {
+				return false;
+			}
+		} else if (!schoolOther.equals(other.schoolOther)) {
+			return false;
+		}
+		return true;
+	}
 }

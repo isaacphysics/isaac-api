@@ -104,6 +104,33 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 	
 	@Override
+	public void deleteUserAccount(final String id) throws SegueDatabaseException {
+		Validate.notBlank(id, "The id field must not be blank.");
+		
+		JacksonDBCollection<RegisteredUser, String> userCollection = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				String.class);
+			
+		try {
+			WriteResult<RegisteredUser, String> r = userCollection.removeById(id);
+			
+			if (r.getError() != null) {
+				log.error("Error during database update " + r.getError());
+				throw new SegueDatabaseException(
+						"MongoDB encountered an exception while deleting a user account: " + r.getError());
+			}
+			
+			// tidy up
+			this.cleanupOrphanedLinkedAccounts(id);
+			
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception while attempting to delete a user account.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		}
+	}
+	
+	@Override
 	public final String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
 			final String providerUserId) throws SegueDatabaseException {
 		Validate.notNull(user);
@@ -139,9 +166,12 @@ public class MongoUserDataManager implements IUserDataManager {
 			RegisteredUser user = jc.findOneById(id);
 			
 			return user;
-			
 		} catch (MongoException e) {
 			String errorMessage = "MongoDB encountered an exception while attempting to find a user account by id.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		} catch (IllegalArgumentException e) {
+			String errorMessage = "The id provided was not found or was illegal.";
 			log.error(errorMessage, e);
 			throw new SegueDatabaseException(errorMessage, e);
 		}
