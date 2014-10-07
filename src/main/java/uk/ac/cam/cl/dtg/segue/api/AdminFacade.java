@@ -421,7 +421,7 @@ public class AdminFacade {
 			
 			this.userManager.deleteUserAccount(userId);
 			
-			return Response.status(Status.GONE).build();
+			return Response.noContent().build();
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"You must be logged in order to use this endpoint.").toResponse();
