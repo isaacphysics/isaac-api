@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -58,12 +59,11 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * 
  */
 @Path("/admin")
-public class AdminFacade {
+public class AdminFacade extends AbstractSegueFacade {
 	private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
 	private final UserManager userManager;
 	private final ContentVersionController contentVersionController;
-	private final PropertiesLoader properties;
 
 	/**
 	 * Create an instance of the administrators facade.
@@ -74,11 +74,13 @@ public class AdminFacade {
 	 *            - The manager object responsible for users.
 	 * @param contentVersionController
 	 *            - The content version controller used by the api.
+	 * @param logManager
+	 *            - So we can log events of interest.
 	 */
 	@Inject
 	public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
-			final ContentVersionController contentVersionController) {
-		this.properties = properties;
+			final ContentVersionController contentVersionController, final ILogManager logManager) {
+		super(properties, logManager);
 		this.userManager = userManager;
 		this.contentVersionController = contentVersionController;
 	}
@@ -163,7 +165,7 @@ public class AdminFacade {
 			// check if we are authorized to do this operation.
 			// no authorisation required in DEV mode, but in PROD we need to be
 			// an admin.
-			if (!this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
+			if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
 					Constants.EnvironmentType.PROD.name())
 					|| this.userManager.isUserAnAdmin(request)) {
 				log.info("Informed of content change; " + "so triggering new synchronisation job.");
@@ -207,7 +209,7 @@ public class AdminFacade {
 		// check if we are authorized to do this operation.
 		// no authorisation required in DEV mode, but in PROD we need to be
 		// an admin.
-		if (!this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
+		if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
 				Constants.EnvironmentType.PROD.name())) {
 			log.info("Informed of content change; so triggering new async synchronisation job.");
 			// on this occasion we don't want to wait for a response.
@@ -274,7 +276,7 @@ public class AdminFacade {
 		Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
 				contentVersionController.getLiveVersion());
 
-		if (this.properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
+		if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
 			try {
 				if (!this.userManager.isUserAnAdmin(request)) {
 					return Response.status(Status.FORBIDDEN)
