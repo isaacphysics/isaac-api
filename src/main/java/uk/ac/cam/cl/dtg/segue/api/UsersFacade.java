@@ -305,7 +305,8 @@ public class UsersFacade extends AbstractSegueFacade {
 					&& !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You do not have permission to change a users role.").toResponse();
-			} else {
+			} else if (userObjectFromClient.getRole() != null
+					&& !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
 				log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
 						+ userObjectFromClient.getEmail() + " to " + userObjectFromClient.getRole());
 			}
