@@ -67,7 +67,6 @@ import com.google.inject.Inject;
 @Path("/")
 public class UsersFacade extends AbstractSegueFacade {
 	private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
-
 	private final UserManager userManager;
 
 	/**
