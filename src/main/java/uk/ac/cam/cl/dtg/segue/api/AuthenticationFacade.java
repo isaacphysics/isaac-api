@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class AuthenticationFacade extends AbstractSegueFacade {
 
 	private final UserManager userManager;
-	private final ILogManager logManager;
+
 
 	/**
 	 * Create an instance of the authentication Facade.
@@ -68,9 +68,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	@Inject
 	public AuthenticationFacade(final PropertiesLoader properties, final UserManager userManager,
 			final ILogManager logManager) {
-		super(properties);
+		super(properties, logManager);
 		this.userManager = userManager;
-		this.logManager = logManager;
 	}
 
 	/**
@@ -215,7 +214,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	public final Response userLogout(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response) {
 		
-		this.logManager.logEvent(this.userManager.getCurrentUser(request), request, Constants.LOG_OUT,
+		this.getLogManager().logEvent(this.userManager.getCurrentUser(request), request, Constants.LOG_OUT,
 				Maps.newHashMap());
 		
 		userManager.logUserOut(request, response);

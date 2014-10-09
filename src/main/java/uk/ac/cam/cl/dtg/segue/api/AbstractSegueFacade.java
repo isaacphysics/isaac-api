@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -40,13 +41,16 @@ public abstract class AbstractSegueFacade {
 			.getLogger(AbstractSegueFacade.class);
 	
 	private final PropertiesLoader properties;
+	private final ILogManager logManager;
 	
 	/**
 	 * Constructor that provides a properties loader.
 	 * @param properties the propertiesLoader.
+	 * @param logManager - For logging interesting user events.
 	 */
-	public AbstractSegueFacade(final PropertiesLoader properties) {
+	public AbstractSegueFacade(final PropertiesLoader properties, final ILogManager logManager) {
 		this.properties = properties;
+		this.logManager = logManager;
 	}
 	
 	/**
@@ -170,5 +174,13 @@ public abstract class AbstractSegueFacade {
 			final String databaseName, final Class<T> classType) {
 		return SegueGuiceConfigurationModule.getAppDataManager(databaseName,
 				classType);
+	}
+
+	/**
+	 * Gets the logManager.
+	 * @return the logManager
+	 */
+	public ILogManager getLogManager() {
+		return logManager;
 	}
 }

@@ -100,7 +100,6 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	private QuestionManager questionManager;
 
 	private ICommunicator communicator;
-	private ILogManager logManager;
 
 	/**
 	 * Constructor that allows pre-configuration of the segue api.
@@ -131,7 +130,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			final ContentVersionController contentVersionController, final UserManager userManager,
 			final QuestionManager questionManager, final ICommunicator communicator,
 			final ILogManager logManager) {
-		super(properties);
+		super(properties, logManager);
 		// this.properties = properties;
 		this.questionManager = questionManager;
 		this.communicator = communicator;
@@ -150,8 +149,6 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		this.contentVersionController = contentVersionController;
 		this.userManager = userManager;
-
-		this.logManager = logManager;
 
 		try {
 			// We need to do this to make sure we have an up to date content repo.
@@ -192,7 +189,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		// remove the type information as we don't need it.
 		eventJSON.remove(Constants.TYPE_FIELDNAME);
 
-		this.logManager.logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
+		this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
 		return Response.ok().build();
 	}
@@ -943,7 +940,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 					(QuestionValidationResponseDTO) response.getEntity());
 		}
 
-		this.logManager.logEvent(currentUser, request, Constants.ANSWER_QUESTION, response.getEntity());
+		this.getLogManager().logEvent(currentUser, request, Constants.ANSWER_QUESTION, response.getEntity());
 
 		return response;
 	}
@@ -1069,14 +1066,5 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment) {
 		return this.contentVersionController.getContentManager().populateContentSummaries(version,
 				contentToAugment);
-	}
-
-	/**
-	 * Library method to provide access to the Segue Log Manager.
-	 * 
-	 * @return an instance of the log manager.
-	 */
-	public ILogManager getLogManager() {
-		return this.logManager;
 	}
 }

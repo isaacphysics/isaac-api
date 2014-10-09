@@ -22,29 +22,35 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 /**
  * Interface for logging components.
  * 
+ * This is for logging user interaction events for the purpose of research and /
+ * or technology improvement not for logging system errors / events.
+ * 
  */
 public interface ILogManager {
-	
 	/**
-	 * Log an event with the persistence logging framework without looking up the user from the database.
+	 * Log an event with the persistence logging framework without looking up
+	 * the user from the database.
 	 * 
-	 * @param user - user to log must not be null.
+	 * @param user
+	 *            - user to log must not be null.
 	 * @param httpRequest
-	 *            - so we can figure out request specific information e.g. ip address.
+	 *            - so we can figure out request specific information e.g. ip
+	 *            address.
 	 * @param eventType
 	 *            - Type of event that we are interested in.
 	 * @param eventDetails
 	 *            - Additional information associated with the event - this is
 	 *            expected to be a json deserializable object
 	 */
-	void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
-	
+	void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType,
+			Object eventDetails);
+
 	/**
-	 * Log an event with the persistence logging framework without looking up the user from the database.
+	 * Log an event with the persistence logging framework without looking up
+	 * the user from the database.
 	 * 
-	 * @param user - user to log must not be null.
-	 * @param httpRequest
-	 *            - so we can figure out request specific information e.g. ip address.
+	 * @param user
+	 *            - user to log must not be null.
 	 * @param eventType
 	 *            - Type of event that we are interested in.
 	 * @param eventDetails
@@ -52,15 +58,17 @@ public interface ILogManager {
 	 *            expected to be a json deserializable object
 	 */
 	void logInternalEvent(AbstractSegueUserDTO user, String eventType, Object eventDetails);
-	
+
 	/**
-	 * This method will endeavour to find all log events for a given anonymous user and reassign ownership to
-	 * a registered user.
+	 * This method will endeavour to find all log events for a given anonymous
+	 * user and reassign ownership to a registered user.
 	 * 
 	 * This will also result in an event being created.
 	 * 
-	 * @param oldUserId - the id of the old anonymous user
-	 * @param newUserId - the user object of the newly registered user. 
+	 * @param oldUserId
+	 *            - the id of the old anonymous user
+	 * @param newUserId
+	 *            - the user object of the newly registered user.
 	 */
 	void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId);
 }

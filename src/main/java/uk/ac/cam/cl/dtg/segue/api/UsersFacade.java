@@ -47,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -76,10 +77,12 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *            - properties loader for the application
 	 * @param userManager
 	 *            - user manager for the application
+	 * @param logManager
+	 *            - so we can log interesting events. 
 	 */
 	@Inject
-	public UsersFacade(final PropertiesLoader properties, final UserManager userManager) {
-		super(properties);
+	public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager) {
+		super(properties, logManager);
 		this.userManager = userManager;
 	}
 
