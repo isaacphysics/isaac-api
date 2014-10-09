@@ -20,6 +20,7 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.Validate;
+import org.elasticsearch.common.collect.ImmutableMap;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.mongojack.internal.MongoJackModule;
@@ -90,6 +91,55 @@ public class MongoLogManager implements ILogManager {
 			
 		} catch (JsonProcessingException e) {
 			log.error("Unable to serialize eventDetails as json string", e);
+		}
+	}
+	
+	@Override
+	public void logInternalEvent(final AbstractSegueUserDTO user, final String eventType, final Object eventDetails) {
+		Validate.notNull(user);
+		try {
+			if (user instanceof RegisteredUserDTO) {
+				this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails,
+						null);
+			} else {
+				this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
+						null);
+			}
+			
+		} catch (JsonProcessingException e) {
+			log.error("Unable to serialize eventDetails as json string", e);
+		}
+	}
+	
+	@Override
+	public void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId) {
+		Validate.notBlank(oldUserId);
+		Validate.notNull(newUserId);
+		
+		JacksonDBCollection<DBObject, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), DBObject.class,
+				String.class, this.objectMapper);
+		
+		BasicDBObject updateQuery = new BasicDBObject();
+		BasicDBObject fieldsToUpdate = new BasicDBObject();
+		fieldsToUpdate.put("userId", newUserId);
+		fieldsToUpdate.put("anonymousUser", false);
+		updateQuery.append("$set", fieldsToUpdate);
+		
+		BasicDBObject searchQuery = new BasicDBObject();
+		searchQuery.append("userId", oldUserId);
+		
+		WriteResult<DBObject, String> result = jc.updateMulti(searchQuery, updateQuery);
+		
+		if (result.getError() != null) {
+			log.error("Error while trying to reassign anonymous user log events to registered user.");
+		}
+		
+		try {
+			this.persistLogEvent(newUserId, null, "USER_REGISTRATION",
+					ImmutableMap.of("anonymousUserId", oldUserId), null);
+		} catch (JsonProcessingException e) {
+			log.error("Unable to serialize json for merge event.", e);
 		}
 	}
 
@@ -179,5 +229,5 @@ public class MongoLogManager implements ILogManager {
             ip = request.getRemoteAddr();  
         }  
         return ip;  
-    }  
+    }
 }

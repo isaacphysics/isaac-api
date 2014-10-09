@@ -400,6 +400,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * @param providersToRegister
 	 *            - list of known providers.
 	 * @param communicator - so that we can send e-mails.
+	 * @param logManager - so that we can log interesting user based events.
 	 * @return Content version controller with associated dependencies.
 	 */
 	@Inject
@@ -409,11 +410,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			final IUserDataManager database,
 			final PropertiesLoader properties,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-			final ICommunicator communicator) {
+			final ICommunicator communicator, final ILogManager logManager) {
 
 		if (null == userManager) {
 			userManager = new UserManager(database, properties, providersToRegister,
-					this.getDOtoDTOMapper(), communicator);
+					this.getDOtoDTOMapper(), communicator, logManager);
 			log.info("Creating singleton of UserManager");
 		}
 

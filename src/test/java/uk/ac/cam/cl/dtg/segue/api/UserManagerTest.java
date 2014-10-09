@@ -59,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -88,6 +89,7 @@ public class UserManagerTest {
 	private SimpleDateFormat sdf;
 	
 	private Cache<String, AnonymousUser> dummyUserCache;
+	private ILogManager dummyLogManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -109,7 +111,9 @@ public class UserManagerTest {
 		this.dummyUserCache = CacheBuilder.newBuilder()
 				.expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
 				.<String, AnonymousUser> build();
-
+		
+		this.dummyLogManager = createMock(ILogManager.class);
+		
 		expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt)
 				.anyTimes();
 		expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName)
@@ -126,21 +130,21 @@ public class UserManagerTest {
 	public final void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown() {
 		try {
 			new UserManager(null, this.dummyPropertiesLoader, this.dummyProvidersMap, this.dummyMapper,
-					this.dummyCommunicator);
+					this.dummyCommunicator, this.dummyLogManager);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
 			new UserManager(this.dummyDatabase, null, this.dummyProvidersMap, this.dummyMapper,
-					this.dummyCommunicator);
+					this.dummyCommunicator, this.dummyLogManager);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
 		}
 		try {
 			new UserManager(this.dummyDatabase, this.dummyPropertiesLoader, null, this.dummyMapper,
-					this.dummyCommunicator);
+					this.dummyCommunicator, this.dummyLogManager);
 			fail("Expected a null pointer exception immediately");
 		} catch (NullPointerException e) {
 			// fine
@@ -645,7 +649,7 @@ public class UserManagerTest {
 			= new HashMap<AuthenticationProvider, IAuthenticator>();
 		providerMap.put(provider, authenticator);
 		return new UserManager(this.dummyDatabase, this.dummyPropertiesLoader, providerMap, this.dummyMapper,
-				this.dummyCommunicator, this.dummyUserCache);
+				this.dummyCommunicator, this.dummyUserCache, this.dummyLogManager);
 	}
 
 	private Map<String, String> getSessionInformationAsAMap(UserManager userManager, String userId,

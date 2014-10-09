@@ -81,6 +81,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -107,6 +108,7 @@ public class UserManager {
 
 	private final IUserDataManager database;
 	private final Cache<String, AnonymousUser> temporaryUserCache;
+	private final ILogManager logManager;
 	
 	private final String hmacKey;
 	private final Integer sessionExpiryTimeInSeconds;
@@ -134,16 +136,18 @@ public class UserManager {
 	 *            - the preconfigured DO to DTO object mapper for user objects.
 	 * @param communicator
 	 *            - the preconfigured communicator manager for sending e-mails.   
+	 * @param logManager
+	 *            - so that we can log events for users..   
 	 */
 	@Inject
 	public UserManager(final IUserDataManager database, final PropertiesLoader properties,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
 			final MapperFacade dtoMapper,
-			final ICommunicator communicator) {
+			final ICommunicator communicator, final ILogManager logManager) {
 		this(database, properties, providersToRegister, dtoMapper, communicator,
 				CacheBuilder.newBuilder()
 						.expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-						.<String, AnonymousUser> build());
+						.<String, AnonymousUser> build(), logManager);
 	}
 
 	/**
@@ -160,22 +164,26 @@ public class UserManager {
 	 * @param communicator
 	 *            - the preconfigured communicator manager for sending e-mails.   
 	 * @param temporaryUserCache
-	 *            - the preconfigured communicator manager for sending e-mails.   
+	 *            - the preconfigured communicator manager for sending e-mails.
+	 * @param logManager
+	 *            - so that we can log events for users..  
 	 */
 	public UserManager(final IUserDataManager database, final PropertiesLoader properties,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
 			final MapperFacade dtoMapper, final ICommunicator communicator,
-			final Cache<String, AnonymousUser> temporaryUserCache) {
+			final Cache<String, AnonymousUser> temporaryUserCache,
+			final ILogManager logManager) {
 		Validate.notNull(database);
 		Validate.notNull(properties);
 		Validate.notNull(providersToRegister);
 		Validate.notNull(dtoMapper);
 		Validate.notNull(communicator);
 		Validate.notNull(temporaryUserCache);
-
+		Validate.notNull(logManager);
+		
 		this.database = database;
 		this.temporaryUserCache = temporaryUserCache;
-
+		this.logManager = logManager;
 		this.hmacKey = properties.getProperty(Constants.HMAC_SALT);
 		Validate.notNull(this.hmacKey);
 
@@ -1902,6 +1910,8 @@ public class UserManager {
 		Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = anonymousUser
 				.getTemporaryQuestionAttempts();
 		
+		this.logManager.transferLogEventsToNewRegisteredUser(anonymousUser.getSessionId(), registeredUser.getDbId());
+		
 		if (anonymouslyAnsweredQuestions.isEmpty()) {
 			return;
 		}
@@ -1919,6 +1929,9 @@ public class UserManager {
 				}
 			}
 		}
+		
+		this.logManager.logInternalEvent(this.convertUserDOToUserDTO(registeredUser), Constants.MERGE_USER,
+				ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 		
 		// delete the session attribute as merge has completed.
 		this.temporaryUserCache.invalidate(anonymousUser.getSessionId());
