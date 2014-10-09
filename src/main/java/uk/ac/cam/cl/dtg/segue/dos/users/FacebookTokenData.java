@@ -18,10 +18,19 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * FacebookTokenData.
+ *
+ */
 public class FacebookTokenData {
 	private String appId;
 	private boolean isValid;
 
+	/**
+	 * 
+	 * @param appId - application id
+	 * @param isValid - 
+	 */
 	@JsonCreator
 	public FacebookTokenData(@JsonProperty("app_id") final String appId,
 			@JsonProperty("is_valid") final boolean isValid) {
@@ -39,7 +48,7 @@ public class FacebookTokenData {
 	/**
 	 * @param appId the appId to set
 	 */
-	public void setAppId(String appId) {
+	public void setAppId(final String appId) {
 		this.appId = appId;
 	}
 
@@ -53,7 +62,7 @@ public class FacebookTokenData {
 	/**
 	 * @param isValid the isValid to set
 	 */
-	public void setValid(boolean isValid) {
+	public void setValid(final boolean isValid) {
 		this.isValid = isValid;
 	}
 }

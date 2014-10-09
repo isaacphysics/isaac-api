@@ -18,9 +18,17 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * FacebookTokenInfo.
+ *
+ */
 public class FacebookTokenInfo {
 	private FacebookTokenData data;
 
+	/**
+	 * 
+	 * @param data -
+	 */
 	@JsonCreator
 	public FacebookTokenInfo(@JsonProperty("data") final FacebookTokenData data) {
 		this.data = data;
@@ -36,8 +44,7 @@ public class FacebookTokenInfo {
 	/**
 	 * @param data the data to set
 	 */
-	public void setData(FacebookTokenData data) {
+	public void setData(final FacebookTokenData data) {
 		this.data = data;
 	}
-
 }

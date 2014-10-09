@@ -18,6 +18,10 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * DO representing a Facebook User.
+ *
+ */
 public class FacebookUser {
 	private String id;
 	private String firstName;
@@ -31,6 +35,20 @@ public class FacebookUser {
 	private String updatedTime;
 	private boolean verified;
 
+	/**
+	 * 
+	 * @param id -
+	 * @param firstName - 
+	 * @param email - 
+	 * @param gender -
+	 * @param lastName -
+	 * @param link - 
+	 * @param locale - 
+	 * @param name - 
+	 * @param timezone -
+	 * @param updatedTime -
+	 * @param verified -
+	 */
 	@JsonCreator
 	public FacebookUser(@JsonProperty("id") final String id,
 			@JsonProperty("first_name") final String firstName,
@@ -54,7 +72,6 @@ public class FacebookUser {
 		this.updatedTime = updatedTime;
 		this.verified = verified;
 	}
-
 
 	/**
 	 * @return the id
