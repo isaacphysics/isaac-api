@@ -31,12 +31,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -51,6 +53,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class AuthenticationFacade extends AbstractSegueFacade {
 
 	private final UserManager userManager;
+	private final ILogManager logManager;
 
 	/**
 	 * Create an instance of the authentication Facade.
@@ -59,11 +62,15 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	 *            - properties loader for the application
 	 * @param userManager
 	 *            - user manager for the application
+	 * @param logManager
+	 *            - so we can log interesting events. 
 	 */
 	@Inject
-	public AuthenticationFacade(final PropertiesLoader properties, final UserManager userManager) {
+	public AuthenticationFacade(final PropertiesLoader properties, final UserManager userManager,
+			final ILogManager logManager) {
 		super(properties);
 		this.userManager = userManager;
+		this.logManager = logManager;
 	}
 
 	/**
@@ -207,8 +214,12 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	@Path("/logout")
 	public final Response userLogout(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response) {
+		
+		this.logManager.logEvent(this.userManager.getCurrentUser(request), request, Constants.LOG_OUT,
+				Maps.newHashMap());
+		
 		userManager.logUserOut(request, response);
-
+		
 		return Response.ok().build();
 	}
 }

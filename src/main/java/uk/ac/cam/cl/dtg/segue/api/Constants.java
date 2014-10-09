@@ -296,6 +296,7 @@ public final class Constants {
 	public static final String LOG_TABLE_NAME = "loggedEvents";
 	public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
 	public static final String MERGE_USER = "MERGE_USER";
+	public static final String LOG_OUT = "LOG_OUT";
 	
 	/*
 	 * Default values.
