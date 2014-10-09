@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -51,7 +51,6 @@ public class MongoLogManager implements ILogManager {
 	private static final Logger log = LoggerFactory.getLogger(MongoLogManager.class);
 
 	private final DB database;
-	private final UserManager userManager;
 	private final ObjectMapper objectMapper;
 	
 	private final boolean loggingEnabled;
@@ -61,8 +60,6 @@ public class MongoLogManager implements ILogManager {
 	 * 
 	 * @param database
 	 *            - instance of mongodb database.
-	 * @param userManager
-	 *            - user manager to allow user information resolution.
 	 * @param objectMapper
 	 *            - used for serialising eventDetails into something useful.
 	 * @param loggingEnabled
@@ -70,41 +67,29 @@ public class MongoLogManager implements ILogManager {
 	 *            be saved false is that they wont.
 	 */
 	@Inject
-	public MongoLogManager(final DB database, final UserManager userManager, final ObjectMapper objectMapper,
+	public MongoLogManager(final DB database, final ObjectMapper objectMapper,
 			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
 		this.database = database;
-		this.userManager = userManager;
 		this.objectMapper = objectMapper;
 		this.loggingEnabled = loggingEnabled;
 	}
 
 	@Override
-	public void logEvent(final RegisteredUserDTO user, final HttpServletRequest httpRequest,
+	public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
 			final String eventType, final Object eventDetails) {
 		Validate.notNull(user);
 
 		try {
-			this.persistLogEvent(user.getDbId(), null, eventType, eventDetails, httpRequest.getRemoteAddr());
+			if (user instanceof RegisteredUserDTO) {
+				this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails,
+						getClientIpAddr(httpRequest));
+			} else {
+				this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
+						getClientIpAddr(httpRequest));
+			}
+			
 		} catch (JsonProcessingException e) {
 			log.error("Unable to serialize eventDetails as json string", e);
-		}
-	}
-
-	@Override
-	public void logEvent(final HttpServletRequest httpRequest, final String eventType,
-			final Object eventDetails) {
-		RegisteredUserDTO userToLog;
-		
-		try {
-			userToLog = userManager.getCurrentRegisteredUser(httpRequest);
-			this.logEvent(userToLog, httpRequest, eventType, eventDetails);
-		} catch (NoUserLoggedInException e) {
-			try {
-				this.persistLogEvent(null, httpRequest.getSession().getId(), eventType, eventDetails,
-						MongoLogManager.getClientIpAddr(httpRequest));
-			} catch (JsonProcessingException e1) {
-				log.error("Unable to serialize eventDetails as json string", e);
-			}
 		}
 	}
 

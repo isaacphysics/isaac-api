@@ -243,7 +243,8 @@ public class IsaacController {
 					.put(CONTENT_VERSION, api.getLiveVersion()).build();
 					
 			// the request log
-			this.api.getLogManager().logEvent(servletRequest, Constants.VIEW_CONCEPT, logEntry);
+			this.api.getLogManager().logEvent(this.api.getCurrentUserIdentifier(servletRequest),
+					servletRequest, Constants.VIEW_CONCEPT, logEntry);
 		}
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
@@ -398,7 +399,7 @@ public class IsaacController {
 						userQuestionAttempts);
 
 			// the request log
-			this.api.getLogManager().logEvent(httpServletRequest, Constants.VIEW_QUESTION, logEntry);
+			this.api.getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
 
 			// return augmented content.
 			return Response.ok(content).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
@@ -459,7 +460,8 @@ public class IsaacController {
 				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
 				.put(CONTENT_VERSION, api.getLiveVersion()).build();
 		
-		this.api.getLogManager().logEvent(httpServletRequest, GLOBAL_SITE_SEARCH, logMap);
+		this.api.getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
+				httpServletRequest, GLOBAL_SITE_SEARCH, logMap);
 		
 		return Response
 				.ok(this.extractContentSummaryFromResultsWrapper(searchResults,
@@ -723,7 +725,7 @@ public class IsaacController {
 			return Response.noContent().build();
 		}
 		
-		this.api.getLogManager().logEvent(request, VIEW_MY_BOARDS_PAGE,
+		this.api.getLogManager().logEvent(currentUser, request, VIEW_MY_BOARDS_PAGE,
 				ImmutableMap.builder().put("totalBoards", gameboards.getTotalResults())
 						.put("notStartedTotal", gameboards.getTotalNotStarted())
 						.put("completedTotal", gameboards.getTotalCompleted())
@@ -928,7 +930,8 @@ public class IsaacController {
 					.put(CONTENT_VERSION, api.getLiveVersion()).build();
 					
 			// the request log
-			this.api.getLogManager().logEvent(httpServletRequest, Constants.VIEW_PAGE, logEntry);			
+			this.api.getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
+					httpServletRequest, Constants.VIEW_PAGE, logEntry);			
 		}
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())

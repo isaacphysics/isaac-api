@@ -17,26 +17,13 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import javax.servlet.http.HttpServletRequest;
 
-import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 
 /**
  * Interface for logging components.
  * 
  */
 public interface ILogManager {
-	
-	/**
-	 * Log an event with the persistence logging framework by looking up the user from the httpRequest.
-	 * 
-	 * @param httpRequest
-	 *            - so we can figure out the user who triggered the event.
-	 * @param eventType
-	 *            - Type of event that we are interested in.
-	 * @param eventDetails
-	 *            - Additional information associated with the event - this is
-	 *            expected to be a json deserializable object
-	 */
-	void logEvent(HttpServletRequest httpRequest, String eventType, Object eventDetails);
 	
 	/**
 	 * Log an event with the persistence logging framework without looking up the user from the database.
@@ -50,5 +37,5 @@ public interface ILogManager {
 	 *            - Additional information associated with the event - this is
 	 *            expected to be a json deserializable object
 	 */
-	void logEvent(RegisteredUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
+	void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
 }

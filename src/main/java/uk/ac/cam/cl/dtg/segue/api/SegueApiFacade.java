@@ -192,7 +192,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		// remove the type information as we don't need it.
 		eventJSON.remove(Constants.TYPE_FIELDNAME);
 
-		this.logManager.logEvent(httpRequest, eventType, eventJSON);
+		this.logManager.logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
 		return Response.ok().build();
 	}
@@ -936,13 +936,14 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		// validate the answer.
 		Response response = this.questionManager.validateAnswer(question,
 				Lists.newArrayList(answersFromClient));
-
+		AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+		
 		if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-			userManager.recordQuestionAttempt(this.userManager.getCurrentUser(request),
+			userManager.recordQuestionAttempt(currentUser,
 					(QuestionValidationResponseDTO) response.getEntity());
 		}
 
-		this.logManager.logEvent(request, Constants.ANSWER_QUESTION, response.getEntity());
+		this.logManager.logEvent(currentUser, request, Constants.ANSWER_QUESTION, response.getEntity());
 
 		return response;
 	}
