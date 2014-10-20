@@ -61,8 +61,7 @@ public class IsaacApplicationRegister extends Application {
 					new SegueGuiceConfigurationModule());
 			
 			// invoke optional service initialisation
-			this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
-			//this.singletons.add(injector.getInstance(MathsRenderingServiceFacade.class));			
+			this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));	
 			
 			// initialise segue framework. 
 			this.singletons.add(injector.getInstance(SegueApiFacade.class));
