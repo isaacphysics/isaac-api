@@ -63,7 +63,7 @@ import com.google.inject.name.Named;
  * This class is derived from GoogleAuthenticator and provides 3rd party
  * authentication via the Facebook OAuth API.
  * 
- * @author nr378
+ * @author Nick Rogers
  */
 public class FacebookAuthenticator implements IOAuth2Authenticator {
 
@@ -87,6 +87,12 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
 
+	/**
+	 * @param clientId 
+	 * @param clientSecret 
+	 * @param callbackUri 
+	 * @param requestedScopes 
+	 */
 	@Inject
 	public FacebookAuthenticator(
 			@Named(Constants.FACEBOOK_CLIENT_ID) final String clientId,
@@ -145,7 +151,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public String exchangeCode(final String authorizationCode)
-			throws CodeExchangeException {
+		throws CodeExchangeException {
 		try {
 			AuthorizationCodeTokenRequest request = new AuthorizationCodeTokenRequest(
 					httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
@@ -218,15 +224,18 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public String getAntiForgeryStateToken() {
-		String antiForgerySalt = new BigInteger(130, new SecureRandom())
-				.toString(32);
+		final int numberOfBits = 130;
+		final int radix = 130;
+		
+		String antiForgerySalt = new BigInteger(numberOfBits, new SecureRandom())
+				.toString(radix);
 		String antiForgeryStateToken = "facebook" + antiForgerySalt;
 		return antiForgeryStateToken;
 	}
 
 	@Override
 	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
-			throws NoUserException, IOException,
+		throws NoUserException, IOException,
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 
@@ -265,7 +274,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	 * This method will contact the identity provider to verify that the token
 	 * is valid for our application.
 	 * 
-	 * @param credentials
+	 * @param credentials to verify
 	 * @return true if the token passes our validation false if not.
 	 */
 	private boolean verifyAccessTokenIsValid(final Credential credentials) {
@@ -328,7 +337,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	 * @param is
 	 *            - The InputStream to be read
 	 * @return the contents of the InputStream
-	 * @throws IOException
+	 * @throws IOException - if there is an error during reading the input stream.
 	 */
 	private String inputStreamToString(final InputStream is) throws IOException {
 		String line = "";

@@ -15,37 +15,52 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
+/**
+ * @author Nick Rogers
+ * 
+ */
 public class OAuth1Token {
 	private String token;
 	private String tokenSecret;
-	
-	public OAuth1Token(String token, String tokenSecret) {
+
+	/**
+	 * Create an OAuth1Token.
+	 * 
+	 * @param token 
+	 * @param tokenSecret 
+	 */
+	public OAuth1Token(final String token, final String tokenSecret) {
 		this.token = token;
 		this.tokenSecret = tokenSecret;
 	}
-	
+
 	/**
 	 * @return the token
 	 */
 	public String getToken() {
 		return token;
 	}
+
 	/**
-	 * @param token the token to set
+	 * @param token
+	 *            the token to set
 	 */
-	public void setToken(String token) {
+	public void setToken(final String token) {
 		this.token = token;
 	}
+
 	/**
 	 * @return the tokenSecret
 	 */
 	public String getTokenSecret() {
 		return tokenSecret;
 	}
+
 	/**
-	 * @param tokenSecret the tokenSecret to set
+	 * @param tokenSecret
+	 *            the tokenSecret to set
 	 */
-	public void setTokenSecret(String tokenSecret) {
+	public void setTokenSecret(final String tokenSecret) {
 		this.tokenSecret = tokenSecret;
 	}
 }

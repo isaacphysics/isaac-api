@@ -69,13 +69,18 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 	private final String clientSecret;
 	private final String callbackUri;
 
-	private final String AUTH_URL = "https://api.twitter.com/oauth/authenticate";
-	private final String TOKEN_EXCHANGE_URL = "https://api.twitter.com/oauth/access_token";
+	private static final String AUTH_URL = "https://api.twitter.com/oauth/authenticate";
+	private static final String TOKEN_EXCHANGE_URL = "https://api.twitter.com/oauth/access_token";
 
 	// weak cache for mapping userInformation to credentials
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
 
+	/**
+	 * @param clientId 
+	 * @param clientSecret 
+	 * @param callbackUri 
+	 */
 	@Inject
 	public TwitterAuthenticator(
 			@Named(Constants.TWITTER_CLIENT_ID) final String clientId,
@@ -118,7 +123,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 	}
 
 	@Override
-	public String getAuthorizationUrl(OAuth1Token token) {
+	public String getAuthorizationUrl(final OAuth1Token token) {
 		return new RequestToken(token.getToken(), token.getTokenSecret()).getAuthenticationURL();
 	}
 
@@ -138,7 +143,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 
 	@Override
 	public String exchangeCode(final String authorizationCode)
-			throws CodeExchangeException {
+		throws CodeExchangeException {
 		try {
 			AccessToken accessToken = twitter
 					.getOAuthAccessToken(authorizationCode);
@@ -201,10 +206,10 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 	 * @param url - The URL to parse
 	 * @param param - The parameter name
 	 * @return The value of the parameter
-	 * @throws IOException
+	 * @throws IOException 
 	 */
-	private String getParameterFromUrl(GenericUrl url, String param)
-			throws IOException {
+	private String getParameterFromUrl(final GenericUrl url, final String param)
+		throws IOException {
 		try {
 			@SuppressWarnings("unchecked")
 			ArrayList<Object> arr = (ArrayList<Object>) url.get(param);

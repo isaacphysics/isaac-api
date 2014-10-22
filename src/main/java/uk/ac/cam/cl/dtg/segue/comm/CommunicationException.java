@@ -16,10 +16,17 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 /**
+ * An exception whilst trying to complete a communication action.
+ * 
  * @author nr378
  */
 public class CommunicationException extends Exception {
-	public CommunicationException(Exception e) {
+	private static final long serialVersionUID = 7797028995535006701L;
+
+	/**
+	 * @param e 
+	 */
+	public CommunicationException(final Exception e) {
 		super(e);
 	}
 }

@@ -33,23 +33,30 @@ public class EmailCommunicator implements ICommunicator {
 	// TODO: remove reference to isaac
 	private static final String SIGNATURE = "Isaac Physics";
 
+	/**
+	 * Creates an instance of an email communicator that can send e-mails.
+	 * 
+	 * @param smtpAddress
+	 *            the smtp server to use to send e-mails. Must be open for this
+	 *            implementation.
+	 * @param fromAddress
+	 *            - The email address to to show as the from address.
+	 */
 	@Inject
-	public EmailCommunicator(
-			@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
-			@Named(Constants.MAIL_FROM_ADDRESS) final String mailAddress) {
+	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
+			@Named(Constants.MAIL_FROM_ADDRESS) final String fromAddress) {
 		Validate.notNull(smtpAddress);
-		Validate.notNull(mailAddress);
+		Validate.notNull(fromAddress);
 
-		this.fromAddress = mailAddress;
+		this.fromAddress = fromAddress;
 
 		// Construct a new instance of the mailer object
-		this.mailer = new Mailer(smtpAddress, mailAddress);
+		this.mailer = new Mailer(smtpAddress, fromAddress);
 	}
 
 	@Override
-	public void sendMessage(final String recipientAddress, final String recipientName, String subject,
-	                        final String message) throws CommunicationException {
-		subject = String.format("%s - %s", subject, SIGNATURE);
+	public void sendMessage(final String recipientAddress, final String recipientName, final String subject,
+			final String message) throws CommunicationException {
 
 		// Construct message
 		StringBuilder messageBuilder = new StringBuilder();
@@ -59,7 +66,8 @@ public class EmailCommunicator implements ICommunicator {
 
 		// Send email
 		try {
-			mailer.sendMail(new String[]{recipientAddress}, this.fromAddress, subject, messageBuilder.toString());
+			mailer.sendMail(new String[] { recipientAddress }, this.fromAddress,
+					String.format("%s - %s", subject, SIGNATURE), messageBuilder.toString());
 		} catch (MessagingException e) {
 			throw new CommunicationException(e);
 		}

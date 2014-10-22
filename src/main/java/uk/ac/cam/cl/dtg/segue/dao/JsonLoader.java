@@ -22,18 +22,65 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class JsonLoader {
+/**
+ * Class to help simplify deserialization of json classes.
+ * 
+ */
+public final class JsonLoader {
 	private static ObjectMapper mapper = new ObjectMapper();
 
-	public static <T> T load(String json, Class<T> c, boolean ignoreUnknown)
-			throws JsonParseException, JsonMappingException, IOException {
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-				!ignoreUnknown);
+	/**
+	 * Prevent this class from being instantiated.
+	 */
+	private JsonLoader() {
+
+	}
+
+	/**
+	 * Deserialize json into a class of a given type.
+	 * 
+	 * @param <T>
+	 *            type to return
+	 * @param json
+	 *            - as a string
+	 * @param c
+	 *            - class to create
+	 * @param ignoreUnknown
+	 *            - boolean - if true it will ignore unknown properties if false
+	 *            it will throw an exception.
+	 * @return an instance of c
+	 * @throws JsonParseException
+	 *             - if we cannot read the json
+	 * @throws JsonMappingException
+	 *             - if we cannot map the json into the specified object.
+	 * @throws IOException
+	 *             - failure during IO.
+	 */
+	public static <T> T load(final String json, final Class<T> c, final boolean ignoreUnknown)
+		throws JsonParseException, JsonMappingException, IOException {
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknown);
 		return mapper.readValue(json, c);
 	}
 
-	public static <T> T load(String json, Class<T> c)
-			throws JsonParseException, JsonMappingException, IOException {
+	/**
+	 * Deserialize json into a class of a given type.
+	 * 
+	 * @param <T>
+	 *            type to return
+	 * @param json
+	 *            - as a string
+	 * @param c
+	 *            - class to create
+	 * @return an instance of c
+	 * @throws JsonParseException
+	 *             - if we cannot read the json
+	 * @throws JsonMappingException
+	 *             - if we cannot map the json into the specified object.
+	 * @throws IOException
+	 *             - failure during IO.
+	 */
+	public static <T> T load(final String json, final Class<T> c) throws JsonParseException, JsonMappingException,
+			IOException {
 		return load(json, c, false);
 	}
 }

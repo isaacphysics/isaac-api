@@ -33,8 +33,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 public class TrimWhitespaceDeserializer extends JsonDeserializer<String> {
 
 	@Override
-	public String deserialize(JsonParser jsonParser,
-			DeserializationContext deserializationContext) throws IOException,
+	public String deserialize(final JsonParser jsonParser,
+			final DeserializationContext deserializationContext) throws IOException,
 			JsonProcessingException, JsonMappingException {
 		return jsonParser.getText().trim();
 	}

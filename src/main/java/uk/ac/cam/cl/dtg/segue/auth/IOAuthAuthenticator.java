@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Stephen Cummins
+ * Copyright 2014 Nick Rogers & Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 
 /**
- * This interface defines the required methods for an oauth 1 or oauth 2 provider.
+ * This interface defines the required methods for an oauth 1 or oauth 2
+ * provider.
  * 
- * @author nr378
  */
 public interface IOAuthAuthenticator extends IFederatedAuthenticator {
 
@@ -34,7 +34,7 @@ public interface IOAuthAuthenticator extends IFederatedAuthenticator {
 	 * @param url
 	 *            containing the authorisation code
 	 * @return the extracted authorisation code.
-	 * @throws IOException
+	 * @throws IOException 
 	 */
 	String extractAuthCode(String url) throws IOException;
 
@@ -55,9 +55,9 @@ public interface IOAuthAuthenticator extends IFederatedAuthenticator {
 	 *         IOAuth2Authenticator that allows us to use
 	 *         FederatedAuthentication methods that require an internal
 	 *         reference number.
-	 * @throws IOException
-	 *             , CodeExchangeException, NoUserIdException
+	 * @throws IOException 
+	 * @throws CodeExchangeException 
+	 * @throws NoUserException 
 	 */
-	String exchangeCode(String authorizationCode) throws IOException,
-			CodeExchangeException, NoUserException;
+	String exchangeCode(String authorizationCode) throws IOException, CodeExchangeException, NoUserException;
 }
