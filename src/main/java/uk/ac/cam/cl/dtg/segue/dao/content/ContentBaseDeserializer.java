@@ -69,7 +69,7 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
 		if (null == root.get("type")) {
 			throw new JsonMappingException(
 					"Error: unable to parse content as there "
-					+ "is no type property within the json input.");			
+					+ "is no type property within the json input. Json Fragment: " + root.toString());			
 		}
 
 		String contentType = root.get("type").textValue();
