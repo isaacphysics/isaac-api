@@ -24,6 +24,7 @@ import org.mongojack.DBQuery;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
+import org.mongojack.DBQuery.Query;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,6 +219,32 @@ public class MongoUserDataManager implements IUserDataManager {
 		BasicDBObject query = new BasicDBObject(mapper.convertValue(
 				prototype, HashMap.class));
 		
+		DBCursor<RegisteredUser> users = jc.find(query);
+		
+		return users.toArray();		
+	}
+	
+	@Override 
+	public List<RegisteredUser> findUsers(final List<String> usersToLocate) throws SegueDatabaseException {
+		Validate.notNull(usersToLocate);
+		
+		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				String.class);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		MongoJackModule.configure(mapper);
+		
+		Query query = null;
+		List<Query> idsToFind = Lists.newArrayList();
+		
+		for (String userId : usersToLocate) {
+			idsToFind.add(DBQuery.is("_id", userId));	
+		}
+		
+		query = DBQuery.or(idsToFind.toArray(new Query[usersToLocate.size()]));
+
 		DBCursor<RegisteredUser> users = jc.find(query);
 		
 		return users.toArray();		

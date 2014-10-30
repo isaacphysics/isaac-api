@@ -148,6 +148,14 @@ public interface IUserDataManager {
 	List<RegisteredUser> findUsers(RegisteredUser prototype) throws SegueDatabaseException;
 
 	/**
+	 * Bulk find users based on ids.
+	 * @param usersToLocate - user ids as a list.
+	 * @return a List of Registered Users.
+	 * @throws SegueDatabaseException - if there is a problem with the database.
+	 */
+	List<RegisteredUser> findUsers(List<String> usersToLocate) throws SegueDatabaseException;
+	
+	/**
 	 * Get a user by password reset token.
 	 *
 	 * @param token
@@ -207,4 +215,5 @@ public interface IUserDataManager {
 	 */
 	QuestionAttemptUserRecord getQuestionAttempts(final String userId)
 		throws SegueDatabaseException;
+
 }
