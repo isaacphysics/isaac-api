@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Stephen Cummins & Nick Rogers
+ * Copyright 2014 Stephen Cummins & Nick Rogers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,8 +119,8 @@ public class UserManager {
 	private final MapperFacade dtoMapper;
 	
 	private final ICommunicator communicator;
-	// TODO: This still shouldn't be here
-	private final String hostName;
+	
+	private final String hostName; // TODO: This still shouldn't be here
 
 	private final ObjectMapper serializationMapper;
 	
@@ -390,17 +390,8 @@ public class UserManager {
 					Status.UNAUTHORIZED, "Unable to locate user information.");
 			log.error("No userID exception received. Unable to locate user.", e);
 			return error.toResponse();
-		} catch (CodeExchangeException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, "Security code exchange failed.");
-			log.error("Unable to verify security code.", e);
-			return error.toResponse();
-		} catch (AuthenticatorSecurityException e) {
-			SegueErrorResponse error = new SegueErrorResponse(
-					Status.UNAUTHORIZED, "Error during security checks.");
-			log.error(error.getErrorMessage(), e);
-			return error.toResponse();
-		} catch (AuthenticationCodeException | CrossSiteRequestForgeryException e) {
+		} catch (AuthenticationCodeException | CrossSiteRequestForgeryException
+				| AuthenticatorSecurityException | CodeExchangeException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.UNAUTHORIZED, e.getMessage());
 			log.info("Error detected during authentication: " + e.getClass().toString(), e);
@@ -486,7 +477,6 @@ public class UserManager {
 				this.createSession(request, response, user);
 				
 				return Response.ok(this.convertUserDOToUserDTO(user)).build();
-
 			} catch (IncorrectCredentialsProvidedException | NoUserException
 					| NoCredentialsAvailableException e) {
 				log.debug("Incorrect Credentials Received", e);
