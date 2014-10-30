@@ -214,19 +214,6 @@ public class GameManager {
 		throws SegueDatabaseException {		
 		this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getDbId(), gameboardToUnlink.getId());
 	}
-	
-	/**
-	 * Store a gameboard in a public location.
-	 * 
-	 * @param gameboardToStore
-	 *            - Gameboard object to persist.
-	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
-	 */
-	private void permanentlyStoreGameboard(
-			final GameboardDTO gameboardToStore) throws SegueDatabaseException {
-		this.gameboardPersistenceManager
-				.saveGameboardToPermanentStorage(gameboardToStore);
-	}
 
 	/**
 	 * Get a gameboard by its id.
@@ -442,6 +429,19 @@ public class GameManager {
 		return this.gameboardPersistenceManager.updateGameboardTitle(gameboardWithUpdatedTitle);
 	}
 
+	/**
+	 * Store a gameboard in a public location.
+	 * 
+	 * @param gameboardToStore
+	 *            - Gameboard object to persist.
+	 * @throws SegueDatabaseException - if there is a problem persisting the gameboard in the database.
+	 */
+	private void permanentlyStoreGameboard(
+			final GameboardDTO gameboardToStore) throws SegueDatabaseException {
+		this.gameboardPersistenceManager
+				.saveGameboardToPermanentStorage(gameboardToStore);
+	}
+	
 	/**
 	 * This method aims to (somewhat) intelligently select some useful gameboard
 	 * questions.
