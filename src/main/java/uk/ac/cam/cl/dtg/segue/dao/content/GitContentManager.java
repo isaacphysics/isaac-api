@@ -407,7 +407,7 @@ public class GitContentManager implements IContentManager {
 						Thread validationJob = new Thread() {
 							@Override
 							public void run() {
-								validateReferentialIntegrity(version);
+								checkForContentErrors(version);
 							}
 						};
 						validationJob.start();
@@ -774,7 +774,7 @@ public class GitContentManager implements IContentManager {
 	 * @return True if we are happy with the integrity of the git repository,
 	 *         False if there is something wrong.
 	 */
-	private boolean validateReferentialIntegrity(final String sha) {
+	private boolean checkForContentErrors(final String sha) {
 		log.info("Starting content Validation.");
 		Set<Content> allObjectsSeen = new HashSet<Content>();
 		Set<String> expectedIds = new HashSet<String>();
