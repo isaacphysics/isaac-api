@@ -20,7 +20,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import uk.ac.cam.cl.dtg.isaac.app.IsaacControllerTest;
-import uk.ac.cam.cl.dtg.segue.api.UserManagerTest;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManagerTest;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticatorTest;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticatorTest;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticatorTest;
