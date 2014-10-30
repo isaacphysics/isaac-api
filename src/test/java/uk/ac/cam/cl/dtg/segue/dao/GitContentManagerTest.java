@@ -533,7 +533,7 @@ public class GitContentManagerTest {
 		replay(content, database);
 
 		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
-				"validateReferentialIntegrity", INITIAL_VERSION);
+				"checkForContentErrors", INITIAL_VERSION);
 
 		assertTrue(result);
 		assertTrue(indexProblemCache.size() == 0);
@@ -576,7 +576,7 @@ public class GitContentManagerTest {
 		replay(content, database);
 
 		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
-				"validateReferentialIntegrity", INITIAL_VERSION);
+				"checkForContentErrors", INITIAL_VERSION);
 
 		assertTrue(result);
 		assertTrue(indexProblemCache.size() == 0);
@@ -622,7 +622,7 @@ public class GitContentManagerTest {
 		replay(content, database);
 
 		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
-				"validateReferentialIntegrity", INITIAL_VERSION);
+				"checkForContentErrors", INITIAL_VERSION);
 
 		assertTrue(result);
 		assertTrue(indexProblemCache.size() == 1);
@@ -662,7 +662,7 @@ public class GitContentManagerTest {
 		replay(content);
 
 		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
-				"validateReferentialIntegrity", INITIAL_VERSION);
+				"checkForContentErrors", INITIAL_VERSION);
 
 		assertTrue(!result);
 		assertTrue(indexProblemCache.size() == 1);
@@ -710,7 +710,7 @@ public class GitContentManagerTest {
 		replay(child, content);
 
 		boolean result = Whitebox.<Boolean> invokeMethod(gitContentManager,
-				"validateReferentialIntegrity", INITIAL_VERSION);
+				"checkForContentErrors", INITIAL_VERSION);
 
 		assertTrue(result);
 		assertTrue(indexProblemCache.size() == 1);
