@@ -94,6 +94,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -621,6 +622,18 @@ public class UserManager {
 	}
 	
 	/**
+	 * Find a list of users based on a List of user ids.
+	 * @param userIds - partially completed user object to base search on
+	 * @return list of registered user dtos.
+	 * @throws SegueDatabaseException - if there is a database error.
+	 */
+	public final List<RegisteredUserDTO> findUsers(final List<String> userIds) throws SegueDatabaseException {
+		List<RegisteredUser> registeredUsersDOs = this.database.findUsers(userIds);
+		
+		return this.convertUserDOToUserDTOList(registeredUsersDOs);
+	}
+	
+	/**
 	 * This function can be used to find user information about a user when given an id.
 	 * @param id - the id of the user to search for.
 	 * @return the userDTO
@@ -686,8 +699,6 @@ public class UserManager {
 					+ "Unable to logout again...", e);
 		}
 	}
-
-
 
 	/**
 	 * Record that someone has answered a question.
@@ -912,87 +923,6 @@ public class UserManager {
 	}
 
 	/**
-	 * Create a session and attach it to the request provided.
-	 * 
-	 * @param request
-	 *            to enable access to anonymous user information.
-	 * @param response
-	 *            to store the session in our own segue cookie.
-	 * @param user
-	 *            account to associate the session with.
-	 */
-	private void createSession(final HttpServletRequest request, final HttpServletResponse response,
-			final RegisteredUser user) {
-		Validate.notNull(response);
-		Validate.notNull(user);
-		Validate.notBlank(user.getDbId());
-		
-		String userId = user.getDbId();
-		
-		try {
-			String currentDate = sessionDateFormat.format(new Date());
-			String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, currentDate);
-			
-			Map<String, String> sessionInformation = ImmutableMap.of(
-					Constants.SESSION_USER_ID, userId, 
-					Constants.DATE_SIGNED, currentDate,
-					Constants.HMAC, sessionHMAC);
-			
-			Cookie authCookie = new Cookie(Constants.SEGUE_AUTH_COOKIE, serializationMapper
-					.writeValueAsString(sessionInformation));
-			authCookie.setMaxAge(this.sessionExpiryTimeInSeconds);
-			authCookie.setPath("/");
-			authCookie.setHttpOnly(true);
-			
-			response.addCookie(authCookie);
-			
-			AnonymousUser anonymousUser = this.findAnonymousUserDOBySessionId(this.getAnonymousUser(request)
-					.getSessionId());
-			if (anonymousUser != null) {
-				// merge any anonymous information collected with this user.
-				try {
-					this.mergeAnonymousQuestionInformationWithUserRecord(anonymousUser, user);
-				} catch (NoUserLoggedInException | SegueDatabaseException e) {
-					log.error("Unable to merge anonymously collected data with stored user object.", e);
-				}				
-			}
-		} catch (JsonProcessingException e1) {
-			log.error("Unable to save cookie.", e1);
-		}
-	}
-	
-	/**
-	 * Helper method to handle the setting of segue passwords when user objects are updated.
-	 * 
-	 * This method will mutate the password fields in both parameters.
-	 * 
-	 * @param userContainingPlainTextPassword - the object to extract the plain text password from (and then nullify it)
-	 * @param userToSave - the object to store the hashed credentials prior to saving.
-	 * 
-	 * @throws AuthenticationProviderMappingException - if we can't map to a valid authenticator.
-	 * @throws InvalidPasswordException - if the password is not valid.
-	 */
-	private void checkForSeguePasswordChange(final RegisteredUser userContainingPlainTextPassword,
-			final RegisteredUser userToSave) throws AuthenticationProviderMappingException,
-			InvalidPasswordException {
-		// do we need to do local password storage using the segue
-		// authenticator? I.e. is the password changing?
-		if (null != userContainingPlainTextPassword.getPassword()
-				&& !userContainingPlainTextPassword.getPassword().isEmpty()) {
-			IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
-					.mapToProvider(AuthenticationProvider.SEGUE.name());
-			String plainTextPassword = userContainingPlainTextPassword.getPassword();
-
-			// clear reference to plainTextPassword
-			userContainingPlainTextPassword.setPassword(null);
-
-			// set the new password on the object to be saved.
-			authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
-		}
-	}
-	
-
-	/**
 	 * This method will use an email address to check a local user exists and if so, will send
 	 * an email with a unique token to allow a password reset. This method does not indicate
 	 * whether or not the email actually existed.
@@ -1091,6 +1021,111 @@ public class UserManager {
 		this.database.createOrUpdateUser(user);
 	}
 
+	/**
+	 * Helper method to convert a user object into a cutdown userSummary DTO.
+	 * 
+	 * @param userToConvert - full user object.
+	 * @return a summarised object with minimal personal information
+	 */
+	public UserSummaryDTO convertToUserSummaryObject(final RegisteredUserDTO userToConvert) {
+		return this.dtoMapper.map(userToConvert, UserSummaryDTO.class);
+	}
+	
+	/**
+	 * Helper method to convert a user object into a cutdown userSummary DTO.
+	 * 
+	 * @param userListToConvert - full user objects.
+	 * @return a list of summarised objects with minimal personal information
+	 */
+	public List<UserSummaryDTO> convertToUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
+		Validate.notNull(userListToConvert);
+		List<UserSummaryDTO> resultList = Lists.newArrayList();
+		for (RegisteredUserDTO user : userListToConvert) {
+			resultList.add(this.convertToUserSummaryObject(user));
+		}
+		return resultList;
+	}
+	
+	/**
+	 * Create a session and attach it to the request provided.
+	 * 
+	 * @param request
+	 *            to enable access to anonymous user information.
+	 * @param response
+	 *            to store the session in our own segue cookie.
+	 * @param user
+	 *            account to associate the session with.
+	 */
+	private void createSession(final HttpServletRequest request, final HttpServletResponse response,
+			final RegisteredUser user) {
+		Validate.notNull(response);
+		Validate.notNull(user);
+		Validate.notBlank(user.getDbId());
+		
+		String userId = user.getDbId();
+		
+		try {
+			String currentDate = sessionDateFormat.format(new Date());
+			String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, currentDate);
+			
+			Map<String, String> sessionInformation = ImmutableMap.of(
+					Constants.SESSION_USER_ID, userId, 
+					Constants.DATE_SIGNED, currentDate,
+					Constants.HMAC, sessionHMAC);
+			
+			Cookie authCookie = new Cookie(Constants.SEGUE_AUTH_COOKIE, serializationMapper
+					.writeValueAsString(sessionInformation));
+			authCookie.setMaxAge(this.sessionExpiryTimeInSeconds);
+			authCookie.setPath("/");
+			authCookie.setHttpOnly(true);
+			
+			response.addCookie(authCookie);
+			
+			AnonymousUser anonymousUser = this.findAnonymousUserDOBySessionId(this.getAnonymousUser(request)
+					.getSessionId());
+			if (anonymousUser != null) {
+				// merge any anonymous information collected with this user.
+				try {
+					this.mergeAnonymousQuestionInformationWithUserRecord(anonymousUser, user);
+				} catch (NoUserLoggedInException | SegueDatabaseException e) {
+					log.error("Unable to merge anonymously collected data with stored user object.", e);
+				}				
+			}
+		} catch (JsonProcessingException e1) {
+			log.error("Unable to save cookie.", e1);
+		}
+	}
+	
+	/**
+	 * Helper method to handle the setting of segue passwords when user objects are updated.
+	 * 
+	 * This method will mutate the password fields in both parameters.
+	 * 
+	 * @param userContainingPlainTextPassword - the object to extract the plain text password from (and then nullify it)
+	 * @param userToSave - the object to store the hashed credentials prior to saving.
+	 * 
+	 * @throws AuthenticationProviderMappingException - if we can't map to a valid authenticator.
+	 * @throws InvalidPasswordException - if the password is not valid.
+	 */
+	private void checkForSeguePasswordChange(final RegisteredUser userContainingPlainTextPassword,
+			final RegisteredUser userToSave) throws AuthenticationProviderMappingException,
+			InvalidPasswordException {
+		// do we need to do local password storage using the segue
+		// authenticator? I.e. is the password changing?
+		if (null != userContainingPlainTextPassword.getPassword()
+				&& !userContainingPlainTextPassword.getPassword().isEmpty()) {
+			IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
+					.mapToProvider(AuthenticationProvider.SEGUE.name());
+			String plainTextPassword = userContainingPlainTextPassword.getPassword();
+
+			// clear reference to plainTextPassword
+			userContainingPlainTextPassword.setPassword(null);
+
+			// set the new password on the object to be saved.
+			authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
+		}
+	}
+	
 	/**
 	 * Library method that allows the api to locate a user object from the
 	 * database based on a given unique id.
