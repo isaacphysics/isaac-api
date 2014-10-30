@@ -108,7 +108,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public final String getDbId() {
+	public String getDbId() {
 		return databaseId;
 	}
 
@@ -120,7 +120,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public final void setDbId(final String id) {
+	public void setDbId(final String id) {
 		this.databaseId = id;
 	}
 
@@ -128,7 +128,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the givenName.
 	 * @return the givenName
 	 */
-	public final String getGivenName() {
+	public String getGivenName() {
 		return givenName;
 	}
 
@@ -136,7 +136,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the givenName.
 	 * @param givenName the givenName to set
 	 */
-	public final void setGivenName(final String givenName) {
+	public void setGivenName(final String givenName) {
 		this.givenName = givenName;
 	}
 
@@ -144,7 +144,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the familyName.
 	 * @return the familyName
 	 */
-	public final String getFamilyName() {
+	public String getFamilyName() {
 		return familyName;
 	}
 
@@ -152,7 +152,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the familyName.
 	 * @param familyName the familyName to set
 	 */
-	public final void setFamilyName(final String familyName) {
+	public void setFamilyName(final String familyName) {
 		this.familyName = familyName;
 	}
 
@@ -160,7 +160,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the email.
 	 * @return the email
 	 */
-	public final String getEmail() {
+	public String getEmail() {
 		return email;
 	}
 
@@ -168,7 +168,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the email.
 	 * @param email the email to set
 	 */
-	public final void setEmail(final String email) {
+	public void setEmail(final String email) {
 		this.email = email;
 	}
 
@@ -193,7 +193,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the dateOfBirth.
 	 * @return the dateOfBirth
 	 */
-	public final Date getDateOfBirth() {
+	public Date getDateOfBirth() {
 		return dateOfBirth;
 	}
 
@@ -201,7 +201,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the dateOfBirth.
 	 * @param dateOfBirth the dateOfBirth to set
 	 */
-	public final void setDateOfBirth(final Date dateOfBirth) {
+	public void setDateOfBirth(final Date dateOfBirth) {
 		this.dateOfBirth = dateOfBirth;
 	}
 
@@ -209,7 +209,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the gender.
 	 * @return the gender
 	 */
-	public final Gender getGender() {
+	public Gender getGender() {
 		return gender;
 	}
 
@@ -217,7 +217,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the gender.
 	 * @param gender the gender to set
 	 */
-	public final void setGender(final Gender gender) {
+	public void setGender(final Gender gender) {
 		this.gender = gender;
 	}
 
@@ -225,7 +225,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the registrationDate.
 	 * @return the registrationDate
 	 */
-	public final Date getRegistrationDate() {
+	public Date getRegistrationDate() {
 		return registrationDate;
 	}
 
@@ -233,7 +233,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the registrationDate.
 	 * @param registrationDate the registrationDate to set
 	 */
-	public final void setRegistrationDate(final Date registrationDate) {
+	public void setRegistrationDate(final Date registrationDate) {
 		this.registrationDate = registrationDate;
 	}
 
@@ -241,7 +241,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Gets the schoolId.
 	 * @return the schoolId
 	 */
-	public final String getSchoolId() {
+	public String getSchoolId() {
 		return schoolId;
 	}
 
@@ -249,7 +249,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	 * Sets the schoolId.
 	 * @param schoolId the schoolId to set
 	 */
-	public final void setSchoolId(final String schoolId) {
+	public void setSchoolId(final String schoolId) {
 		this.schoolId = schoolId;
 	}
 
