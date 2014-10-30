@@ -254,22 +254,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 	}
 
 	/**
-	 * Gets the databaseId.
-	 * @return the databaseId
-	 */
-	public String getDatabaseId() {
-		return databaseId;
-	}
-
-	/**
-	 * Sets the databaseId.
-	 * @param databaseId the databaseId to set
-	 */
-	public void setDatabaseId(final String databaseId) {
-		this.databaseId = databaseId;
-	}
-
-	/**
 	 * Gets the schoolOther.
 	 * @return the schoolOther
 	 */
