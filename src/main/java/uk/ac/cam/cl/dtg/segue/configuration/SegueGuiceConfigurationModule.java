@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -47,6 +48,8 @@ import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -108,7 +111,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	private PropertiesLoader globalProperties = null;
 
+	private UserAssociationManager userAssociationManager;
+
 	private static ILogManager logManager;
+
+	private static MongoAssociationDataManager associationDataManager;
 
 	/**
 	 * Create a SegueGuiceConfigurationModule.
@@ -386,8 +393,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
-	 * This provides a singleton of the contentVersionController for the segue
-	 * facade.
+	 * This provides a singleton of the UserManager for various
+	 * facades.
 	 * 
 	 * @param database
 	 *            - IUserManager
@@ -416,9 +423,32 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return userManager;
 	}
+	
+	/**
+	 * This provides a singleton of the IAssociationDataManager for the segue
+	 * facade.
+	 * 
+	 * @param database
+	 *            - to use for persistence.
+	 * @param contentMapper
+	 *            - the instance of a content mapper to use.
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private static IAssociationDataManager getAssociationManager(
+			final DB database, final ContentMapper contentMapper) {
+		if (null == associationDataManager) {
+			associationDataManager = new MongoAssociationDataManager(database);
+			log.info("Creating singleton of MongoUserDataManager");
+		}
+
+		return associationDataManager;
+	}
 
 	/**
-	 * This provides a singleton of the contentVersionController for the segue
+	 * This provides a singleton of the IUserDataManager for the segue
 	 * facade.
 	 * 
 	 * @param database
@@ -441,6 +471,29 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 
+	/**
+	 * This provides a singleton of the UserAssociationManager for the Authorisation
+	 * facade.
+	 * 
+	 * @param database
+	 *            - IUserManager
+	 *            
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private UserAssociationManager getAssociationManager(
+			final IAssociationDataManager database) {
+
+		if (null == userAssociationManager) {
+			userAssociationManager = new UserAssociationManager(database);
+			log.info("Creating singleton of UserManager");
+		}
+
+		return userAssociationManager;
+	}
+	
 	/**
 	 * Gets the instance of the dozer mapper object.
 	 * 

@@ -347,6 +347,9 @@ public final class Constants {
 
 	public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
 
+	public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
+	public static final String ASSOCIATION_USER_GRANTING_ACCESS = "userIdGrantingPermission";
+	public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";
 
 	
 	/**

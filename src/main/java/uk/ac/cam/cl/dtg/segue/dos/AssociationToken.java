@@ -15,6 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import org.mongojack.ObjectId;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * AssociationToken. This allows one user to request permission to view other
  * users details.
@@ -22,30 +26,57 @@ package uk.ac.cam.cl.dtg.segue.dos;
  * This token will be used to make new associations between users.
  */
 public class AssociationToken {
+	private String id;
 	private String token;
-	private String teacherId;
-	private String labelId;
-
+	private String ownerUserId;
+	private String groupId;
+	
+	/**
+	 * 
+	 */
+	public AssociationToken() {
+		
+	}
+	
 	/**
 	 * AssociationToken - Default Constructor.
 	 * 
 	 * @param token
 	 *            - unique id and token string.
-	 * @param teacherId
+	 * @param ownerUserId
 	 *            - id of user who should be granted permission
-	 * @param labelId
+	 * @param groupId
 	 *            - group / label that users who use this token should be put in
 	 *            / labelled.
 	 */
-	public AssociationToken(final String token, final String teacherId, final String labelId) {
+	public AssociationToken(final String token, final String ownerUserId, final String groupId) {
 		this.token = token;
-		this.teacherId = teacherId;
-		this.labelId = labelId;
+		this.ownerUserId = ownerUserId;
+		this.groupId = groupId;
+	}
+
+	/**
+	 * Gets the id.
+	 * @return the id
+	 */
+	@JsonProperty("_id")
+	@ObjectId
+	public String getId() {
+		return id;
+	}
+
+	/**
+	 * Sets the id.
+	 * @param id the id to set
+	 */
+	@JsonProperty("_id")
+	@ObjectId
+	public void setId(final String id) {
+		this.id = id;
 	}
 
 	/**
 	 * Gets the token.
-	 * 
 	 * @return the token
 	 */
 	public String getToken() {
@@ -53,20 +84,42 @@ public class AssociationToken {
 	}
 
 	/**
-	 * Gets the teacher_id.
-	 * 
-	 * @return the teacher_id
+	 * Sets the token.
+	 * @param token the token to set
 	 */
-	public String getTeacherId() {
-		return teacherId;
+	public void setToken(String token) {
+		this.token = token;
 	}
 
 	/**
-	 * Gets the label_id.
-	 * 
-	 * @return the label_id
+	 * Gets the ownerUserId.
+	 * @return the ownerUserId
 	 */
-	public String getLabelId() {
-		return labelId;
+	public String getOwnerUserId() {
+		return ownerUserId;
+	}
+
+	/**
+	 * Sets the ownerUserId.
+	 * @param ownerUserId the ownerUserId to set
+	 */
+	public void setOwnerUserId(String ownerUserId) {
+		this.ownerUserId = ownerUserId;
+	}
+
+	/**
+	 * Gets the groupId.
+	 * @return the groupId
+	 */
+	public String getGroupId() {
+		return groupId;
+	}
+
+	/**
+	 * Sets the groupId.
+	 * @param groupId the groupId to set
+	 */
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
 	}
 }
