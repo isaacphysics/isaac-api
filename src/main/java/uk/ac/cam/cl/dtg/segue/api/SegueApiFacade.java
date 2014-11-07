@@ -893,7 +893,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response answerQuestion(@Context final HttpServletRequest request,
+	public Response answerQuestion(@Context final HttpServletRequest request,
 			@PathParam("question_id") final String questionId, final String jsonAnswer) {
 		Content contentBasedOnId = contentVersionController.getContentManager().getById(questionId,
 				contentVersionController.getLiveVersion());
