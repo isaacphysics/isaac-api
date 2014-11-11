@@ -41,12 +41,14 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -65,6 +67,8 @@ public class AdminFacade extends AbstractSegueFacade {
 	private final UserManager userManager;
 	private final ContentVersionController contentVersionController;
 
+	private StatisticsManager statsManager;
+
 	/**
 	 * Create an instance of the administrators facade.
 	 * 
@@ -76,15 +80,68 @@ public class AdminFacade extends AbstractSegueFacade {
 	 *            - The content version controller used by the api.
 	 * @param logManager
 	 *            - So we can log events of interest.
+	 * @param statsManager
+	 *            - So we can report high level stats.
 	 */
 	@Inject
 	public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
-			final ContentVersionController contentVersionController, final ILogManager logManager) {
+			final ContentVersionController contentVersionController, final ILogManager logManager,
+			final StatisticsManager statsManager) {
 		super(properties, logManager);
 		this.userManager = userManager;
 		this.contentVersionController = contentVersionController;
+		this.statsManager = statsManager;
 	}
 
+	/**
+	 * Statistics endpoint.
+	 * @param request - to determine access.
+	 * @return stats
+	 */
+	@GET
+	@Path("/stats/")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getStatistics(@Context final HttpServletRequest request) {
+		try {
+			if (!this.userManager.isUserAnAdmin(request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin to access this endpoint.").toResponse();
+			}
+			
+			return Response.ok(statsManager.outputGeneralStatistics()).build();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in to access this endpoint.").toResponse();
+		}
+	}
+	
+	/**
+	 * Statistics endpoint.
+	 * @param request - to determine access.
+	 * @return stats
+	 */
+	@GET
+	@Path("/stats/schools")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getSchoolStatistics(@Context final HttpServletRequest request) {
+		try {
+			if (!this.userManager.isUserAnAdmin(request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin to access this endpoint.").toResponse();
+			}
+			
+			return Response.ok(statsManager.getUsersBySchool()).build();
+		} catch (UnableToIndexSchoolsException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable To Index Schools Exception in admin facade", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in to access this endpoint.").toResponse();
+		}
+	}
+	
 	/**
 	 * This method will allow the live version served by the site to be changed.
 	 * 
@@ -443,4 +500,6 @@ public class AdminFacade extends AbstractSegueFacade {
 					"Unable to locate the user with the requested id: " + userId).toResponse();
 		}
 	}
+	
+	
 }
