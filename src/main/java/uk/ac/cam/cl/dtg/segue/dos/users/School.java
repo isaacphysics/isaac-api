@@ -128,4 +128,39 @@ public class School {
 	public void setPostcode(final String postcode) {
 		this.postcode = postcode;
 	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((establishmentNumber == null) ? 0 : establishmentNumber.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof School)) {
+			return false;
+		}
+		School other = (School) obj;
+		if (establishmentNumber == null) {
+			if (other.establishmentNumber != null) {
+				return false;
+			}
+		} else if (!establishmentNumber.equals(other.establishmentNumber)) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "School [urn=" + urn + ", name=" + name + ", postcode=" + postcode + "]";
+	}
 }

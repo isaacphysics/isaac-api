@@ -16,15 +16,22 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -35,18 +42,22 @@ import com.google.inject.Inject;
 public class StatisticsManager {
 	private UserManager userManager;
 	private ILogManager logManager;
-
-	//private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
+	private SchoolListReader schoolManager;
+	
+	private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
 	
 	/**
 	 * StatisticsManager.
 	 * @param userManager - to query user information
 	 * @param logManager - to query Log information
+	 * @param schoolManager - to query School information
 	 */
 	@Inject
-	public StatisticsManager(final UserManager userManager,	final ILogManager logManager) {
+	public StatisticsManager(final UserManager userManager, final ILogManager logManager,
+			final SchoolListReader schoolManager) {
 		this.userManager = userManager;
 		this.logManager = logManager;
+		this.schoolManager = schoolManager;
 	}
 
 	/**
@@ -140,4 +151,34 @@ public class StatisticsManager {
 		return ib.build();
 	}
 
+	/**
+	 * Get the number of users per school.
+	 * @return A map of schools to integers (representing the number of registered users)
+	 * @throws UnableToIndexSchoolsException 
+	 */
+	public Map<School, Integer> getUsersBySchool() throws UnableToIndexSchoolsException {
+		List<RegisteredUserDTO> users;
+		Map<School, Integer> usersBySchool = Maps.newHashMap();
+		
+		try {
+			users = userManager.findUsers(new RegisteredUserDTO());
+			for (RegisteredUserDTO user : users) {
+				if (user.getSchoolId() == null) {
+					continue;
+				}
+				
+				School s = schoolManager.findSchoolById(user.getSchoolId());
+				if (usersBySchool.containsKey(s)) {
+					usersBySchool.put(s, usersBySchool.get(s) + 1); 
+				} else {
+					usersBySchool.put(s, 1); 
+				}
+			}
+			
+		} catch (SegueDatabaseException e) {
+			log.error("Segue database error during school frequency calculation", e);
+		}
+		
+		return usersBySchool;
+	}
 }
