@@ -133,7 +133,7 @@ public class School {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((establishmentNumber == null) ? 0 : establishmentNumber.hashCode());
+		result = prime * result + ((urn == null) ? 0 : urn.hashCode());
 		return result;
 	}
 
@@ -149,11 +149,11 @@ public class School {
 			return false;
 		}
 		School other = (School) obj;
-		if (establishmentNumber == null) {
-			if (other.establishmentNumber != null) {
+		if (urn == null) {
+			if (other.urn != null) {
 				return false;
 			}
-		} else if (!establishmentNumber.equals(other.establishmentNumber)) {
+		} else if (!urn.equals(other.urn)) {
 			return false;
 		}
 		return true;
