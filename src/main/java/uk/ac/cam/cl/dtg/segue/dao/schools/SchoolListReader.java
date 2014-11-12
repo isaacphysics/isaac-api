@@ -107,6 +107,29 @@ public class SchoolListReader {
 		}
 		return resultList;
 	}
+	
+	/**
+	 * Find school by Id.
+	 * @param schoolId - to search for.
+	 * @return school.
+	 * @throws UnableToIndexSchoolsException 
+	 */
+	public School findSchoolById(final String schoolId) throws UnableToIndexSchoolsException {
+		List<School> matchingSchoolList;
+		matchingSchoolList = this.findSchoolByNameOrPostCode(schoolId);
+		if (matchingSchoolList.isEmpty()) {
+			return null;
+		}
+		
+		for (School school : matchingSchoolList) {
+			if (school.getUrn().equals(schoolId)) {
+				return school;
+			}
+		}
+		
+		return null;
+	}
+	
 
 	/**
 	 * Trigger a thread to index the schools list. If needed.

@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 /**
- * Utility class to provide common isaac-specific constants.
+ * Utility class to provide common segue-specific constants.
  * 
  */
 public final class Constants {

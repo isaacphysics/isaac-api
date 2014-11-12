@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.HashMap;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -71,4 +74,11 @@ public interface ILogManager {
 	 *            - the user object of the newly registered user.
 	 */
 	void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId);
+
+	/**
+	 * To enable some simple analytics we provide a way to query logs by event type.
+	 * @param type - string representing the type of event to find.
+	 * @return all events of the type requested or null if none available. The map should be of type String, Object
+	 */
+	List<HashMap> getLogsByType(String type);
 }

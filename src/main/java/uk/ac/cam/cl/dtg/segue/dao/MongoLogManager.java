@@ -16,11 +16,14 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.mongojack.DBQuery;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.mongojack.internal.MongoJackModule;
@@ -142,7 +145,21 @@ public class MongoLogManager implements ILogManager {
 			log.error("Unable to serialize json for merge event.", e);
 		}
 	}
-
+	
+	@Override
+	public List<HashMap> getLogsByType(final String type) {
+		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		MongoJackModule.configure(objectMapper);
+		
+		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+				String.class, this.objectMapper);
+		
+		List<HashMap> results = jc.find(DBQuery.is("eventType", type)).toArray();
+		
+		return results;
+	}
+	
 	/**
 	 * log an event in the database.
 	 * 

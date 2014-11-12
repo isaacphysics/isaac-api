@@ -279,4 +279,11 @@ public class GameboardDTO {
 	public void setStartedQuestion(final boolean startedQuestion) {
 		this.startedQuestion = startedQuestion;
 	}
+
+	@Override
+	public String toString() {
+		return "GameboardDTO [id=" + id + ", title=" + title + ", questions=" + questions + ", wildCard="
+				+ wildCard + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate
+				+ ", gameFilter=" + gameFilter + ", ownerUserId=" + ownerUserId + "]";
+	}
 }
