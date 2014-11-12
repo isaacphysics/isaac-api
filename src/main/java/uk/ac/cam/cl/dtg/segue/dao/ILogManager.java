@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.HashMap;
 import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
