@@ -592,9 +592,12 @@ public class IsaacController {
 			AbstractSegueUserDTO randomUser = this.api.getCurrentUserIdentifier(httpServletRequest);
 			Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
 					api.getQuestionAttemptsBySession(randomUser);
-		
+			
+			GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
+			
 			// Calculate the ETag 
-			EntityTag etag = new EntityTag(gameboardId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
+			EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
+					+ userQuestionAttempts.toString().hashCode() + "");
 			
 			Response cachedResponse = api.generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
 			if (cachedResponse != null) {
