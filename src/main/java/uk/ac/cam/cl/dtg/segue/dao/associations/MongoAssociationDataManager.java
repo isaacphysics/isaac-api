@@ -28,9 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationGroup;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 
 import com.google.inject.Inject;
@@ -43,14 +41,11 @@ import com.mongodb.DB;
 public class MongoAssociationDataManager implements IAssociationDataManager {
 	private static final String ASSOCIATION_COLLECTION_NAME = "userAssociations";
 	private static final String ASSOCIATION_TOKENS_COLLECTION_NAME = "userAssociationsTokens";
-	private static final String GROUP_COLLECTION_NAME = "userGroups";
-	private static final String GROUP_MEMBERSHIP_COLLECTION_NAME = "groupMemberships";
+
 
 	private static final Logger log = LoggerFactory.getLogger(MongoAssociationDataManager.class);
 
 	private final DB database;
-
-
 
 	/**
 	 * PostgresAssociationDataManager.
@@ -151,52 +146,11 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	}
 
 	@Override
-	public AssociationGroup createGroup(final AssociationGroup group) throws SegueDatabaseException {
-		JacksonDBCollection<AssociationGroup, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getCollection(GROUP_COLLECTION_NAME), AssociationGroup.class, String.class);
-
-		WriteResult<AssociationGroup, String> result = jacksonCollection.save(group);
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
-					+ result.getError());
-		}
-
-		group.setId(result.getSavedId());
-		return group;
-	}
-
-	@Override
 	public AssociationToken lookupAssociationToken(final String tokenCode) {
 		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
 				database.getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
 				String.class);
 
 		return jacksonCollection.findOne(DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, tokenCode));
-	}
-
-	@Override
-	public void addUserToGroup(final String userId, final String groupId) throws SegueDatabaseException {
-		JacksonDBCollection<GroupMembership, String> groupMembershipCollection = JacksonDBCollection
-				.wrap(database.getCollection(GROUP_MEMBERSHIP_COLLECTION_NAME), GroupMembership.class,
-						String.class);
-
-		WriteResult<GroupMembership, String> result = groupMembershipCollection.save(new GroupMembership(
-				null, userId, groupId));
-
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException("MongoDB encountered an exception while creating a new groupt: "
-					+ result.getError());
-		}
-	}
-
-	@Override
-	public boolean hasGroup(final String groupId) {
-		JacksonDBCollection<AssociationGroup, String> groupCollection = JacksonDBCollection.wrap(
-				database.getCollection(GROUP_COLLECTION_NAME), AssociationGroup.class, String.class);
-		AssociationGroup group = groupCollection.findOneById(groupId);
-
-		return group != null;
 	}
 }

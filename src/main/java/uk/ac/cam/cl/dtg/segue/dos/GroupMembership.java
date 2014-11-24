@@ -55,6 +55,8 @@ public class GroupMembership {
 	 * Gets the id.
 	 * @return the id
 	 */
+	@JsonProperty("_id")
+	@ObjectId
 	public String getId() {
 		return id;
 	}
@@ -63,6 +65,8 @@ public class GroupMembership {
 	 * Sets the id.
 	 * @param id the id to set
 	 */
+	@JsonProperty("_id")
+	@ObjectId
 	public void setId(String id) {
 		this.id = id;
 	}

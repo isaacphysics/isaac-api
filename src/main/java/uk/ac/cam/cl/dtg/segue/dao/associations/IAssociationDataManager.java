@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dao.associations;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationGroup;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 
@@ -93,34 +92,5 @@ public interface IAssociationDataManager {
 	 * @return the list of user associations.
 	 */
 	List<UserAssociation> getUserAssociations(String userId);
-	
-	/**
-	 * Create a group that users can be assigned to.
-	 * 
-	 * This is only to support organisation of accounts that can access data about other users.
-	 * 
-	 * @param group - to save
-	 * @return group saved (with database id included)
-	 * @throws SegueDatabaseException if there is a problem with the database operation.
-	 */
-	AssociationGroup createGroup(AssociationGroup group) throws SegueDatabaseException;
 
-	/**
-	 * Adds a user to a group.
-	 * 
-	 * @param userId
-	 *            the user id to add to the group
-	 * @param groupId
-	 *            the group id to add to.
-	 * @throws SegueDatabaseException
-	 *             - if there is a problem adding the group membership
-	 */
-	void addUserToGroup(String userId, String groupId) throws SegueDatabaseException;
-
-	/**
-	 * Determine if a group id exists.
-	 * @param groupId - group id
-	 * @return true if it does false if not.
-	 */
-	boolean hasGroup(String groupId);
 }

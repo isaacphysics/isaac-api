@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.GroupNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 @PowerMockIgnore({ "javax.ws.*" })
 public class UserAssociationManagerTest {
 	private IAssociationDataManager dummyAssociationDataManager;
+	private GroupManager dummyGroupDataManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -45,18 +46,20 @@ public class UserAssociationManagerTest {
 	@Before
 	public final void setUp() throws Exception {
 		dummyAssociationDataManager = createMock(IAssociationDataManager.class);
+		dummyGroupDataManager = createMock(GroupManager.class);
 	}
 
 	/**
 	 * Verify that the constructor responds correctly to bad input.
 	 * 
 	 * @throws SegueDatabaseException
-	 * @throws GroupNotFoundException
+	 * @throws UserGroupNotFoundException
 	 */
 	@Test
 	public final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
-			throws SegueDatabaseException, GroupNotFoundException {
-		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager);
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
 
 		String someUserId = "89745531132231213";
 
@@ -68,11 +71,11 @@ public class UserAssociationManagerTest {
 
 		AssociationToken someToken = new AssociationToken("someToken", someUserId, someAssociatedGroupId);
 		
-		expect(dummyAssociationDataManager.hasGroup(someAssociatedGroupId)).andReturn(true).once();
+		expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).once();
 		
 		expect(dummyAssociationDataManager.saveAssociationToken((AssociationToken) anyObject())).andReturn(
 				someToken).once();
-		replay(dummyAssociationDataManager);
+		replay(dummyAssociationDataManager, dummyGroupDataManager);
 
 		AssociationToken someGeneratedToken = managerUnderTest.generateToken(someRegisteredUser,
 				someAssociatedGroupId);

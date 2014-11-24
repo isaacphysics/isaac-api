@@ -16,18 +16,16 @@
 package uk.ac.cam.cl.dtg.segue.dao.associations;
 
 /**
- * UserAssociationException. This exception means that an account already exists with an key field.
- * 
+ * Exception indicating that something is wrong with the token provided.
  */
-public class GroupNotFoundException extends Exception {
+public class InvalidUserAssociationTokenException extends Exception {
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Create a new DuplicateAccountException.
-	 * @param message - message to add
+	 * Exception indicating that something is wrong with the token provided.
+	 * @param message - explaining the issue.
 	 */
-	public GroupNotFoundException(final String message) {
+	public InvalidUserAssociationTokenException(final String message) {
 		super(message);
 	}
-
 }

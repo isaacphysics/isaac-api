@@ -227,7 +227,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Override 
 	public List<RegisteredUser> findUsers(final List<String> usersToLocate) throws SegueDatabaseException {
 		Validate.notNull(usersToLocate);
-		
+		// have to have another instance of this as not thread-safe with own mapper.
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);

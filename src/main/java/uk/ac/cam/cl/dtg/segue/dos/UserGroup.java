@@ -24,13 +24,13 @@ import org.mongojack.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * AssociationGroupDO - this object represents a group or label assigned to
+ * UserGroupDO - this object represents a group or label assigned to
  * users who have been placed into a group.
  * 
  * This allows users to be organised by class / project and for teachers (or
  * those granted permission) to view progress.
  */
-public class AssociationGroup {
+public class UserGroup {
 	private String id;
 	private String groupName;
 	private String ownerId;
@@ -39,7 +39,7 @@ public class AssociationGroup {
 	/**
 	 * Default Constructor.
 	 */
-	public AssociationGroup() {
+	public UserGroup() {
 
 	}
 
@@ -55,7 +55,7 @@ public class AssociationGroup {
 	 * @param created
 	 *            - date created.
 	 */
-	public AssociationGroup(@Nullable final String id, final String groupName, final String ownerId,
+	public UserGroup(@Nullable final String id, final String groupName, final String ownerId,
 			final Date created) {
 		this.id = id;
 		this.groupName = groupName;

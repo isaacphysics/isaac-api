@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.GroupNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationGroup;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import com.google.inject.Inject;
@@ -40,20 +40,26 @@ import com.google.inject.Inject;
  * permissions for one user to grant data view rights to another.
  */
 public class UserAssociationManager {
-	private final IAssociationDataManager database;
+	private final IAssociationDataManager associationDatabase;
 
 	private final int tokenLength = 5;
 	
 	private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
 
+	private final GroupManager userGroupManager;
+
 	/**
 	 * UserAssociationManager.
-	 * @param database
+	 * @param associationDatabase
+	 *            - IAssociationDataManager providing access to the database.
+	 * @param userGroupManager
 	 *            - IAssociationDataManager providing access to the database.
 	 */
 	@Inject
-	public UserAssociationManager(final IAssociationDataManager database) {
-		this.database = database;
+	public UserAssociationManager(final IAssociationDataManager associationDatabase,
+			final GroupManager userGroupManager) {
+		this.associationDatabase = associationDatabase;
+		this.userGroupManager = userGroupManager;
 	}
 
 	/**
@@ -68,14 +74,14 @@ public class UserAssociationManager {
 	 *         to the owner of the token.
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
-	 * @throws GroupNotFoundException - if the group specified does not exist. 
+	 * @throws UserGroupNotFoundException - if the group specified does not exist. 
 	 */
 	public AssociationToken generateToken(final RegisteredUserDTO registeredUser,
-			final String associatedGroupId) throws SegueDatabaseException, GroupNotFoundException {
+			final String associatedGroupId) throws SegueDatabaseException, UserGroupNotFoundException {
 		Validate.notNull(registeredUser);
 		
-		if (associatedGroupId != null && !database.hasGroup(associatedGroupId)) {
-			throw new GroupNotFoundException("Group not found: " + associatedGroupId);
+		if (associatedGroupId != null && !userGroupManager.isValidGroup(associatedGroupId)) {
+			throw new UserGroupNotFoundException("Group not found: " + associatedGroupId);
 		}
 		
 		// create some kind of random token
@@ -85,28 +91,7 @@ public class UserAssociationManager {
 		AssociationToken associationToken = new AssociationToken(token, registeredUser.getDbId(),
 				associatedGroupId);
 		
-		return database.saveAssociationToken(associationToken);
-	}
-
-	/**
-	 * createAssociationGroup.
-	 * 
-	 * @param groupName
-	 *            - name describing the group.
-	 * @param groupOwner
-	 *            - the user who wishes to grant permissions to another.
-	 * @return AssociationGroup
-	 * @throws SegueDatabaseException
-	 *             - If an error occurred while interacting with the database.
-	 */
-	public AssociationGroup createAssociationGroup(final String groupName, final RegisteredUserDTO groupOwner)
-		throws SegueDatabaseException {
-		Validate.notBlank(groupName);
-		Validate.notNull(groupOwner);
-
-		AssociationGroup group = new AssociationGroup(null, groupName, groupOwner.getDbId(), new Date());
-
-		return database.createGroup(group);
+		return associationDatabase.saveAssociationToken(associationToken);
 	}
 	
 	/**
@@ -115,7 +100,7 @@ public class UserAssociationManager {
 	 * @return List of all of their associations.
 	 */
 	public List<UserAssociation> getAssociations(final RegisteredUserDTO user) {
-		return database.getUserAssociations(user.getDbId());
+		return associationDatabase.getUserAssociations(user.getDbId());
 	}
 
 	/**
@@ -130,22 +115,28 @@ public class UserAssociationManager {
 	 *             - If an error occurred while interacting with the database.
 	 * @throws UserAssociationException
 	 *             - if we cannot create the association because it is invalid.
+	 * @throws InvalidUserAssociationTokenException - If the token provided is invalid.
 	 */
 	public void createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
-		throws SegueDatabaseException, UserAssociationException {
+		throws SegueDatabaseException, UserAssociationException, InvalidUserAssociationTokenException {
 		Validate.notBlank(token);
 		Validate.notNull(userGrantingPermission);
 
-		AssociationToken lookedupToken = database.lookupAssociationToken(token);
-
-		if (database.hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getDbId())) {
+		AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
+		
+		if (null == lookedupToken) {
+			throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
+		}
+		
+		if (associationDatabase.hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getDbId())) {
 			throw new UserAssociationException("Association already exists.");
 		}
 
-		database.createAssociation(lookedupToken, userGrantingPermission.getDbId());
-
+		associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getDbId());
+		UserGroup group = userGroupManager.getGroupById(lookedupToken.getGroupId());
+		
 		if (lookedupToken.getGroupId() != null) {
-			database.addUserToGroup(userGrantingPermission.getDbId(), lookedupToken.getGroupId());
+			userGroupManager.addUserToGroup(group, userGrantingPermission);
 			log.info(String.format("Adding User: %s to Group: %s", userGrantingPermission.getDbId(),
 					lookedupToken.getGroupId()));
 		}
@@ -166,6 +157,6 @@ public class UserAssociationManager {
 		Validate.notNull(ownerUser);
 		Validate.notNull(userToRevoke);
 		
-		database.deleteAssociation(ownerUser.getDbId(), userToRevoke.getDbId());
+		associationDatabase.deleteAssociation(ownerUser.getDbId(), userToRevoke.getDbId());
 	}
 }

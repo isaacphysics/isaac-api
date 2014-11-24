@@ -42,9 +42,9 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.GroupNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
-import uk.ac.cam.cl.dtg.segue.dos.AssociationGroup;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -84,7 +84,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	}
 
 	/**
-	 * Get all current user associations.
+	 * Get all current user associations that have been granted.
 	 * 
 	 * @param request
 	 *            - so we can identify the current user.
@@ -120,25 +120,23 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            - so we can find out who the current user is
-	 * @param groupName
-	 *            - so we can create a group for associated users to fall into.
+	 * @param groupId
+	 *            - GroupId must exist.
 	 * @return a Response containing an association token or a
 	 *         SegueErrorResponse.
 	 */
 	@POST
-	@Path("/associations/token/{groupName}")
+	@Path("/associations/token/{groupId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getAssociationToken(@Context final HttpServletRequest request,
-			@PathParam("groupName") final String groupName) {
-		if (null == groupName || groupName.isEmpty()) {
+			@PathParam("groupId") final String groupId) {
+		if (null == groupId || groupId.isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
 		}
 
 		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
-			AssociationGroup group = associationManager.createAssociationGroup(groupName, user);
-			AssociationToken token = associationManager.generateToken(user, group.getId());
+			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);			
+			AssociationToken token = associationManager.generateToken(user, groupId);
 
 			return Response.ok(token).build();
 		} catch (SegueDatabaseException e) {
@@ -146,7 +144,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
-		} catch (GroupNotFoundException e) {
+		} catch (UserGroupNotFoundException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Error connecting to group", e).toResponse();
 		}
 	}
@@ -176,7 +174,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
 			associationManager.createAssociationWithToken(token, user);
 
-			return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success")).build();
+			return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to get association token. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
@@ -184,6 +182,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
 		} catch (UserAssociationException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to create association", e).toResponse();
+		} catch (InvalidUserAssociationTokenException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The token provided is Invalid or no longer exists.").toResponse();
 		}
 	}
 

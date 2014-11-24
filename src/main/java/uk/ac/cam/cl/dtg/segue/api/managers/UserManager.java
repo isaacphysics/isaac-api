@@ -618,6 +618,11 @@ public class UserManager {
 	 * @throws SegueDatabaseException - if there is a database error.
 	 */
 	public final List<RegisteredUserDTO> findUsers(final List<String> userIds) throws SegueDatabaseException {
+		Validate.notNull(userIds);
+		if (userIds.isEmpty()) {
+			return Lists.newArrayList();
+		}
+		
 		List<RegisteredUser> registeredUsersDOs = this.database.findUsers(userIds);
 		
 		return this.convertUserDOToUserDTOList(registeredUsersDOs);
