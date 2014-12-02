@@ -416,6 +416,42 @@ public class GameManager {
 	}
 	
 	/**
+	 * @param gameboardDTO - to save
+	 * @param owner - user to make owner of gameboard.
+	 * @return gameboardDTO as persisted
+	 * @throws NoWildcardException - if we cannot add a wildcard.
+	 * @throws InvalidGameboardException - if the gameboard already exists with the given id.
+	 * @throws SegueDatabaseException - If we cannot save the gameboard.
+	 * @throws DuplicateGameboardException - If a gameboard already exists with the given id.
+	 */
+	public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
+		throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException {
+		Validate.notNull(gameboardDTO);
+		Validate.notNull(owner);
+		
+		if (gameboardDTO.getId() == null) {
+			gameboardDTO.setId(UUID.randomUUID().toString());
+		} else if (this.getGameboard(gameboardDTO.getId()) != null) {
+			throw new DuplicateGameboardException();
+		}
+		
+		if (gameboardDTO.getWildCard() == null) {
+			gameboardDTO.setWildCard(this.getRandomWildcard(mapper));
+			gameboardDTO.setWildCardPosition(this.generateRandomWildCardPosition());
+		}
+
+		// set creation date to now.
+		gameboardDTO.setCreationDate(new Date());
+		gameboardDTO.setOwnerUserId(owner.getDbId());
+		
+		validateGameboard(gameboardDTO);
+		
+		this.permanentlyStoreGameboard(gameboardDTO);
+		
+		return gameboardDTO;
+	}
+	
+	/**
 	 * Update the gameboards title.
 	 * 
 	 * @param gameboardWithUpdatedTitle
@@ -809,5 +845,30 @@ public class GameManager {
 			}
 		}
 		return true;
+	}
+	
+	/**
+	 * Provides validation for a given gameboard. For use prior to persistence. 
+	 * @param gameboardDTO - to check
+	 * @return the gameboard (unchanged) if everything is ok, otherwise an exception will be thrown.
+	 * @throws InvalidGameboardException - If the gameboard is considered to be invalid.
+	 */
+	private GameboardDTO validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException {
+		
+		if (gameboardDTO.getQuestions().size() > Constants.GAME_BOARD_TARGET_SIZE) {
+			throw new InvalidGameboardException(String.format(
+					"Your gameboard must not contain more than %s questions", GAME_BOARD_TARGET_SIZE));
+		}
+		
+		if (gameboardDTO.getGameFilter() == null || !validateFilterQuery(gameboardDTO.getGameFilter())) {
+			throw new InvalidGameboardException(String.format(
+					"Your gameboard must have some valid filter information e.g. subject must be set.",
+					GAME_BOARD_TARGET_SIZE));
+		}
+		
+		
+		// TODO: need to verify that all questions exist.
+		
+		return gameboardDTO;
 	}
 }

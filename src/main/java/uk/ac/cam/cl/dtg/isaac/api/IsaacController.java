@@ -586,6 +586,7 @@ public class IsaacController {
 			@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("gameboard_id") final String gameboardId) {
+		
 		try {
 			GameboardDTO gameboard;
 			
@@ -594,6 +595,10 @@ public class IsaacController {
 					api.getQuestionAttemptsBySession(randomUser);
 			
 			GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
+			if (null == unAugmentedGameboard) {
+				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
+						.toResponse();
+			}
 			
 			// Calculate the ETag 
 			EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
@@ -606,11 +611,6 @@ public class IsaacController {
 			
 			// attempt to augment the gameboard with user information.
 			gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
-
-			if (null == gameboard) {
-				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
-						.toResponse();
-			}
 			
 			// We decided not to log this on the backend as the front end uses this lots.
 			return Response.ok(gameboard).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
@@ -783,6 +783,58 @@ public class IsaacController {
 		return Response.noContent().build();
 	}
 	
+	/**
+	 * createGameboard.
+	 * @param request 
+	 * @param newGameboardObject 
+	 * @return Gameboard DTO which has been persisted.
+	 */
+	@POST
+	@Path("gameboards")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public final Response createGameboard(
+			@Context final HttpServletRequest request,
+			final GameboardDTO newGameboardObject) {
+		
+		RegisteredUserDTO user;
+		
+		try {
+			user = api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e1) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"User not logged in. Unable to modify gameboards.")
+					.toResponse();
+		}
+		
+		if (null == newGameboardObject) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must provide a gameboard object")
+					.toResponse();			
+		}
+		
+		GameboardDTO persistedGameboard;
+		try {
+			persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
+		} catch (NoWildcardException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"No wildcard available. Unable to construct gameboard.")
+					.toResponse();
+		} catch (InvalidGameboardException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					String.format("The gameboard you provided is invalid"), e)
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database Error whilst trying to save the gameboard.", e).toResponse();
+		} catch (DuplicateGameboardException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					String.format("Gameboard with that id (%s) already exists. ", newGameboardObject.getId()))
+					.toResponse();
+		}		
+		
+		return Response.ok(persistedGameboard).build();
+	}
 	
 	/**
 	 * REST end point to allow gameboards to be persisted into permanent storage 
