@@ -1009,6 +1009,7 @@ public class UserManager {
 
 		// Save user
 		this.database.createOrUpdateUser(user);
+		log.info(String.format("Password Reset for user (%s) has completed successfully.", userObject.getEmail()));
 	}
 
 	/**
@@ -1523,7 +1524,8 @@ public class UserManager {
 		// decide if we need to register a new user or link to an existing
 		// account
 		if (null == localUserInformation) {
-			log.info("New registration - User does not already exist.");
+			log.info(String.format("New registration (%s) - User does not already exist.",
+					federatedAuthenticator.getAuthenticationProvider().name()));
 
 			UserFromAuthProvider userFromProvider = federatedAuthenticator
 					.getUserInfo(providerSpecificUserLookupReference);
@@ -1941,7 +1943,8 @@ public class UserManager {
 			return;
 		}
 		
-		log.info("Merging anonymous questions with known user account");
+		log.info(String.format("Merging anonymously answered questions with known user account (%s)",
+				registeredUser.getDbId()));
 		
 		for (String questionPageId : anonymouslyAnsweredQuestions.keySet()) {
 			for (String questionId : anonymouslyAnsweredQuestions.get(questionPageId).keySet()) {

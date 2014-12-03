@@ -407,8 +407,8 @@ public class IsaacController {
 			
 		} else {
 			// this is not a segue page so something probably went wrong.
-			log.info("This is not a segue question page so just returning it as is.");
-			return response;			
+			log.warn(String.format("This is not a segue question page (%s) so just returning it as is.", questionId));
+			return response;
 		}
 	}
 
