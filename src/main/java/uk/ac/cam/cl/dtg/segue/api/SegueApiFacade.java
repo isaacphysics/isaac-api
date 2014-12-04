@@ -895,6 +895,10 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@GZIP
 	public Response answerQuestion(@Context final HttpServletRequest request,
 			@PathParam("question_id") final String questionId, final String jsonAnswer) {
+		if (null == jsonAnswer || jsonAnswer.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
+		}
+		
 		Content contentBasedOnId = contentVersionController.getContentManager().getById(questionId,
 				contentVersionController.getLiveVersion());
 
@@ -911,7 +915,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		// decide if we have been given a list or an object and put it in a list
 		// either way
 		List<ChoiceDTO> answersFromClient = Lists.newArrayList();
-		try {
+		try {			
 			// convert single object into a list.
 			Choice answerFromClient = mapper.getContentObjectMapper().readValue(jsonAnswer, Choice.class);
 			// convert to a DTO so that it strips out any untrusted data.
@@ -935,23 +939,24 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		try {
 			response = this.questionManager.validateAnswer(question,
 					Lists.newArrayList(answersFromClient));	
+			
+			AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+			
+			if (response.getEntity() instanceof QuestionValidationResponseDTO) {
+				userManager.recordQuestionAttempt(currentUser,
+						(QuestionValidationResponseDTO) response.getEntity());
+			}
+
+			this.getLogManager().logEvent(currentUser, request, Constants.ANSWER_QUESTION, response.getEntity());
+
+			return response;
+			
 		} catch (IllegalArgumentException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
 					"Bad request - " + e.getMessage(), e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
 		}
-		
-		AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-		
-		if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-			userManager.recordQuestionAttempt(currentUser,
-					(QuestionValidationResponseDTO) response.getEntity());
-		}
-
-		this.getLogManager().logEvent(currentUser, request, Constants.ANSWER_QUESTION, response.getEntity());
-
-		return response;
 	}
 
 	/**
