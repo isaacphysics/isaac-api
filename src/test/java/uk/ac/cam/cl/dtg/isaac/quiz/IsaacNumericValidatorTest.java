@@ -149,7 +149,6 @@ public class IsaacNumericValidatorTest {
 		assertTrue("check question is marked as correct", response.isCorrect());
 		assertTrue("check units is correct", response.getCorrectUnits());
 	}
-	
 
 	@Test
 	public final void isaacNumericValidator_CheckCorrectAnswerWithIncorrectValue_IncorrectResponseShouldHappen() {
