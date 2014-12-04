@@ -928,11 +928,20 @@ public class SegueApiFacade extends AbstractSegueFacade {
 					"Unable to map response to a " + "Choice object so failing with an error", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
-		}
+		} 
 
 		// validate the answer.
-		Response response = this.questionManager.validateAnswer(question,
-				Lists.newArrayList(answersFromClient));
+		Response response; 
+		try {
+			response = this.questionManager.validateAnswer(question,
+					Lists.newArrayList(answersFromClient));	
+		} catch (IllegalArgumentException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+					"Bad request - " + e.getMessage(), e);
+			log.error(error.getErrorMessage(), e);
+			return error.toResponse();
+		}
+		
 		AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 		
 		if (response.getEntity() instanceof QuestionValidationResponseDTO) {

@@ -42,15 +42,15 @@ public class IsaacNumericValidator implements IValidator {
 	public final QuestionValidationResponseDTO validateQuestionResponse(final Question question,
 			final ChoiceDTO answer) {
 		if (!(question instanceof IsaacNumericQuestion)) {
-			log.error("Incorrect validator used for question: " + question.getId());
-			throw new IllegalArgumentException("This validator only works with Isaac Numeric Questions...");
+			throw new IllegalArgumentException(String.format(
+					"This validator only works with Isaac Numeric Questions... (%s is not numeric)",
+					question.getId()));
 		}
 
 		if (!(answer instanceof QuantityDTO)) {
-			log.error("Expected Quantity for IsaacNumericQuestion: " + question.getId());
-
-			return new QuantityValidationResponseDTO(question.getId(), answer, false, new Content(
-					"The answer we received was not in Quantity format."), false, false, new Date());
+			throw new IllegalArgumentException(String.format(
+					"Expected Quantity for IsaacNumericQuestion: %s. Received (%s) ", question.getId(),
+					answer.getClass()));
 		}
 
 		IsaacNumericQuestion isaacNumericQuestion = (IsaacNumericQuestion) question;
