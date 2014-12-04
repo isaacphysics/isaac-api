@@ -150,7 +150,7 @@ public class SchoolListReader {
 				}
 			}
 		};
-
+		thread.setDaemon(true);
 		thread.start();
 	}
 

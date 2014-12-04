@@ -410,6 +410,7 @@ public class GitContentManager implements IContentManager {
 								checkForContentErrors(version);
 							}
 						};
+						validationJob.setDaemon(true);
 						validationJob.start();
 
 						buildSearchIndexFromLocalGitIndex(version);
