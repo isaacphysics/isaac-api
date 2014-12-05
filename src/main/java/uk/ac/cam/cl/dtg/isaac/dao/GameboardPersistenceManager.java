@@ -313,6 +313,53 @@ public class GameboardPersistenceManager {
 	}
 	
 	/**
+	 * Find the list of invalid question ids.
+	 * @param gameboardDTO - to check
+	 * @return a List containing the ideas of any invalid or inaccessible questions - the list will be empty if none.
+	 */
+	public List<String> getInvalidQuestionIdsFromGameboard(final GameboardDTO gameboardDTO) {
+		GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
+		
+		// build query the db to get full question information
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+		fieldsToMap.put(
+				immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), gameboardDO.getQuestions());
+
+		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
+				Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+
+		// Search for questions that match the ids.
+		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
+				gameboardDO.getQuestions().size());
+
+		List<ContentDTO> questionsForGameboard = results.getResults();
+
+		// Map each Content object into an GameboardItem object
+		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
+
+		for (ContentDTO c : questionsForGameboard) {
+			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
+			questionInfo.setUri(URIManager.generateApiUrl(c));
+			gameboardReadyQuestions.put(c.getId(), questionInfo);
+		}
+		
+		List<String> errors = Lists.newArrayList();
+		
+		for (String questionid : gameboardDO.getQuestions()) {
+			// There is a possibility that the question cannot be found any more for some reason
+			// In this case we will simply pretend it isn't there.
+			GameboardItem item = gameboardReadyQuestions.get(questionid);
+			if (null == item) {
+				errors.add(questionid);
+			}
+		}
+		
+		return errors;
+	}
+	
+	/**
 	 * Helper method to tidy temporary gameboard cache.
 	 */
 	private void tidyTemporaryGameboardStorage() {

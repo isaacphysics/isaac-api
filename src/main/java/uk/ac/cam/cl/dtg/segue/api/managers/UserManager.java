@@ -1524,7 +1524,7 @@ public class UserManager {
 		// decide if we need to register a new user or link to an existing
 		// account
 		if (null == localUserInformation) {
-			log.info(String.format("New registration (%s) - User does not already exist.",
+			log.info(String.format("New registration (%s) as user does not already exist.",
 					federatedAuthenticator.getAuthenticationProvider().name()));
 
 			UserFromAuthProvider userFromProvider = federatedAuthenticator

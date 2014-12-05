@@ -817,7 +817,7 @@ public class IsaacController {
 		try {
 			persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
 		} catch (NoWildcardException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"No wildcard available. Unable to construct gameboard.")
 					.toResponse();
 		} catch (InvalidGameboardException e) {
@@ -862,7 +862,7 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
-		
+		// TODO fix accidental edits which don't do anything.
 		RegisteredUserDTO user;
 		try {
 			user = api.getCurrentUser(request);
@@ -894,8 +894,13 @@ public class IsaacController {
 			existingGameboard = gameManager.getGameboard(gameboardId);
 			
 			if (null == existingGameboard) {
-				return new SegueErrorResponse(Status.NOT_FOUND,
-						"No gameboard found with the id: " + gameboardId)
+				// this is not an edit operation.
+				return this.createGameboard(request, newGameboardObject);
+			} else if (!existingGameboard.equals(newGameboardObject)) {
+				return new SegueErrorResponse(
+						Status.BAD_REQUEST,
+						"You are only allowed to edit the title of gameboards. "
+						+ "It appears as though you are trying to edit something else.")
 						.toResponse();
 			}
 		} catch (SegueDatabaseException e) {

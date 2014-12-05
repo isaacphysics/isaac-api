@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -228,7 +229,10 @@ public class GameManager {
 	 *             database or updating the users gameboard link table.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId) throws SegueDatabaseException {
-				
+		if (null == gameboardId || gameboardId.isEmpty()) {
+			return null;
+		}
+		
 		GameboardDTO gameboardFound = 
 				this.gameboardPersistenceManager.getGameboardById(gameboardId);
 		
@@ -433,6 +437,8 @@ public class GameManager {
 			gameboardDTO.setId(UUID.randomUUID().toString());
 		} else if (this.getGameboard(gameboardDTO.getId()) != null) {
 			throw new DuplicateGameboardException();
+		} else {
+			gameboardDTO.setId(gameboardDTO.getId().toLowerCase());
 		}
 		
 		if (gameboardDTO.getWildCard() == null) {
@@ -444,6 +450,7 @@ public class GameManager {
 		gameboardDTO.setCreationDate(new Date());
 		gameboardDTO.setOwnerUserId(owner.getDbId());
 		
+		// this will throw an exception if it doesn't validate.
 		validateGameboard(gameboardDTO);
 		
 		this.permanentlyStoreGameboard(gameboardDTO);
@@ -692,6 +699,30 @@ public class GameManager {
 
 		return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
 	}
+	
+	/**
+	 * Get a wildcard by id.
+	 * @param id - of wildcard
+	 * @return wildcard or an exception.
+	 * @throws NoWildcardException - if we cannot locate the exception.
+	 */
+	private IsaacWildcard getWildCardById(final String id) throws NoWildcardException {
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+		fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Arrays.asList(id));
+		fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
+
+		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
+		
+		// try to increase randomness of wildcard results.
+		Collections.shuffle(wildcardResults.getResults());
+		
+		if (wildcardResults.getTotalResults() == 0) {
+			throw new NoWildcardException();
+		}
+
+		return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
+	}
 
 	/**
 	 * Helper method to generate field to match requirements for search queries
@@ -848,27 +879,57 @@ public class GameManager {
 	}
 	
 	/**
-	 * Provides validation for a given gameboard. For use prior to persistence. 
-	 * @param gameboardDTO - to check
-	 * @return the gameboard (unchanged) if everything is ok, otherwise an exception will be thrown.
-	 * @throws InvalidGameboardException - If the gameboard is considered to be invalid.
+	 * Provides validation for a given gameboard. For use prior to persistence.
+	 * 
+	 * @param gameboardDTO
+	 *            - to check
+	 * @return the gameboard (unchanged) if everything is ok, otherwise an
+	 *         exception will be thrown.
+	 * @throws InvalidGameboardException
+	 *             - If the gameboard is considered to be invalid.
+	 * @throws NoWildcardException
+	 *             - if the wildcard cannot be found.
 	 */
-	private GameboardDTO validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException {
+	private GameboardDTO validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
+			NoWildcardException {
+		if (gameboardDTO.getId() != null && gameboardDTO.getId().contains(" ")) {
+			throw new InvalidGameboardException(String.format(
+					"Your gameboard must not contain illegal characters e.g. spaces"));
+		}
 		
 		if (gameboardDTO.getQuestions().size() > Constants.GAME_BOARD_TARGET_SIZE) {
 			throw new InvalidGameboardException(String.format(
 					"Your gameboard must not contain more than %s questions", GAME_BOARD_TARGET_SIZE));
 		}
-		
+
 		if (gameboardDTO.getGameFilter() == null || !validateFilterQuery(gameboardDTO.getGameFilter())) {
 			throw new InvalidGameboardException(String.format(
 					"Your gameboard must have some valid filter information e.g. subject must be set.",
 					GAME_BOARD_TARGET_SIZE));
 		}
+
+		List<String> badQuestions = this.gameboardPersistenceManager
+				.getInvalidQuestionIdsFromGameboard(gameboardDTO);
+		if (badQuestions.size() > 0) {
+			throw new InvalidGameboardException(String.format(
+					"The gameboard provided contains %s invalid (or missing) questions - [%s]",
+					badQuestions.size(), badQuestions));
+		}
+
+		if (gameboardDTO.getWildCard() == null) {
+			throw new NoWildcardException();
+		}
 		
-		
-		// TODO: need to verify that all questions exist.
-		
+		// This will throw a NoWildCardException if we cannot locate a valid
+		// wildcard for this gameboard.
+		try {
+			this.getWildCardById(gameboardDTO.getWildCard().getId());
+		} catch (NoWildcardException e) {
+			throw new InvalidGameboardException(String.format(
+					"The gameboard provided contains an invalid wildcard with id [%s]",
+					gameboardDTO.getWildCard().getId()));
+		}
+
 		return gameboardDTO;
 	}
 }

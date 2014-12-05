@@ -286,4 +286,82 @@ public class GameboardDTO {
 				+ wildCard + ", wildCardPosition=" + wildCardPosition + ", creationDate=" + creationDate
 				+ ", gameFilter=" + gameFilter + ", ownerUserId=" + ownerUserId + "]";
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((creationDate == null) ? 0 : creationDate.hashCode());
+		result = prime * result + ((gameFilter == null) ? 0 : gameFilter.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((ownerUserId == null) ? 0 : ownerUserId.hashCode());
+		result = prime * result + ((questions == null) ? 0 : questions.hashCode());
+		result = prime * result + ((wildCard == null) ? 0 : wildCard.hashCode());
+		result = prime * result + ((wildCardPosition == null) ? 0 : wildCardPosition.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof GameboardDTO)) {
+			return false;
+		}
+		GameboardDTO other = (GameboardDTO) obj;
+		if (creationDate == null) {
+			if (other.creationDate != null) {
+				return false;
+			}
+		} else if (!creationDate.equals(other.creationDate)) {
+			return false;
+		}
+		if (gameFilter == null) {
+			if (other.gameFilter != null) {
+				return false;
+			}
+		} else if (!gameFilter.equals(other.gameFilter)) {
+			return false;
+		}
+		if (id == null) {
+			if (other.id != null) {
+				return false;
+			}
+		} else if (!id.equals(other.id)) {
+			return false;
+		}
+		if (ownerUserId == null) {
+			if (other.ownerUserId != null) {
+				return false;
+			}
+		} else if (!ownerUserId.equals(other.ownerUserId)) {
+			return false;
+		}
+		if (questions == null) {
+			if (other.questions != null) {
+				return false;
+			}
+		} else if (!questions.equals(other.questions)) {
+			return false;
+		}
+		if (wildCard == null) {
+			if (other.wildCard != null) {
+				return false;
+			}
+		} else if (!wildCard.equals(other.wildCard)) {
+			return false;
+		}
+		if (wildCardPosition == null) {
+			if (other.wildCardPosition != null) {
+				return false;
+			}
+		} else if (!wildCardPosition.equals(other.wildCardPosition)) {
+			return false;
+		}
+		return true;
+	}
 }
