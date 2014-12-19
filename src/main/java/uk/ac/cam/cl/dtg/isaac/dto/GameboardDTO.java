@@ -88,7 +88,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the id
 	 */
-	public final String getId() {
+	public String getId() {
 		return id;
 	}
 
@@ -98,7 +98,7 @@ public class GameboardDTO {
 	 * @param id
 	 *            the id to set
 	 */
-	public final void setId(final String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
@@ -107,7 +107,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the title
 	 */
-	public final String getTitle() {
+	public String getTitle() {
 		return title;
 	}
 
@@ -117,7 +117,7 @@ public class GameboardDTO {
 	 * @param title
 	 *            the title to set
 	 */
-	public final void setTitle(final String title) {
+	public void setTitle(final String title) {
 		this.title = title;
 	}
 
@@ -126,7 +126,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the gameboardItems
 	 */
-	public final List<GameboardItem> getQuestions() {
+	public List<GameboardItem> getQuestions() {
 		return questions;
 	}
 
@@ -136,7 +136,7 @@ public class GameboardDTO {
 	 * @param questions
 	 *            the gameboardItems to set
 	 */
-	public final void setQuestions(final List<GameboardItem> questions) {
+	public void setQuestions(final List<GameboardItem> questions) {
 		this.questions = questions;
 	}
 
@@ -145,7 +145,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the wildCard
 	 */
-	public final IsaacWildcard getWildCard() {
+	public IsaacWildcard getWildCard() {
 		return wildCard;
 	}
 
@@ -155,7 +155,7 @@ public class GameboardDTO {
 	 * @param wildCard
 	 *            the wildCard to set
 	 */
-	public final void setWildCard(final IsaacWildcard wildCard) {
+	public void setWildCard(final IsaacWildcard wildCard) {
 		this.wildCard = wildCard;
 	}
 
@@ -163,7 +163,7 @@ public class GameboardDTO {
 	 * Gets the wildCardPosition.
 	 * @return the wildCardPosition
 	 */
-	public final Integer getWildCardPosition() {
+	public Integer getWildCardPosition() {
 		return wildCardPosition;
 	}
 	
@@ -171,7 +171,7 @@ public class GameboardDTO {
 	 * Sets the wildCardPosition.
 	 * @param wildCardPosition the wildCardPosition to set
 	 */
-	public final void setWildCardPosition(final Integer wildCardPosition) {
+	public void setWildCardPosition(final Integer wildCardPosition) {
 		this.wildCardPosition = wildCardPosition;
 	}
 	
@@ -180,7 +180,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the creationDate
 	 */
-	public final Date getCreationDate() {
+	public Date getCreationDate() {
 		return creationDate;
 	}
 
@@ -190,7 +190,7 @@ public class GameboardDTO {
 	 * @param creationDate
 	 *            the creationDate to set
 	 */
-	public final void setCreationDate(final Date creationDate) {
+	public void setCreationDate(final Date creationDate) {
 		this.creationDate = creationDate;
 	}
 
@@ -199,7 +199,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the gameFilter
 	 */
-	public final GameFilter getGameFilter() {
+	public GameFilter getGameFilter() {
 		return gameFilter;
 	}
 
@@ -209,7 +209,7 @@ public class GameboardDTO {
 	 * @param gameFilter
 	 *            the gameFilter to set
 	 */
-	public final void setGameFilter(final GameFilter gameFilter) {
+	public void setGameFilter(final GameFilter gameFilter) {
 		this.gameFilter = gameFilter;
 	}
 
@@ -218,7 +218,7 @@ public class GameboardDTO {
 	 * 
 	 * @return the userId
 	 */
-	public final String getOwnerUserId() {
+	public String getOwnerUserId() {
 		return ownerUserId;
 	}
 
@@ -228,7 +228,7 @@ public class GameboardDTO {
 	 * @param ownerUserId
 	 *            the ownerUserId to set
 	 */
-	public final void setOwnerUserId(final String ownerUserId) {
+	public void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
 	}
 
