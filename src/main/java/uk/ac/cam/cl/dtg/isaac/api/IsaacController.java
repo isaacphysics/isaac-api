@@ -862,7 +862,7 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
-		// TODO fix accidental edits which don't do anything.
+
 		RegisteredUserDTO user;
 		try {
 			user = api.getCurrentUser(request);
@@ -896,26 +896,15 @@ public class IsaacController {
 			if (null == existingGameboard) {
 				// this is not an edit operation.
 				return this.createGameboard(request, newGameboardObject);
-			} else if (!existingGameboard.equals(newGameboardObject)) {
-				return new SegueErrorResponse(
-						Status.BAD_REQUEST,
-						"You are only allowed to edit the title of gameboards. "
-						+ "It appears as though you are trying to edit something else.")
-						.toResponse();
-			}
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access the gameboard in the database.", e).toResponse();
-		}
-		
-		try {
+			} 
+			
 			// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
 			gameManager.linkUserToGameboard(existingGameboard, user);
 			this.api.getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+			
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error while attempting to save the gameboard.")
-					.toResponse();
+					"Error whilst trying to access the gameboard database.", e).toResponse();
 		}
 
 		// Now determine if the user is trying to change the title and if they have permission.
