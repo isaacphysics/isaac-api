@@ -260,6 +260,8 @@ public class IsaacController {
 	 *            - used to determine if we can return a cache response. 
 	 * @param ids
 	 *            - the ids of the concepts to request.
+	 * @param searchString
+	 *            - an optional search string to allow finding of questions by title.
 	 * @param tags
 	 *            - a comma separated list of strings
 	 * @param level
