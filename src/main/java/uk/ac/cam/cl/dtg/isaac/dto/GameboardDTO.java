@@ -301,6 +301,11 @@ public class GameboardDTO {
 		return result;
 	}
 
+	/**
+	 * The only mutable field is the title field and so this is excluded from the equality check.
+	 * @param obj - object to test equality of.
+	 * @return true if the same or false if different.
+	 */
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -318,13 +323,6 @@ public class GameboardDTO {
 				return false;
 			}
 		} else if (!creationDate.equals(other.creationDate)) {
-			return false;
-		}
-		if (gameFilter == null) {
-			if (other.gameFilter != null) {
-				return false;
-			}
-		} else if (!gameFilter.equals(other.gameFilter)) {
 			return false;
 		}
 		if (id == null) {

@@ -916,9 +916,15 @@ public class IsaacController {
 			existingGameboard = gameManager.getGameboard(gameboardId);
 			
 			if (null == existingGameboard) {
-				// this is not an edit operation.
+				// this is not an edit and is a create request operation.
 				return this.createGameboard(request, newGameboardObject);
-			} 
+			} else if (!existingGameboard.equals(newGameboardObject)) {
+				// The only editable field of a game board is its title.
+				// If you are trying to change anything else this should fail.
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"A different game board with that id already exists.")
+						.toResponse();
+			}
 			
 			// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
 			gameManager.linkUserToGameboard(existingGameboard, user);
