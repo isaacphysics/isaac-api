@@ -281,6 +281,7 @@ public class IsaacController {
 	public final Response getQuestionList(
 			@Context final Request request,
 			@QueryParam("ids") final String ids,
+			@QueryParam("searchString") final String searchString,
 			@QueryParam("tags") final String tags,
 			@QueryParam("levels") final String level,
 			@QueryParam("start_index") final String startIndex,
@@ -292,26 +293,31 @@ public class IsaacController {
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 		etagCodeBuilder.append(QUESTION_TYPE);
 		
-		String newLimit = null;
+		String newLimit = "10";
+		String newStartIndex = "0";
 
 		// options
-		if (limit != null) {
+		if (limit != null && !limit.isEmpty()) {
 			newLimit = limit;
 		}
+		
+		if (startIndex != null && !startIndex.isEmpty()) {
+			newStartIndex = startIndex;
+		}
 
-		if (ids != null) {
+		if (ids != null && !ids.isEmpty()) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
 			newLimit = String.valueOf(idsList.size());
 			etagCodeBuilder.append(ids);
 		}
 
-		if (tags != null) {
+		if (tags != null && !tags.isEmpty()) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 			etagCodeBuilder.append(tags);
 		}
 
-		if (level != null) {
+		if (level != null && !level.isEmpty()) {
 			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
 			etagCodeBuilder.append(level);
 		}
@@ -326,9 +332,24 @@ public class IsaacController {
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
-		
-		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-				.cacheControl(api.getCacheControl()).build();
+
+		// TODO: currently if you provide a search string we use a different
+		// library call. This is because the previous one does not allow fuzzy
+		// search. We should unify these as the limit and pagination stuff doesn't work via this route.
+		if (searchString != null && !searchString.isEmpty()) {
+			ResultsWrapper<ContentDTO> c = api.search(searchString, api.getLiveVersion(), fieldsToMatch);
+			
+			ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+					this.extractContentSummaryFromList(c.getResults(),
+							propertiesLoader.getProperty(PROXY_PATH)),
+					c.getTotalResults());
+			
+			return Response.ok(summarizedContent).tag(etag)
+					.cacheControl(api.getCacheControl()).build();
+		} else {
+			return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
+					.cacheControl(api.getCacheControl()).build();
+		}
 	}
 
 	/**
@@ -354,6 +375,7 @@ public class IsaacController {
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		// TODO we need to sort this out...
 		//fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
 		// options

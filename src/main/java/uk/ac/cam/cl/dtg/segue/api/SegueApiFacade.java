@@ -39,6 +39,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.elasticsearch.common.collect.Lists;
@@ -426,6 +427,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	/**
 	 * Rest end point that searches the content manager for some search string.
 	 * 
+	 * TODO: we should allow this to be paginated. 
+	 * 
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param version
@@ -455,6 +458,31 @@ public class SegueApiFacade extends AbstractSegueFacade {
 				contentVersionController.getLiveVersion(), searchString, typesThatMustMatch);
 
 		return Response.ok(searchResults).build();
+	}
+	
+	/**
+	 * Library Method that searches the content manager for some search string and map of fields that must match.
+	 * 
+	 * TODO: we should allow this to be paginated. 
+	 * 
+	 * @param searchString
+	 *            - to pass to the search engine.
+	 * @param version
+	 *            - of the content to search.
+	 * @param fieldsThatMustMatch
+	 *            - a map of fieldName to list of possible matches.
+	 * @return a response containing the search results (results wrapper) or an
+	 *         empty list.
+	 */
+	public final ResultsWrapper<ContentDTO> search(@PathParam("searchString") final String searchString,
+			@PathParam("version") final String version,
+			@QueryParam("fieldsToMatch") final Map<String, List<String>> fieldsThatMustMatch) {
+		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
+
+		ResultsWrapper<ContentDTO> searchResults = contentPersistenceManager.searchForContent(
+				contentVersionController.getLiveVersion(), searchString, fieldsThatMustMatch);
+
+		return searchResults;
 	}
 
 	/**
