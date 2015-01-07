@@ -23,7 +23,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -546,16 +548,35 @@ public class UserManager {
 	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
 	 */
 	public final boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
+		return this.checkUserRole(request, Arrays.asList(Role.ADMIN));
+	}
+	
+	/**
+	 * CheckUserRole matches a list of valid roles.
+	 * 
+	 * @param request
+	 *            - http request so that we can get current users details.
+	 * @param validRoles
+	 *            - a Collection of roles that we would want the user to match.
+	 * @return true if the user is a member of one of the roles in our valid
+	 *         roles list. False if not.
+	 * @throws NoUserLoggedInException
+	 *             - if there is no registered user logged in.
+	 */
+	public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
+		throws NoUserLoggedInException {
 		RegisteredUser user = this.getCurrentRegisteredUserDO(request);
-		
+
 		if (null == user) {
 			throw new NoUserLoggedInException();
 		}
 		
-		if (user.getRole() != null && user.getRole().equals(Role.ADMIN)) {
-			return true;
-		} 
-		
+		for (Role roleToMatch : validRoles) {
+			if (user.getRole().equals(roleToMatch)) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 	

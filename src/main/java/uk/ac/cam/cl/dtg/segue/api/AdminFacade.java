@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -103,7 +105,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getStatistics(@Context final HttpServletRequest request) {
 		try {
-			if (!this.userManager.isUserAnAdmin(request)) {
+			if (!this.userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR))) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an admin to access this endpoint.").toResponse();
 			}
@@ -335,7 +337,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
 		if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
 			try {
-				if (!this.userManager.isUserAnAdmin(request)) {
+				if (!this.userManager.checkUserRole(request,
+						Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR))) {
 					return Response.status(Status.FORBIDDEN)
 							.entity("This page is only available to administrators in PROD mode.").build();
 
