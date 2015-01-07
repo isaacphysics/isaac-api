@@ -75,7 +75,7 @@ public class StatisticsManager {
 		List<RegisteredUserDTO> female = Lists.newArrayList();
 		List<RegisteredUserDTO> unknownGender = Lists.newArrayList();
 
-		ib.put("Total Users", "" + users.size());
+		ib.put("total_users", "" + users.size());
 
 		List<RegisteredUserDTO> studentOrUnknownRole = Lists.newArrayList();
 		List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
@@ -130,16 +130,16 @@ public class StatisticsManager {
 
 		}
 
-		ib.put("MALE Users", "" + male.size());
-		ib.put("FEMALE Users", "" + female.size());
-		ib.put("Unknown Gender Users", "" + unknownGender.size());
+		ib.put("male_users", "" + male.size());
+		ib.put("female_users", "" + female.size());
+		ib.put("unknown_gender_users", "" + unknownGender.size());
 
-		ib.put("Student Role Users", "" + studentOrUnknownRole.size());
-		ib.put("Teacher Role Users", "" + teacherRole.size());
-		ib.put("Staff Users", "" + adminStaffRole.size());
+		ib.put("student_users", "" + studentOrUnknownRole.size());
+		ib.put("teacher_users", "" + teacherRole.size());
+		ib.put("staff_users", "" + adminStaffRole.size());
 
-		ib.put("View Question Events", "" + logManager.getLogsByType(Constants.VIEW_QUESTION).size());
-		ib.put("Answered Question Events", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
+		ib.put("view_question_events", "" + logManager.getLogsByType(Constants.VIEW_QUESTION).size());
+		ib.put("answered_question_events", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
 		
 		// questions answered registered
 
