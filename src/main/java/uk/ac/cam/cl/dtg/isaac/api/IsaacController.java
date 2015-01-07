@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -340,8 +341,16 @@ public class IsaacController {
 		// library call. This is because the previous one does not allow fuzzy
 		// search. We should unify these as the limit and pagination stuff doesn't work via this route.
 		if (searchString != null && !searchString.isEmpty()) {
-			ResultsWrapper<ContentDTO> c = api.segueSearch(searchString, api.getLiveVersion(), fieldsToMatch,
-					newStartIndex, newLimit);
+			ResultsWrapper<ContentDTO> c;
+			try {
+				c = api.segueSearch(searchString, api.getLiveVersion(), fieldsToMatch,
+						newStartIndex, newLimit);
+			} catch (ContentManagerException e1) {
+				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+						"Error locating the version requested", e1);
+				log.error(error.getErrorMessage(), e1);
+				return error.toResponse();
+			}
 
 			ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
 					this.extractContentSummaryFromList(c.getResults(),
@@ -595,6 +604,11 @@ public class IsaacController {
 			log.error("SegueDatabaseException whilst generating a gameboard", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 	}
 	
@@ -654,6 +668,11 @@ public class IsaacController {
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 	}
 
@@ -755,6 +774,11 @@ public class IsaacController {
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 
 		if (null == gameboards) {
@@ -811,6 +835,11 @@ public class IsaacController {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"User not logged in. Unable to retrieve delete gameboards.")
 					.toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 		
 		return Response.noContent().build();
@@ -1190,34 +1219,35 @@ public class IsaacController {
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
 	 *            match
-	 * @return A Response containing a single conceptPage or containing
-	 *         a SegueErrorResponse.
+	 * @return A Response containing a single conceptPage or containing a
+	 *         SegueErrorResponse.
 	 */
-	private Response findSingleResult(
-			final Map<String, List<String>> fieldsToMatch) {
-		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(
-				api.getLiveVersion(),
-				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
-				null, null); // includes type checking.
+	private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
+		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(api.getLiveVersion(),
+				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+																						// type
+																						// checking.
 		ContentDTO c = null;
 		if (conceptList.getResults().size() > 1) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Multiple results (" + conceptList.getResults().size()
-							+ ") returned error. For search query: "
-							+ fieldsToMatch.values()).toResponse();
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
+					+ conceptList.getResults().size() + ") returned error. For search query: "
+					+ fieldsToMatch.values()).toResponse();
 		} else if (conceptList.getResults().isEmpty()) {
 			return new SegueErrorResponse(Status.NOT_FOUND,
-					"No content found that matches the query with parameters: "
-							+ fieldsToMatch.values()).toResponse();
+					"No content found that matches the query with parameters: " + fieldsToMatch.values())
+					.toResponse();
 		} else {
 			c = conceptList.getResults().get(0);
 		}
 
-		// String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-		// ContentPage cp = new ContentPage(c.getId(), c,
-		// this.buildMetaContentmap(proxyPath, c));
-
-		return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
+		try {
+			return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		}
 	}
 	
 

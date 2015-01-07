@@ -157,7 +157,7 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public boolean ensureCache(final String version) {
+	public void ensureCache(final String version) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 

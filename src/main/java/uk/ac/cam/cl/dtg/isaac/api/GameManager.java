@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -105,8 +106,11 @@ public class GameManager {
 	 * @throws NoWildcardException
 	 *             - when we are unable to provide you with a wildcard object.
 	 * @throws SegueDatabaseException - 
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
-	public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException {
+	public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException,
+			ContentManagerException {
 		return this.generateRandomGameboard(null, null, null, null, null, null);
 	}
 
@@ -136,12 +140,14 @@ public class GameManager {
 	 *             - when we are unable to provide you with a wildcard object.
 	 * @throws SegueDatabaseException
 	 *             - if there is an error contacting the database.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
 			final List<String> conceptsList, final AbstractSegueUserDTO boardOwner) 
-		throws NoWildcardException, SegueDatabaseException {
+		throws NoWildcardException, SegueDatabaseException, ContentManagerException {
 
 		String boardOwnerId;
 		if (boardOwner instanceof RegisteredUserDTO) {
@@ -251,10 +257,12 @@ public class GameManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboard in the
 	 *             database or updating the users gameboard link table.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
 			final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-		throws SegueDatabaseException {
+		throws SegueDatabaseException, ContentManagerException {
 				
 		GameboardDTO gameboardFound = augmentGameboardWithQuestionAttemptInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
@@ -280,13 +288,15 @@ public class GameManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboards from the
 	 *             database.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public final GameboardListDTO getUsersGameboards(final RegisteredUserDTO user, 
 			@Nullable final Integer startIndex, 
 			@Nullable final Integer limit,
 			@Nullable final GameboardState showOnly, 
 			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions)
-		throws SegueDatabaseException {
+		throws SegueDatabaseException, ContentManagerException {
 		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
@@ -387,10 +397,13 @@ public class GameManager {
 	 * @param questionAttemptsFromUser
 	 *            - the users question data.
 	 * @return Augmented Gameboard
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public final GameboardDTO augmentGameboardWithQuestionAttemptInformation(
 			final GameboardDTO gameboardDTO,
-			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) 
+		throws ContentManagerException {
 		if (null == gameboardDTO) {
 			return null;
 		}
@@ -495,9 +508,12 @@ public class GameManager {
 	 * @param usersQuestionAttempts
 	 *            - the users question attempt information if available.
 	 * @return Gameboard questions
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	private List<GameboardItem> getSelectedGameboardQuestions(final GameFilter gameFilter,
-			final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) 
+		throws ContentManagerException {
 		
 		Long seed = new Random().nextLong();
 		int searchIndex = 0;
@@ -600,9 +616,12 @@ public class GameManager {
 	 *            - the user that may or may not have attempted questions in the
 	 *            gameboard.
 	 * @return The state of the gameboard item.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	private GameboardItemState calculateQuestionState(final String questionPageId,
-			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) 
+		throws ContentManagerException {
 		Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
 		Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
 		

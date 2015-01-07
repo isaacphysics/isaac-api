@@ -57,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -296,6 +297,10 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		} catch (IllegalArgumentException e) {
 			log.error("Unable to map content object.", e);
 			throw e;
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
 		}
 
 		return c;
@@ -375,6 +380,10 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		} catch (IllegalArgumentException e) {
 			log.error("Unable to map content object.", e);
 			throw e;
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
 		}
 
 		return c;
@@ -425,6 +434,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
 					"Error while trying to map to a content object.", e);
 			log.error(error.getErrorMessage(), e);
 			return error.toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 
 		return Response.ok(c).build();
@@ -460,8 +474,16 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			typesThatMustMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(types.split(",")));
 		}
 
-		ResultsWrapper<ContentDTO> searchResults = this.segueSearch(searchString, version,
-				typesThatMustMatch, startIndex, limit);
+		ResultsWrapper<ContentDTO> searchResults;
+		try {
+			searchResults = this.segueSearch(searchString, version,
+					typesThatMustMatch, startIndex, limit);
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		}
 
 		return Response.ok(searchResults).build();
 	}
@@ -482,10 +504,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 *            - the max number of results to return.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
+	 * @throws ContentManagerException 
 	 */
 	public final ResultsWrapper<ContentDTO> segueSearch(final String searchString,
 			@Nullable final String version, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-			@Nullable final Integer startIndex, @Nullable final Integer limit) {
+			@Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
 		int newLimit = Constants.DEFAULT_RESULTS_LIMIT;
 		int newStartIndex = 0;
 		String newVersion = contentVersionController.getLiveVersion();
@@ -524,7 +547,14 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getTagListByLiveVersion(@Context final Request request) {
-		return this.getTagListByVersion(contentVersionController.getLiveVersion(), request);
+		try {
+			return this.getTagListByVersion(contentVersionController.getLiveVersion(), request);
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		}
 	}
 
 	/**
@@ -537,13 +567,14 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 *            so that we can determine whether we can make use of caching
 	 *            via etags.
 	 * @return a set of tags used in the specified version
+	 * @throws ContentManagerException 
 	 */
 	@GET
 	@Path("content/tags/{version}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getTagListByVersion(@PathParam("version") final String version,
-			@Context final Request request) {
+			@Context final Request request) throws ContentManagerException {
 		// Calculate the ETag on last modified date of tags list
 		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode()
 				+ "tagList".hashCode() + "");
@@ -604,9 +635,17 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
-		Collection<String> units = contentPersistenceManager.getAllUnits(version);
+		Collection<String> units;
+		try {
+			units = contentPersistenceManager.getAllUnits(version);
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		}
 
-		return Response.ok().entity(units).tag(etag).cacheControl(getCacheControl()).build();
+		return Response.ok(units).tag(etag).cacheControl(getCacheControl()).build();
 	}
 
 	/**
@@ -931,8 +970,16 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
 		}
 		
-		Content contentBasedOnId = contentVersionController.getContentManager().getById(questionId,
-				contentVersionController.getLiveVersion());
+		Content contentBasedOnId;
+		try {
+			contentBasedOnId = contentVersionController.getContentManager().getById(questionId,
+					contentVersionController.getLiveVersion());
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		}
 
 		Question question = null;
 		if (contentBasedOnId instanceof Question) {
@@ -1083,8 +1130,10 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 * @param idPrefix
 	 *            - prefix / id to match against.
 	 * @return a results wrapper containing any matching content.
+	 * @throws ContentManagerException 
 	 */
-	public final ResultsWrapper<ContentDTO> searchByIdPrefix(final String version, final String idPrefix) {
+	public final ResultsWrapper<ContentDTO> searchByIdPrefix(final String version, final String idPrefix)
+		throws ContentManagerException {
 		return this.contentVersionController.getContentManager().getByIdPrefix(idPrefix, version);
 	}
 
@@ -1108,8 +1157,10 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 * @param contentToAugment
 	 *            - the content to augment.
 	 * @return content which has been augmented
+	 * @throws ContentManagerException 
 	 */
-	public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment) {
+	public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
+		throws ContentManagerException {
 		return this.contentVersionController.getContentManager().populateContentSummaries(version,
 				contentToAugment);
 	}

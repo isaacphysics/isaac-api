@@ -20,6 +20,8 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+
 /**
  * Worker class to orchestrate content indexing jobs.
  * 
@@ -75,7 +77,8 @@ public class ContentSynchronisationWorker implements Callable<String> {
 			// trigger index operation with content Manager.
 			log.debug("Triggering index operation as a result of Content Synchronisation job.");
 
-			if (this.contentVersionController.getContentManager().ensureCache(version)) {
+			try {
+				this.contentVersionController.getContentManager().ensureCache(version);
 				// successful indexing operation.
 				// Call the content controller to tell them we have finished our
 				// job and they may like to do something.
@@ -83,7 +86,11 @@ public class ContentSynchronisationWorker implements Callable<String> {
 
 				log.info("Content synchronisation job completed for " + version + ".");
 				return version;
-			}
+			} catch (ContentManagerException e) {
+				log.error("Error while trying to run index operation", e);
+				contentVersionController.syncJobCompleteCallback(version, false);
+				return null;
+			}		
 		}
 
 		log.error("Error while trying to run index operation for version: " + version

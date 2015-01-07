@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ws.rs.core.Response.Status;
 
 import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
@@ -46,6 +48,7 @@ import org.powermock.reflect.Whitebox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -54,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 /**
@@ -166,8 +170,13 @@ public class GitContentManagerTest {
 		expect(database.verifyCommitExists(version)).andReturn(false).once();
 		replay(database);
 
-		assertTrue(defaultGCM.searchForContent(version, "", null,0, Constants.DEFAULT_RESULTS_LIMIT) == null);
-
+		try {
+			defaultGCM.searchForContent(version, "", null,0, Constants.DEFAULT_RESULTS_LIMIT);
+			fail("exception should have been thrown.");
+		} catch (ContentManagerException e1) {
+			// this should pass.
+		}
+		
 		verify(database);
 	}
 
@@ -215,9 +224,13 @@ public class GitContentManagerTest {
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 		
-		assertTrue(gitContentManager
-				.searchForContent(INITIAL_VERSION, searchString,
-						fieldsThatMustMatch, 0, Constants.DEFAULT_RESULTS_LIMIT).getResults().size() == 0);
+		try {
+			assertTrue(gitContentManager
+					.searchForContent(INITIAL_VERSION, searchString,
+							fieldsThatMustMatch, 0, Constants.DEFAULT_RESULTS_LIMIT).getResults().size() == 0);
+		} catch (ContentManagerException e) {
+			fail("An empty results wrapper should be returned");
+		}
 
 		verify(database, searchProvider, searchHits, contentMapper);
 	}
@@ -246,7 +259,12 @@ public class GitContentManagerTest {
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
-		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == testContent);
+		try {
+			assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == testContent);
+		} catch (ContentManagerException e) {
+			fail("correct object should be returned");
+			e.printStackTrace();
+		}
 
 		verify(searchProvider);
 	}
@@ -257,7 +275,11 @@ public class GitContentManagerTest {
 	@Test
 	public void getById_invalidId_checkNullReturned() {
 		String id = null;
-		assertTrue(defaultGCM.getById(id, INITIAL_VERSION) == null);
+		try {
+			assertTrue(defaultGCM.getById(id, INITIAL_VERSION) == null);
+		} catch (ContentManagerException e) {
+			fail("Null should be returned");
+		}
 	}
 
 	/**
@@ -265,7 +287,7 @@ public class GitContentManagerTest {
 	 * not exist.
 	 */
 	@Test
-	public void getById_missingVersion_checkNullReturned() {
+	public void getById_missingVersion_checkExceptionReturned() {
 		final String id = "test";
 
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
@@ -279,7 +301,12 @@ public class GitContentManagerTest {
 				.once();
 		replay(database);
 
-		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
+		try {
+			gitContentManager.getById(id, INITIAL_VERSION);
+			fail("an exception should be returned");
+		} catch (ContentManagerException e) {
+			// pass
+		}
 
 		verify(database);
 	}
@@ -308,26 +335,35 @@ public class GitContentManagerTest {
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 		
-		assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
+		try {
+			assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
+		} catch (ContentManagerException e) {
+			fail("Null should be returned");
+		}
 
 		verify(searchProvider);
 	}
 
 	/**
-	 * Test that the ensureCache method returns false if a null version hash is
+	 * Test that the ensureCache method returns an exception if a null version hash is
 	 * provided.
 	 */
 	@Test
-	public void ensureCache_nullVersion_checkFalseReturned() {
-		assertTrue(!defaultGCM.ensureCache(null));
+	public void ensureCache_nullVersion_checkExceptionReturned() {
+		try {
+			defaultGCM.ensureCache(null);
+			fail("Expected exception");
+		} catch (ContentManagerException e) {
+			// pass
+		}
 	}
 
 	/**
-	 * Test that the ensureCache method returns true if a cached and indexed
+	 * Test that the ensureCache method returns without exception if a cached and indexed
 	 * version is provided.
 	 */
 	@Test
-	public void ensureCache_cachedVerion_checkTrueReturned() {
+	public void ensureCache_cachedVerion_checkNoExceptionReturned() {
 		Map<String, Map<String, Content>> gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
 		gitCache.put(INITIAL_VERSION, new TreeMap<String, Content>());
 
@@ -342,7 +378,12 @@ public class GitContentManagerTest {
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
-		assertTrue(gitContentManager.ensureCache(INITIAL_VERSION));
+		try {
+			gitContentManager.ensureCache(INITIAL_VERSION);
+		} catch (ContentManagerException e) {
+			e.printStackTrace();
+			fail("No exception should be returned");
+		}
 
 		verify(searchProvider);
 	}
@@ -385,7 +426,12 @@ public class GitContentManagerTest {
 		GitContentManager gitContentManager = new GitContentManager(database,
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
-		assertTrue(gitContentManager.ensureCache(INITIAL_VERSION));
+		try {
+			gitContentManager.ensureCache(INITIAL_VERSION);
+		} catch (ContentManagerException e) {
+			e.printStackTrace();
+			fail("Index should build");
+		}
 		assertTrue(gitCache.containsKey(INITIAL_VERSION));
 
 		verify(database, repository, treeWalk, searchProvider);
@@ -816,7 +862,7 @@ public class GitContentManagerTest {
 	 */
 	@Test
 	public void buildGitContentIndex_addDuplicateObject_contentErrorLogged()
-			throws Exception {
+		throws Exception {
 		reset(database, searchProvider);
 
 		final String pathToContent = "/path/to/content/";
