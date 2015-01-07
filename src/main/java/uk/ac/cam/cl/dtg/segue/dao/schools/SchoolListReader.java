@@ -91,7 +91,7 @@ public class SchoolListReader {
 		}
 
 		List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_SEARCH_INDEX,
-				SCHOOLS_SEARCH_TYPE, searchQuery, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
+				SCHOOLS_SEARCH_TYPE, searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
 				Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, Constants.SCHOOL_POSTCODE_FIELDNAME_POJO)
 				.getResults();
 

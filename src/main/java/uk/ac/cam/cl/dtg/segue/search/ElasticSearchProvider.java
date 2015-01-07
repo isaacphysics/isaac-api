@@ -144,7 +144,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final ResultsWrapper<String> paginatedMatchSearch(final String index, final String indexType,
+	public final ResultsWrapper<String> matchSearch(final String index, final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions) {
 
@@ -175,16 +175,16 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index,
+	public final ResultsWrapper<String> randomisedMatchSearch(final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit) {
 		Long seed = this.randomNumberGenerator.nextLong();
-		return this.randomisedPaginatedMatchSearch(index, indexType, fieldsToMatch, startIndex, limit, seed);
+		return this.randomisedMatchSearch(index, indexType, fieldsToMatch, startIndex, limit, seed);
 	}
 
 	@Override
-	public final ResultsWrapper<String> randomisedPaginatedMatchSearch(final String index,
+	public final ResultsWrapper<String> randomisedMatchSearch(final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit, final Long randomSeed) {
@@ -204,7 +204,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 	@Override
 	public final ResultsWrapper<String> fuzzySearch(final String index, final String indexType,
-			final String searchString, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
+			final String searchString, final Integer startIndex, final Integer limit, 
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch,
 			final String... fields) {
 		if (null == index || null == indexType || null == searchString || null == fields) {
 			log.warn("A required field is missing. Unable to execute search.");
@@ -221,7 +222,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
 		query.must(fuzzyQuery);
 
-		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query);
+		ResultsWrapper<String> resultList = this.executeBasicPaginatedQuery(index, indexType, query, startIndex, limit);
 
 		return resultList;
 	}
@@ -407,6 +408,35 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType)
 				.setQuery(query);
+
+		return executeQuery(configuredSearchRequestBuilder);
+	}
+	
+	/**
+	 * Provides default search execution using the fields specified.
+	 * 
+	 * This method does not provide any way of controlling sort order but will
+	 * allow you to paginate across the results.
+	 * 
+	 * @param index
+	 *            - search index to execute the query against.
+	 * @param indexType
+	 *            - index type to execute the query against.
+	 * @param query
+	 *            - the query to run.
+	 * @param startIndex
+	 *            - The index of the first search result
+	 * @param limit
+	 *            - the number of results to return each time.
+	 * 
+	 * @return list of the search results
+	 */
+	private ResultsWrapper<String> executeBasicPaginatedQuery(final String index, final String indexType,
+			final QueryBuilder query, final int startIndex, final int limit) {
+		log.debug("Building Query: " + query);
+
+		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType)
+				.setQuery(query).setSize(limit).setFrom(startIndex);
 
 		return executeQuery(configuredSearchRequestBuilder);
 	}

@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -153,25 +154,25 @@ public class IsaacController {
 			@Context final Request request,
 			@QueryParam("ids") final String ids,
 			@QueryParam("tags") final String tags,
-			@QueryParam("start_index") final String startIndex,
-			@QueryParam("limit") final String limit) {
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
 		StringBuilder etagCodeBuilder = new StringBuilder();
 		
-		String newLimit = null;
+		Integer newLimit = null;
 		
 		if (limit != null) {
 			newLimit = limit;
-			etagCodeBuilder.append(limit);
+			etagCodeBuilder.append(limit.toString());
 		}
 
 		// options
 		if (ids != null) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
-			newLimit = String.valueOf(idsList.size());
+			newLimit = idsList.size();
 			etagCodeBuilder.append(ids);
 		}
 
@@ -286,31 +287,31 @@ public class IsaacController {
 			@QueryParam("searchString") final String searchString,
 			@QueryParam("tags") final String tags,
 			@QueryParam("levels") final String level,
-			@QueryParam("start_index") final String startIndex,
-			@QueryParam("limit") final String limit) {
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		StringBuilder etagCodeBuilder = new StringBuilder();
-		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 		etagCodeBuilder.append(QUESTION_TYPE);
-		
-		String newLimit = "10";
-		String newStartIndex = "0";
+
+		// defaults
+		int newLimit = DEFAULT_RESULTS_LIMIT;
+		int newStartIndex = 0;
 
 		// options
-		if (limit != null && !limit.isEmpty()) {
+		if (limit != null) {
 			newLimit = limit;
 		}
 		
-		if (startIndex != null && !startIndex.isEmpty()) {
+		if (startIndex != null) {
 			newStartIndex = startIndex;
 		}
 
 		if (ids != null && !ids.isEmpty()) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
-			newLimit = String.valueOf(idsList.size());
+			newLimit = idsList.size();
 			etagCodeBuilder.append(ids);
 		}
 
@@ -339,8 +340,9 @@ public class IsaacController {
 		// library call. This is because the previous one does not allow fuzzy
 		// search. We should unify these as the limit and pagination stuff doesn't work via this route.
 		if (searchString != null && !searchString.isEmpty()) {
-			ResultsWrapper<ContentDTO> c = api.search(searchString, api.getLiveVersion(), fieldsToMatch);
-			
+			ResultsWrapper<ContentDTO> c = api.segueSearch(searchString, api.getLiveVersion(), fieldsToMatch,
+					newStartIndex, newLimit);
+
 			ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
 					this.extractContentSummaryFromList(c.getResults(),
 							propertiesLoader.getProperty(PROXY_PATH)),
@@ -445,6 +447,10 @@ public class IsaacController {
 	 *            - to pass to the search engine.
 	 * @param types
 	 *            - a comma separated list of types to include in the search.
+	 * @param startIndex
+	 *            - the start index for the search results.
+	 * @param limit
+	 *            - the max number of results to return.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -457,7 +463,9 @@ public class IsaacController {
 			@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("searchString") final String searchString,
-			@QueryParam("types") final String types) {
+			@QueryParam("types") final String types,
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
@@ -472,7 +480,8 @@ public class IsaacController {
 		ResultsWrapper<ContentDTO> searchResults = null;
 
 		Response unknownApiResult = api.search(searchString,
-				api.getLiveVersion(), types);
+				api.getLiveVersion(), types, startIndex, limit);
+		
 		if (unknownApiResult.getEntity() instanceof ResultsWrapper) {
 			searchResults = (ResultsWrapper<ContentDTO>) unknownApiResult
 					.getEntity();
@@ -1224,40 +1233,18 @@ public class IsaacController {
 	 *            - the initial index for the first result.
 	 * @param limit
 	 *            - the maximums number of results to return
-	 * @return Response builder containing a list of content summary objects or containing
-	 *         a SegueErrorResponse
+	 * @return Response builder containing a list of content summary objects or
+	 *         containing a SegueErrorResponse
 	 */
-	private Response.ResponseBuilder listContentObjects(
-			final Map<String, List<String>> fieldsToMatch,
-			final String startIndex, final String limit) {
+	private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
+			final Integer startIndex, final Integer limit) {
 		ResultsWrapper<ContentDTO> c;
-		try {
-			Integer resultsLimit = null;
-			Integer startIndexOfResults = null;
 
-			if (null != limit) {
-				resultsLimit = Integer.parseInt(limit);
-			}
-
-			if (null != startIndex) {
-				startIndexOfResults = Integer.parseInt(startIndex);
-			}
-
-			c = api.findMatchingContent(api.getLiveVersion(),
-					SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
-					startIndexOfResults, resultsLimit);
-
-		} catch (NumberFormatException e) {
-			return new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"Unable to convert one of the integer parameters provided "
-							+ "into numbers (null is ok). Params provided were: limit "
-							+ limit + " and startIndex " + startIndex, e).toResponseBuilder();
-		}
+		c = api.findMatchingContent(api.getLiveVersion(),
+				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
 		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-				this.extractContentSummaryFromList(c.getResults(),
-						propertiesLoader.getProperty(PROXY_PATH)),
+				this.extractContentSummaryFromList(c.getResults(), propertiesLoader.getProperty(PROXY_PATH)),
 				c.getTotalResults());
 
 		return Response.ok(summarizedContent);

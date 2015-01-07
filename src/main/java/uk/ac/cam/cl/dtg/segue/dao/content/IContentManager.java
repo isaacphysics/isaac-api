@@ -146,16 +146,23 @@ public interface IContentManager {
 	/**
 	 * Allows fullText search using the internal search provider.
 	 * 
+	 * The fields included in the search is determined by the content manager.
+	 * 
 	 * @param version
 	 *            - version of the content to search.
 	 * @param searchString
 	 *            - string to use as search term.
-	 * @param typesToInclude
-	 *            - list of types to include i.e. type field must match.
+	 * @param fieldsThatMustMatch
+	 *            - map of fields to values which must match. - this can be null and will be ignored
+	 * @param startIndex
+	 *            - the index of the first item to return.
+	 * @param limit
+	 *            - the maximum number of results to return.
 	 * @return list of results ordered by relevance.
 	 */
 	ResultsWrapper<ContentDTO> searchForContent(String version,
-			String searchString, Map<String, List<String>> typesToInclude);
+			String searchString, @Nullable Map<String, List<String>> fieldsThatMustMatch, Integer startIndex,
+			Integer limit);
 
 	/**
 	 * Search for content by providing a set of tags.

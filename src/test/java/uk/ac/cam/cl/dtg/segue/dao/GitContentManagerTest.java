@@ -45,6 +45,7 @@ import org.powermock.reflect.Whitebox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -165,7 +166,7 @@ public class GitContentManagerTest {
 		expect(database.verifyCommitExists(version)).andReturn(false).once();
 		replay(database);
 
-		assertTrue(defaultGCM.searchForContent(version, "", null) == null);
+		assertTrue(defaultGCM.searchForContent(version, "", null,0, Constants.DEFAULT_RESULTS_LIMIT) == null);
 
 		verify(database);
 	}
@@ -193,7 +194,7 @@ public class GitContentManagerTest {
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(true).once();
 		expect(
 				searchProvider.fuzzySearch(anyString(), anyString(),
-						anyString(), anyObject(Map.class), anyString(),
+						anyString(), anyInt(), anyInt(), anyObject(Map.class), anyString(),
 						anyString(), anyString(), anyString(), anyString()))
 				.andReturn(searchHits).once();
 
@@ -216,7 +217,7 @@ public class GitContentManagerTest {
 		
 		assertTrue(gitContentManager
 				.searchForContent(INITIAL_VERSION, searchString,
-						fieldsThatMustMatch).getResults().size() == 0);
+						fieldsThatMustMatch, 0, Constants.DEFAULT_RESULTS_LIMIT).getResults().size() == 0);
 
 		verify(database, searchProvider, searchHits, contentMapper);
 	}

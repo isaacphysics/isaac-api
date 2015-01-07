@@ -39,7 +39,6 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.elasticsearch.common.collect.Lists;
@@ -163,8 +162,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	}
 
 	/**
-	 * Method to allow clients to log frontend specific behaviour in the
-	 * backend.
+	 * Method to allow clients to log front-end specific behaviour in the
+	 * database.
 	 * 
 	 * @param httpRequest
 	 *            - to enable retrieval of session information.
@@ -271,28 +270,29 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 * @return Response containing a ResultsWrapper<ContentDTO> or a Response
 	 *         containing null if none found.
 	 */
-	public final ResultsWrapper<ContentDTO> findMatchingContent(String version,
+	public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			@Nullable Integer startIndex, @Nullable Integer limit) {
+			@Nullable final Integer startIndex, @Nullable final Integer limit) {
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
-		if (null == version) {
-			version = contentVersionController.getLiveVersion();
+		String newVersion = this.getLiveVersion();
+		Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;
+		Integer newStartIndex = 0;
+		if (version != null) {
+			newVersion = version;
 		}
-
-		if (null == limit) {
-			limit = Constants.DEFAULT_RESULTS_LIMIT;
+		if (limit != null) {
+			newLimit = limit;
 		}
-
-		if (null == startIndex) {
-			startIndex = 0;
+		if (startIndex != null) {
+			newStartIndex = startIndex;
 		}
 
 		ResultsWrapper<ContentDTO> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
-			c = contentPersistenceManager.findByFieldNames(version, fieldsToMatch, startIndex, limit);
+			c = contentPersistenceManager.findByFieldNames(newVersion, fieldsToMatch, newStartIndex, newLimit);
 		} catch (IllegalArgumentException e) {
 			log.error("Unable to map content object.", e);
 			throw e;
@@ -304,6 +304,9 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	/**
 	 * This method will return a ResultsWrapper<ContentDTO> based on the
 	 * parameters supplied. Providing the results in a randomised order.
+	 * 
+	 * This method is the same as  {@link #findMatchingContentRandomOrder(String, Map, Integer, Integer, Long)}
+	 * but uses a default random seed.
 	 * 
 	 * @param version
 	 *            - the version of the content to search. If null it will
@@ -345,29 +348,30 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 * @return Response containing a ResultsWrapper<ContentDTO> or a Response
 	 *         containing null if none found.
 	 */
-	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable String version,
+	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			Integer startIndex, Integer limit, final Long randomSeed) {
+			final Integer startIndex, final Integer limit, final Long randomSeed) {
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
-		if (null == version) {
-			version = contentVersionController.getLiveVersion();
+		String newVersion = this.getLiveVersion();
+		Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;
+		Integer newStartIndex = 0;
+		if (version != null) {
+			newVersion = version;
 		}
-
-		if (null == limit) {
-			limit = Constants.DEFAULT_RESULTS_LIMIT;
+		if (limit != null) {
+			newLimit = limit;
 		}
-
-		if (null == startIndex) {
-			startIndex = 0;
+		if (startIndex != null) {
+			newStartIndex = startIndex;
 		}
 
 		ResultsWrapper<ContentDTO> c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
-			c = contentPersistenceManager.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex,
-					limit, randomSeed);
+			c = contentPersistenceManager.findByFieldNamesRandomOrder(newVersion, fieldsToMatch, newStartIndex,
+					newLimit, randomSeed);
 		} catch (IllegalArgumentException e) {
 			log.error("Unable to map content object.", e);
 			throw e;
@@ -393,19 +397,21 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Path("content/{version}/{id}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response getContentById(@PathParam("version") String version,
+	public final Response getContentById(@PathParam("version") final String version,
 			@PathParam("id") final String id) {
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-
-		if (null == version) {
-			version = contentVersionController.getLiveVersion();
+		
+		String newVersion = contentVersionController.getLiveVersion();
+		
+		if (version != null) {
+			newVersion = version;
 		}
 
 		Content c = null;
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
-			c = contentPersistenceManager.getById(id, contentVersionController.getLiveVersion());
+			c = contentPersistenceManager.getById(id, newVersion);
 
 			if (null == c) {
 				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
@@ -427,14 +433,16 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	/**
 	 * Rest end point that searches the content manager for some search string.
 	 * 
-	 * TODO: we should allow this to be paginated. 
-	 * 
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param version
 	 *            - of the content to search.
 	 * @param types
 	 *            - a comma separated list of types to include in the search.
+	 * @param startIndex
+	 *            - the start index for the search results.
+	 * @param limit
+	 *            - the max number of results to return.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -443,8 +451,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response search(@PathParam("searchString") final String searchString,
-			@PathParam("version") final String version, @QueryParam("types") final String types) {
-
+			@PathParam("version") final String version, @QueryParam("types") final String types,
+			@QueryParam("start_index") final Integer startIndex, @QueryParam("limit") final Integer limit) {
 		Map<String, List<String>> typesThatMustMatch = null;
 
 		if (null != types) {
@@ -452,18 +460,15 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			typesThatMustMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(types.split(",")));
 		}
 
-		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-
-		ResultsWrapper<ContentDTO> searchResults = contentPersistenceManager.searchForContent(
-				contentVersionController.getLiveVersion(), searchString, typesThatMustMatch);
+		ResultsWrapper<ContentDTO> searchResults = this.segueSearch(searchString, version,
+				typesThatMustMatch, startIndex, limit);
 
 		return Response.ok(searchResults).build();
 	}
 	
 	/**
-	 * Library Method that searches the content manager for some search string and map of fields that must match.
-	 * 
-	 * TODO: we should allow this to be paginated. 
+	 * Library method that searches the content manager for some search string
+	 * and provides map of fields that must match.
 	 * 
 	 * @param searchString
 	 *            - to pass to the search engine.
@@ -471,39 +476,38 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 *            - of the content to search.
 	 * @param fieldsThatMustMatch
 	 *            - a map of fieldName to list of possible matches.
+	 * @param startIndex
+	 *            - the start index for the search results.
+	 * @param limit
+	 *            - the max number of results to return.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
-	public final ResultsWrapper<ContentDTO> search(@PathParam("searchString") final String searchString,
-			@PathParam("version") final String version,
-			@QueryParam("fieldsToMatch") final Map<String, List<String>> fieldsThatMustMatch) {
+	public final ResultsWrapper<ContentDTO> segueSearch(final String searchString,
+			@Nullable final String version, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
+			@Nullable final Integer startIndex, @Nullable final Integer limit) {
+		int newLimit = Constants.DEFAULT_RESULTS_LIMIT;
+		int newStartIndex = 0;
+		String newVersion = contentVersionController.getLiveVersion();
+
+		if (version != null) {
+			newVersion = version;
+		}
+
+		if (limit != null) {
+			newLimit = limit;
+		}
+
+		if (startIndex != null) {
+			newStartIndex = startIndex;
+		}
+
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
-		ResultsWrapper<ContentDTO> searchResults = contentPersistenceManager.searchForContent(
-				contentVersionController.getLiveVersion(), searchString, fieldsThatMustMatch);
+		ResultsWrapper<ContentDTO> searchResults = contentPersistenceManager.searchForContent(newVersion,
+				searchString, fieldsThatMustMatch, newStartIndex, newLimit);
 
 		return searchResults;
-	}
-
-	/**
-	 * Rest end point that searches the content manager for some search string.
-	 * Using the live version of the content as the default.
-	 * 
-	 * @param searchString
-	 *            - to pass to the search engine.
-	 * @param types
-	 *            - a comma separated list of types to include in the search.
-	 * @return a response containing the search results (results wrapper) or an
-	 *         empty list.
-	 */
-	@GET
-	@Path("content/search/{searchString}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response search(@PathParam("searchString") final String searchString,
-			@QueryParam("types") final String types) {
-
-		return this.search(searchString, this.getLiveVersion(), types);
 	}
 
 	/**
@@ -554,7 +558,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		Set<String> tags = contentPersistenceManager.getTagsList(version);
 
-		return Response.ok().entity(tags).cacheControl(getCacheControl()).tag(etag).build();
+		return Response.ok(tags).cacheControl(getCacheControl()).tag(etag).build();
 	}
 
 	/**

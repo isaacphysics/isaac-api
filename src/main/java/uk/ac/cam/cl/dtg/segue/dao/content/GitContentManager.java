@@ -191,11 +191,14 @@ public class GitContentManager implements IContentManager {
 
 	@Override
 	public final ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
-			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch, final Integer startIndex,
+			final Integer limit) {
+		
 		if (this.ensureCache(version)) {
 			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE,
-					searchString, fieldsThatMustMatch, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
-					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
+					searchString, startIndex, limit, fieldsThatMustMatch, Constants.ID_FIELDNAME,
+					Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
+					Constants.CHILDREN_FIELDNAME);
 
 			List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
@@ -221,7 +224,7 @@ public class GitContentManager implements IContentManager {
 			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
 					Constants.SortOrder.ASC);
 
-			ResultsWrapper<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE,
+			ResultsWrapper<String> searchHits = searchProvider.matchSearch(version, CONTENT_TYPE,
 					fieldsToMatch, startIndex, limit, sortInstructions);
 
 			// setup object mapper to use preconfigured deserializer module.
@@ -251,10 +254,10 @@ public class GitContentManager implements IContentManager {
 		if (this.ensureCache(version)) {
 			ResultsWrapper<String> searchHits;
 			if (null == randomSeed) {
-				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
+				searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE,
 						fieldsToMatch, startIndex, limit);
 			} else {
-				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
+				searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE,
 						fieldsToMatch, startIndex, limit, randomSeed);
 			}
 
