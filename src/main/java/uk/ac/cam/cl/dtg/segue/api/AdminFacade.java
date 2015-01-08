@@ -105,7 +105,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getStatistics(@Context final HttpServletRequest request) {
 		try {
-			if (!this.userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR))) {
+			if (!isUserStaff(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an admin to access this endpoint.").toResponse();
 			}
@@ -129,7 +129,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSchoolStatistics(@Context final HttpServletRequest request) {
 		try {
-			if (!this.userManager.isUserAnAdmin(request)) {
+			if (!isUserAnAdmin(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an admin to access this endpoint.").toResponse();
 			}
@@ -161,7 +161,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			@PathParam("version") final String version) {
 
 		try {
-			if (this.userManager.isUserAnAdmin(request)) {
+			if (isUserAnAdmin(request)) {
 				IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 				String newVersion;
 				if (!contentPersistenceManager.isValidVersion(version)) {
@@ -226,7 +226,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			// an admin.
 			if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
 					Constants.EnvironmentType.PROD.name())
-					|| this.userManager.isUserAnAdmin(request)) {
+					|| isUserAnAdmin(request)) {
 				log.info("Informed of content change; " + "so triggering new synchronisation job.");
 				contentVersionController.triggerSyncJob().get();
 				return Response.ok("success - job started").build();
@@ -296,7 +296,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Path("/clear_caches")
 	public final synchronized Response clearCaches(@Context final HttpServletRequest request) {
 		try {
-			if (this.userManager.isUserAnAdmin(request)) {
+			if (isUserAnAdmin(request)) {
 				IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 				log.info("Clearing all caches...");
@@ -337,8 +337,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
 		if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
 			try {
-				if (!this.userManager.checkUserRole(request,
-						Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR))) {
+				if (!isUserStaff(request)) {
 					return new SegueErrorResponse(Status.FORBIDDEN,
 							"You must be an admin to access this endpoint.").toResponse();
 
@@ -400,7 +399,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
 			@QueryParam("id") final String userId, @QueryParam("email") final String email) {
 		try {
-			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
+			if (!isUserAnAdmin(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -441,7 +440,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("user_id") final String userId) {
 		try {
-			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
+			if (!isUserAnAdmin(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -476,7 +475,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	public Response deleteUserAccount(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("user_id") final String userId) {
 		try {
-			if (!this.userManager.isUserAnAdmin(httpServletRequest)) {
+			if (!isUserAnAdmin(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -504,5 +503,25 @@ public class AdminFacade extends AbstractSegueFacade {
 		}
 	}
 	
+	/**
+	 * Is the current user an admin.
+	 * 
+	 * @param request - with session information
+	 * @return true if user is logged in as an admin, false otherwise.
+	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
+	 */
+	private boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
+		return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN));
+	}
 	
+	/**
+	 * Is the current user in a staff role.
+	 * 
+	 * @param request - with session information
+	 * @return true if user is logged in as an admin, false otherwise.
+	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
+	 */
+	private boolean isUserStaff(final HttpServletRequest request) throws NoUserLoggedInException {
+		return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR));
+	}
 }

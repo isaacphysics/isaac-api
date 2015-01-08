@@ -350,7 +350,8 @@ public final class Constants {
 	public static final String REDIRECT_URL = "redirectUrl";
 
 	public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
-
+	
+	public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
 
 	
 	/**
