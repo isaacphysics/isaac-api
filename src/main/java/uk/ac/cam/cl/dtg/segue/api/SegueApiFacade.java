@@ -851,11 +851,9 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Path("info/content_versions/live_version")
 	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getLiveVersionInfo() {
-		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>()
 				.put("liveVersion", contentVersionController.getLiveVersion())
-				.put("latestKnownVersion", contentPersistenceManager.getLatestVersionId()).build();
+				.build();
 
 		return Response.ok(result).build();
 	}
