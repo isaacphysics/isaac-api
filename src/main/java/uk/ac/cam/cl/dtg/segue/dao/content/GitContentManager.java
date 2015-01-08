@@ -657,8 +657,10 @@ public class GitContentManager implements IContentManager {
 						}
 					}
 				} catch (JsonMappingException e) {
-					log.warn("Unable to parse the json file found " + treeWalk.getPathString()
-							+ " as a content object. Skipping file...", e);
+					log.warn(String
+							.format("Unable to parse the json file found %s as a content object. "
+									+ "Skipping file due to error: \n %s",
+									treeWalk.getPathString(), e.getMessage()));
 					Content dummyContent = new Content();
 					dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
 					this.registerContentProblem(sha, dummyContent,
