@@ -1644,7 +1644,7 @@ public class UserManager {
 			CodeExchangeException, NoUserException, CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
 		if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
-			throw new CrossSiteRequestForgeryException("CRSF check failed");
+			throw new CrossSiteRequestForgeryException("CSRF check failed");
 		}
 
 		// this will have our authorization code within it.
