@@ -339,13 +339,13 @@ public class AdminFacade extends AbstractSegueFacade {
 			try {
 				if (!this.userManager.checkUserRole(request,
 						Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR))) {
-					return Response.status(Status.FORBIDDEN)
-							.entity("This page is only available to administrators in PROD mode.").build();
+					return new SegueErrorResponse(Status.FORBIDDEN,
+							"You must be an admin to access this endpoint.").toResponse();
 
 				}
 			} catch (NoUserLoggedInException e) {
-				return Response.status(Status.UNAUTHORIZED)
-						.entity("You must be logged in to view this page in PROD mode.").build();
+				return new SegueErrorResponse(Status.UNAUTHORIZED,
+						"You must be logged in to access this endpoint.").toResponse();
 			}
 		}
 
