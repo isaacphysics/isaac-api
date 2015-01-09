@@ -24,6 +24,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +56,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -97,31 +97,27 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 /**
  * This class is responsible for all low level user management actions e.g.
  * authentication and registration. 
  */
 public class UserManager {
-	private static final Logger log = LoggerFactory
-			.getLogger(UserManager.class);
-
+	private static final Logger log = LoggerFactory.getLogger(UserManager.class);
 	private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
-
+	
+	private final PropertiesLoader properties;
+	
 	private final IUserDataManager database;
 	private final Cache<String, AnonymousUser> temporaryUserCache;
-	private final ILogManager logManager;
 	
-	private final String hmacKey;
-	private final Integer sessionExpiryTimeInSeconds;
-	private final SimpleDateFormat sessionDateFormat; 
+	private final ILogManager logManager;
 	
 	private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
 	private final MapperFacade dtoMapper;
 	
 	private final ICommunicator communicator;
-	
-	private final String hostName; // TODO: This still shouldn't be here
-
 	private final ObjectMapper serializationMapper;
 	
 	/**
@@ -147,7 +143,7 @@ public class UserManager {
 			final ICommunicator communicator, final ILogManager logManager) {
 		this(database, properties, providersToRegister, dtoMapper, communicator,
 				CacheBuilder.newBuilder()
-						.expireAfterAccess(Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
+						.expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
 						.<String, AnonymousUser> build(), logManager);
 	}
 
@@ -181,24 +177,19 @@ public class UserManager {
 		Validate.notNull(communicator);
 		Validate.notNull(temporaryUserCache);
 		Validate.notNull(logManager);
+		Validate.notNull(properties.getProperty(HMAC_SALT));
+		Validate.notNull(Integer.parseInt(properties
+				.getProperty(SESSION_EXPIRY_SECONDS)));
+		Validate.notNull(properties.getProperty(HOST_NAME));
 		
 		this.database = database;
 		this.temporaryUserCache = temporaryUserCache;
 		this.logManager = logManager;
-		this.hmacKey = properties.getProperty(Constants.HMAC_SALT);
-		Validate.notNull(this.hmacKey);
-
-		this.sessionExpiryTimeInSeconds = Integer.parseInt(properties
-				.getProperty(Constants.SESSION_EXPIRY_SECONDS));
-		Validate.notNull(sessionExpiryTimeInSeconds);
-
-		this.sessionDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+		this.properties = properties;
 
 		this.registeredAuthProviders = providersToRegister;
 		this.dtoMapper = dtoMapper;
-		this.hostName = properties.getProperty(Constants.HOST_NAME);
-		Validate.notNull(this.hostName);
-
+		
 		this.communicator = communicator;
 		this.serializationMapper = new ObjectMapper();
 	}
@@ -262,7 +253,7 @@ public class UserManager {
 		}
 		
 		// record our intention to link an account.
-		request.getSession().setAttribute(Constants.LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
+		request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
 		
 		return this.initiateAuthenticationFlow(request, provider);
 	}
@@ -336,7 +327,7 @@ public class UserManager {
 				} else {
 					// This extra check is to prevent callbacks to this method from merging accounts unexpectedly
 					Boolean intentionToLinkRegistered = (Boolean) request.getSession()
-							.getAttribute(Constants.LINK_ACCOUNT_PARAM_NAME);
+							.getAttribute(LINK_ACCOUNT_PARAM_NAME);
 					if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
 						SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
 								"User is already authenticated - "
@@ -347,7 +338,7 @@ public class UserManager {
 					}
 
 					// clear link accounts intention until next time
-					request.removeAttribute(Constants.LINK_ACCOUNT_PARAM_NAME);
+					request.removeAttribute(LINK_ACCOUNT_PARAM_NAME);
 					
 					// Decide if this is a link operation or an authenticate / register
 					// operation.
@@ -377,7 +368,6 @@ public class UserManager {
 			// to do this again for a while.
 			this.createSession(request, response, segueUserDO);
 			return Response.ok(segueUserDTO).build();
-
 		} catch (IOException e) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.INTERNAL_SERVER_ERROR,
@@ -441,8 +431,8 @@ public class UserManager {
 		// in this case we expect a username and password to have been
 		// sent in the json response.
 		if (null == credentials
-				|| credentials.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME) == null
-				|| credentials.get(Constants.LOCAL_AUTH_PASSWORD_FIELDNAME) == null) {
+				|| credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
+				|| credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME) == null) {
 			SegueErrorResponse error = new SegueErrorResponse(
 					Status.BAD_REQUEST,
 					"You must specify credentials email and password to use this authentication provider.");
@@ -471,8 +461,8 @@ public class UserManager {
 
 			try {
 				RegisteredUser user = passwordAuthenticator.authenticate(credentials
-						.get(Constants.LOCAL_AUTH_EMAIL_FIELDNAME), credentials
-						.get(Constants.LOCAL_AUTH_PASSWORD_FIELDNAME));
+						.get(LOCAL_AUTH_EMAIL_FIELDNAME), credentials
+						.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
 
 				this.createSession(request, response, user);
 				
@@ -539,23 +529,31 @@ public class UserManager {
 	}
 	
 	/**
-	 * Is the current user an admin.
+	 * CheckUserRole matches a list of valid roles.
 	 * 
-	 * @param request - with session information
-	 * @return true if user is logged in as an admin, false otherwise.
-	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
+	 * @param request
+	 *            - http request so that we can get current users details.
+	 * @param validRoles
+	 *            - a Collection of roles that we would want the user to match.
+	 * @return true if the user is a member of one of the roles in our valid
+	 *         roles list. False if not.
+	 * @throws NoUserLoggedInException
+	 *             - if there is no registered user logged in.
 	 */
-	public final boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
+	public final boolean checkUserRole(final HttpServletRequest request, final Collection<Role> validRoles)
+		throws NoUserLoggedInException {
 		RegisteredUser user = this.getCurrentRegisteredUserDO(request);
-		
+
 		if (null == user) {
 			throw new NoUserLoggedInException();
 		}
 		
-		if (user.getRole() != null && user.getRole().equals(Role.ADMIN)) {
-			return true;
-		} 
-		
+		for (Role roleToMatch : validRoles) {
+			if (user.getRole().equals(roleToMatch)) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 	
@@ -683,7 +681,7 @@ public class UserManager {
 		Validate.notNull(request);
 		try {
 			request.getSession().invalidate();
-			Cookie logoutCookie = new Cookie(Constants.SEGUE_AUTH_COOKIE, "");
+			Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
 			logoutCookie.setPath("/");
 			logoutCookie.setMaxAge(0);
 			logoutCookie.setHttpOnly(true);
@@ -715,7 +713,7 @@ public class UserManager {
 		// an id is the question page
 		// and that the id separator is |
 		String[] questionPageId = questionResponse.getQuestionId().split(
-				Constants.ESCAPED_ID_SEPARATOR);
+				ESCAPED_ID_SEPARATOR);
 
 		if (user instanceof RegisteredUserDTO) {
 			RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
@@ -878,6 +876,12 @@ public class UserManager {
 		userToSave.setRegistrationDate(existingUser.getRegistrationDate());		
 		userToSave.setLastUpdated(new Date());
 		
+		// special case if user used to have a role and admin user has removed it - it needs to be removed.
+		// this is safe as it is equivalent to having no permissions.
+		if (user.getRole() == null && existingUser.getRole() != null) {
+			userToSave.setRole(null);
+		}
+		
 		this.checkForSeguePasswordChange(user, userToSave);
 
 		// Before save we should validate the user for mandatory fields.
@@ -1014,6 +1018,7 @@ public class UserManager {
 
 		// Save user
 		this.database.createOrUpdateUser(user);
+		log.info(String.format("Password Reset for user (%s) has completed successfully.", userObject.getEmail()));
 	}
 
 	/**
@@ -1056,21 +1061,25 @@ public class UserManager {
 		Validate.notNull(response);
 		Validate.notNull(user);
 		Validate.notBlank(user.getDbId());
+		SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+		Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties
+				.getProperty(SESSION_EXPIRY_SECONDS));
 		
 		String userId = user.getDbId();
+		String hmacKey = properties.getProperty(HMAC_SALT);
 		
 		try {
 			String currentDate = sessionDateFormat.format(new Date());
 			String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, currentDate);
 			
 			Map<String, String> sessionInformation = ImmutableMap.of(
-					Constants.SESSION_USER_ID, userId, 
-					Constants.DATE_SIGNED, currentDate,
-					Constants.HMAC, sessionHMAC);
+					SESSION_USER_ID, userId, 
+					DATE_SIGNED, currentDate,
+					HMAC, sessionHMAC);
 			
-			Cookie authCookie = new Cookie(Constants.SEGUE_AUTH_COOKIE, serializationMapper
+			Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE, serializationMapper
 					.writeValueAsString(sessionInformation));
-			authCookie.setMaxAge(this.sessionExpiryTimeInSeconds);
+			authCookie.setMaxAge(sessionExpiryTimeInSeconds);
 			authCookie.setPath("/");
 			authCookie.setHttpOnly(true);
 			
@@ -1200,7 +1209,7 @@ public class UserManager {
 				String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
 
 				// Store antiForgeryToken in the users session.
-				request.getSession().setAttribute(Constants.STATE_PARAM_NAME, antiForgeryTokenFromProvider);
+				request.getSession().setAttribute(STATE_PARAM_NAME, antiForgeryTokenFromProvider);
 
 				redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
 			} else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
@@ -1208,7 +1217,7 @@ public class UserManager {
 				OAuth1Token token = oauth1Provider.getRequestToken();
 
 				// Store token and secret in the users session.
-				request.getSession().setAttribute(Constants.OAUTH_TOKEN_PARAM_NAME, token.getToken());
+				request.getSession().setAttribute(OAUTH_TOKEN_PARAM_NAME, token.getToken());
 
 				redirectLink = URI.create(oauth1Provider.getAuthorizationUrl(token));
 			} else {
@@ -1218,7 +1227,7 @@ public class UserManager {
 				return error.toResponse();
 			}
 			
-			Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>().put(Constants.REDIRECT_URL,
+			Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>().put(REDIRECT_URL,
 					redirectLink).build();
 			
 			return Response.ok(redirectResponse).build();
@@ -1248,9 +1257,16 @@ public class UserManager {
 	private boolean isValidUsersSession(final Map<String, String> sessionInformation) {
 		Validate.notNull(sessionInformation);
 
-		String userId = sessionInformation.get(Constants.SESSION_USER_ID);
-		String sessionCreationDate = sessionInformation.get(Constants.DATE_SIGNED);
-		String sessionHMAC = sessionInformation.get(Constants.HMAC);
+		Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties
+				.getProperty(SESSION_EXPIRY_SECONDS));
+		
+		SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
+		
+		String hmacKey = properties.getProperty(HMAC_SALT);
+		
+		String userId = sessionInformation.get(SESSION_USER_ID);
+		String sessionCreationDate = sessionInformation.get(DATE_SIGNED);
+		String sessionHMAC = sessionInformation.get(HMAC);
 
 		String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionCreationDate);
 
@@ -1263,7 +1279,7 @@ public class UserManager {
 		Calendar sessionExpiryDate = Calendar.getInstance(); 
 		try {
 			sessionExpiryDate.setTime(sessionDateFormat.parse(sessionCreationDate));
-			sessionExpiryDate.add(Calendar.SECOND, this.sessionExpiryTimeInSeconds);
+			sessionExpiryDate.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
 			
 			if (new Date().after(sessionExpiryDate.getTime())) {
 				log.debug("Session expired");
@@ -1378,9 +1394,9 @@ public class UserManager {
 
 		String key;
 		if (oauthProvider instanceof IOAuth2Authenticator) {
-			key = Constants.STATE_PARAM_NAME;
+			key = STATE_PARAM_NAME;
 		} else if (oauthProvider instanceof IOAuth1Authenticator) {
-			key = Constants.OAUTH_TOKEN_PARAM_NAME;
+			key = OAUTH_TOKEN_PARAM_NAME;
 		} else {
 			throw new CrossSiteRequestForgeryException(
 					"Provider not recognized.");
@@ -1394,17 +1410,17 @@ public class UserManager {
 		if (null == csrfTokenFromUser || null == csrfTokenFromProvider
 				|| !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
 			log.error("Invalid state parameter - Provider said: "
-					+ request.getParameter(Constants.STATE_PARAM_NAME)
+					+ request.getParameter(STATE_PARAM_NAME)
 					+ " Session said: "
 					+ request.getSession().getAttribute(
-							Constants.STATE_PARAM_NAME));
+							STATE_PARAM_NAME));
 			return false;
 		} else {
 			log.debug("State parameter matches - Provider said: "
-					+ request.getParameter(Constants.STATE_PARAM_NAME)
+					+ request.getParameter(STATE_PARAM_NAME)
 					+ " Session said: "
 					+ request.getSession().getAttribute(
-							Constants.STATE_PARAM_NAME));
+							STATE_PARAM_NAME));
 			return true;
 		}
 	}
@@ -1528,7 +1544,8 @@ public class UserManager {
 		// decide if we need to register a new user or link to an existing
 		// account
 		if (null == localUserInformation) {
-			log.info("New registration - User does not already exist.");
+			log.info(String.format("New registration (%s) as user does not already exist.",
+					federatedAuthenticator.getAuthenticationProvider().name()));
 
 			UserFromAuthProvider userFromProvider = federatedAuthenticator
 					.getUserInfo(providerSpecificUserLookupReference);
@@ -1626,7 +1643,7 @@ public class UserManager {
 			CodeExchangeException, NoUserException, CrossSiteRequestForgeryException {
 		// verify there is no cross site request forgery going on.
 		if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
-			throw new CrossSiteRequestForgeryException("CRSF check failed");
+			throw new CrossSiteRequestForgeryException("CSRF check failed");
 		}
 
 		// this will have our authorization code within it.
@@ -1738,7 +1755,7 @@ public class UserManager {
 		}
 		
 		// get the current user based on their session id information
-		String currentUserId = currentSessionInformation.get(Constants.SESSION_USER_ID);
+		String currentUserId = currentSessionInformation.get(SESSION_USER_ID);
 		// should be ok as isValidUser checks this.
 		Validate.notBlank(currentUserId);
 		
@@ -1813,11 +1830,12 @@ public class UserManager {
 	 * @throws CommunicationException - if a fault occurred whilst sending the communique
 	 */
 	private void sendPasswordResetMessage(final RegisteredUser user) throws CommunicationException {
+		String hostName = properties.getProperty(HOST_NAME);
 		String subject = "Password Reset";
 
 		// Construct message
 		String message = String.format("Please follow this link to reset your password: https://%s/resetpassword/%s",
-				this.hostName, user.getResetToken());
+				hostName, user.getResetToken());
 
 		// Send message
 		communicator.sendMessage(user.getEmail(), user.getGivenName(), subject, message);
@@ -1880,23 +1898,23 @@ public class UserManager {
 	private AnonymousUser getAnonymousUserDO(final HttpServletRequest request) {
 		AnonymousUser user;
 		// no session exists so create one.
-		if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) == null) {
+		if (request.getSession().getAttribute(ANONYMOUS_USER) == null) {
 			user = new AnonymousUser(request.getSession().getId());
 			user.setDateCreated(new Date());
 			// add the user reference to the session
-			request.getSession().setAttribute(Constants.ANONYMOUS_USER, user.getSessionId());
+			request.getSession().setAttribute(ANONYMOUS_USER, user.getSessionId());
 			this.temporaryUserCache.put(user.getSessionId(), user);
 		} else {
 			// reuse existing one
-			if (request.getSession().getAttribute(Constants.ANONYMOUS_USER) instanceof String) {
+			if (request.getSession().getAttribute(ANONYMOUS_USER) instanceof String) {
 				String userId = (String) request.getSession().getAttribute(
-						Constants.ANONYMOUS_USER);
+						ANONYMOUS_USER);
 				user = this.temporaryUserCache.getIfPresent(userId);
 				
 				if (null == user) {
 					// the session must have expired. Create a new user and run this method again.
 					// this probably won't happen often as the session expiry and the cache should be timed correctly.
-					request.getSession().removeAttribute(Constants.ANONYMOUS_USER);
+					request.getSession().removeAttribute(ANONYMOUS_USER);
 					log.warn("Anonymous user session expired so creating a"
 							+ " new one - this should not happen often if cache settings are correct.");
 					return this.getAnonymousUserDO(request);
@@ -1946,7 +1964,8 @@ public class UserManager {
 			return;
 		}
 		
-		log.info("Merging anonymous questions with known user account");
+		log.info(String.format("Merging anonymously answered questions with known user account (%s)",
+				registeredUser.getDbId()));
 		
 		for (String questionPageId : anonymouslyAnsweredQuestions.keySet()) {
 			for (String questionId : anonymouslyAnsweredQuestions.get(questionPageId).keySet()) {
@@ -1960,7 +1979,7 @@ public class UserManager {
 			}
 		}
 		
-		this.logManager.logInternalEvent(this.convertUserDOToUserDTO(registeredUser), Constants.MERGE_USER,
+		this.logManager.logInternalEvent(this.convertUserDOToUserDTO(registeredUser), MERGE_USER,
 				ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 		
 		// delete the session attribute as merge has completed.
@@ -1987,7 +2006,7 @@ public class UserManager {
 		}
 		
 		for (Cookie c : request.getCookies()) {
-			if (c.getName().equals(Constants.SEGUE_AUTH_COOKIE)) {
+			if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
 				segueAuthCookie = c;
 			}
 		}

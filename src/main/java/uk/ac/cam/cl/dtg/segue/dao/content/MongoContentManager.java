@@ -127,7 +127,7 @@ public class MongoContentManager implements IContentManager {
 
 	@Override
 	public ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
-			final Map<String, List<String>> typesToInclude) {
+			final Map<String, List<String>> typesToInclude, final Integer startIndex, final Integer limit) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 
@@ -157,7 +157,7 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public boolean ensureCache(final String version) {
+	public void ensureCache(final String version) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
 

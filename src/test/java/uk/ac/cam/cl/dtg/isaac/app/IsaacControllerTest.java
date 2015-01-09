@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -69,11 +70,12 @@ public class IsaacControllerTest {
 	/**
 	 * Verify that when an empty gameboard is noticed a 204 is returned.
 	 * @throws NoUserLoggedInException 
+	 * @throws ContentManagerException 
 	 */
 	@Test
 	@PowerMockIgnore({"javax.ws.*"})
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned() 
-		throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException {
+		throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException, ContentManagerException {
 		IsaacController isaacController = new IsaacController(dummyAPI,
 				dummyPropertiesLoader, dummyGameManager);
 

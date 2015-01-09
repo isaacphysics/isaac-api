@@ -162,4 +162,67 @@ public class GameFilter {
 		sb.append("concepts: " + concepts);
 		return sb.toString();
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((concepts == null) ? 0 : concepts.hashCode());
+		result = prime * result + ((fields == null) ? 0 : fields.hashCode());
+		result = prime * result + ((levels == null) ? 0 : levels.hashCode());
+		result = prime * result + ((subjects == null) ? 0 : subjects.hashCode());
+		result = prime * result + ((topics == null) ? 0 : topics.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof GameFilter)) {
+			return false;
+		}
+		GameFilter other = (GameFilter) obj;
+		if (concepts == null) {
+			if (other.concepts != null) {
+				return false;
+			}
+		} else if (!concepts.equals(other.concepts)) {
+			return false;
+		}
+		if (fields == null) {
+			if (other.fields != null) {
+				return false;
+			}
+		} else if (!fields.equals(other.fields)) {
+			return false;
+		}
+		if (levels == null) {
+			if (other.levels != null) {
+				return false;
+			}
+		} else if (!levels.equals(other.levels)) {
+			return false;
+		}
+		if (subjects == null) {
+			if (other.subjects != null) {
+				return false;
+			}
+		} else if (!subjects.equals(other.subjects)) {
+			return false;
+		}
+		if (topics == null) {
+			if (other.topics != null) {
+				return false;
+			}
+		} else if (!topics.equals(other.topics)) {
+			return false;
+		}
+		return true;
+	}
+	
 }

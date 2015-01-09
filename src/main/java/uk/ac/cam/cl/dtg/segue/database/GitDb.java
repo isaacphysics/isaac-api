@@ -427,7 +427,7 @@ public class GitDb {
 	 *         node.
 	 */
 	private ObjectId findGitObject(String sha, String filename)
-			throws IOException, UnsupportedOperationException {
+		throws IOException, UnsupportedOperationException {
 		if (null == sha || null == filename) {
 			return null;
 		}
@@ -469,8 +469,6 @@ public class GitDb {
 		}
 
 		if (null == objectId) {
-			log.warn("No objects found matching the search criteria (" + sha
-					+ "," + filename + ") in Git");
 			return null;
 		}
 

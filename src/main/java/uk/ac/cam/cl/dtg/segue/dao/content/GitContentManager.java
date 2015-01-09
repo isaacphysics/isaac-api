@@ -155,117 +155,112 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final Content getById(final String id, final String version) {
+	public final Content getById(final String id, final String version) throws ContentManagerException {
 		if (null == id) {
 			return null;
 		}
 
-		if (this.ensureCache(version)) {
-			Content result = gitCache.get(version).get(id);
-			if (null == result) {
-				log.error("Failed to locate the content (" + id + ") in the cache for version " + version);
-			} else {
-				log.debug("Loading content from cache: " + id);
-			}
-			return result;
+		this.ensureCache(version);
+
+		Content result = gitCache.get(version).get(id);
+		if (null == result) {
+			log.error("Failed to locate the content (" + id + ") in the cache for version " + version);
 		} else {
-			return null;
+			log.debug("Loading content from cache: " + id);
 		}
+		return result;
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final String version) {
-		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
-					Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix);
+	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final String version)
+		throws ContentManagerException {
+		this.ensureCache(version);
+		
+		ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
+				Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix);
 
-			List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+		List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-			return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
-					searchHits.getTotalResults());
-		} else {
-			log.error("Unable to ensure cache for requested version" + version);
-			return null;
-		}
+		return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
+				searchHits.getTotalResults());
 	}
 
 	@Override
 	public final ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
-			@Nullable final Map<String, List<String>> fieldsThatMustMatch) {
-		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE,
-					searchString, fieldsThatMustMatch, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
-					Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch, final Integer startIndex,
+			final Integer limit) throws ContentManagerException {
+		
+		this.ensureCache(version);
+		
+		ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE,
+				searchString, startIndex, limit, fieldsThatMustMatch, Constants.ID_FIELDNAME,
+				Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
+				Constants.CHILDREN_FIELDNAME);
 
-			List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+		List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-			return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
-					searchHits.getTotalResults());
-		} else {
-			log.error("Unable to ensure cache for requested version" + version);
-			return null;
-		}
+		return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults),
+				searchHits.getTotalResults());
 	}
 
 	@Override
 	public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			final Integer startIndex, final Integer limit) {
+			final Integer startIndex, final Integer limit) throws ContentManagerException {
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
-		if (this.ensureCache(version)) {
-			// TODO: Fix to allow sort order to be changed, currently it is hard
-			// coded to sort ASC by title..
-			Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+		this.ensureCache(version);
 
-			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-					Constants.SortOrder.ASC);
+		Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
 
-			ResultsWrapper<String> searchHits = searchProvider.paginatedMatchSearch(version, CONTENT_TYPE,
-					fieldsToMatch, startIndex, limit, sortInstructions);
+		sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+				Constants.SortOrder.ASC);
 
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-			List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
-			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
+		ResultsWrapper<String> searchHits = searchProvider.matchSearch(version, CONTENT_TYPE,
+				fieldsToMatch, startIndex, limit, sortInstructions);
 
-			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
-		}
+		// setup object mapper to use preconfigured deserializer module.
+		// Required to deal with type polymorphism
+		List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
+		List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
+		finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+		
 		return finalResults;
 	}
 
 	@Override
 	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			final Integer startIndex, final Integer limit) {
+			final Integer startIndex, final Integer limit) throws ContentManagerException {
 		return this.findByFieldNamesRandomOrder(version, fieldsToMatch, startIndex, limit, null);
 	}
 
 	@Override
 	public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
-			final Integer startIndex, final Integer limit, final Long randomSeed) {
+			final Integer startIndex, final Integer limit, final Long randomSeed) throws ContentManagerException {
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
-		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchHits;
-			if (null == randomSeed) {
-				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
-						fieldsToMatch, startIndex, limit);
-			} else {
-				searchHits = searchProvider.randomisedPaginatedMatchSearch(version, CONTENT_TYPE,
-						fieldsToMatch, startIndex, limit, randomSeed);
-			}
-
-			// setup object mapper to use preconfigured deserializer module.
-			// Required to deal with type polymorphism
-			List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
-
-			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
-
-			finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+		this.ensureCache(version);
+		
+		ResultsWrapper<String> searchHits;
+		if (null == randomSeed) {
+			searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE,
+					fieldsToMatch, startIndex, limit);
+		} else {
+			searchHits = searchProvider.randomisedMatchSearch(version, CONTENT_TYPE,
+					fieldsToMatch, startIndex, limit, randomSeed);
 		}
+
+		// setup object mapper to use preconfigured deserializer module.
+		// Required to deal with type polymorphism
+		List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
+
+		List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
+
+		finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+		
 
 		return finalResults;
 	}
@@ -341,28 +336,27 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final ResultsWrapper<ContentDTO> getContentByTags(final String version, final Set<String> tags) {
+	public final ResultsWrapper<ContentDTO> getContentByTags(final String version, final Set<String> tags)
+		throws ContentManagerException {
 		if (null == version || null == tags) {
 			return null;
 		}
 
-		if (this.ensureCache(version)) {
-			ResultsWrapper<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE,
-					tags, "tags");
+		this.ensureCache(version);
+		
+		ResultsWrapper<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE,
+				tags, "tags");
 
-			List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults.getResults());
+		List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults.getResults());
 
-			List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(contentResults);
+		List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(contentResults);
 
-			return new ResultsWrapper<ContentDTO>(contentDTOResults, searchResults.getTotalResults());
-		} else {
-			log.error("Cache not found. Failed to build cache with version: " + version);
-			return null;
-		}
+		return new ResultsWrapper<ContentDTO>(contentDTOResults, searchResults.getTotalResults());
+		
 	}
 
 	@Override
-	public final Set<String> getTagsList(final String version) {
+	public final Set<String> getTagsList(final String version) throws ContentManagerException {
 		Validate.notBlank(version);
 
 		this.ensureCache(version);
@@ -376,7 +370,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final Collection<String> getAllUnits(final String version) {
+	public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
 		Validate.notBlank(version);
 
 		this.ensureCache(version);
@@ -390,9 +384,10 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public final boolean ensureCache(final String version) {
+	public void ensureCache(final String version) throws ContentManagerException {
 		if (version == null) {
-			return false;
+			throw new ContentVersionUnavailableException(
+					"You must specify a non-null version to make sure it is cached.");
 		}
 
 		if (!gitCache.containsKey(version)) {
@@ -410,12 +405,13 @@ public class GitContentManager implements IContentManager {
 								checkForContentErrors(version);
 							}
 						};
+						validationJob.setDaemon(true);
 						validationJob.start();
 
 						buildSearchIndexFromLocalGitIndex(version);
 					} else {
-						log.warn("Unable find the commit (" + version + ") in git to ensure the cache");
-						return false;
+						throw new ContentVersionUnavailableException(String.format(
+								"Unable find the version (%s) in git to ensure the cache", version));
 					}
 				}
 			}
@@ -429,7 +425,22 @@ public class GitContentManager implements IContentManager {
 			}
 		}
 
-		return gitCache.containsKey(version) && searchIndexed;
+		StringBuilder errorMessageStringBuilder = new StringBuilder();
+		
+		if (!gitCache.containsKey(version)) {
+			errorMessageStringBuilder.append(String.format(
+					"Version %s does not exist in the internal cache.", version));
+		}
+		
+		if (!searchIndexed) {
+			errorMessageStringBuilder.append(String.format("Version %s does not exist in the searchIndex.",
+					version));
+		}
+		
+		String message = errorMessageStringBuilder.toString();
+		if (!message.isEmpty()) {
+			throw new ContentVersionUnavailableException(message);
+		}		
 	}
 
 	@Override
@@ -448,9 +459,12 @@ public class GitContentManager implements IContentManager {
 	 *            - the destination contentDTO which should have content
 	 *            summaries created.
 	 * @return fully populated contentDTO.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	@Override
-	public ContentDTO populateContentSummaries(final String version, final ContentDTO contentDTO) {
+	public ContentDTO populateContentSummaries(final String version, final ContentDTO contentDTO) 
+		throws ContentManagerException {
 		if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
 			return contentDTO;
 		}
@@ -643,8 +657,10 @@ public class GitContentManager implements IContentManager {
 						}
 					}
 				} catch (JsonMappingException e) {
-					log.warn("Unable to parse the json file found " + treeWalk.getPathString()
-							+ " as a content object. Skipping file...", e);
+					log.warn(String
+							.format("Unable to parse the json file found %s as a content object. "
+									+ "Skipping file due to error: \n %s",
+									treeWalk.getPathString(), e.getMessage()));
 					Content dummyContent = new Content();
 					dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
 					this.registerContentProblem(sha, dummyContent,

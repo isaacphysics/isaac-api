@@ -45,9 +45,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -104,8 +106,11 @@ public class GameManager {
 	 * @throws NoWildcardException
 	 *             - when we are unable to provide you with a wildcard object.
 	 * @throws SegueDatabaseException - 
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
-	public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException {
+	public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException,
+			ContentManagerException {
 		return this.generateRandomGameboard(null, null, null, null, null, null);
 	}
 
@@ -135,12 +140,14 @@ public class GameManager {
 	 *             - when we are unable to provide you with a wildcard object.
 	 * @throws SegueDatabaseException
 	 *             - if there is an error contacting the database.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public GameboardDTO generateRandomGameboard(
 			final List<String> subjectsList, final List<String> fieldsList,
 			final List<String> topicsList, final List<Integer> levelsList,
 			final List<String> conceptsList, final AbstractSegueUserDTO boardOwner) 
-		throws NoWildcardException, SegueDatabaseException {
+		throws NoWildcardException, SegueDatabaseException, ContentManagerException {
 
 		String boardOwnerId;
 		if (boardOwner instanceof RegisteredUserDTO) {
@@ -228,7 +235,10 @@ public class GameManager {
 	 *             database or updating the users gameboard link table.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId) throws SegueDatabaseException {
-				
+		if (null == gameboardId || gameboardId.isEmpty()) {
+			return null;
+		}
+		
 		GameboardDTO gameboardFound = 
 				this.gameboardPersistenceManager.getGameboardById(gameboardId);
 		
@@ -247,10 +257,12 @@ public class GameManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboard in the
 	 *             database or updating the users gameboard link table.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
 			final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
-		throws SegueDatabaseException {
+		throws SegueDatabaseException, ContentManagerException {
 				
 		GameboardDTO gameboardFound = augmentGameboardWithQuestionAttemptInformation(
 				this.gameboardPersistenceManager.getGameboardById(gameboardId),
@@ -276,13 +288,15 @@ public class GameManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem retrieving the gameboards from the
 	 *             database.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public final GameboardListDTO getUsersGameboards(final RegisteredUserDTO user, 
 			@Nullable final Integer startIndex, 
 			@Nullable final Integer limit,
 			@Nullable final GameboardState showOnly, 
 			@Nullable final List<Map.Entry<String, SortOrder>> sortInstructions)
-		throws SegueDatabaseException {
+		throws SegueDatabaseException, ContentManagerException {
 		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
@@ -383,10 +397,13 @@ public class GameManager {
 	 * @param questionAttemptsFromUser
 	 *            - the users question data.
 	 * @return Augmented Gameboard
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	public final GameboardDTO augmentGameboardWithQuestionAttemptInformation(
 			final GameboardDTO gameboardDTO,
-			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) 
+		throws ContentManagerException {
 		if (null == gameboardDTO) {
 			return null;
 		}
@@ -411,6 +428,45 @@ public class GameManager {
 		
 		double percentageCompleted = totalCompleted * 100 / gameboardDTO.getQuestions().size();
 		gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
+		
+		return gameboardDTO;
+	}
+	
+	/**
+	 * @param gameboardDTO - to save
+	 * @param owner - user to make owner of gameboard.
+	 * @return gameboardDTO as persisted
+	 * @throws NoWildcardException - if we cannot add a wildcard.
+	 * @throws InvalidGameboardException - if the gameboard already exists with the given id.
+	 * @throws SegueDatabaseException - If we cannot save the gameboard.
+	 * @throws DuplicateGameboardException - If a gameboard already exists with the given id.
+	 */
+	public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
+		throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException {
+		Validate.notNull(gameboardDTO);
+		Validate.notNull(owner);
+		
+		if (gameboardDTO.getId() == null) {
+			gameboardDTO.setId(UUID.randomUUID().toString());
+		} else if (this.getGameboard(gameboardDTO.getId()) != null) {
+			throw new DuplicateGameboardException();
+		} else {
+			gameboardDTO.setId(gameboardDTO.getId().toLowerCase());
+		}
+		
+		if (gameboardDTO.getWildCard() == null) {
+			gameboardDTO.setWildCard(this.getRandomWildcard(mapper));
+			gameboardDTO.setWildCardPosition(this.generateRandomWildCardPosition());
+		}
+
+		// set creation date to now.
+		gameboardDTO.setCreationDate(new Date());
+		gameboardDTO.setOwnerUserId(owner.getDbId());
+		
+		// this will throw an exception if it doesn't validate.
+		validateGameboard(gameboardDTO);
+		
+		this.permanentlyStoreGameboard(gameboardDTO);
 		
 		return gameboardDTO;
 	}
@@ -452,9 +508,12 @@ public class GameManager {
 	 * @param usersQuestionAttempts
 	 *            - the users question attempt information if available.
 	 * @return Gameboard questions
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	private List<GameboardItem> getSelectedGameboardQuestions(final GameFilter gameFilter,
-			final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) 
+		throws ContentManagerException {
 		
 		Long seed = new Random().nextLong();
 		int searchIndex = 0;
@@ -557,9 +616,12 @@ public class GameManager {
 	 *            - the user that may or may not have attempted questions in the
 	 *            gameboard.
 	 * @return The state of the gameboard item.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
 	 */
 	private GameboardItemState calculateQuestionState(final String questionPageId,
-			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) {
+			final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser) 
+		throws ContentManagerException {
 		Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
 		Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
 		
@@ -644,6 +706,30 @@ public class GameManager {
 		fieldsToMap.put(immutableEntry(
 				BooleanOperator.OR, TYPE_FIELDNAME), Arrays
 				.asList(WILDCARD_TYPE));
+
+		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
+		
+		// try to increase randomness of wildcard results.
+		Collections.shuffle(wildcardResults.getResults());
+		
+		if (wildcardResults.getTotalResults() == 0) {
+			throw new NoWildcardException();
+		}
+
+		return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
+	}
+	
+	/**
+	 * Get a wildcard by id.
+	 * @param id - of wildcard
+	 * @return wildcard or an exception.
+	 * @throws NoWildcardException - if we cannot locate the exception.
+	 */
+	private IsaacWildcard getWildCardById(final String id) throws NoWildcardException {
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+		fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Arrays.asList(id));
+		fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
 
 		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
 		
@@ -809,5 +895,60 @@ public class GameManager {
 			}
 		}
 		return true;
+	}
+	
+	/**
+	 * Provides validation for a given gameboard. For use prior to persistence.
+	 * 
+	 * @param gameboardDTO
+	 *            - to check
+	 * @return the gameboard (unchanged) if everything is ok, otherwise an
+	 *         exception will be thrown.
+	 * @throws InvalidGameboardException
+	 *             - If the gameboard is considered to be invalid.
+	 * @throws NoWildcardException
+	 *             - if the wildcard cannot be found.
+	 */
+	private GameboardDTO validateGameboard(final GameboardDTO gameboardDTO) throws InvalidGameboardException,
+			NoWildcardException {
+		if (gameboardDTO.getId() != null && gameboardDTO.getId().contains(" ")) {
+			throw new InvalidGameboardException(String.format(
+					"Your gameboard must not contain illegal characters e.g. spaces"));
+		}
+		
+		if (gameboardDTO.getQuestions().size() > Constants.GAME_BOARD_TARGET_SIZE) {
+			throw new InvalidGameboardException(String.format(
+					"Your gameboard must not contain more than %s questions", GAME_BOARD_TARGET_SIZE));
+		}
+
+		if (gameboardDTO.getGameFilter() == null || !validateFilterQuery(gameboardDTO.getGameFilter())) {
+			throw new InvalidGameboardException(String.format(
+					"Your gameboard must have some valid filter information e.g. subject must be set.",
+					GAME_BOARD_TARGET_SIZE));
+		}
+
+		List<String> badQuestions = this.gameboardPersistenceManager
+				.getInvalidQuestionIdsFromGameboard(gameboardDTO);
+		if (badQuestions.size() > 0) {
+			throw new InvalidGameboardException(String.format(
+					"The gameboard provided contains %s invalid (or missing) questions - [%s]",
+					badQuestions.size(), badQuestions));
+		}
+
+		if (gameboardDTO.getWildCard() == null) {
+			throw new NoWildcardException();
+		}
+		
+		// This will throw a NoWildCardException if we cannot locate a valid
+		// wildcard for this gameboard.
+		try {
+			this.getWildCardById(gameboardDTO.getWildCard().getId());
+		} catch (NoWildcardException e) {
+			throw new InvalidGameboardException(String.format(
+					"The gameboard provided contains an invalid wildcard with id [%s]",
+					gameboardDTO.getWildCard().getId()));
+		}
+
+		return gameboardDTO;
 	}
 }

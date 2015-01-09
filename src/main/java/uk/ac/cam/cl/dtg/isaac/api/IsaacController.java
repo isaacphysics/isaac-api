@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -52,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -153,25 +155,25 @@ public class IsaacController {
 			@Context final Request request,
 			@QueryParam("ids") final String ids,
 			@QueryParam("tags") final String tags,
-			@QueryParam("start_index") final String startIndex,
-			@QueryParam("limit") final String limit) {
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
 		StringBuilder etagCodeBuilder = new StringBuilder();
 		
-		String newLimit = null;
+		Integer newLimit = null;
 		
 		if (limit != null) {
 			newLimit = limit;
-			etagCodeBuilder.append(limit);
+			etagCodeBuilder.append(limit.toString());
 		}
 
 		// options
 		if (ids != null) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
-			newLimit = String.valueOf(idsList.size());
+			newLimit = idsList.size();
 			etagCodeBuilder.append(ids);
 		}
 
@@ -260,6 +262,8 @@ public class IsaacController {
 	 *            - used to determine if we can return a cache response. 
 	 * @param ids
 	 *            - the ids of the concepts to request.
+	 * @param searchString
+	 *            - an optional search string to allow finding of questions by title.
 	 * @param tags
 	 *            - a comma separated list of strings
 	 * @param level
@@ -281,37 +285,43 @@ public class IsaacController {
 	public final Response getQuestionList(
 			@Context final Request request,
 			@QueryParam("ids") final String ids,
+			@QueryParam("searchString") final String searchString,
 			@QueryParam("tags") final String tags,
 			@QueryParam("levels") final String level,
-			@QueryParam("start_index") final String startIndex,
-			@QueryParam("limit") final String limit) {
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		StringBuilder etagCodeBuilder = new StringBuilder();
-		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
 		etagCodeBuilder.append(QUESTION_TYPE);
-		
-		String newLimit = null;
+
+		// defaults
+		int newLimit = DEFAULT_RESULTS_LIMIT;
+		int newStartIndex = 0;
 
 		// options
 		if (limit != null) {
 			newLimit = limit;
 		}
+		
+		if (startIndex != null) {
+			newStartIndex = startIndex;
+		}
 
-		if (ids != null) {
+		if (ids != null && !ids.isEmpty()) {
 			List<String> idsList = Arrays.asList(ids.split(","));
 			fieldsToMatch.put(ID_FIELDNAME, idsList);
-			newLimit = String.valueOf(idsList.size());
+			newLimit = idsList.size();
 			etagCodeBuilder.append(ids);
 		}
 
-		if (tags != null) {
+		if (tags != null && !tags.isEmpty()) {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 			etagCodeBuilder.append(tags);
 		}
 
-		if (level != null) {
+		if (level != null && !level.isEmpty()) {
 			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
 			etagCodeBuilder.append(level);
 		}
@@ -326,9 +336,33 @@ public class IsaacController {
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
-		
-		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-				.cacheControl(api.getCacheControl()).build();
+
+		// TODO: currently if you provide a search string we use a different
+		// library call. This is because the previous one does not allow fuzzy
+		// search. We should unify these as the limit and pagination stuff doesn't work via this route.
+		if (searchString != null && !searchString.isEmpty()) {
+			ResultsWrapper<ContentDTO> c;
+			try {
+				c = api.segueSearch(searchString, api.getLiveVersion(), fieldsToMatch,
+						newStartIndex, newLimit);
+			} catch (ContentManagerException e1) {
+				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+						"Error locating the version requested", e1);
+				log.error(error.getErrorMessage(), e1);
+				return error.toResponse();
+			}
+
+			ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+					this.extractContentSummaryFromList(c.getResults(),
+							propertiesLoader.getProperty(PROXY_PATH)),
+					c.getTotalResults());
+			
+			return Response.ok(summarizedContent).tag(etag)
+					.cacheControl(api.getCacheControl()).build();
+		} else {
+			return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
+					.cacheControl(api.getCacheControl()).build();
+		}
 	}
 
 	/**
@@ -354,6 +388,7 @@ public class IsaacController {
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		// TODO we need to sort this out...
 		//fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
 		// options
@@ -407,8 +442,8 @@ public class IsaacController {
 			
 		} else {
 			// this is not a segue page so something probably went wrong.
-			log.info("This is not a segue question page so just returning it as is.");
-			return response;			
+			log.warn(String.format("This is not a segue question page (%s) so just returning it as is.", questionId));
+			return response;
 		}
 	}
 
@@ -421,6 +456,10 @@ public class IsaacController {
 	 *            - to pass to the search engine.
 	 * @param types
 	 *            - a comma separated list of types to include in the search.
+	 * @param startIndex
+	 *            - the start index for the search results.
+	 * @param limit
+	 *            - the max number of results to return.
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
@@ -433,7 +472,9 @@ public class IsaacController {
 			@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("searchString") final String searchString,
-			@QueryParam("types") final String types) {
+			@QueryParam("types") final String types,
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
@@ -448,7 +489,8 @@ public class IsaacController {
 		ResultsWrapper<ContentDTO> searchResults = null;
 
 		Response unknownApiResult = api.search(searchString,
-				api.getLiveVersion(), types);
+				api.getLiveVersion(), types, startIndex, limit);
+		
 		if (unknownApiResult.getEntity() instanceof ResultsWrapper) {
 			searchResults = (ResultsWrapper<ContentDTO>) unknownApiResult
 					.getEntity();
@@ -562,6 +604,11 @@ public class IsaacController {
 			log.error("SegueDatabaseException whilst generating a gameboard", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 	}
 	
@@ -586,6 +633,7 @@ public class IsaacController {
 			@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("gameboard_id") final String gameboardId) {
+		
 		try {
 			GameboardDTO gameboard;
 			
@@ -594,6 +642,10 @@ public class IsaacController {
 					api.getQuestionAttemptsBySession(randomUser);
 			
 			GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
+			if (null == unAugmentedGameboard) {
+				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
+						.toResponse();
+			}
 			
 			// Calculate the ETag 
 			EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
@@ -606,11 +658,6 @@ public class IsaacController {
 			
 			// attempt to augment the gameboard with user information.
 			gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
-
-			if (null == gameboard) {
-				return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
-						.toResponse();
-			}
 			
 			// We decided not to log this on the backend as the front end uses this lots.
 			return Response.ok(gameboard).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
@@ -621,6 +668,11 @@ public class IsaacController {
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 	}
 
@@ -722,6 +774,11 @@ public class IsaacController {
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 
 		if (null == gameboards) {
@@ -778,11 +835,68 @@ public class IsaacController {
 			return new SegueErrorResponse(Status.UNAUTHORIZED,
 					"User not logged in. Unable to retrieve delete gameboards.")
 					.toResponse();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
 		}
 		
 		return Response.noContent().build();
 	}
 	
+	/**
+	 * createGameboard.
+	 * @param request 
+	 * @param newGameboardObject 
+	 * @return Gameboard DTO which has been persisted.
+	 */
+	@POST
+	@Path("gameboards")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public final Response createGameboard(
+			@Context final HttpServletRequest request,
+			final GameboardDTO newGameboardObject) {
+		
+		RegisteredUserDTO user;
+		
+		try {
+			user = api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e1) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"User not logged in. Unable to modify gameboards.")
+					.toResponse();
+		}
+		
+		if (null == newGameboardObject) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must provide a gameboard object")
+					.toResponse();			
+		}
+		
+		GameboardDTO persistedGameboard;
+		try {
+			persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
+		} catch (NoWildcardException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"No wildcard available. Unable to construct gameboard.")
+					.toResponse();
+		} catch (InvalidGameboardException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					String.format("The gameboard you provided is invalid"), e)
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database Error whilst trying to save the gameboard.", e).toResponse();
+		} catch (DuplicateGameboardException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					String.format("Gameboard with that id (%s) already exists. ", newGameboardObject.getId()))
+					.toResponse();
+		}		
+		
+		return Response.ok(persistedGameboard).build();
+	}
 	
 	/**
 	 * REST end point to allow gameboards to be persisted into permanent storage 
@@ -810,7 +924,7 @@ public class IsaacController {
 			@Context final HttpServletRequest request,
 			@PathParam("id") final String gameboardId,
 			final GameboardDTO newGameboardObject) {
-		
+
 		RegisteredUserDTO user;
 		try {
 			user = api.getCurrentUser(request);
@@ -842,23 +956,23 @@ public class IsaacController {
 			existingGameboard = gameManager.getGameboard(gameboardId);
 			
 			if (null == existingGameboard) {
-				return new SegueErrorResponse(Status.NOT_FOUND,
-						"No gameboard found with the id: " + gameboardId)
+				// this is not an edit and is a create request operation.
+				return this.createGameboard(request, newGameboardObject);
+			} else if (!existingGameboard.equals(newGameboardObject)) {
+				// The only editable field of a game board is its title.
+				// If you are trying to change anything else this should fail.
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"A different game board with that id already exists.")
 						.toResponse();
 			}
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access the gameboard in the database.", e).toResponse();
-		}
-		
-		try {
+			
 			// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
 			gameManager.linkUserToGameboard(existingGameboard, user);
 			this.api.getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+			
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error while attempting to save the gameboard.")
-					.toResponse();
+					"Error whilst trying to access the gameboard database.", e).toResponse();
 		}
 
 		// Now determine if the user is trying to change the title and if they have permission.
@@ -1105,34 +1219,35 @@ public class IsaacController {
 	 * @param fieldsToMatch
 	 *            - expects a map of the form fieldname -> list of queries to
 	 *            match
-	 * @return A Response containing a single conceptPage or containing
-	 *         a SegueErrorResponse.
+	 * @return A Response containing a single conceptPage or containing a
+	 *         SegueErrorResponse.
 	 */
-	private Response findSingleResult(
-			final Map<String, List<String>> fieldsToMatch) {
-		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(
-				api.getLiveVersion(),
-				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
-				null, null); // includes type checking.
+	private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
+		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(api.getLiveVersion(),
+				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+																						// type
+																						// checking.
 		ContentDTO c = null;
 		if (conceptList.getResults().size() > 1) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Multiple results (" + conceptList.getResults().size()
-							+ ") returned error. For search query: "
-							+ fieldsToMatch.values()).toResponse();
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
+					+ conceptList.getResults().size() + ") returned error. For search query: "
+					+ fieldsToMatch.values()).toResponse();
 		} else if (conceptList.getResults().isEmpty()) {
 			return new SegueErrorResponse(Status.NOT_FOUND,
-					"No content found that matches the query with parameters: "
-							+ fieldsToMatch.values()).toResponse();
+					"No content found that matches the query with parameters: " + fieldsToMatch.values())
+					.toResponse();
 		} else {
 			c = conceptList.getResults().get(0);
 		}
 
-		// String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
-		// ContentPage cp = new ContentPage(c.getId(), c,
-		// this.buildMetaContentmap(proxyPath, c));
-
-		return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
+		try {
+			return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		}
 	}
 	
 
@@ -1148,40 +1263,18 @@ public class IsaacController {
 	 *            - the initial index for the first result.
 	 * @param limit
 	 *            - the maximums number of results to return
-	 * @return Response builder containing a list of content summary objects or containing
-	 *         a SegueErrorResponse
+	 * @return Response builder containing a list of content summary objects or
+	 *         containing a SegueErrorResponse
 	 */
-	private Response.ResponseBuilder listContentObjects(
-			final Map<String, List<String>> fieldsToMatch,
-			final String startIndex, final String limit) {
+	private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
+			final Integer startIndex, final Integer limit) {
 		ResultsWrapper<ContentDTO> c;
-		try {
-			Integer resultsLimit = null;
-			Integer startIndexOfResults = null;
 
-			if (null != limit) {
-				resultsLimit = Integer.parseInt(limit);
-			}
-
-			if (null != startIndex) {
-				startIndexOfResults = Integer.parseInt(startIndex);
-			}
-
-			c = api.findMatchingContent(api.getLiveVersion(),
-					SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
-					startIndexOfResults, resultsLimit);
-
-		} catch (NumberFormatException e) {
-			return new SegueErrorResponse(
-					Status.BAD_REQUEST,
-					"Unable to convert one of the integer parameters provided "
-							+ "into numbers (null is ok). Params provided were: limit "
-							+ limit + " and startIndex " + startIndex, e).toResponseBuilder();
-		}
+		c = api.findMatchingContent(api.getLiveVersion(),
+				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
 		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-				this.extractContentSummaryFromList(c.getResults(),
-						propertiesLoader.getProperty(PROXY_PATH)),
+				this.extractContentSummaryFromList(c.getResults(), propertiesLoader.getProperty(PROXY_PATH)),
 				c.getTotalResults());
 
 		return Response.ok(summarizedContent);

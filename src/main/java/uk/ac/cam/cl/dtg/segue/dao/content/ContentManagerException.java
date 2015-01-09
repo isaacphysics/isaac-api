@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Stephen Cummins
+ * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.users;
+package uk.ac.cam.cl.dtg.segue.dao.content;
 
 /**
- * Enum of valid roles for users of Segue to have.  
+ * ContentManagerException.
+ *
  */
-public enum Role {
-	STUDENT, TEACHER, ADMIN, CONTENT_EDITOR, TESTER, STAFF
+public class ContentManagerException extends Exception {
+	private static final long serialVersionUID = -4900667815265966457L;
+
+	/**
+	 * Exception that occurred at the content manager DAO layer.
+	 * @param message - explaining the problem
+	 */
+	public ContentManagerException(final String message) {
+		super(message);
+	}
 }

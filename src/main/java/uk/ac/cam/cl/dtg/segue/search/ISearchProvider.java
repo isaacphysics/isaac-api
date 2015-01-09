@@ -102,7 +102,7 @@ public interface ISearchProvider {
 	 *            - the map of how to sort each field of interest.
 	 * @return Results
 	 */
-	ResultsWrapper<String> paginatedMatchSearch(
+	ResultsWrapper<String> matchSearch(
 			final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
@@ -110,7 +110,7 @@ public interface ISearchProvider {
 			final Map<String, Constants.SortOrder> sortInstructions);
 
 	/**
-	 * Executes a fuzzy search on an array of fields.
+	 * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
 	 * 
 	 * @param index
 	 *            - the name of the index
@@ -118,22 +118,25 @@ public interface ISearchProvider {
 	 *            - the name of the type of document being searched for
 	 * @param searchString
 	 *            - the string to use for fuzzy matching
+	 * @param startIndex
+	 *            - e.g. 0 for the first set of results
+	 * @param limit
+	 *            - e.g. 10 for 10 results per page
 	 * @param fieldsThatMustMatch
 	 *            - Map of Must match field -> value
 	 * @param fields
-	 *            - array (var args) of fields to match against
+	 *            - array (var args) of fields to search using the searchString
 	 * @return results
 	 */
-	ResultsWrapper<String> fuzzySearch(final String index,
-			final String indexType, final String searchString,
-			final Map<String, List<String>> fieldsThatMustMatch,
-			final String... fields);
+	ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString,
+			final Integer startIndex, final Integer limit,
+			final Map<String, List<String>> fieldsThatMustMatch, final String... fields);
 
 	/**
 	 * Executes a terms search using an array of terms on a single field.
 	 * 
-	 * Useful for tag searches - Currently setting is that results will only be
-	 * returned if they match all search search terms.
+	 * Useful for tag searches - Current setting is that results will only be
+	 * returned if they match all search terms.
 	 * 
 	 * @param index
 	 *            - the name of the index
@@ -167,7 +170,7 @@ public interface ISearchProvider {
 	 *            - the maximum number of results to return.
 	 * @return results in a random order for a given match search.
 	 */
-	ResultsWrapper<String> randomisedPaginatedMatchSearch(
+	ResultsWrapper<String> randomisedMatchSearch(
 			final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
@@ -193,7 +196,7 @@ public interface ISearchProvider {
 	 *            - random seed.
 	 * @return results in a random order for a given match search.
 	 */
-	ResultsWrapper<String> randomisedPaginatedMatchSearch(String index, String indexType,
+	ResultsWrapper<String> randomisedMatchSearch(String index, String indexType,
 			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, int startIndex, int limit,
 			Long randomSeed);
 	

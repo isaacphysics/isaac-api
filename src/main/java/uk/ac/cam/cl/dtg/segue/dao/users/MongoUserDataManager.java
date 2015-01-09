@@ -149,7 +149,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final RegisteredUser getById(final String id) throws SegueDatabaseException {
+	public RegisteredUser getById(final String id) throws SegueDatabaseException {
 		if (null == id) {
 			return null;
 		}
@@ -500,8 +500,9 @@ public class MongoUserDataManager implements IUserDataManager {
 
 			return null == r.getError();
 		} catch (MongoException.DuplicateKey e) {
-			throw new AccountAlreadyLinkedException(
-					"This account has already been linked to a local user for the provider " + provider);
+			throw new AccountAlreadyLinkedException(String.format(
+					"This account (%s) has already been linked to a local user for the provider (%s) ",
+					user.getEmail(), provider));
 		} catch (MongoException e) {
 			String errorMessage = "MongoDB encountered an exception "
 					+ "while attempting to link an auth provider to a user account.";

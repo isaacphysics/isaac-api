@@ -296,8 +296,12 @@ public final class Constants {
 	/*
 	 * Default values.
 	 */
+	public static final Integer DEFAULT_START_INDEX = 0;
+	public static final String DEFAULT_START_INDEX_AS_STRING = "0";
+	
 	public static final Integer DEFAULT_RESULTS_LIMIT = 10;
-
+	public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
+	
 	// Content model specific stuff
 	public static final String ID_FIELDNAME = "id";
 	public static final String TITLE_FIELDNAME = "title";
@@ -347,7 +351,9 @@ public final class Constants {
 	public static final String REDIRECT_URL = "redirectUrl";
 
 	public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
-
+	
+	public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
+	
 	public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
 	public static final String ASSOCIATION_USER_GRANTING_ACCESS = "userIdGrantingPermission";
 	public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";

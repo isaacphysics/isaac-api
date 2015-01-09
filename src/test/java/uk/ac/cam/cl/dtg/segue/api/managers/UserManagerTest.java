@@ -77,7 +77,6 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 @PowerMockIgnore({ "javax.ws.*" })
 public class UserManagerTest {
-
 	private IUserDataManager dummyDatabase;
 	private String dummyHMACSalt;
 	private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
@@ -91,7 +90,7 @@ public class UserManagerTest {
 	
 	private Cache<String, AnonymousUser> dummyUserCache;
 	private ILogManager dummyLogManager;
-
+	
 	/**
 	 * Initial configuration of tests.
 	 * 
