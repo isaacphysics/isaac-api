@@ -78,6 +78,9 @@ public class UserAssociationManagerTest {
 		
 		expect(dummyAssociationDataManager.saveAssociationToken((AssociationToken) anyObject())).andReturn(
 				someToken).once();
+		
+		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(anyString())).andReturn(null);
+		
 		replay(dummyAssociationDataManager, dummyGroupDataManager);
 
 		AssociationToken someGeneratedToken = managerUnderTest.getAssociationToken(someRegisteredUser,
