@@ -49,6 +49,15 @@ public interface IAssociationDataManager {
 	 */
 	AssociationToken lookupAssociationToken(final String tokenCode);
 
+	
+	/**
+	 * getAssociationTokenByGroupId.
+	 * @param groupId
+	 *            - id of the group to check.
+	 * @return token if the group has a token already otherwise null.
+	 */
+	AssociationToken getAssociationTokenByGroupId(String groupId);
+	
 	/**
 	 * Creates an association based on a token.
 	 * 
@@ -76,7 +85,7 @@ public interface IAssociationDataManager {
 		throws SegueDatabaseException;
 
 	/**
-	 * Determines whether the user.
+	 * Determines whether the user has a valid association already.
 	 * 
 	 * @param userIdRequestingAccess
 	 *            - User who wishes to access someone elses' data.

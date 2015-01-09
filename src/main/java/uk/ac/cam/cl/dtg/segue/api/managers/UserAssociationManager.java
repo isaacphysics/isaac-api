@@ -76,12 +76,19 @@ public class UserAssociationManager {
 	 *             - If an error occurred while interacting with the database.
 	 * @throws UserGroupNotFoundException - if the group specified does not exist. 
 	 */
-	public AssociationToken generateToken(final RegisteredUserDTO registeredUser,
+	public AssociationToken getAssociationToken(final RegisteredUserDTO registeredUser,
 			final String associatedGroupId) throws SegueDatabaseException, UserGroupNotFoundException {
 		Validate.notNull(registeredUser);
 		
-		if (associatedGroupId != null && !userGroupManager.isValidGroup(associatedGroupId)) {
-			throw new UserGroupNotFoundException("Group not found: " + associatedGroupId);
+		if (associatedGroupId != null) {
+			if (!userGroupManager.isValidGroup(associatedGroupId)) {
+				throw new UserGroupNotFoundException("Group not found: " + associatedGroupId);
+			}
+
+			AssociationToken groupToken = this.associationDatabase.getAssociationTokenByGroupId(associatedGroupId);
+			if (groupToken != null) {
+				return groupToken;
+			}
 		}
 		
 		// create some kind of random token

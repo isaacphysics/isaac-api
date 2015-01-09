@@ -125,7 +125,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	 * @return a Response containing an association token or a
 	 *         SegueErrorResponse.
 	 */
-	@POST
+	@GET
 	@Path("/associations/token/{groupId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getAssociationToken(@Context final HttpServletRequest request,
@@ -133,10 +133,10 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 		if (null == groupId || groupId.isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
 		}
-
+		
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);			
-			AssociationToken token = associationManager.generateToken(user, groupId);
+			AssociationToken token = associationManager.getAssociationToken(user, groupId);
 
 			return Response.ok(token).build();
 		} catch (SegueDatabaseException e) {

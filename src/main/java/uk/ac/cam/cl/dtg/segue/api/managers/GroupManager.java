@@ -29,9 +29,8 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * GroupManager.
- * 
+ * Responsible for managing group related logic.
  * @author sac92
- *
  */
 public class GroupManager {
 	private final IUserGroupDataManager groupDatabase;
@@ -42,9 +41,14 @@ public class GroupManager {
 	 * 
 	 * @param groupDatabase
 	 *            - the IUserGroupManager implementation
+	 * @param userManager
+	 *            - the user manager so that the group manager can get user details.
 	 */
 	@Inject
 	public GroupManager(final IUserGroupDataManager groupDatabase, final UserManager userManager) {
+		Validate.notNull(groupDatabase);
+		Validate.notNull(userManager);
+		
 		this.groupDatabase = groupDatabase;
 		this.userManager = userManager;
 	}
@@ -88,6 +92,7 @@ public class GroupManager {
 	 * @param group to find
 	 * @return list of users who are members of the group
 	 * @throws SegueDatabaseException
+	 *             - If an error occurred while interacting with the database.
 	 */
 	public List<RegisteredUserDTO> getUsersInGroup(final UserGroup group) throws SegueDatabaseException {		
 		List<String> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
@@ -96,21 +101,21 @@ public class GroupManager {
 	}
 
 	/**
-	 * getGroupsByUser.
+	 * getGroupsByOwner.
 	 * 
 	 * @param ownerUserId
 	 *            - the owner of the group to search for.
 	 * @return List of groups or empty list.
 	 */
-	public List<UserGroup> getGroupsByUser(final String ownerUserId) {
+	public List<UserGroup> getGroupsByOwner(final String ownerUserId) {
 		return groupDatabase.getGroupsByOwner(ownerUserId);
 	}
 
 	/**
 	 * Adds a user to a group.
 	 * 
-	 * @param group
-	 * @param userToAdd
+	 * @param group - the group that the user should be added to
+	 * @param userToAdd - the user to add to a group
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
@@ -122,8 +127,8 @@ public class GroupManager {
 	/**
 	 * Removes a user from a group.
 	 * 
-	 * @param group
-	 * @param userToRemove
+	 * @param group - that should be affected
+	 * @param userToRemove - user that should be removed.
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */

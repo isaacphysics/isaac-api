@@ -93,7 +93,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
 			return Response.ok(
-					groupManager.getGroupsByUser(user.getDbId()))
+					groupManager.getGroupsByOwner(user.getDbId()))
 					.build();
 		} catch (NoUserLoggedInException e) {
 			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
