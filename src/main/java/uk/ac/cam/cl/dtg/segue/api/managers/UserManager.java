@@ -871,6 +871,12 @@ public class UserManager {
 		userToSave.setRegistrationDate(existingUser.getRegistrationDate());		
 		userToSave.setLastUpdated(new Date());
 		
+		// special case if user used to have a role and admin user has removed it - it needs to be removed.
+		// this is safe as it is equivalent to having no permissions.
+		if (user.getRole() == null && existingUser.getRole() != null) {
+			userToSave.setRole(null);
+		}
+		
 		this.checkForSeguePasswordChange(user, userToSave);
 
 		// Before save we should validate the user for mandatory fields.

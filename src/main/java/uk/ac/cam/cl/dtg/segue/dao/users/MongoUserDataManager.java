@@ -149,7 +149,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	}
 
 	@Override
-	public final RegisteredUser getById(final String id) throws SegueDatabaseException {
+	public RegisteredUser getById(final String id) throws SegueDatabaseException {
 		if (null == id) {
 			return null;
 		}
