@@ -210,6 +210,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	 */
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.WILDCARD)
 	@Path("/logout")
 	public final Response userLogout(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response) {
