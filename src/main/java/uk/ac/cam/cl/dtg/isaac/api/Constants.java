@@ -41,6 +41,9 @@ public final class Constants {
 	public static final String GAMEBOARD_COLLECTION_NAME = "gameboards";
 	public static final String USERS_GAMEBOARD_COLLECTION_NAME = "UsersToGameboards";
 	
+	public static final String ASSIGNMENT_COLLECTION_NAME = "assignments";
+	public static final String GROUP_ASSIGNMENT_COLLECTION_NAME = "groupToAssignments";
+	
 	/**
 	 * Game specific variables.
 	 */
