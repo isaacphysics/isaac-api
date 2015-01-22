@@ -27,7 +27,6 @@ import uk.ac.cam.cl.dtg.isaac.api.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
-import uk.ac.cam.cl.dtg.isaac.dos.AssignmentGroupDO;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
@@ -208,9 +207,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		if (null == assignmentPersistenceManager) {
 			assignmentPersistenceManager = new AssignmentPersistenceManager(
 					api.requestAppDataManager(ASSIGNMENT_COLLECTION_NAME,
-							AssignmentDO.class), api.requestAppDataManager(GROUP_ASSIGNMENT_COLLECTION_NAME,
-									AssignmentGroupDO.class), mapper);
-			log.info("Creating Singleton of AssignmentPersistenceManager");
+							AssignmentDO.class), mapper);
+			log.info("Creating Singleton of GameboardPersistenceManager");
 		}
 
 		return assignmentPersistenceManager;

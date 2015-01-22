@@ -16,17 +16,21 @@
 package uk.ac.cam.cl.dtg.isaac.dos;
 
 import java.util.Date;
+
+import org.mongojack.ObjectId;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This class is the Domain Object used to store Assignments in the segue CMS.
+ * This class is the Domain Object used to store Assignments in the isaac CMS.
  */
 public class AssignmentDO {
+	@ObjectId
 	@JsonProperty("_id")
 	private String id;
 	private String gameboardId;
+	private String groupId;
 	private String ownerUserId;
-
 	private Date creationDate;
 	
 	/**
@@ -38,13 +42,17 @@ public class AssignmentDO {
 	 *            - The gameboard to assign as homework.
 	 * @param ownerUserId
 	 *            - User id of the owner of the gameboard.
+	 * @param groupId
+	 *            - Group id who should be assigned the game board.
 	 * @param creationDate
 	 *            - the date the assignment was created.
 	 */
-	public AssignmentDO(final String id, final String gameboardId, final String ownerUserId, final Date creationDate) {
+	public AssignmentDO(final String id, final String gameboardId, final String ownerUserId,
+			final String groupId, final Date creationDate) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
+		this.groupId = groupId;
 		this.creationDate = creationDate;
 	}
 	
@@ -59,6 +67,8 @@ public class AssignmentDO {
 	 * Gets the id.
 	 * @return the id
 	 */
+	@JsonProperty("_id")
+	@ObjectId
 	public String getId() {
 		return id;
 	}
@@ -67,6 +77,8 @@ public class AssignmentDO {
 	 * Sets the id.
 	 * @param id the id to set
 	 */
+	@JsonProperty("_id")
+	@ObjectId
 	public void setId(final String id) {
 		this.id = id;
 	}
@@ -85,6 +97,22 @@ public class AssignmentDO {
 	 */
 	public void setGameboardId(final String gameboardId) {
 		this.gameboardId = gameboardId;
+	}
+
+	/**
+	 * Gets the groupId.
+	 * @return the groupId
+	 */
+	public String getGroupId() {
+		return groupId;
+	}
+
+	/**
+	 * Sets the groupId.
+	 * @param groupId the groupId to set
+	 */
+	public void setGroupId(final String groupId) {
+		this.groupId = groupId;
 	}
 
 	/**

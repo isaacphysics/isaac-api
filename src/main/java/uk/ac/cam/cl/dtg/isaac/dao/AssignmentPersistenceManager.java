@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,7 +31,6 @@ import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
-import uk.ac.cam.cl.dtg.isaac.dos.AssignmentGroupDO;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
@@ -40,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import static com.google.common.collect.Maps.*;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -47,13 +46,10 @@ import static com.google.common.collect.Maps.*;
 public class AssignmentPersistenceManager {
 	private static final Logger log = LoggerFactory.getLogger(AssignmentPersistenceManager.class);
 
-	private static final String DB_ID_FIELD = "_id";
-	private static final String DB_ASSIGNMENT_FKEY = "assignmentId";
+	private static final String DB_OWNER_ID = "ownerUserId";
 	private static final String DB_GROUP_FKEY = "groupId";
 
-	private final IAppDatabaseManager<AssignmentDO> assignmentsDataManager;
-	private final IAppDatabaseManager<AssignmentGroupDO> databaseForAssignmentGroups;
-	
+	private final IAppDatabaseManager<AssignmentDO> assignmentsDataManager;	
 	private final MapperFacade mapper;
 
 	/**
@@ -61,19 +57,14 @@ public class AssignmentPersistenceManager {
 	 * 
 	 * @param databaseForAssignments
 	 *            - the database reference used for persistence.
-	 * @param databaseForAssignmentGroups
-	 *            - the database reference used for persistence of user to
-	 *            assignment to group relationships.
 	 * @param mapper
 	 *            - An instance of an automapper that can be used for mapping to
 	 *            and from AssignmentDOs and DTOs.
 	 */
 	@Inject
 	public AssignmentPersistenceManager(final IAppDatabaseManager<AssignmentDO> databaseForAssignments,
-			final IAppDatabaseManager<AssignmentGroupDO> databaseForAssignmentGroups,
 			final MapperFacade mapper) {
 		this.assignmentsDataManager = databaseForAssignments;
-		this.databaseForAssignmentGroups = databaseForAssignmentGroups;
 		this.mapper = mapper;
 	}
 
@@ -86,8 +77,8 @@ public class AssignmentPersistenceManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem saving the assignment in the database.
 	 */
-	public final String saveAssignment(final AssignmentDTO assignment)
-		throws SegueDatabaseException {
+	public String saveAssignment(final AssignmentDTO assignment)
+		throws SegueDatabaseException {		
 		AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
 
 		String resultId = assignmentsDataManager.save(assignmentToSave);
@@ -96,81 +87,6 @@ public class AssignmentPersistenceManager {
 		return resultId;
 	}
 
-	/**
-	 * Add a group to an assignment.
-	 * 
-	 * @param groupId
-	 *            - groupId to link
-	 * @param assignmentId
-	 *            - assignment to link
-	 * @throws SegueDatabaseException
-	 *             - if there is a problem persisting the link in the database.
-	 */
-	public void linkGroupToAssignment(final String groupId, final String assignmentId)
-		throws SegueDatabaseException {
-		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-
-		Map.Entry<BooleanOperator, String> userIdFieldParam = immutableEntry(BooleanOperator.AND, DB_GROUP_FKEY);
-		Map.Entry<BooleanOperator, String> assignmentIdFieldParam = immutableEntry(BooleanOperator.AND,
-				DB_ASSIGNMENT_FKEY);
-		fieldsToMatch.put(userIdFieldParam, Arrays.asList(groupId));
-		fieldsToMatch.put(assignmentIdFieldParam, Arrays.asList(assignmentId));
-
-		List<AssignmentGroupDO> groupAssignmentDOs = this.databaseForAssignmentGroups.find(fieldsToMatch);
-
-		if (groupAssignmentDOs.size() == 0) {
-			// if this user is not already connected make a connection.
-			AssignmentGroupDO assignmentUserDO = new AssignmentGroupDO(null, assignmentId, groupId,
-					new Date());
-
-			this.databaseForAssignmentGroups.save(assignmentUserDO);
-		} else if (groupAssignmentDOs.size() == 1) {
-			// if the group is already connected to the assignment then 
-			// something is wrong.
-			log.error(String.format("Group (%s) is already allocated to this assignment (%s).", groupId, assignmentId));
-		} else {
-			log.error("Expected one result and found multiple user assignment associations.");
-		}
-	}
-	
-	/**
-	 * Allows a link between users and a assignment to be destroyed.
-	 * 
-	 * @param groupId
-	 *            - users id.
-	 * @param assignmentId
-	 *            - assignment's id
-	 * @throws SegueDatabaseException
-	 *             - if there is an error during the delete operation.
-	 */
-	public void removeGroupLinkFromAssignment(final String groupId, final String assignmentId)
-		throws SegueDatabaseException {
-		
-		// verify that the link exists and retrieve the link id.
-		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-
-		Map.Entry<BooleanOperator, String> userIdFieldParam = immutableEntry(BooleanOperator.AND, DB_GROUP_FKEY);
-		Map.Entry<BooleanOperator, String> assignmentIdFieldParam = immutableEntry(BooleanOperator.AND,
-				DB_ASSIGNMENT_FKEY);
-		fieldsToMatch.put(userIdFieldParam, Arrays.asList(groupId));
-		fieldsToMatch.put(assignmentIdFieldParam, Arrays.asList(assignmentId));
-
-		List<AssignmentGroupDO> groupAssignmentDOs = this.databaseForAssignmentGroups.find(fieldsToMatch);
-		
-		if (groupAssignmentDOs.size() == 1) {
-			// delete it
-			this.databaseForAssignmentGroups.delete(groupAssignmentDOs.get(0).getId());
-		} else if (groupAssignmentDOs.size() == 0) {
-			// unable to find it.
-			log.info("Attempted to remove group to assignment link but there was none to remove.");
-		} else {
-			// too many groupAssignments found.
-			throw new SegueDatabaseException(
-					"Unable to delete the assignment as there is more than one "
-					+ "linking that matches the search terms. Found: "
-							+ groupAssignmentDOs.size());
-		}
-	}
 
 	/**
 	 * Find a assignment by id.
@@ -180,8 +96,11 @@ public class AssignmentPersistenceManager {
 	 * @return the assignment or null if we can't find it..
 	 * @throws SegueDatabaseException  - if there is a problem accessing the database.
 	 */
-	public final AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
-
+	public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
+		if (null == assignmentId) {
+			return null;
+		}
+		
 		AssignmentDO assignmentFromDb = assignmentsDataManager.getById(assignmentId);
 
 		if (null == assignmentFromDb) {
@@ -192,7 +111,7 @@ public class AssignmentPersistenceManager {
 
 		return assignmentDTO;
 	}
-
+	
 	/**
 	 * Retrieve all Assignments for a given
 	 * group.
@@ -203,29 +122,81 @@ public class AssignmentPersistenceManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is an error when accessing the database.
 	 */
-	public final List<AssignmentDTO> getAssignmentsByGroupId(final UserGroup group) throws SegueDatabaseException {
-		// find all assignments related to this group.
-		Map<String, AssignmentGroupDO> assignmentLinksToGroup = this.findAssignmentsByAssociatedGroupId(group
-				.getId());
+	public List<AssignmentDTO> getAssignmentsByGroupId(final UserGroup group) throws SegueDatabaseException {
+		
+		// find all assignments related to this groupId.
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
 
-		List<String> assignmentIdsLinkedToGroup = Lists.newArrayList();
-		assignmentIdsLinkedToGroup.addAll(assignmentLinksToGroup.keySet());
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_GROUP_FKEY),
+				Arrays.asList(group.getId()));
 
-		if (null == assignmentIdsLinkedToGroup || assignmentIdsLinkedToGroup.isEmpty()) {
-			return Lists.newArrayList();
-		}
-
-		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
-
-		fieldsToMatch
-				.put(immutableEntry(Constants.BooleanOperator.OR, DB_ID_FIELD), assignmentIdsLinkedToGroup);
-
-		List<AssignmentDTO> assignmentDTOs = this.convertToAssignmentDTOs(this.assignmentsDataManager
-				.find(fieldsToMatch));
-
-		return assignmentDTOs;
+		return findByMappedConditions(fieldsToMatchForAssignmentSearch);
 	}
 
+	/**
+	 * getAssignmentsByGameboardAndOwner.
+	 * 
+	 * @param gameboardId - gameboard of interest
+	 * @param ownerId - the user id who might have assigned the gameboard.
+	 * @return list of assignments
+	 * @throws SegueDatabaseException
+	 *             - if there is an error when accessing the database.
+	 */
+	public List<AssignmentDTO> getAssignmentsByGameboardAndOwner(final String gameboardId,
+			final String ownerId) throws SegueDatabaseException {
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
+
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, GAMEBOARD_ID_FKEY),
+				Arrays.asList(gameboardId));
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_OWNER_ID),
+				Arrays.asList(ownerId));
+
+		return findByMappedConditions(fieldsToMatchForAssignmentSearch);
+	}
+	
+	/**
+	 * getAssignmentsByGameboardAndGroup.
+	 * 
+	 * @param gameboardId
+	 *            - gameboard of interest
+	 * @param groupId
+	 *            - the group id has the gameboard assigned.
+	 * @return assignment if found null if not.
+	 * @throws SegueDatabaseException
+	 *             - if there is an error when accessing the database or if
+	 *             duplicate assignments exist in the database..
+	 */
+	public List<AssignmentDTO> getAssignmentsByGameboardAndGroup(final String gameboardId,
+			final String groupId) throws SegueDatabaseException {
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
+
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, GAMEBOARD_ID_FKEY),
+				Arrays.asList(gameboardId));
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_GROUP_FKEY),
+				Arrays.asList(groupId));
+
+		List<AssignmentDTO> assignments = findByMappedConditions(fieldsToMatchForAssignmentSearch);
+		
+		return assignments;
+	}	
+	
+	/**
+	 * getAssignmentsByOwner.
+	 * 
+	 * @param ownerId - the user id who might have assigned the gameboard.
+	 * @return list of assignments
+	 * @throws SegueDatabaseException
+	 *             - if there is an error when accessing the database.
+	 */
+	public List<AssignmentDTO> getAssignmentsByOwner(final String ownerId) throws SegueDatabaseException {
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
+
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_OWNER_ID),
+				Arrays.asList(ownerId));
+
+		return findByMappedConditions(fieldsToMatchForAssignmentSearch);
+	}
+	
 	/**
 	 * Convert form a list of assignment DOs to a list of assignment DTOs.
 	 * 
@@ -257,31 +228,37 @@ public class AssignmentPersistenceManager {
 	private AssignmentDTO convertToAssignmentDTO(final AssignmentDO assignmentDO) {
 		return mapper.map(assignmentDO, AssignmentDTO.class);
 	}
+
+	/**
+	 * deleteAssignment.
+	 * 
+	 * @param id
+	 *            - assignment id to delete.
+	 * @throws SegueDatabaseException
+	 *             - if we are unable to perform the delete operation.
+	 */
+	public void deleteAssignment(final String id) throws SegueDatabaseException {
+		this.assignmentsDataManager.delete(id);
+	}
 	
 	/**
-	 * Find all assignments that are connected to a given group.
-	 * 
-	 * @param groupId
-	 *            to search against.
-	 * @return A Map of ids to AssignmentGroup.
-	 * @throws SegueDatabaseException - if there is a problem accessing the database.
+	 * findByMapConditions.
+	 * @param fieldsToMatchForAssignmentSearch - to specify match conditions.
+	 * @return List of AssignmentDTOs or empty list
+	 * @throws SegueDatabaseException
+	 *             - if there is an error when accessing the database.
 	 */
-	private Map<String, AssignmentGroupDO> findAssignmentsByAssociatedGroupId(final String groupId)
+	private List<AssignmentDTO> findByMappedConditions(
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch)
 		throws SegueDatabaseException {
-		// find all assignments related to this groupId.
-		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
-
-		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_GROUP_FKEY),
-				Arrays.asList(groupId));
-
-		List<AssignmentGroupDO> assignmentGroupDO = this.databaseForAssignmentGroups
+		List<AssignmentDO> assignmentGroupDO = this.assignmentsDataManager
 				.find(fieldsToMatchForAssignmentSearch);
 
-		Map<String, AssignmentGroupDO> resultToReturn = Maps.newHashMap();
-		for (AssignmentGroupDO objectToConvert : assignmentGroupDO) {
-			resultToReturn.put(objectToConvert.getAssignmentId(), objectToConvert);
+		List<AssignmentDO> resultToReturn = Lists.newArrayList();
+		for (AssignmentDO objectToConvert : assignmentGroupDO) {
+			resultToReturn.add(objectToConvert);
 		}
 
-		return resultToReturn;
-	}	
+		return this.convertToAssignmentDTOs(resultToReturn);
+	}
 }
