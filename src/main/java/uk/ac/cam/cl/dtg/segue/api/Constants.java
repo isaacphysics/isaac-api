@@ -312,6 +312,7 @@ public final class Constants {
 	public static final String LEVEL_FIELDNAME = "level";
 	
 	public static final String USER_ID_FKEY_FIELDNAME = "userId";
+	public static final String OWNER_USER_ID_FKEY_FIELDNAME = "ownerId";
 
 	public static final String ID_SEPARATOR = "|";
 	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
@@ -352,7 +353,12 @@ public final class Constants {
 	public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
 	
 	public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
+	
+	public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
+	public static final String ASSOCIATION_USER_GRANTING_ACCESS = "userIdGrantingPermission";
+	public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";
 
+	public static final String GROUP_FK = "groupId";
 	
 	/**
 	 * Private constructor to prevent this class being created.

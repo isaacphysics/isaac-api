@@ -41,6 +41,9 @@ public final class Constants {
 	public static final String GAMEBOARD_COLLECTION_NAME = "gameboards";
 	public static final String USERS_GAMEBOARD_COLLECTION_NAME = "UsersToGameboards";
 	
+	public static final String ASSIGNMENT_COLLECTION_NAME = "assignments";
+	public static final String GROUP_ASSIGNMENT_COLLECTION_NAME = "groupToAssignments";
+	
 	/**
 	 * Game specific variables.
 	 */
@@ -59,7 +62,10 @@ public final class Constants {
 	public enum GameboardState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED }
 	// GameboardDTO field names
 	public static final String CREATED_DATE_FIELDNAME = "created";
-	public static final String VISITED_DATE_FIELDNAME = "lastVisited";	
+	public static final String VISITED_DATE_FIELDNAME = "lastVisited";
+
+
+	public static final String GAMEBOARD_ID_FKEY = "gameboardId";	
 	
 	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
 	

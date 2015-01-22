@@ -24,7 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
@@ -59,6 +61,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	private static GameManager gameManager = null;
 
 	private static GameboardPersistenceManager gameboardPersistenceManager = null;
+	
+	private static AssignmentPersistenceManager assignmentPersistenceManager = null;
 
 	/**
 	 * Creates a new isaac guice configuration module.
@@ -184,5 +188,29 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 		}
 
 		return gameboardPersistenceManager;
+	}
+	
+	/**
+	 * Gets a Assignment Persistence manager.
+	 * 
+	 * @param api
+	 *            - api that we can use to create a AppDataManager instance
+	 * @param mapper
+	 *            - an instance of an auto mapper.
+	 * @return Game persistence manager object.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private static AssignmentPersistenceManager getAssignmentPersistenceManager(final SegueApiFacade api,
+			final MapperFacade mapper) {
+		if (null == assignmentPersistenceManager) {
+			assignmentPersistenceManager = new AssignmentPersistenceManager(
+					api.requestAppDataManager(ASSIGNMENT_COLLECTION_NAME,
+							AssignmentDO.class), mapper);
+			log.info("Creating Singleton of GameboardPersistenceManager");
+		}
+
+		return assignmentPersistenceManager;
 	}
 }

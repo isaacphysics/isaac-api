@@ -47,10 +47,14 @@ import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.MongoGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
@@ -109,6 +113,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private PropertiesLoader globalProperties = null;
 
 	private static ILogManager logManager;
+
 
 	/**
 	 * Create a SegueGuiceConfigurationModule.
@@ -183,6 +188,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 										.getProperty(Constants.REMOTE_GIT_SSH_URL),
 								globalProperties
 										.getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
+		
+		bind(IUserGroupDataManager.class).to(MongoGroupDataManager.class);
+		
+		bind(IAssociationDataManager.class).to(MongoAssociationDataManager.class);
 	}
 
 	/**
@@ -248,7 +257,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		// Allows GitDb to take over content Management
 		bind(IContentManager.class).to(GitContentManager.class);
 
-		//bind(ILogManager.class).to(MongoLogManager.class);
 	}
 
 	/**
@@ -386,8 +394,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
-	 * This provides a singleton of the contentVersionController for the segue
-	 * facade.
+	 * This provides a singleton of the UserManager for various
+	 * facades.
 	 * 
 	 * @param database
 	 *            - IUserManager
@@ -418,7 +426,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
-	 * This provides a singleton of the contentVersionController for the segue
+	 * This provides a singleton of the IUserDataManager for the segue
 	 * facade.
 	 * 
 	 * @param database
@@ -441,6 +449,29 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 
+//	/**
+//	 * This provides a singleton of the UserAssociationManager for the Authorisation
+//	 * facade.
+//	 * 
+//	 * @param database
+//	 *            - IUserManager
+//	 *            
+//	 * @return Content version controller with associated dependencies.
+//	 */
+//	@Inject
+//	@Provides
+//	@Singleton
+//	private UserAssociationManager getAssociationManager(
+//			final IAssociationDataManager database, final IUserGroupManager userGroupDatabase) {
+//
+//		if (null == userAssociationManager) {
+//			userAssociationManager = new UserAssociationManager(database, userGroupDatabase);
+//			log.info("Creating singleton of UserAssociationManager");
+//		}
+//
+//		return userAssociationManager;
+//	}
+	
 	/**
 	 * Gets the instance of the dozer mapper object.
 	 * 
