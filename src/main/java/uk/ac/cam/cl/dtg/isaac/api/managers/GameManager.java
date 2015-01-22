@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.api;
+package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +37,9 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.api.Constants;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
+import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;

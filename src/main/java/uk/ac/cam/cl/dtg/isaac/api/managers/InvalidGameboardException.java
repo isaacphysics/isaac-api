@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.isaac.api;
+package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 /**
  * An exception that indicates an invalid gameboard has been provided.

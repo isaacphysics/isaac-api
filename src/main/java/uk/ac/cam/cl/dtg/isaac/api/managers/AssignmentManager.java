@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.api;
+package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import java.util.Date;
 import java.util.List;
