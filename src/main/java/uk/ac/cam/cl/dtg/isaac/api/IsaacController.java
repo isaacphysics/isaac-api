@@ -180,14 +180,14 @@ public class IsaacController extends AbstractIsaacFacade {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ etagCodeBuilder.toString().hashCode() + "");
 		
-		Response cachedResponse = api.generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag);
 		
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
 
 		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-				.cacheControl(api.getCacheControl()).build();
+				.cacheControl(getCacheControl()).build();
 	}
 
 	/**
@@ -215,7 +215,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ "byId".hashCode() + conceptId.hashCode() + "");
-		Response cachedResponse = api.generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -238,12 +238,12 @@ public class IsaacController extends AbstractIsaacFacade {
 					.put(CONTENT_VERSION, api.getLiveVersion()).build();
 					
 			// the request log
-			this.api.getLogManager().logEvent(this.api.getCurrentUserIdentifier(servletRequest),
+			getLogManager().logEvent(this.api.getCurrentUserIdentifier(servletRequest),
 					servletRequest, Constants.VIEW_CONCEPT, logEntry);
 		}
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(api.getCacheControl()).tag(etag).build();
+				.cacheControl(getCacheControl()).tag(etag).build();
 		
 		return cachableResult;
 	}
@@ -324,7 +324,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ etagCodeBuilder.toString().hashCode() + "");
 		
-		Response cachedResponse = api.generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag);
 		
 		if (cachedResponse != null) {
 			return cachedResponse;
@@ -351,10 +351,10 @@ public class IsaacController extends AbstractIsaacFacade {
 					c.getTotalResults());
 			
 			return Response.ok(summarizedContent).tag(etag)
-					.cacheControl(api.getCacheControl()).build();
+					.cacheControl(getCacheControl()).build();
 		} else {
 			return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
-					.cacheControl(api.getCacheControl()).build();
+					.cacheControl(getCacheControl()).build();
 		}
 	}
 
@@ -403,7 +403,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		// Calculate the ETag 
 		EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
 		
-		Response cachedResponse = api.generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+		Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -427,7 +427,7 @@ public class IsaacController extends AbstractIsaacFacade {
 						userQuestionAttempts);
 
 			// the request log
-			this.api.getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
+			getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
 
 			// return augmented content.
 			return Response.ok(content).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
@@ -474,7 +474,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ searchString.hashCode() + types.hashCode() + "");
 		
-		Response cachedResponse = api.generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -495,13 +495,13 @@ public class IsaacController extends AbstractIsaacFacade {
 				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
 				.put(CONTENT_VERSION, api.getLiveVersion()).build();
 		
-		this.api.getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
+		getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
 				httpServletRequest, GLOBAL_SITE_SEARCH, logMap);
 		
 		return Response
 				.ok(this.extractContentSummaryFromResultsWrapper(searchResults,
 						this.getProperties().getProperty(PROXY_PATH))).tag(etag)
-				.cacheControl(api.getCacheControl()).build();
+				.cacheControl(getCacheControl()).build();
 	}
 	
 
@@ -644,7 +644,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
 					+ userQuestionAttempts.toString().hashCode() + "");
 			
-			Response cachedResponse = api.generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+			Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
 			if (cachedResponse != null) {
 				return cachedResponse;
 			}
@@ -778,7 +778,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			return Response.noContent().build();
 		}
 		
-		this.api.getLogManager().logEvent(currentUser, request, VIEW_MY_BOARDS_PAGE,
+		getLogManager().logEvent(currentUser, request, VIEW_MY_BOARDS_PAGE,
 				ImmutableMap.builder().put("totalBoards", gameboards.getTotalResults())
 						.put("notStartedTotal", gameboards.getTotalNotStarted())
 						.put("completedTotal", gameboards.getTotalCompleted())
@@ -818,7 +818,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			}
 			
 			this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
-			this.api.getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
+			getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
 
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -961,7 +961,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			
 			// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
 			gameManager.linkUserToGameboard(existingGameboard, user);
-			this.api.getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+			getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
 			
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -1018,7 +1018,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ pageId.hashCode() + "");
 		
-		Response cachedResponse = api.generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -1040,12 +1040,12 @@ public class IsaacController extends AbstractIsaacFacade {
 					.put(CONTENT_VERSION, api.getLiveVersion()).build();
 					
 			// the request log
-			this.api.getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
+			getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
 					httpServletRequest, Constants.VIEW_PAGE, logEntry);			
 		}
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(api.getCacheControl()).tag(etag).build();
+				.cacheControl(getCacheControl()).tag(etag).build();
 		return cachableResult;
 	}
 
@@ -1070,7 +1070,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		// NOTE: Assumes that the latest version of the content is being used.
 		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
 				+ fragmentId.hashCode() + "");
-		Response cachedResponse = api.generateCachedResponse(request, etag);
+		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
@@ -1087,7 +1087,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		Response result = this.findSingleResult(fieldsToMatch);
 		
 		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(api.getCacheControl()).tag(etag).build();
+				.cacheControl(getCacheControl()).tag(etag).build();
 		
 		return cachableResult;
 	}
