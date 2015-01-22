@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -55,13 +56,12 @@ import com.google.inject.Inject;
  * 
  */
 @Path("/assignments")
-public class AssignmentFacade {
+public class AssignmentFacade extends AbstractIsaacFacade {
 	private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 
 	private final AssignmentManager assignmentManager;
 	private final UserManager userManager;
 	private final GroupManager groupManager;
-	private final PropertiesLoader propertiesLoader;
 	private final GameManager gameManager;
 
 	/**
@@ -78,13 +78,15 @@ public class AssignmentFacade {
 	 *            - Instance of properties Loader
 	 * @param gameManager
 	 *            - Instance of Game Manager
+	 * @param logManager
+	 *            - Instance of log manager
 	 */
 	@Inject
 	public AssignmentFacade(final AssignmentManager assignmentManager, final UserManager userManager,
 			final GroupManager groupManager, final PropertiesLoader propertiesLoader,
-			final GameManager gameManager) {
+			final GameManager gameManager, final ILogManager logManager) {
+		super(propertiesLoader, logManager);
 		this.userManager = userManager;
-		this.propertiesLoader = propertiesLoader;
 		this.gameManager = gameManager;
 		this.groupManager = groupManager;
 		this.assignmentManager = assignmentManager;

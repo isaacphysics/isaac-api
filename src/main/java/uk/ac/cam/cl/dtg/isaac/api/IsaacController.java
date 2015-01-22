@@ -48,14 +48,13 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -72,9 +71,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
+import com.google.inject.Inject;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -88,29 +85,13 @@ import static com.google.common.collect.Maps.*;
  * 
  */
 @Path("/")
-public class IsaacController {
+public class IsaacController extends AbstractIsaacFacade {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacController.class);
 
-	private SegueApiFacade api;
-	private PropertiesLoader propertiesLoader;
-	private GameManager gameManager;
-
-	/**
-	 * Creates an instance of the isaac controller which provides the REST
-	 * endpoints for the isaac api.
-	 * 
-	 */
-	public IsaacController() {
-		// Get an singleton instances of dependencies
-		// without using the rest endpoints.
-		Injector injector = Guice.createInjector(
-				new IsaacGuiceConfigurationModule(),
-				new SegueGuiceConfigurationModule());
-		api = injector.getInstance(SegueApiFacade.class);
-		propertiesLoader = injector.getInstance(PropertiesLoader.class);
-		gameManager = injector.getInstance(GameManager.class);
-	}
+	private final SegueApiFacade api;
+	private final GameManager gameManager;
+	private final MapperFacade mapper; 
 
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
@@ -122,13 +103,21 @@ public class IsaacController {
 	 *            - Instance of properties Loader
 	 * @param gameManager
 	 *            - Instance of Game Manager
+	 * @param logManager
+	 *            - Instance of Log Manager
+	 * @param mapper
+	 *            - Instance of Mapper facade.
 	 */
+	@Inject
 	public IsaacController(final SegueApiFacade api,
 			final PropertiesLoader propertiesLoader,
-			final GameManager gameManager) {
+			final GameManager gameManager,
+			final ILogManager logManager,
+			final MapperFacade mapper) {
+		super(propertiesLoader, logManager);
 		this.api = api;
-		this.propertiesLoader = propertiesLoader;
 		this.gameManager = gameManager;
+		this.mapper = mapper;
 	}
 
 	/**
@@ -358,7 +347,7 @@ public class IsaacController {
 
 			ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
 					this.extractContentSummaryFromList(c.getResults(),
-							propertiesLoader.getProperty(PROXY_PATH)),
+							this.getProperties().getProperty(PROXY_PATH)),
 					c.getTotalResults());
 			
 			return Response.ok(summarizedContent).tag(etag)
@@ -511,7 +500,7 @@ public class IsaacController {
 		
 		return Response
 				.ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-						propertiesLoader.getProperty(PROXY_PATH))).tag(etag)
+						this.getProperties().getProperty(PROXY_PATH))).tag(etag)
 				.cacheControl(api.getCacheControl()).build();
 	}
 	
@@ -1141,11 +1130,6 @@ public class IsaacController {
 		}
 
 		// try auto-mapping
-		Injector injector = Guice.createInjector(
-				new IsaacGuiceConfigurationModule(),
-				new SegueGuiceConfigurationModule());
-		MapperFacade mapper = injector.getInstance(MapperFacade.class);
-
 		ContentSummaryDTO contentInfo = mapper.map(content,
 				ContentSummaryDTO.class);
 		contentInfo.setUrl(URIManager.generateApiUrl(content));
@@ -1278,7 +1262,7 @@ public class IsaacController {
 				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
 		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-				this.extractContentSummaryFromList(c.getResults(), propertiesLoader.getProperty(PROXY_PATH)),
+				this.extractContentSummaryFromList(c.getResults(), this.getProperties().getProperty(PROXY_PATH)),
 				c.getTotalResults());
 
 		return Response.ok(summarizedContent);

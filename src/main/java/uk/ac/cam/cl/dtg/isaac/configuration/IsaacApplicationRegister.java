@@ -74,6 +74,7 @@ public class IsaacApplicationRegister extends Application {
 			this.singletons.add(injector.getInstance(AuthorisationFacade.class));
 			//this.singletons.add(injector.getInstance(AssignmentFacade.class));
 			this.singletons.add(injector.getInstance(GroupsFacade.class));
+			this.singletons.add(injector.getInstance(IsaacController.class));
 		}
 
 		return this.singletons;
@@ -82,7 +83,7 @@ public class IsaacApplicationRegister extends Application {
 	@Override
 	public final Set<Class<?>> getClasses() {
 		Set<Class<?>> result = new HashSet<Class<?>>();
-		result.add(IsaacController.class);
+		//result.add(IsaacController.class);
 		result.add(APIOverviewResource.class);
 		result.add(RestEasyJacksonConfiguration.class);
 		return result;
