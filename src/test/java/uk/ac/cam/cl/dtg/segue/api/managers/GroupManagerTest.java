@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -82,18 +82,18 @@ public class GroupManagerTest {
 		someGroupOwner.setDbId("533ee66842f639e95ce35e29");
 		someGroupOwner.setEmail("test@test.com");
 		
-		Capture<UserGroup> capturedGroup = new Capture<UserGroup>();
+		Capture<UserGroupDO> capturedGroup = new Capture<UserGroupDO>();
 		
-		UserGroup resultFromDB = new UserGroup();
+		UserGroupDO resultFromDB = new UserGroupDO();
 		
 		GroupManager gm = new GroupManager(this.groupDataManager, this.userManager);
 		try {
-			expect(this.groupDataManager.createGroup(and(capture(capturedGroup), isA(UserGroup.class))))
+			expect(this.groupDataManager.createGroup(and(capture(capturedGroup), isA(UserGroupDO.class))))
 					.andReturn(resultFromDB);
 			replay(this.groupDataManager);
 
 			// check that the result of the method is whatever comes out of the database
-			UserGroup createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
+			UserGroupDO createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
 			assertTrue(createUserGroup == resultFromDB);
 
 			// check that what goes into the database is what we passed it.

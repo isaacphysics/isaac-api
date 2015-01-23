@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
@@ -120,7 +120,7 @@ public class UserAssociationManagerTest {
 		dummyAssociationDataManager.createAssociation(someToken, someUserIdGrantingAccess);
 		expectLastCall().once();
 		
-		UserGroup groupToAddUserTo = createMock(UserGroup.class);
+		UserGroupDO groupToAddUserTo = createMock(UserGroupDO.class);
 		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
 		
 		dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);

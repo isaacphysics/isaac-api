@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 
 import com.google.api.client.util.Lists;
@@ -44,7 +44,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	private static final Logger log = LoggerFactory.getLogger(MongoGroupDataManager.class);
 
 	private final DB database;
-	private final JacksonDBCollection<UserGroup, String> groupCollection;
+	private final JacksonDBCollection<UserGroupDO, String> groupCollection;
 	private final JacksonDBCollection<GroupMembership, String> groupMembershipCollection;
 
 	/**
@@ -58,15 +58,15 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 		this.database = database;
 		
 		groupCollection = JacksonDBCollection.wrap(this.database.getCollection(GROUP_COLLECTION_NAME),
-				UserGroup.class, String.class);
+				UserGroupDO.class, String.class);
 		groupMembershipCollection = JacksonDBCollection
 				.wrap(this.database.getCollection(GROUP_MEMBERSHIP_COLLECTION_NAME), GroupMembership.class,
 						String.class);
 	}
 
 	@Override
-	public UserGroup createGroup(final UserGroup group) throws SegueDatabaseException {
-		WriteResult<UserGroup, String> result = groupCollection.save(group);
+	public UserGroupDO createGroup(final UserGroupDO group) throws SegueDatabaseException {
+		WriteResult<UserGroupDO, String> result = groupCollection.save(group);
 		if (result.getError() != null) {
 			log.error("Error during database update " + result.getError());
 			throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
@@ -105,22 +105,22 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	}
 
 	@Override
-	public List<UserGroup> getGroupsByOwner(final String ownerUserId) {
+	public List<UserGroupDO> getGroupsByOwner(final String ownerUserId) {
 		Query query = DBQuery.is(Constants.OWNER_USER_ID_FKEY_FIELDNAME, ownerUserId);
 
-		DBCursor<UserGroup> result = groupCollection.find(query);
+		DBCursor<UserGroupDO> result = groupCollection.find(query);
 
 		return result.toArray();
 	}
 	
 	@Override
-	public UserGroup findById(final String groupId) {
+	public UserGroupDO findById(final String groupId) {
 		return groupCollection.findOneById(groupId);
 	}
 	
 	@Override
-	public void deleteGroup(final UserGroup group) throws SegueDatabaseException {
-		WriteResult<UserGroup, String> result = groupCollection.removeById(group.getId());
+	public void deleteGroup(final UserGroupDO group) throws SegueDatabaseException {
+		WriteResult<UserGroupDO, String> result = groupCollection.removeById(group.getId());
 
 		if (result.getError() != null) {
 			throw new SegueDatabaseException("Unable to delete group from database");

@@ -29,7 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
@@ -66,7 +66,7 @@ public class AssignmentManager {
 	 *             - if we cannot complete a required database operation.
 	 */
 	public List<AssignmentDTO> getAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
-		List<UserGroup> groups = groupManager.getGroupsByOwner(user.getDbId());
+		List<UserGroupDO> groups = groupManager.getGroupsByOwner(user.getDbId());
 
 		if (groups.size() == 0) {
 			log.debug(String.format("User (%s) does not have any groups", user.getDbId()));
@@ -74,7 +74,7 @@ public class AssignmentManager {
 		}
 
 		List<AssignmentDTO> assignments = Lists.newArrayList();
-		for (UserGroup group : groups) {
+		for (UserGroupDO group : groups) {
 			assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group));
 		}
 

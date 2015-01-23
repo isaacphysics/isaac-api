@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This allows users to be organised by class / project and for teachers (or
  * those granted permission) to view progress.
  */
-public class UserGroup {
+public class UserGroupDO {
 	private String id;
 	private String groupName;
 	private String ownerId;
@@ -39,7 +39,7 @@ public class UserGroup {
 	/**
 	 * Default Constructor.
 	 */
-	public UserGroup() {
+	public UserGroupDO() {
 
 	}
 
@@ -55,7 +55,7 @@ public class UserGroup {
 	 * @param created
 	 *            - date created.
 	 */
-	public UserGroup(@Nullable final String id, final String groupName, final String ownerId,
+	public UserGroupDO(@Nullable final String id, final String groupName, final String ownerId,
 			final Date created) {
 		this.id = id;
 		this.groupName = groupName;

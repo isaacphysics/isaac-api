@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import com.google.inject.Inject;
@@ -140,7 +140,7 @@ public class UserAssociationManager {
 		}
 
 		associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getDbId());
-		UserGroup group = userGroupManager.getGroupById(lookedupToken.getGroupId());
+		UserGroupDO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
 		
 		if (lookedupToken.getGroupId() != null) {
 			userGroupManager.addUserToGroup(group, userGrantingPermission);

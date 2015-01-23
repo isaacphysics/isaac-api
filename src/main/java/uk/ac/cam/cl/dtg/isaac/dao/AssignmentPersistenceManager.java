@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import static com.google.common.collect.Maps.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -122,7 +122,7 @@ public class AssignmentPersistenceManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is an error when accessing the database.
 	 */
-	public List<AssignmentDTO> getAssignmentsByGroupId(final UserGroup group) throws SegueDatabaseException {
+	public List<AssignmentDTO> getAssignmentsByGroupId(final UserGroupDO group) throws SegueDatabaseException {
 		
 		// find all assignments related to this groupId.
 		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
