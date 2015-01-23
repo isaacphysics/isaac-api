@@ -115,8 +115,7 @@ public class UsersFacade extends AbstractSegueFacade {
 			return Response.ok(currentUser).tag(etag)
 					.cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user as no user is currently logged in.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
 
@@ -322,8 +321,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
 			return Response.ok(updatedUser).build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to change your user settings.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (NoUserException e) {
 			return new SegueErrorResponse(Status.NOT_FOUND, "The user specified does not exist.")
 					.toResponse();

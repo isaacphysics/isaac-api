@@ -108,8 +108,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 	public final Response linkExistingUserToProvider(@Context final HttpServletRequest request,
 			@PathParam("provider") final String authProviderAsString) {
 		if (!this.userManager.isRegisteredUserLoggedIn(request)) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user as no user is currently logged in.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 
 		return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString);
@@ -141,8 +140,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 					"Unable to remove account as this will mean that the user cannot login again in the future.",
 					e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user as no user is currently logged in.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (AuthenticationProviderMappingException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Unable to map to a known authenticator. The provider: " + authProviderAsString

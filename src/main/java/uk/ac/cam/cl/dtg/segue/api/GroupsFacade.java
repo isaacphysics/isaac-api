@@ -96,7 +96,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 					groupManager.getGroupsByOwner(user.getDbId()))
 					.build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
 
@@ -129,7 +129,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			log.error("Database error while trying to create user group. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} 
 	}
 	
@@ -165,7 +165,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} 
 	}
 	
@@ -199,7 +199,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			log.error("Database error while trying to add user to a group. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (NoUserException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
 		} 

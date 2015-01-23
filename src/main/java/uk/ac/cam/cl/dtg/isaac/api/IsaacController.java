@@ -699,9 +699,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		try {
 			currentUser = api.getCurrentUser(request);
 		} catch (NoUserLoggedInException e1) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"Unable to retrieve the current user's gameboards as no user is currently logged in.")
-					.toResponse();		
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 		
 		Integer gameboardLimit = Constants.DEFAULT_GAMEBOARDS_RESULTS_LIMIT;
@@ -825,9 +823,7 @@ public class IsaacController extends AbstractIsaacFacade {
 					"Error whilst trying to delete a gameboard.", e)
 					.toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to retrieve delete gameboards.")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (ContentManagerException e1) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Error locating the version requested", e1);
@@ -857,9 +853,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		try {
 			user = api.getCurrentUser(request);
 		} catch (NoUserLoggedInException e1) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to modify gameboards.")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 		
 		if (null == newGameboardObject) {
@@ -922,9 +916,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		try {
 			user = api.getCurrentUser(request);
 		} catch (NoUserLoggedInException e1) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"User not logged in. Unable to modify gameboards.")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 		
 		if (null == newGameboardObject || null == gameboardId || newGameboardObject.getId() == null) {

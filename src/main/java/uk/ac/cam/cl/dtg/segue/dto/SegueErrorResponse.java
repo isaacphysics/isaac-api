@@ -135,4 +135,22 @@ public class SegueErrorResponse implements Serializable {
 		sb.append('\n' + this.getAdditionalErrorInformation());
 		return sb.toString();
 	}
+	
+	/**
+	 * @return a default response for when the user must be logged in to access
+	 *         a resource.
+	 */
+	public static Response getNotLoggedInResponse() {
+		return new SegueErrorResponse(Status.UNAUTHORIZED, "You must be logged in to access this resource.")
+				.toResponse();
+	}
+
+	/**
+	 * @return a default response for when the user does not have the correct
+	 *         access rights to access a resource.
+	 */
+	public static Response getIncorrectRoleResponse() {
+		return new SegueErrorResponse(Status.FORBIDDEN,
+				"You do not have the permissions to complete this action").toResponse();
+	}
 }

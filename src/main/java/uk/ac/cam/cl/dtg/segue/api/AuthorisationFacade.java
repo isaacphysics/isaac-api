@@ -106,7 +106,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 					userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
 					.build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		}
@@ -143,7 +143,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			log.error("Database error while trying to get association token. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (UserGroupNotFoundException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Error connecting to group", e).toResponse();
 		}
@@ -179,7 +179,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			log.error("Database error while trying to get association token. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (UserAssociationException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to create association", e).toResponse();
 		} catch (InvalidUserAssociationTokenException e) {
@@ -217,7 +217,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			log.error("Database error while trying to get association token. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "No user logged in").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (NoUserException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
 		}

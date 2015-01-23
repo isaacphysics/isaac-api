@@ -114,8 +114,7 @@ public class AdminFacade extends AbstractSegueFacade {
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this endpoint.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
 	
@@ -139,8 +138,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable To Index Schools Exception in admin facade", e).toResponse();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this endpoint.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
 	
@@ -196,8 +194,7 @@ public class AdminFacade extends AbstractSegueFacade {
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (InterruptedException e) {
 			log.error("ExecutorException during version change.", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -237,8 +234,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			}
 		} catch (NoUserLoggedInException e) {
 			log.warn("Unable to trigger synch job as not logged in.");
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (InterruptedException e) {
 			log.error("ExecutorException during synchronise datastores operation.", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -312,8 +308,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			}
 
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in to access this function.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
 
@@ -343,8 +338,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
 				}
 			} catch (NoUserLoggedInException e) {
-				return new SegueErrorResponse(Status.UNAUTHORIZED,
-						"You must be logged in to access this endpoint.").toResponse();
+				return SegueErrorResponse.getNotLoggedInResponse();
 			}
 		}
 
@@ -404,8 +398,7 @@ public class AdminFacade extends AbstractSegueFacade {
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in order to use this endpoint.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 
 		try {
@@ -445,8 +438,7 @@ public class AdminFacade extends AbstractSegueFacade {
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in order to use this endpoint.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 
 		try {
@@ -492,8 +484,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			
 			return Response.noContent().build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED,
-					"You must be logged in order to use this endpoint.").toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while looking up user information.").toResponse();
