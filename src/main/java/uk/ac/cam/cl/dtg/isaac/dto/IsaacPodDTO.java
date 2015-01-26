@@ -34,7 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 @JsonType("IsaacPod")
 public class IsaacPodDTO extends ContentDTO {
 	private ImageDTO image;
-	private String link;
+	private String url;
 
 	@JsonCreator
 	public IsaacPodDTO(@JsonProperty("_id") String _id,
@@ -53,12 +53,12 @@ public class IsaacPodDTO extends ContentDTO {
 			@JsonProperty("tags") Set<String> tags,
 			@JsonProperty("level") Integer level,
 			@JsonProperty("image") ImageDTO image,
-			@JsonProperty("homepage") String link) {
+			@JsonProperty("url") String url) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 
-		this.link = link;
+		this.url = url;
 		this.image = image;
 	}
 
@@ -89,15 +89,15 @@ public class IsaacPodDTO extends ContentDTO {
 	 * Gets the link.
 	 * @return the link
 	 */
-	public String getLink() {
-		return link;
+	public String getUrl() {
+		return url;
 	}
 
 	/**
 	 * Sets the link.
-	 * @param link the link to set
+	 * @param url the link to set
 	 */
-	public void setLink(final String link) {
-		this.link = link;
+	public void setUrl(final String url) {
+		this.url = url;
 	}	
 }

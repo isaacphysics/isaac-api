@@ -21,7 +21,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacFeaturedProfileDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacPodDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
  * DO for isaac featured profiles.
  *
  */
-@DTOMapping(IsaacFeaturedProfileDTO.class)
+@DTOMapping(IsaacPodDTO.class)
 @JsonType("isaacPod")
 public class IsaacPod extends Content {
 	private Image image;
@@ -56,7 +56,7 @@ public class IsaacPod extends Content {
 			@JsonProperty("level") Integer level,
 			@JsonProperty("emailAddress") String emailAddress,
 			@JsonProperty("image") Image image,
-			@JsonProperty("homepage") String url) {
+			@JsonProperty("url") String url) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
