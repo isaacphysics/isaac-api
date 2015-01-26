@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
  * DO for isaac featured profiles.
  *
  */
-@JsonType("IsaacPod")
+@JsonType("isaacPod")
 public class IsaacPodDTO extends ContentDTO {
 	private ImageDTO image;
 	private String url;
