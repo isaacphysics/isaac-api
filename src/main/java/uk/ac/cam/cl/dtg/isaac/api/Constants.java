@@ -34,6 +34,7 @@ public final class Constants {
 	public static final String FAST_TRACK_QUESTION_TYPE = "isaacFastTrackQuestionPage";
 	public static final String WILDCARD_TYPE = "isaacWildcard";
 	public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
+	public static final String POD_FRAGMENT_TYPE = "isaacPod";
 	public static final String PAGE_TYPE = "page";
 
 	public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
@@ -68,6 +69,7 @@ public final class Constants {
 	public static final String GAMEBOARD_ID_FKEY = "gameboardId";	
 	
 	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
+	public static final Integer MAX_PODS_TO_RETURN = 10;
 	
 	// Log events
 	public static final String VIEW_QUESTION = "VIEW_QUESTION";

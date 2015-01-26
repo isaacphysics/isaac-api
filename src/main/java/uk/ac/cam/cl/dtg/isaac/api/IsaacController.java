@@ -72,6 +72,7 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static com.google.common.collect.Maps.*;
@@ -1084,6 +1085,42 @@ public class IsaacController extends AbstractIsaacFacade {
 		return cachableResult;
 	}
 
+	/**
+	 * Rest end point that gets a all of the content marked as being type
+	 * "pods".
+	 * 
+	 * @param request
+	 *            - so that we can deal with caching.
+	 * @return A Response object containing a page fragment object or containing
+	 *         a SegueErrorResponse.
+	 */
+	@GET
+	@Path("pages/pods")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getPodList(
+			@Context final Request request) {
+		
+		// Calculate the ETag on current live version of the content
+		// NOTE: Assumes that the latest version of the content is being used.
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode() + "");
+		Response cachedResponse = generateCachedResponse(request, etag);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
+		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
+
+		ResultsWrapper<ContentDTO> pods = api.findMatchingContent(api.getLiveVersion(),
+				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+		
+		Response cachableResult = Response.ok(pods)
+				.cacheControl(getCacheControl()).tag(etag).build();
+		
+		return cachableResult;
+	}
+	
 
 	/**
 	 * Rest end point to allow images to be requested from the database.

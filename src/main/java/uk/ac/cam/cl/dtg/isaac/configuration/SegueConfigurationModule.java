@@ -24,6 +24,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacFastTrackQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacMultiChoiceQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
@@ -53,6 +54,7 @@ public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 		supplementaryContentDTOs.add(IsaacConceptPage.class);
 		supplementaryContentDTOs.add(IsaacFeaturedProfile.class);
 		supplementaryContentDTOs.add(IsaacWildcard.class);
+		supplementaryContentDTOs.add(IsaacPod.class);
 
 		return supplementaryContentDTOs;
 	}
