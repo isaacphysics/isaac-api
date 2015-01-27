@@ -51,6 +51,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -760,6 +761,12 @@ public class GitContentManager implements IContentManager {
 			IsaacFeaturedProfile profile = (IsaacFeaturedProfile) content;
 			if (profile.getImage() != null) {
 				this.augmentChildContent(profile.getImage(), canonicalSourceFile, newParentId);
+			}
+		}
+		if (content instanceof IsaacPod) {
+			IsaacPod pod = (IsaacPod) content;
+			if (pod.getImage() != null) {
+				this.augmentChildContent(pod.getImage(), canonicalSourceFile, newParentId);
 			}
 		}
 
