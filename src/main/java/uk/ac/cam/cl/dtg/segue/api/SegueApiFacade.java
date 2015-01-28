@@ -718,7 +718,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 				SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
 						"Invalid file extension requested");
 				log.debug(error.getErrorMessage());
-				return error.toResponse();
+				return error.toResponse(getCacheControl(Constants.CACHE_FOR_ONE_DAY), etag);
 		}
 
 		try {
@@ -739,7 +739,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: "
 					+ path);
 			log.warn(error.getErrorMessage());
-			return error.toResponse(getCacheControl(Constants.CACHE_FOR_ONE_DAY), etag);
+			return error.toResponse(getCacheControl(Constants.CACHE_FOR_TEN_MINUTES), etag);
 		}
 
 		return Response.ok(fileContent.toByteArray()).type(mimeType)
