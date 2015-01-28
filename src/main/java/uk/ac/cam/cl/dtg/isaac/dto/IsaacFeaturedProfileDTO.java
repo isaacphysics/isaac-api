@@ -21,11 +21,11 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 
 /**
  * DO for isaac featured profiles.
@@ -34,7 +34,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 @JsonType("isaacFeaturedProfile")
 public class IsaacFeaturedProfileDTO extends ContentDTO {
 	private String emailAddress;
-	private Image image;
+	private ImageDTO image;
 	private String homepage;
 
 	@JsonCreator
@@ -56,7 +56,7 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 			@JsonProperty("src") String src,
 			@JsonProperty("altText") String altText,
 			@JsonProperty("emailAddress") String emailAddress,
-			@JsonProperty("image") Image image,
+			@JsonProperty("image") ImageDTO image,
 			@JsonProperty("homepage") String homepage) {
 		super(_id, id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
@@ -93,7 +93,7 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 	 * Gets the image.
 	 * @return the image
 	 */
-	public Image getImage() {
+	public ImageDTO getImage() {
 		return image;
 	}
 
@@ -101,7 +101,7 @@ public class IsaacFeaturedProfileDTO extends ContentDTO {
 	 * Sets the image.
 	 * @param image the image to set
 	 */
-	public void setImage(final Image image) {
+	public void setImage(final ImageDTO image) {
 		this.image = image;
 	}
 	
