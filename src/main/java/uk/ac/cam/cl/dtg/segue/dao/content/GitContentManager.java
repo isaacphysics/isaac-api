@@ -19,6 +19,8 @@ import static com.google.common.collect.Maps.immutableEntry;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,9 +51,7 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacPod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -756,27 +756,27 @@ public class GitContentManager implements IContentManager {
 			}
 		}
 
-		// TODO: we need to fix this as this is an isaac thing in segue land.
-		if (content instanceof IsaacFeaturedProfile) {
-			IsaacFeaturedProfile profile = (IsaacFeaturedProfile) content;
-			if (profile.getImage() != null) {
-				this.augmentChildContent(profile.getImage(), canonicalSourceFile, newParentId);
+		// try to determine if we have images as fields to deal with in this class
+		Class<? extends Content> cls = content.getClass();
+		Method[] methods = cls.getDeclaredMethods();
+		
+		for (int i = 0; i < methods.length; i++) {
+			if (Media.class.isAssignableFrom(methods[i].getReturnType())) {
+				try {
+					Media media = (Media) methods[i].invoke(content);
+					if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
+						media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
+					}
+				} catch (SecurityException | IllegalAccessException | IllegalArgumentException
+						| InvocationTargetException e) {
+					log.error("Unable to access method using reflection: attempting to fix Media Src", e);
+				}
 			}
 		}
-		if (content instanceof IsaacPod) {
-			IsaacPod pod = (IsaacPod) content;
-			if (pod.getImage() != null) {
-				this.augmentChildContent(pod.getImage(), canonicalSourceFile, newParentId);
-			}
-		}
-
+		
 		if (content instanceof Media) {
 			Media media = (Media) content;
-			if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
-				String newPath = FilenameUtils.normalize(
-						FilenameUtils.getPath(canonicalSourceFile) + media.getSrc(), true);
-				media.setSrc(newPath);
-			}
+			media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
 		}
 
 		// Concatenate the parentId with our id to get a fully qualified
@@ -788,6 +788,20 @@ public class GitContentManager implements IContentManager {
 		return content;
 	}
 
+	/**
+	 * @param canonicalSourceFile - the canonical path to use for concat operations.
+	 * @param originalSrc - to modify
+	 * @return src with relative paths fixed.
+	 */
+	private String fixMediaSrc(final String canonicalSourceFile, final String originalSrc) {
+		if (originalSrc != null && !(originalSrc.startsWith("http://") || originalSrc.startsWith("https://"))) {
+			String newPath = FilenameUtils.normalize(
+					FilenameUtils.getPath(canonicalSourceFile) + originalSrc, true);
+			return newPath;
+		}
+		return originalSrc;
+	}
+	
 	/**
 	 * This method will attempt to traverse the cache to ensure that all content
 	 * references are valid.
