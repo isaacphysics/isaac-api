@@ -68,16 +68,16 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 * Creates a new isaac guice configuration module.
 	 */
 	public IsaacGuiceConfigurationModule() {
-		try {
-			if (null == globalProperties) {
-				final String propertiesFileLocation = "/config/segue-config.properties";
-				globalProperties = new PropertiesLoader(propertiesFileLocation);
-				log.info("Loading properties file from "
-						+ propertiesFileLocation);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			if (null == globalProperties) {
+//				final String propertiesFileLocation = "/config/segue-config.properties";
+//				globalProperties = new PropertiesLoader(propertiesFileLocation);
+//				log.info("Loading properties file from "
+//						+ propertiesFileLocation);
+//			}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	@Override

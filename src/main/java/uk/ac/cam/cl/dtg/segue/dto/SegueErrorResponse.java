@@ -19,6 +19,8 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -125,6 +127,17 @@ public class SegueErrorResponse implements Serializable {
 	 */
 	public final Response toResponse() {
 		return this.toResponseBuilder().build();
+	}
+	
+	/**
+	 * Allow cache control options to be configured so that we don't have to generate this 
+	 * SegueError everytime.
+	 * @param cacheControl - a configured cache control object.
+	 * @param entityTag - an etag to be returned with the error response.
+	 * @return A cache control configured error response.
+	 */
+	public final Response toResponse(final CacheControl cacheControl, final EntityTag entityTag) {
+		return this.toResponseBuilder().cacheControl(cacheControl).tag(entityTag).build();
 	}
 
 	@Override

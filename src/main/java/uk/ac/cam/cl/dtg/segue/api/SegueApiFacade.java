@@ -737,8 +737,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		if (null == fileContent) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: "
 					+ path);
-			log.error(error.getErrorMessage());
-			return error.toResponse();
+			log.warn(error.getErrorMessage());
+			return error.toResponse(getCacheControl(Constants.CACHE_FOR_ONE_DAY), etag);
 		}
 
 		return Response.ok(fileContent.toByteArray()).type(mimeType)
