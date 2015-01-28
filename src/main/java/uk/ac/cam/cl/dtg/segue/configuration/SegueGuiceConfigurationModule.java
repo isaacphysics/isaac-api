@@ -491,6 +491,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 	/**
+	 * @return segue version currently running.
+	 */
+	public static String getSegueVersion() {
+		if (configLocationProperties != null) {
+			return configLocationProperties.getProperty(Constants.SEGUE_APP_VERSION);
+		}
+		log.warn("Unable to read segue version property");
+		return "UNKNOWN";
+	}
+	
+	/**
 	 * Gets the instance of the GoogleClientSecrets object.
 	 * 
 	 * @param clientSecretLocation

@@ -55,6 +55,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -810,7 +811,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getSegueAppVersion() {
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueVersion",
-				this.getProperties().getProperty(Constants.SEGUE_APP_VERSION)).build();
+				SegueGuiceConfigurationModule.getSegueVersion()).build();
 
 		return Response.ok(result).build();
 	}
