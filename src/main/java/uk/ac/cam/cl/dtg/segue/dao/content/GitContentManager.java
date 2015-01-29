@@ -760,7 +760,7 @@ public class GitContentManager implements IContentManager {
 		Method[] methods = content.getClass().getDeclaredMethods();
 		
 		for (int i = 0; i < methods.length; i++) {
-			if (Media.class.isAssignableFrom(methods[i].getReturnType()) && methods[i].getParameterCount() == 0) {
+			if (Media.class.isAssignableFrom(methods[i].getReturnType())) {
 				try {
 					Media media = (Media) methods[i].invoke(content);
 					if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
