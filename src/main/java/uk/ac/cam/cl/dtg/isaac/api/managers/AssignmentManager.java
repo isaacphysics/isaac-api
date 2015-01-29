@@ -161,4 +161,29 @@ public class AssignmentManager {
 				"Duplicate Assignment (group: %s) (gameboard: %s) Exception: %s", groupId, gameboardId,
 				assignments));
 	}
+	
+	/**
+	 * findGroupsByGameboard.
+	 * 
+	 * @param user
+	 *            - owner of assignments (teacher)
+	 * @param gameboardId
+	 *            - the gameboard id to query
+	 * @return Empty List if none or a List or groups.
+	 * @throws SegueDatabaseException
+	 *             - If something goes wrong with database access.
+	 */
+	public List<UserGroupDO> findGroupsByGameboard(final RegisteredUserDTO user, final String gameboardId)
+		throws SegueDatabaseException {
+		List<AssignmentDTO> allAssignments = this.getAllAssignmentsSetByUser(user);
+		List<UserGroupDO> groups = Lists.newArrayList();
+
+		for (AssignmentDTO assignment : allAssignments) {
+			if (assignment.getGameboardId().equals(gameboardId)) {
+				groups.add(groupManager.getGroupById(assignment.getGroupId()));
+			}
+		}
+
+		return groups;
+	}
 }

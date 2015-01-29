@@ -144,6 +144,33 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	}
 
 	/**
+	 * Allows a user to get all groups that have been assigned to a given board.
+	 * 
+	 * @param request
+	 *            - so that we can identify the current user.
+	 * @param gameboardId - the id of the game board of interest.
+	 * @return the assignment object.
+	 */
+	@GET
+	@Path("/assign/{gameboard_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getAssignedGroups(@Context final HttpServletRequest request,
+			@PathParam("gameboard_id") final String gameboardId) {
+		try {
+			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+			
+			return Response.ok(assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId)).build();
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged to assign gameboards")
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to assign work", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
+					.toResponse();
+		} 
+	}
+	
+	/**
 	 * Allows a user to assign a gameboard to group of users.
 	 * 
 	 * @param request
