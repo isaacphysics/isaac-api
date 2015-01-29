@@ -45,7 +45,7 @@ public class Image extends Media {
 	 * Sets the clickUrl.
 	 * @param clickUrl the clickUrl to set
 	 */
-	public void setClickUrl(String clickUrl) {
+	public void setClickUrl(final String clickUrl) {
 		this.clickUrl = clickUrl;
 	}
 
@@ -61,7 +61,7 @@ public class Image extends Media {
 	 * Sets the clickTarget.
 	 * @param clickTarget the clickTarget to set
 	 */
-	public void setClickTarget(String clickTarget) {
+	public void setClickTarget(final String clickTarget) {
 		this.clickTarget = clickTarget;
 	}
 }

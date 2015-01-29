@@ -757,11 +757,10 @@ public class GitContentManager implements IContentManager {
 		}
 
 		// try to determine if we have images as fields to deal with in this class
-		Class<? extends Content> cls = content.getClass();
-		Method[] methods = cls.getDeclaredMethods();
+		Method[] methods = content.getClass().getDeclaredMethods();
 		
 		for (int i = 0; i < methods.length; i++) {
-			if (Media.class.isAssignableFrom(methods[i].getReturnType())) {
+			if (Media.class.isAssignableFrom(methods[i].getReturnType()) && methods[i].getParameterCount() == 0) {
 				try {
 					Media media = (Media) methods[i].invoke(content);
 					if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
