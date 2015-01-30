@@ -756,15 +756,14 @@ public class GitContentManager implements IContentManager {
 			}
 		}
 
-		// try to determine if we have images as fields to deal with in this class
+		// try to determine if we have media as fields to deal with in this class
 		Method[] methods = content.getClass().getDeclaredMethods();
-		
 		for (int i = 0; i < methods.length; i++) {
 			if (Media.class.isAssignableFrom(methods[i].getReturnType())) {
 				try {
 					Media media = (Media) methods[i].invoke(content);
-					if (media.getSrc() != null && !media.getSrc().startsWith("http")) {
-						media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
+					if (media != null) {
+						media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));	
 					}
 				} catch (SecurityException | IllegalAccessException | IllegalArgumentException
 						| InvocationTargetException e) {
