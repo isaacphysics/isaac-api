@@ -141,7 +141,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 				url.toString());
 
 		if (authResponse.getError() == null) {
-			log.info("User granted access to our app.");
+			log.debug("User granted access to our app.");
 		} else {
 			log.info("User denied access to our app.");
 		}

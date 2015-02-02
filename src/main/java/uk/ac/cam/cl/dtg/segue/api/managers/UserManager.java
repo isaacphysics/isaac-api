@@ -387,7 +387,7 @@ public class UserManager {
 			log.info("Error detected during authentication: " + e.getClass().toString(), e);
 			return error.toResponse();
 		} catch (DuplicateAccountException e) { 
-			log.info("Duplicate user already exists in the database.", e);
+			log.debug("Duplicate user already exists in the database.", e);
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"A user already exists with the e-mail address specified.")
 					.toResponse();
@@ -1544,7 +1544,7 @@ public class UserManager {
 		// decide if we need to register a new user or link to an existing
 		// account
 		if (null == localUserInformation) {
-			log.info(String.format("New registration (%s) as user does not already exist.",
+			log.debug(String.format("New registration (%s) as user does not already exist.",
 					federatedAuthenticator.getAuthenticationProvider().name()));
 
 			UserFromAuthProvider userFromProvider = federatedAuthenticator

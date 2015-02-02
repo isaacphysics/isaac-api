@@ -133,7 +133,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 		try {
 			String oauthVerifier = getParameterFromUrl(urlParser,
 					"oauth_verifier");
-			log.info("User granted access to our app.");
+			log.debug("User granted access to our app.");
 			return oauthVerifier;
 		} catch (IOException e) {
 			log.info("User denied access to our app.");
