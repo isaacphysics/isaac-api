@@ -256,6 +256,9 @@ public class GitDb {
 			return false;
 		}
 
+		// we need to check that the local remote is up to date in order to determine if the commit exists or not.
+		this.pullLatestFromRemote();
+		
 		try {
 			Iterable<RevCommit> logs = gitHandle.log().all().call();
 
