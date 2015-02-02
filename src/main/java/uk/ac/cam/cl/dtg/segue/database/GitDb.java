@@ -76,8 +76,9 @@ public class GitDb {
 	 * @param repoLocation
 	 *            - location of the local git repository
 	 * @throws IOException
+	 *             - if we cannot access the repo location.
 	 */
-	public GitDb(String repoLocation) throws IOException {
+	public GitDb(final String repoLocation) throws IOException {
 		Validate.notBlank(repoLocation);
 
 		// unused for this constructor
@@ -105,10 +106,11 @@ public class GitDb {
 	 *            - location of the local private key file used to access the
 	 *            ssh FetchUrl
 	 * @throws IOException
+	 *             - if we cannot access the repo location.
 	 */
 	@Inject
-	public GitDb(String repoLocation, String sshFetchUrl,
-			String privateKeyFileLocation) throws IOException {
+	public GitDb(final String repoLocation, final String sshFetchUrl, final String privateKeyFileLocation)
+		throws IOException {
 		Validate.notBlank(repoLocation);
 
 		this.sshFetchUrl = sshFetchUrl;
@@ -126,7 +128,7 @@ public class GitDb {
 	 * @param gitHandle
 	 *            - The (probably mocked) Git object to use.
 	 */
-	public GitDb(Git gitHandle) {
+	public GitDb(final Git gitHandle) {
 		Validate.notNull(gitHandle);
 
 		this.privateKey = null;
@@ -142,23 +144,24 @@ public class GitDb {
 	 * will attempt to locate a unique file and return a bytearrayoutputstream
 	 * of the files contents.
 	 * 
-	 * @param SHA
+	 * @param sha
 	 *            to search in.
-	 * @param Full
+	 * @param fullFilePath
 	 *            file path to search for e.g. /src/filename.json
 	 * @return the ByteArrayOutputStream - which you can extract the file
 	 *         contents via the toString method.
 	 * @throws IOException
+	 *             - if we cannot access the repo location.
 	 * @throws UnsupportedOperationException
 	 *             - This method is intended to only locate one file at a time.
 	 *             If your search matches multiple files then this exception
 	 *             will be thrown.
 	 */
-	public ByteArrayOutputStream getFileByCommitSHA(String sha,
-			String fullFilePath) throws IOException,
-			UnsupportedOperationException {
-		if (null == sha || null == fullFilePath)
+	public ByteArrayOutputStream getFileByCommitSHA(final String sha, final String fullFilePath)
+		throws IOException, UnsupportedOperationException {
+		if (null == sha || null == fullFilePath) {
 			return null;
+		}
 
 		ObjectId objectId = this.findGitObject(sha, fullFilePath);
 
@@ -188,17 +191,18 @@ public class GitDb {
 	 *            extension.
 	 * @return A preconfigured treewalk object.
 	 * @throws IOException
+	 *             - if we cannot access the repo location.
 	 * @throws UnsupportedOperationException
+	 *             - if git does not support the operation requested.
 	 */
-	public TreeWalk getTreeWalk(String sha, String searchString)
-			throws IOException, UnsupportedOperationException {
+	public TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
+			UnsupportedOperationException {
 		Validate.notBlank(sha);
 		Validate.notNull(searchString);
 
 		ObjectId commitId = gitHandle.getRepository().resolve(sha);
 		if (null == commitId) {
-			log.error("Failed to buildGitIndex - Unable to locate resource with SHA: "
-					+ sha);
+			log.error("Failed to buildGitIndex - Unable to locate resource with sha: " + sha);
 		} else {
 			RevWalk revWalk = new RevWalk(gitHandle.getRepository());
 			RevCommit commit = revWalk.parseCommit(commitId);
@@ -216,9 +220,9 @@ public class GitDb {
 	}
 
 	/**
-	 * Get the git handle for the database
+	 * Get the git handle for the database.
 	 * 
-	 * @return
+	 * @return the repository
 	 */
 	public Repository getGitRepository() {
 		return gitHandle.getRepository();
@@ -229,11 +233,13 @@ public class GitDb {
 	 * sha and full path.
 	 * 
 	 * @param sha
+	 *            - the version that to search within.
 	 * @param fullfilePath
+	 *            - the full path of the file in git.
 	 * @return True if we can successfully find the object, false if not. False
 	 *         if we encounter an exception.
 	 */
-	public boolean verifyGitObject(String sha, String fullfilePath) {
+	public boolean verifyGitObject(final String sha, final String fullfilePath) {
 		try {
 			if (findGitObject(sha, fullfilePath) != null) {
 				return true;
@@ -248,23 +254,27 @@ public class GitDb {
 	 * Check that a commit sha exists within the git repository.
 	 * 
 	 * @param sha
+	 *            - the version that the treewalk should be configured to search
+	 *            within.
 	 * @return True if we have found the git sha false if not.
 	 */
-	public boolean verifyCommitExists(String sha) {
+	public boolean verifyCommitExists(final String sha) {
 		if (null == sha) {
 			log.warn("Null version provided. Unable to verify commit exists.");
 			return false;
 		}
 
-		// we need to check that the local remote is up to date in order to determine if the commit exists or not.
+		// we need to check that the local remote is up to date in order to
+		// determine if the commit exists or not.
 		this.pullLatestFromRemote();
-		
+
 		try {
 			Iterable<RevCommit> logs = gitHandle.log().all().call();
 
 			for (RevCommit rev : logs) {
-				if (rev.getName().equals(sha))
+				if (rev.getName().equals(sha)) {
 					return true;
+				}
 			}
 
 		} catch (NoHeadException e) {
@@ -283,21 +293,24 @@ public class GitDb {
 	}
 
 	/**
-	 * Get the time of the commit specified
+	 * Get the time of the commit specified.
 	 * 
 	 * @param sha
 	 *            - to search for.
 	 * @return integer value representing time since epoch.
+	 * @throws NotFoundException
+	 *             - if we cannot find the commit requested.
 	 */
-	public int getCommitTime(String sha) throws NotFoundException {
+	public int getCommitTime(final String sha) throws NotFoundException {
 		Validate.notBlank(sha);
 
 		try {
 			Iterable<RevCommit> logs = gitHandle.log().all().call();
 
 			for (RevCommit rev : logs) {
-				if (rev.getName().equals(sha))
+				if (rev.getName().equals(sha)) {
 					return rev.getCommitTime();
+				}
 			}
 
 		} catch (NoHeadException e) {
@@ -334,13 +347,9 @@ public class GitDb {
 			}
 
 		} catch (GitAPIException e) {
-			log.error(
-					"Git returned an API exception. While trying to to list all commits.",
-					e);
+			log.error("Git returned an API exception. While trying to to list all commits.", e);
 		} catch (IOException e) {
-			log.error(
-					"Git returned an IO exception. While trying to to list all commits.",
-					e);
+			log.error("Git returned an IO exception. While trying to to list all commits.", e);
 		}
 
 		return logList;
@@ -356,13 +365,13 @@ public class GitDb {
 		try {
 			SshSessionFactory factory = new JschConfigSessionFactory() {
 				@Override
-				public void configure(Host hc, com.jcraft.jsch.Session session) {
+				public void configure(final Host hc, final com.jcraft.jsch.Session session) {
 					session.setConfig("StrictHostKeyChecking", "no");
 				}
 
 				@Override
-				protected JSch getJSch(final OpenSshConfig.Host hc,
-						org.eclipse.jgit.util.FS fs) throws JSchException {
+				protected JSch getJSch(final OpenSshConfig.Host hc, final org.eclipse.jgit.util.FS fs)
+					throws JSchException {
 					JSch jsch = super.getJSch(hc, fs);
 					jsch.removeAllIdentity();
 
@@ -374,28 +383,25 @@ public class GitDb {
 				}
 			};
 
-			if (this.sshFetchUrl != null)
+			if (this.sshFetchUrl != null) {
 				SshSessionFactory.setInstance(factory);
+			}
 
 			RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
-			FetchResult r = gitHandle.fetch().setRefSpecs(refSpec)
-					.setRemote(sshFetchUrl).call();
+			FetchResult r = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
-			log.debug("Fetched the following advertised Refs."
-					+ r.getAdvertisedRefs().toString());
+			log.debug("Fetched the following advertised Refs." + r.getAdvertisedRefs().toString());
 			log.debug("Fetched latest from git result: " + this.getHeadSha());
 
 		} catch (GitAPIException e) {
-			log.error(
-					"Error while trying to pull the latest from the remote repository.",
-					e);
+			log.error("Error while trying to pull the latest from the remote repository.", e);
 		}
 		return this.getHeadSha();
 	}
 
 	/**
 	 * Retrieve the SHA that is at the head of the repository (based on all
-	 * fetched commits)
+	 * fetched commits).
 	 * 
 	 * @return String of sha id
 	 */
@@ -403,19 +409,16 @@ public class GitDb {
 		String result = null;
 
 		try {
-			ObjectId fetchHead = gitHandle.getRepository().resolve(
-					Constants.FETCH_HEAD);
+			ObjectId fetchHead = gitHandle.getRepository().resolve(Constants.FETCH_HEAD);
 			if (null != fetchHead) {
 				result = fetchHead.getName();
 			} else {
 				log.warn("Problem fetching head from remote. Providing local head instead.");
-				result = gitHandle.getRepository().resolve(Constants.HEAD)
-						.getName();
+				result = gitHandle.getRepository().resolve(Constants.HEAD).getName();
 			}
 
 		} catch (RevisionSyntaxException | IOException e) {
-			e.printStackTrace();
-			log.error("Error getting the head from the repository.");
+			log.error("Error getting the head from the repository.", e);
 		}
 		return result;
 	}
@@ -425,12 +428,18 @@ public class GitDb {
 	 * path.
 	 * 
 	 * @param sha
+	 *            - to search for.
 	 * @param filename
+	 *            - of the file in git to locate.
 	 * @return ObjectId which will allow you to access information about the
 	 *         node.
+	 * @throws IOException
+	 *             - if we cannot access the repo location.
+	 * @throws UnsupportedOperationException
+	 *             - if git does not support the operation requested.
 	 */
-	private ObjectId findGitObject(String sha, String filename)
-		throws IOException, UnsupportedOperationException {
+	private ObjectId findGitObject(final String sha, final String filename) throws IOException,
+			UnsupportedOperationException {
 		if (null == sha || null == filename) {
 			return null;
 		}
@@ -457,10 +466,9 @@ public class GitDb {
 			if (null == objectId) {
 				objectId = treeWalk.getObjectId(0);
 				path = treeWalk.getPathString();
-			}
-			// throw exception if we find that there is more than one that
-			// matches the search.
-			else if (count > 1) {
+			} else if (count > 1) {
+				// throw exception if we find that there is more than one that
+				// matches the search.
 				StringBuilder sb = new StringBuilder();
 				sb.append("Multiple results have been found in the git repository for the following search: ");
 				sb.append(filename + ".");
@@ -476,9 +484,8 @@ public class GitDb {
 		}
 
 		revWalk.dispose();
-		log.debug("Retrieved Commit Id: " + commitId.getName()
-				+ " Searching for: " + filename + " found: " + path);
+		log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + filename + " found: "
+				+ path);
 		return objectId;
 	}
-
 }
