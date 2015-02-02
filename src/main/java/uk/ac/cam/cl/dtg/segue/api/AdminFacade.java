@@ -260,20 +260,25 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Path("/new_version_alert")
 	@Produces(MediaType.APPLICATION_JSON)
 	public final synchronized Response versionChangeNotification(@Context final HttpServletRequest request) {
-
 		// check if we are authorized to do this operation.
 		// no authorisation required in DEV mode, but in PROD we need to be
 		// an admin.
-		if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
-				Constants.EnvironmentType.PROD.name())) {
-			log.info("Informed of content change; so triggering new async synchronisation job.");
-			// on this occasion we don't want to wait for a response.
-			contentVersionController.triggerSyncJob();
-			return Response.ok().build();
-		} else {
-			log.warn("Unable to trigger synch job as this segue environment is configured in PROD mode.");
-			return new SegueErrorResponse(Status.FORBIDDEN,
-					"You must be an administrator to use this function.").toResponse();
+		try {
+			if (!this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(
+					Constants.EnvironmentType.PROD.name()) || this.isUserAnAdmin(request)) {
+				log.info("Informed of content change; so triggering new async synchronisation job.");
+				// on this occasion we don't want to wait for a response.
+				contentVersionController.triggerSyncJob();
+				return Response.ok().build();
+			} else {
+				log.warn("Unable to trigger synch job as this segue environment is "
+						+ "configured in PROD mode unless you are an ADMIN.");
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an administrator to use this function on the PROD environment.").toResponse();
+			}
+		} catch (NoUserLoggedInException e) {
+			return new SegueErrorResponse(Status.UNAUTHORIZED,
+					"You must be logged in to use this function on a PROD environment.").toResponse();
 		}
 	}
 
