@@ -228,7 +228,7 @@ public class AdminFacade extends AbstractSegueFacade {
 				contentVersionController.triggerSyncJob().get();
 				return Response.ok("success - job started").build();
 			} else {
-				log.warn("Unable to trigger synch job as not an admin.");
+				log.warn("Unable to trigger synch job as not an admin or this server is set to the PROD environment.");
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an administrator to use this function.").toResponse();
 			}
