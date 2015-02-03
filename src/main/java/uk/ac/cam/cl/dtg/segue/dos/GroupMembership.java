@@ -67,7 +67,7 @@ public class GroupMembership {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
@@ -83,7 +83,7 @@ public class GroupMembership {
 	 * Sets the groupId.
 	 * @param groupId the groupId to set
 	 */
-	public void setGroupId(String groupId) {
+	public void setGroupId(final String groupId) {
 		this.groupId = groupId;
 	}
 
@@ -99,7 +99,7 @@ public class GroupMembership {
 	 * Sets the userId.
 	 * @param userId the userId to set
 	 */
-	public void setUserId(String userId) {
+	public void setUserId(final String userId) {
 		this.userId = userId;
 	}
 
@@ -115,7 +115,7 @@ public class GroupMembership {
 	 * Sets the created.
 	 * @param created the created to set
 	 */
-	public void setCreated(Date created) {
+	public void setCreated(final Date created) {
 		this.created = created;
 	}
 }

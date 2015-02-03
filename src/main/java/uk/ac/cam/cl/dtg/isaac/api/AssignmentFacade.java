@@ -110,8 +110,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
 			return Response.ok(assignments).build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged to assign gameboards")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while trying to get assignments.", e).toResponse();
@@ -135,8 +134,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
 					.build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged to assign gameboards")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
 					.toResponse();
@@ -161,8 +159,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			
 			return Response.ok(assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId)).build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged to assign gameboards")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to assign work", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
@@ -210,8 +207,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
 			return Response.ok(newAssignment).build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged to assign gameboards")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (DuplicateAssignmentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
 					.toResponse();
@@ -269,8 +265,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			
 			return Response.noContent().build();
 		} catch (NoUserLoggedInException e) {
-			return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged to assign gameboards")
-					.toResponse();
+			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
 					.toResponse();

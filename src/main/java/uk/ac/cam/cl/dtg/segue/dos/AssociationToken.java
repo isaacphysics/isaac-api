@@ -87,7 +87,7 @@ public class AssociationToken {
 	 * Sets the token.
 	 * @param token the token to set
 	 */
-	public void setToken(String token) {
+	public void setToken(final String token) {
 		this.token = token;
 	}
 
@@ -103,7 +103,7 @@ public class AssociationToken {
 	 * Sets the ownerUserId.
 	 * @param ownerUserId the ownerUserId to set
 	 */
-	public void setOwnerUserId(String ownerUserId) {
+	public void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
 	}
 
@@ -119,7 +119,7 @@ public class AssociationToken {
 	 * Sets the groupId.
 	 * @param groupId the groupId to set
 	 */
-	public void setGroupId(String groupId) {
+	public void setGroupId(final String groupId) {
 		this.groupId = groupId;
 	}
 }
