@@ -120,8 +120,17 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	
 	@Override
 	public void deleteGroup(final UserGroupDO group) throws SegueDatabaseException {
-		WriteResult<UserGroupDO, String> result = groupCollection.removeById(group.getId());
+		Query query = DBQuery.is(Constants.GROUP_FK, group.getId());
 
+		WriteResult<GroupMembership, String> cascadeDeleteResult = groupMembershipCollection.remove(query);
+		
+		if (cascadeDeleteResult.getError() != null) {
+			throw new SegueDatabaseException(
+					"Unable to delete group from database - failed on deleting membership information.");
+		}
+
+		WriteResult<UserGroupDO, String> result = groupCollection.removeById(group.getId());
+		
 		if (result.getError() != null) {
 			throw new SegueDatabaseException("Unable to delete group from database");
 		}

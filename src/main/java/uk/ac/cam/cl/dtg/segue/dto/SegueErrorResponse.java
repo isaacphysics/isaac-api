@@ -166,4 +166,13 @@ public class SegueErrorResponse implements Serializable {
 		return new SegueErrorResponse(Status.FORBIDDEN,
 				"You do not have the permissions to complete this action").toResponse();
 	}
+	
+	/**
+	 * @return a default response for when an endpoint will exist in the future
+	 *         but has not yet been implemented.
+	 */
+	public static Response getNotImplementedResponse() {
+		return new SegueErrorResponse(Status.NOT_IMPLEMENTED,
+				"This endpoint has not yet been implemented").toResponse();
+	}
 }

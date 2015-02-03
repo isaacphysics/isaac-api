@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -170,6 +171,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 	}
 	
 	/**
+	 * Add User to Group.
 	 * @param request - for authentication
 	 * @param groupId - group of interest.
 	 * @param userId - user to add.
@@ -203,5 +205,42 @@ public class GroupsFacade extends AbstractSegueFacade {
 		} catch (NoUserException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
 		} 
+	}
+	
+	/**
+	 * Delete group.
+	 * @param request - for authentication
+	 * @param groupId - group to delete.
+	 * @return 200 or error response
+	 */
+	@DELETE
+	@Path("/{group_id}")
+	public Response deleteGroup(@Context final HttpServletRequest request,
+			@PathParam("group_id") final String groupId) {
+		if (null == groupId || groupId.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+		}
+
+		try {
+			// ensure there is a user currently logged in.
+			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+			
+			UserGroupDO groupBasedOnId = groupManager.getGroupById(groupId);
+			
+			if (!currentUser.getDbId().equals(groupBasedOnId.getOwnerId())) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You are not the owner of this group, and therefore do not have permission to delete it.")
+						.toResponse();
+			}
+			
+			groupManager.deleteGroup(groupBasedOnId);
+
+			return Response.noContent().build();
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to add user to a group. ", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
 	}
 }

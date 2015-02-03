@@ -83,8 +83,8 @@ public class GroupManager {
 	 *             - If an error occurred while interacting with the database.
 	 */
 	public void deleteGroup(final UserGroupDO group) throws SegueDatabaseException {
-		groupDatabase.deleteGroup(group);
-		// TODO: clear membership information
+		groupDatabase.deleteGroup(group);		
+		//TODO: assignments should probably be cleaned up
 	}
 
 	/**

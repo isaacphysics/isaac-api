@@ -317,7 +317,7 @@ public class GameManager {
 		Long totalInProgress = 0L;
 		Long totalNotStarted = 0L;
 		
-		// filter gameboards based on selection and also clear out unnecessary question data.
+		// filter gameboards based on selection.
 		for (GameboardDTO gameboard : usersGameboards) {
 			this.augmentGameboardWithQuestionAttemptInformation(gameboard, questionAttemptsFromUser);
 			
