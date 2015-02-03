@@ -320,12 +320,10 @@ public class GameManager {
 		// filter gameboards based on selection and also clear out unnecessary question data.
 		for (GameboardDTO gameboard : usersGameboards) {
 			this.augmentGameboardWithQuestionAttemptInformation(gameboard, questionAttemptsFromUser);
-			gameboard.setQuestions(null);
 			
 			if (null == showOnly) {
 				resultToReturn.add(gameboard);
 			} else if (gameboard.isStartedQuestion() && showOnly.equals(GameboardState.IN_PROGRESS)) {
-				// in_progress
 				resultToReturn.add(gameboard);
 			} else if (!gameboard.isStartedQuestion() && showOnly.equals(GameboardState.NOT_ATTEMPTED)) {
 				resultToReturn.add(gameboard);
@@ -386,7 +384,12 @@ public class GameManager {
 		
 		int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
 		
-		GameboardListDTO myBoardsResults = new GameboardListDTO(resultToReturn.subList(startIndex, toIndex),
+		List<GameboardDTO> sublistOfGameboards = resultToReturn.subList(startIndex, toIndex);
+
+		// fully augment only those we are returning.
+		this.gameboardPersistenceManager.augmentGameboardItems(sublistOfGameboards);
+		
+		GameboardListDTO myBoardsResults = new GameboardListDTO(sublistOfGameboards,
 				(long) resultToReturn.size(), totalNotStarted, totalInProgress, totalCompleted);
 		
 		return myBoardsResults;

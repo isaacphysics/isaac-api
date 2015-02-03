@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import ma.glasnost.orika.MapperFacade;
 
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
@@ -360,6 +362,51 @@ public class GameboardPersistenceManager {
 	}
 	
 	/**
+	 * Attempt to improve performance of getting gameboard items in a batch.
+	 * 
+	 * This method will attempt to ensure that all gameboards provided have their associated
+	 * gameboard items populated with meaningful titles.
+	 * 
+	 * @param gameboards - list of gameboards to fully augment.
+	 * @return augmented gameboards as per inputted list.
+	 */
+	public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
+		Set<String> qids = Sets.newHashSet();
+		Map<String, List<String>> gameboardToQuestionsMap = Maps.newHashMap();
+
+		// go through all game boards working out the set of question ids.
+		for (GameboardDTO game : gameboards) {
+			List<String> ids = getQuestionIds(game);
+			qids.addAll(ids);
+			gameboardToQuestionsMap.put(game.getId(), ids);
+		}
+		
+		if (qids.isEmpty()) {
+			log.info("No qids found; returning original gameboard without augmenting.");
+			return gameboards;
+		}
+		
+		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(qids));
+		for (GameboardDTO game : gameboards) {
+			// empty and re-populate the gameboard dto with fully augmented gameboard items.
+			game.setQuestions(new ArrayList<GameboardItem>());
+			for (String questionid : gameboardToQuestionsMap.get(game.getId())) {
+				// There is a possibility that the question cannot be found any more for some reason
+				// In this case we will simply pretend it isn't there.
+				GameboardItem item = gameboardReadyQuestions.get(questionid);
+				if (item != null) {
+					game.getQuestions().add(item);	
+				} else {
+					log.warn("The gameboard: " + game.getId() + " has a reference to a question ("
+							+ questionid + ") that we cannot find. Removing it from the DTO.");
+				}
+			}
+		}	
+		
+		return gameboards;
+	}
+	
+	/**
 	 * Helper method to tidy temporary gameboard cache.
 	 */
 	private void tidyTemporaryGameboardStorage() {
@@ -385,7 +432,7 @@ public class GameboardPersistenceManager {
 	 *            to convert
 	 * @param populateGameboardItems
 	 *            - true if we should fully populate the gameboard DTO with
-	 *            gameboard items false if a summary is ok do?
+	 *            gameboard items false if a summary is ok do? i.e. should game board items have titles etc.
 	 * @return gameboard DTO
 	 */
 	private List<GameboardDTO> convertToGameboardDTOs(final List<GameboardDO> gameboardDOs,
@@ -442,30 +489,8 @@ public class GameboardPersistenceManager {
 			return gameboardDTO;
 		}
 
-		// build query the db to get full question information
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-
-		fieldsToMap.put(
-				immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), gameboardDO.getQuestions());
-
-		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
-				Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
-
-		// Search for questions that match the ids.
-		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
-				gameboardDO.getQuestions().size());
-
-		List<ContentDTO> questionsForGameboard = results.getResults();
-
 		// Map each Content object into an GameboardItem object
-		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
-
-		for (ContentDTO c : questionsForGameboard) {
-			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-			questionInfo.setUri(URIManager.generateApiUrl(c));
-			gameboardReadyQuestions.put(c.getId(), questionInfo);
-		}
+		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(gameboardDO.getQuestions());
 
 		// empty and repopulate the gameboard dto.
 		gameboardDTO.setQuestions(new ArrayList<GameboardItem>());
@@ -530,4 +555,60 @@ public class GameboardPersistenceManager {
 
 		return resultToReturn;
 	}
+	
+	/**
+	 * Utility method to allow all gameboard related questions to be retrieved in one big batch.
+	 * 
+	 * @param questionIds to populate.
+	 * @return a map of question id to fully populated gameboard item.
+	 */
+	private Map<String, GameboardItem> getGameboardItemMap(final List<String> questionIds) {
+		// build query the db to get full question information
+		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+		fieldsToMap.put(
+				immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIds);
+
+		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
+				Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+
+		// Search for questions that match the ids.
+		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
+				questionIds.size());
+
+		List<ContentDTO> questionsForGameboard = results.getResults();
+
+		// Map each Content object into an GameboardItem object
+		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
+
+		for (ContentDTO c : questionsForGameboard) {
+			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
+			questionInfo.setUri(URIManager.generateApiUrl(c));
+			gameboardReadyQuestions.put(c.getId(), questionInfo);
+		}
+		
+		return gameboardReadyQuestions;
+	}
+	
+    /**
+     * Helper method to get a list of question ids from a dto.
+     * @param gameboardDTO - to extract.
+     * @return List of question ids for the gameboard provided.
+     */
+    private static List<String> getQuestionIds(final GameboardDTO gameboardDTO) {    	
+    	List<String> listOfQuestionIds = Lists.newArrayList();
+    	
+        if (gameboardDTO.getQuestions() == null || gameboardDTO.getQuestions().isEmpty()) {
+        	return listOfQuestionIds;
+        }
+        
+        for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
+            if (gameItem.getId() == null || gameItem.getId().isEmpty()) {
+                continue;
+            }
+            listOfQuestionIds.add(gameItem.getId());
+        }
+        return listOfQuestionIds;
+    }
 }
