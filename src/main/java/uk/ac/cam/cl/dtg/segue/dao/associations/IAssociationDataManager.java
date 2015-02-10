@@ -97,9 +97,23 @@ public interface IAssociationDataManager {
 	
 	/**
 	 * Get a list of user associations for a given user.
+	 * 
+	 * I.e. Who can currently view a users data.
+	 * 
 	 * @param userId - User to find the associations for.
 	 * @return the list of user associations.
 	 */
 	List<UserAssociation> getUserAssociations(String userId);
 
+	/**
+	 * Get a list of user associations that provide grant access for a given user.
+	 * 
+	 * I.e. Who can I currently see data for.
+	 * 
+	 * @param userId - User to find the associations for.
+	 * @return the list of user associations.
+	 */
+	List<UserAssociation> getUsersThatICanSee(String userId);
+
+	
 }

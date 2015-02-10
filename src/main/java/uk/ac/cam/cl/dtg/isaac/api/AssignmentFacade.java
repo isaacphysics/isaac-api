@@ -42,8 +42,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -185,7 +185,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			@PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final String groupId) {
 		try {
 			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-			UserGroupDO assigneeGroup = groupManager.getGroupById(groupId);
+			UserGroupDTO assigneeGroup = groupManager.getGroupById(groupId);
 			if (null == assigneeGroup) {
 				return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
 						.toResponse();
@@ -237,7 +237,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
 		try {
 			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-			UserGroupDO assigneeGroup = groupManager.getGroupById(groupId);
+			UserGroupDTO assigneeGroup = groupManager.getGroupById(groupId);
 			if (null == assigneeGroup) {
 				return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
 						.toResponse();

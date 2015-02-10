@@ -56,7 +56,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * 
  * @author Stephen Cummins
  */
-@Path("/authorise")
+@Path("/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
 	private final UserManager userManager;
 	private final UserAssociationManager associationManager;
@@ -84,16 +84,16 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	}
 
 	/**
-	 * Get all current user associations that have been granted.
+	 * Get all users who can see my data.
 	 * 
 	 * @param request
 	 *            - so we can identify the current user.
 	 * @return List of user associations.
 	 */
 	@GET
-	@Path("/associations")
+	@Path("/current_user")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getCurrentAssociations(@Context final HttpServletRequest request) {
+	public Response getUsersWithAccess(@Context final HttpServletRequest request) {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
@@ -104,6 +104,35 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
 			return Response.ok(
 					userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
+					.build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		}
+	}
+	
+	/**
+	 * Get all users whose data I can see.
+	 * 
+	 * @param request
+	 *            - so we can identify the current user.
+	 * @return List of user associations.
+	 */
+	@GET
+	@Path("/other_users")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getCurrentAccessRights(@Context final HttpServletRequest request) {
+		try {
+			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+			List<String> userIdsGrantingAccess = Lists.newArrayList();
+			for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
+				userIdsGrantingAccess.add(a.getUserIdGrantingPermission());
+			}
+
+			return Response.ok(
+					userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsGrantingAccess)))
 					.build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();

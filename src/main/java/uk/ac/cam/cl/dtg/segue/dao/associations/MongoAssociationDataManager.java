@@ -85,7 +85,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	public void createAssociation(final AssociationToken token, final String userIdGrantingAccess)
 		throws SegueDatabaseException {
 		Validate.notNull(token);
-		Validate.isTrue(!token.getOwnerUserId().equals(userIdGrantingAccess), "You can't grant access to yourself.");
+		//Validate.isTrue(!token.getOwnerUserId().equals(userIdGrantingAccess), "You can't grant access to yourself.");
 		
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
 				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
@@ -164,5 +164,19 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 		AssociationToken token = jacksonCollection.findOne(new BasicDBObject(Constants.GROUP_FK, groupId));
 		
 		return token;
+	}
+
+	@Override
+	public List<UserAssociation> getUsersThatICanSee(final String userId) {
+		Validate.notBlank(userId);
+		
+		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
+				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+
+		Query query = DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userId);
+		
+		DBCursor<UserAssociation> results = associationCollection.find(query);
+
+		return results.toArray();
 	}
 }

@@ -36,7 +36,6 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
 import static com.google.common.collect.Maps.*;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -116,19 +115,19 @@ public class AssignmentPersistenceManager {
 	 * Retrieve all Assignments for a given
 	 * group.
 	 * 
-	 * @param group
+	 * @param groupId
 	 *            - to search for
 	 * @return assignments as a list
 	 * @throws SegueDatabaseException
 	 *             - if there is an error when accessing the database.
 	 */
-	public List<AssignmentDTO> getAssignmentsByGroupId(final UserGroupDO group) throws SegueDatabaseException {
+	public List<AssignmentDTO> getAssignmentsByGroupId(final String groupId) throws SegueDatabaseException {
 		
 		// find all assignments related to this groupId.
 		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
 
 		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_GROUP_FKEY),
-				Arrays.asList(group.getId()));
+				Arrays.asList(groupId));
 
 		return findByMappedConditions(fieldsToMatchForAssignmentSearch);
 	}

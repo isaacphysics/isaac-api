@@ -18,13 +18,17 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import java.util.Date;
 import java.util.List;
 
+import ma.glasnost.orika.MapperFacade;
+
 import org.apache.commons.lang3.Validate;
 
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
@@ -35,7 +39,8 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 public class GroupManager {
 	private final IUserGroupDataManager groupDatabase;
 	private final UserManager userManager;
-
+	private final MapperFacade dtoMapper;
+	
 	/**
 	 * GroupManager.
 	 * 
@@ -43,14 +48,18 @@ public class GroupManager {
 	 *            - the IUserGroupManager implementation
 	 * @param userManager
 	 *            - the user manager so that the group manager can get user details.
+	 * @param dtoMapper
+	 *            - Preconfigured dto mapper
 	 */
 	@Inject
-	public GroupManager(final IUserGroupDataManager groupDatabase, final UserManager userManager) {
+	public GroupManager(final IUserGroupDataManager groupDatabase, final UserManager userManager,
+			final MapperFacade dtoMapper) {
 		Validate.notNull(groupDatabase);
 		Validate.notNull(userManager);
 		
 		this.groupDatabase = groupDatabase;
 		this.userManager = userManager;
+		this.dtoMapper = dtoMapper;
 	}
 
 	/**
@@ -64,12 +73,12 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public UserGroupDO createUserGroup(final String groupName, final RegisteredUserDTO groupOwner)
+	public UserGroup createUserGroup(final String groupName, final RegisteredUserDTO groupOwner)
 		throws SegueDatabaseException {
 		Validate.notBlank(groupName);
 		Validate.notNull(groupOwner);
 
-		UserGroupDO group = new UserGroupDO(null, groupName, groupOwner.getDbId(), new Date());
+		UserGroup group = new UserGroup(null, groupName, groupOwner.getDbId(), new Date());
 
 		return groupDatabase.createGroup(group);
 	}
@@ -82,8 +91,8 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public void deleteGroup(final UserGroupDO group) throws SegueDatabaseException {
-		groupDatabase.deleteGroup(group);		
+	public void deleteGroup(final UserGroupDTO group) throws SegueDatabaseException {
+		groupDatabase.deleteGroup(group.getId());		
 		//TODO: assignments should probably be cleaned up
 	}
 
@@ -94,7 +103,7 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDO group) throws SegueDatabaseException {		
+	public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {		
 		List<String> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
 		
 		return userManager.findUsers(groupMemberIds);
@@ -107,8 +116,8 @@ public class GroupManager {
 	 *            - the owner of the group to search for.
 	 * @return List of groups or empty list.
 	 */
-	public List<UserGroupDO> getGroupsByOwner(final String ownerUserId) {
-		return groupDatabase.getGroupsByOwner(ownerUserId);
+	public List<UserGroupDTO> getGroupsByOwner(final String ownerUserId) {
+		return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUserId));
 	}
 
 	/**
@@ -119,7 +128,7 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public void addUserToGroup(final UserGroupDO group, final RegisteredUserDTO userToAdd)
+	public void addUserToGroup(final UserGroupDTO group, final RegisteredUserDTO userToAdd)
 		throws SegueDatabaseException {
 		groupDatabase.addUserToGroup(userToAdd.getDbId(), group.getId());
 	}
@@ -132,7 +141,7 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public void removeUserFromGroup(final UserGroupDO group, final RegisteredUserDTO userToRemove)
+	public void removeUserFromGroup(final UserGroup group, final RegisteredUserDTO userToRemove)
 		throws SegueDatabaseException {
 		groupDatabase.removeUserFromGroup(userToRemove.getDbId(), group.getId());
 	}
@@ -144,8 +153,8 @@ public class GroupManager {
 	 *            to search for.
 	 * @return group or null.
 	 */
-	public UserGroupDO getGroupById(final String groupId) {
-		return groupDatabase.findById(groupId);
+	public UserGroupDTO getGroupById(final String groupId) {
+		return convertGroupToDTO(groupDatabase.findById(groupId));
 	}
 
 	/**
@@ -157,5 +166,25 @@ public class GroupManager {
 	 */
 	public boolean isValidGroup(final String groupId) {
 		return this.groupDatabase.findById(groupId) != null;
+	}
+	
+	/**
+	 * @param group to convert
+	 * @return groupDTO
+	 */
+	private UserGroupDTO convertGroupToDTO(final UserGroup group) {
+		return dtoMapper.map(group, UserGroupDTO.class);
+	}
+	
+	/**
+	 * @param groups to convert
+	 * @return groupDTOs
+	 */
+	private List<UserGroupDTO> convertGroupToDTOs(final List<UserGroup> groups) {
+		List<UserGroupDTO> result = Lists.newArrayList();
+		for (UserGroup group : groups) {
+			result.add(convertGroupToDTO(group));
+		}
+		return result;
 	}
 }

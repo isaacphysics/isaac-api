@@ -41,8 +41,9 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -92,10 +93,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 	public Response getGroupsForCurrentUser(@Context final HttpServletRequest request) {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-
-			return Response.ok(
-					groupManager.getGroupsByOwner(user.getDbId()))
-					.build();
+			List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user.getDbId());
+			return Response.ok(groups).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -116,14 +115,14 @@ public class GroupsFacade extends AbstractSegueFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response createGroup(@Context final HttpServletRequest request,
-			final UserGroupDO groupDTO) {
+			final UserGroup groupDTO) {
 		if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
 		}
 
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-			UserGroupDO group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
+			UserGroup group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
 
 			return Response.ok(group).build();
 		} catch (SegueDatabaseException e) {
@@ -153,7 +152,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 			
-			UserGroupDO group = groupManager.getGroupById(groupId);
+			UserGroupDTO group = groupManager.getGroupById(groupId);
 			
 			if (!group.getOwnerId().equals(user.getDbId())) {
 				return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
@@ -190,7 +189,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			// ensure there is a user currently logged in.
 			userManager.getCurrentRegisteredUser(request);
 			
-			UserGroupDO groupBasedOnId = groupManager.getGroupById(groupId);
+			UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 			
 			RegisteredUserDTO userToAdd = userManager.getUserDTOById(userId);
 			
@@ -225,7 +224,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			// ensure there is a user currently logged in.
 			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 			
-			UserGroupDO groupBasedOnId = groupManager.getGroupById(groupId);
+			UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 			
 			if (!currentUser.getDbId().equals(groupBasedOnId.getOwnerId())) {
 				return new SegueErrorResponse(Status.FORBIDDEN,

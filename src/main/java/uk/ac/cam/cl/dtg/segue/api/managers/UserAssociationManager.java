@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import com.google.inject.Inject;
@@ -102,7 +102,9 @@ public class UserAssociationManager {
 	}
 	
 	/**
-	 * getAssociations.
+	 * get Associations.
+	 * 
+	 * This method will get all users who
 	 * @param user to find associations for.
 	 * @return List of all of their associations.
 	 */
@@ -110,6 +112,14 @@ public class UserAssociationManager {
 		return associationDatabase.getUserAssociations(user.getDbId());
 	}
 
+	/**
+	 * @param user - who may have access granted.
+	 * @return List of all associations
+	 */
+	public List<UserAssociation> getAssociationsForOthers(final RegisteredUserDTO user) {
+		return associationDatabase.getUsersThatICanSee(user.getDbId());
+	}
+	
 	/**
 	 * createAssociationWithToken.
 	 * 
@@ -140,7 +150,7 @@ public class UserAssociationManager {
 		}
 
 		associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getDbId());
-		UserGroupDO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
+		UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
 		
 		if (lookedupToken.getGroupId() != null) {
 			userGroupManager.addUserToGroup(group, userGrantingPermission);

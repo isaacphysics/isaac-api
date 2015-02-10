@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 
 /**
  * Interface for data manager classes that deal with user association data.
@@ -31,14 +31,14 @@ public interface IUserGroupDataManager {
 	 * @param ownerUserId the owner Id to find all groups for.
 	 * @return List of groups belonging to owner user.
 	 */
-	List<UserGroupDO> getGroupsByOwner(String ownerUserId);
+	List<UserGroup> getGroupsByOwner(String ownerUserId);
 	
 	/**
 	 * Find User group by Id.
 	 * @param groupId - the id of the group to find.
 	 * @return group
 	 */
-	UserGroupDO findById(String groupId);
+	UserGroup findById(String groupId);
 	
 	/**
 	 * @param groupId group to lookup
@@ -55,7 +55,7 @@ public interface IUserGroupDataManager {
 	 * @return group saved (with database id included)
 	 * @throws SegueDatabaseException if there is a problem with the database operation.
 	 */
-	UserGroupDO createGroup(UserGroupDO group) throws SegueDatabaseException;
+	UserGroup createGroup(UserGroup group) throws SegueDatabaseException;
 
 	/**
 	 * Adds a user to a group.
@@ -83,9 +83,9 @@ public interface IUserGroupDataManager {
 
 	/**
 	 * Delete group and all membership information.
-	 * @param group to delete.
+	 * @param groupId to delete.
 	 * @throws SegueDatabaseException - if there is a database error.
 	 */
-	void deleteGroup(UserGroupDO group) throws SegueDatabaseException;
+	void deleteGroup(String groupId) throws SegueDatabaseException;
 
 }

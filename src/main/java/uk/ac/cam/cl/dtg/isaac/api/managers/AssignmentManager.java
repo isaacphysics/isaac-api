@@ -29,7 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroupDO;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
@@ -66,7 +66,7 @@ public class AssignmentManager {
 	 *             - if we cannot complete a required database operation.
 	 */
 	public List<AssignmentDTO> getAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
-		List<UserGroupDO> groups = groupManager.getGroupsByOwner(user.getDbId());
+		List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user.getDbId());
 
 		if (groups.size() == 0) {
 			log.debug(String.format("User (%s) does not have any groups", user.getDbId()));
@@ -74,8 +74,8 @@ public class AssignmentManager {
 		}
 
 		List<AssignmentDTO> assignments = Lists.newArrayList();
-		for (UserGroupDO group : groups) {
-			assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group));
+		for (UserGroupDTO group : groups) {
+			assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
 		}
 
 		return assignments;
@@ -173,10 +173,10 @@ public class AssignmentManager {
 	 * @throws SegueDatabaseException
 	 *             - If something goes wrong with database access.
 	 */
-	public List<UserGroupDO> findGroupsByGameboard(final RegisteredUserDTO user, final String gameboardId)
+	public List<UserGroupDTO> findGroupsByGameboard(final RegisteredUserDTO user, final String gameboardId)
 		throws SegueDatabaseException {
 		List<AssignmentDTO> allAssignments = this.getAllAssignmentsSetByUser(user);
-		List<UserGroupDO> groups = Lists.newArrayList();
+		List<UserGroupDTO> groups = Lists.newArrayList();
 
 		for (AssignmentDTO assignment : allAssignments) {
 			if (assignment.getGameboardId().equals(gameboardId)) {
