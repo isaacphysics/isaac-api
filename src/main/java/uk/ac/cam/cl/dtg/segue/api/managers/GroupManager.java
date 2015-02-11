@@ -73,16 +73,32 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public UserGroup createUserGroup(final String groupName, final RegisteredUserDTO groupOwner)
+	public UserGroupDTO createUserGroup(final String groupName, final RegisteredUserDTO groupOwner)
 		throws SegueDatabaseException {
 		Validate.notBlank(groupName);
 		Validate.notNull(groupOwner);
 
 		UserGroup group = new UserGroup(null, groupName, groupOwner.getDbId(), new Date());
 
-		return groupDatabase.createGroup(group);
+		return this.convertGroupToDTO(groupDatabase.createGroup(group));
 	}
 
+	/**
+	 * createAssociationGroup.
+	 * 
+	 * @param groupToEdit
+	 *            - group to edit.
+	 * @return modified group.
+	 * @throws SegueDatabaseException
+	 *             - If an error occurred while interacting with the database.
+	 */
+	public UserGroupDTO editUserGroup(final UserGroup groupToEdit)
+		throws SegueDatabaseException {
+		Validate.notNull(groupToEdit);		
+		
+		return this.convertGroupToDTO(groupDatabase.editGroup(groupToEdit));
+	}
+	
 	/**
 	 * Delete Group.
 	 * 
@@ -141,7 +157,7 @@ public class GroupManager {
 	 * @throws SegueDatabaseException
 	 *             - If an error occurred while interacting with the database.
 	 */
-	public void removeUserFromGroup(final UserGroup group, final RegisteredUserDTO userToRemove)
+	public void removeUserFromGroup(final UserGroupDTO group, final RegisteredUserDTO userToRemove)
 		throws SegueDatabaseException {
 		groupDatabase.removeUserFromGroup(userToRemove.getDbId(), group.getId());
 	}

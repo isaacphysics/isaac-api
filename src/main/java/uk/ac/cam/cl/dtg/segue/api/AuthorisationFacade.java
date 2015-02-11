@@ -160,13 +160,13 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	public Response getAssociationToken(@Context final HttpServletRequest request,
 			@PathParam("groupId") final String groupId) {
 		if (null == groupId || groupId.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
 		}
 		
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);			
 			AssociationToken token = associationManager.getAssociationToken(user, groupId);
-
+			
 			return Response.ok(token).build();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to get association token. ", e);

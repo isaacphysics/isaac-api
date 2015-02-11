@@ -120,9 +120,71 @@ public class GroupsFacade extends AbstractSegueFacade {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
 		}
 
+		if (groupDTO.getId() != null) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You should use the edit endpoint and specify the group id in the URL").toResponse();
+		}
+		
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-			UserGroup group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
+			UserGroupDTO group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
+
+			return Response.ok(group).build();
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to create user group. ", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} 
+	}
+	
+	/**
+	 * Function to allow users to edit a group.
+	 * This function requires the group DTO to be provided.
+	 * 
+	 * @param request
+	 *            - so we can find out who the current user is
+	 * @param groupDTO
+	 *            - Containing required information to create a group
+	 * @param groupId
+	 *            - Id of the group to edit.
+	 * @return a Response containing the group
+	 */
+	@POST
+	@Path("/{group_id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response editGroup(@Context final HttpServletRequest request, 
+			final UserGroup groupDTO, @PathParam("group_id") final String groupId) {
+		if (null == groupDTO.getGroupName() || groupDTO.getGroupName().isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+		}
+		
+		if (null == groupId || groupId.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Group Id must be specified.").toResponse();			
+		}
+		
+		if (!groupId.equals(groupDTO.getId())) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Group Id in request url must match data object.").toResponse();
+		}
+		
+		try {
+			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+			
+			// get existing group
+			UserGroupDTO existingGroup = groupManager.getGroupById(groupId);
+			
+			if (null == existingGroup) {
+				return new SegueErrorResponse(Status.NOT_FOUND, "Group specified does not exist.").toResponse();	
+			}
+			
+			if (!existingGroup.getOwnerId().equals(user.getDbId())) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"The group you have attempted to edit does not belong to you.").toResponse();	
+			}
+			
+			UserGroupDTO group = groupManager.editUserGroup(groupDTO);
 
 			return Response.ok(group).build();
 		} catch (SegueDatabaseException e) {
@@ -159,7 +221,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 			}
 			
 			List<RegisteredUserDTO> members = groupManager.getUsersInGroup(group);
-
+			// TODO: security implication. Currently all data about users in
+			// these users will be returned including DOB etc.
 			return Response.ok(members).build();
 		} catch (SegueDatabaseException e) {
 
@@ -178,6 +241,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 	 */
 	@POST
 	@Path("{group_id}/membership/{user_id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)	
 	public Response addUserToGroup(@Context final HttpServletRequest request,
 			@PathParam("group_id") final String groupId, 
 			@PathParam("user_id") final String userId) {
@@ -207,6 +272,49 @@ public class GroupsFacade extends AbstractSegueFacade {
 	}
 	
 	/**
+	 * Remove User from a Group.
+	 * @param request - for authentication
+	 * @param groupId - group of interest.
+	 * @param userId - user to remove.
+	 * @return 200 or error response
+	 */
+	@DELETE
+	@Path("{group_id}/membership/{user_id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)	
+	public Response removeUserFromGroup(@Context final HttpServletRequest request,
+			@PathParam("group_id") final String groupId, 
+			@PathParam("user_id") final String userId) {
+		if (null == groupId || groupId.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
+		}
+
+		try {
+			// ensure there is a user currently logged in.
+			RegisteredUserDTO currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
+			
+			UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
+			
+			if (!currentRegisteredUser.getDbId().equals(groupBasedOnId.getOwnerId())) {
+				return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
+			}
+			
+			RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
+			
+			groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
+
+			return this.getUsersInGroup(request, groupId);
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to add user to a group. ", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "User specified does not exist.").toResponse();
+		} 
+	}	
+	
+	/**
 	 * Delete group.
 	 * @param request - for authentication
 	 * @param groupId - group to delete.
@@ -214,6 +322,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 	 */
 	@DELETE
 	@Path("/{group_id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)	
 	public Response deleteGroup(@Context final HttpServletRequest request,
 			@PathParam("group_id") final String groupId) {
 		if (null == groupId || groupId.isEmpty()) {

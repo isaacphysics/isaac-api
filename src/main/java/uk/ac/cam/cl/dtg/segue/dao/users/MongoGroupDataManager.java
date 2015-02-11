@@ -78,6 +78,18 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	}
 
 	@Override
+	public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
+		WriteResult<UserGroup, String> result = groupCollection.updateById(group.getId(), group);
+		if (result.getError() != null) {
+			log.error("Error during database update " + result.getError());
+			throw new SegueDatabaseException("MongoDB encountered an exception while editing a new group: "
+					+ result.getError());
+		}
+
+		return group;
+	}
+	
+	@Override
 	public void addUserToGroup(final String userId, final String groupId) throws SegueDatabaseException {
 		WriteResult<GroupMembership, String> result = groupMembershipCollection.save(new GroupMembership(
 				null, userId, groupId));

@@ -88,4 +88,12 @@ public interface IUserGroupDataManager {
 	 */
 	void deleteGroup(String groupId) throws SegueDatabaseException;
 
+	/**
+	 * Edit the group information for an existing group.
+	 * @param group to edit
+	 * @return edited group.
+	 * @throws SegueDatabaseException - if there is a database error.
+	 */
+	UserGroup editGroup(UserGroup group) throws SegueDatabaseException;
+
 }
