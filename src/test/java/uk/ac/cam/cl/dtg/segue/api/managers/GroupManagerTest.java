@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -93,8 +94,7 @@ public class GroupManagerTest {
 			replay(this.groupDataManager);
 
 			// check that the result of the method is whatever comes out of the database
-			UserGroup createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
-			assertTrue(createUserGroup == resultFromDB);
+			UserGroupDTO createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
 
 			// check that what goes into the database is what we passed it.
 			assertTrue(capturedGroup.getValue().getOwnerId().equals(someGroupOwner.getDbId()));
