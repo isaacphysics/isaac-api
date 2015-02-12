@@ -92,7 +92,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	@Override
 	public void addUserToGroup(final String userId, final String groupId) throws SegueDatabaseException {
 		WriteResult<GroupMembership, String> result = groupMembershipCollection.save(new GroupMembership(
-				null, userId, groupId));
+				null, groupId, userId));
 
 		if (result.getError() != null) {
 			log.error("Error during database update " + result.getError());
