@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -113,6 +114,41 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	}
 	
 	/**
+	 * Revoke a user association.
+	 * 
+	 * @param request
+	 *            - so we can find out the current user
+	 * @param userIdToRevoke
+	 *            - so we can delete any associations that the user might have.
+	 * @return response with no content or a segueErrorResponse
+	 */
+	@DELETE
+	@Path("/{userId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response revokeAssociation(@Context final HttpServletRequest request,
+			@PathParam("userId") final String userIdToRevoke) {
+		if (null == userIdToRevoke || userIdToRevoke.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.")
+					.toResponse();
+		}
+
+		try {
+			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+			RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
+			associationManager.revokeAssociation(user, userToRevoke);
+
+			return Response.status(Status.NO_CONTENT).build();
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to get association token. ", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
+		}
+	}	
+	
+	/**
 	 * Get all users whose data I can see.
 	 * 
 	 * @param request
@@ -155,7 +191,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	 *         SegueErrorResponse.
 	 */
 	@GET
-	@Path("/associations/token/{groupId}")
+	@Path("/token/{groupId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getAssociationToken(@Context final HttpServletRequest request,
 			@PathParam("groupId") final String groupId) {
@@ -190,9 +226,10 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	 *         SegueErrorResponse.
 	 */
 	@POST
-	@Path("/associations/use_token/{token}")
+	@Path("/use_token/{token}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response useAssociationToken(@Context final HttpServletRequest request,
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response useToken(@Context final HttpServletRequest request,
 			@PathParam("token") final String token) {
 		if (null == token || token.isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
@@ -214,41 +251,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 		} catch (InvalidUserAssociationTokenException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"The token provided is Invalid or no longer exists.").toResponse();
-		}
-	}
-
-	/**
-	 * Revoke a user association.
-	 * 
-	 * @param request
-	 *            - so we can find out the current user
-	 * @param userIdToRevoke
-	 *            - so we can delete any associations that the user might have.
-	 * @return response with no content or a segueErrorResponse
-	 */
-	@DELETE
-	@Path("/associations/{userId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response revokeAssociation(@Context final HttpServletRequest request,
-			@PathParam("userId") final String userIdToRevoke) {
-		if (null == userIdToRevoke || userIdToRevoke.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.")
-					.toResponse();
-		}
-
-		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-			RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
-			associationManager.revokeAssociation(user, userToRevoke);
-
-			return Response.status(Status.NO_CONTENT).build();
-		} catch (SegueDatabaseException e) {
-			log.error("Database error while trying to get association token. ", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (NoUserException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
 		}
 	}
 }
