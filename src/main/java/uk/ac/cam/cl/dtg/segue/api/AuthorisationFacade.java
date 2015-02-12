@@ -91,7 +91,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	 * @return List of user associations.
 	 */
 	@GET
-	@Path("/current_user")
+	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getUsersWithAccess(@Context final HttpServletRequest request) {
 		try {
