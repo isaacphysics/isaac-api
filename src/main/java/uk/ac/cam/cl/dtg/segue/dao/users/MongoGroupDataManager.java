@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 
 /**
@@ -41,6 +42,8 @@ import com.mongodb.DB;
 public class MongoGroupDataManager implements IUserGroupDataManager {
 	private static final String GROUP_COLLECTION_NAME = "userGroups";
 	private static final String GROUP_MEMBERSHIP_COLLECTION_NAME = "groupMemberships";
+	private static final String GROUP_NAME_FIELD = "groupName";
+	
 	private static final Logger log = LoggerFactory.getLogger(MongoGroupDataManager.class);
 
 	private final DB database;
@@ -120,7 +123,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	public List<UserGroup> getGroupsByOwner(final String ownerUserId) {
 		Query query = DBQuery.is(Constants.OWNER_USER_ID_FKEY_FIELDNAME, ownerUserId);
 
-		DBCursor<UserGroup> result = groupCollection.find(query);
+		DBCursor<UserGroup> result = groupCollection.find(query).sort(new BasicDBObject(GROUP_NAME_FIELD , 1));
 
 		return result.toArray();
 	}
