@@ -24,7 +24,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
-//import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
+import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
@@ -72,7 +72,7 @@ public class IsaacApplicationRegister extends Application {
 			this.singletons.add(injector.getInstance(AuthenticationFacade.class));
 			this.singletons.add(injector.getInstance(AdminFacade.class));
 			this.singletons.add(injector.getInstance(AuthorisationFacade.class));
-//			this.singletons.add(injector.getInstance(AssignmentFacade.class));
+			this.singletons.add(injector.getInstance(AssignmentFacade.class));
 			this.singletons.add(injector.getInstance(GroupsFacade.class));
 			this.singletons.add(injector.getInstance(IsaacController.class));
 		}

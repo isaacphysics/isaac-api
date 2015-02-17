@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -60,6 +61,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
 	private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
 	private final GroupManager groupManager;
+	private final UserAssociationManager associationManager;
 
 	/**
 	 * Create an instance of the authentication Facade.
@@ -72,13 +74,17 @@ public class GroupsFacade extends AbstractSegueFacade {
 	 *            - so we can log interesting events.
 	 * @param groupManager
 	 *            - so that we can manage groups.
+	 * @param associationsManager
+	 *            - so we can decide what information is allowed to be exposed.
 	 */
 	@Inject
 	public GroupsFacade(final PropertiesLoader properties, final UserManager userManager,
-			final ILogManager logManager, final GroupManager groupManager) {
+			final ILogManager logManager, final GroupManager groupManager,
+			final UserAssociationManager associationsManager) {
 		super(properties, logManager);
 		this.userManager = userManager;
 		this.groupManager = groupManager;
+		this.associationManager = associationsManager;
 	}
 
 	/**
@@ -223,6 +229,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 			
 			List<UserSummaryDTO> summarisedMembers = userManager.convertToUserSummaryObjectList(groupManager
 					.getUsersInGroup(group));
+			
+			associationManager.enforceAuthorisationPrivacy(user, summarisedMembers);
 			
 			return Response.ok(summarisedMembers).build();
 		} catch (SegueDatabaseException e) {

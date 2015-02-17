@@ -25,6 +25,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 	private String givenName;
 	private String familyName;
 	private String email;
+	private boolean authorisedFullAccess;
 	
 	/**
 	 * UserSummaryDTO.
@@ -97,5 +98,21 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 	 */
 	public void setEmail(final String email) {
 		this.email = email;
+	}
+
+	/**
+	 * Gets the authorisedFullAccess.
+	 * @return the authorisedFullAccess
+	 */
+	public boolean isAuthorisedFullAccess() {
+		return authorisedFullAccess;
+	}
+
+	/**
+	 * Sets the authorisedFullAccess.
+	 * @param authorisedFullAccess the authorisedFullAccess to set
+	 */
+	public void setAuthorisedFullAccess(final boolean authorisedFullAccess) {
+		this.authorisedFullAccess = authorisedFullAccess;
 	}
 }

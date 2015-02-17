@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.google.inject.Inject;
 
@@ -175,5 +176,40 @@ public class UserAssociationManager {
 		Validate.notNull(userToRevoke);
 		
 		associationDatabase.deleteAssociation(ownerUser.getDbId(), userToRevoke.getDbId());
+	}
+	
+	/**
+	 * This method will accept a list of User objects and will strip out any
+	 * data that is restricted by authorisation settings.
+	 * 
+	 * @param currentUser - user requesting access
+	 * @param dataRequested - the list of users being accessed.
+	 * @return updated collection of users with data removed and access flags set.
+	 */
+	public List<UserSummaryDTO> enforceAuthorisationPrivacy(final RegisteredUserDTO currentUser,
+			final List<UserSummaryDTO> dataRequested) {
+		// verify permission of currentUser to access dataRequested.
+		
+		// for those without permission obfuscate the date
+		for (UserSummaryDTO user : dataRequested) {
+			if (this.hasPermission(currentUser, user)) {
+				user.setAuthorisedFullAccess(true);
+			} else {
+				user.setAuthorisedFullAccess(false);
+				user.setFamilyName(null);
+				user.setGivenName(null);
+			}
+		}
+		return dataRequested;
+	}
+	
+	/**
+	 * Check if one user has permission to view another user's data.
+	 * @param currentUser - requesting permission
+	 * @param userRequested - the owner of the data to view.
+	 * @return true if yes false if no.
+	 */
+	public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
+		return this.associationDatabase.hasValidAssociation(currentUser.getDbId(), userRequested.getDbId());
 	}
 }
