@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.util.Comparator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -229,12 +230,19 @@ public class GroupsFacade extends AbstractSegueFacade {
 			
 			List<UserSummaryDTO> summarisedMembers = userManager.convertToUserSummaryObjectList(groupManager
 					.getUsersInGroup(group));
+
+			// sort by last name
+			summarisedMembers.sort(new Comparator<UserSummaryDTO>() {
+				@Override
+				public int compare(final UserSummaryDTO arg0, final UserSummaryDTO arg1) {
+					return arg0.getFamilyName().compareTo(arg1.getFamilyName());
+				}
+			});
 			
 			associationManager.enforceAuthorisationPrivacy(user, summarisedMembers);
 			
 			return Response.ok(summarisedMembers).build();
 		} catch (SegueDatabaseException e) {
-
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
