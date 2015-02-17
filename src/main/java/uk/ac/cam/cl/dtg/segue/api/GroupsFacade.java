@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -220,10 +221,10 @@ public class GroupsFacade extends AbstractSegueFacade {
 				return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
 			}
 			
-			List<RegisteredUserDTO> members = groupManager.getUsersInGroup(group);
-			// TODO: security implication. Currently all data about users in
-			// these users will be returned including DOB etc.
-			return Response.ok(members).build();
+			List<UserSummaryDTO> summarisedMembers = userManager.convertToUserSummaryObjectList(groupManager
+					.getUsersInGroup(group));
+			
+			return Response.ok(summarisedMembers).build();
 		} catch (SegueDatabaseException e) {
 
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();

@@ -24,6 +24,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 	private String databaseId;
 	private String givenName;
 	private String familyName;
+	private String email;
 	
 	/**
 	 * UserSummaryDTO.
@@ -80,5 +81,21 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
 	 */
 	public void setFamilyName(final String familyName) {
 		this.familyName = familyName;
+	}
+
+	/**
+	 * Gets the email.
+	 * @return the email
+	 */
+	public String getEmail() {
+		return email;
+	}
+
+	/**
+	 * Sets the email.
+	 * @param email the email to set
+	 */
+	public void setEmail(final String email) {
+		this.email = email;
 	}
 }

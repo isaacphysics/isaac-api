@@ -114,6 +114,4 @@ public interface IAssociationDataManager {
 	 * @return the list of user associations.
 	 */
 	List<UserAssociation> getUsersThatICanSee(String userId);
-
-	
 }
