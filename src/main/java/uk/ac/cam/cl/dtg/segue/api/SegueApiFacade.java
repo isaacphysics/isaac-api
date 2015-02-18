@@ -193,7 +193,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
-		return Response.ok().build();
+		return Response.ok().cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 	}
 
 	/**

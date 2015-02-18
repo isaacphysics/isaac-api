@@ -48,6 +48,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
@@ -587,7 +588,7 @@ public class IsaacController extends AbstractIsaacFacade {
 						.toResponse();
 			}
 			
-			return Response.ok(gameboard).build();
+			return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (IllegalArgumentException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"Your gameboard filter request is invalid.").toResponse();
@@ -784,7 +785,7 @@ public class IsaacController extends AbstractIsaacFacade {
 						.put("inProgressTotal", gameboards.getTotalInProgress())
 						.build());
 		
-		return Response.ok(gameboards).build();
+		return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 	}
 
 	/**
@@ -863,7 +864,10 @@ public class IsaacController extends AbstractIsaacFacade {
 					.toResponse();			
 		}
 		
+		newGameboardObject.setCreationMethod(GameboardCreationMethod.BUILDER);
+		
 		GameboardDTO persistedGameboard;
+		
 		try {
 			persistedGameboard = gameManager.saveNewGameboard(newGameboardObject, user);
 		} catch (NoWildcardException e) {
