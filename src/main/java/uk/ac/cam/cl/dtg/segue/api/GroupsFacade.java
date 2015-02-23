@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -228,20 +229,19 @@ public class GroupsFacade extends AbstractSegueFacade {
 				return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
 			}
 			
-			List<UserSummaryDTO> summarisedMembers = userManager.convertToUserSummaryObjectList(groupManager
-					.getUsersInGroup(group));
+			List<UserSummaryDTO> summarisedMemberInfo 
+				= userManager.convertToUserSummaryObjectList(groupManager.getUsersInGroup(group));
 
-			// sort by last name
-			summarisedMembers.sort(new Comparator<UserSummaryDTO>() {
+			Collections.sort(summarisedMemberInfo, new Comparator<UserSummaryDTO>() {
 				@Override
 				public int compare(final UserSummaryDTO arg0, final UserSummaryDTO arg1) {
 					return arg0.getFamilyName().compareTo(arg1.getFamilyName());
 				}
 			});
 			
-			associationManager.enforceAuthorisationPrivacy(user, summarisedMembers);
+			associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
 			
-			return Response.ok(summarisedMembers).build();
+			return Response.ok(summarisedMemberInfo).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
