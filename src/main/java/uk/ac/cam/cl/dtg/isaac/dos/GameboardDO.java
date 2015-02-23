@@ -38,6 +38,7 @@ public class GameboardDO {
 	private Date creationDate;
 	private GameFilter gameFilter;
 	private String ownerUserId;
+	private GameboardCreationMethod creationMethod;
 	
 	/**
 	 * Complete gameboard constructor with all dependencies.
@@ -59,11 +60,14 @@ public class GameboardDO {
 	 *            the gameboard.
 	 * @param ownerUserId
 	 *            - User id of the owner of the gameboard.
+	 * @param creationMethod
+	 *            - Method used to construct this game board.
 	 */
 	public GameboardDO(final String id, final String title,
 			final List<String> questions, final IsaacWildcard wildCard,
 			final Integer wildcardPosition, final Date creationDate,
-			final GameFilter gameFilter, final String ownerUserId) {
+			final GameFilter gameFilter, final String ownerUserId, 
+			final GameboardCreationMethod creationMethod) {
 		this.id = id;
 		this.title = title;
 		this.questions = questions;
@@ -72,6 +76,7 @@ public class GameboardDO {
 		this.creationDate = creationDate;
 		this.gameFilter = gameFilter;
 		this.ownerUserId = ownerUserId;	
+		this.creationMethod = creationMethod;
 	}
 	
 	/**
@@ -224,5 +229,21 @@ public class GameboardDO {
 	 */
 	public final void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
+	}
+
+	/**
+	 * Gets the creationMethod.
+	 * @return the creationMethod
+	 */
+	public GameboardCreationMethod getCreationMethod() {
+		return creationMethod;
+	}
+
+	/**
+	 * Sets the creationMethod.
+	 * @param creationMethod the creationMethod to set
+	 */
+	public void setCreationMethod(final GameboardCreationMethod creationMethod) {
+		this.creationMethod = creationMethod;
 	}
 }

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 
 /**
@@ -34,7 +35,8 @@ public class GameboardDTO {
 	private Date creationDate;
 	private GameFilter gameFilter;
 	private String ownerUserId;
-
+	private GameboardCreationMethod creationMethod;
+	
 	private Integer percentageCompleted;
 	private Date lastVisited;
 
@@ -68,11 +70,14 @@ public class GameboardDTO {
 	 *            the gameboard.
 	 * @param ownerUserId
 	 *            - User id of the owner of the gameboard.
+	 * @param creationMethod
+	 *            - Method used to construct this game board.
 	 */
 	public GameboardDTO(final String id, final String title,
 			final List<GameboardItem> questions, final IsaacWildcard wildCard,
 			final Integer wildcardPosition, final Date creationDate,
-			final GameFilter gameFilter, final String ownerUserId) {
+			final GameFilter gameFilter, final String ownerUserId,
+			final GameboardCreationMethod creationMethod) {
 		this.id = id;
 		this.title = title;
 		this.questions = questions;
@@ -81,6 +86,7 @@ public class GameboardDTO {
 		this.creationDate = creationDate;
 		this.gameFilter = gameFilter;
 		this.ownerUserId = ownerUserId;
+		this.creationMethod = creationMethod;
 	}
 
 	/**
@@ -230,6 +236,22 @@ public class GameboardDTO {
 	 */
 	public void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
+	}
+
+	/**
+	 * Gets the creationMethod.
+	 * @return the creationMethod
+	 */
+	public GameboardCreationMethod getCreationMethod() {
+		return creationMethod;
+	}
+
+	/**
+	 * Sets the creationMethod.
+	 * @param creationMethod the creationMethod to set
+	 */
+	public void setCreationMethod(final GameboardCreationMethod creationMethod) {
+		this.creationMethod = creationMethod;
 	}
 
 	/**

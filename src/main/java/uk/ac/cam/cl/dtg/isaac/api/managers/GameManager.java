@@ -41,6 +41,7 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -178,7 +179,7 @@ public class GameManager {
 			GameboardDTO gameboardDTO = new GameboardDTO(uuid, null,
 					selectionOfGameboardQuestions, getRandomWildcard(mapper),
 					generateRandomWildCardPosition(), new Date(), gameFilter,
-					boardOwnerId);
+					boardOwnerId, GameboardCreationMethod.FILTER);
 
 			this.gameboardPersistenceManager
 					.temporarilyStoreGameboard(gameboardDTO);
