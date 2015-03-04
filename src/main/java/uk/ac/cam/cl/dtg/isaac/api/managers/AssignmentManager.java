@@ -77,7 +77,7 @@ public class AssignmentManager {
 		for (UserGroupDTO group : groups) {
 			assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
 		}
-
+		
 		return assignments;
 	}
 

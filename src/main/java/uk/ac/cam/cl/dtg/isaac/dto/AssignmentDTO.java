@@ -29,6 +29,7 @@ public class AssignmentDTO {
 	@JsonProperty("_id")
 	private String id;
 	private String gameboardId;
+	private GameboardDTO gameboard;
 	private String groupId;
 	private String ownerUserId;
 	private Date creationDate;
@@ -98,6 +99,24 @@ public class AssignmentDTO {
 	public void setGameboardId(final String gameboardId) {
 		this.gameboardId = gameboardId;
 	}
+
+	/**
+	 * Gets the gameboardDTO.
+	 * @return the gameboardDTO
+	 */
+	public GameboardDTO getGameboard() {
+		return gameboard;
+	}
+	
+
+	/**
+	 * Sets the gameboardDTO.
+	 * @param gameboardDTO the gameboardDTO to set
+	 */
+	public void setGameboard(final GameboardDTO gameboardDTO) {
+		this.gameboard = gameboardDTO;
+	}
+	
 
 	/**
 	 * Gets the groupId.

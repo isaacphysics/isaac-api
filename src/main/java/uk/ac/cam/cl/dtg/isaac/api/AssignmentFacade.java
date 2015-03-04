@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -42,6 +43,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -107,13 +110,26 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
 			List<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
+			
+			Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.userManager
+					.getQuestionAttemptsByUser(currentlyLoggedInUser);
 
+			// we want to populate gameboard details.
+			for (AssignmentDTO assignment : assignments) {
+				assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
+						currentlyLoggedInUser, questionAttemptsByUser));
+
+			}
+			
 			return Response.ok(assignments).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while trying to get assignments.", e).toResponse();
+		} catch (ContentManagerException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to retrieve the content requested. Please try again later.", e).toResponse();
 		}
 	}
 
