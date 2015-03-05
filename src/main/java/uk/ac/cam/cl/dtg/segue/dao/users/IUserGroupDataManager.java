@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import java.util.Collection;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -77,7 +78,7 @@ public interface IUserGroupDataManager {
 	 * @param groupId
 	 *            the group id of interest.
 	 * @throws SegueDatabaseException
-	 *             - if there is a problem adding the group membership
+	 *             - if there is a problem removing the group membership
 	 */
 	void removeUserFromGroup(String userId, String groupId) throws SegueDatabaseException;
 
@@ -96,4 +97,13 @@ public interface IUserGroupDataManager {
 	 */
 	UserGroup editGroup(UserGroup group) throws SegueDatabaseException;
 
+	/**
+	 * getGroupMembershipList.
+	 * 
+	 * @param userId - to lookup
+	 * @return the list of groups the user belongs to.
+	 * @throws SegueDatabaseException - if a database error occurs.
+	 */
+	Collection<UserGroup> getGroupMembershipList(String userId) throws SegueDatabaseException;
+	
 }

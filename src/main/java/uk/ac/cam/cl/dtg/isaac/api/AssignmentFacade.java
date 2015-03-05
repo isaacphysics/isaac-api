@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -96,11 +97,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	}
 
 	/**
-	 * Endpoint that will return a list of currently assigned boards.
+	 * Endpoint that will return a list of boards assigned to the current user.
 	 * 
 	 * @param request
 	 *            - so that we can identify the current user.
-	 * @return List of assignments
+	 * @return List of assignments (maybe empty)
 	 */
 	@GET
 	@Path("/")
@@ -109,16 +110,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 		try {
 			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-			List<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
+			Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
 			
 			Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.userManager
 					.getQuestionAttemptsByUser(currentlyLoggedInUser);
 
-			// we want to populate gameboard details.
+			// we want to populate gameboard details for the assignment DTO.
 			for (AssignmentDTO assignment : assignments) {
 				assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
 						currentlyLoggedInUser, questionAttemptsByUser));
-
 			}
 			
 			return Response.ok(assignments).build();

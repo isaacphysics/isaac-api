@@ -43,7 +43,7 @@ import com.google.inject.Inject;
 public class UserAssociationManager {
 	private final IAssociationDataManager associationDatabase;
 
-	private final int tokenLength = 5;
+	private final int tokenLength = 6;
 	
 	private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
 
@@ -94,7 +94,7 @@ public class UserAssociationManager {
 		
 		// create some kind of random token
 		String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=",
-				"").substring(0, tokenLength);
+				"").substring(0, tokenLength).toUpperCase();
 
 		AssociationToken associationToken = new AssociationToken(token, registeredUser.getDbId(),
 				associatedGroupId);

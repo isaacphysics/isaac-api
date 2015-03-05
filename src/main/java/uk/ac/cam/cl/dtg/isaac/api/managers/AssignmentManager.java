@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -28,6 +29,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -57,7 +59,7 @@ public class AssignmentManager {
 	}
 
 	/**
-	 * Get Assignments.
+	 * Get Assignments set for a given user.
 	 * 
 	 * @param user
 	 *            - to get the assignments for.
@@ -65,8 +67,8 @@ public class AssignmentManager {
 	 * @throws SegueDatabaseException
 	 *             - if we cannot complete a required database operation.
 	 */
-	public List<AssignmentDTO> getAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
-		List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user.getDbId());
+	public Collection<AssignmentDTO> getAssignments(final RegisteredUserDTO user) throws SegueDatabaseException {
+		List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
 		if (groups.size() == 0) {
 			log.debug(String.format("User (%s) does not have any groups", user.getDbId()));
@@ -118,6 +120,7 @@ public class AssignmentManager {
 	 */
 	public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user)
 		throws SegueDatabaseException {
+		Validate.notNull(user);
 		return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getDbId());
 	}
 
@@ -125,7 +128,7 @@ public class AssignmentManager {
 	 * deleteAssignment.
 	 * 
 	 * @param assignment
-	 *            - to delete.
+	 *            - to delete (must have an id).
 	 * @throws SegueDatabaseException
 	 *             - if we cannot complete a required database operation.
 	 */
@@ -142,7 +145,7 @@ public class AssignmentManager {
 	 *            to match
 	 * @param groupId
 	 *            group id to match
-	 * @return assignment
+	 * @return assignment or null if none matches the parameters provided.
 	 * @throws SegueDatabaseException
 	 *             - if we cannot complete a required database operation.
 	 */
@@ -175,12 +178,22 @@ public class AssignmentManager {
 	 */
 	public List<UserGroupDTO> findGroupsByGameboard(final RegisteredUserDTO user, final String gameboardId)
 		throws SegueDatabaseException {
+		Validate.notNull(user);
+		Validate.notBlank(gameboardId);
+		
 		List<AssignmentDTO> allAssignments = this.getAllAssignmentsSetByUser(user);
 		List<UserGroupDTO> groups = Lists.newArrayList();
 
 		for (AssignmentDTO assignment : allAssignments) {
 			if (assignment.getGameboardId().equals(gameboardId)) {
-				groups.add(groupManager.getGroupById(assignment.getGroupId()));
+				try {
+					groups.add(groupManager.getGroupById(assignment.getGroupId()));
+				} catch (ResourceNotFoundException e) {
+					// skip group as it no longer exists.
+					log.warn(String.format(
+							"Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
+							assignment.getGroupId(), assignment.getId()));
+				}
 			}
 		}
 

@@ -102,7 +102,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 	public Response getGroupsForCurrentUser(@Context final HttpServletRequest request) {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-			List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user.getDbId());
+			List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user);
 			return Response.ok(groups).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
@@ -293,7 +293,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 	 * @param request - for authentication
 	 * @param groupId - group of interest.
 	 * @param userId - user to remove.
-	 * @return 200 or error response
+	 * @return 200 containing new list of users in the group or error response
 	 */
 	@DELETE
 	@Path("{group_id}/membership/{user_id}")
@@ -335,7 +335,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 	 * Delete group.
 	 * @param request - for authentication
 	 * @param groupId - group to delete.
-	 * @return 200 or error response
+	 * @return NO Content response or error response
 	 */
 	@DELETE
 	@Path("/{group_id}")
@@ -360,7 +360,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 			}
 			
 			groupManager.deleteGroup(groupBasedOnId);
-
+			//TODO: old assignments should probably be cleaned up?
+			
 			return Response.noContent().build();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to add user to a group. ", e);

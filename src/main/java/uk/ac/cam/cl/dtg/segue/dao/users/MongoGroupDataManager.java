@@ -15,7 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
@@ -31,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -163,5 +166,22 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 		}
 		
 		return userIds;
+	}
+
+	@Override
+	public Collection<UserGroup> getGroupMembershipList(final String userId) throws SegueDatabaseException {
+		Query query = DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId);
+		
+		DBCursor<GroupMembership> results = groupMembershipCollection.find(query);
+		
+		Set<UserGroup> groups = Sets.newHashSet();
+		for (GroupMembership gm : results.toArray()) {
+			UserGroup group = this.findById(gm.getGroupId());
+			if (group != null) {
+				groups.add(group);	
+			}
+		}
+		
+		return groups;
 	}
 }

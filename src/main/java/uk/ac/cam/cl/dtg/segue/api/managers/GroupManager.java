@@ -25,6 +25,7 @@ import org.apache.commons.lang3.Validate;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
@@ -108,8 +109,8 @@ public class GroupManager {
 	 *             - If an error occurred while interacting with the database.
 	 */
 	public void deleteGroup(final UserGroupDTO group) throws SegueDatabaseException {
-		groupDatabase.deleteGroup(group.getId());		
-		//TODO: assignments should probably be cleaned up
+		Validate.notNull(group);
+		groupDatabase.deleteGroup(group.getId());
 	}
 
 	/**
@@ -120,7 +121,12 @@ public class GroupManager {
 	 *             - If an error occurred while interacting with the database.
 	 */
 	public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {		
+		Validate.notNull(group);
 		List<String> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
+		
+		if (groupMemberIds.isEmpty()) {
+			return Lists.newArrayList();
+		}
 		
 		return userManager.findUsers(groupMemberIds);
 	}
@@ -128,14 +134,29 @@ public class GroupManager {
 	/**
 	 * getGroupsByOwner.
 	 * 
-	 * @param ownerUserId
-	 *            - the owner of the group to search for.
+	 * @param ownerUser
+	 *            - the owner of the groups to search for.
 	 * @return List of groups or empty list.
 	 */
-	public List<UserGroupDTO> getGroupsByOwner(final String ownerUserId) {
-		return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUserId));
+	public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) {
+		Validate.notNull(ownerUser);
+		return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getDbId()));
 	}
 
+	/**
+	 * getGroupMembershipList.
+	 * 
+	 * @param userToLookup - the user to search for group membership details for.
+	 * @return the list of groups the user belongs to.
+	 * @throws SegueDatabaseException - if there is a database error.
+	 */
+	public List<UserGroupDTO> getGroupMembershipList(final RegisteredUserDTO userToLookup)
+		throws SegueDatabaseException {
+		Validate.notNull(userToLookup);
+
+		return convertGroupToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getDbId()));
+	}
+	
 	/**
 	 * Adds a user to a group.
 	 * 
@@ -146,6 +167,8 @@ public class GroupManager {
 	 */
 	public void addUserToGroup(final UserGroupDTO group, final RegisteredUserDTO userToAdd)
 		throws SegueDatabaseException {
+		Validate.notNull(group);
+		Validate.notNull(userToAdd);
 		groupDatabase.addUserToGroup(userToAdd.getDbId(), group.getId());
 	}
 
@@ -159,6 +182,8 @@ public class GroupManager {
 	 */
 	public void removeUserFromGroup(final UserGroupDTO group, final RegisteredUserDTO userToRemove)
 		throws SegueDatabaseException {
+		Validate.notNull(group);
+		Validate.notNull(userToRemove);
 		groupDatabase.removeUserFromGroup(userToRemove.getDbId(), group.getId());
 	}
 
@@ -168,9 +193,17 @@ public class GroupManager {
 	 * @param groupId
 	 *            to search for.
 	 * @return group or null.
+	 * @throws ResourceNotFoundException - if we cannot find the resource specified.
+	 * @throws SegueDatabaseException - if there is a database error.
 	 */
-	public UserGroupDTO getGroupById(final String groupId) {
-		return convertGroupToDTO(groupDatabase.findById(groupId));
+	public UserGroupDTO getGroupById(final String groupId) throws ResourceNotFoundException, SegueDatabaseException {
+		UserGroup group = groupDatabase.findById(groupId);
+		
+		if (null == group) {
+			throw new ResourceNotFoundException("The group id specified does not exist.");
+		}
+		
+		return convertGroupToDTO(group);
 	}
 
 	/**
@@ -196,7 +229,7 @@ public class GroupManager {
 	 * @param groups to convert
 	 * @return groupDTOs
 	 */
-	private List<UserGroupDTO> convertGroupToDTOs(final List<UserGroup> groups) {
+	private List<UserGroupDTO> convertGroupToDTOs(final Iterable<UserGroup> groups) {
 		List<UserGroupDTO> result = Lists.newArrayList();
 		for (UserGroup group : groups) {
 			result.add(convertGroupToDTO(group));
