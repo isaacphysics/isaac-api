@@ -54,6 +54,14 @@ public interface IAppDatabaseManager<T> extends IAppDataManager<T> {
 		throws SegueDatabaseException;
 	
 	/**
+	 * findAll records.
+	 * @return returns a list of all records held by this data manager.
+	 * @throws SegueDatabaseException
+	 *             - when a database error has occurred.
+	 */
+	List<T> findAll() throws SegueDatabaseException;
+	
+	/**
 	 * Update a field in a given object by Id.
 	 * 
 	 * @param objectId

@@ -202,4 +202,12 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 		
 		return result;
 	}
+
+	@Override
+	public List<T> findAll() throws SegueDatabaseException {
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(collectionName), typeParamaterClass,
+				String.class);
+		return jc.find().toArray();
+	}
 }
