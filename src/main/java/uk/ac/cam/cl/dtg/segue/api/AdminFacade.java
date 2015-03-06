@@ -47,11 +47,13 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -130,10 +132,12 @@ public class AdminFacade extends AbstractSegueFacade {
 		try {
 			if (!isUserAnAdmin(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin to access this endpoint.").toResponse();
+						"You must be an admin user to access this endpoint.").toResponse();
 			}
 			
-			return Response.ok(statsManager.getUsersBySchool()).build();
+			Map<School, Integer> map = statsManager.getUsersBySchool();
+
+			return Response.ok(map).build();
 		} catch (UnableToIndexSchoolsException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable To Index Schools Exception in admin facade", e).toResponse();
@@ -141,6 +145,27 @@ public class AdminFacade extends AbstractSegueFacade {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
+	
+	/**
+	 * Get user last seen information map.
+	 * @param request - to determine access.
+	 * @return stats
+	 */
+	@GET
+	@Path("/stats/users/last_access")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getUserLastAccessInformation(@Context final HttpServletRequest request) {
+		try {
+			if (!isUserAnAdmin(request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+			
+			return Response.ok(statsManager.getLastSeenUserMap()).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} 
+	}		
 	
 	/**
 	 * This method will allow the live version served by the site to be changed.
@@ -498,6 +523,39 @@ public class AdminFacade extends AbstractSegueFacade {
 					"Unable to locate the user with the requested id: " + userId).toResponse();
 		}
 	}
+	
+	/**
+	 * Get users by school id.
+	 * @param request - to determine access.
+	 * @param schoolId - of the school of interest.
+	 * @return stats
+	 */
+	@GET
+	@Path("/users/schools/{school_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getSchoolStatistics(@Context final HttpServletRequest request,
+			@PathParam("school_id") final String schoolId) {
+		try {
+			if (!isUserAnAdmin(request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+			
+			return Response.ok(statsManager.getUsersBySchoolId(schoolId)).build();
+		} catch (UnableToIndexSchoolsException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable To Index Schools Exception in admin facade", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (ResourceNotFoundException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND, "We cannot locate the school requested")
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			log.error("Error while trying to list users belonging to a school.", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error").toResponse();
+		}
+	}	
 	
 	/**
 	 * Is the current user an admin.

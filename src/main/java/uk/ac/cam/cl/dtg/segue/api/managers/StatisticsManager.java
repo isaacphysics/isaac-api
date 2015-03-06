@@ -15,14 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
@@ -81,6 +84,10 @@ public class StatisticsManager {
 		List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
 		List<RegisteredUserDTO> adminStaffRole = Lists.newArrayList();
 
+		List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
+		List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
+		List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
+		
 		// build user stats
 		for (RegisteredUserDTO user : users) {
 			if (user.getGender() == null) {
@@ -127,7 +134,15 @@ public class StatisticsManager {
 						break;
 				}
 			}
-
+			
+			if (user.getSchoolId() == null && user.getSchoolOther() == null) {
+				hasNoSchool.add(user);
+			} else {
+				hasSchool.add(user);
+				if (user.getSchoolOther() != null) {
+					hasOtherSchool.add(user);
+				}
+			}
 		}
 
 		ib.put("male_users", "" + male.size());
@@ -140,6 +155,10 @@ public class StatisticsManager {
 
 		ib.put("view_question_events", "" + logManager.getLogsByType(Constants.VIEW_QUESTION).size());
 		ib.put("answered_question_events", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
+		
+		ib.put("has_school", "" + hasSchool.size());
+		ib.put("has_no_school", "" + hasNoSchool.size());
+		ib.put("has_school_other", "" + hasOtherSchool.size());
 		
 		// questions answered registered
 
@@ -180,5 +199,41 @@ public class StatisticsManager {
 		}
 		
 		return usersBySchool;
+	}
+	
+	/**
+	 * Find all users belonging to a given school.
+	 * 
+	 * @param schoolId - that we are interested in.
+	 * @return list of users.
+	 * @throws SegueDatabaseException - if there is a general database error
+	 * @throws ResourceNotFoundException - if we cannot locate the school requested.
+	 * @throws UnableToIndexSchoolsException - if the school list has not been indexed.
+	 */
+	public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId)
+		throws ResourceNotFoundException, SegueDatabaseException, UnableToIndexSchoolsException {
+		Validate.notBlank(schoolId);
+		
+		List<RegisteredUserDTO> users = Lists.newArrayList();
+
+		School s = schoolManager.findSchoolById(schoolId);
+		
+		if (null == s) {
+			throw new ResourceNotFoundException("The school with the id provided cannot be found.");
+		}
+		
+		RegisteredUserDTO prototype = new RegisteredUserDTO();
+		prototype.setSchoolId(schoolId);
+		
+		users = userManager.findUsers(prototype);
+
+		return users;
+	}
+	
+	/**
+	 * @return a list of userId's to last event timestamp
+	 */
+	public Map<String, Date> getLastSeenUserMap() {
+		return this.logManager.getLastAccessForAllUsers();
 	}
 }

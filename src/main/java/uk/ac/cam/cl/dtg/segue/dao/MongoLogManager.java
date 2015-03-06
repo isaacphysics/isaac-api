@@ -18,12 +18,14 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.mongojack.DBQuery;
+import org.mongojack.DBQuery.Query;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
 import org.mongojack.internal.MongoJackModule;
@@ -38,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
@@ -158,6 +161,99 @@ public class MongoLogManager implements ILogManager {
 		List<HashMap> results = jc.find(DBQuery.is("eventType", type)).toArray();
 		
 		return results;
+	}
+	
+	@Override
+	public List<HashMap> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
+		// sanity check
+		if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
+			throw new IllegalArgumentException(
+					"This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
+		}
+		
+		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+				String.class, this.objectMapper);
+		
+		List<HashMap> results = jc.find(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class))).toArray();
+		
+		return results;
+	}
+
+	@Override
+	public List<HashMap> getAllLogsByUser(final AbstractSegueUserDTO prototype) {
+		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
+		
+		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+				String.class, this.objectMapper);
+		
+		Query q;
+		if (prototype instanceof RegisteredUserDTO) {
+			RegisteredUserDTO user = (RegisteredUserDTO) prototype;
+			Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
+			
+			q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("_id", user.getDbId()));
+		} else if (prototype instanceof AnonymousUserDTO) {
+			AnonymousUserDTO user = (AnonymousUserDTO) prototype;
+			q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("_id", user.getSessionId()));
+		} else {
+			throw new IllegalArgumentException("Unknown user type provided.");
+		}
+		
+		List<HashMap> results = jc.find(q).toArray();
+		return results;
+	}
+	
+	@Override
+	public HashMap getLastLogForUser(final AbstractSegueUserDTO prototype) {
+		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
+		
+		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+				String.class, this.objectMapper);
+		
+		Query q;
+		if (prototype instanceof RegisteredUserDTO) {
+			RegisteredUserDTO user = (RegisteredUserDTO) prototype;
+			Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
+			
+			q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("userId", user.getDbId()));
+		} else if (prototype instanceof AnonymousUserDTO) {
+			AnonymousUserDTO user = (AnonymousUserDTO) prototype;
+			q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("userId", user.getSessionId()));
+		} else {
+			throw new IllegalArgumentException("Unknown user type provided.");
+		}
+		
+		List<HashMap> results = jc.find(q).sort(new BasicDBObject("_id", -1)).limit(1).toArray();
+		
+		if (results.size() > 0) {
+			return results.get(0);
+		} else {
+			return null;
+		}
+	}
+	
+	@Override
+	public Map<String, Date> getLastAccessForAllUsers() {
+		List<HashMap> allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
+		
+		Map<String, Date> results = Maps.newHashMap();
+		
+		for (HashMap log : allLogsByUserType) {
+			if (results.containsKey((String) log.get("userId"))) {
+				
+				if (results.get((String) log.get("userId")).after((Date) log.get("timestamp"))) {
+					results.put((String) log.get("userId"), (Date) log.get("timestamp"));
+				}
+				
+			} else {
+				results.put((String) log.get("userId"), (Date) log.get("timestamp"));
+			}
+		}
+		return results;
+		
 	}
 	
 	/**

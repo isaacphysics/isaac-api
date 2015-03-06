@@ -475,4 +475,14 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 		}
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "RegisteredUserDTO [databaseId=" + databaseId + ", givenName=" + givenName + ", familyName="
+				+ familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth
+				+ ", gender=" + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId
+				+ ", schoolOther=" + schoolOther + ", defaultLevel=" + defaultLevel + ", linkedAccounts="
+				+ linkedAccounts + ", hasSegueAccount=" + hasSegueAccount + ", firstLogin=" + firstLogin
+				+ ", lastUpdated=" + lastUpdated + "]";
+	}
 }
