@@ -187,6 +187,10 @@ public class StatisticsManager {
 				}
 				
 				School s = schoolManager.findSchoolById(user.getSchoolId());
+				if (s == null) {
+					continue;
+				}
+				
 				if (usersBySchool.containsKey(s)) {
 					usersBySchool.put(s, usersBySchool.get(s) + 1); 
 				} else {

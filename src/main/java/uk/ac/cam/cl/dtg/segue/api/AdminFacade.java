@@ -17,8 +17,11 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,6 +40,7 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -136,8 +140,35 @@ public class AdminFacade extends AbstractSegueFacade {
 			}
 			
 			Map<School, Integer> map = statsManager.getUsersBySchool();
+			
+			final String school = "school";
+			final String connections = "connections";
 
-			return Response.ok(map).build();
+			List<Map<String, Object>> result = Lists.newArrayList();
+			for (Entry<School, Integer> e : map.entrySet()) {
+				result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue()));
+			}
+		
+			Collections.sort(result, new Comparator<Map<String, Object>>() {
+				/**
+				 * Descending numerical order
+				 */
+				@Override
+				public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
+
+					if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
+						return 1;
+					}
+
+					if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
+						return -1;
+					}
+
+					return 0;
+				}
+			});
+			
+			return Response.ok(result).build();
 		} catch (UnableToIndexSchoolsException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable To Index Schools Exception in admin facade", e).toResponse();
