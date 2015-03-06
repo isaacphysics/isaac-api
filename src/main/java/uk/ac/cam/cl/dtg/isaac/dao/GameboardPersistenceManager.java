@@ -243,7 +243,7 @@ public class GameboardPersistenceManager {
 	 * @return the gameboard or null if we can't find it..
 	 * @throws SegueDatabaseException  - if there is a problem accessing the database.
 	 */
-	public final GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
+	public GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
 		// first try temporary storage
 		if (this.gameboardNonPersistentStorage.containsKey(gameboardId)) {
 			return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.get(gameboardId));
@@ -256,6 +256,28 @@ public class GameboardPersistenceManager {
 		}
 
 		GameboardDTO gameboardDTO = this.convertToGameboardDTO(gameboardFromDb);
+
+		return gameboardDTO;
+	}
+	
+	/**
+	 * @param gameboardId
+	 * @return
+	 * @throws SegueDatabaseException
+	 */
+	public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
+		// first try temporary storage
+		if (this.gameboardNonPersistentStorage.containsKey(gameboardId)) {
+			return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.get(gameboardId));
+		}
+
+		GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
+
+		if (null == gameboardFromDb) {
+			return null;
+		}
+
+		GameboardDTO gameboardDTO = this.convertToGameboardDTO(gameboardFromDb, false);
 
 		return gameboardDTO;
 	}
@@ -404,6 +426,28 @@ public class GameboardPersistenceManager {
 		}	
 		
 		return gameboards;
+	}
+	
+	/**
+	 * Utility method to get a map of gameboard id to list of users who are connected to it.
+	 * @return map of gameboard id to list of users
+	 * @throws SegueDatabaseException - if there is a database error.
+	 */
+	public Map<String, List<String>> getBoardToUserIdMapping() throws SegueDatabaseException {
+		List<UserGameboardsDO> all = this.userToGameboardMappingsDatabase.findAll();
+		Map<String, List<String>> results = Maps.newHashMap();
+		
+		for (UserGameboardsDO userBoardMapping : all) {
+			if (results.containsKey(userBoardMapping.getGameboardId())) {
+				results.get(userBoardMapping.getGameboardId()).add(userBoardMapping.getUserId());
+			} else {
+				List<String> users = Lists.newArrayList();
+				users.add(userBoardMapping.getUserId());
+				results.put(userBoardMapping.getGameboardId(), users);
+			}
+		}
+		
+		return results;
 	}
 	
 	/**

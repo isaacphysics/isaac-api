@@ -17,8 +17,11 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -786,6 +789,66 @@ public class IsaacController extends AbstractIsaacFacade {
 						.build());
 		
 		return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+	}
+	
+	/**
+	 * getBoardPopularityList.
+	 * @return list of popular boards.
+	 */
+	@GET
+	@Path("gameboards/popular")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getBoardPopularityList() {
+		final String connections = "connections";
+		try {
+			Map<String, Integer> numberOfConnectedUsersByGameboard = this.gameManager
+					.getNumberOfConnectedUsersByGameboard();
+
+			List<Map<String, Object>> resultList = Lists.newArrayList();
+
+			for (Entry<String, Integer> e : numberOfConnectedUsersByGameboard.entrySet()) {
+				if (e.getValue() > 1) {
+					resultList.add(ImmutableMap.of("gameboard", this.gameManager.getLiteGameboard(e.getKey()),
+							"connections", e.getValue()));
+					
+				}
+			}
+
+			Collections.sort(resultList, new Comparator<Map<String, Object>>() {
+				/**
+				 * Descending numerical order
+				 */
+				@Override
+				public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
+
+					if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
+						return 1;
+					}
+
+					if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
+						return -1;
+					}
+
+					return 0;
+				}
+			});
+
+			Integer sharedBoards = 0;
+
+			for (Map<String, Object> e : resultList) {
+				if ((Integer) e.get(connections) > 1) {
+					sharedBoards++;
+				}
+			}
+
+			ImmutableMap<String, Object> resultMap = ImmutableMap.of("board_list", resultList,
+					"shared_boards", sharedBoards);
+
+			return Response.ok(resultMap).build();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error while trying to build the response.", e).toResponse();
+		}
 	}
 
 	/**

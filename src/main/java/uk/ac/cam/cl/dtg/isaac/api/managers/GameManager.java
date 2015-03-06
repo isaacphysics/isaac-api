@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.common.collect.Multiset.Entry;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants;
@@ -247,6 +248,18 @@ public class GameManager {
 				this.gameboardPersistenceManager.getGameboardById(gameboardId);
 		
 		return gameboardFound;
+	}
+	
+	/**
+	 * Get a gameboard by its id.
+	 * 
+	 * @param gameboardId - the id to find.
+	 * @return a lite gameboard without the question data fully expanded.
+	 * @throws SegueDatabaseException
+	 *             - a database error has occurred.
+	 */
+	public GameboardDTO getLiteGameboard(final String gameboardId) throws SegueDatabaseException {
+		return this.gameboardPersistenceManager.getLiteGameboardById(gameboardId);
 	}
 	
 	/**
@@ -476,6 +489,22 @@ public class GameManager {
 		this.permanentlyStoreGameboard(gameboardDTO);
 		
 		return gameboardDTO;
+	}
+	
+	/**
+	 * @return useful for providing an indication of how many people are sharing boards.
+	 * @throws SegueDatabaseException 
+	 */
+	public Map<String, Integer> getNumberOfConnectedUsersByGameboard() throws SegueDatabaseException {
+		Map<String, List<String>> boardToUserIdMapping = this.gameboardPersistenceManager.getBoardToUserIdMapping();
+		
+		Map<String, Integer> result = Maps.newTreeMap();
+		
+		for (java.util.Map.Entry<String, List<String>> e : boardToUserIdMapping.entrySet()) {
+			result.put(e.getKey(), e.getValue().size());
+		}
+
+		return result;
 	}
 	
 	/**
