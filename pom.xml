@@ -318,7 +318,7 @@
 		<profile>
 			<id>biology-staging</id>
 			<properties>
-				<build.profile.id>staging</build.profile.id>
+				<build.profile.id>biology-staging</build.profile.id>
 			</properties>
 			<build>
 				<filters>
