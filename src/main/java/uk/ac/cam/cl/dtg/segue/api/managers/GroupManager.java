@@ -21,6 +21,8 @@ import java.util.List;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -38,6 +40,8 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  * @author sac92
  */
 public class GroupManager {
+	private static final Logger log = LoggerFactory.getLogger(GroupManager.class);
+			
 	private final IUserGroupDataManager groupDatabase;
 	private final UserManager userManager;
 	private final MapperFacade dtoMapper;
@@ -145,6 +149,7 @@ public class GroupManager {
 
 	/**
 	 * getGroupMembershipList.
+	 * Gets the groups a user is a member of.
 	 * 
 	 * @param userToLookup - the user to search for group membership details for.
 	 * @return the list of groups the user belongs to.
@@ -169,7 +174,15 @@ public class GroupManager {
 		throws SegueDatabaseException {
 		Validate.notNull(group);
 		Validate.notNull(userToAdd);
-		groupDatabase.addUserToGroup(userToAdd.getDbId(), group.getId());
+		
+		// don't do it if they are already in there
+		if (!this.isUserInGroup(userToAdd, group)) {
+			groupDatabase.addUserToGroup(userToAdd.getDbId(), group.getId());	
+		} else {
+			// otherwise it is a noop.
+			log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
+					userToAdd.getDbId(), group.getId()));
+		}
 	}
 
 	/**
@@ -215,6 +228,19 @@ public class GroupManager {
 	 */
 	public boolean isValidGroup(final String groupId) {
 		return this.groupDatabase.findById(groupId) != null;
+	}
+	
+	/**
+	 * isUserInGroup?
+	 * 
+	 * @param user - to look for
+	 * @param group - group to check.
+	 * @return true if yes false if no.
+	 * @throws SegueDatabaseException - if there is a database problem.
+	 */
+	public boolean isUserInGroup(final RegisteredUserDTO user, final UserGroupDTO group) throws SegueDatabaseException {
+		List<UserGroupDTO> groups = this.getGroupMembershipList(user);
+		return groups.contains(group);
 	}
 	
 	/**

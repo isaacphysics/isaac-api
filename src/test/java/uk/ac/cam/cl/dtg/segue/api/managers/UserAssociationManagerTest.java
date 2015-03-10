@@ -143,6 +143,53 @@ public class UserAssociationManagerTest {
 	}
 	
 	@Test
+	public final void userAssociationManager_DuplicateAssociationButAddToGroupAnyway_associationShouldNotBeCreatedButUserShouldBeAddedToGroup()
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
+
+		String someUserIdGrantingAccess = "89745531132231213";
+		String someGroupOwnerUserId = "17659214141";
+
+		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
+		String someAssociatedGroupId = "5654811fd6g51gd8r";
+
+		expect(someRegisteredUserGrantingAccess.getDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		
+		expect(someRegisteredUserReceivingAccess.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		replay(someRegisteredUserGrantingAccess);
+
+		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
+		
+		expect(dummyAssociationDataManager.lookupAssociationToken(someToken.getToken())).andReturn(someToken);
+		
+		expect(
+				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+						someUserIdGrantingAccess)).andReturn(true);
+		
+		UserGroupDTO groupToAddUserTo = createMock(UserGroupDTO.class);
+		expect(dummyGroupDataManager.getGroupById(someAssociatedGroupId)).andReturn(groupToAddUserTo).once();
+		
+		dummyGroupDataManager.addUserToGroup(groupToAddUserTo, someRegisteredUserGrantingAccess);
+		expectLastCall().once();
+		
+		replay(dummyAssociationDataManager, dummyGroupDataManager);
+
+		try {
+			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
+		} catch (UserAssociationException e) {
+			e.printStackTrace();
+			fail("UserAssociationException is unexpected");
+		} catch (InvalidUserAssociationTokenException e) {
+			e.printStackTrace();
+			fail("InvalidUserAssociationTokenException is unexpected");
+		}
+
+		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
+	}	
+	
+	@Test
 	public final void userAssociationManager_createAssociationWithTokenNoGroup_associationShouldBeCreated()
 			throws SegueDatabaseException, UserGroupNotFoundException {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,

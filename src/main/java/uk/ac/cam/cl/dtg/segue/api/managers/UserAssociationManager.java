@@ -146,17 +146,19 @@ public class UserAssociationManager {
 			throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
 		}
 		
-		if (associationDatabase.hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getDbId())) {
-			throw new UserAssociationException("Association already exists.");
+		if (!associationDatabase.hasValidAssociation(lookedupToken.getOwnerUserId(),
+				userGrantingPermission.getDbId())) {
+			associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getDbId());
+			// don't create a new association just do the group assignment as they have already granted permission.
 		}
 
-		associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getDbId());
 		UserGroupDTO group = userGroupManager.getGroupById(lookedupToken.getGroupId());
-		
+				
 		if (lookedupToken.getGroupId() != null) {
 			userGroupManager.addUserToGroup(group, userGrantingPermission);
-			log.info(String.format("Adding User: %s to Group: %s", userGrantingPermission.getDbId(),
+			log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getDbId(),
 					lookedupToken.getGroupId()));
+				
 		}
 	}
 
