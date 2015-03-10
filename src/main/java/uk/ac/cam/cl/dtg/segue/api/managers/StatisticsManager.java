@@ -97,7 +97,7 @@ public class StatisticsManager {
 		List<RegisteredUserDTO> female = Lists.newArrayList();
 		List<RegisteredUserDTO> unknownGender = Lists.newArrayList();
 
-		ib.put("total_users", "" + users.size());
+		ib.put("totalUsers", "" + users.size());
 
 		List<RegisteredUserDTO> studentOrUnknownRole = Lists.newArrayList();
 		List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
@@ -164,20 +164,20 @@ public class StatisticsManager {
 			}
 		}
 
-		ib.put("male_users", "" + male.size());
-		ib.put("female_users", "" + female.size());
-		ib.put("unknown_gender_users", "" + unknownGender.size());
+		ib.put("maleUsers", "" + male.size());
+		ib.put("femaleUsers", "" + female.size());
+		ib.put("unknownGenderUsers", "" + unknownGender.size());
 
-		ib.put("student_users", "" + studentOrUnknownRole.size());
-		ib.put("teacher_users", "" + teacherRole.size());
-		ib.put("staff_users", "" + adminStaffRole.size());
+		ib.put("studentUsers", "" + studentOrUnknownRole.size());
+		ib.put("teacherUsers", "" + teacherRole.size());
+		ib.put("staffUsers", "" + adminStaffRole.size());
 
-		ib.put("view_question_events", "" + logManager.getLogsByType(Constants.VIEW_QUESTION).size());
-		ib.put("answered_question_events", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
+		ib.put("viewQuestionEvents", "" + logManager.getLogsByType(Constants.VIEW_QUESTION).size());
+		ib.put("answeredQuestionEvents", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
 		
-		ib.put("has_school", "" + hasSchool.size());
-		ib.put("has_no_school", "" + hasNoSchool.size());
-		ib.put("has_school_other", "" + hasOtherSchool.size());
+		ib.put("hasSchool", "" + hasSchool.size());
+		ib.put("hasNoSchool", "" + hasNoSchool.size());
+		ib.put("hasSchoolOther", "" + hasOtherSchool.size());
 		
 		// questions answered registered
 
@@ -261,10 +261,13 @@ public class StatisticsManager {
 	}
 	
 	/**
+	 * getUserQuestionInformation.
+	 * Produces a map that contains information about the total questions attempted, (correct and correct first time)
+	 * "totalQuestionsAttempted", "totalCorrect", "totalCorrectFirstTime","attemptsByTag", questionAttemptsByLevelStats.
 	 * @param userOfInterest
 	 * @return
-	 * @throws SegueDatabaseException
-	 * @throws ContentManagerException 
+	 * @throws SegueDatabaseException - if something went wrong with the database.
+	 * @throws ContentManagerException - if we are unable to look up the content.
 	 */
 	public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
 		throws SegueDatabaseException, ContentManagerException {
@@ -348,9 +351,9 @@ public class StatisticsManager {
 			}
 		}
 		
-		return ImmutableMap.of("total_questions_attempted", totalQuestionsAttempted, "total_correct",
-				questionsAnsweredCorrectly, "total_correct_first_time", questionsFirstTime,
-				"attempts_by_tag", questionAttemptsByTagStats, "attempts_by_level",
+		return ImmutableMap.of("totalQuestionsAttempted", totalQuestionsAttempted, "totalCorrect",
+				questionsAnsweredCorrectly, "totalCorrectFirstTime", questionsFirstTime,
+				"attemptsByTag", questionAttemptsByTagStats, "attemptsByLevel",
 				questionAttemptsByLevelStats);
 	}
 	
