@@ -1233,12 +1233,17 @@ public class IsaacController extends AbstractIsaacFacade {
 		
 		// get the question attempted information
 		try {
-			Map<String, Integer> userQuestionInformation = statsManager.getUserQuestionInformation(user);
+			Map<String, Object> userQuestionInformation = statsManager.getUserQuestionInformation(user);
+
 			return Response.ok(userQuestionInformation).build();
 			
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error whilst trying to access user statistics.")
+					.toResponse();
+		} catch (ContentManagerException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access user statistics. Content cannot be resolved.")
 					.toResponse();
 		}
 		

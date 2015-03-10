@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +32,18 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Lists;
@@ -49,6 +59,8 @@ public class StatisticsManager {
 	private UserManager userManager;
 	private ILogManager logManager;
 	private SchoolListReader schoolManager;
+	private ContentVersionController versionManager;
+	private IContentManager contentManager;
 	
 	private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
 	
@@ -60,10 +72,14 @@ public class StatisticsManager {
 	 */
 	@Inject
 	public StatisticsManager(final UserManager userManager, final ILogManager logManager,
-			final SchoolListReader schoolManager) {
+			final SchoolListReader schoolManager, final ContentVersionController versionManager,
+			final IContentManager contentManager) {
 		this.userManager = userManager;
 		this.logManager = logManager;
 		this.schoolManager = schoolManager;
+		
+		this.versionManager = versionManager;
+		this.contentManager = contentManager;
 	}
 
 	/**
@@ -244,7 +260,14 @@ public class StatisticsManager {
 		return this.logManager.getLastAccessForAllUsers();
 	}
 	
-	public Map<String, Integer> getUserQuestionInformation(final RegisteredUserDTO userOfInterest) throws SegueDatabaseException {
+	/**
+	 * @param userOfInterest
+	 * @return
+	 * @throws SegueDatabaseException
+	 * @throws ContentManagerException 
+	 */
+	public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
+		throws SegueDatabaseException, ContentManagerException {
 		Validate.notNull(userOfInterest);
 		
 		// get questions answered correctly.
@@ -258,12 +281,12 @@ public class StatisticsManager {
 		
 		// question pages stats goes here
 //		int totalQuestionPagesAttempted = 0;
-//		
 //		int totalQuestionPagesCompleted = 0;
 		
 		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = userManager
 				.getQuestionAttemptsByUser(userOfInterest);
 		
+		// all relevant question page info
 		for (Entry<String, Map<String, List<QuestionValidationResponse>>> questionPage : questionAttemptsByUser
 				.entrySet()) {
 			// question page
@@ -289,9 +312,78 @@ public class StatisticsManager {
 				}
 			}
 		}
+
+		// TODO this stuff should be tidied up and put somewhere else
+		Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
+
+		Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
+		Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
+
+		for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser
+				.entrySet()) {
+			// add the tags
+			if (questionMap.get(question.getKey()) != null) {
+				for (String tag : questionMap.get(question.getKey()).getTags()) {
+					if (questionAttemptsByTagStats.containsKey(tag)) {
+						questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
+					} else {
+						questionAttemptsByTagStats.put(tag, 1);
+					}
+				}				
+			}
+
+			ContentDTO questionContentDTO = questionMap.get(question.getKey());
+			
+			if (null == questionContentDTO) {
+				continue;
+			}
+			
+			String questionLevel = questionContentDTO.getLevel().toString();
+			
+			if (questionAttemptsByLevelStats.containsKey(questionLevel.toString())) {
+				questionAttemptsByLevelStats.put(questionLevel.toString(),
+						questionAttemptsByLevelStats.get(questionLevel.toString()) + 1);
+			} else {
+				questionAttemptsByLevelStats.put(questionLevel.toString(), 1);
+			}
+		}
 		
 		return ImmutableMap.of("total_questions_attempted", totalQuestionsAttempted, "total_correct",
-				questionsAnsweredCorrectly, "total_correct_first_time", questionsFirstTime);
+				questionsAnsweredCorrectly, "total_correct_first_time", questionsFirstTime,
+				"attempts_by_tag", questionAttemptsByTagStats, "attempts_by_level",
+				questionAttemptsByLevelStats);
+	}
+	
+	/**
+	 * Utility method to get a load of question pages by id in one go.
+	 * 
+	 * @param ids to search for
+	 * @return map of id to content object.
+	 * @throws ContentManagerException - if something goes wrong.
+	 */
+	private Map<String, ContentDTO> getQuestionMap(final Collection<String> ids) throws ContentManagerException {
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+		fieldsToMap.put(
+				immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.'
+						+ UNPROCESSED_SEARCH_FIELD_SUFFIX), new ArrayList<String>(ids));
+
+		fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
+				Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+
+		// Search for questions that match the ids.
+		ResultsWrapper<ContentDTO> findByFieldNames = contentManager.findByFieldNames(
+				versionManager.getLiveVersion(), fieldsToMap, 0, ids.size());
+
+		List<ContentDTO> questionsForGameboard = findByFieldNames.getResults();
+
+		Map<String, ContentDTO> questionIdToQuestionMap = Maps.newHashMap();
+		for (ContentDTO content : questionsForGameboard) {
+			if (content != null) {
+				questionIdToQuestionMap.put(content.getId(), content);	
+			}
+		}
 		
+		return questionIdToQuestionMap;
 	}
 }
