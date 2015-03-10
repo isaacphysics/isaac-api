@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -56,6 +57,7 @@ public class IsaacControllerTest {
 	private String validLiveVersion = "d600d7af95b3cbceecd6910604fa9ea0c5337219";
 	private ILogManager dummyLogManager = null;
 	private MapperFacade dummyMapper = null;
+	private StatisticsManager dummyStatsManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -70,6 +72,7 @@ public class IsaacControllerTest {
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyUserManager = createMock(UserManager.class);
 		this.dummyLogManager  = createMock(ILogManager.class);
+		this.dummyStatsManager  = createMock(StatisticsManager.class);
 		this.dummyMapper = createMock(MapperFacade.class);
 	}
 
@@ -83,7 +86,7 @@ public class IsaacControllerTest {
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned() 
 		throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException, ContentManagerException {
 		IsaacController isaacController = new IsaacController(dummyAPI,
-				dummyPropertiesLoader, dummyGameManager, dummyLogManager, dummyMapper);
+				dummyPropertiesLoader, dummyGameManager, dummyLogManager, dummyMapper, dummyStatsManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";
