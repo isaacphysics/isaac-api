@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -29,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -239,5 +242,56 @@ public class StatisticsManager {
 	 */
 	public Map<String, Date> getLastSeenUserMap() {
 		return this.logManager.getLastAccessForAllUsers();
+	}
+	
+	public Map<String, Integer> getUserQuestionInformation(final RegisteredUserDTO userOfInterest) throws SegueDatabaseException {
+		Validate.notNull(userOfInterest);
+		
+		// get questions answered correctly.
+		int questionsAnsweredCorrectly = 0;
+		
+		// get total questions attempted
+		int totalQuestionsAttempted = 0;
+		
+		// get total questions answered first time correctly
+		int questionsFirstTime = 0;
+		
+		// question pages stats goes here
+//		int totalQuestionPagesAttempted = 0;
+//		
+//		int totalQuestionPagesCompleted = 0;
+		
+		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = userManager
+				.getQuestionAttemptsByUser(userOfInterest);
+		
+		for (Entry<String, Map<String, List<QuestionValidationResponse>>> questionPage : questionAttemptsByUser
+				.entrySet()) {
+			// question page
+//			totalQuestionPagesAttempted++;
+
+			for (Entry<String, List<QuestionValidationResponse>> question : questionPage.getValue()
+					.entrySet()) {
+				totalQuestionsAttempted++;
+
+				for (int i = 0; question.getValue().size() > i; i++) {
+					// assumption that the order of the list is in chronological
+					// order
+
+					QuestionValidationResponse validationResponse = question.getValue().get(i);
+					if (validationResponse.isCorrect() && i == 0) {
+						questionsFirstTime++;
+					}
+
+					if (validationResponse.isCorrect()) {
+						questionsAnsweredCorrectly++;
+						break;
+					}
+				}
+			}
+		}
+		
+		return ImmutableMap.of("total_questions_attempted", totalQuestionsAttempted, "total_correct",
+				questionsAnsweredCorrectly, "total_correct_first_time", questionsFirstTime);
+		
 	}
 }

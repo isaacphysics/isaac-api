@@ -56,6 +56,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -96,7 +97,9 @@ public class IsaacController extends AbstractIsaacFacade {
 
 	private final SegueApiFacade api;
 	private final GameManager gameManager;
-	private final MapperFacade mapper; 
+	private final MapperFacade mapper;
+
+	private StatisticsManager statsManager; 
 
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
@@ -118,11 +121,13 @@ public class IsaacController extends AbstractIsaacFacade {
 			final PropertiesLoader propertiesLoader,
 			final GameManager gameManager,
 			final ILogManager logManager,
-			final MapperFacade mapper) {
+			final MapperFacade mapper,
+			final StatisticsManager statsManager) {
 		super(propertiesLoader, logManager);
 		this.api = api;
 		this.gameManager = gameManager;
 		this.mapper = mapper;
+		this.statsManager = statsManager;
 	}
 
 	/**
@@ -1207,6 +1212,36 @@ public class IsaacController extends AbstractIsaacFacade {
 	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
 		// entity tags etc are already added by segue
 		return api.getImageFileContent(request, api.getLiveVersion(), path);
+	}
+	
+	/**
+	 * Getr some statistics out of how many questions the user has completed.
+	 * @param request - so we can find the current user.
+	 * @return a map containing the information.
+	 */
+	@GET
+	@Path("users/current_user/progress")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getUserProgressInformation(@Context final HttpServletRequest request) {
+		RegisteredUserDTO user;
+		try {
+			user = api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e1) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
+		
+		// get the question attempted information
+		try {
+			Map<String, Integer> userQuestionInformation = statsManager.getUserQuestionInformation(user);
+			return Response.ok(userQuestionInformation).build();
+			
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access user statistics.")
+					.toResponse();
+		}
+		
 	}
 	
 	/**
