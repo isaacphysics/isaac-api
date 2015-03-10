@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.Multiset.Entry;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants;

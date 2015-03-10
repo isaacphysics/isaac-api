@@ -196,8 +196,7 @@ public class UserAssociationManager {
 				user.setAuthorisedFullAccess(true);
 			} else {
 				user.setAuthorisedFullAccess(false);
-				user.setFamilyName(null);
-				user.setGivenName(null);
+				user.setEmail(null);
 			}
 		}
 		return dataRequested;
