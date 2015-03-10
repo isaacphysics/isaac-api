@@ -846,8 +846,8 @@ public class IsaacController extends AbstractIsaacFacade {
 				}
 			}
 
-			ImmutableMap<String, Object> resultMap = ImmutableMap.of("board_list", resultList,
-					"shared_boards", sharedBoards);
+			ImmutableMap<String, Object> resultMap = ImmutableMap.of("boardList", resultList,
+					"sharedBoards", sharedBoards);
 
 			return Response.ok(resultMap).build();
 		} catch (SegueDatabaseException e) {
