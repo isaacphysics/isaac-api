@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -150,42 +150,43 @@ public class MongoLogManager implements ILogManager {
 	}
 	
 	@Override
-	public List<HashMap> getLogsByType(final String type) {
+	public List<LogEvent> getLogsByType(final String type) {
 		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		MongoJackModule.configure(objectMapper);
 		
-		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
-		List<HashMap> results = jc.find(DBQuery.is("eventType", type)).toArray();
+		List<LogEvent> results = jc.find(DBQuery.is("eventType", type)).toArray();
 		
 		return results;
 	}
 	
 	@Override
-	public List<HashMap> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
+	public List<LogEvent> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
 		// sanity check
 		if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
 			throw new IllegalArgumentException(
 					"This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
 		}
 		
-		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
-		List<HashMap> results = jc.find(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class))).toArray();
+		List<LogEvent> results = jc
+				.find(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class))).toArray();
 		
 		return results;
 	}
 
 	@Override
-	public List<HashMap> getAllLogsByUser(final AbstractSegueUserDTO prototype) {
+	public List<LogEvent> getAllLogsByUser(final AbstractSegueUserDTO prototype) {
 		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
 		
-		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		Query q;
@@ -201,16 +202,16 @@ public class MongoLogManager implements ILogManager {
 			throw new IllegalArgumentException("Unknown user type provided.");
 		}
 		
-		List<HashMap> results = jc.find(q).toArray();
+		List<LogEvent> results = jc.find(q).toArray();
 		return results;
 	}
 	
 	@Override
-	public HashMap getLastLogForUser(final AbstractSegueUserDTO prototype) {
+	public LogEvent getLastLogForUser(final AbstractSegueUserDTO prototype) {
 		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
 		
-		JacksonDBCollection<HashMap, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), HashMap.class,
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		Query q;
@@ -226,7 +227,7 @@ public class MongoLogManager implements ILogManager {
 			throw new IllegalArgumentException("Unknown user type provided.");
 		}
 		
-		List<HashMap> results = jc.find(q).sort(new BasicDBObject("_id", -1)).limit(1).toArray();
+		List<LogEvent> results = jc.find(q).sort(new BasicDBObject("_id", -1)).limit(1).toArray();
 		
 		if (results.size() > 0) {
 			return results.get(0);
@@ -237,19 +238,19 @@ public class MongoLogManager implements ILogManager {
 	
 	@Override
 	public Map<String, Date> getLastAccessForAllUsers() {
-		List<HashMap> allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
+		List<LogEvent> allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
 		
 		Map<String, Date> results = Maps.newHashMap();
 		
-		for (HashMap log : allLogsByUserType) {
-			if (results.containsKey((String) log.get("userId"))) {
+		for (LogEvent log : allLogsByUserType) {
+			if (results.containsKey((String) log.getUserId())) {
 				
-				if (results.get((String) log.get("userId")).after((Date) log.get("timestamp"))) {
-					results.put((String) log.get("userId"), (Date) log.get("timestamp"));
+				if (results.get((String) log.getUserId()).after(log.getTimestamp())) {
+					results.put((String) log.getUserId(), log.getTimestamp());
 				}
 				
 			} else {
-				results.put((String) log.get("userId"), (Date) log.get("timestamp"));
+				results.put((String) log.getUserId(), log.getTimestamp());
 			}
 		}
 		return results;
@@ -285,28 +286,28 @@ public class MongoLogManager implements ILogManager {
 		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		MongoJackModule.configure(objectMapper);
 		
-		JacksonDBCollection<DBObject, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), DBObject.class,
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 
-		DBObject dbo = new BasicDBObject();
+		LogEvent logEvent = new LogEvent();
 
 		if (null != userId) {
-			dbo.put("userId", userId);
-			dbo.put("anonymousUser", false);
+			logEvent.setUserId(userId);
+			logEvent.setAnonymousUser(false);
 		} else {
-			dbo.put("userId", anonymousUserId);
-			dbo.put("anonymousUser", true);
+			logEvent.setUserId(anonymousUserId);
+			logEvent.setAnonymousUser(true);
 		}
 
-		dbo.put("eventType", eventType);
-		dbo.put("eventDetailsType", eventDetails.getClass().getCanonicalName());
-		dbo.put("eventDetails", eventDetails);
-		dbo.put("ipAddress", ipAddress);
-		dbo.put("timestamp", new Date());
+		logEvent.setEventType(eventType);
+		logEvent.setEventDetailsType(eventDetails.getClass().getCanonicalName());
+		logEvent.setEventDetails(eventDetails);
+		logEvent.setIpAddress(ipAddress);
+		logEvent.setTimestamp(new Date());
 
 		try {
-			WriteResult<DBObject, String> result = jc.insert(dbo);
+			WriteResult<LogEvent, String> result = jc.insert(logEvent);
 			if (result.getError() != null) {
 				log.error("Error during log operation: " + result.getError());
 			}

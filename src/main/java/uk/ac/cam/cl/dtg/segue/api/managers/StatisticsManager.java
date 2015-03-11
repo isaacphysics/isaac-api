@@ -26,7 +26,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
+
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -40,8 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Lists;
@@ -172,7 +171,7 @@ public class StatisticsManager {
 		ib.put("teacherUsers", "" + teacherRole.size());
 		ib.put("staffUsers", "" + adminStaffRole.size());
 
-		ib.put("viewQuestionEvents", "" + logManager.getLogsByType(Constants.VIEW_QUESTION).size());
+		ib.put("viewQuestionEvents", "" + logManager.getLogsByType(VIEW_QUESTION).size());
 		ib.put("answeredQuestionEvents", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
 		
 		ib.put("hasSchool", "" + hasSchool.size());

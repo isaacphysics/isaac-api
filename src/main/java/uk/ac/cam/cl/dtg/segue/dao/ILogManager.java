@@ -16,12 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 
 /**
@@ -82,19 +82,19 @@ public interface ILogManager {
 	 * @param type - string representing the type of event to find.
 	 * @return all events of the type requested or null if none available. The map should be of type String, Object
 	 */
-	List<HashMap> getLogsByType(String type);
+	List<LogEvent> getLogsByType(String type);
 	
 	/**
 	 * @param userType to filter by.
 	 * @return All logs belonging to a particular class of user.
 	 */
-	List<HashMap> getAllLogsByUserType(Class<? extends AbstractSegueUserDTO> userType);
+	List<LogEvent> getAllLogsByUserType(Class<? extends AbstractSegueUserDTO> userType);
 	
 	/**
 	 * @param prototype containing the user identifier.
 	 * @return all logs for the user with the identifier provided.
 	 */
-	List<HashMap> getAllLogsByUser(AbstractSegueUserDTO prototype);
+	List<LogEvent> getAllLogsByUser(AbstractSegueUserDTO prototype);
 
 	/**
 	 * Get the last log event for a given user.
@@ -102,7 +102,7 @@ public interface ILogManager {
 	 * @param prototype - containing the user's unique identifier.
 	 * @return the last log event.
 	 */
-	HashMap getLastLogForUser(AbstractSegueUserDTO prototype);
+	LogEvent getLastLogForUser(AbstractSegueUserDTO prototype);
 
 	/**
 	 * A more efficient way of getting the last access date for all users.
