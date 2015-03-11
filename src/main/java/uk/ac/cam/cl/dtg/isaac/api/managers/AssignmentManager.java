@@ -82,6 +82,17 @@ public class AssignmentManager {
 		
 		return assignments;
 	}
+	
+	/**
+	 * getAssignmentById.
+	 * @param assignmentId to find
+	 * @return the assignment.
+	 * @throws SegueDatabaseException
+	 *             - if we cannot complete a required database operation.
+	 */
+	public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
+		return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
+	}
 
 	/**
 	 * create Assignment.
@@ -124,6 +135,24 @@ public class AssignmentManager {
 		return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getDbId());
 	}
 
+	/**
+	 * Assignments set by user and group.
+	 * 
+	 * @param user
+	 *            - who set the assignments
+	 * @param group
+	 *            - the group that was assigned the work.
+	 * @return the assignments.
+	 * @throws SegueDatabaseException
+	 *             - if we cannot complete a required database operation.
+	 */
+	public List<AssignmentDTO> getAllAssignmentsSetByUserToGroup(final RegisteredUserDTO user,
+		final UserGroupDTO group) throws SegueDatabaseException {
+		Validate.notNull(user);
+		Validate.notNull(group);
+		return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getDbId(), group.getId());
+	}
+	
 	/**
 	 * deleteAssignment.
 	 * 

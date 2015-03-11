@@ -515,9 +515,47 @@ public class GameManager {
 	 * @throws SegueDatabaseException
 	 *             - if there is a problem updating the gameboard.
 	 */
-	public final GameboardDTO updateGameboardTitle(final GameboardDTO gameboardWithUpdatedTitle)
+	public GameboardDTO updateGameboardTitle(final GameboardDTO gameboardWithUpdatedTitle)
 		throws SegueDatabaseException {
 		return this.gameboardPersistenceManager.updateGameboardTitle(gameboardWithUpdatedTitle);
+	}
+	
+	/**
+	 * Returns game states for a number of users for a given gameboard.
+	 * 
+	 * @param users
+	 *            - of interest
+	 * @param gameboard
+	 *            - gameboard containing questions.
+	 * @return map of users to their gameboard item results.
+	 * @throws SegueDatabaseException
+	 *             - if there is a problem with the database
+	 * @throws ContentManagerException
+	 *             - if we can't look up the question page details.
+	 */
+	public Map<RegisteredUserDTO, List<GameboardItemState>> gatherGameProgressData(
+			final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
+			ContentManagerException {
+		Validate.notNull(users);
+		Validate.notNull(gameboard);
+
+		Map<RegisteredUserDTO, List<GameboardItemState>> result = Maps.newHashMap();
+
+		for (RegisteredUserDTO user : users) {
+			Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = api
+					.getQuestionAttemptsBySession(user);
+			List<GameboardItemState> listOfQuestionStates = Lists.newArrayList();
+
+			for (GameboardItem question : gameboard.getQuestions()) {
+				// TODO: this will be horribly inefficient as it looks up
+				// questions in the question page lots of times.
+				listOfQuestionStates.add(this.calculateQuestionState(question.getId(),
+						questionAttemptsBySession));
+			}
+			result.put(user, listOfQuestionStates);
+		}
+
+		return result;
 	}
 
 	/**

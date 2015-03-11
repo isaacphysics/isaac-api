@@ -16,8 +16,11 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -26,20 +29,24 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.elasticsearch.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -49,8 +56,10 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 /**
@@ -68,6 +77,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	private final GroupManager groupManager;
 	private final GameManager gameManager;
 
+	private final UserAssociationManager associationManager;
+
 	/**
 	 * Creates an instance of the AssignmentFacade controller which provides the
 	 * REST endpoints for the isaac api.
@@ -84,16 +95,20 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	 *            - Instance of Game Manager
 	 * @param logManager
 	 *            - Instance of log manager
+	 * @param associationManager
+	 *            - So that we can determine what information is allowed to be seen by other users.
 	 */
 	@Inject
 	public AssignmentFacade(final AssignmentManager assignmentManager, final UserManager userManager,
 			final GroupManager groupManager, final PropertiesLoader propertiesLoader,
-			final GameManager gameManager, final ILogManager logManager) {
+			final GameManager gameManager, final ILogManager logManager,
+			final UserAssociationManager associationManager) {
 		super(propertiesLoader, logManager);
 		this.userManager = userManager;
 		this.gameManager = gameManager;
 		this.groupManager = groupManager;
 		this.assignmentManager = assignmentManager;
+		this.associationManager = associationManager;
 	}
 
 	/**
@@ -138,17 +153,39 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	 * 
 	 * @param request
 	 *            - so that we can identify the current user.
+	 * @param groupIdOfInterest
+	 *            - Optional parameter to filter the list by group id.
 	 * @return the assignment object.
 	 */
 	@GET
-	@Path("/assign/")
+	@Path("/assign")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getAssigned(@Context final HttpServletRequest request) {
+	public Response getAssigned(@Context final HttpServletRequest request,
+			@QueryParam("group") final String groupIdOfInterest) {
 		try {
 			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
-			return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
-					.build();
+			if (null == groupIdOfInterest) {
+				return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
+						.build();				
+			} else {
+				UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
+				
+				if (null == group) {
+					return new SegueErrorResponse(Status.NOT_FOUND, "The group specified cannot be located.")
+							.toResponse();
+				}
+				
+				List<AssignmentDTO> allAssignmentsSetByUserToGroup = this.assignmentManager
+						.getAllAssignmentsSetByUserToGroup(currentlyLoggedInUser, group);
+				
+				// we want to populate gameboard details for the assignment DTO.
+				for (AssignmentDTO assignment : allAssignmentsSetByUserToGroup) {
+					assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId()));
+				}
+				return Response.ok(allAssignmentsSetByUserToGroup).build();
+			}
+			
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
@@ -156,7 +193,81 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 					.toResponse();
 		}
 	}
+	
+	/**
+	 * Allows the user to view results of an assignment they have set.
+	 * 
+	 * @param assignmentId - the id of the assignment to be looked up.
+	 * @param request
+	 *            - so that we can identify the current user.
+	 * @return the assignment object.
+	 */
+	@GET
+	@Path("/assign/{assignment_id}/progress")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getAssignmentProgress(@Context final HttpServletRequest request,
+			@PathParam("assignment_id") final String assignmentId) {
+		try {
+			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+			
+			AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
+			if (null == assignment) {
+				return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
+			}
+			
+			if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You can only view the results of assignments that you own.").toResponse();
+			}
+			
+			GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
+			UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+			List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
 
+			List<ImmutableMap<String, Object>> result = Lists.newArrayList();
+			final String userString = "user";
+			final String resultsString = "results";
+			
+			for (Entry<RegisteredUserDTO, List<GameboardItemState>> e : this.gameManager
+					.gatherGameProgressData(groupMembers, gameboard).entrySet()) {
+				UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(
+						currentlyLoggedInUser, userManager.convertToUserSummaryObject(e.getKey()));
+				
+				// can the user access the data?
+				if (userSummary.isAuthorisedFullAccess()) {
+					result.add(ImmutableMap.of(userString, userSummary,
+							resultsString, e.getValue()));					
+				} else {
+					result.add(ImmutableMap.of(userString, userSummary,
+							resultsString, Lists.newArrayList()));					
+				}
+			}
+
+			// quick fix to sort list by user last name
+			Collections.sort(result, new Comparator<ImmutableMap<String, Object>>() {
+				@Override
+				public int compare(final ImmutableMap<String, Object> o1, final ImmutableMap<String, Object> o2) {
+					UserSummaryDTO user1 = (UserSummaryDTO) o1.get(userString);
+					UserSummaryDTO user2 = (UserSummaryDTO) o2.get(userString);
+					
+					return user1.getFamilyName().compareTo(user2.getFamilyName());
+				}
+			});
+			
+			// get game manager completion information for this assignment.
+			return Response.ok(result).build();
+			
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
+					.toResponse();
+		} catch (ContentManagerException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown content database error.")
+					.toResponse();
+		}		
+	}
+	
 	/**
 	 * Allows a user to get all groups that have been assigned to a given board.
 	 * 

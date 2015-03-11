@@ -96,7 +96,7 @@ public class AssignmentPersistenceManager {
 	 * @throws SegueDatabaseException  - if there is a problem accessing the database.
 	 */
 	public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
-		if (null == assignmentId) {
+		if (null == assignmentId || assignmentId.isEmpty()) {
 			return null;
 		}
 		
@@ -132,6 +132,33 @@ public class AssignmentPersistenceManager {
 		return findByMappedConditions(fieldsToMatchForAssignmentSearch);
 	}
 
+	
+	/**
+	 * Retrieve all Assignments for a given
+	 * group and set by a given user.
+	 * 
+	 * @param assignmentOwnerId
+	 *            - to search for
+	 * @param groupId
+	 *            - to search for
+	 * @return assignments as a list
+	 * @throws SegueDatabaseException
+	 *             - if there is an error when accessing the database.
+	 */
+	public List<AssignmentDTO> getAssignmentsByOwnerIdAndGroupId(final String assignmentOwnerId,
+			final String groupId) throws SegueDatabaseException {
+		
+		// find all assignments related to this groupId.
+		Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatchForAssignmentSearch = Maps.newHashMap();
+
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_GROUP_FKEY),
+				Arrays.asList(groupId));
+		fieldsToMatchForAssignmentSearch.put(immutableEntry(Constants.BooleanOperator.AND, DB_OWNER_ID),
+				Arrays.asList(assignmentOwnerId));
+
+		return findByMappedConditions(fieldsToMatchForAssignmentSearch);
+	}
+	
 	/**
 	 * getAssignmentsByGameboardAndOwner.
 	 * 

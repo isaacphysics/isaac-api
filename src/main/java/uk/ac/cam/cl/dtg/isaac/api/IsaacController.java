@@ -115,6 +115,8 @@ public class IsaacController extends AbstractIsaacFacade {
 	 *            - Instance of Log Manager
 	 * @param mapper
 	 *            - Instance of Mapper facade.
+	 * @param statsManager
+	 *            - Instance of the Statistics Manager.
 	 */
 	@Inject
 	public IsaacController(final SegueApiFacade api,

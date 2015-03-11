@@ -181,6 +181,25 @@ public class UserAssociationManager {
 	}
 	
 	/**
+	 * This method will accept a User summary object and will strip out any
+	 * data that is restricted by authorisation settings.
+	 * 
+	 * @param currentUser - user requesting access
+	 * @param userRequested - the users to be accessed.
+	 * @return updated user with data removed and access flags set.
+	 */
+	public UserSummaryDTO enforceAuthorisationPrivacy(final RegisteredUserDTO currentUser,
+			final UserSummaryDTO userRequested) {
+		if (this.hasPermission(currentUser, userRequested)) {
+			userRequested.setAuthorisedFullAccess(true);
+		} else {
+			userRequested.setAuthorisedFullAccess(false);
+			userRequested.setEmail(null);
+		}
+		return userRequested;
+	}
+	
+	/**
 	 * This method will accept a list of User objects and will strip out any
 	 * data that is restricted by authorisation settings.
 	 * 
@@ -194,12 +213,7 @@ public class UserAssociationManager {
 		
 		// for those without permission obfuscate the date
 		for (UserSummaryDTO user : dataRequested) {
-			if (this.hasPermission(currentUser, user)) {
-				user.setAuthorisedFullAccess(true);
-			} else {
-				user.setAuthorisedFullAccess(false);
-				user.setEmail(null);
-			}
+			this.enforceAuthorisationPrivacy(currentUser, user);
 		}
 		return dataRequested;
 	}
@@ -211,6 +225,8 @@ public class UserAssociationManager {
 	 * @return true if yes false if no.
 	 */
 	public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
-		return this.associationDatabase.hasValidAssociation(currentUser.getDbId(), userRequested.getDbId());
+		return currentUser.getDbId().equals(userRequested.getDbId())
+				|| this.associationDatabase.hasValidAssociation(currentUser.getDbId(),
+						userRequested.getDbId());
 	}
 }

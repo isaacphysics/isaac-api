@@ -22,8 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +67,8 @@ public class StatisticsManager {
 	 * @param userManager - to query user information
 	 * @param logManager - to query Log information
 	 * @param schoolManager - to query School information
+	 * @param versionManager - to query live version information
+	 * @param contentManager - to query content 
 	 */
 	@Inject
 	public StatisticsManager(final UserManager userManager, final ILogManager logManager,
@@ -261,13 +261,19 @@ public class StatisticsManager {
 	}
 	
 	/**
-	 * getUserQuestionInformation.
-	 * Produces a map that contains information about the total questions attempted, (correct and correct first time)
-	 * "totalQuestionsAttempted", "totalCorrect", "totalCorrectFirstTime","attemptsByTag", questionAttemptsByLevelStats.
+	 * getUserQuestionInformation. Produces a map that contains information
+	 * about the total questions attempted, (correct and correct first time)
+	 * "totalQuestionsAttempted", "totalCorrect",
+	 * "totalCorrectFirstTime","attemptsByTag", questionAttemptsByLevelStats.
+	 * 
 	 * @param userOfInterest
-	 * @return
-	 * @throws SegueDatabaseException - if something went wrong with the database.
-	 * @throws ContentManagerException - if we are unable to look up the content.
+	 *            - the user you wish to compile statistics for.
+	 * @return gets high level statistics about the questions a user has
+	 *         completed.
+	 * @throws SegueDatabaseException
+	 *             - if something went wrong with the database.
+	 * @throws ContentManagerException
+	 *             - if we are unable to look up the content.
 	 */
 	public Map<String, Object> getUserQuestionInformation(final RegisteredUserDTO userOfInterest)
 		throws SegueDatabaseException, ContentManagerException {

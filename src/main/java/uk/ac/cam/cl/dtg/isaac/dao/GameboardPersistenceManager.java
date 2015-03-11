@@ -261,9 +261,15 @@ public class GameboardPersistenceManager {
 	}
 	
 	/**
+	 * getLiteGameboardById. This method will get a gameboard by id but not
+	 * resolve any fine grain details about the board. E.g. no question details
+	 * will be retrieved.
+	 * 
 	 * @param gameboardId
-	 * @return
+	 *            - to retrieve.
+	 * @return a lightly populated gameboard.
 	 * @throws SegueDatabaseException
+	 *             - if there are problems with the database.
 	 */
 	public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
 		// first try temporary storage
