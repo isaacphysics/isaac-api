@@ -175,4 +175,13 @@ public class SegueErrorResponse implements Serializable {
 		return new SegueErrorResponse(Status.NOT_IMPLEMENTED,
 				"This endpoint has not yet been implemented").toResponse();
 	}
+	
+	/**
+	 * @param message - the message for the user.
+	 * @return a helper function to get a resource not found response
+	 */
+	public static Response getResourceNotFoundResponse(final String message) {
+		return new SegueErrorResponse(Status.NOT_FOUND,
+				message).toResponse();
+	}
 }
