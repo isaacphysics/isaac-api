@@ -99,7 +99,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	private final GameManager gameManager;
 	private final MapperFacade mapper;
 
-	private StatisticsManager statsManager; 
+	private final StatisticsManager statsManager; 
 
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
@@ -407,9 +407,10 @@ public class IsaacController extends AbstractIsaacFacade {
 		try {
 			userQuestionAttempts = api.getQuestionAttemptsBySession(user);
 		} catch (SegueDatabaseException e) {
-			log.error("SegueDatabaseException whilst trying to retrieve user question data", e);
+			String message = "SegueDatabaseException whilst trying to retrieve user question data";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access the user question information in the database.", e).toResponse();
+					message).toResponse();
 		}
 	
 		// Calculate the ETag 
@@ -606,9 +607,10 @@ public class IsaacController extends AbstractIsaacFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to load the wildcard.").toResponse();
 		} catch (SegueDatabaseException e) {
-			log.error("SegueDatabaseException whilst generating a gameboard", e);
+			String message = "SegueDatabaseException whilst generating a gameboard";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+					message).toResponse();			
 		} catch (ContentManagerException e1) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Error locating the version requested", e1);
@@ -671,8 +673,10 @@ public class IsaacController extends AbstractIsaacFacade {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.")
 					.toResponse();
 		} catch (SegueDatabaseException e) {
+			String message = "Error whilst trying to access the gameboard in the database.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+					message).toResponse();
 		} catch (ContentManagerException e1) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Error locating the version requested", e1);
@@ -775,8 +779,10 @@ public class IsaacController extends AbstractIsaacFacade {
 			gameboards = gameManager.getUsersGameboards(currentUser, startIndexAsInteger,
 					gameboardLimit, gameboardShowCriteria, parsedSortInstructions);
 		} catch (SegueDatabaseException e) {
+			String message = "Error whilst trying to access the gameboard in the database.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access the gameboard in the database.", e).toResponse();
+					message).toResponse();
 		} catch (ContentManagerException e1) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Error locating the version requested", e1);
@@ -853,8 +859,10 @@ public class IsaacController extends AbstractIsaacFacade {
 
 			return Response.ok(resultMap).build();
 		} catch (SegueDatabaseException e) {
+			String message = "Error whilst trying to get the gameboard popularity list.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error while trying to build the response.", e).toResponse();
+					message).toResponse();
 		}
 	}
 
@@ -891,9 +899,10 @@ public class IsaacController extends AbstractIsaacFacade {
 			getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
 
 		} catch (SegueDatabaseException e) {
+			String message = "Error whilst trying to delete a gameboard.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to delete a gameboard.", e)
-					.toResponse();
+					message).toResponse();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (ContentManagerException e1) {
@@ -949,12 +958,19 @@ public class IsaacController extends AbstractIsaacFacade {
 					String.format("The gameboard you provided is invalid"), e)
 					.toResponse();
 		} catch (SegueDatabaseException e) {
+			String message = "Database Error whilst trying to save the gameboard.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database Error whilst trying to save the gameboard.", e).toResponse();
+					message).toResponse();
 		} catch (DuplicateGameboardException e) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					String.format("Gameboard with that id (%s) already exists. ", newGameboardObject.getId()))
 					.toResponse();
+		} catch (ContentManagerException e) {
+			String message = "Content Error whilst trying to save the gameboard.";
+			log.error(message, e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					message).toResponse();
 		}		
 		
 		return Response.ok(persistedGameboard).build();
@@ -1052,9 +1068,10 @@ public class IsaacController extends AbstractIsaacFacade {
 			try {
 				updatedGameboard = gameManager.updateGameboardTitle(newGameboardObject);
 			} catch (SegueDatabaseException e) {
+				String message = "Error whilst trying to update the gameboard.";
+				log.error(message, e);
 				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-						"Error whilst trying to update the gameboard.")
-						.toResponse();
+						message).toResponse();
 			}
 			return Response.ok(updatedGameboard).build();
 		}
@@ -1240,13 +1257,15 @@ public class IsaacController extends AbstractIsaacFacade {
 			return Response.ok(userQuestionInformation).build();
 			
 		} catch (SegueDatabaseException e) {
+			String message = "Error whilst trying to access user statistics.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access user statistics.")
-					.toResponse();
+					message).toResponse();
 		} catch (ContentManagerException e) {
+			String message = "Error whilst trying to access user statistics; Content cannot be resolved";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error whilst trying to access user statistics. Content cannot be resolved.")
-					.toResponse();
+					message).toResponse();
 		}
 		
 	}

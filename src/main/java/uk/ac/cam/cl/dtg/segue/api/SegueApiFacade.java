@@ -1123,7 +1123,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 	/**
 	 * Library method for finding content by id prefix.
-	 * 
+	 * @deprecated this can be accessed using dependency injectable ContentVersionController or IContentManager
 	 * @param version
 	 *            - of the content to search for.
 	 * @param idPrefix
@@ -1131,6 +1131,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 * @return a results wrapper containing any matching content.
 	 * @throws ContentManagerException 
 	 */
+	@Deprecated
 	public final ResultsWrapper<ContentDTO> searchByIdPrefix(final String version, final String idPrefix)
 		throws ContentManagerException {
 		return this.contentVersionController.getContentManager().getByIdPrefix(idPrefix, version);

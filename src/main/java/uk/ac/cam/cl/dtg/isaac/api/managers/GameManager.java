@@ -48,10 +48,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -74,31 +75,36 @@ public class GameManager {
 
 	private static final int MAX_QUESTIONS_TO_SEARCH = 30;
 
-	private final SegueApiFacade api;
 	private final GameboardPersistenceManager gameboardPersistenceManager;
 	private final Random randomGenerator;
 	private final MapperFacade mapper;
 
+	private final UserManager userManager;
+
+	private final ContentVersionController versionManager;
+
 	/**
 	 * Creates a game manager that operates using the provided api.
 	 * 
-	 * @param api
-	 *            - the api that the game manager can use.
+	 * @param userManager
+	 *            - so we can resolve game progress / user information.
+	 * @param versionManager
+	 *            - so we can augment game objects with actual detailed content
 	 * @param gameboardPersistenceManager
-	 *            - the gameboardPersistenceManager that handles storage and
-	 *            retrieval of gameboards.
+	 *            - a persistence manager that deals with storing and retrieving
+	 *            gameboards.
 	 * @param mapper
-	 *            - An instance of an object automapper so that DOs can be transformed into DTOs.
+	 *            - allows mapping between DO and DTO object types.
 	 */
 	@Inject
-	public GameManager(final SegueApiFacade api,
+	public GameManager(final UserManager userManager, final ContentVersionController versionManager,
 			final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper) {
-		this.api = api;
-
+		this.versionManager = versionManager;
+		this.userManager = userManager;
 		this.gameboardPersistenceManager = gameboardPersistenceManager;
 
 		this.randomGenerator = new Random();
-		
+
 		this.mapper = mapper;
 	}
 
@@ -161,8 +167,8 @@ public class GameManager {
 			boardOwnerId = null;
 		}
 		
-		Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = api
-				.getQuestionAttemptsBySession(boardOwner);
+		Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = userManager
+				.getQuestionAttemptsByUser(boardOwner);
 		
 		GameFilter gameFilter = new GameFilter(subjectsList, fieldsList,
 				topicsList, levelsList, conceptsList);
@@ -316,9 +322,8 @@ public class GameManager {
 		Validate.notNull(user);
 		
 		List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
-		
-		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = api
-				.getQuestionAttemptsBySession(user);
+		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = 
+				userManager.getQuestionAttemptsByUser(user);
 		
 		if (null == usersGameboards || usersGameboards.isEmpty()) {
 			return new GameboardListDTO();
@@ -459,9 +464,11 @@ public class GameManager {
 	 * @throws InvalidGameboardException - if the gameboard already exists with the given id.
 	 * @throws SegueDatabaseException - If we cannot save the gameboard.
 	 * @throws DuplicateGameboardException - If a gameboard already exists with the given id.
+	 * @throws ContentManagerException - if we are unable to lookup the required content.
 	 */
 	public GameboardDTO saveNewGameboard(final GameboardDTO gameboardDTO, final RegisteredUserDTO owner)
-		throws NoWildcardException, InvalidGameboardException, SegueDatabaseException, DuplicateGameboardException {
+		throws NoWildcardException, InvalidGameboardException, SegueDatabaseException,
+			DuplicateGameboardException, ContentManagerException {
 		Validate.notNull(gameboardDTO);
 		Validate.notNull(owner);
 		
@@ -542,8 +549,9 @@ public class GameManager {
 		Map<RegisteredUserDTO, List<GameboardItemState>> result = Maps.newHashMap();
 
 		for (RegisteredUserDTO user : users) {
-			Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = api
-					.getQuestionAttemptsBySession(user);
+			Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession =
+					userManager.getQuestionAttemptsByUser(user);
+			
 			List<GameboardItemState> listOfQuestionStates = Lists.newArrayList();
 
 			for (GameboardItem question : gameboard.getQuestions()) {
@@ -651,17 +659,21 @@ public class GameManager {
 	 * @param index - the starting index of the query.
 	 * @param randomSeed - so that we can use search pagination and not repeat ourselves.
 	 * @return a list of gameboard items.
+	 * @throws ContentManagerException - if there is a problem accessing the content repository.
 	 */
 	private List<GameboardItem> getNextQuestionsForFilter(final GameFilter gameFilter, final int index,
-			final Long randomSeed) {
+			final Long randomSeed) throws ContentManagerException {
 		// get some questions
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 		fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE));
 		fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 		
 		// Search for questions that match the fields to map variable.
-		ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(api.getLiveVersion(),
-				fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
+		
+		ResultsWrapper<ContentDTO> results = versionManager.getContentManager().findByFieldNamesRandomOrder(
+				versionManager.getLiveVersion(), fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
+		//ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(api.getLiveVersion(),
+		//		fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
 
 		List<ContentDTO> questionsForGameboard = results.getResults();
 
@@ -701,8 +713,8 @@ public class GameManager {
 		if (questionAttemptsFromUser != null
 				&& questionAttemptsFromUser.containsKey(questionPageId)) {
 			// go through each question in the question page
-			ResultsWrapper<ContentDTO> listOfQuestions = api.searchByIdPrefix(
-					api.getLiveVersion(), questionPageId + ID_SEPARATOR);
+			ResultsWrapper<ContentDTO> listOfQuestions = versionManager.getContentManager().getByIdPrefix(
+					versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR);
 			
 			// go through all of the questions that make up this gameboard item.
 			boolean allQuestionsCorrect = true;
@@ -772,15 +784,18 @@ public class GameManager {
 	 * @return wildCard object.
 	 * @throws NoWildcardException
 	 *             - when we are unable to provide you with a wildcard object.
+	 * @throws ContentManagerException - if we cannot access the content requested.
 	 */
-	private IsaacWildcard getRandomWildcard(final MapperFacade mapper) throws NoWildcardException {
+	private IsaacWildcard getRandomWildcard(final MapperFacade mapper) throws NoWildcardException,
+			ContentManagerException {
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
 		fieldsToMap.put(immutableEntry(
 				BooleanOperator.OR, TYPE_FIELDNAME), Arrays
 				.asList(WILDCARD_TYPE));
 
-		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
+		ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager()
+				.findByFieldNamesRandomOrder(versionManager.getLiveVersion(), fieldsToMap, 0, 1);
 		
 		// try to increase randomness of wildcard results.
 		Collections.shuffle(wildcardResults.getResults());
@@ -797,14 +812,17 @@ public class GameManager {
 	 * @param id - of wildcard
 	 * @return wildcard or an exception.
 	 * @throws NoWildcardException - if we cannot locate the exception.
+	 * @throws ContentManagerException - if we cannot access the content requested.
 	 */
-	private IsaacWildcard getWildCardById(final String id) throws NoWildcardException {
+	private IsaacWildcard getWildCardById(final String id) throws NoWildcardException, ContentManagerException {
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
 		fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Arrays.asList(id));
 		fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
 
-		ResultsWrapper<ContentDTO> wildcardResults = api.findMatchingContentRandomOrder(null, fieldsToMap, 0, 1);
+		//TODO: this should be refactored to use getbyid endpoint instead this convoluted way.
+		ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager()
+				.findByFieldNamesRandomOrder(versionManager.getLiveVersion(), fieldsToMap, 0, 1);
 		
 		// try to increase randomness of wildcard results.
 		Collections.shuffle(wildcardResults.getResults());
@@ -1020,6 +1038,10 @@ public class GameManager {
 			throw new InvalidGameboardException(String.format(
 					"The gameboard provided contains an invalid wildcard with id [%s]",
 					gameboardDTO.getWildCard().getId()));
+		} catch (ContentManagerException e) {
+			log.error("Error validating gameboard.", e);
+			throw new InvalidGameboardException(
+					"There was a problem validating the gameboard due to ContentManagerException another exception.");
 		}
 
 		return gameboardDTO;

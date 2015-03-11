@@ -173,7 +173,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final String version)
+	public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix)
 		throws ContentManagerException {
 		this.ensureCache(version);
 		

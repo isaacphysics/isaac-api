@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
-import java.io.IOException;
-
 import javax.annotation.Nullable;
 
 import ma.glasnost.orika.MapperFacade;
@@ -55,8 +53,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	private static final Logger log = LoggerFactory
 			.getLogger(IsaacGuiceConfigurationModule.class);
 
-	private static PropertiesLoader globalProperties;
-
 	private static SegueApiFacade segueApi = null;
 	private static GameManager gameManager = null;
 
@@ -68,16 +64,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	 * Creates a new isaac guice configuration module.
 	 */
 	public IsaacGuiceConfigurationModule() {
-//		try {
-//			if (null == globalProperties) {
-//				final String propertiesFileLocation = "/config/segue-config.properties";
-//				globalProperties = new PropertiesLoader(propertiesFileLocation);
-//				log.info("Loading properties file from "
-//						+ propertiesFileLocation);
-//			}
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+
 	}
 
 	@Override
@@ -142,8 +129,10 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	/**
 	 * Gets a Game manager.
 	 * 
-	 * @param api
-	 *            - api that the game manager can use for content resolution.
+	 * @param userManager
+	 *            - so we can resolve game progress / user information.
+	 * @param versionManager
+	 *            - so we can augment game objects with actual detailed content
 	 * @param gameboardPersistenceManager
 	 *            - a persistence manager that deals with storing and retrieving
 	 *            gameboards.
@@ -154,11 +143,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	@Provides
 	@Singleton
-	private static GameManager getGameManager(final SegueApiFacade api,
-			final GameboardPersistenceManager gameboardPersistenceManager,
-			final MapperFacade mapper) {
+	private static GameManager getGameManager(final UserManager userManager,
+			final ContentVersionController versionManager,
+			final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper) {
 		if (null == gameManager) {
-			gameManager = new GameManager(api, gameboardPersistenceManager, mapper);
+			gameManager = new GameManager(userManager, versionManager, gameboardPersistenceManager, mapper);
 			log.info("Creating Singleton of Game Manager");
 		}
 

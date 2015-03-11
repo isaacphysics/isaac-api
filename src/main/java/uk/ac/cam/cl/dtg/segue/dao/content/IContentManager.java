@@ -80,15 +80,15 @@ public interface IContentManager {
 	 * GetByIdPrefix Returns results that match a given id prefix for a
 	 * specified version number.
 	 * 
-	 * @param idPrefix
-	 *            - id prefix to search for.
 	 * @param version
 	 *            - version of the content to search against.
+	 * @param idPrefix
+	 *            - id prefix to search for.
 	 * @return ResultsWrapper of objects that match the id prefix.
 	 * @throws ContentManagerException
 	 *             - if there is an error retrieving the content requested.
 	 */
-	ResultsWrapper<ContentDTO> getByIdPrefix(String idPrefix, String version) throws ContentManagerException;
+	ResultsWrapper<ContentDTO> getByIdPrefix(String version, String idPrefix) throws ContentManagerException;
 
 	/**
 	 * Method to allow bulk search of content based on the type field.
