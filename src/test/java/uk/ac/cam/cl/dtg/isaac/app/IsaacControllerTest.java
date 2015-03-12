@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -58,6 +59,7 @@ public class IsaacControllerTest {
 	private ILogManager dummyLogManager = null;
 	private MapperFacade dummyMapper = null;
 	private StatisticsManager dummyStatsManager;
+	private ContentVersionController contentVersionController;
 
 	/**
 	 * Initial configuration of tests.
@@ -71,22 +73,25 @@ public class IsaacControllerTest {
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyUserManager = createMock(UserManager.class);
-		this.dummyLogManager  = createMock(ILogManager.class);
-		this.dummyStatsManager  = createMock(StatisticsManager.class);
+		this.dummyLogManager = createMock(ILogManager.class);
+		this.dummyStatsManager = createMock(StatisticsManager.class);
+		this.contentVersionController = createMock(ContentVersionController.class);
 		this.dummyMapper = createMock(MapperFacade.class);
 	}
 
 	/**
 	 * Verify that when an empty gameboard is noticed a 204 is returned.
-	 * @throws NoUserLoggedInException 
-	 * @throws ContentManagerException 
+	 * 
+	 * @throws NoUserLoggedInException
+	 * @throws ContentManagerException
 	 */
 	@Test
-	@PowerMockIgnore({"javax.ws.*"})
-	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned() 
-		throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException, ContentManagerException {
-		IsaacController isaacController = new IsaacController(dummyAPI,
-				dummyPropertiesLoader, dummyGameManager, dummyLogManager, dummyMapper, dummyStatsManager);
+	@PowerMockIgnore({ "javax.ws.*" })
+	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
+			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
+			ContentManagerException {
+		IsaacController isaacController = new IsaacController(dummyAPI, dummyPropertiesLoader,
+				dummyGameManager, dummyLogManager, dummyMapper, dummyStatsManager, contentVersionController);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";
@@ -96,22 +101,19 @@ public class IsaacControllerTest {
 		String concepts = "newtoni";
 
 		expect(
-				dummyGameManager.generateRandomGameboard(
-						EasyMock.<List<String>> anyObject(),
-						EasyMock.<List<String>> anyObject(),
-						EasyMock.<List<String>> anyObject(),
-						EasyMock.<List<Integer>> anyObject(),
-						EasyMock.<List<String>> anyObject(),
-						EasyMock.<AbstractSegueUserDTO> anyObject())).andReturn(null)
+				dummyGameManager.generateRandomGameboard(EasyMock.<List<String>> anyObject(),
+						EasyMock.<List<String>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<List<Integer>> anyObject(), EasyMock.<List<String>> anyObject(),
+						EasyMock.<AbstractSegueUserDTO> anyObject())).andReturn(null).atLeastOnce();
+
+		expect(dummyAPI.getCurrentUserIdentifier(dummyRequest)).andReturn(new AnonymousUserDTO("testID"))
 				.atLeastOnce();
 
-		expect(dummyAPI.getCurrentUserIdentifier(dummyRequest)).andReturn(new AnonymousUserDTO("testID")).atLeastOnce();
-		
 		replay(dummyGameManager);
 		replay(dummyAPI);
 
-		Response r = isaacController.generateTemporaryGameboard(dummyRequest, subjects,
-				fields, topics, levels, concepts);
+		Response r = isaacController.generateTemporaryGameboard(dummyRequest, subjects, fields, topics,
+				levels, concepts);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());
 		verify(dummyAPI, dummyGameManager);

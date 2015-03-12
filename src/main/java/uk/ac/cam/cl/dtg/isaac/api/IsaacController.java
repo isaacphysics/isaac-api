@@ -56,6 +56,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -99,7 +100,9 @@ public class IsaacController extends AbstractIsaacFacade {
 	private final GameManager gameManager;
 	private final MapperFacade mapper;
 
-	private final StatisticsManager statsManager; 
+	private final StatisticsManager statsManager;
+
+	private final ContentVersionController versionManager; 
 
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
@@ -124,12 +127,14 @@ public class IsaacController extends AbstractIsaacFacade {
 			final GameManager gameManager,
 			final ILogManager logManager,
 			final MapperFacade mapper,
-			final StatisticsManager statsManager) {
+			final StatisticsManager statsManager,
+			final ContentVersionController versionManager) {
 		super(propertiesLoader, logManager);
 		this.api = api;
 		this.gameManager = gameManager;
 		this.mapper = mapper;
 		this.statsManager = statsManager;
+		this.versionManager = versionManager;
 	}
 
 	/**
@@ -456,8 +461,10 @@ public class IsaacController extends AbstractIsaacFacade {
 	/**
 	 * Rest end point that searches the api for some search string.
 	 * 
-	 * @param request - so that we can handle caching of search responses.
-	 * @param httpServletRequest - so we can extract user information for logging.
+	 * @param request
+	 *            - so that we can handle caching of search responses.
+	 * @param httpServletRequest
+	 *            - so we can extract user information for logging.
 	 * @param searchString
 	 *            - to pass to the search engine.
 	 * @param types
@@ -469,52 +476,52 @@ public class IsaacController extends AbstractIsaacFacade {
 	 * @return a response containing the search results (results wrapper) or an
 	 *         empty list.
 	 */
-	@SuppressWarnings("unchecked")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search/{searchString}")
 	@GZIP
-	public final Response search(
-			@Context final Request request,
+	public final Response search(@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
-			@PathParam("searchString") final String searchString,
-			@QueryParam("types") final String types,
+			@PathParam("searchString") final String searchString, @QueryParam("types") final String types,
 			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
 			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-		
+
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
-				+ searchString.hashCode() + types.hashCode() + "");
-		
+		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode() + searchString.hashCode()
+				+ types.hashCode() + "");
+
 		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
-		
-		ResultsWrapper<ContentDTO> searchResults = null;
 
-		Response unknownApiResult = api.search(searchString,
-				api.getLiveVersion(), types, startIndex, limit);
-		
-		if (unknownApiResult.getEntity() instanceof ResultsWrapper) {
-			searchResults = (ResultsWrapper<ContentDTO>) unknownApiResult
-					.getEntity();
-		} else {
-			return unknownApiResult;
+		ResultsWrapper<ContentDTO> searchResults;
+		try {
+			Map<String, List<String>> typesThatMustMatch = null;
+
+			if (null != types) {
+				typesThatMustMatch = Maps.newHashMap();
+				typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
+			}
+
+			searchResults = versionManager.getContentManager().searchForContent(
+					versionManager.getLiveVersion(), searchString, typesThatMustMatch, startIndex, limit);
+		} catch (ContentManagerException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to retrieve content requested", e).toResponse();
 		}
-		
+
 		ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
 				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
 				.put(CONTENT_VERSION, api.getLiveVersion()).build();
-		
-		getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
-				httpServletRequest, GLOBAL_SITE_SEARCH, logMap);
-		
+
+		getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest), httpServletRequest,
+				GLOBAL_SITE_SEARCH, logMap);
+
 		return Response
-				.ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-						this.getProperties().getProperty(PROXY_PATH))).tag(etag)
-				.cacheControl(getCacheControl()).build();
+				.ok(this.extractContentSummaryFromResultsWrapper(searchResults, this.getProperties()
+						.getProperty(PROXY_PATH))).tag(etag).cacheControl(getCacheControl()).build();
 	}
 	
 

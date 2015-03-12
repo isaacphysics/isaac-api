@@ -43,9 +43,11 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.PrefixQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -212,21 +214,56 @@ public class ElasticSearchProvider implements ISearchProvider {
 			return null;
 		}
 
+		BoolQueryBuilder masterQuery;
+		BoolQueryBuilder query = QueryBuilders.boolQuery();
+		if (null != fieldsThatMustMatch) {
+			masterQuery = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
+		} else {
+			masterQuery = QueryBuilders.boolQuery();
+		}
+
+		QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields).type(
+				MultiMatchQueryBuilder.Type.PHRASE_PREFIX).boost(2.0f);
+		query.should(multiMatchQuery);
+		
+		QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString)
+				.fuzziness(Fuzziness.AUTO);
+		query.should(fuzzyQuery);
+		
+		masterQuery.must(query);
+		
+		ResultsWrapper<String> resultList = this.executeBasicPaginatedQuery(index, indexType, masterQuery,
+				startIndex, limit);
+		
+		return resultList;
+	}
+
+	@Override
+	public ResultsWrapper<String> basicFieldSearch(final String index, final String indexType,
+			final String searchString, final Integer startIndex, final Integer limit, 
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch, final String... fields) {
+		if (null == index || null == indexType || null == searchString || null == fields) {
+			log.warn("A required field is missing. Unable to execute search.");
+			return null;
+		}
+
 		BoolQueryBuilder query;
 		if (null != fieldsThatMustMatch) {
 			query = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
 		} else {
 			query = QueryBuilders.boolQuery();
 		}
-
-		QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString);
-		query.must(fuzzyQuery);
-
-		ResultsWrapper<String> resultList = this.executeBasicPaginatedQuery(index, indexType, query, startIndex, limit);
+		
+		QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields).type(
+				MultiMatchQueryBuilder.Type.PHRASE_PREFIX);
+		query.must(multiMatchQuery);
+		
+		ResultsWrapper<String> resultList = this.executeBasicPaginatedQuery(index, indexType,
+				query, startIndex, limit);
 
 		return resultList;
 	}
-
+	
 	@Override
 	public final ResultsWrapper<String> termSearch(final String index, final String indexType,
 			final Collection<String> searchTerms, final String field) {

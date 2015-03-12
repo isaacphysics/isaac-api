@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.annotation.Nullable;
+
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -110,7 +112,34 @@ public interface ISearchProvider {
 			final Map<String, Constants.SortOrder> sortInstructions);
 
 	/**
+	 * Executes a multi match search on an array of fields and will consider the fieldsThatMustMatchMap.
+	 * 
+	 * This method will only return exact prefix matches for any of the fields requested.
+	 * 
+	 * @param index
+	 *            - the name of the index
+	 * @param indexType
+	 *            - the name of the type of document being searched for
+	 * @param searchString
+	 *            - the string to use for matching
+	 * @param startIndex
+	 *            - e.g. 0 for the first set of results
+	 * @param limit
+	 *            - e.g. 10 for 10 results per page
+	 * @param fieldsThatMustMatch
+	 *            - Map of Must match field -> value
+	 * @param fields
+	 *            - array (var args) of fields to search using the searchString
+	 * @return results
+	 */
+	ResultsWrapper<String> basicFieldSearch(final String index, final String indexType,
+			final String searchString, final Integer startIndex, final Integer limit,
+			@Nullable final Map<String, List<String>> fieldsThatMustMatch, final String... fields);
+	
+	/**
 	 * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
+	 * 
+	 * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
 	 * 
 	 * @param index
 	 *            - the name of the index
