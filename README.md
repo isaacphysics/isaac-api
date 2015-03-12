@@ -2,7 +2,7 @@ Segue and Isaac Server project
 =============
 Required Software to Run (Pre-requisites) 
 =================
-* Elastic Search - [Windows Installation](http://www.elasticsearch.org/overview/elkdownloads/), [Linux Installation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html)
+* Elastic Search (v1.4.x) - [Windows Installation](http://www.elasticsearch.org/overview/elkdownloads/), [Linux Installation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-repositories.html)
 * Git
 * MongoDb (optional depending on configuration)
 * Tomcat 8
