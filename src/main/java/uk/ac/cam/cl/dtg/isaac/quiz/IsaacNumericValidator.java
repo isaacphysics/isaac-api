@@ -256,7 +256,7 @@ public class IsaacNumericValidator implements IValidator {
 	 */
 	private double roundToSigFigs(final double f, final int sigFigs) {
 
-		int mag = (int) Math.floor(Math.log10(f));
+		int mag = (int) Math.floor(Math.log10(Math.abs(f)));
 
 		double normalised = f / Math.pow(10, mag);
 

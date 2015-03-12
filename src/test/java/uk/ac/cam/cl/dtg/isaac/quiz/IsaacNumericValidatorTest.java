@@ -440,7 +440,32 @@ public class IsaacNumericValidatorTest {
 		
 		verifyCorrectNumberOfSigFigs(Arrays.asList("0000100.00", "-0000100.00"), Arrays.asList(5), Arrays.asList(4,6,7));
 	}
+	
+	@Test
+	public final void isaacNumericValidator_CheckSignificantFiguresRoundingWorks() throws Exception {
+		IsaacNumericValidator test = new IsaacNumericValidator();
+		this.testSigFigRoundingWorks(test, 1.25648, 1, 1.0);
+		this.testSigFigRoundingWorks(test, 1.25648, 2, 1.3);
+		
+		this.testSigFigRoundingWorks(test, -1.25648, 2, -1.3);
 
+		this.testSigFigRoundingWorks(test, 1.25E11, 2, 1.3E11);
+		this.testSigFigRoundingWorks(test, 1.25E1, 2, 1.3E1);
+		
+		this.testSigFigRoundingWorks(test, -4.0E11, 2, -4.0E11);
+		this.testSigFigRoundingWorks(test, -4.0E-11, 2, -4.0E-11);
+
+		this.testSigFigRoundingWorks(test, 0.0, 2, 0.0);
+	}	
+
+	private void testSigFigRoundingWorks(IsaacNumericValidator classUnderTest, double inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
+		double result = Whitebox.<Double> invokeMethod(classUnderTest, "roundToSigFigs", inputValue, sigFigToRoundTo);				
+		
+		assertTrue("sigfig rounding failed for value " + inputValue + " to " + sigFigToRoundTo
+				+ " expected: " + expectedResult + " got " + result, result == expectedResult);
+	}
+	
+	
 	/**
 	 * Helper to launch multiple sig fig tests on given numbers.
 	 * 
