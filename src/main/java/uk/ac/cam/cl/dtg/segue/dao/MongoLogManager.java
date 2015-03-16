@@ -198,7 +198,7 @@ public class MongoLogManager implements ILogManager {
 				this.objectMapper);
 
 		Query q = DBQuery.and(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class)),
-				DBQuery.is("event_type", eventType));
+				DBQuery.is("eventType", eventType));
 
 		List<LogEvent> results = jc.find(q).toArray();
 
