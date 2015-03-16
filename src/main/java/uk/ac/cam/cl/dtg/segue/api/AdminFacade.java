@@ -624,6 +624,7 @@ public class AdminFacade extends AbstractSegueFacade {
 							// use registration date if we need to.
 							if (lastEventDate == null) {
 								lastEventDate = user.getRegistrationDate();
+								log.info("Using registration date for " + user.getDbId());
 							}
 							
 							try {
