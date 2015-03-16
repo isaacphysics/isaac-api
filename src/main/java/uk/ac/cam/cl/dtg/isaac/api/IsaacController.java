@@ -127,8 +127,12 @@ public class IsaacController extends AbstractIsaacFacade {
 	 *            - Instance of Mapper facade.
 	 * @param statsManager
 	 *            - Instance of the Statistics Manager.
+	 * @param versionManager
+	 *            - so we can find out the latest content version.
 	 * @param userManager 
 	 * 			  - So we can interrogate the user Manager.
+	 * @param associationManager 
+	 * 			  - So we can check user permissions.
 	 */
 	@Inject
 	public IsaacController(final SegueApiFacade api,
