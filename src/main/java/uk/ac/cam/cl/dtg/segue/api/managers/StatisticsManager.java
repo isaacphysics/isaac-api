@@ -17,16 +17,16 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -178,6 +178,30 @@ public class StatisticsManager {
 		ib.put("hasNoSchool", "" + hasNoSchool.size());
 		ib.put("hasSchoolOther", "" + hasOtherSchool.size());
 		
+		Map<String, Date> lastSeenUserMap = this.getLastSeenUserMap();
+		
+		final int sevenDays = 7;
+		final int thirtyDays = 30;
+		
+		List<RegisteredUserDTO> nonStaffUsers = Lists.newArrayList();
+		nonStaffUsers.addAll(teacherRole);
+		nonStaffUsers.addAll(studentOrUnknownRole);
+		
+		ib.put("activeTeachersLastWeek",
+				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, sevenDays));
+		ib.put("activeTeachersLastThirtyDays",
+				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, thirtyDays));
+		
+		ib.put("activeStudentsLastWeek",
+				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap, sevenDays));
+		ib.put("activeStudentsLastThirtyDays",
+				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap, thirtyDays));
+		
+		ib.put("activeUsersLastWeek",
+				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, sevenDays));
+		ib.put("activeUsersLastThirtyDays",
+				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays));
+		
 		// questions answered registered
 
 		// questions answered teacher
@@ -251,12 +275,19 @@ public class StatisticsManager {
 
 		return users;
 	}
-	
 	/**
 	 * @return a list of userId's to last event timestamp
 	 */
 	public Map<String, Date> getLastSeenUserMap() {
-		return this.logManager.getLastAccessForAllUsers();
+		return this.getLastSeenUserMap(null);
+	}
+	
+	/**
+	 * @param qualifyingLogEvent the string event type that will be looked for.
+	 * @return a list of userId's to last event timestamp
+	 */
+	public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) {
+		return this.logManager.getLastAccessForAllUsers(qualifyingLogEvent);
 	}
 	
 	/**
@@ -360,6 +391,38 @@ public class StatisticsManager {
 				questionsAnsweredCorrectly, "totalCorrectFirstTime", questionsFirstTime,
 				"attemptsByTag", questionAttemptsByTagStats, "attemptsByLevel",
 				questionAttemptsByLevelStats);
+	}
+	
+	/**
+	 * Calculate the number of users from the list provided that meet the
+	 * criteria.
+	 * 
+	 * @param users
+	 *            - collection of users to consider.
+	 * @param lastSeenUserMap
+	 *            - The map of user event data. UserId --> last event date.
+	 * @param daysFromToday
+	 *            - the number of days from today that should be included in the
+	 *            calculation e.g. 7 would be the last week's data.
+	 * @return the number of qualifying users.
+	 */
+	public int getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
+			final Map<String, Date> lastSeenUserMap, final int daysFromToday) {
+		
+		int qualifyingUsers = 0;
+		
+		for (RegisteredUserDTO user : users) {
+			Date eventDate = lastSeenUserMap.get(user.getDbId());
+			Calendar validInclusionTime = Calendar.getInstance(); 
+			validInclusionTime.setTime(new Date());
+			validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));
+			
+			if (eventDate != null && eventDate.after(validInclusionTime.getTime())) {
+				qualifyingUsers++;
+			}
+		}
+		
+		return qualifyingUsers;
 	}
 	
 	/**

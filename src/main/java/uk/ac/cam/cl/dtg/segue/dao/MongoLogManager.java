@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.Validate;
@@ -180,6 +181,29 @@ public class MongoLogManager implements ILogManager {
 		
 		return results;
 	}
+	
+	@Override
+	public List<LogEvent> getAllLogsByUserTypeAndEvent(final Class<? extends AbstractSegueUserDTO> userType,
+			final String eventType) {
+		// sanity check
+		if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
+			throw new IllegalArgumentException(
+					"This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
+		}
+
+		Validate.notBlank(eventType);
+		
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+				this.objectMapper);
+
+		Query q = DBQuery.and(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class)),
+				DBQuery.is("event_type", eventType));
+
+		List<LogEvent> results = jc.find(q).toArray();
+
+		return results;
+	}
 
 	@Override
 	public List<LogEvent> getAllLogsByUser(final AbstractSegueUserDTO prototype) {
@@ -238,14 +262,24 @@ public class MongoLogManager implements ILogManager {
 	
 	@Override
 	public Map<String, Date> getLastAccessForAllUsers() {
-		List<LogEvent> allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
+		return this.getLastAccessForAllUsers(null);
+	}
+	
+	@Override
+	public Map<String, Date> getLastAccessForAllUsers(@Nullable final String qualifyingLogEventType) {
+		List<LogEvent> allLogsByUserType;
+		if (qualifyingLogEventType != null) {
+			allLogsByUserType = this.getAllLogsByUserTypeAndEvent(RegisteredUserDTO.class, qualifyingLogEventType);
+		} else {
+			allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
+		}
 		
 		Map<String, Date> results = Maps.newHashMap();
 		
 		for (LogEvent log : allLogsByUserType) {
 			if (results.containsKey((String) log.getUserId())) {
 				
-				if (results.get((String) log.getUserId()).after(log.getTimestamp())) {
+				if (results.get((String) log.getUserId()).before(log.getTimestamp())) {
 					results.put((String) log.getUserId(), log.getTimestamp());
 				}
 				
@@ -254,7 +288,6 @@ public class MongoLogManager implements ILogManager {
 			}
 		}
 		return results;
-		
 	}
 	
 	/**

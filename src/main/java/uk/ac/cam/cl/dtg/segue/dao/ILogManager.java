@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
@@ -78,20 +79,36 @@ public interface ILogManager {
 	void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId);
 
 	/**
-	 * To enable some simple analytics we provide a way to query logs by event type.
-	 * @param type - string representing the type of event to find.
-	 * @return all events of the type requested or null if none available. The map should be of type String, Object
+	 * To enable some simple analytics we provide a way to query logs by event
+	 * type.
+	 * 
+	 * @param type
+	 *            - string representing the type of event to find.
+	 * @return all events of the type requested or null if none available. The
+	 *         map should be of type String, Object
 	 */
 	List<LogEvent> getLogsByType(String type);
-	
+
 	/**
-	 * @param userType to filter by.
+	 * @param userType
+	 *            to filter by.
 	 * @return All logs belonging to a particular class of user.
 	 */
 	List<LogEvent> getAllLogsByUserType(Class<? extends AbstractSegueUserDTO> userType);
-	
+
 	/**
-	 * @param prototype containing the user identifier.
+	 * @param userType
+	 *            to filter by.
+	 * @param eventType
+	 *            - event of interest
+	 * @return All logs belonging to a particular class of user and eventId
+	 */
+	List<LogEvent> getAllLogsByUserTypeAndEvent(Class<? extends AbstractSegueUserDTO> userType,
+			String eventType);
+
+	/**
+	 * @param prototype
+	 *            containing the user identifier.
 	 * @return all logs for the user with the identifier provided.
 	 */
 	List<LogEvent> getAllLogsByUser(AbstractSegueUserDTO prototype);
@@ -99,14 +116,27 @@ public interface ILogManager {
 	/**
 	 * Get the last log event for a given user.
 	 * 
-	 * @param prototype - containing the user's unique identifier.
+	 * @param prototype
+	 *            - containing the user's unique identifier.
 	 * @return the last log event.
 	 */
 	LogEvent getLastLogForUser(AbstractSegueUserDTO prototype);
 
 	/**
 	 * A more efficient way of getting the last access date for all users.
-	 * @return Map<String, Date> where string is the user id and the date is the last access date.
+	 * 
+	 * @param qualifyingLogEventType
+	 *            - the log event type to include in the data.
+	 * @return Map<String, Date> where string is the user id and the date is the
+	 *         last access date.
+	 */
+	Map<String, Date> getLastAccessForAllUsers(@Nullable final String qualifyingLogEventType);
+
+	/**
+	 * A more efficient way of getting the last access date for all users.
+	 * 
+	 * @return Map<String, Date> where string is the user id and the date is the
+	 *         last access date.
 	 */
 	Map<String, Date> getLastAccessForAllUsers();
 }
