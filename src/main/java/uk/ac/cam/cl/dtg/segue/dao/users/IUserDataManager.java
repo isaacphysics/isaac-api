@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import java.util.Date;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
@@ -222,4 +223,12 @@ public interface IUserDataManager {
 	 * @throws SegueDatabaseException if an error occurs
 	 */
 	void updateUserLastSeen(final String userId) throws SegueDatabaseException;
+
+	/**
+	 * A method that will allow us to measure how active a user's account is.
+	 * @param userId to update.
+	 * @param date to use.
+	 * @throws SegueDatabaseException if an error occurs
+	 */
+	void updateUserLastSeen(final String userId, final Date date) throws SegueDatabaseException;
 }

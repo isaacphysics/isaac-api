@@ -516,6 +516,11 @@ public class MongoUserDataManager implements IUserDataManager {
 
 	@Override
 	public void updateUserLastSeen(final String userId) throws SegueDatabaseException {
+		this.updateUserLastSeen(userId, new Date());
+	}
+	
+	@Override
+	public void updateUserLastSeen(final String userId, final Date date) throws SegueDatabaseException {
 		Validate.notBlank(userId);
 		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
 		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
@@ -528,7 +533,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		Query q = DBQuery.is("_id", new ObjectId(userId));
 		
 		BasicDBObject update = new BasicDBObject("$set", new BasicDBObject(
-				Constants.USER_LAST_SEEN_FIELDNAME, new Date()));
+				Constants.USER_LAST_SEEN_FIELDNAME, date));
 		
 		try {
 			WriteResult<BasicDBObject, String> result = jc.update(q, update);
@@ -542,7 +547,7 @@ public class MongoUserDataManager implements IUserDataManager {
 			log.error(errorMessage, e);
 			throw new SegueDatabaseException(errorMessage, e);
 		}
-	}
+	}	
 	
 	/**
 	 * This method ensures that the collection is setup correctly and has all of
