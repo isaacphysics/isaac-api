@@ -202,6 +202,9 @@ public class UserManagerTest {
 		RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "",
 				Role.STUDENT, new Date(), Gender.MALE, new Date(), null, null, null, null, new Date());
 
+		dummyDatabase.updateUserLastSeen(validUserId);
+		expectLastCall();
+		
 		expect(request.getCookies()).andReturn(cookieWithSessionInfo).anyTimes();
 		replay(request);
 

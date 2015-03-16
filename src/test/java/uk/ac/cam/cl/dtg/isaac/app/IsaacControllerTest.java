@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -60,6 +61,8 @@ public class IsaacControllerTest {
 	private MapperFacade dummyMapper = null;
 	private StatisticsManager dummyStatsManager;
 	private ContentVersionController contentVersionController;
+	private UserManager userManager;
+	private UserAssociationManager userAssociationManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -77,6 +80,9 @@ public class IsaacControllerTest {
 		this.dummyStatsManager = createMock(StatisticsManager.class);
 		this.contentVersionController = createMock(ContentVersionController.class);
 		this.dummyMapper = createMock(MapperFacade.class);
+		this.userManager = createMock(UserManager.class);
+		this.userAssociationManager = createMock(UserAssociationManager.class);
+
 	}
 
 	/**
@@ -91,7 +97,8 @@ public class IsaacControllerTest {
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
 		IsaacController isaacController = new IsaacController(dummyAPI, dummyPropertiesLoader,
-				dummyGameManager, dummyLogManager, dummyMapper, dummyStatsManager, contentVersionController);
+				dummyGameManager, dummyLogManager, dummyMapper, dummyStatsManager, contentVersionController,
+				userManager, userAssociationManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";
