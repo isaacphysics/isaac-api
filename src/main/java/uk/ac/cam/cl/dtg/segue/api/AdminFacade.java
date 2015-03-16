@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -585,6 +586,66 @@ public class AdminFacade extends AbstractSegueFacade {
 			log.error("Error while trying to list users belonging to a school.", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error").toResponse();
+		}
+	}	
+	
+	/**
+	 * Get users by school id.
+	 * 
+	 * @param request
+	 *            - to determine access.
+	 * @return ok
+	 * @deprecated - one off function for db update.
+	 */
+	@GET
+	@Path("/users/updateLastSeen")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Deprecated
+	public Response updateLastSeen(@Context final HttpServletRequest request) {
+		try {
+			if (!isUserAnAdmin(request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+			
+			final List<RegisteredUserDTO> allUsers = this.userManager.findUsers(new RegisteredUserDTO());
+			final Map<String, Date> lastSeenUserMap = this.statsManager.getLastSeenUserMap();
+			// may as well spawn a new thread to do the validation
+			// work now.
+			Thread bulkUpdateJob = new Thread() {
+				@SuppressWarnings("deprecation")
+				@Override
+				public void run() {					
+					log.info("Beginning lastSeen update");
+					int updated = 0;
+					for (RegisteredUserDTO user : allUsers) {
+						Date lastEventDate = lastSeenUserMap.get(user.getDbId());
+						if (user.getLastSeen() == null) {
+							// use registration date if we need to.
+							if (lastEventDate == null) {
+								lastEventDate = user.getRegistrationDate();
+							}
+							
+							try {
+								userManager.updateLastSeenData(user, lastEventDate);
+								updated++;
+							} catch (SegueDatabaseException e) {
+								log.error("Error while updating last seen data", e);
+							}
+						}
+					}
+					
+					log.info("LastSeen update complete - " + updated + " users updated");
+				}
+			};
+			bulkUpdateJob.setDaemon(true);
+			bulkUpdateJob.start();
+			
+			return Response.ok("update task started. See server logs for progress.").build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
 		}
 	}	
 	
