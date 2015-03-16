@@ -216,4 +216,10 @@ public interface IUserDataManager {
 	QuestionAttemptUserRecord getQuestionAttempts(final String userId)
 		throws SegueDatabaseException;
 
+	/**
+	 * A method that will allow us to measure how active a user's account is.
+	 * @param userId to update.
+	 * @throws SegueDatabaseException if an error occurs
+	 */
+	void updateUserLastSeen(final String userId) throws SegueDatabaseException;
 }

@@ -593,6 +593,12 @@ public class UserManager {
 			throw new NoUserLoggedInException();
 		}
 		
+		try {
+			updateLastSeen(user);
+		} catch (SegueDatabaseException e) {
+			log.error(String.format("Unable to update user (%s) last seen date.", user.getDbId()));
+		}
+		
 		return this.convertUserDOToUserDTO(user);
 	}
 	
@@ -2020,5 +2026,26 @@ public class UserManager {
 				.readValue(segueAuthCookie.getValue(), HashMap.class);
 		
 		return sessionInformation;
+	}
+	
+	/**
+	 * Update the users' last seen field.
+	 * @param user of interest
+	 * @throws SegueDatabaseException - if an error occurs with the update.
+	 */
+	private void updateLastSeen(final RegisteredUser user) throws SegueDatabaseException {
+		long timeDiff;
+		
+		if (user.getLastSeen() == null) {
+			timeDiff = LAST_SEEN_UPDATE_FREQUENCY_MINUTES + 1;
+		} else {
+			timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
+		}
+		
+		long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
+		if (user.getLastSeen() == null || minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
+			this.database.updateUserLastSeen(user.getDbId());
+		}
+		
 	}
 }

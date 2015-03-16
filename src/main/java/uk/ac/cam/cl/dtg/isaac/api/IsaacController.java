@@ -1002,7 +1002,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	 *         a SegueErrorResponse.
 	 */
 	@POST
-	@Path("gameboards/{id}/")
+	@Path("gameboards/{id}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public final Response updateGameboard(

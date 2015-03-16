@@ -52,6 +52,7 @@ public class RegisteredUser extends AbstractSegueUser {
 	private Date resetExpiry;
 	
 	private Date lastUpdated;
+	private Date lastSeen;
 	
 	/**
 	 * Full constructor for the User object.
@@ -381,6 +382,22 @@ public class RegisteredUser extends AbstractSegueUser {
 	 */
 	public void setLastUpdated(final Date lastUpdated) {
 		this.lastUpdated = lastUpdated;
+	}
+
+	/**
+	 * Gets the lastSeen.
+	 * @return the lastSeen
+	 */
+	public Date getLastSeen() {
+		return lastSeen;
+	}
+
+	/**
+	 * Sets the lastSeen.
+	 * @param lastSeen the lastSeen to set
+	 */
+	public void setLastSeen(final Date lastSeen) {
+		this.lastSeen = lastSeen;
 	}
 
 	@Override

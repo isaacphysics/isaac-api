@@ -15,10 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.Validate;
+import org.bson.types.ObjectId;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
 import org.mongojack.DBUpdate;
@@ -512,6 +514,36 @@ public class MongoUserDataManager implements IUserDataManager {
 
 	}
 
+	@Override
+	public void updateUserLastSeen(final String userId) throws SegueDatabaseException {
+		Validate.notBlank(userId);
+		// Since we are attaching our own auto mapper we have to do MongoJack configure on it. 
+		ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+		MongoJackModule.configure(objectMapper);
+				
+		JacksonDBCollection<BasicDBObject, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(USER_COLLECTION_NAME), BasicDBObject.class,
+				String.class, objectMapper);
+
+		Query q = DBQuery.is("_id", new ObjectId(userId));
+		
+		BasicDBObject update = new BasicDBObject("$set", new BasicDBObject(
+				Constants.USER_LAST_SEEN_FIELDNAME, new Date()));
+		
+		try {
+			WriteResult<BasicDBObject, String> result = jc.update(q, update);
+
+			if (result.getError() != null) {
+				throw new SegueDatabaseException("Error response when updating last access date.");
+			}
+		} catch (MongoException e) {
+			String errorMessage = "MongoDB encountered an exception "
+					+ "while attempting to link an auth provider to a user account.";
+			log.error(errorMessage, e);
+			throw new SegueDatabaseException(errorMessage, e);
+		}
+	}
+	
 	/**
 	 * This method ensures that the collection is setup correctly and has all of
 	 * the required indices.
