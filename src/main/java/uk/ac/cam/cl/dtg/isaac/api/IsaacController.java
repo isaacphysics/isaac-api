@@ -59,6 +59,9 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -72,6 +75,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -102,7 +106,10 @@ public class IsaacController extends AbstractIsaacFacade {
 
 	private final StatisticsManager statsManager;
 
-	private final ContentVersionController versionManager; 
+	private final ContentVersionController versionManager;
+	
+	private final UserManager userManager;
+	private final UserAssociationManager associationManager;
 
 	/**
 	 * Creates an instance of the isaac controller which provides the REST
@@ -120,6 +127,8 @@ public class IsaacController extends AbstractIsaacFacade {
 	 *            - Instance of Mapper facade.
 	 * @param statsManager
 	 *            - Instance of the Statistics Manager.
+	 * @param userManager 
+	 * 			  - So we can interrogate the user Manager.
 	 */
 	@Inject
 	public IsaacController(final SegueApiFacade api,
@@ -128,13 +137,17 @@ public class IsaacController extends AbstractIsaacFacade {
 			final ILogManager logManager,
 			final MapperFacade mapper,
 			final StatisticsManager statsManager,
-			final ContentVersionController versionManager) {
+			final ContentVersionController versionManager,
+			final UserManager userManager,
+			final UserAssociationManager associationManager) {
 		super(propertiesLoader, logManager);
 		this.api = api;
 		this.gameManager = gameManager;
 		this.mapper = mapper;
 		this.statsManager = statsManager;
 		this.versionManager = versionManager;
+		this.userManager = userManager;
+		this.associationManager = associationManager;
 	}
 
 	/**
@@ -1241,7 +1254,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	}
 	
 	/**
-	 * Getr some statistics out of how many questions the user has completed.
+	 * Get some statistics out of how many questions the user has completed.
 	 * @param request - so we can find the current user.
 	 * @return a map containing the information.
 	 */
@@ -1249,7 +1262,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	@Path("users/current_user/progress")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response getUserProgressInformation(@Context final HttpServletRequest request) {
+	public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
 		RegisteredUserDTO user;
 		try {
 			user = api.getCurrentUser(request);
@@ -1274,8 +1287,54 @@ public class IsaacController extends AbstractIsaacFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					message).toResponse();
 		}
-		
 	}
+	
+	/**
+	 * Get some statistics out of how many questions the user has completed.
+	 * 
+	 * Only users with permission can use this endpoint.
+	 * 
+	 * @param request - so we can authenticate the current user.
+	 * @param userId - to look up the user of interest
+	 * @return a map containing the information.
+	 */
+	@GET
+	@Path("users/{user_id}/progress")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getUserProgressInformation(@Context final HttpServletRequest request,
+			@PathParam("user_id") final String userId) {
+		RegisteredUserDTO user;
+		UserSummaryDTO userOfInterest;
+		try {
+			user = api.getCurrentUser(request);
+			
+			userOfInterest = userManager.convertToUserSummaryObject(userManager.getUserDTOById(userId));
+			
+			if (associationManager.hasPermission(user, userOfInterest)) {
+				Map<String, Object> userQuestionInformation = statsManager.getUserQuestionInformation(user);
+
+				return Response.ok(userQuestionInformation).build();	
+			} else {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You do not have permission to view this users data.").toResponse();
+			}
+		} catch (NoUserLoggedInException e1) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (NoUserException e) {
+			return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
+		} catch (SegueDatabaseException e) {
+			String message = "Error whilst trying to access user statistics.";
+			log.error(message, e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					message).toResponse();
+		} catch (ContentManagerException e) {
+			String message = "Error whilst trying to access user statistics; Content cannot be resolved";
+			log.error(message, e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					message).toResponse();
+		}
+	}	
 	
 	/**
 	 * This method will extract basic information from a content object so the
