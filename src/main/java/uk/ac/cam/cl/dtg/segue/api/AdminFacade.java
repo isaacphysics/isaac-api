@@ -144,10 +144,20 @@ public class AdminFacade extends AbstractSegueFacade {
 			
 			final String school = "school";
 			final String connections = "connections";
-
+			final String numberActive = "numberActiveLastSevenDays";
+			final int sevenDays = 7;
+			
+			Map<String, Date> lastSeenUserMap = this.statsManager.getLastSeenUserMap();
 			List<Map<String, Object>> result = Lists.newArrayList();
 			for (Entry<School, Integer> e : map.entrySet()) {
-				result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue()));
+				RegisteredUserDTO prototype = new RegisteredUserDTO();
+				prototype.setSchoolId(e.getKey().getUrn());
+				
+				List<RegisteredUserDTO> usersBySchool = this.userManager.findUsers(prototype);
+				
+				result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue(), numberActive,
+						this.statsManager.getNumberOfUsersActiveForLastNDays(usersBySchool, lastSeenUserMap,
+								sevenDays)));
 			}
 		
 			Collections.sort(result, new Comparator<Map<String, Object>>() {
@@ -175,6 +185,9 @@ public class AdminFacade extends AbstractSegueFacade {
 					"Unable To Index Schools Exception in admin facade", e).toResponse();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e1) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error during user lookup").toResponse();
 		}
 	}
 	
