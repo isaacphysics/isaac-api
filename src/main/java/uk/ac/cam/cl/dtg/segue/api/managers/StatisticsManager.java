@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -407,10 +408,15 @@ public class StatisticsManager {
 			}
 		}
 		
-		return ImmutableMap.of("totalQuestionsAttempted", totalQuestionsAttempted, "totalCorrect",
-				questionsAnsweredCorrectly, "totalCorrectFirstTime", questionsFirstTime,
-				"attemptsByTag", questionAttemptsByTagStats, "attemptsByLevel",
-				questionAttemptsByLevelStats);
+		ImmutableMap<String, Object> immutableMap = new ImmutableMap.Builder<String, Object>()
+				.put("totalQuestionsAttempted", totalQuestionsAttempted)
+				.put("totalCorrect", questionsAnsweredCorrectly)
+				.put("totalCorrectFirstTime", questionsFirstTime)
+				.put("attemptsByTag", questionAttemptsByTagStats)
+				.put("attemptsByLevel", questionAttemptsByLevelStats)
+				.put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest)).build();
+		
+		return immutableMap;
 	}
 	
 	/**
