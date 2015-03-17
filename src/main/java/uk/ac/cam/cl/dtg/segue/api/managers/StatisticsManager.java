@@ -213,13 +213,22 @@ public class StatisticsManager {
 
 		Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
 
-		ib.put("questionsAnsweredLastWeek",
+		ib.put("questionsAnsweredLastWeekTeachers",
 				""
-						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMapQuestions,
+						+ this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
 								sevenDays).size());
-		ib.put("questionsAnsweredLastThirtyDays",
+		ib.put("questionsAnsweredLastThirtyDaysTeachers",
 				""
-						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMapQuestions,
+						+ this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
+								thirtyDays).size());
+		
+		ib.put("questionsAnsweredLastWeekStudents",
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
+								sevenDays).size());
+		ib.put("questionsAnsweredLastThirtyDaysStudents",
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
 								thirtyDays).size());
 		
 		// questions answered registered
