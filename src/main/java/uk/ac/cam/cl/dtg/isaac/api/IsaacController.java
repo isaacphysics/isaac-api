@@ -1300,7 +1300,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	 * Only users with permission can use this endpoint.
 	 * 
 	 * @param request - so we can authenticate the current user.
-	 * @param userId - to look up the user of interest
+	 * @param userIdOfInterest - to look up the user of interest
 	 * @return a map containing the information.
 	 */
 	@GET
@@ -1308,16 +1308,18 @@ public class IsaacController extends AbstractIsaacFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public final Response getUserProgressInformation(@Context final HttpServletRequest request,
-			@PathParam("user_id") final String userId) {
+			@PathParam("user_id") final String userIdOfInterest) {
 		RegisteredUserDTO user;
-		UserSummaryDTO userOfInterest;
+		UserSummaryDTO userOfInterestSummary;
+		RegisteredUserDTO userOfInterestFull;
 		try {
 			user = api.getCurrentUser(request);
+			userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+			userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 			
-			userOfInterest = userManager.convertToUserSummaryObject(userManager.getUserDTOById(userId));
-			
-			if (associationManager.hasPermission(user, userOfInterest)) {
-				Map<String, Object> userQuestionInformation = statsManager.getUserQuestionInformation(user);
+			if (associationManager.hasPermission(user, userOfInterestSummary)) {
+				Map<String, Object> userQuestionInformation = statsManager
+						.getUserQuestionInformation(userOfInterestFull);
 
 				return Response.ok(userQuestionInformation).build();	
 			} else {
