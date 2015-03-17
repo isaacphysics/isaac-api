@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +122,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	@GET
 	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getAssignments(@Context final HttpServletRequest request) {
 		try {
 			RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -160,6 +162,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	@GET
 	@Path("/assign")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getAssigned(@Context final HttpServletRequest request,
 			@QueryParam("group") final String groupIdOfInterest) {
 		try {
@@ -205,6 +208,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	@GET
 	@Path("/assign/{assignment_id}/progress")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getAssignmentProgress(@Context final HttpServletRequest request,
 			@PathParam("assignment_id") final String assignmentId) {
 		try {
@@ -279,6 +283,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	@GET
 	@Path("/assign/{gameboard_id}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getAssignedGroups(@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId) {
 		try {
@@ -308,6 +313,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	@POST
 	@Path("/assign/{gameboard_id}/{group_id}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response assignGameBoard(@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final String groupId) {
 		try {
@@ -359,6 +365,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 	@DELETE
 	@Path("/assign/{gameboard_id}/{group_id}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response deleteAssignment(@Context final HttpServletRequest request,
 			@PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final String groupId) {
 
