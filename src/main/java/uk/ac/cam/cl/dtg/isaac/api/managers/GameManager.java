@@ -958,13 +958,13 @@ public class GameManager {
 		boolean foundMultipleTerms = false;
 
 		// Now check that the subjects are of the correct size
-		if (null != gameFilter.getSubjects()) {
+		if (null != gameFilter.getSubjects() && !gameFilter.getSubjects().isEmpty()) {
 			if (gameFilter.getSubjects().size() > 1) {
 				foundMultipleTerms = true;
 			}
 		}
 
-		if (null != gameFilter.getFields()) {
+		if (null != gameFilter.getFields() && !gameFilter.getFields().isEmpty()) {
 			if (foundMultipleTerms) {
 				log.warn("Error validating query: multiple subjects and fields specified.");
 				return false;
@@ -975,7 +975,7 @@ public class GameManager {
 			}
 		}
 
-		if (null != gameFilter.getTopics()) {
+		if (null != gameFilter.getTopics() && !gameFilter.getTopics().isEmpty()) {
 			if (foundMultipleTerms) {
 				log.warn("Error validating query: multiple fields and topics specified.");
 				return false;
