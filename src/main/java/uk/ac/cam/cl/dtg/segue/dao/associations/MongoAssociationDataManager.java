@@ -58,7 +58,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	public MongoAssociationDataManager(final DB database) {
 		this.database = database;
 
-		// TODO: Ensure collection indices are created
+		initialiseDataManager();
 	}
 
 	@Override
@@ -178,5 +178,15 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 		DBCursor<UserAssociation> results = associationCollection.find(query);
 
 		return results.toArray();
+	}
+	
+	/**
+	 * This method ensures that the collection is setup correctly and has all of
+	 * the required indices.
+	 */
+	private void initialiseDataManager() {
+		database.getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME).ensureIndex(
+				new BasicDBObject(Constants.ASSOCIATION_TOKEN_FIELDNAME, 1),
+				Constants.ASSOCIATION_TOKEN_FIELDNAME, true);
 	}
 }
