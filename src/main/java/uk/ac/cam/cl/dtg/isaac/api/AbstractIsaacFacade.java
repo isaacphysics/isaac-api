@@ -31,6 +31,5 @@ public class AbstractIsaacFacade extends AbstractSegueFacade {
 	 */
 	public AbstractIsaacFacade(final PropertiesLoader properties, final ILogManager logManager) {
 		super(properties, logManager);
-
 	}
 }

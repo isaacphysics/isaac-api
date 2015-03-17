@@ -38,6 +38,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +111,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/stats/")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getStatistics(@Context final HttpServletRequest request) {
 		try {
 			if (!isUserStaff(request)) {
@@ -133,6 +135,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/stats/schools")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getSchoolStatistics(@Context final HttpServletRequest request) {
 		try {
 			if (!isUserAnAdmin(request)) {
@@ -199,6 +202,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/stats/users/last_access")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getUserLastAccessInformation(@Context final HttpServletRequest request) {
 		try {
 			if (!isUserAnAdmin(request)) {
@@ -401,6 +405,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/content_problems")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public final Response getContentProblems(@Context final HttpServletRequest request) {
 		Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
 				contentVersionController.getLiveVersion());
@@ -465,6 +470,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/users")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
 			@QueryParam("id") final String userId, @QueryParam("email") final String email) {
 		try {
@@ -505,6 +511,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/users/{user_id}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("user_id") final String userId) {
 		try {
@@ -578,6 +585,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/users/schools/{school_id}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getSchoolStatistics(@Context final HttpServletRequest request,
 			@PathParam("school_id") final String schoolId) {
 		try {

@@ -31,6 +31,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,6 +95,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getUsersWithAccess(@Context final HttpServletRequest request) {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -125,6 +127,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	@DELETE
 	@Path("/{userId}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response revokeAssociation(@Context final HttpServletRequest request,
 			@PathParam("userId") final String userIdToRevoke) {
 		if (null == userIdToRevoke || userIdToRevoke.isEmpty()) {
@@ -158,6 +161,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/other_users")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getCurrentAccessRights(@Context final HttpServletRequest request) {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
@@ -193,6 +197,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	@GET
 	@Path("/token/{groupId}")
 	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response getAssociationToken(@Context final HttpServletRequest request,
 			@PathParam("groupId") final String groupId) {
 		if (null == groupId || groupId.isEmpty()) {
@@ -229,6 +234,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 	@Path("/use_token/{token}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@GZIP
 	public Response useToken(@Context final HttpServletRequest request,
 			@PathParam("token") final String token) {
 		if (null == token || token.isEmpty()) {
