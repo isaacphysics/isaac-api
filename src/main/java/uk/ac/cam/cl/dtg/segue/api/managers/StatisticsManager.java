@@ -188,27 +188,38 @@ public class StatisticsManager {
 		nonStaffUsers.addAll(studentOrUnknownRole);
 		
 		ib.put("activeTeachersLastWeek",
-				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, sevenDays));
+				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, sevenDays).size());
 		ib.put("activeTeachersLastThirtyDays",
-				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, thirtyDays));
-		
+				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, thirtyDays).size());
+
 		ib.put("activeStudentsLastWeek",
-				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap, sevenDays));
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap,
+								sevenDays).size());
 		ib.put("activeStudentsLastThirtyDays",
-				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap, thirtyDays));
-		
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap,
+								thirtyDays).size());
+
 		ib.put("activeUsersLastWeek",
-				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, sevenDays));
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, sevenDays)
+								.size());
 		ib.put("activeUsersLastThirtyDays",
-				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays));
-		
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays)
+								.size());
+
 		Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
-		
-		
+
 		ib.put("questionsAnsweredLastWeek",
-				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMapQuestions, sevenDays));
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMapQuestions,
+								sevenDays).size());
 		ib.put("questionsAnsweredLastThirtyDays",
-				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMapQuestions, thirtyDays));
+				""
+						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMapQuestions,
+								thirtyDays).size());
 		
 		// questions answered registered
 
@@ -283,6 +294,7 @@ public class StatisticsManager {
 
 		return users;
 	}
+	
 	/**
 	 * @return a list of userId's to last event timestamp
 	 */
@@ -412,12 +424,12 @@ public class StatisticsManager {
 	 * @param daysFromToday
 	 *            - the number of days from today that should be included in the
 	 *            calculation e.g. 7 would be the last week's data.
-	 * @return the number of qualifying users.
+	 * @return a collection containing the users who meet the criteria
 	 */
-	public int getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
+	public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
 			final Map<String, Date> lastSeenUserMap, final int daysFromToday) {
 		
-		int qualifyingUsers = 0;
+		List<RegisteredUserDTO> qualifyingUsers = Lists.newArrayList();
 		
 		for (RegisteredUserDTO user : users) {
 			Date eventDate = lastSeenUserMap.get(user.getDbId());
@@ -426,7 +438,7 @@ public class StatisticsManager {
 			validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));
 			
 			if (eventDate != null && eventDate.after(validInclusionTime.getTime())) {
-				qualifyingUsers++;
+				qualifyingUsers.add(user);
 			}
 		}
 		

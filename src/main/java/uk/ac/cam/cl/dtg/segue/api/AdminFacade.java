@@ -157,7 +157,7 @@ public class AdminFacade extends AbstractSegueFacade {
 				
 				result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue(), numberActive,
 						this.statsManager.getNumberOfUsersActiveForLastNDays(usersBySchool, lastSeenUserMap,
-								sevenDays)));
+								sevenDays).size()));
 			}
 		
 			Collections.sort(result, new Comparator<Map<String, Object>>() {
@@ -603,7 +603,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	}	
 	
 	/**
-	 * Get users by school id.
+	 * Temporary endpoint to trigger a historical update of user last-seen information.
 	 * 
 	 * @param request
 	 *            - to determine access.
@@ -626,7 +626,6 @@ public class AdminFacade extends AbstractSegueFacade {
 			// may as well spawn a new thread to do the validation
 			// work now.
 			Thread bulkUpdateJob = new Thread() {
-				@SuppressWarnings("deprecation")
 				@Override
 				public void run() {					
 					log.info("Beginning lastSeen update");
