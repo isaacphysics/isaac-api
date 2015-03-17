@@ -220,6 +220,9 @@ public class UserAssociationManager {
 	
 	/**
 	 * Check if one user has permission to view another user's data.
+	 * 
+	 * Users always have permission to view their own data.
+	 * 
 	 * @param currentUser - requesting permission
 	 * @param userRequested - the owner of the data to view.
 	 * @return true if yes false if no.

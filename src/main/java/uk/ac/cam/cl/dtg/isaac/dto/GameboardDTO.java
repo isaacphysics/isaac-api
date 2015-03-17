@@ -21,6 +21,7 @@ import java.util.List;
 
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 /**
  * DTO representation of a gameboard.
@@ -35,6 +36,8 @@ public class GameboardDTO {
 	private Date creationDate;
 	private GameFilter gameFilter;
 	private String ownerUserId;
+	private UserSummaryDTO ownerUserInformation;
+	
 	private GameboardCreationMethod creationMethod;
 	
 	private Integer percentageCompleted;
@@ -236,6 +239,22 @@ public class GameboardDTO {
 	 */
 	public void setOwnerUserId(final String ownerUserId) {
 		this.ownerUserId = ownerUserId;
+	}
+
+	/**
+	 * Gets the ownerUserInformation.
+	 * @return the ownerUserInformation
+	 */
+	public UserSummaryDTO getOwnerUserInformation() {
+		return ownerUserInformation;
+	}
+
+	/**
+	 * Sets the ownerUserInformation.
+	 * @param ownerUserInformation the ownerUserInformation to set
+	 */
+	public void setOwnerUserInformation(final UserSummaryDTO ownerUserInformation) {
+		this.ownerUserInformation = ownerUserInformation;
 	}
 
 	/**

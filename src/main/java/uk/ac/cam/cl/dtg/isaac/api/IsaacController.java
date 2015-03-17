@@ -67,6 +67,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -830,14 +831,21 @@ public class IsaacController extends AbstractIsaacFacade {
 	
 	/**
 	 * getBoardPopularityList.
+	 * @param request for checking if the user is authorised to use this endpoint
 	 * @return list of popular boards.
 	 */
 	@GET
 	@Path("gameboards/popular")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getBoardPopularityList() {
+	public Response getBoardPopularityList(@Context final HttpServletRequest request) {		
 		final String connections = "connections";
 		try {
+			RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+			
+			if (!userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF))) {
+				return SegueErrorResponse.getIncorrectRoleResponse();
+			}
+			
 			Map<String, Integer> numberOfConnectedUsersByGameboard = this.gameManager
 					.getNumberOfConnectedUsersByGameboard();
 
@@ -845,9 +853,16 @@ public class IsaacController extends AbstractIsaacFacade {
 
 			for (Entry<String, Integer> e : numberOfConnectedUsersByGameboard.entrySet()) {
 				if (e.getValue() > 1) {
-					resultList.add(ImmutableMap.of("gameboard", this.gameManager.getLiteGameboard(e.getKey()),
-							"connections", e.getValue()));
+					GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
 					
+					RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
+					if (ownerUser != null) {
+						liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
+								currentUser, userManager.convertToUserSummaryObject(ownerUser)));						
+					}
+					
+					resultList.add(ImmutableMap.of("gameboard", liteGameboard,
+							"connections", e.getValue()));
 				}
 			}
 
@@ -882,11 +897,13 @@ public class IsaacController extends AbstractIsaacFacade {
 					"sharedBoards", sharedBoards);
 
 			return Response.ok(resultMap).build();
-		} catch (SegueDatabaseException e) {
+		} catch (SegueDatabaseException | NoUserException e) {
 			String message = "Error whilst trying to get the gameboard popularity list.";
 			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					message).toResponse();
+		} catch (NoUserLoggedInException e1) {
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
 
@@ -1274,23 +1291,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 		
-		// get the question attempted information
-		try {
-			Map<String, Object> userQuestionInformation = statsManager.getUserQuestionInformation(user);
-
-			return Response.ok(userQuestionInformation).build();
-			
-		} catch (SegueDatabaseException e) {
-			String message = "Error whilst trying to access user statistics.";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					message).toResponse();
-		} catch (ContentManagerException e) {
-			String message = "Error whilst trying to access user statistics; Content cannot be resolved";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					message).toResponse();
-		}
+		return getUserProgressInformation(request, user.getDbId());
 	}
 	
 	/**
