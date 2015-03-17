@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -113,6 +115,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static PropertiesLoader configLocationProperties;
 	
 	private PropertiesLoader globalProperties = null;
+
+	private UserAssociationManager userAssociationManager = null;
 
 	private static ILogManager logManager;
 
@@ -454,28 +458,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	}
 
 
-//	/**
-//	 * This provides a singleton of the UserAssociationManager for the Authorisation
-//	 * facade.
-//	 * 
-//	 * @param database
-//	 *            - IUserManager
-//	 *            
-//	 * @return Content version controller with associated dependencies.
-//	 */
-//	@Inject
-//	@Provides
-//	@Singleton
-//	private UserAssociationManager getAssociationManager(
-//			final IAssociationDataManager database, final IUserGroupManager userGroupDatabase) {
-//
-//		if (null == userAssociationManager) {
-//			userAssociationManager = new UserAssociationManager(database, userGroupDatabase);
-//			log.info("Creating singleton of UserAssociationManager");
-//		}
-//
-//		return userAssociationManager;
-//	}
+	/**
+	 * This provides a singleton of the UserAssociationManager for the Authorisation
+	 * facade.
+	 * 
+	 * @param database
+	 *            - IUserManager
+	 *            
+	 * @return Content version controller with associated dependencies.
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private UserAssociationManager getAssociationManager(
+			final IAssociationDataManager database, final GroupManager userGroupDatabase) {
+		if (null == userAssociationManager) {
+			userAssociationManager = new UserAssociationManager(database, userGroupDatabase);
+			log.info("Creating singleton of UserAssociationManager");
+		}
+
+		return userAssociationManager;
+	}
 	
 	/**
 	 * Gets the instance of the dozer mapper object.
