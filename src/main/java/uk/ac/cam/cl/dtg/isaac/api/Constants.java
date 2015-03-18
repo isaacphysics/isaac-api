@@ -54,7 +54,7 @@ public final class Constants {
 	 * GameboardItemState
 	 * Represents the potential states of a gameboard item.
 	 */
-	public enum GameboardItemState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED, TRY_AGAIN }
+	public enum GameboardItemState { PERFECT, COMPLETED, IN_PROGRESS, NOT_ATTEMPTED, TRY_AGAIN }
 	
 	/**
 	 * GameboardState

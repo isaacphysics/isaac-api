@@ -15,7 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import java.util.List;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
+import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
@@ -26,5 +33,42 @@ import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 @DTOMapping(IsaacQuestionPageDTO.class)
 @JsonType("isaacQuestionPage")
 public class IsaacQuestionPage extends SeguePage {
+	protected Float passMark;
+	
+	@JsonCreator
+	public IsaacQuestionPage(@JsonProperty("_id") String _id,
+	                     @JsonProperty("id") String id, @JsonProperty("title") String title,
+	                     @JsonProperty("subtitle") String subtitle,
+	                     @JsonProperty("type") String type,
+	                     @JsonProperty("author") String author,
+	                     @JsonProperty("encoding") String encoding,
+	                     @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+	                     @JsonProperty("layout") String layout,
+	                     @JsonProperty("children") List<ContentBase> children,
+	                     @JsonProperty("value") String value,
+	                     @JsonProperty("attribution") String attribution,
+	                     @JsonProperty("relatedContent") List<String> relatedContent,
+	                     @JsonProperty("published") boolean published,
+	                     @JsonProperty("tags") Set<String> tags,
+	                     @JsonProperty("level") Integer level,
+	                     @JsonProperty("passMark") Float passMark) {
+		super(_id, id, title, subtitle, type, author, encoding,
+				canonicalSourceFile, layout, children, value, attribution,
+				relatedContent, published, tags, level);
 
+		this.passMark = passMark;
+	}
+
+	/**
+	 * Default constructor required for Jackson
+	 */
+	public IsaacQuestionPage() { }
+
+	public Float getPassMark() {
+		return passMark;
+	}
+
+	public void setPassMark(Float passMark) {
+		this.passMark = passMark;
+	}
 }
