@@ -190,7 +190,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		
 		// Calculate the ETag on last modified date of tags list
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
 				+ etagCodeBuilder.toString().hashCode() + "");
 		
 		Response cachedResponse = generateCachedResponse(request, etag);
@@ -226,7 +226,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
 				+ "byId".hashCode() + conceptId.hashCode() + "");
 		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
@@ -248,10 +248,10 @@ public class IsaacController extends AbstractIsaacFacade {
 		if (result.getEntity() instanceof SeguePageDTO) {
 			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
 					.put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
-					.put(CONTENT_VERSION, api.getLiveVersion()).build();
+					.put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
 					
 			// the request log
-			getLogManager().logEvent(this.api.getCurrentUserIdentifier(servletRequest),
+			getLogManager().logEvent(userManager.getCurrentUser(servletRequest),
 					servletRequest, Constants.VIEW_CONCEPT, logEntry);
 		}
 		
@@ -334,7 +334,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
 		// Calculate the ETag on last modified date of tags list
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
 				+ etagCodeBuilder.toString().hashCode() + "");
 		
 		Response cachedResponse = generateCachedResponse(request, etag);
@@ -349,7 +349,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		if (searchString != null && !searchString.isEmpty()) {
 			ResultsWrapper<ContentDTO> c;
 			try {
-				c = api.segueSearch(searchString, api.getLiveVersion(), fieldsToMatch,
+				c = api.segueSearch(searchString, versionManager.getLiveVersion(), fieldsToMatch,
 						newStartIndex, newLimit);
 			} catch (ContentManagerException e1) {
 				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
@@ -402,11 +402,11 @@ public class IsaacController extends AbstractIsaacFacade {
 			fieldsToMatch
 					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
 		}
-		AbstractSegueUserDTO user = api.getCurrentUserIdentifier(httpServletRequest);
+		AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
 		Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
 		
 		try {
-			userQuestionAttempts = api.getQuestionAttemptsBySession(user);
+			userQuestionAttempts = userManager.getQuestionAttemptsByUser(user);
 		} catch (SegueDatabaseException e) {
 			String message = "SegueDatabaseException whilst trying to retrieve user question data";
 			log.error(message, e);
@@ -428,7 +428,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
 			Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(), "contentVersion",
-					api.getLiveVersion());
+					versionManager.getLiveVersion());
 			
 			String userId;
 			if (user instanceof AnonymousUserDTO) {
@@ -444,7 +444,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
 
 			// return augmented content.
-			return Response.ok(content).cacheControl(api.getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
+			return Response.ok(content).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
 					.tag(etag).build();
 			
 		} else {
@@ -484,7 +484,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode() + searchString.hashCode()
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + searchString.hashCode()
 				+ types.hashCode() + "");
 
 		Response cachedResponse = generateCachedResponse(request, etag);
@@ -510,18 +510,15 @@ public class IsaacController extends AbstractIsaacFacade {
 
 		ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
 				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
-				.put(CONTENT_VERSION, api.getLiveVersion()).build();
+				.put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
 
-		getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest), httpServletRequest,
+		getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
 				GLOBAL_SITE_SEARCH, logMap);
 
 		return Response
 				.ok(this.extractContentSummaryFromResultsWrapper(searchResults, this.getProperties()
 						.getProperty(PROXY_PATH))).tag(etag).cacheControl(getCacheControl()).build();
 	}
-
-
-	
 	
 	/**
 	 * Rest end point that gets a single page based on a given id.
@@ -542,7 +539,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			@PathParam("page") final String pageId) {
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
 				+ pageId.hashCode() + "");
 		
 		Response cachedResponse = generateCachedResponse(request, etag);
@@ -564,10 +561,10 @@ public class IsaacController extends AbstractIsaacFacade {
 		if (result.getEntity() instanceof SeguePageDTO) {
 			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
 					.put(PAGE_ID_LOG_FIELDNAME, pageId)
-					.put(CONTENT_VERSION, api.getLiveVersion()).build();
+					.put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
 					
 			// the request log
-			getLogManager().logEvent(this.api.getCurrentUserIdentifier(httpServletRequest),
+			getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest),
 					httpServletRequest, Constants.VIEW_PAGE, logEntry);			
 		}
 		
@@ -595,7 +592,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode()
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
 				+ fragmentId.hashCode() + "");
 		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
@@ -637,7 +634,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		
 		// Calculate the ETag on current live version of the content
 		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(this.api.getLiveVersion().hashCode() + "");
+		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + "");
 		Response cachedResponse = generateCachedResponse(request, etag);
 		if (cachedResponse != null) {
 			return cachedResponse;
@@ -646,7 +643,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
 
-		ResultsWrapper<ContentDTO> pods = api.findMatchingContent(api.getLiveVersion(),
+		ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
 				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 		
 		Response cachableResult = Response.ok(pods)
@@ -673,7 +670,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	@GZIP
 	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
 		// entity tags etc are already added by segue
-		return api.getImageFileContent(request, api.getLiveVersion(), path);
+		return api.getImageFileContent(request, versionManager.getLiveVersion(), path);
 	}
 	
 	/**
@@ -688,7 +685,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
 		RegisteredUserDTO user;
 		try {
-			user = api.getCurrentUser(request);
+			user = userManager.getCurrentRegisteredUser(request);
 		} catch (NoUserLoggedInException e1) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -715,7 +712,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		UserSummaryDTO userOfInterestSummary;
 		RegisteredUserDTO userOfInterestFull;
 		try {
-			user = api.getCurrentUser(request);
+			user = userManager.getCurrentRegisteredUser(request);
 			userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
 			userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 			
@@ -843,7 +840,7 @@ public class IsaacController extends AbstractIsaacFacade {
 	 *         SegueErrorResponse.
 	 */
 	private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(api.getLiveVersion(),
+		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(versionManager.getLiveVersion(),
 				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
 																						// type
 																						// checking.
@@ -861,7 +858,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		}
 
 		try {
-			return Response.ok(api.augmentContentWithRelatedContent(api.getLiveVersion(), c)).build();
+			return Response.ok(api.augmentContentWithRelatedContent(versionManager.getLiveVersion(), c)).build();
 		} catch (ContentManagerException e1) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Error locating the version requested", e1);
@@ -890,7 +887,7 @@ public class IsaacController extends AbstractIsaacFacade {
 			final Integer startIndex, final Integer limit) {
 		ResultsWrapper<ContentDTO> c;
 
-		c = api.findMatchingContent(api.getLiveVersion(),
+		c = api.findMatchingContent(versionManager.getLiveVersion(),
 				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
 		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
