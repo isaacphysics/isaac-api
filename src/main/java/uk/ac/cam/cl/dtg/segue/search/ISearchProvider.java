@@ -125,7 +125,7 @@ public interface ISearchProvider {
 	 * @param startIndex
 	 *            - e.g. 0 for the first set of results
 	 * @param limit
-	 *            - e.g. 10 for 10 results per page
+	 *            - the maximum number of results to return -1 will attempt to return all results.
 	 * @param fieldsThatMustMatch
 	 *            - Map of Must match field -> value
 	 * @param fields
@@ -150,7 +150,7 @@ public interface ISearchProvider {
 	 * @param startIndex
 	 *            - e.g. 0 for the first set of results
 	 * @param limit
-	 *            - e.g. 10 for 10 results per page
+	 *            - the maximum number of results to return -1 will attempt to return all results.
 	 * @param fieldsThatMustMatch
 	 *            - Map of Must match field -> value
 	 * @param fields
@@ -175,11 +175,15 @@ public interface ISearchProvider {
 	 *            - e.g. tags
 	 * @param field
 	 *            - to match against
+	 * @param startIndex
+	 *            - start index for results
+	 * @param limit
+	 *            - the maximum number of results to return -1 will attempt to return all results.
 	 * @return results
 	 */
 	ResultsWrapper<String> termSearch(final String index,
 			final String indexType, final Collection<String> searchTerms,
-			final String field);
+			final String field, final int startIndex, final int limit);
 
 	/**
 	 * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the
@@ -243,10 +247,14 @@ public interface ISearchProvider {
 	 *            - fieldName to search within.
 	 * @param prefix
 	 *            - idPrefix to search for.
+	 * @param startIndex
+	 *            - start index for results
+	 * @param limit
+	 *            - the maximum number of results to return -1 will attempt to return all results.
 	 * @return A list of results that match the id prefix.
 	 */
 	ResultsWrapper<String> findByPrefix(String index, String indexType,
-			String fieldname, String prefix);
+			String fieldname, String prefix, int startIndex, int limit);
 
 	/**
 	 * Clear a specific index from the search providers cache.

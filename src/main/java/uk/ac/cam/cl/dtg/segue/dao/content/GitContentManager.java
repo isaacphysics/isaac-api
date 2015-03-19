@@ -68,6 +68,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -173,12 +174,14 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix)
+	public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix,
+			final int startIndex, final int limit)
 		throws ContentManagerException {
+		
 		this.ensureCache(version);
 		
 		ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
-				Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix);
+				Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix, startIndex, limit);
 
 		List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
@@ -347,7 +350,7 @@ public class GitContentManager implements IContentManager {
 		this.ensureCache(version);
 		
 		ResultsWrapper<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE,
-				tags, "tags");
+				tags, "tags", 0, DEFAULT_RESULTS_LIMIT);
 
 		List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults.getResults());
 

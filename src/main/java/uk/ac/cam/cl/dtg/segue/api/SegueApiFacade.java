@@ -1134,7 +1134,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Deprecated
 	public final ResultsWrapper<ContentDTO> searchByIdPrefix(final String version, final String idPrefix)
 		throws ContentManagerException {
-		return this.contentVersionController.getContentManager().getByIdPrefix(idPrefix, version);
+		return this.contentVersionController.getContentManager().getByIdPrefix(idPrefix, version, 0, -1);
 	}
 
 	/**

@@ -464,6 +464,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * 
 	 * @param database
 	 *            - IUserManager
+	 * @param userGroupDatabase
+	 *            - group database
 	 *            
 	 * @return Content version controller with associated dependencies.
 	 */

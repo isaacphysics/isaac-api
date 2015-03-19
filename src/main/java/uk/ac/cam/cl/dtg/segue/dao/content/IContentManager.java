@@ -84,11 +84,16 @@ public interface IContentManager {
 	 *            - version of the content to search against.
 	 * @param idPrefix
 	 *            - id prefix to search for.
+	 * @param startIndex
+	 *            - start index for results
+	 * @param limit
+	 *            - the maximum number of results to return -1 will attempt to return all results.
 	 * @return ResultsWrapper of objects that match the id prefix.
 	 * @throws ContentManagerException
 	 *             - if there is an error retrieving the content requested.
 	 */
-	ResultsWrapper<ContentDTO> getByIdPrefix(String version, String idPrefix) throws ContentManagerException;
+	ResultsWrapper<ContentDTO> getByIdPrefix(String version, String idPrefix, int startIndex, int limit)
+		throws ContentManagerException;
 
 	/**
 	 * Method to allow bulk search of content based on the type field.

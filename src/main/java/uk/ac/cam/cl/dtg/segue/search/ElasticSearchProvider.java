@@ -79,6 +79,9 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 	private final Random randomNumberGenerator;
 
+	// to try and improve performance of searches with a -1 limit.
+	private static final int LARGE_LIMIT = 100; 
+
 	/**
 	 * Constructor for creating an instance of the ElasticSearchProvider Object.
 	 * 
@@ -93,13 +96,13 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final void indexObject(final String index, final String indexType, final String content)
+	public void indexObject(final String index, final String indexType, final String content)
 		throws SegueSearchOperationException {
 		indexObject(index, indexType, content, null);
 	}
 
 	@Override
-	public final void bulkIndex(final String index, final String indexType,
+	public void bulkIndex(final String index, final String indexType,
 			final List<Map.Entry<String, String>> dataToIndex) throws SegueSearchOperationException {
 		// check index already exists if not execute any initialisation steps.
 		if (!this.hasIndex(index)) {
@@ -128,7 +131,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final void indexObject(final String index, final String indexType, final String content,
+	public void indexObject(final String index, final String indexType, final String content,
 			final String uniqueId) throws SegueSearchOperationException {
 		// check index already exists if not execute any initialisation steps.
 		if (!this.hasIndex(index)) {
@@ -146,7 +149,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final ResultsWrapper<String> matchSearch(final String index, final String indexType,
+	public ResultsWrapper<String> matchSearch(final String index, final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions) {
 
@@ -177,7 +180,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final ResultsWrapper<String> randomisedMatchSearch(final String index,
+	public ResultsWrapper<String> randomisedMatchSearch(final String index,
 			final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit) {
@@ -205,7 +208,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final ResultsWrapper<String> fuzzySearch(final String index, final String indexType,
+	public ResultsWrapper<String> fuzzySearch(final String index, final String indexType,
 			final String searchString, final Integer startIndex, final Integer limit, 
 			@Nullable final Map<String, List<String>> fieldsThatMustMatch,
 			final String... fields) {
@@ -232,7 +235,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 		
 		masterQuery.must(query);
 		
-		ResultsWrapper<String> resultList = this.executeBasicPaginatedQuery(index, indexType, masterQuery,
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, masterQuery,
 				startIndex, limit);
 		
 		return resultList;
@@ -258,32 +261,32 @@ public class ElasticSearchProvider implements ISearchProvider {
 				MultiMatchQueryBuilder.Type.PHRASE_PREFIX);
 		query.must(multiMatchQuery);
 		
-		ResultsWrapper<String> resultList = this.executeBasicPaginatedQuery(index, indexType,
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType,
 				query, startIndex, limit);
 
 		return resultList;
 	}
 	
 	@Override
-	public final ResultsWrapper<String> termSearch(final String index, final String indexType,
-			final Collection<String> searchTerms, final String field) {
+	public ResultsWrapper<String> termSearch(final String index, final String indexType,
+			final Collection<String> searchTerms, final String field, final int startIndex, final int limit) {
 		if (null == index || null == indexType || null == searchTerms || null == field) {
 			log.warn("A required field is missing. Unable to execute search.");
 			return null;
 		}
 
 		QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
-		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query);
+		ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
 		return resultList;
 	}
 
 	@Override
-	public final boolean expungeEntireSearchCache() {
+	public boolean expungeEntireSearchCache() {
 		return this.expungeIndexFromSearchCache("_all");
 	}
 
 	@Override
-	public final boolean expungeIndexFromSearchCache(final String index) {
+	public boolean expungeIndexFromSearchCache(final String index) {
 		Validate.notBlank(index);
 
 		try {
@@ -298,7 +301,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	}
 
 	@Override
-	public final boolean expungeIndexTypeFromSearchCache(final String index, final String indexType) {
+	public boolean expungeIndexTypeFromSearchCache(final String index, final String indexType) {
 		try {
 			DeleteMappingRequest deleteMapping = new DeleteMappingRequest(index).types(indexType);
 			client.admin().indices().deleteMapping(deleteMapping).actionGet();
@@ -342,12 +345,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 
 	@Override
 	public ResultsWrapper<String> findByPrefix(final String index, final String indexType,
-			final String fieldname, final String prefix) {
+			final String fieldname, final String prefix, final int startIndex, final int limit) {
 		ResultsWrapper<String> resultList;
 
 		PrefixQueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
 
-		resultList = this.executeBasicQuery(index, indexType, query);
+		resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
 
 		return resultList;
 	}
@@ -436,46 +439,38 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 *            - index type to execute the query against.
 	 * @param query
 	 *            - the query to run.
-	 * 
+	 * @param startIndex
+	 *            - start index for results
+	 * @param limit
+	 *            - the maximum number of results to return -1 will attempt to return all results.
 	 * @return list of the search results
 	 */
 	private ResultsWrapper<String> executeBasicQuery(final String index, final String indexType,
-			final QueryBuilder query) {
-		log.debug("Building Query: " + query);
-
-		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType)
-				.setQuery(query);
-
-		return executeQuery(configuredSearchRequestBuilder);
-	}
-	
-	/**
-	 * Provides default search execution using the fields specified.
-	 * 
-	 * This method does not provide any way of controlling sort order but will
-	 * allow you to paginate across the results.
-	 * 
-	 * @param index
-	 *            - search index to execute the query against.
-	 * @param indexType
-	 *            - index type to execute the query against.
-	 * @param query
-	 *            - the query to run.
-	 * @param startIndex
-	 *            - The index of the first search result
-	 * @param limit
-	 *            - the number of results to return each time.
-	 * 
-	 * @return list of the search results
-	 */
-	private ResultsWrapper<String> executeBasicPaginatedQuery(final String index, final String indexType,
 			final QueryBuilder query, final int startIndex, final int limit) {
 		log.debug("Building Query: " + query);
+		int newLimit = limit;
+		
+		boolean isUnlimitedSearch = limit == -1;
+		
+		if (isUnlimitedSearch) {
+			newLimit = LARGE_LIMIT;
+		}
 
 		SearchRequestBuilder configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType)
-				.setQuery(query).setSize(limit).setFrom(startIndex);
+				.setQuery(query).setSize(newLimit).setFrom(startIndex);
 
-		return executeQuery(configuredSearchRequestBuilder);
+		ResultsWrapper<String> results = executeQuery(configuredSearchRequestBuilder);
+
+		// execute another query to get all results as this is an unlimited
+		// query.
+		if (isUnlimitedSearch && (results.getResults().size() < results.getTotalResults())) {
+			configuredSearchRequestBuilder = client.prepareSearch(index).setTypes(indexType).setQuery(query)
+					.setSize(results.getTotalResults().intValue()).setFrom(startIndex);
+			results = executeQuery(configuredSearchRequestBuilder);
+			log.debug("Unlimited Search - had to make a second round trip to elasticsearch.");
+		}
+		
+		return results;
 	}
 
 	/**

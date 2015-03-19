@@ -712,9 +712,10 @@ public class GameManager {
 		
 		if (questionAttemptsFromUser != null
 				&& questionAttemptsFromUser.containsKey(questionPageId)) {
-			// go through each question in the question page
+			// get all questions in the question page: depends on each question
+			// having an id that starts with the question page id.
 			ResultsWrapper<ContentDTO> listOfQuestions = versionManager.getContentManager().getByIdPrefix(
-					versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR);
+					versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
 			
 			// go through all of the questions that make up this gameboard item.
 			boolean allQuestionsCorrect = true;

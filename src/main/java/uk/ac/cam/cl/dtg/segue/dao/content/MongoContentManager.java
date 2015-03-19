@@ -186,11 +186,6 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> getByIdPrefix(final String idPrefix, final String version) {
-		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
-	}
-
-	@Override
 	public ContentDTO populateContentSummaries(final String version, final ContentDTO contentDTO) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");
 	}
@@ -204,6 +199,12 @@ public class MongoContentManager implements IContentManager {
 	public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
 			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, final Integer startIndex,
 			final Integer limit, final Long randomSeed) {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
+
+	@Override
+	public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix,
+			final int startIndex, final int limit) throws ContentManagerException {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 }

@@ -307,6 +307,8 @@ public final class Constants {
 	public static final Integer DEFAULT_RESULTS_LIMIT = 10;
 	public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
 	
+	public static final Integer NO_SEARCH_LIMIT = -1;
+	
 	// Content model specific stuff
 	public static final String ID_FIELDNAME = "id";
 	public static final String TITLE_FIELDNAME = "title";
