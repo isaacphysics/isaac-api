@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -56,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
@@ -441,7 +443,7 @@ public class GameManager {
 		for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
 			GameboardItemState state = this.calculateQuestionState(gameItem.getId(), questionAttemptsFromUser);
 			gameItem.setState(state);
-			if (state.equals(GameboardItemState.COMPLETED)) {
+			if (state.equals(GameboardItemState.PASSED)) {
 				totalCompleted++;
 			}
 
@@ -613,7 +615,7 @@ public class GameManager {
 				&& !selectionOfGameboardQuestions.isEmpty()) {
 			for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
 				if (this.calculateQuestionState(gameboardItem.getId(), usersQuestionAttempts).equals(
-						GameboardItemState.COMPLETED)) {
+						GameboardItemState.PASSED)) {
 					completedQuestions.add(gameboardItem);
 				} else if (!gameboardReadyQuestions.contains(gameboardItem)) {
 					gameboardReadyQuestions.add(gameboardItem);
@@ -710,15 +712,32 @@ public class GameManager {
 		Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
 		Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
 		
+		
+		
 		if (questionAttemptsFromUser != null
 				&& questionAttemptsFromUser.containsKey(questionPageId)) {
 			// get all questions in the question page: depends on each question
 			// having an id that starts with the question page id.
+			
+			// Get the pass mark for the question page
+			
+			IsaacQuestionPage questionPage = (IsaacQuestionPage)versionManager.getContentManager().getById(questionPageId, versionManager.getLiveVersion());
+			
+			Float passMark = questionPage.getPassMark();
+			
+			if (passMark == null) {
+				passMark = 50f;
+				// TODO: This should be different for Book pages.
+			}
+			
+			// go through each question in the question page
 			ResultsWrapper<ContentDTO> listOfQuestions = versionManager.getContentManager().getByIdPrefix(
 					versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
 			
 			// go through all of the questions that make up this gameboard item.
-			boolean allQuestionsCorrect = true;
+			int questionPartsCorrect = 0;
+			int questionPartsIncorrect = 0;
+			int questionPartsNotAttempted = 0;
 			for (ContentDTO contentDTO : listOfQuestions.getResults()) {
 				if (!(contentDTO instanceof QuestionDTO) || contentDTO instanceof IsaacQuickQuestionDTO) {
 					// we are not interested if this is not a question or if it is a quick question.
@@ -729,14 +748,15 @@ public class GameManager {
 				List<QuestionValidationResponse> questionAttempts = questionAttemptsFromUser.get(questionPageId)
 						.get(contentDTO.getId());
 				
-				// If we have an entry for the question page and do not have
-				// any attempts for this question then it means that we have
-				// done something on this question but have not yet answered
-				// all parts.
-				if (questionAttemptsFromUser.get(questionPageId) != null
-						&& null == questionAttempts) {
-					return GameboardItemState.IN_PROGRESS;
-				}
+                // If we have an entry for the question page and do not have
+                // any attempts for this question then it means that we have
+                // done something on this question but have not yet answered
+                // all parts.
+                if (questionAttemptsFromUser.get(questionPageId) != null
+                        && null == questionAttempts) {
+                    questionPartsNotAttempted++;
+                    continue;
+                }
 				
 				boolean foundCorrectForThisQuestion = false;
 				
@@ -750,18 +770,29 @@ public class GameManager {
 					} 
 				}
 				
-				// update the all questions correct variable with the 
-				// information from this question.
-				allQuestionsCorrect = allQuestionsCorrect & foundCorrectForThisQuestion;
 
-				// if We know that this is now false we can just return and stop looking.
-				if (!allQuestionsCorrect) {
-					return GameboardItemState.TRY_AGAIN;
+				if (foundCorrectForThisQuestion) {
+					questionPartsCorrect++;
+				} else {
+					questionPartsIncorrect++;
 				}
-				
 			}
-			// if we get to the end and haven't sent a false back then they must have completed it.
-			return GameboardItemState.COMPLETED;
+			
+			int totalParts = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
+			
+			float percentCorrect = 100*(float)questionPartsCorrect / totalParts;
+			float percentIncorrect = 100*(float)questionPartsIncorrect / totalParts;
+			
+			if (questionPartsCorrect == totalParts) {
+				return GameboardItemState.PERFECT;
+			} else if (percentCorrect >= passMark) {
+				return GameboardItemState.PASSED;
+			} else if (percentIncorrect > (100 - passMark)) {
+				return GameboardItemState.FAILED;
+			} else {
+				return GameboardItemState.IN_PROGRESS;
+			}
+			
 		} else {
 			return GameboardItemState.NOT_ATTEMPTED;
 		}
