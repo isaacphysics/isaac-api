@@ -333,7 +333,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@POST
 	@Path("/new_version_alert")
 	@Produces(MediaType.APPLICATION_JSON)
-	public synchronized Response versionChangeNotification(@Context final HttpServletRequest request) {
+	public Response versionChangeNotification(@Context final HttpServletRequest request) {
 		// check if we are authorized to do this operation.
 		// no authorisation required in DEV mode, but in PROD we need to be
 		// an admin.

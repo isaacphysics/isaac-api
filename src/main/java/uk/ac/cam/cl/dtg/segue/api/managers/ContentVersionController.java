@@ -123,7 +123,7 @@ public class ContentVersionController implements ServletContextListener {
 	 * 
 	 * @return a future containing a string which is the version id.
 	 */
-	public synchronized Future<String> triggerSyncJob() {
+	public Future<String> triggerSyncJob() {
 		return this.triggerSyncJob(null);
 	}
 
@@ -140,7 +140,7 @@ public class ContentVersionController implements ServletContextListener {
 	 *            to sync
 	 * @return a future containing a string which is the version id.
 	 */
-	public synchronized Future<String> triggerSyncJob(final String version) {
+	public Future<String> triggerSyncJob(final String version) {
 		ContentSynchronisationWorker worker = new ContentSynchronisationWorker(
 				this, version);
 		
