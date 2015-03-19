@@ -23,19 +23,15 @@ import javax.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
-import ma.glasnost.orika.MapperFacade;
-
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
-import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
+import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -50,17 +46,12 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Test class for the user manager class.
  * 
  */
-public class IsaacControllerTest {
+public class GameboardsFacadeTest {
 
 	private SegueApiFacade dummyAPI = null;
 	private PropertiesLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
-	private UserManager dummyUserManager = null;
-	private String validLiveVersion = "d600d7af95b3cbceecd6910604fa9ea0c5337219";
 	private ILogManager dummyLogManager = null;
-	private MapperFacade dummyMapper = null;
-	private StatisticsManager dummyStatsManager;
-	private ContentVersionController contentVersionController;
 	private UserManager userManager;
 	private UserAssociationManager userAssociationManager;
 
@@ -75,14 +66,9 @@ public class IsaacControllerTest {
 		this.dummyAPI = createMock(SegueApiFacade.class);
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
-		this.dummyUserManager = createMock(UserManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
-		this.dummyStatsManager = createMock(StatisticsManager.class);
-		this.contentVersionController = createMock(ContentVersionController.class);
-		this.dummyMapper = createMock(MapperFacade.class);
 		this.userManager = createMock(UserManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
-
 	}
 
 	/**
@@ -96,9 +82,8 @@ public class IsaacControllerTest {
 	public final void isaacEndPoint_checkEmptyGameboardCausesErrorNoUser_SegueErrorResponseShouldBeReturned()
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
-		IsaacController isaacController = new IsaacController(dummyAPI, dummyPropertiesLoader,
-				dummyGameManager, dummyLogManager, dummyMapper, dummyStatsManager, contentVersionController,
-				userManager, userAssociationManager);
+		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyPropertiesLoader, dummyLogManager,
+				dummyGameManager, userManager, userAssociationManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";
@@ -113,13 +98,13 @@ public class IsaacControllerTest {
 						EasyMock.<List<Integer>> anyObject(), EasyMock.<List<String>> anyObject(),
 						EasyMock.<AbstractSegueUserDTO> anyObject())).andReturn(null).atLeastOnce();
 
-		expect(dummyAPI.getCurrentUserIdentifier(dummyRequest)).andReturn(new AnonymousUserDTO("testID"))
+		expect(userManager.getCurrentUser(dummyRequest)).andReturn(new AnonymousUserDTO("testID"))
 				.atLeastOnce();
 
 		replay(dummyGameManager);
 		replay(dummyAPI);
 
-		Response r = isaacController.generateTemporaryGameboard(dummyRequest, subjects, fields, topics,
+		Response r = gameboardFacade.generateTemporaryGameboard(dummyRequest, subjects, fields, topics,
 				levels, concepts);
 
 		assertTrue(r.getStatus() == Status.NO_CONTENT.getStatusCode());

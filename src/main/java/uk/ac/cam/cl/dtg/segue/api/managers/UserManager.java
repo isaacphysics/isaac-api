@@ -212,7 +212,7 @@ public class UserManager {
 	 *         redirect URI to the authentication provider if authorization /
 	 *         login is required or an error response if the user is already logged in.
 	 */
-	public final Response authenticate(final HttpServletRequest request, final String provider) {
+	public Response authenticate(final HttpServletRequest request, final String provider) {
 		if (!this.isRegisteredUserLoggedIn(request)) {
 			// this is the expected case so we can
 			// start the authenticationFlow.
@@ -243,7 +243,7 @@ public class UserManager {
 	 *         login is required. Alternatively a SegueErrorResponse could be
 	 *         returned.
 	 */
-	public final Response initiateLinkAccountToUserFlow(final HttpServletRequest request,
+	public Response initiateLinkAccountToUserFlow(final HttpServletRequest request,
 			final String provider) {
 		// The user must be logged in to be able to link accounts.
 		if (!this.isRegisteredUserLoggedIn(request)) {
@@ -276,7 +276,7 @@ public class UserManager {
 	 * @return Response containing the user object. Alternatively a
 	 *         SegueErrorResponse could be returned.
 	 */
-	public final Response authenticateCallback(final HttpServletRequest request,
+	public Response authenticateCallback(final HttpServletRequest request,
 			final HttpServletResponse response, final String provider) {
 		try {
 			IAuthenticator authenticator = mapToProvider(provider);
@@ -667,7 +667,7 @@ public class UserManager {
 	 * 
 	 * @return AbstractSegueUserDTO - Either a RegisteredUser or an AnonymousUser
 	 */
-	public final AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) {
+	public AbstractSegueUserDTO getCurrentUser(final HttpServletRequest request) {
 		try {
 			return this.getCurrentRegisteredUser(request);
 		} catch (NoUserLoggedInException e) {
@@ -683,7 +683,7 @@ public class UserManager {
 	 * @param response
 	 *            to destroy the segue cookie.
 	 */
-	public final void logUserOut(final HttpServletRequest request, final HttpServletResponse response) {
+	public void logUserOut(final HttpServletRequest request, final HttpServletResponse response) {
 		Validate.notNull(request);
 		try {
 			request.getSession().invalidate();
@@ -710,7 +710,7 @@ public class UserManager {
 	 * @param questionResponse
 	 *            - question results.
 	 */
-	public final void recordQuestionAttempt(final AbstractSegueUserDTO user,
+	public void recordQuestionAttempt(final AbstractSegueUserDTO user,
 			final QuestionValidationResponseDTO questionResponse) {
 		QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
 				QuestionValidationResponse.class);
