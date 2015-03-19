@@ -229,7 +229,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@POST
 	@Path("/live_version/{version}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public final synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
+	public synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
 			@PathParam("version") final String version) {
 
 		try {
@@ -290,7 +290,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	 */
 	@POST
 	@Path("/synchronise_datastores")
-	public final synchronized Response synchroniseDataStores(@Context final HttpServletRequest request) {
+	public synchronized Response synchroniseDataStores(@Context final HttpServletRequest request) {
 		try {
 			// check if we are authorized to do this operation.
 			// no authorisation required in DEV mode, but in PROD we need to be
@@ -333,7 +333,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@POST
 	@Path("/new_version_alert")
 	@Produces(MediaType.APPLICATION_JSON)
-	public final synchronized Response versionChangeNotification(@Context final HttpServletRequest request) {
+	public synchronized Response versionChangeNotification(@Context final HttpServletRequest request) {
 		// check if we are authorized to do this operation.
 		// no authorisation required in DEV mode, but in PROD we need to be
 		// an admin.
@@ -369,7 +369,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/clear_caches")
-	public final synchronized Response clearCaches(@Context final HttpServletRequest request) {
+	public synchronized Response clearCaches(@Context final HttpServletRequest request) {
 		try {
 			if (isUserAnAdmin(request)) {
 				IContentManager contentPersistenceManager = contentVersionController.getContentManager();
@@ -406,7 +406,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Path("/content_problems")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response getContentProblems(@Context final HttpServletRequest request) {
+	public Response getContentProblems(@Context final HttpServletRequest request) {
 		Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
 				contentVersionController.getLiveVersion());
 
@@ -415,7 +415,6 @@ public class AdminFacade extends AbstractSegueFacade {
 				if (!isUserStaff(request)) {
 					return new SegueErrorResponse(Status.FORBIDDEN,
 							"You must be an admin to access this endpoint.").toResponse();
-
 				}
 			} catch (NoUserLoggedInException e) {
 				return SegueErrorResponse.getNotLoggedInResponse();
@@ -447,6 +446,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
 				errors++;
 			}
+			
 			c.getChildren().add(child);
 			child.setId(pair.getKey().getId() + "_problem_report_" + errors);
 		}
@@ -607,66 +607,6 @@ public class AdminFacade extends AbstractSegueFacade {
 			log.error("Error while trying to list users belonging to a school.", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error").toResponse();
-		}
-	}	
-	
-	/**
-	 * Temporary endpoint to trigger a historical update of user last-seen information.
-	 * 
-	 * @param request
-	 *            - to determine access.
-	 * @return ok
-	 * @deprecated - one off function for db update.
-	 */
-	@GET
-	@Path("/users/updateLastSeen")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Deprecated
-	public Response updateLastSeen(@Context final HttpServletRequest request) {
-		try {
-			if (!isUserAnAdmin(request)) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin user to access this endpoint.").toResponse();
-			}
-			
-			final List<RegisteredUserDTO> allUsers = this.userManager.findUsers(new RegisteredUserDTO());
-			final Map<String, Date> lastSeenUserMap = this.statsManager.getLastSeenUserMap();
-			// may as well spawn a new thread to do the validation
-			// work now.
-			Thread bulkUpdateJob = new Thread() {
-				@Override
-				public void run() {					
-					log.info("Beginning lastSeen update");
-					int updated = 0;
-					for (RegisteredUserDTO user : allUsers) {
-						Date lastEventDate = lastSeenUserMap.get(user.getDbId());
-						if (user.getLastSeen() == null) {
-							// use registration date if we need to.
-							if (lastEventDate == null) {
-								lastEventDate = user.getRegistrationDate();
-								log.info("Using registration date for " + user.getDbId());
-							}
-							
-							try {
-								userManager.updateLastSeenData(user, lastEventDate);
-								updated++;
-							} catch (SegueDatabaseException e) {
-								log.error("Error while updating last seen data", e);
-							}
-						}
-					}
-					
-					log.info("LastSeen update complete - " + updated + " users updated");
-				}
-			};
-			bulkUpdateJob.setDaemon(true);
-			bulkUpdateJob.start();
-			
-			return Response.ok("update task started. See server logs for progress.").build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
 		}
 	}	
 	

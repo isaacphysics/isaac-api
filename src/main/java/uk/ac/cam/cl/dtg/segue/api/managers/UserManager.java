@@ -1053,26 +1053,6 @@ public class UserManager {
 	}
 	
 	/**
-	 * Helper method to update the user last updated date.
-	 * 
-	 * Note: this function was created specifically for a one-time database
-	 * update.
-	 * 
-	 * @param user
-	 *            - to update
-	 * @param date
-	 *            - date to use
-	 * @throws SegueDatabaseException
-	 *             - if there is a db error.
-	 * @deprecated after initial use.
-	 */
-	@Deprecated
-	public void updateLastSeenData(final RegisteredUserDTO user, final Date date)
-			throws SegueDatabaseException {
-		this.database.updateUserLastSeen(user.getDbId(), date);
-	}
-	
-	/**
 	 * Create a session and attach it to the request provided.
 	 * 
 	 * @param request
