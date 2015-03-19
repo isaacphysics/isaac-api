@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -46,6 +47,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -60,7 +63,11 @@ public class StatisticsManager {
 	private ContentVersionController versionManager;
 	private IContentManager contentManager;
 	
+	private Cache<String, Map<String, String>> statsCache;
+	
 	private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
+	private static final String GENERAL_STATS = "GENERAL_STATS";
+	private static final int STATS_EVICTION_INTERVAL_MINUTES = 15;
 	
 	/**
 	 * StatisticsManager.
@@ -80,6 +87,10 @@ public class StatisticsManager {
 		
 		this.versionManager = versionManager;
 		this.contentManager = contentManager;
+		
+		this.statsCache = CacheBuilder.newBuilder()
+				.expireAfterWrite(STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
+				.<String, Map<String, String>> build();
 	}
 
 	/**
@@ -88,7 +99,13 @@ public class StatisticsManager {
 	 * @return ImmutableMap<String, String> (stat name, stat value)
 	 * @throws SegueDatabaseException 
 	 */
-	public ImmutableMap<String, String> outputGeneralStatistics() throws SegueDatabaseException {
+	public Map<String, String> outputGeneralStatistics() throws SegueDatabaseException {
+		Map<String, String> cachedOutput = this.statsCache.getIfPresent(GENERAL_STATS);
+		if (cachedOutput != null) {
+			log.debug("Using cached statistics.");
+			return cachedOutput;
+		}
+		
 		List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 
 		ImmutableMap.Builder<String, String> ib = new ImmutableMap.Builder<String, String>();
@@ -203,42 +220,32 @@ public class StatisticsManager {
 								thirtyDays).size());
 
 		ib.put("activeUsersLastWeek",
-				""
-						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, sevenDays)
+				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, sevenDays)
 								.size());
 		ib.put("activeUsersLastThirtyDays",
-				""
-						+ this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays)
+				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays)
 								.size());
 
 		Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
 
 		ib.put("questionsAnsweredLastWeekTeachers",
-				""
-						+ this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
+				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
 								sevenDays).size());
 		ib.put("questionsAnsweredLastThirtyDaysTeachers",
-				""
-						+ this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
+				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
 								thirtyDays).size());
 		
 		ib.put("questionsAnsweredLastWeekStudents",
-				""
-						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
+				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
 								sevenDays).size());
 		ib.put("questionsAnsweredLastThirtyDaysStudents",
-				""
-						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
+				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
 								thirtyDays).size());
+		Map<String, String> result = ib.build();
 		
-		// questions answered registered
-
-		// questions answered teacher
-
-		// questions answered student
-
-		// questions answered unknown
-		return ib.build();
+		this.statsCache.put(GENERAL_STATS, result);
+		
+		return result; 
 	}
 
 	/**
