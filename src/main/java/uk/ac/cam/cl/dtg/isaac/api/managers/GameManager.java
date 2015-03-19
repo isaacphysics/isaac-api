@@ -443,7 +443,7 @@ public class GameManager {
 		for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
 			GameboardItemState state = this.calculateQuestionState(gameItem.getId(), questionAttemptsFromUser);
 			gameItem.setState(state);
-			if (state.equals(GameboardItemState.PASSED)) {
+			if (state.equals(GameboardItemState.PASSED) || state.equals(GameboardItemState.PERFECT)) {
 				totalCompleted++;
 			}
 
@@ -614,8 +614,8 @@ public class GameManager {
 		while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE
 				&& !selectionOfGameboardQuestions.isEmpty()) {
 			for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
-				if (this.calculateQuestionState(gameboardItem.getId(), usersQuestionAttempts).equals(
-						GameboardItemState.PASSED)) {
+				GameboardItemState questionState = this.calculateQuestionState(gameboardItem.getId(), usersQuestionAttempts);
+				if (questionState.equals(GameboardItemState.PASSED) || questionState.equals(GameboardItemState.PERFECT)) {
 					completedQuestions.add(gameboardItem);
 				} else if (!gameboardReadyQuestions.contains(gameboardItem)) {
 					gameboardReadyQuestions.add(gameboardItem);
