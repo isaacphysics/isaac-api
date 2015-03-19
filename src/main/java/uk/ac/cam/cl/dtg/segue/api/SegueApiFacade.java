@@ -70,6 +70,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -421,7 +422,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		// Deserialize object into POJO of specified type, providing one exists.
 		try {
-			c = contentPersistenceManager.getById(id, newVersion);
+			c = contentPersistenceManager.getContentDOById(newVersion, id);
 
 			if (null == c) {
 				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
@@ -971,8 +972,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		
 		Content contentBasedOnId;
 		try {
-			contentBasedOnId = contentVersionController.getContentManager().getById(questionId,
-					contentVersionController.getLiveVersion());
+			contentBasedOnId = contentVersionController.getContentManager().getContentDOById(
+					contentVersionController.getLiveVersion(), questionId);
 		} catch (ContentManagerException e1) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
 					"Error locating the version requested", e1);

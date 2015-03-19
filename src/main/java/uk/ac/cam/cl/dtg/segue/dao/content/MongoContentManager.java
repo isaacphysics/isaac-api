@@ -68,7 +68,7 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public Content getById(final String id, final String version) {
+	public Content getContentDOById(final String id, final String version) {
 		if (null == id) {
 			return null;
 		}
@@ -205,6 +205,11 @@ public class MongoContentManager implements IContentManager {
 	@Override
 	public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix,
 			final int startIndex, final int limit) throws ContentManagerException {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
+
+	@Override
+	public ContentDTO getContentById(final String version, final String id) throws ContentManagerException {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 }

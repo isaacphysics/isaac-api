@@ -343,9 +343,9 @@ public class IsaacController extends AbstractIsaacFacade {
 			return cachedResponse;
 		}
 
-		// TODO: currently if you provide a search string we use a different
+		// Currently if you provide a search string we use a different
 		// library call. This is because the previous one does not allow fuzzy
-		// search. We should unify these as the limit and pagination stuff doesn't work via this route.
+		// search.
 		if (searchString != null && !searchString.isEmpty()) {
 			ResultsWrapper<ContentDTO> c;
 			try {

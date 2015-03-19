@@ -260,7 +260,7 @@ public class GitContentManagerTest {
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 
 		try {
-			assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == testContent);
+			assertTrue(gitContentManager.getContentDOById(INITIAL_VERSION, id) == testContent);
 		} catch (ContentManagerException e) {
 			fail("correct object should be returned");
 			e.printStackTrace();
@@ -276,7 +276,7 @@ public class GitContentManagerTest {
 	public void getById_invalidId_checkNullReturned() {
 		String id = null;
 		try {
-			assertTrue(defaultGCM.getById(id, INITIAL_VERSION) == null);
+			assertTrue(defaultGCM.getContentDOById(INITIAL_VERSION, id) == null);
 		} catch (ContentManagerException e) {
 			fail("Null should be returned");
 		}
@@ -302,7 +302,7 @@ public class GitContentManagerTest {
 		replay(database);
 
 		try {
-			gitContentManager.getById(id, INITIAL_VERSION);
+			gitContentManager.getContentDOById(INITIAL_VERSION, id);
 			fail("an exception should be returned");
 		} catch (ContentManagerException e) {
 			// pass
@@ -336,7 +336,7 @@ public class GitContentManagerTest {
 				searchProvider, contentMapper, gitCache, new ConcurrentHashMap<String, Map<Content, List<String>>>());
 		
 		try {
-			assertTrue(gitContentManager.getById(id, INITIAL_VERSION) == null);
+			assertTrue(gitContentManager.getContentDOById(INITIAL_VERSION, id) == null);
 		} catch (ContentManagerException e) {
 			fail("Null should be returned");
 		}

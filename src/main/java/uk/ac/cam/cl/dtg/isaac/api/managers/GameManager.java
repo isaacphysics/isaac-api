@@ -712,8 +712,6 @@ public class GameManager {
 		Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
 		Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
 		
-		
-		
 		if (questionAttemptsFromUser != null
 				&& questionAttemptsFromUser.containsKey(questionPageId)) {
 			// get all questions in the question page: depends on each question
@@ -721,7 +719,8 @@ public class GameManager {
 			
 			// Get the pass mark for the question page
 			
-			IsaacQuestionPage questionPage = (IsaacQuestionPage)versionManager.getContentManager().getById(questionPageId, versionManager.getLiveVersion());
+			IsaacQuestionPage questionPage = (IsaacQuestionPage) versionManager.getContentManager()
+					.getContentDOById(versionManager.getLiveVersion(), questionPageId);
 			
 			Float passMark = questionPage.getPassMark();
 			
@@ -852,18 +851,10 @@ public class GameManager {
 		fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Arrays.asList(id));
 		fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
 
-		//TODO: this should be refactored to use getbyid endpoint instead this convoluted way.
-		ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager()
-				.findByFieldNamesRandomOrder(versionManager.getLiveVersion(), fieldsToMap, 0, 1);
-		
-		// try to increase randomness of wildcard results.
-		Collections.shuffle(wildcardResults.getResults());
-		
-		if (wildcardResults.getTotalResults() == 0) {
-			throw new NoWildcardException();
-		}
+		Content wildcardResults = versionManager.getContentManager().getContentDOById(
+				versionManager.getLiveVersion(), id);
 
-		return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
+		return mapper.map(wildcardResults, IsaacWildcard.class);
 	}
 
 	/**

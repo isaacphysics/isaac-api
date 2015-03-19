@@ -62,7 +62,7 @@ public interface IContentManager {
 
 	/**
 	 * Goes to the configured Database and attempts to find a content item with
-	 * the specified ID.
+	 * the specified ID. This returns the object in the raw DO form.
 	 * 
 	 * @param id
 	 *            id to search for in preconfigured data source.
@@ -74,8 +74,24 @@ public interface IContentManager {
 	 * @throws ContentManagerException
 	 *             - if there is an error retrieving the content requested.
 	 */
-	Content getById(String id, String version) throws ContentManagerException;
+	Content getContentDOById(String version, String id) throws ContentManagerException;
 
+	/**
+	 * Goes to the configured Database and attempts to find a content item with
+	 * the specified ID. This returns the object in the DTO form.
+	 * 
+	 * @param id
+	 *            id to search for in preconfigured data source.
+	 * @param version
+	 *            - the version to attempt to retrieve.
+	 * 
+	 * @return Will return a Content object (or subclass of Content) or Null if
+	 *         no content object is found.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
+	 */
+	ContentDTO getContentById(String version, String id) throws ContentManagerException;
+	
 	/**
 	 * GetByIdPrefix Returns results that match a given id prefix for a
 	 * specified version number.

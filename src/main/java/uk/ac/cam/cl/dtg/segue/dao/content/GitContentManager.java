@@ -155,9 +155,14 @@ public class GitContentManager implements IContentManager {
 		throw new UnsupportedOperationException(
 				"This method is not implemented yet - Git is a readonly data store at the moment.");
 	}
-
+	
 	@Override
-	public final Content getById(final String id, final String version) throws ContentManagerException {
+	public final ContentDTO getContentById(final String version, final String id) throws ContentManagerException {
+		return this.mapper.getDTOByDO(this.getContentDOById(version, id));
+	}
+	
+	@Override
+	public final Content getContentDOById(final String version, final String id) throws ContentManagerException {
 		if (null == id) {
 			return null;
 		}
@@ -170,6 +175,7 @@ public class GitContentManager implements IContentManager {
 		} else {
 			log.debug("Loading content from cache: " + id);
 		}
+		
 		return result;
 	}
 
