@@ -192,7 +192,9 @@ public interface IContentManager {
 	 *         specified.
 	 * @throws ContentManagerException
 	 *             - if there is an error retrieving the content requested.
+	 * @deprecated I don't think this is used any more.
 	 */
+	@Deprecated
 	ResultsWrapper<ContentDTO> getContentByTags(String version, Set<String> tags) throws ContentManagerException;
 
 	/**
@@ -259,7 +261,7 @@ public interface IContentManager {
 	 * @return A set of tags that have been already used in a particular version
 	 *         of the content
 	 * @throws ContentManagerException
-	 *             - if there is an error retrieving the content requested. 
+	 *             - if there is an error retrieving the content requested.
 	 */
 	Set<String> getTagsList(String version) throws ContentManagerException;
 

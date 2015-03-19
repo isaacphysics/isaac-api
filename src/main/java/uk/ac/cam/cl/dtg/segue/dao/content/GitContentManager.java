@@ -341,6 +341,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
+	@Deprecated
 	public final ResultsWrapper<ContentDTO> getContentByTags(final String version, final Set<String> tags)
 		throws ContentManagerException {
 		if (null == version || null == tags) {
