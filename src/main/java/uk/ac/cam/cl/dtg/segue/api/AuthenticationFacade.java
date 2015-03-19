@@ -54,7 +54,6 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
 	private final UserManager userManager;
 
-
 	/**
 	 * Create an instance of the authentication Facade.
 	 * 

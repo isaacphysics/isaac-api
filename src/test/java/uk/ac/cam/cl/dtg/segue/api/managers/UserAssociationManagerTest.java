@@ -28,7 +28,6 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
-import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
@@ -61,7 +60,7 @@ public class UserAssociationManagerTest {
 	 */
 	@Test
 	public final void userAssociationManager_generateToken_tokenShouldBeCreatedAndPersisted()
-			throws SegueDatabaseException, UserGroupNotFoundException {
+		throws SegueDatabaseException, UserGroupNotFoundException {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
@@ -269,5 +268,4 @@ public class UserAssociationManagerTest {
 
 		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
 	}
-
 }

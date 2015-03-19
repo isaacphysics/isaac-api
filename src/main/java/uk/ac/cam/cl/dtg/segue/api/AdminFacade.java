@@ -136,7 +136,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Path("/stats/schools")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public Response getSchoolStatistics(@Context final HttpServletRequest request) {
+	public Response getSchoolsStatistics(@Context final HttpServletRequest request) {
 		try {
 			if (!isUserAnAdmin(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
@@ -147,8 +147,8 @@ public class AdminFacade extends AbstractSegueFacade {
 			
 			final String school = "school";
 			final String connections = "connections";
-			final String numberActive = "numberActiveLastSevenDays";
-			final int sevenDays = 7;
+			final String numberActive = "numberActiveLastThirtyDays";
+			final int thirtyDays = 30;
 			
 			Map<String, Date> lastSeenUserMap = this.statsManager.getLastSeenUserMap();
 			List<Map<String, Object>> result = Lists.newArrayList();
@@ -160,7 +160,7 @@ public class AdminFacade extends AbstractSegueFacade {
 				
 				result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue(), numberActive,
 						this.statsManager.getNumberOfUsersActiveForLastNDays(usersBySchool, lastSeenUserMap,
-								sevenDays).size()));
+								thirtyDays).size()));
 			}
 		
 			Collections.sort(result, new Comparator<Map<String, Object>>() {
@@ -170,11 +170,11 @@ public class AdminFacade extends AbstractSegueFacade {
 				@Override
 				public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
 
-					if ((Integer) o1.get(connections) < (Integer) o2.get(connections)) {
+					if ((Integer) o1.get(numberActive) < (Integer) o2.get(numberActive)) {
 						return 1;
 					}
 
-					if ((Integer) o1.get(connections) > (Integer) o2.get(connections)) {
+					if ((Integer) o1.get(numberActive) > (Integer) o2.get(numberActive)) {
 						return -1;
 					}
 
