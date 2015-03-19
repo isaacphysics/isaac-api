@@ -355,18 +355,12 @@ public class StatisticsManager {
 		// get total questions answered first time correctly
 		int questionsFirstTime = 0;
 		
-		// question pages stats goes here
-//		int totalQuestionPagesAttempted = 0;
-//		int totalQuestionPagesCompleted = 0;
-		
 		Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = userManager
 				.getQuestionAttemptsByUser(userOfInterest);
 		
 		// all relevant question page info
 		for (Entry<String, Map<String, List<QuestionValidationResponse>>> questionPage : questionAttemptsByUser
 				.entrySet()) {
-			// question page
-//			totalQuestionPagesAttempted++;
 
 			for (Entry<String, List<QuestionValidationResponse>> question : questionPage.getValue()
 					.entrySet()) {
