@@ -52,7 +52,6 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -364,7 +363,6 @@ public class GitContentManager implements IContentManager {
 		List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(contentResults);
 
 		return new ResultsWrapper<ContentDTO>(contentDTOResults, searchResults.getTotalResults());
-		
 	}
 
 	@Override
@@ -943,12 +941,6 @@ public class GitContentManager implements IContentManager {
 					}
 				}
 
-			}
-
-			if (c instanceof IsaacQuestionPage && (c.getLevel() == null || c.getLevel() == 0)) {
-				this.registerContentProblem(sha, c,
-						"Level error! - Question: " + c.getId() + " in " + c.getCanonicalSourceFile()
-								+ " has the level field set to: " + c.getLevel());
 			}
 		}
 
