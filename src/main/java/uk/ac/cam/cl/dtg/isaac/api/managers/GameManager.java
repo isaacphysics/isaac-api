@@ -614,8 +614,10 @@ public class GameManager {
 		while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE
 				&& !selectionOfGameboardQuestions.isEmpty()) {
 			for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
-				GameboardItemState questionState = this.calculateQuestionState(gameboardItem.getId(), usersQuestionAttempts);
-				if (questionState.equals(GameboardItemState.PASSED) || questionState.equals(GameboardItemState.PERFECT)) {
+				GameboardItemState questionState = this.calculateQuestionState(gameboardItem.getId(),
+						usersQuestionAttempts);
+				if (questionState.equals(GameboardItemState.PASSED)
+						|| questionState.equals(GameboardItemState.PERFECT)) {
 					completedQuestions.add(gameboardItem);
 				} else if (!gameboardReadyQuestions.contains(gameboardItem)) {
 					gameboardReadyQuestions.add(gameboardItem);
@@ -778,8 +780,8 @@ public class GameManager {
 			
 			int totalParts = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
 			
-			float percentCorrect = 100*(float)questionPartsCorrect / totalParts;
-			float percentIncorrect = 100*(float)questionPartsIncorrect / totalParts;
+			float percentCorrect = 100 * (float) questionPartsCorrect / totalParts;
+			float percentIncorrect = 100 * (float) questionPartsIncorrect / totalParts;
 			
 			if (questionPartsCorrect == totalParts) {
 				return GameboardItemState.PERFECT;

@@ -640,6 +640,59 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 		return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 	}
 	
+	/**
+	 * REST end point to allow gameboards to be persisted into permanent storage 
+	 * and for it to be added to the users' my boards collection. 
+	 * 
+	 * @param request
+	 *            - so that we can find out the currently logged in user
+	 * @param gameboardId
+	 *            - So that we can look up an existing gameboard to modify.
+	 * @return a Response containing a list of gameboard objects or containing
+	 *         a SegueErrorResponse.
+	 */
+	@POST
+	@Path("users/current_user/gameboards/{gameboard_id}")
+	public final Response linkUserToGameboard(
+			@Context final HttpServletRequest request,
+			@PathParam("gameboard_id") final String gameboardId) {
+		//TODO: change endpoint path to be more consistent with the gameboards facade
+		RegisteredUserDTO user;
+		try {
+			user = userManager.getCurrentRegisteredUser(request);
+		} catch (NoUserLoggedInException e1) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
+		
+		if (null == gameboardId) {
+			// Gameboard object must be there and have an id.
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must provide a gameboard id to be able to link to it.")
+					.toResponse();			
+		}
+
+		// find the existing gameboard.
+		GameboardDTO existingGameboard;
+		try {
+			existingGameboard = gameManager.getGameboard(gameboardId);
+			
+			if (null == existingGameboard) {
+				return new SegueErrorResponse(Status.NOT_FOUND, "No gameboard found for that id.")
+						.toResponse();
+			}
+			
+			// go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
+			gameManager.linkUserToGameboard(existingGameboard, user);
+			getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+			
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error whilst trying to access the gameboard database.", e).toResponse();
+		}
+		
+		return Response.ok().build();
+	}
+	
 
 	/**
 	 * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
