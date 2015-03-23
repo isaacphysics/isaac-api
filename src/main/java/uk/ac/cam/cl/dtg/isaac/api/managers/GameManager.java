@@ -725,8 +725,7 @@ public class GameManager {
 			Float passMark = questionPage.getPassMark();
 			
 			if (passMark == null) {
-				passMark = 50f;
-				// TODO: This should be different for Book pages.
+				passMark = 100f;
 			}
 			
 			// go through each question in the question page
