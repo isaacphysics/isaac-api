@@ -92,9 +92,10 @@ public class UserAssociationManager {
 			}
 		}
 		
-		// create some kind of random token
-		String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=",
-				"").substring(0, tokenLength).toUpperCase();
+		// create some kind of random token and remove ambiguous characters.
+		String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes()))
+				.replace("=", "").substring(0, tokenLength).toUpperCase().replace("0", "ZR")
+				.replace("O", "QR");
 
 		AssociationToken associationToken = new AssociationToken(token, registeredUser.getDbId(),
 				associatedGroupId);
