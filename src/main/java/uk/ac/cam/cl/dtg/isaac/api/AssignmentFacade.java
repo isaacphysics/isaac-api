@@ -61,7 +61,10 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * AssignmentFacade
@@ -138,10 +141,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 						currentlyLoggedInUser, questionAttemptsByUser));
 			}
 			
+			this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, Maps.newHashMap());
+			
 			return Response.ok(assignments).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to assignments set a given user", e);	
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while trying to get assignments.", e).toResponse();
 		} catch (ContentManagerException e) {
@@ -186,12 +192,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 				for (AssignmentDTO assignment : allAssignmentsSetByUserToGroup) {
 					assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId()));
 				}
+				
+				this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_GROUPS_ASSIGNMENTS,
+						Maps.newHashMap());
+				
 				return Response.ok(allAssignmentsSetByUserToGroup).build();
 			}
 			
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to assignments set to a given group", e);	
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
 					.toResponse();
 		}
@@ -258,12 +269,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 				}
 			});
 			
+			this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS, Maps.newHashMap());
+			
 			// get game manager completion information for this assignment.
 			return Response.ok(result).build();
 			
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to view assignment progress", e);			
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
 					.toResponse();
 		} catch (ContentManagerException e) {
@@ -337,7 +351,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
 			// modifies assignment passed in to include an id.
 			this.assignmentManager.createAssignment(newAssignment);
-
+			
+			this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, Maps.newHashMap());
+			
 			return Response.ok(newAssignment).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
@@ -397,10 +413,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			
 			this.assignmentManager.deleteAssignment(assignmentToDelete);
 			
+			this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT, Maps.newHashMap());
+			
 			return Response.noContent().build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to delete assignment", e);			
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.")
 					.toResponse();
 		}

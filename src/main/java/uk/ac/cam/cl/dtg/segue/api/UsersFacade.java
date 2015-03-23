@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,6 +59,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 /**
@@ -139,7 +142,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
+	public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final String userObjectString) {
 
@@ -174,6 +177,8 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * @param userObject
 	 *            - A user object containing the email of the user requesting a
 	 *            reset
+	 * @param request
+	 *            - For logging purposes.
 	 * @return a successful response regardless of whether the email exists or
 	 *         an error code if there is a technical fault
 	 */
@@ -181,7 +186,8 @@ public class UsersFacade extends AbstractSegueFacade {
 	@Path("users/resetpassword")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response generatePasswordResetToken(final RegisteredUserDTO userObject) {
+	public Response generatePasswordResetToken(final RegisteredUserDTO userObject,
+			@Context final HttpServletRequest request) {
 		if (null == userObject) {
 			log.debug("User is null");
 			return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
@@ -190,6 +196,10 @@ public class UsersFacade extends AbstractSegueFacade {
 		try {
 			userManager.resetPasswordRequest(userObject);
 
+			this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+					PASSWORD_RESET_REQUEST_RECEIVED,
+					ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
+			
 			return Response.ok().build();
 		} catch (CommunicationException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -217,7 +227,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	@Path("users/resetpassword/{token}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response validatePasswordResetRequest(@PathParam("token") final String token) {
+	public Response validatePasswordResetRequest(@PathParam("token") final String token) {
 		try {
 			if (userManager.validatePasswordResetToken(token)) {
 				return Response.ok().build();
@@ -241,16 +251,26 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *            - A password reset token
 	 * @param userObject
 	 *            - A user object containing password information.
+	 * @param request
+	 *            - For logging purposes.
 	 * @return successful response.
 	 */
 	@POST
 	@Path("users/resetpassword/{token}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@GZIP
-	public final Response resetPassword(@PathParam("token") final String token,
-			final RegisteredUser userObject) {
+	public Response resetPassword(@PathParam("token") final String token,
+			final RegisteredUser userObject,
+			@Context final HttpServletRequest request) {
 		try {
 			userManager.resetPassword(token, userObject);
+			
+			RegisteredUserDTO userDTOByEmail = userManager.getUserDTOByEmail(userObject.getEmail());
+			
+			this.getLogManager().logEvent(userDTOByEmail, request,
+					PASSWORD_RESET_REQUEST_SUCCESSFUL,
+					ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
+			
 		} catch (InvalidTokenException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
 					"Invalid password reset token.");
@@ -263,8 +283,13 @@ public class UsersFacade extends AbstractSegueFacade {
 			log.error(errorMsg, e);
 			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg);
 			return error.toResponse();
+		} catch (NoUserException e) {
+			log.error(
+					"Unable to find user by email during password reset flow - after success. "
+					+ "Something went very wrong.",
+					e);
 		}
-
+		
 		return Response.ok().build();
 	}
 

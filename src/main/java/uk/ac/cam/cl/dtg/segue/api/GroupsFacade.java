@@ -35,6 +35,7 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -138,6 +139,9 @@ public class GroupsFacade extends AbstractSegueFacade {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 			UserGroupDTO group = groupManager.createUserGroup(groupDTO.getGroupName(), user);
 
+			this.getLogManager().logEvent(user, request, Constants.CREATE_USER_GROUP,
+					ImmutableMap.of(Constants.GROUP_FK, group.getId()));
+			
 			return Response.ok(group).build();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to create user group. ", e);

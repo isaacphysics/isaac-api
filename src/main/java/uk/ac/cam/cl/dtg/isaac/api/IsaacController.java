@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -719,7 +720,10 @@ public class IsaacController extends AbstractIsaacFacade {
 			if (associationManager.hasPermission(user, userOfInterestSummary)) {
 				Map<String, Object> userQuestionInformation = statsManager
 						.getUserQuestionInformation(userOfInterestFull);
-
+				
+				this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
+						ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getDbId()));
+				
 				return Response.ok(userQuestionInformation).build();	
 			} else {
 				return new SegueErrorResponse(Status.FORBIDDEN,

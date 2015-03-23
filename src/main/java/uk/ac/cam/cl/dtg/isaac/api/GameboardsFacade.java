@@ -412,6 +412,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 					message).toResponse();
 		}		
 		
+		this.getLogManager().logEvent(user, request, CREATE_GAMEBOARD,
+				ImmutableMap.of(GAMEBOARD_ID_FKEY, persistedGameboard.getId()));
+		
 		return Response.ok(persistedGameboard).build();
 	}
 	

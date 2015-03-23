@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -140,6 +142,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
 			associationManager.revokeAssociation(user, userToRevoke);
 
+			this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
+					ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdToRevoke));
+			
 			return Response.status(Status.NO_CONTENT).build();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to get association token. ", e);
@@ -245,7 +250,10 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
 			associationManager.createAssociationWithToken(token, user);
-
+			
+			this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
+					ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, token));
+			
 			return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to get association token. ", e);

@@ -83,9 +83,20 @@ public final class Constants {
 	public static final String PAGE_ID_FIELDNAME = "CONCEPT_ID";
 	public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
 	
+	
+	public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
+	public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
+	public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
+	public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
+	public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
+	
 	public static final String GENERATE_RANDOM_GAMEBOARD = "GENERATE_RANDOM_GAMEBOARD";
 	public static final String GAMEBOARD_LOG_FIELDNAME = "GAMEBOARD_LOG_FIELDNAME";
 	public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
+	
+	public static final String VIEW_USER_PROGRESS = "VIEW_USER_PROGRESS";
+	
+	public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
 	
 	/**
 	 * Private constructor to prevent this class being created.

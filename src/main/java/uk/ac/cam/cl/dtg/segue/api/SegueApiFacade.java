@@ -47,7 +47,6 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
@@ -82,6 +81,7 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue Api Facade
@@ -179,21 +179,21 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
 
-		if (null == eventJSON || eventJSON.get(Constants.TYPE_FIELDNAME) == null) {
+		if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
 			log.error("Error during log operation, no event type specified. Event: " + eventJSON);
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-					"Unable to record log message as the log has no " + Constants.TYPE_FIELDNAME
+					"Unable to record log message as the log has no " + TYPE_FIELDNAME
 							+ " property.");
 			return error.toResponse();
 		}
 
-		String eventType = (String) eventJSON.get(Constants.TYPE_FIELDNAME);
+		String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
 		// remove the type information as we don't need it.
-		eventJSON.remove(Constants.TYPE_FIELDNAME);
+		eventJSON.remove(TYPE_FIELDNAME);
 
 		this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
-		return Response.ok().cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+		return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 	}
 
 	/**
@@ -218,14 +218,14 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	public final Response getContentListByVersion(@PathParam("version") final String version,
 			@QueryParam("tags") final String tags, @QueryParam("type") final String type,
 			@QueryParam("start_index") final String startIndex, @QueryParam("limit") final String limit) {
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
 
 		if (null != type) {
-			fieldsToMatch.put(immutableEntry(Constants.BooleanOperator.AND, Constants.TYPE_FIELDNAME),
+			fieldsToMatch.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME),
 					Arrays.asList(type.split(",")));
 		}
 		if (null != tags) {
-			fieldsToMatch.put(immutableEntry(Constants.BooleanOperator.AND, Constants.TAGS_FIELDNAME),
+			fieldsToMatch.put(immutableEntry(BooleanOperator.AND, TAGS_FIELDNAME),
 					Arrays.asList(tags.split(",")));
 		}
 
@@ -273,12 +273,12 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 *         containing null if none found.
 	 */
 	public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
-			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
 			@Nullable final Integer startIndex, @Nullable final Integer limit) {
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		String newVersion = this.getLiveVersion();
-		Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;
+		Integer newLimit = DEFAULT_RESULTS_LIMIT;
 		Integer newStartIndex = 0;
 		if (version != null) {
 			newVersion = version;
@@ -329,7 +329,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 *         containing null if none found.
 	 */
 	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
-			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) {
 		return this.findMatchingContentRandomOrder(version, fieldsToMatch, startIndex, limit, null);
 	}
@@ -355,12 +355,12 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 *         containing null if none found.
 	 */
 	public final ResultsWrapper<ContentDTO> findMatchingContentRandomOrder(@Nullable final String version,
-			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit, final Long randomSeed) {
 		IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
 		String newVersion = this.getLiveVersion();
-		Integer newLimit = Constants.DEFAULT_RESULTS_LIMIT;
+		Integer newLimit = DEFAULT_RESULTS_LIMIT;
 		Integer newStartIndex = 0;
 		if (version != null) {
 			newVersion = version;
@@ -472,7 +472,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		if (null != types) {
 			typesThatMustMatch = Maps.newHashMap();
-			typesThatMustMatch.put(Constants.TYPE_FIELDNAME, Arrays.asList(types.split(",")));
+			typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
 		}
 
 		ResultsWrapper<ContentDTO> searchResults;
@@ -510,7 +510,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	public final ResultsWrapper<ContentDTO> segueSearch(final String searchString,
 			@Nullable final String version, @Nullable final Map<String, List<String>> fieldsThatMustMatch,
 			@Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
-		int newLimit = Constants.DEFAULT_RESULTS_LIMIT;
+		int newLimit = DEFAULT_RESULTS_LIMIT;
 		int newStartIndex = 0;
 		String newVersion = contentVersionController.getLiveVersion();
 
@@ -688,7 +688,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		// determine if we can use the cache if so return cached response.
 		EntityTag etag = new EntityTag(version.hashCode() + path.hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag, Constants.CACHE_FOR_ONE_DAY);
+		Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_ONE_DAY);
 
 		if (cachedResponse != null) {
 			return cachedResponse;
@@ -718,7 +718,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 				SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
 						"Invalid file extension requested");
 				log.debug(error.getErrorMessage());
-				return error.toResponse(getCacheControl(Constants.CACHE_FOR_ONE_DAY), etag);
+				return error.toResponse(getCacheControl(CACHE_FOR_ONE_DAY), etag);
 		}
 
 		try {
@@ -739,11 +739,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: "
 					+ path);
 			log.warn(error.getErrorMessage());
-			return error.toResponse(getCacheControl(Constants.CACHE_FOR_TEN_MINUTES), etag);
+			return error.toResponse(getCacheControl(CACHE_FOR_TEN_MINUTES), etag);
 		}
 
 		return Response.ok(fileContent.toByteArray()).type(mimeType)
-				.cacheControl(getCacheControl(Constants.CACHE_FOR_ONE_DAY)).tag(etag).build();
+				.cacheControl(getCacheControl(CACHE_FOR_ONE_DAY)).tag(etag).build();
 	}
 
 	/**
@@ -766,7 +766,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		try {
 			if (null == limit) {
-				limitAsInt = Constants.DEFAULT_RESULTS_LIMIT;
+				limitAsInt = DEFAULT_RESULTS_LIMIT;
 			} else {
 				limitAsInt = Integer.parseInt(limit);
 			}
@@ -829,16 +829,16 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@GZIP
 	public final Response getSegueEnvironment(@Context final Request request) {
 		EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag, Constants.CACHE_FOR_THIRTY_DAY);
+		Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_THIRTY_DAY);
 		if (cachedResponse != null) {
 			return cachedResponse;
 		}
 
 		ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put(
-				"segueEnvironment", this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT))
+				"segueEnvironment", this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT))
 				.build();
 
-		return Response.ok(result).cacheControl(this.getCacheControl(Constants.CACHE_FOR_THIRTY_DAY))
+		return Response.ok(result).cacheControl(this.getCacheControl(CACHE_FOR_THIRTY_DAY))
 				.tag(etag).build();
 	}
 
@@ -1025,7 +1025,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 						(QuestionValidationResponseDTO) response.getEntity());
 			}
 
-			this.getLogManager().logEvent(currentUser, request, Constants.ANSWER_QUESTION, response.getEntity());
+			this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
 
 			return response;
 			
@@ -1042,6 +1042,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	 * 
 	 * @param form
 	 *            - Map containing the message details
+	 * @param request
+	 *            - for logging purposes.
 	 * @return - Successful response if no error occurs, otherwise error
 	 *         response
 	 */
@@ -1049,7 +1051,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	@Path("contact/")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response contactUs(final Map<String, String> form) {
+	public Response contactUs(final Map<String, String> form, @Context final HttpServletRequest request) {
 		if (form.get("firstName") == null || form.get("lastName") == null || form.get("emailAddress") == null
 				|| form.get("subject") == null || form.get("message") == null) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.");
@@ -1082,6 +1084,10 @@ public class SegueApiFacade extends AbstractSegueFacade {
 		try {
 			communicator.sendMessage(this.getProperties().getProperty("MAIL_RECEIVERS"), "Administrator",
 					"Contact Us Form", builder.toString());
+			
+			getLogManager().logEvent(userManager.getCurrentUser(request),
+					request, CONTACT_US_FORM_USED, builder.toString());
+			
 		} catch (CommunicationException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error sending message.", e);
@@ -1108,11 +1114,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
 			Map.Entry<BooleanOperator, String> newEntry = null;
-			if (pair.getKey().equals(Constants.ID_FIELDNAME)) {
+			if (pair.getKey().equals(ID_FIELDNAME)) {
 				newEntry = immutableEntry(BooleanOperator.OR, pair.getKey());
 
 			} else {
-				newEntry = immutableEntry(Constants.BooleanOperator.AND, pair.getKey());
+				newEntry = immutableEntry(BooleanOperator.AND, pair.getKey());
 			}
 
 			fieldsToMatchOutput.put(newEntry, pair.getValue());

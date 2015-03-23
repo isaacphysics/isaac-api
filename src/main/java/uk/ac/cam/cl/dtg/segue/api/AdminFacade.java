@@ -561,6 +561,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			}
 			
 			this.userManager.deleteUserAccount(userId);
+			
 			log.info("Admin User: " + currentlyLoggedInUser.getEmail()
 					+ " has just deleted the user account with id: " + userId);
 			

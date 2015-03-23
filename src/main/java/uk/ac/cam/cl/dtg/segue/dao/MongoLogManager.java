@@ -334,8 +334,12 @@ public class MongoLogManager implements ILogManager {
 		}
 
 		logEvent.setEventType(eventType);
-		logEvent.setEventDetailsType(eventDetails.getClass().getCanonicalName());
-		logEvent.setEventDetails(eventDetails);
+		
+		if (eventDetails != null) {
+			logEvent.setEventDetailsType(eventDetails.getClass().getCanonicalName());
+			logEvent.setEventDetails(eventDetails);			
+		}
+		
 		logEvent.setIpAddress(ipAddress);
 		logEvent.setTimestamp(new Date());
 
