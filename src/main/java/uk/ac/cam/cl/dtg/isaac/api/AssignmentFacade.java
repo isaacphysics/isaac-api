@@ -154,7 +154,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to retrieve the content requested. Please try again later.", e).toResponse();
 		}
-	}
+	}	
 
 	/**
 	 * Allows a user to get all assignments they have set.

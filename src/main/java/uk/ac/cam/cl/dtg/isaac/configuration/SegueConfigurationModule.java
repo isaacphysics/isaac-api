@@ -20,6 +20,7 @@ import java.util.List;
 import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacConceptPage;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFastTrackQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacFeaturedProfile;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacMultiChoiceQuestion;
@@ -55,6 +56,7 @@ public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 		supplementaryContentDTOs.add(IsaacFeaturedProfile.class);
 		supplementaryContentDTOs.add(IsaacWildcard.class);
 		supplementaryContentDTOs.add(IsaacPod.class);
+		supplementaryContentDTOs.add(IsaacEventPage.class);
 
 		return supplementaryContentDTOs;
 	}
