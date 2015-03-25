@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.Validate;
@@ -47,6 +48,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -445,7 +447,7 @@ public class StatisticsManager {
 	public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
 			final Map<String, Date> lastSeenUserMap, final int daysFromToday) {
 		
-		List<RegisteredUserDTO> qualifyingUsers = Lists.newArrayList();
+		Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
 		
 		for (RegisteredUserDTO user : users) {
 			Date eventDate = lastSeenUserMap.get(user.getDbId());
