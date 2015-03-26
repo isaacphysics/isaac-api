@@ -23,6 +23,7 @@ import org.apache.commons.lang3.Validate;
 import org.bson.types.ObjectId;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
+import org.mongojack.DBSort;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
@@ -221,7 +222,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		BasicDBObject query = new BasicDBObject(mapper.convertValue(
 				prototype, HashMap.class));
 		
-		DBCursor<RegisteredUser> users = jc.find(query);
+		DBCursor<RegisteredUser> users = jc.find(query).sort(DBSort.asc("familyName"));
 		
 		return users.toArray();		
 	}
