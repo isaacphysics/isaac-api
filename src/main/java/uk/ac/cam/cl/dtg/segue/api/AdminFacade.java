@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -465,6 +466,10 @@ public class AdminFacade extends AbstractSegueFacade {
 	 *            - if searching by id
 	 * @param email
 	 *            - if searching by e-mail
+	 * @param familyName
+	 *            - if searching by familyName
+	 * @param role
+	 *            - if searching by role
 	 * @return a userDTO or a segue error response
 	 */
 	@GET
@@ -472,9 +477,14 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
-			@QueryParam("id") final String userId, @QueryParam("email") final String email) {
+			@QueryParam("id") final String userId, @QueryParam("email") @Nullable final String email,
+			@QueryParam("familyName") @Nullable final String familyName,
+			@QueryParam("role") @Nullable final Role role) {
+
+		RegisteredUserDTO currentUser;
 		try {
-			if (!isUserAnAdmin(httpServletRequest)) {
+			currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+			if (currentUser.getRole() == null || currentUser.getRole() != Role.ADMIN) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -491,7 +501,18 @@ public class AdminFacade extends AbstractSegueFacade {
 			if (null != email && !email.isEmpty()) {
 				userPrototype.setEmail(email);	
 			}
+			
+			if (null != familyName && !familyName.isEmpty()) {
+				userPrototype.setFamilyName(familyName);	
+			}
+			
+			if (null != role) {
+				userPrototype.setRole(role);	
+			}
 
+			log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
+					currentUser.getRole(), currentUser.getEmail(), userPrototype));
+			
 			return Response.ok(this.userManager.findUsers(userPrototype)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -514,8 +535,11 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GZIP
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("user_id") final String userId) {
+		
+		RegisteredUserDTO currentUser;
 		try {
-			if (!isUserAnAdmin(httpServletRequest)) {
+			currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+			if (currentUser.getRole() == null || currentUser.getRole() != Role.ADMIN) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -524,6 +548,9 @@ public class AdminFacade extends AbstractSegueFacade {
 		}
 
 		try {
+			log.info(String.format("%s user (%s) did an id search across all users based on user id {%s}",
+					currentUser.getRole(), currentUser.getEmail(), userId));
+			
 			return Response.ok(this.userManager.getUserDTOById(userId)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
