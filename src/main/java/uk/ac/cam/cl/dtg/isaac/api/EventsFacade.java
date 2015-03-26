@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -114,5 +116,46 @@ public class EventsFacade extends AbstractIsaacFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error locating the content you requested.").toResponse();
 		}
-	}	
+	}
+	
+	/**
+	 * REST end point to retrieve an event by id..
+	 * 
+	 * @param request
+	 *            - this allows us to check to see if a user is currently
+	 *            logged-in.
+	 * @param eventId
+	 *            - Id of the event of interest.
+	 * @return a Response containing a list of events objects or containing
+	 *         a SegueErrorResponse.
+	 */
+	@GET
+	@Path("/{event_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getEvent(
+			@Context final HttpServletRequest request,
+			@PathParam("event_id") final String eventId) {
+		
+		try {
+			ContentDTO c = this.versionManager.getContentManager().getContentById(
+					versionManager.getLiveVersion(), eventId);
+
+			if (null == c) {
+				return SegueErrorResponse.getResourceNotFoundResponse("The event requested could not be located");
+			}
+			
+			if (c instanceof IsaacEventPageDTO) {
+				return Response.ok(c).build();
+			} else {
+				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+						"The content found is of the incorrect type.").toResponse();
+			}
+
+		} catch (ContentManagerException e) {
+			log.error("Error during event request", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Error locating the content you requested.").toResponse();
+		}
+	}		
 }

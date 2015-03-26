@@ -289,6 +289,10 @@ public class ContentMapper {
 	 * @return DTO that can be used for mapping.
 	 */
 	public ContentDTO getDTOByDO(final Content content) {
+		if (null == content) {
+			return null;
+		}
+		
 		ContentDTO result = getAutoMapper().map(content,
 				this.mapOfDOsToDTOs.get(content.getClass()));
 		if (result.getRelatedContent() != null) {
