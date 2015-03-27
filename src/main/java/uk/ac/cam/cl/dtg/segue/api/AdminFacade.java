@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +38,9 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -621,6 +624,56 @@ public class AdminFacade extends AbstractSegueFacade {
 			log.error("Error while trying to list users belonging to a school.", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error").toResponse();
+		}
+	}	
+	
+	/**
+	 * Get the event data for a specified user.
+	 * 
+	 * @param request
+	 *            - request information used for caching.
+	 * @param httpServletRequest
+	 *            - the request which may contain session information.
+	 * @param fromDate
+	 *            - date to start search
+	 * @param toDate
+	 *            - date to end search
+	 * @param events
+	 *            - comma separated list of events of interest.
+	 * @return Returns a map of eventType to Map of dates to total number of
+	 *         events.
+	 */
+	@GET
+	@Path("users/event_data/over_time")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response getEventDataForUser(@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest,
+			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+			@QueryParam("events") final String events) {
+		
+		if (null == events) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must specify the events you are interested in.").toResponse();
+		}
+
+		if (null == fromDate || null == toDate) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must specify the from_date and to_date you are interested in.").toResponse();
+		}
+		
+		try {
+			if (!isUserAnAdmin(httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.").toResponse();
+			}
+
+			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager.getEventLogsByDate(
+					Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate));
+
+			return Response.ok(eventLogsByDate).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}	
 	

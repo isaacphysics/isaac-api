@@ -18,6 +18,9 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +30,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -35,10 +39,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.Validate;
+import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
@@ -71,6 +78,7 @@ import com.google.inject.Inject;
 public class UsersFacade extends AbstractSegueFacade {
 	private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
 	private final UserManager userManager;
+	private StatisticsManager statsManager;
 
 	/**
 	 * Construct an instance of the UsersFacade.
@@ -80,12 +88,16 @@ public class UsersFacade extends AbstractSegueFacade {
 	 * @param userManager
 	 *            - user manager for the application
 	 * @param logManager
-	 *            - so we can log interesting events. 
+	 *            - so we can log interesting events.
+	 * @param statsManager
+	 *            - so we can view stats on interesting events.  
 	 */
 	@Inject
-	public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager) {
+	public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
+			final StatisticsManager statsManager) {
 		super(properties, logManager);
 		this.userManager = userManager;
+		this.statsManager = statsManager;
 	}
 
 	/**
@@ -293,6 +305,62 @@ public class UsersFacade extends AbstractSegueFacade {
 		return Response.ok().build();
 	}
 
+	/**
+	 * Get the event data for a specified user.
+	 * 
+	 * @param request
+	 *            - request information used for caching.
+	 * @param httpServletRequest
+	 *            - the request which may contain session information.
+	 * @param userId
+	 *            - userId of interest - currently only supports looking at own data.
+	 * @param fromDate
+	 *            - date to start search
+	 * @param toDate
+	 *            - date to end search
+	 * @param events
+	 *            - comma separated list of events of interest.
+	 * @return Returns a map of eventType to Map of dates to total number of
+	 *         events.
+	 */
+	@GET
+	@Path("users/{user_id}/event_data/over_time")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response getEventDataForUser(@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final String userId,
+			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+			@QueryParam("events") final String events) {
+		
+		if (null == events) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must specify the events you are interested in.").toResponse();
+		}
+
+		if (null == fromDate || null == toDate) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must specify the from_date and to_date you are interested in.").toResponse();
+		}
+		
+		try {
+			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+			
+			// decide if the user is allowed to view this data.
+			if (!currentUser.getDbId().equals(userId)) {
+				return SegueErrorResponse.getIncorrectRoleResponse();
+			}
+
+			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager
+					.getEventLogsByDateAndUserList(Lists.newArrayList(events.split(",")), new Date(fromDate),
+							new Date(toDate), Arrays.asList(currentUser));
+
+			return Response.ok(eventLogsByDate).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
+	}	
+	
+	
 	/**
 	 * Update a user object.
 	 * 

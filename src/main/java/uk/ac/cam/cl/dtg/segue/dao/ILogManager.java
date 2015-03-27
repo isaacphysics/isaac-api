@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * Interface for logging components.
@@ -117,6 +118,9 @@ public interface ILogManager {
 	 */
 	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate);
 	
+	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate,
+			List<RegisteredUserDTO> usersOfInterest);
+	
 	/**
 	 * @param userType
 	 *            to filter by.
@@ -167,5 +171,7 @@ public interface ILogManager {
 	 *         last access date.
 	 */
 	Map<String, Date> getLastAccessForAllUsers();
+
+
 
 }

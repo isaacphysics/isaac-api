@@ -41,14 +41,16 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DB;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Log Manager.
@@ -170,8 +172,15 @@ public class MongoLogManager implements ILogManager {
 		return getLogsByType(type, fromDate, null);
 	}
 	
+	
 	@Override
 	public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate) {
+		return this.getLogsByType(type, fromDate, toDate, null);
+	}
+	
+	@Override
+	public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
+			final List<RegisteredUserDTO> usersOfInterest) {
 		Date newToDate;
 		if (null == toDate) {
 			newToDate = new Date();
@@ -186,10 +195,29 @@ public class MongoLogManager implements ILogManager {
 				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
-		DBObject dateRangeObject = BasicDBObjectBuilder.start("$gte", fromDate).add("$lte", newToDate).get();
+		BasicDBObject queryDateRange = new BasicDBObject("timestamp", //
+                new BasicDBObject("$gte", fromDate).append("$lt", newToDate));
 		
-		List<LogEvent> results = jc.find(
-				DBQuery.and(DBQuery.is("eventType", type), DBQuery.is("timestamp", dateRangeObject))).toArray();
+		BasicDBObject andQuery = new BasicDBObject();
+		List<BasicDBObject> obj = Lists.newArrayList();
+		obj.add(queryDateRange);
+		obj.add(new BasicDBObject("eventType", type));
+	
+		if (null != usersOfInterest && usersOfInterest.size() > 0) {
+			BasicDBObject orQuery = new BasicDBObject();
+			
+			List<BasicDBObject> ids = Lists.newArrayList();
+			for (RegisteredUserDTO user : usersOfInterest) {
+				ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getDbId()));
+			}
+			
+			orQuery.put("$or", ids);
+			obj.add(orQuery);
+		}
+		
+		andQuery.put("$and", obj);
+		
+		List<LogEvent> results = jc.find(andQuery).toArray();
 		
 		return results;
 	}

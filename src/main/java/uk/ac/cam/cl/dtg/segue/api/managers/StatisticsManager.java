@@ -502,7 +502,6 @@ public class StatisticsManager {
 		return immutableMap;
 	}
 	
-	
 	/**
 	 * getEventLogsByDate.
 	 * 
@@ -520,6 +519,44 @@ public class StatisticsManager {
 
 		for (String typeOfInterest : eventTypes) {
 			List<LogEvent> logsByType = this.logManager.getLogsByType(typeOfInterest, fromDate, toDate);
+
+			if (!result.containsKey(typeOfInterest)) {
+				result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
+			}
+
+			for (LogEvent log : logsByType) {
+				LocalDate dateGroup = new LocalDate(log.getTimestamp());
+				if (result.get(typeOfInterest).containsKey(dateGroup)) {
+					result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
+				} else {
+					result.get(typeOfInterest).put(dateGroup, 1);
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * getEventLogsByDate.
+	 *
+	 * @param eventTypes
+	 *            - of interest
+	 * @param fromDate
+	 *            - of interest
+	 * @param toDate
+	 *            - of interest
+	 * @param userList
+	 *            - user prototype to filter events. e.g. user(s) with a
+	 *            particular id or role.
+	 * @return Map of eventType --> map of dates and frequency
+	 */
+	public Map<String, Map<LocalDate, Integer>> getEventLogsByDateAndUserList(
+			final Collection<String> eventTypes, final Date fromDate, final Date toDate,
+			final List<RegisteredUserDTO> userList) {
+		Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
+
+		for (String typeOfInterest : eventTypes) {
+			List<LogEvent> logsByType = this.logManager.getLogsByType(typeOfInterest, fromDate, toDate, userList);
 
 			if (!result.containsKey(typeOfInterest)) {
 				result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
