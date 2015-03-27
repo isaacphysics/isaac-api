@@ -548,7 +548,7 @@ public class AdminFacade extends AbstractSegueFacade {
 		}
 
 		try {
-			log.info(String.format("%s user (%s) did an id search across all users based on user id {%s}",
+			log.info(String.format("%s user (%s) did a user id lookup based on user id {%s}",
 					currentUser.getRole(), currentUser.getEmail(), userId));
 			
 			return Response.ok(this.userManager.getUserDTOById(userId)).build();
