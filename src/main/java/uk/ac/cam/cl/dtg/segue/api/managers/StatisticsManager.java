@@ -19,7 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.Validate;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -65,11 +70,12 @@ public class StatisticsManager {
 	private ContentVersionController versionManager;
 	private IContentManager contentManager;
 	
-	private Cache<String, Map<String, String>> statsCache;
+	private Cache<String, Object> statsCache;
 	
 	private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
 	private static final String GENERAL_STATS = "GENERAL_STATS";
-	private static final int STATS_EVICTION_INTERVAL_MINUTES = 15;
+	private static final String SCHOOL_STATS = "SCHOOL_STATS";
+	private static final int STATS_EVICTION_INTERVAL_MINUTES = 10;
 	
 	/**
 	 * StatisticsManager.
@@ -92,17 +98,19 @@ public class StatisticsManager {
 		
 		this.statsCache = CacheBuilder.newBuilder()
 				.expireAfterWrite(STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
-				.<String, Map<String, String>> build();
+				.<String, Object> build();
 	}
 
 	/**
 	 * Output general stats.
+	 * This returns a Map of String to Object and is intended to be sent directly to a serializable facade endpoint.
 	 * 
 	 * @return ImmutableMap<String, String> (stat name, stat value)
 	 * @throws SegueDatabaseException 
 	 */
-	public Map<String, String> outputGeneralStatistics() throws SegueDatabaseException {
-		Map<String, String> cachedOutput = this.statsCache.getIfPresent(GENERAL_STATS);
+	public Map<String, Object> outputGeneralStatistics() throws SegueDatabaseException {
+		@SuppressWarnings("unchecked")
+		Map<String, Object> cachedOutput = (Map<String, Object>) this.statsCache.getIfPresent(GENERAL_STATS);
 		if (cachedOutput != null) {
 			log.debug("Using cached statistics.");
 			return cachedOutput;
@@ -110,7 +118,7 @@ public class StatisticsManager {
 		
 		List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 
-		ImmutableMap.Builder<String, String> ib = new ImmutableMap.Builder<String, String>();
+		ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
 
 		List<RegisteredUserDTO> male = Lists.newArrayList();
 		List<RegisteredUserDTO> female = Lists.newArrayList();
@@ -243,13 +251,76 @@ public class StatisticsManager {
 		ib.put("questionsAnsweredLastThirtyDaysStudents",
 				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
 								thirtyDays).size());
-		Map<String, String> result = ib.build();
+		Map<String, Object> result = ib.build();
 		
 		this.statsCache.put(GENERAL_STATS, result);
 		
 		return result; 
 	}
 
+	/**
+	 * Get an overview of all school performance.
+	 * This is for analytics / admin users.
+	 * 
+	 * @return list of school to statistics mapping. The object in the map is another map with keys
+	 * connections, numberActiveLastThirtyDays.
+	 * 
+	 * @throws UnableToIndexSchoolsException -
+	 * @throws SegueDatabaseException - 
+	 */
+	public List<Map<String, Object>> getSchoolStatistics() throws UnableToIndexSchoolsException,
+		SegueDatabaseException {
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.statsCache.getIfPresent(SCHOOL_STATS);
+		if (cachedOutput != null) {
+			log.debug("Using cached statistics.");
+			return cachedOutput;
+		}
+		
+		Map<School, Integer> map = getUsersBySchool();
+		
+		final String school = "school";
+		final String connections = "connections";
+		final String numberActive = "numberActiveLastThirtyDays";
+		final int thirtyDays = 30;
+		
+		Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
+		List<Map<String, Object>> result = Lists.newArrayList();
+		for (Entry<School, Integer> e : map.entrySet()) {
+			RegisteredUserDTO prototype = new RegisteredUserDTO();
+			prototype.setSchoolId(e.getKey().getUrn());
+			
+			List<RegisteredUserDTO> usersBySchool = this.userManager.findUsers(prototype);
+			
+			result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue(), numberActive,
+					getNumberOfUsersActiveForLastNDays(usersBySchool, lastSeenUserMap,
+							thirtyDays).size()));
+		}
+	
+		Collections.sort(result, new Comparator<Map<String, Object>>() {
+			/**
+			 * Descending numerical order
+			 */
+			@Override
+			public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
+
+				if ((Integer) o1.get(numberActive) < (Integer) o2.get(numberActive)) {
+					return 1;
+				}
+
+				if ((Integer) o1.get(numberActive) > (Integer) o2.get(numberActive)) {
+					return -1;
+				}
+
+				return 0;
+			}
+		});	
+		
+		this.statsCache.put(SCHOOL_STATS, (List<Map<String, Object>>) result);
+		
+		return result;
+	}
+	
 	/**
 	 * Get the number of users per school.
 	 * @return A map of schools to integers (representing the number of registered users)
@@ -429,6 +500,41 @@ public class StatisticsManager {
 				.put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest)).build();
 		
 		return immutableMap;
+	}
+	
+	
+	/**
+	 * getEventLogsByDate.
+	 * 
+	 * @param eventTypes
+	 *            - of interest
+	 * @param fromDate
+	 *            - of interest
+	 * @param toDate
+	 *            - of interest
+	 * @return Map of eventType --> map of dates and frequency
+	 */
+	public Map<String, Map<LocalDate, Integer>> getEventLogsByDate(final Collection<String> eventTypes,
+			final Date fromDate, final Date toDate) {
+		Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
+
+		for (String typeOfInterest : eventTypes) {
+			List<LogEvent> logsByType = this.logManager.getLogsByType(typeOfInterest, fromDate, toDate);
+
+			if (!result.containsKey(typeOfInterest)) {
+				result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
+			}
+
+			for (LogEvent log : logsByType) {
+				LocalDate dateGroup = new LocalDate(log.getTimestamp());
+				if (result.get(typeOfInterest).containsKey(dateGroup)) {
+					result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
+				} else {
+					result.get(typeOfInterest).put(dateGroup, 1);
+				}
+			}
+		}
+		return result;
 	}
 	
 	/**

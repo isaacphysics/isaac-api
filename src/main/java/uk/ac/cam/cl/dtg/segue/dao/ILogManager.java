@@ -90,6 +90,34 @@ public interface ILogManager {
 	List<LogEvent> getLogsByType(String type);
 
 	/**
+	 * Allows filtering by date range.
+	 * 
+	 * Will use now as the toDate.
+	 * 
+	 * @param type
+	 *            - string representing the type of event to find.
+	 * @param fromDate
+	 *            - date to start search
+	 * @return all events of the type requested or null if none available. The
+	 *         map should be of type String, Object
+	 */
+	List<LogEvent> getLogsByType(String type, Date fromDate);
+	
+	/**
+	 * Allows filtering by date range.
+	 * 
+	 * @param type
+	 *            - string representing the type of event to find.
+	 * @param fromDate
+	 *            - date to start search
+	 * @param toDate
+	 *            - date to end search.
+	 * @return all events of the type requested or null if none available. The
+	 *         map should be of type String, Object
+	 */
+	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate);
+	
+	/**
 	 * @param userType
 	 *            to filter by.
 	 * @return All logs belonging to a particular class of user.
@@ -139,4 +167,5 @@ public interface ILogManager {
 	 *         last access date.
 	 */
 	Map<String, Date> getLastAccessForAllUsers();
+
 }

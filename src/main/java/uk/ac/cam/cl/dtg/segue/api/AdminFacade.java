@@ -17,12 +17,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -35,7 +31,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -43,7 +41,6 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -60,10 +57,10 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Admin facade for segue.
@@ -131,59 +128,33 @@ public class AdminFacade extends AbstractSegueFacade {
 	/**
 	 * Statistics endpoint.
 	 * @param request - to determine access.
+	 * @param requestForCache - to determine caching.
 	 * @return stats
 	 */
 	@GET
 	@Path("/stats/schools")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public Response getSchoolsStatistics(@Context final HttpServletRequest request) {
+	public Response getSchoolsStatistics(@Context final HttpServletRequest request,
+			@Context final Request requestForCache) {
 		try {
 			if (!isUserAnAdmin(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an admin user to access this endpoint.").toResponse();
 			}
-			
-			Map<School, Integer> map = statsManager.getUsersBySchool();
-			
-			final String school = "school";
-			final String connections = "connections";
-			final String numberActive = "numberActiveLastThirtyDays";
-			final int thirtyDays = 30;
-			
-			Map<String, Date> lastSeenUserMap = this.statsManager.getLastSeenUserMap();
-			List<Map<String, Object>> result = Lists.newArrayList();
-			for (Entry<School, Integer> e : map.entrySet()) {
-				RegisteredUserDTO prototype = new RegisteredUserDTO();
-				prototype.setSchoolId(e.getKey().getUrn());
-				
-				List<RegisteredUserDTO> usersBySchool = this.userManager.findUsers(prototype);
-				
-				result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue(), numberActive,
-						this.statsManager.getNumberOfUsersActiveForLastNDays(usersBySchool, lastSeenUserMap,
-								thirtyDays).size()));
+
+			List<Map<String, Object>> schoolStatistics = statsManager.getSchoolStatistics();
+
+			// Calculate the ETag 
+			EntityTag etag = new EntityTag(schoolStatistics.toString().hashCode() + "");
+
+			Response cachedResponse = generateCachedResponse(requestForCache, etag);
+			if (cachedResponse != null) {
+				return cachedResponse;
 			}
-		
-			Collections.sort(result, new Comparator<Map<String, Object>>() {
-				/**
-				 * Descending numerical order
-				 */
-				@Override
-				public int compare(final Map<String, Object> o1, final Map<String, Object> o2) {
-
-					if ((Integer) o1.get(numberActive) < (Integer) o2.get(numberActive)) {
-						return 1;
-					}
-
-					if ((Integer) o1.get(numberActive) > (Integer) o2.get(numberActive)) {
-						return -1;
-					}
-
-					return 0;
-				}
-			});
 			
-			return Response.ok(result).build();
+			return Response.ok(schoolStatistics).tag(etag)
+					.cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
 		} catch (UnableToIndexSchoolsException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable To Index Schools Exception in admin facade", e).toResponse();
@@ -462,6 +433,8 @@ public class AdminFacade extends AbstractSegueFacade {
 	 * 
 	 * @param httpServletRequest
 	 *            - for checking permissions
+	 * @param request
+	 *            - for caching
 	 * @param userId
 	 *            - if searching by id
 	 * @param email
@@ -477,6 +450,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public Response findUsers(@Context final HttpServletRequest httpServletRequest,
+			@Context final Request request,
 			@QueryParam("id") final String userId, @QueryParam("email") @Nullable final String email,
 			@QueryParam("familyName") @Nullable final String familyName,
 			@QueryParam("role") @Nullable final Role role) {
@@ -510,10 +484,22 @@ public class AdminFacade extends AbstractSegueFacade {
 				userPrototype.setRole(role);	
 			}
 
+			List<RegisteredUserDTO> findUsers = this.userManager.findUsers(userPrototype);
+			
+			// Calculate the ETag 
+			EntityTag etag = new EntityTag(findUsers.toString().hashCode() + userPrototype.toString().hashCode()
+					+ "");
+			
+			Response cachedResponse = generateCachedResponse(request, etag);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+
 			log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
 					currentUser.getRole(), currentUser.getEmail(), userPrototype));
 			
-			return Response.ok(this.userManager.findUsers(userPrototype)).build();
+			return Response.ok(findUsers).tag(etag)
+					.cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Database error while looking up user information.").toResponse();

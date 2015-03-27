@@ -45,6 +45,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DB;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
@@ -160,6 +161,35 @@ public class MongoLogManager implements ILogManager {
 				String.class, this.objectMapper);
 		
 		List<LogEvent> results = jc.find(DBQuery.is("eventType", type)).toArray();
+		
+		return results;
+	}
+	
+	@Override
+	public List<LogEvent> getLogsByType(final String type, final Date fromDate) {		
+		return getLogsByType(type, fromDate, null);
+	}
+	
+	@Override
+	public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate) {
+		Date newToDate;
+		if (null == toDate) {
+			newToDate = new Date();
+		} else {
+			newToDate = toDate;
+		}
+		
+		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		MongoJackModule.configure(objectMapper);
+		
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				String.class, this.objectMapper);
+		
+		DBObject dateRangeObject = BasicDBObjectBuilder.start("$gte", fromDate).add("$lte", newToDate).get();
+		
+		List<LogEvent> results = jc.find(
+				DBQuery.and(DBQuery.is("eventType", type), DBQuery.is("timestamp", dateRangeObject))).toArray();
 		
 		return results;
 	}
