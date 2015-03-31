@@ -144,7 +144,7 @@ public class ContentVersionController implements ServletContextListener {
 		ContentSynchronisationWorker worker = new ContentSynchronisationWorker(
 				this, version);
 		
-		log.info("Adding sync job for version " + version + " to the queue");
+		log.info("Adding sync job for version " + version + " to the queue (" + this.indexQueue.size() + ")");
 		// add the job to the indexers internal queue 
 		Future<String> future = indexer.submit(worker);
 
