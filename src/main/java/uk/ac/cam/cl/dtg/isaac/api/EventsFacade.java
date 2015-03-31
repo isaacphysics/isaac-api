@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -85,6 +86,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 	 *            loggedin.
 	 * @param tags
 	 *            - a comma separated list of tags to include in the search.
+	 * @param startIndex
+	 *            - the initial index for the first result.
+	 * @param limit
+	 *            - the maximums number of results to return
 	 * @return a Response containing a list of events objects or containing
 	 *         a SegueErrorResponse.
 	 */
@@ -94,23 +99,36 @@ public class EventsFacade extends AbstractIsaacFacade {
 	@GZIP
 	public final Response getEvents(
 			@Context final HttpServletRequest request,
-			@QueryParam("type") final String tags) {
+			@QueryParam("tags") final String tags, 
+			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 		// TODO: finish implementing this.
 		// TODO: order by date
-		// TODO: filter by tags
 		// TODO: filter by location
-		// TODO: pagination.
-		
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+		
+		Integer newLimit = null;
+		Integer newStartIndex = null;
+		if (limit != null) {
+			newLimit = limit;
+		}
+		
+		if (startIndex != null) {
+			newStartIndex = startIndex;
+		}
+		
+		if (tags != null) {
+			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+		}
 		
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 		
 		try {
 			ResultsWrapper<ContentDTO> findByFieldNames = this.versionManager.getContentManager()
 					.findByFieldNames(versionManager.getLiveVersion(),
-							SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, -1);
-			return Response.ok(findByFieldNames).build();
+							SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex, newLimit);
 			
+			return Response.ok(findByFieldNames).build();
 		} catch (ContentManagerException e) {
 			log.error("Error during event request", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,

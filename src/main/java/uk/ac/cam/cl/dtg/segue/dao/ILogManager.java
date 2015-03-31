@@ -118,6 +118,21 @@ public interface ILogManager {
 	 */
 	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate);
 	
+	
+	/**
+	 * Allows filtering by date range.
+	 * 
+	 * @param type
+	 *            - string representing the type of event to find.
+	 * @param fromDate
+	 *            - date to start search
+	 * @param toDate
+	 *            - date to end search.
+	 * @param usersOfInterest
+	 *            - users of interest.
+	 * @return all events of the type requested or null if none available. The
+	 *         map should be of type String, Object
+	 */
 	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate,
 			List<RegisteredUserDTO> usersOfInterest);
 	

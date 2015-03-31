@@ -830,7 +830,6 @@ public class IsaacController extends AbstractIsaacFacade {
 		return contentSummaryResults;
 	}
 
-	
 	/**
 	 * For use when we expect to only find a single result.
 	 * 
@@ -870,7 +869,6 @@ public class IsaacController extends AbstractIsaacFacade {
 			return error.toResponse();
 		}
 	}
-	
 
 	/**
 	 * Helper method to query segue for a list of content objects.
