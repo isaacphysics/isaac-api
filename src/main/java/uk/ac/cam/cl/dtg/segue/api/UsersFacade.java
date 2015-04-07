@@ -120,7 +120,7 @@ public class UsersFacade extends AbstractSegueFacade {
 			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
 			// Calculate the ETag based on User we just retrieved from the DB
-			EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.hashCode() + "");
+			EntityTag etag = new EntityTag("currentUser".hashCode() + currentUser.toString().hashCode() + "");
 			Response cachedResponse = generateCachedResponse(request, etag,
 					Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
 			if (cachedResponse != null) {
