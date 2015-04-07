@@ -27,8 +27,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Isaac Symbolic Question DO.
- *
+ * ********************************************
+ * 
+ * Note: This class is currently not used.!!
+ * TODO: make sure mapping is completed.
+ * ********************************************
  */
 @JsonType("isaacWildcard")
 public class IsaacWildcardDTO extends ContentDTO {
