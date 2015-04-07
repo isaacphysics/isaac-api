@@ -1024,7 +1024,7 @@ public class UserManager {
 
 		// Save user
 		this.database.createOrUpdateUser(user);
-		log.info(String.format("Password Reset for user (%s) has completed successfully.", userObject.getEmail()));
+		log.info(String.format("Password Reset for user (%s) has completed successfully.", userObject.getDbId()));
 	}
 
 	/**
