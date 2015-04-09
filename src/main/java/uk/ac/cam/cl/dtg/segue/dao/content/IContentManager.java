@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -131,6 +132,52 @@ public interface IContentManager {
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			Integer startIndex, Integer limit) throws ContentManagerException;
 
+	/**
+	 * Method to allow bulk search of content based on the type field.
+	 * 
+	 * @param version
+	 *            - version of the content to search.
+	 * @param fieldsToMatch
+	 *            - Map which is used for field matching.
+	 * @param startIndex
+	 *            - the index of the first item to return.
+	 * @param limit
+	 *            - the maximum number of results to return.
+	 * @param sortInstructions
+	 *            - The sort instructions for results returned by this method.
+	 * @return Results Wrapper containing results of the search.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
+	 */
+	ResultsWrapper<ContentDTO> findByFieldNames(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
+			Integer limit, Map<String, SortOrder> sortInstructions) throws ContentManagerException;
+	
+	/**
+	 * Method to allow bulk search of content based on the type field.
+	 * 
+	 * @param version
+	 *            - version of the content to search.
+	 * @param fieldsToMatch
+	 *            - Map which is used for field matching.
+	 * @param startIndex
+	 *            - the index of the first item to return.
+	 * @param limit
+	 *            - the maximum number of results to return.
+	 * @param sortInstructions
+	 *            - The sort instructions for results returned by this method.
+	 * @param filterInstructions
+	 *            - Any filter instructions.
+	 * @return Results Wrapper containing results of the search.
+	 * @throws ContentManagerException
+	 *             - if there is an error retrieving the content requested.
+	 */
+	ResultsWrapper<ContentDTO> findByFieldNames(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
+			Integer limit, Map<String, SortOrder> sortInstructions,
+			@Nullable final Map<String, Map<String, String>> filterInstructions)
+			throws ContentManagerException;
+	
 	/**
 	 * The same as findByFieldNames but the results list is returned in a
 	 * randomised order.
@@ -366,5 +413,7 @@ public interface IContentManager {
 	 *             - if there is an error retrieving the content requested.
 	 */
 	ContentDTO populateContentSummaries(String version, ContentDTO contentDTO) throws ContentManagerException;
+
+
 
 }

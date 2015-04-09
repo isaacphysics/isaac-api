@@ -87,6 +87,7 @@ public interface ISearchProvider {
 	 */
 	boolean hasIndex(final String index);
 
+	
 	/**
 	 * Paginated Match search for one field.
 	 * 
@@ -110,6 +111,33 @@ public interface ISearchProvider {
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit,
 			final Map<String, Constants.SortOrder> sortInstructions);
+	
+	/**
+	 * Paginated Match search for one field.
+	 * 
+	 * @param index
+	 *            - ElasticSearch index
+	 * @param indexType
+	 *            - Index type
+	 * @param fieldsToMatch
+	 *            - the field name to use - and the field name search term
+	 * @param startIndex
+	 *            - e.g. 0 for the first set of results
+	 * @param limit
+	 *            - e.g. 10 for 10 results per page
+	 * @param sortInstructions
+	 *            - the map of how to sort each field of interest.
+	 * @param filterInstructions
+	 *            - the map of how to sort each field of interest.
+	 * @return Results
+	 */
+	ResultsWrapper<String> matchSearch(
+			final String index,
+			final String indexType,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final int startIndex, final int limit,
+			final Map<String, Constants.SortOrder> sortInstructions,
+			@Nullable final Map<String, Map<String, String>> filterInstructions);
 
 	/**
 	 * Executes a multi match search on an array of fields and will consider the fieldsThatMustMatchMap.

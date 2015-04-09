@@ -216,17 +216,40 @@ public class GitContentManager implements IContentManager {
 	public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit) throws ContentManagerException {
+		
+		return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, null);
+	}
+	
+	@Override
+	public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Integer startIndex, final Integer limit, 
+			@Nullable final Map<String, Constants.SortOrder> sortInstructions) throws ContentManagerException {
+		return this.findByFieldNames(version, fieldsToMatch, startIndex, limit, sortInstructions, null);
+	}
+	
+	@Override
+	public final ResultsWrapper<ContentDTO> findByFieldNames(final String version,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final Integer startIndex, final Integer limit, 
+			@Nullable final Map<String, Constants.SortOrder> sortInstructions,
+			@Nullable final Map<String, Map<String, String>> filterInstructions)
+		throws ContentManagerException {
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 
 		this.ensureCache(version);
-
-		Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-
-		sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-				Constants.SortOrder.ASC);
+		
+		final Map<String, Constants.SortOrder> newSortInstructions;
+		if (null == sortInstructions || sortInstructions.isEmpty()) {
+			newSortInstructions = Maps.newHashMap();
+			newSortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+					Constants.SortOrder.ASC);
+		} else {
+			newSortInstructions = sortInstructions;
+		}
 
 		ResultsWrapper<String> searchHits = searchProvider.matchSearch(version, CONTENT_TYPE,
-				fieldsToMatch, startIndex, limit, sortInstructions);
+				fieldsToMatch, startIndex, limit, newSortInstructions, filterInstructions);
 
 		// setup object mapper to use preconfigured deserializer module.
 		// Required to deal with type polymorphism

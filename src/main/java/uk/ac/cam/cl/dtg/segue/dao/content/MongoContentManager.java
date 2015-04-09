@@ -32,6 +32,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -210,6 +211,21 @@ public class MongoContentManager implements IContentManager {
 
 	@Override
 	public ContentDTO getContentById(final String version, final String id) throws ContentManagerException {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
+
+	@Override
+	public ResultsWrapper<ContentDTO> findByFieldNames(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
+			Integer limit, Map<String, SortOrder> sortInstructions) throws ContentManagerException {
+		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
+	}
+
+	@Override
+	public ResultsWrapper<ContentDTO> findByFieldNames(String version,
+			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
+			Integer limit, Map<String, SortOrder> sortInstructions,
+			Map<String, Map<String, String>> filterInstructions) throws ContentManagerException {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 }

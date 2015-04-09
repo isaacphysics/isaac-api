@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
@@ -46,11 +47,15 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.PrefixQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeFilterBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -153,9 +158,22 @@ public class ElasticSearchProvider implements ISearchProvider {
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions) {
 
-		// build up the query from the fieldsToMatch map
-		BoolQueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+		return this.matchSearch(index, indexType, fieldsToMatch, startIndex, limit, sortInstructions, null);
+	}
+	
+	@Override
+	public ResultsWrapper<String> matchSearch(final String index, final String indexType,
+			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
+			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions,
+			@Nullable final Map<String, Map<String, String>> filterInstructions) {
 
+		// build up the query from the fieldsToMatch map
+		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
+	
+		if (filterInstructions != null) {
+			query = QueryBuilders.filteredQuery(query, generateFilterQuery(filterInstructions));
+		}
+		
 		log.debug("Query to be sent to elasticsearch is : " + query);
 
 		SearchRequestBuilder searchRequest = client.prepareSearch(index).setTypes(indexType).setQuery(query)
@@ -177,6 +195,34 @@ public class ElasticSearchProvider implements ISearchProvider {
 		searchRequest = addSortInstructions(searchRequest, sortInstructions);
 
 		return this.executeQuery(searchRequest);
+	}
+
+	/**
+	 * Helper method to create elastic search understandable filter instructions.
+	 * @param filterInstructions - in the form "fieldName --> instruction key --> instruction value"
+	 * @return filterbuilder
+	 */
+	private FilterBuilder generateFilterQuery(final Map<String, Map<String, String>> filterInstructions) {
+		AndFilterBuilder filter = FilterBuilders.andFilter();
+
+		for (Entry<String, Map<String, String>> filterInstruction : filterInstructions.entrySet()) {
+			if (filterInstruction.getValue().get("type").equals("DATE_RANGE")) {
+				Validate.isTrue(filterInstruction.getValue().get("from") != null
+						|| filterInstruction.getValue().get("to") != null,
+						"DATE_RANGE filters must have either from or to specified");
+				RangeFilterBuilder rangeFilter = FilterBuilders.rangeFilter(filterInstruction.getKey());
+
+				if (filterInstruction.getValue().get("from") != null) {
+					rangeFilter.from(filterInstruction.getValue().get("from"));
+				} else {
+					rangeFilter.from(filterInstruction.getValue().get("to"));
+				}
+
+				filter.add(rangeFilter);
+			}
+		}
+
+		return filter;
 	}
 
 	@Override
