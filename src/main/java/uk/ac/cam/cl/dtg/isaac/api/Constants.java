@@ -62,12 +62,13 @@ public final class Constants {
 	 * Represents the potential states of a gameboard.
 	 */
 	public enum GameboardState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED }
-	// GameboardDTO field names
+	// field names
 	public static final String CREATED_DATE_FIELDNAME = "created";
 	public static final String VISITED_DATE_FIELDNAME = "lastVisited";
 
-
 	public static final String GAMEBOARD_ID_FKEY = "gameboardId";	
+
+	public static final String EVENT_DATE_FIELDNAME = "date";
 	
 	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
 	public static final Integer MAX_PODS_TO_RETURN = 10;

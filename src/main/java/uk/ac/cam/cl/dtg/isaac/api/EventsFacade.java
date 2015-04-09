@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +40,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -90,8 +92,13 @@ public class EventsFacade extends AbstractIsaacFacade {
 	 *            - the initial index for the first result.
 	 * @param limit
 	 *            - the maximums number of results to return
-	 * @return a Response containing a list of events objects or containing
-	 *         a SegueErrorResponse.
+	 * @param sortOrder
+	 *            - flag to indicate preferred sort order.
+	 * @param showActiveOnly
+	 *            - true will not impose any filtering on the results. False
+	 *            will show only dates in the future. Defaults to false.
+	 * @return a Response containing a list of events objects or containing a
+	 *         SegueErrorResponse.
 	 */
 	@GET
 	@Path("/")
@@ -101,9 +108,9 @@ public class EventsFacade extends AbstractIsaacFacade {
 			@Context final HttpServletRequest request,
 			@QueryParam("tags") final String tags, 
 			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-		// TODO: finish implementing this.
-		// TODO: order by date
+			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+			@QueryParam("sort_by") final String sortOrder,
+			@QueryParam("show_active_only") final Boolean showActiveOnly) {
 		// TODO: filter by location
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
@@ -121,12 +128,31 @@ public class EventsFacade extends AbstractIsaacFacade {
 			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
 		}
 		
+		final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+		if (sortOrder != null && sortOrder.equals("title")) {
+			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+					SortOrder.ASC);
+		} else {
+			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+		}
+		
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+		
+		Map<String, Map<String, String>> filterInstructions = null;
+		if (null == showActiveOnly || showActiveOnly) {
+			filterInstructions = Maps.newHashMap();
+			Map<String, String> rangeDetail = Maps.newHashMap();
+			rangeDetail.put("type", "DATE_RANGE");
+			rangeDetail.put("from", (new Date().getTime()) + "");	
+			filterInstructions.put(EVENT_DATE_FIELDNAME, rangeDetail);
+			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+		} 
 		
 		try {
 			ResultsWrapper<ContentDTO> findByFieldNames = this.versionManager.getContentManager()
 					.findByFieldNames(versionManager.getLiveVersion(),
-							SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex, newLimit);
+							SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex,
+							newLimit, sortInstructions, filterInstructions);
 			
 			return Response.ok(findByFieldNames).build();
 		} catch (ContentManagerException e) {
