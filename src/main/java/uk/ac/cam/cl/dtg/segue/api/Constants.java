@@ -199,7 +199,7 @@ public final class Constants {
 	public enum SortOrder {
 		ASC, DESC
 	};
-
+	
 	/**
 	 * Enum to represent search boolean operators.
 	 * 

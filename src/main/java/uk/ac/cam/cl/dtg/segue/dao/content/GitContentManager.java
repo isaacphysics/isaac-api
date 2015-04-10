@@ -65,6 +65,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -233,7 +234,7 @@ public class GitContentManager implements IContentManager {
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final Integer startIndex, final Integer limit, 
 			@Nullable final Map<String, Constants.SortOrder> sortInstructions,
-			@Nullable final Map<String, Map<String, String>> filterInstructions)
+			@Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
 		throws ContentManagerException {
 		ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
 

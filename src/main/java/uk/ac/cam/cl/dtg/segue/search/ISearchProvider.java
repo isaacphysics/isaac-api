@@ -137,7 +137,7 @@ public interface ISearchProvider {
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit,
 			final Map<String, Constants.SortOrder> sortInstructions,
-			@Nullable final Map<String, Map<String, String>> filterInstructions);
+			@Nullable final Map<String, AbstractFilterInstruction> filterInstructions);
 
 	/**
 	 * Executes a multi match search on an array of fields and will consider the fieldsThatMustMatchMap.

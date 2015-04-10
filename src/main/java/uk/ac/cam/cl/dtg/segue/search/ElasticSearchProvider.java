@@ -165,7 +165,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	public ResultsWrapper<String> matchSearch(final String index, final String indexType,
 			final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
 			final int startIndex, final int limit, final Map<String, Constants.SortOrder> sortInstructions,
-			@Nullable final Map<String, Map<String, String>> filterInstructions) {
+			@Nullable final Map<String, AbstractFilterInstruction> filterInstructions) {
 
 		// build up the query from the fieldsToMatch map
 		QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
@@ -195,34 +195,6 @@ public class ElasticSearchProvider implements ISearchProvider {
 		searchRequest = addSortInstructions(searchRequest, sortInstructions);
 
 		return this.executeQuery(searchRequest);
-	}
-
-	/**
-	 * Helper method to create elastic search understandable filter instructions.
-	 * @param filterInstructions - in the form "fieldName --> instruction key --> instruction value"
-	 * @return filterbuilder
-	 */
-	private FilterBuilder generateFilterQuery(final Map<String, Map<String, String>> filterInstructions) {
-		AndFilterBuilder filter = FilterBuilders.andFilter();
-
-		for (Entry<String, Map<String, String>> filterInstruction : filterInstructions.entrySet()) {
-			if (filterInstruction.getValue().get("type").equals("DATE_RANGE")) {
-				Validate.isTrue(filterInstruction.getValue().get("from") != null
-						|| filterInstruction.getValue().get("to") != null,
-						"DATE_RANGE filters must have either from or to specified");
-				RangeFilterBuilder rangeFilter = FilterBuilders.rangeFilter(filterInstruction.getKey());
-
-				if (filterInstruction.getValue().get("from") != null) {
-					rangeFilter.from(filterInstruction.getValue().get("from"));
-				} else {
-					rangeFilter.from(filterInstruction.getValue().get("to"));
-				}
-
-				filter.add(rangeFilter);
-			}
-		}
-
-		return filter;
 	}
 
 	@Override
@@ -431,6 +403,34 @@ public class ElasticSearchProvider implements ISearchProvider {
 		return searchRequest;
 	}
 
+	/**
+	 * Helper method to create elastic search understandable filter instructions.
+	 * @param filterInstructions - in the form "fieldName --> instruction key --> instruction value"
+	 * @return filterbuilder
+	 */
+	private FilterBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
+		AndFilterBuilder filter = FilterBuilders.andFilter();
+
+		for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
+			// date filter logic
+			if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
+				DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
+						.getValue();
+				RangeFilterBuilder rangeFilter = FilterBuilders.rangeFilter(fieldToFilterInstruction.getKey());
+				// Note: assumption that dates are stored in long format.
+				if (dateRangeInstruction.getFromDate() != null) {
+					rangeFilter.from(dateRangeInstruction.getFromDate().getTime());
+				} else {
+					rangeFilter.from(dateRangeInstruction.getToDate().getTime());
+				}
+
+				filter.add(rangeFilter);
+			}
+		}
+
+		return filter;
+	}
+	
 	/**
 	 * Utility method to generate a BoolMatchQuery based on the parameters
 	 * provided.

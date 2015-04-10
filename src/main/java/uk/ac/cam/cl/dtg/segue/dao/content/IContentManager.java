@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 
 /**
  * Shared interface for content managers. This is to allow them to be backed by
@@ -175,8 +176,8 @@ public interface IContentManager {
 	ResultsWrapper<ContentDTO> findByFieldNames(String version,
 			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
 			Integer limit, Map<String, SortOrder> sortInstructions,
-			@Nullable final Map<String, Map<String, String>> filterInstructions)
-			throws ContentManagerException;
+			@Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
+		throws ContentManagerException;
 	
 	/**
 	 * The same as findByFieldNames but the results list is returned in a

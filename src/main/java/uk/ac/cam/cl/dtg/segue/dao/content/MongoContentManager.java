@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 
 /**
  * Implementation that specifically works with MongoDB Content objects.
@@ -215,17 +216,17 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> findByFieldNames(String version,
-			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
-			Integer limit, Map<String, SortOrder> sortInstructions) throws ContentManagerException {
+	public ResultsWrapper<ContentDTO> findByFieldNames(final String version,
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, final Integer startIndex,
+			final Integer limit, final Map<String, SortOrder> sortInstructions) throws ContentManagerException {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> findByFieldNames(String version,
-			Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, Integer startIndex,
-			Integer limit, Map<String, SortOrder> sortInstructions,
-			Map<String, Map<String, String>> filterInstructions) throws ContentManagerException {
+	public ResultsWrapper<ContentDTO> findByFieldNames(final String version,
+			final Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, final Integer startIndex,
+			final Integer limit, final Map<String, SortOrder> sortInstructions,
+			final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
 		throw new UnsupportedOperationException("MongoDB Content Manager does not support this operation.");
 	}
 }

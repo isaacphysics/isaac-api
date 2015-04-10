@@ -48,6 +48,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -138,13 +140,11 @@ public class EventsFacade extends AbstractIsaacFacade {
 		
 		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
 		
-		Map<String, Map<String, String>> filterInstructions = null;
+		Map<String, AbstractFilterInstruction> filterInstructions = null;
 		if (null == showActiveOnly || showActiveOnly) {
 			filterInstructions = Maps.newHashMap();
-			Map<String, String> rangeDetail = Maps.newHashMap();
-			rangeDetail.put("type", "DATE_RANGE");
-			rangeDetail.put("from", (new Date().getTime()) + "");	
-			filterInstructions.put(EVENT_DATE_FIELDNAME, rangeDetail);
+			DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
+			filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsFromNow);
 			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
 		} 
 		
