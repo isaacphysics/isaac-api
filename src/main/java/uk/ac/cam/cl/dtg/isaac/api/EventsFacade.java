@@ -63,7 +63,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 			.getLogger(EventsFacade.class);
 	
 	private final ContentVersionController versionManager;
-
+	
 	/**
 	 * EventsFacade. 
 	 * 
@@ -97,8 +97,11 @@ public class EventsFacade extends AbstractIsaacFacade {
 	 * @param sortOrder
 	 *            - flag to indicate preferred sort order.
 	 * @param showActiveOnly
-	 *            - true will not impose any filtering on the results. False
-	 *            will show only dates in the future. Defaults to false.
+	 *            - true will impose filtering on the results. False
+	 *            will not. Defaults to false.
+	 * @param showInactiveOnly
+	 *            - true will impose filtering on the results. False
+	 *            will not. Defaults to false.
 	 * @return a Response containing a list of events objects or containing a
 	 *         SegueErrorResponse.
 	 */
@@ -112,7 +115,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
 			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
 			@QueryParam("sort_by") final String sortOrder,
-			@QueryParam("show_active_only") final Boolean showActiveOnly) {
+			@QueryParam("show_active_only") final Boolean showActiveOnly,
+			@QueryParam("show_inactive_only") final Boolean showInactiveOnly) {
 		// TODO: filter by location
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 		
@@ -146,6 +150,18 @@ public class EventsFacade extends AbstractIsaacFacade {
 			DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
 			filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsFromNow);
 			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+		} 
+		
+		if (showInactiveOnly != null && showInactiveOnly) {
+			if (showActiveOnly) {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"You cannot request both show active and in active only.").toResponse();
+			}
+			
+			filterInstructions = Maps.newHashMap();
+			DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
+			filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsToNow);
+			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
 		} 
 		
 		try {

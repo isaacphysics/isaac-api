@@ -420,8 +420,10 @@ public class ElasticSearchProvider implements ISearchProvider {
 				// Note: assumption that dates are stored in long format.
 				if (dateRangeInstruction.getFromDate() != null) {
 					rangeFilter.from(dateRangeInstruction.getFromDate().getTime());
-				} else {
-					rangeFilter.from(dateRangeInstruction.getToDate().getTime());
+				} 
+				
+				if (dateRangeInstruction.getToDate() != null) {
+					rangeFilter.to(dateRangeInstruction.getToDate().getTime());
 				}
 
 				filter.add(rangeFilter);
