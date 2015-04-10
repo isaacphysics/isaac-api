@@ -395,8 +395,8 @@ public class IsaacController extends AbstractIsaacFacade {
 			@Context final HttpServletRequest httpServletRequest,
 			@PathParam("question_page_id") final String questionId) {
 		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		// TODO we need to sort this out...
-		//fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+
+		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
 		// options
 		if (null != questionId) {
@@ -425,7 +425,7 @@ public class IsaacController extends AbstractIsaacFacade {
 		
 		Response response = this.findSingleResult(fieldsToMatch);
 
-		if (response.getEntity() instanceof IsaacQuestionPageDTO) {
+		if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
 			SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
 			Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(), "contentVersion",
@@ -449,9 +449,9 @@ public class IsaacController extends AbstractIsaacFacade {
 					.tag(etag).build();
 			
 		} else {
-			// this is not a segue page so something probably went wrong.
-			log.warn(String.format("This is not a segue question page (%s) so just returning it as is.", questionId));
-			return response;
+			String error = "Unable to locate a question with the id specified: " + questionId;
+			log.warn(error);
+			return SegueErrorResponse.getResourceNotFoundResponse(error);
 		}
 	}
 
@@ -843,21 +843,21 @@ public class IsaacController extends AbstractIsaacFacade {
 	 *         SegueErrorResponse.
 	 */
 	private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-		ResultsWrapper<ContentDTO> conceptList = api.findMatchingContent(versionManager.getLiveVersion(),
+		ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(versionManager.getLiveVersion(),
 				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
 																						// type
 																						// checking.
 		ContentDTO c = null;
-		if (conceptList.getResults().size() > 1) {
+		if (resultList.getResults().size() > 1) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
-					+ conceptList.getResults().size() + ") returned error. For search query: "
+					+ resultList.getResults().size() + ") returned error. For search query: "
 					+ fieldsToMatch.values()).toResponse();
-		} else if (conceptList.getResults().isEmpty()) {
+		} else if (resultList.getResults().isEmpty()) {
 			return new SegueErrorResponse(Status.NOT_FOUND,
 					"No content found that matches the query with parameters: " + fieldsToMatch.values())
 					.toResponse();
 		} else {
-			c = conceptList.getResults().get(0);
+			c = resultList.getResults().get(0);
 		}
 
 		try {

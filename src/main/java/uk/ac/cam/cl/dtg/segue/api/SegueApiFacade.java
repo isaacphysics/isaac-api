@@ -1111,12 +1111,14 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	public static Map<Map.Entry<BooleanOperator, String>, List<String>> generateDefaultFieldToMatch(
 			final Map<String, List<String>> fieldsToMatch) {
 		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatchOutput = Maps.newHashMap();
-
+		
 		for (Map.Entry<String, List<String>> pair : fieldsToMatch.entrySet()) {
 			Map.Entry<BooleanOperator, String> newEntry = null;
 			if (pair.getKey().equals(ID_FIELDNAME)) {
 				newEntry = immutableEntry(BooleanOperator.OR, pair.getKey());
-
+			} else if (pair.getKey().equals(TYPE_FIELDNAME) && pair.getValue().size() > 1) {
+				// special case of when you want to allow more than one 
+				newEntry = immutableEntry(BooleanOperator.OR, pair.getKey());
 			} else {
 				newEntry = immutableEntry(BooleanOperator.AND, pair.getKey());
 			}
