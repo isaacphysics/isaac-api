@@ -246,22 +246,6 @@ public interface IContentManager {
 			Integer limit) throws ContentManagerException;
 
 	/**
-	 * Search for content by providing a set of tags.
-	 * 
-	 * @param version
-	 *            - version of the content to search.
-	 * @param tags
-	 *            - set of tags that must match search results.
-	 * @return Content objects that are associated with any of the tags
-	 *         specified.
-	 * @throws ContentManagerException
-	 *             - if there is an error retrieving the content requested.
-	 * @deprecated I don't think this is used any more.
-	 */
-	@Deprecated
-	ResultsWrapper<ContentDTO> getContentByTags(String version, Set<String> tags) throws ContentManagerException;
-
-	/**
 	 * Method allows raw output to be retrieved for given files in the git
 	 * repository. This is mainly so we can retrieve image files.
 	 * 

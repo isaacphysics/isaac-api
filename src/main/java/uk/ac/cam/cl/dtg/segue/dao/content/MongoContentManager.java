@@ -123,11 +123,6 @@ public class MongoContentManager implements IContentManager {
 	}
 
 	@Override
-	public ResultsWrapper<ContentDTO> getContentByTags(final String version, final Set<String> tags) {
-		throw new UnsupportedOperationException("This method is not implemented yet.");
-	}
-
-	@Override
 	public ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
 			final Map<String, List<String>> typesToInclude, final Integer startIndex, final Integer limit) {
 		throw new UnsupportedOperationException("This method is not implemented yet.");

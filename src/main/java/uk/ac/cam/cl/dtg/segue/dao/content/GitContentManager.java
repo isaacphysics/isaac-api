@@ -370,26 +370,6 @@ public class GitContentManager implements IContentManager {
 	}
 
 	@Override
-	@Deprecated
-	public final ResultsWrapper<ContentDTO> getContentByTags(final String version, final Set<String> tags)
-		throws ContentManagerException {
-		if (null == version || null == tags) {
-			return null;
-		}
-
-		this.ensureCache(version);
-		
-		ResultsWrapper<String> searchResults = this.searchProvider.termSearch(version, CONTENT_TYPE,
-				tags, "tags", 0, DEFAULT_RESULTS_LIMIT);
-
-		List<Content> contentResults = mapper.mapFromStringListToContentList(searchResults.getResults());
-
-		List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(contentResults);
-
-		return new ResultsWrapper<ContentDTO>(contentDTOResults, searchResults.getTotalResults());
-	}
-
-	@Override
 	public final Set<String> getTagsList(final String version) throws ContentManagerException {
 		Validate.notBlank(version);
 
