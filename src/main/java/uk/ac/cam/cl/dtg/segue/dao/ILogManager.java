@@ -118,6 +118,12 @@ public interface ILogManager {
 	 */
 	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate);
 	
+	/**
+	 * Convenience method to find out how many of a particular type of event have been logged.
+	 * @param type - event type of interest.
+	 * @return the number of that type recorded.
+	 */
+	Long getLogCountByType(String type);
 	
 	/**
 	 * Allows filtering by date range.
@@ -186,7 +192,5 @@ public interface ILogManager {
 	 *         last access date.
 	 */
 	Map<String, Date> getLastAccessForAllUsers();
-
-
-
+	
 }

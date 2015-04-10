@@ -199,8 +199,8 @@ public class StatisticsManager {
 		ib.put("teacherUsers", "" + teacherRole.size());
 		ib.put("staffUsers", "" + adminStaffRole.size());
 
-		ib.put("viewQuestionEvents", "" + logManager.getLogsByType(VIEW_QUESTION).size());
-		ib.put("answeredQuestionEvents", "" + logManager.getLogsByType(ANSWER_QUESTION).size());
+		ib.put("viewQuestionEvents", "" + logManager.getLogCountByType(VIEW_QUESTION));
+		ib.put("answeredQuestionEvents", "" + logManager.getLogCountByType(ANSWER_QUESTION));
 		
 		ib.put("hasSchool", "" + hasSchool.size());
 		ib.put("hasNoSchool", "" + hasNoSchool.size());

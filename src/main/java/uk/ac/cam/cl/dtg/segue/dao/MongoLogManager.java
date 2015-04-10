@@ -223,6 +223,18 @@ public class MongoLogManager implements ILogManager {
 	}
 	
 	@Override
+	public Long getLogCountByType(final String type) {
+		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		MongoJackModule.configure(objectMapper);
+		
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				String.class, this.objectMapper);
+		BasicDBObject query = new BasicDBObject("eventType", type);
+		return jc.count(query);
+	}
+	
+	@Override
 	public List<LogEvent> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
 		// sanity check
 		if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
