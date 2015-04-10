@@ -141,7 +141,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	public Response getSchoolsStatistics(@Context final HttpServletRequest request,
 			@Context final Request requestForCache) {
 		try {
-			if (!isUserAnAdmin(request)) {
+			if (!isUserStaff(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an admin user to access this endpoint.").toResponse();
 			}
@@ -461,7 +461,7 @@ public class AdminFacade extends AbstractSegueFacade {
 		RegisteredUserDTO currentUser;
 		try {
 			currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-			if (currentUser.getRole() == null || currentUser.getRole() != Role.ADMIN) {
+			if (!isUserAnAdmin(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -528,7 +528,7 @@ public class AdminFacade extends AbstractSegueFacade {
 		RegisteredUserDTO currentUser;
 		try {
 			currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-			if (currentUser.getRole() == null || currentUser.getRole() != Role.ADMIN) {
+			if (!isUserAnAdmin(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
@@ -606,7 +606,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	public Response getSchoolStatistics(@Context final HttpServletRequest request,
 			@PathParam("school_id") final String schoolId) {
 		try {
-			if (!isUserAnAdmin(request)) {
+			if (!isUserStaff(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an admin user to access this endpoint.").toResponse();
 			}
