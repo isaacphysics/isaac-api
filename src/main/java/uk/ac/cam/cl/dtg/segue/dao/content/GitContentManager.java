@@ -463,7 +463,7 @@ public class GitContentManager implements IContentManager {
 	}
 
 	/**
-	 * Augment content DTO with related content.
+	 * Populate content summary object.
 	 * 
 	 * @param version
 	 *            - the version of the content to use for the augmentation

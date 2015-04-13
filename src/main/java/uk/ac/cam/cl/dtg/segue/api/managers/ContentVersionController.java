@@ -205,7 +205,8 @@ public class ContentVersionController implements ServletContextListener {
 			while (this.indexQueue.size() > 1) {
 				Future<String> f = this.indexQueue.remove();
 				f.cancel(false);
-				log.info("Cancelling pending (old) index operations as we are in follow git mode.");
+				log.info("Cancelling pending (old) index operations as we are in follow git mode. Queue is currently: ("
+						+ this.indexQueue.size() + ")");
 			}
 			
 		} else {
