@@ -92,7 +92,11 @@ public class IsaacWildcard extends Content {
 	public String getUrl() {
 		// It appears as though sometimes urls are provided with trailing spaces in git... 
 		// I do not know why...
-		return url.trim();
+		if (url != null) {
+			return url.trim();
+		} else {
+			return null;
+		}
 	}
 
 	/**
