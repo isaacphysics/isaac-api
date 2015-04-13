@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacSymbolicQuestionDTO;
+
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
@@ -27,6 +27,10 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * IsaacWildcard
+ * Represents gameboard advertising space.
+ */
 @JsonType("isaacWildcard")
 @DTOMapping(IsaacWildcardDTO.class)
 public class IsaacWildcard extends Content {
@@ -66,21 +70,80 @@ public class IsaacWildcard extends Content {
 
 	}
 
+	/**
+	 * getDescription.
+	 * @return the description.
+	 */
 	public String getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	/**
+	 * @param description of the wildcard
+	 */
+	public void setDescription(final String description) {
 		this.description = description;
 	}
 
+	/**
+	 * getUrl.
+	 * @return url
+	 */
 	public String getUrl() {
 		// It appears as though sometimes urls are provided with trailing spaces in git... 
 		// I do not know why...
 		return url.trim();
 	}
 
-	public void setUrl(String url) {
+	/**
+	 * @param url - navigation url
+	 */
+	public void setUrl(final String url) {
 		this.url = url;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("IsaacWildcard [description=");
+		builder.append(description);
+		builder.append(", url=");
+		builder.append(url);
+		builder.append(", title=");
+		builder.append(title);
+		builder.append(", subtitle=");
+		builder.append(subtitle);
+		builder.append(", author=");
+		builder.append(author);
+		builder.append(", encoding=");
+		builder.append(encoding);
+		builder.append(", layout=");
+		builder.append(layout);
+		builder.append(", children=");
+		builder.append(children);
+		builder.append(", value=");
+		builder.append(value);
+		builder.append(", attribution=");
+		builder.append(attribution);
+		builder.append(", relatedContent=");
+		builder.append(relatedContent);
+		builder.append(", published=");
+		builder.append(published);
+		builder.append(", level=");
+		builder.append(level);
+		builder.append(", _id=");
+		builder.append(_id);
+		builder.append(", id=");
+		builder.append(id);
+		builder.append(", type=");
+		builder.append(type);
+		builder.append(", tags=");
+		builder.append(tags);
+		builder.append(", canonicalSourceFile=");
+		builder.append(canonicalSourceFile);
+		builder.append(", version=");
+		builder.append(version);
+		builder.append("]");
+		return builder.toString();
 	}
 }

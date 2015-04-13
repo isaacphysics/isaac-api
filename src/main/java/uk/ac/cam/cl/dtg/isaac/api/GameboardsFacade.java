@@ -56,6 +56,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
@@ -743,4 +744,49 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 		return Response.noContent().build();
 	}
 	
+	/**
+	 * REST end point to retrieve a specific gameboard by Id.
+	 * 
+	 * @param request
+	 *            - so that we can deal with caching and etags.
+	 * @return a Response containing a gameboard object or containing
+	 *         a SegueErrorResponse.
+	 */
+	@GET
+	@Path("gameboards/wildcards")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getWildCards(
+			@Context final Request request) {
+		
+		try {
+			List<IsaacWildcard> wildcards = gameManager.getWildcards();
+			if (null == wildcards || wildcards.isEmpty()) {
+				return new SegueErrorResponse(Status.NOT_FOUND, "No wildcards found.")
+						.toResponse();
+			}
+			
+			// Calculate the ETag 
+			EntityTag etag = new EntityTag(wildcards.toString().hashCode()
+					+ "");
+			
+			Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_TEN_MINUTES);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+			
+			return Response.ok(wildcards).cacheControl(getCacheControl(CACHE_FOR_TEN_MINUTES))
+					.tag(etag).build();
+		} catch (ContentManagerException e1) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating the version requested", e1);
+			log.error(error.getErrorMessage(), e1);
+			return error.toResponse();
+		} catch (NoWildcardException e) {
+			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+					"Error locating any wildcards");
+			log.error(error.getErrorMessage());
+			return error.toResponse();
+		}
+	}
 }

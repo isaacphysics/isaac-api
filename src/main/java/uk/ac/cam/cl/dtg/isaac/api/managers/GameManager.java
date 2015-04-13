@@ -569,6 +569,41 @@ public class GameManager {
 	}
 
 	/**
+	 * Find all wildcards.
+	 * 
+	 * @return wildCard object.
+	 * @throws NoWildcardException
+	 *             - when we are unable to provide you with a wildcard object.
+	 * @throws ContentManagerException - if we cannot access the content requested.
+	 */
+	public List<IsaacWildcard> getWildcards() throws NoWildcardException,
+			ContentManagerException {
+		Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+
+		fieldsToMap.put(immutableEntry(
+				BooleanOperator.OR, TYPE_FIELDNAME), Arrays
+				.asList(WILDCARD_TYPE));
+
+		Map<String, SortOrder> sortInstructions = Maps.newHashMap();
+		sortInstructions.put(TITLE_FIELDNAME  + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
+		
+		ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager().findByFieldNames(
+				versionManager.getLiveVersion(), fieldsToMap, 0, -1, sortInstructions);
+		
+		if (wildcardResults.getTotalResults() == 0) {
+			throw new NoWildcardException();
+		}
+		
+		List<IsaacWildcard> result = Lists.newArrayList();
+		for (ContentDTO c : wildcardResults.getResults()) {
+			IsaacWildcard wildcard = mapper.map(c, IsaacWildcard.class);
+			result.add(wildcard);
+		}
+		
+		return result;
+	}
+	
+	/**
 	 * Store a gameboard in a public location.
 	 * 
 	 * @param gameboardToStore
