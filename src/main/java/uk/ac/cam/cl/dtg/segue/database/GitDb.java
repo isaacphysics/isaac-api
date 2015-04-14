@@ -35,7 +35,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.OpenSshConfig.Host;
@@ -388,8 +387,8 @@ public class GitDb {
 			}
 
 			RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
-			FetchResult r = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
-
+			gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
+			
 			log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
 
 		} catch (GitAPIException e) {
