@@ -390,8 +390,7 @@ public class GitDb {
 			RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
 			FetchResult r = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
-			log.debug("Fetched the following advertised Refs." + r.getAdvertisedRefs().toString());
-			log.debug("Fetched latest from git result: " + this.getHeadSha());
+			log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
 
 		} catch (GitAPIException e) {
 			log.error("Error while trying to pull the latest from the remote repository.", e);
