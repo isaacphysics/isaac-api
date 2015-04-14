@@ -68,7 +68,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -679,6 +678,13 @@ public class GitContentManager implements IContentManager {
 					dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
 					this.registerContentProblem(sha, dummyContent,
 							"Index failure - Unable to parse json file found - " + treeWalk.getPathString()
+									+ ". The following error occurred: " + e.getMessage());
+				} catch (IOException e) {
+					log.error("IOException while trying to parse " + treeWalk.getPathString(), e);
+					Content dummyContent = new Content();
+					dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
+					this.registerContentProblem(sha, dummyContent,
+							"Index failure - Unable to read the json file found - " + treeWalk.getPathString()
 									+ ". The following error occurred: " + e.getMessage());
 				}
 			}
