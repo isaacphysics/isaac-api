@@ -186,7 +186,8 @@ public class ElasticSearchProvider implements ISearchProvider {
 			// in order to do this we have to execute a search and then get the
 			// total hits back.
 			// this is a restriction on elastic search.
-			log.warn("Setting limit to be the size of the result set... "
+			// TODO: we need to fix this to use similar logic to the execute basic query limit stuff.
+			log.debug("Setting limit to be the size of the result set... "
 					+ "Unlimited search may cause performance issues");
 			int largerlimit = this.executeQuery(searchRequest).getTotalResults().intValue();
 			searchRequest.setSize(largerlimit);
