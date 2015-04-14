@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.util.Date;
 import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
@@ -33,7 +34,9 @@ public class ContentSynchronisationWorker implements Callable<String> {
 
 	private ContentVersionController contentVersionController;
 	private String version; // null for latest, set for a particular version
-
+	
+	private final Date dateRequested;
+	
 	/**
 	 * Create a synch worker providing a conntentVersionController and a version
 	 * to index.
@@ -47,6 +50,7 @@ public class ContentSynchronisationWorker implements Callable<String> {
 			final String version) {
 		this.contentVersionController = contentVersionController;
 		this.version = version;
+		this.dateRequested = new Date();
 	}
 
 	/**
@@ -100,5 +104,16 @@ public class ContentSynchronisationWorker implements Callable<String> {
 		contentVersionController.syncJobCompleteCallback(version, false);
 
 		return null;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ContentSynchronisationWorker [version=");
+		builder.append(version);
+		builder.append(", dateRequested=");
+		builder.append(dateRequested);
+		builder.append("]");
+		return builder.toString();
 	}
 }

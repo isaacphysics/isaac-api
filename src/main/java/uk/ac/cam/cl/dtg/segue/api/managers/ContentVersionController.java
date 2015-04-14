@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
@@ -29,6 +31,7 @@ import javax.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.Queues;
 import com.google.inject.Inject;
 
@@ -201,13 +204,7 @@ public class ContentVersionController implements ServletContextListener {
 				}
 			}
 			
-			// remove all but the latest one as the chances are the others are old requests
-			while (this.indexQueue.size() > 1) {
-				Future<String> f = this.indexQueue.remove();
-				f.cancel(false);
-				log.info("Cancelling pending (old) index operations as we are in follow git mode. Queue is currently: ("
-						+ this.indexQueue.size() + ")");
-			}
+			cleanUpTheIndexQueue();
 			
 		} else {
 			// we don't want to change the latest version until told to do so.
@@ -345,6 +342,33 @@ public class ContentVersionController implements ServletContextListener {
 	public synchronized void deleteAllCacheData() {
 		log.info("Clearing all caches and search indices.");
 		contentManager.clearCache();
+	}
+	
+	/**
+	 * get a string representation of what is in the to IndexQueue.
+	 * 
+	 * @return a list of tasks in the index queue.
+	 */
+	public Collection<String> getToIndexQueue() {
+		ArrayList<String> newArrayList = Lists.newArrayList();
+		for (Future<String> f : this.indexQueue) {
+			newArrayList.add(f.toString());
+		}
+		
+		return newArrayList;
+	}
+	
+	/**
+	 * Utility method that will empty the to index queue of any unstarted jobs.
+	 */
+	public void cleanUpTheIndexQueue() {
+		// remove all but the latest one as the chances are the others are old requests
+		while (this.indexQueue.size() > 1) {
+			Future<String> f = this.indexQueue.remove();
+			f.cancel(false);
+			log.info("Cancelling pending (old) index operations as we are in follow git mode. Queue is currently: ("
+					+ this.indexQueue.size() + ")");
+		}
 	}
 
 	@Override

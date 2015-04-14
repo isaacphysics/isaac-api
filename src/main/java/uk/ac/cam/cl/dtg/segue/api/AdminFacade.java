@@ -365,6 +365,66 @@ public class AdminFacade extends AbstractSegueFacade {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
+	
+	/**
+	 * This method will show a string representation of all jobs in the to index queue.
+	 * 
+	 * @param request
+	 *            - containing user session information.
+	 * 
+	 * @return the latest queue information
+	 */
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/content_index_queue")
+	public synchronized Response getCurrentIndexQueue(@Context final HttpServletRequest request) {
+		try {
+			if (isUserAnAdmin(request)) {		
+				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put(
+						"queue", contentVersionController.getToIndexQueue().toString()).build();
+
+				return Response.ok(response).build();
+			} else {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an administrator to use this function.").toResponse();
+			}
+
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
+	}
+	
+	/**
+	 * This method will delete all jobs not yet started in the indexer queue.
+	 * 
+	 * @param request
+	 *            - containing user session information.
+	 * 
+	 * @return the new queue.
+	 */
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/content_index_queue")
+	public synchronized Response deleteAllInCurrentIndexQueue(@Context final HttpServletRequest request) {
+		try {
+			if (isUserAnAdmin(request)) {
+				log.info("Admin user requested to empty indexer queue.");
+				
+				contentVersionController.cleanUpTheIndexQueue();
+				
+				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put(
+						"queue", contentVersionController.getToIndexQueue().toString()).build();
+
+				return Response.ok(response).build();
+			} else {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an administrator to use this function.").toResponse();
+			}
+
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
+	}
 
 	/**
 	 * Rest end point to allow content editors to see the content which failed
