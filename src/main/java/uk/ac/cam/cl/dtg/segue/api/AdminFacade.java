@@ -723,7 +723,7 @@ public class AdminFacade extends AbstractSegueFacade {
 		}
 		
 		try {
-			if (!isUserAnAdmin(httpServletRequest)) {
+			if (!isUserStaff(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be logged in as an admin to access this function.").toResponse();
 			}
