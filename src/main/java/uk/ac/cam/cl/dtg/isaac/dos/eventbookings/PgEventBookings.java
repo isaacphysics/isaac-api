@@ -86,6 +86,24 @@ public class PgEventBookings implements EventBookings {
 		}
 	}
 
+	@Override
+	public void delete(final String eventId, final String userId) throws SegueDatabaseException {
+		PreparedStatement pst;
+		try {
+			pst = ds.prepareStatement("DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?");
+			pst.setString(1, eventId);
+			pst.setString(2, userId);
+			int executeUpdate = pst.executeUpdate();
+			
+			if (executeUpdate == 0) {
+				throw new ResourceNotFoundException("Could not delete the requested booking.");
+			}
+			
+		} catch (SQLException e) {
+			throw new SegueDatabaseException("Postgres exception while trying to delete event booking", e);
+		}
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 

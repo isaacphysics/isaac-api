@@ -37,6 +37,15 @@ public interface EventBookings {
 	EventBooking add(final String eventId, final String userId) throws SegueDatabaseException;
 	
 	/**
+	 * Remove booking from the database.
+	 * 
+	 * @param eventId - the event id
+	 * @param userId - the user id
+	 * @throws SegueDatabaseException - if an error occurs.
+	 */
+	void delete(final String eventId, final String userId) throws SegueDatabaseException;	
+	
+	/**
 	 * get all events.
 	 * 
 	 * @return an iterable with all events in it.

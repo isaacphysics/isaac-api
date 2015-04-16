@@ -31,13 +31,10 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 public class EventBookingPersistenceManager {
 	private static final Logger log = LoggerFactory.getLogger(EventBookingPersistenceManager.class);
 	
-	private PostgresSqlDb database;
-	
-	private EventBookings dao;
-
-	private UserManager userManager;
-
-	private ContentVersionController versionManager;
+	private final PostgresSqlDb database;
+	private final EventBookings dao;
+	private final UserManager userManager;
+	private final ContentVersionController versionManager;
 
 	/**
 	 * EventBookingPersistenceManager.
@@ -130,6 +127,15 @@ public class EventBookingPersistenceManager {
 		} catch (ResourceNotFoundException e) {
 			return false;
 		}
+	}
+	
+	/**
+	 * @param eventId 
+	 * @param userId 
+	 * @throws SegueDatabaseException 
+	 */
+	public void deleteBooking(final String eventId, final String userId) throws SegueDatabaseException {
+		dao.delete(eventId, userId);
 	}
 	
 	/**

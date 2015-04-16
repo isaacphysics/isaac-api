@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -383,5 +384,42 @@ public class EventsFacade extends AbstractIsaacFacade {
 					"Content Database error ocurred while trying to retrieve all event booking information.")
 					.toResponse();
 		}
+	}
+	
+	/**
+	 * Delete a booking.
+	 * 
+	 * @param request - for authentication
+	 * @param eventId - event id
+	 * @param userId - user id
+	 * @return the new booking
+	 */
+	@DELETE
+	@Path("{event_id}/bookings/{user_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response deleteBooking(@Context final HttpServletRequest request,
+			@PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
+		try {
+			if (!isUserStaff(userManager, request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+				
+			if (!bookingManager.isUserBooked(eventId, userId)) {
+				return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.")
+						.toResponse();
+			}
+			
+			bookingManager.deleteBooking(eventId, userId);
+			
+			return Response.noContent().build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error ocurred while trying to retrieve all event booking information.")
+					.toResponse();
+		} 
 	}	
 }
