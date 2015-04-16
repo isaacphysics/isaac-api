@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +61,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.MongoGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -120,6 +122,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	private static ILogManager logManager;
 
+	private static PostgresSqlDb postgresclient;
 
 	/**
 	 * Create a SegueGuiceConfigurationModule.
@@ -187,6 +190,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
 		this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
+		// postgres
+		this.bindConstantToProperty(Constants.POSTGRES_DB_URL, globalProperties);
+		this.bindConstantToProperty(Constants.POSTGRES_DB_USER, globalProperties);
+		this.bindConstantToProperty(Constants.POSTGRES_DB_PASSWORD, globalProperties);
+		
 		// GitDb
 		bind(GitDb.class)
 				.toInstance(
@@ -568,6 +576,37 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		return mongoDB.getDB();
 	}
 
+	/**
+	 * Gets the instance of the postgres connection wrapper.
+	 * 
+	 * @param databaseUrl
+	 *            - database to connect to.
+	 * @param username
+	 *            - port that the mongodb service is running on.
+	 * @param password
+	 *            - the name of the database to configure the wrapper to use.
+	 * @return PostgresSqlDb db object preconfigured to work with the segue database.
+	 * @throws SQLException - If we cannot create the connection.
+	 */
+	@Provides
+	@Singleton
+	@Inject
+	private static PostgresSqlDb getPostgresDB(
+			@Named(Constants.POSTGRES_DB_URL) final String databaseUrl,
+			@Named(Constants.POSTGRES_DB_USER) final String username,
+			@Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
+
+		if (null == postgresclient) {
+			try {
+				postgresclient = new PostgresSqlDb(databaseUrl, username, password);
+				log.info("Created Singleton of PostgresDb wrapper");
+			} catch (ClassNotFoundException e) {
+				log.error("Unable to locate postgres driver.", e);
+			}
+		}
+
+		return postgresclient;
+	}
 
 	/**
 	 * This provides a singleton of the ICommunicator for the segue
