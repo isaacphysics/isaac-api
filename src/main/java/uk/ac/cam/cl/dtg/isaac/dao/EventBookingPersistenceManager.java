@@ -61,7 +61,7 @@ public class EventBookingPersistenceManager {
 	 * @throws SegueDatabaseException 
 	 */
 	public List<EventBookingDTO> getEventsByUserId(final String userId) throws SegueDatabaseException {
-		return convertToDTO(Lists.newArrayList(dao.iterateByUserId(userId)));
+		return convertToDTO(Lists.newArrayList(dao.findAllByUserId(userId)));
 	}
 
 
@@ -80,7 +80,7 @@ public class EventBookingPersistenceManager {
 	 * @throws SegueDatabaseException - if an error occurs.
 	 */
 	public List<EventBookingDTO> getAllBookings() throws SegueDatabaseException {
-		return this.convertToDTO(Lists.newArrayList(dao.iterate()));
+		return this.convertToDTO(Lists.newArrayList(dao.findAll()));
 	}
 	
 	/**
@@ -93,7 +93,7 @@ public class EventBookingPersistenceManager {
 			ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
 					eventId);
 			if (c instanceof IsaacEventPageDTO) {
-				return this.convertToDTO(Lists.newArrayList(dao.iterateByEventId(eventId)),
+				return this.convertToDTO(Lists.newArrayList(dao.findAllByEventId(eventId)),
 						(IsaacEventPageDTO) c);
 			} else {
 				log.error("Content object is not an event page.");

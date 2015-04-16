@@ -25,7 +25,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
  * @author sac92
  */
 public interface EventBookings {
-	
 	/**
 	 * Add booking to the database.
 	 * 
@@ -51,7 +50,7 @@ public interface EventBookings {
 	 * @return an iterable with all events in it.
 	 * @throws SegueDatabaseException - if an error occurs.
 	 */
-	Iterable<EventBooking> iterate() throws SegueDatabaseException;
+	Iterable<EventBooking> findAll() throws SegueDatabaseException;
 
 	/**
 	 * Find all bookings for a given event.
@@ -59,7 +58,7 @@ public interface EventBookings {
 	 * @return an iterable with all the events matching the criteria.
 	 * @throws SegueDatabaseException - if an error occurs.
 	 */
-	Iterable<EventBooking> iterateByEventId(final String eventId) throws SegueDatabaseException;
+	Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException;
 	
 	/**
 	 * Find all bookings for a given event.
@@ -67,7 +66,7 @@ public interface EventBookings {
 	 * @return an iterable with all the events matching the criteria.
 	 * @throws SegueDatabaseException - if an error occurs.
 	 */
-	Iterable<EventBooking> iterateByUserId(final String userId) throws SegueDatabaseException;
+	Iterable<EventBooking> findAllByUserId(final String userId) throws SegueDatabaseException;
 
 	/**
 	 * Find an event booking by event and user id.

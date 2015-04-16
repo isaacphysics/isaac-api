@@ -18,7 +18,9 @@ package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 import java.util.Date;
 
 /**
- * @author sac92
+ * EventBooking.
+ * 
+ * Database aware EventBooking.
  *
  */
 public interface EventBooking {

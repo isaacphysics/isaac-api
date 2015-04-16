@@ -33,7 +33,9 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import com.google.api.client.util.Lists;
 
 /**
- * @author sac92
+ * PgEventBookings.
+ * 
+ * Postgres aware EventBookings.
  *
  */
 public class PgEventBookings implements EventBookings {
@@ -151,7 +153,7 @@ public class PgEventBookings implements EventBookings {
 	 * @see uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings#iterate()
 	 */
 	@Override
-	public Iterable<EventBooking> iterate() throws SegueDatabaseException {
+	public Iterable<EventBooking> findAll() throws SegueDatabaseException {
 		try {
 			PreparedStatement pst;
 			pst = ds.prepareStatement("Select * FROM event_bookings");
@@ -174,7 +176,7 @@ public class PgEventBookings implements EventBookings {
 	 * @see uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings#iterate()
 	 */
 	@Override
-	public Iterable<EventBooking> iterateByEventId(final String eventId) throws SegueDatabaseException {
+	public Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException {
 		Validate.notBlank(eventId);
 
 		try {
@@ -194,7 +196,7 @@ public class PgEventBookings implements EventBookings {
 	}
 
 	@Override
-	public Iterable<EventBooking> iterateByUserId(final String userId) throws SegueDatabaseException {
+	public Iterable<EventBooking> findAllByUserId(final String userId) throws SegueDatabaseException {
 		Validate.notBlank(userId);
 
 		try {
@@ -214,7 +216,16 @@ public class PgEventBookings implements EventBookings {
 		}
 	}
 	
-	private PgEventBooking buildPgEventBooking(ResultSet results) throws SQLException {
+	/**
+	 * Create a pgEventBooking from a results set.
+	 * 
+	 * Assumes there is a result to read.
+	 * 
+	 * @param results - the results to convert
+	 * @return a new PgEventBooking 
+	 * @throws SQLException - if an error occurs.
+	 */
+	private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException {
 		return new PgEventBooking(ds, results.getLong("id"), results.getString("user_id"),
 				results.getString("event_id"),  results.getTimestamp("created"));
 		
