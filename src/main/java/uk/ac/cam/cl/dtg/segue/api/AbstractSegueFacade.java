@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.util.Arrays;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
@@ -23,9 +26,12 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -182,5 +188,37 @@ public abstract class AbstractSegueFacade {
 	 */
 	public ILogManager getLogManager() {
 		return logManager;
+	}
+	
+	/**
+	 * Is the current user an admin.
+	 * 
+	 * @param userManager
+	 *            - Instance of User Manager
+	 * @param request
+	 *            - with session information
+	 * @return true if user is logged in as an admin, false otherwise.
+	 * @throws NoUserLoggedInException
+	 *             - if we are unable to tell because they are not logged in.
+	 */
+	public static boolean isUserAnAdmin(final UserManager userManager, final HttpServletRequest request)
+		throws NoUserLoggedInException {
+		return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN));
+	}
+
+	/**
+	 * Is the current user in a staff role.
+	 * 
+	 * @param userManager
+	 *            - Instance of User Manager
+	 * @param request
+	 *            - with session information
+	 * @return true if user is logged in as an admin, false otherwise.
+	 * @throws NoUserLoggedInException
+	 *             - if we are unable to tell because they are not logged in.
+	 */
+	public static boolean isUserStaff(final UserManager userManager, final HttpServletRequest request)
+		throws NoUserLoggedInException {
+		return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR));
 	}
 }

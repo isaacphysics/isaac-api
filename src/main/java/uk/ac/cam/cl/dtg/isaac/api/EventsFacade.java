@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -39,15 +40,22 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -63,6 +71,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 			.getLogger(EventsFacade.class);
 	
 	private final ContentVersionController versionManager;
+
+	private EventBookingPersistenceManager bookingManager;
+
+	private UserManager userManager;
 	
 	/**
 	 * EventsFacade. 
@@ -73,13 +85,20 @@ public class EventsFacade extends AbstractIsaacFacade {
 	 *            - for managing logs.
 	 * @param versionManager
 	 *            - for retrieving event content.
+	 * @param bookingManager
+	 *            - Instance of Booking Manager
+	 * @param userManager
+	 *            - Instance of User Manager
 	 */
 	@Inject
 	public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
-			final ContentVersionController versionManager) {
+			final ContentVersionController versionManager,
+			final EventBookingPersistenceManager bookingManager,
+			final UserManager userManager) {
 		super(properties, logManager);
 		this.versionManager = versionManager;
-		
+		this.bookingManager = bookingManager;
+		this.userManager = userManager;
 	}
 	
 	/**
@@ -217,5 +236,152 @@ public class EventsFacade extends AbstractIsaacFacade {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Error locating the content you requested.").toResponse();
 		}
-	}		
+	}
+	
+	/**
+	 * getAllEventBookings.
+	 * @param request - for authentication
+	 * @return a list of booking objects
+	 */
+	@GET
+	@Path("/bookings")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getAllEventBookings(@Context final HttpServletRequest request) {
+		try {			
+			if (!isUserStaff(userManager, request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+			
+			return Response.ok(bookingManager.getAllBookings()).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error ocurred while trying to retrieve all event booking information.")
+					.toResponse();
+		}
+	}
+	
+	/**
+	 * Find a booking by id.
+	 * @param request - for authentication
+	 * @param bookingId - the booking of interest.
+	 * @return The booking information.
+	 */
+	@GET
+	@Path("/bookings/{booking_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getEventBookingById(@Context final HttpServletRequest request,
+			@PathParam("booking_id") final String bookingId) {
+		try {
+			if (!isUserStaff(userManager, request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+			
+			return Response.ok(bookingManager.getBookingById(Long.parseLong(bookingId))).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (NumberFormatException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The booking id provided is invalid.")
+					.toResponse();
+		}  catch (ResourceNotFoundException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND,
+					"The booking you requested does not exist.")
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error ocurred while trying to retrieve all event booking information.")
+					.toResponse();
+		}
+	}
+
+	/**
+	 * gets a list of event bookings based on a given event id.
+	 * @param request - for authentication
+	 * @param eventId - the event of interest.
+	 * @return list of bookings.
+	 */
+	@GET
+	@Path("{event_id}/bookings")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
+			@PathParam("event_id") final String eventId) {
+		try {
+			if (!isUserStaff(userManager, request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+
+			return Response.ok(bookingManager.getBookingByEventId(eventId)).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error ocurred while trying to retrieve all event booking information.")
+					.toResponse();
+		}
+	}
+	
+
+	/**
+	 * createBooking.
+	 * 
+	 * @param request - for authentication
+	 * @param eventId - event id
+	 * @param userId - user id
+	 * @return the new booking
+	 */
+	@POST
+	@Path("{event_id}/bookings/{user_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public final Response createBooking(@Context final HttpServletRequest request,
+			@PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
+		try {
+			if (!isUserStaff(userManager, request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin user to access this endpoint.").toResponse();
+			}
+
+			RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
+			
+			ContentDTO event = this.versionManager.getContentManager().getContentById(
+					versionManager.getLiveVersion(), eventId);
+			
+			// TODO: make it so anyone can book on to a future event.
+			
+			if (null == event) {
+				return new SegueErrorResponse(Status.NOT_FOUND,
+						"Unable to locate the event requested")
+						.toResponse();
+			}
+			
+			if (bookingManager.isUserBooked(eventId, userId)) {
+				return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.")
+						.toResponse();
+			}
+			
+			return Response.ok(bookingManager.createBooking(eventId, bookedUser.getDbId())).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Database error ocurred while trying to retrieve all event booking information.")
+					.toResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND,
+					"Unable to locate the user requested")
+					.toResponse();
+		} catch (ContentManagerException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Content Database error ocurred while trying to retrieve all event booking information.")
+					.toResponse();
+		}
+	}	
 }

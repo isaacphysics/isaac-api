@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -745,7 +744,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
 	 */
 	private boolean isUserAnAdmin(final HttpServletRequest request) throws NoUserLoggedInException {
-		return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN));
+		return isUserAnAdmin(userManager, request);
 	}
 	
 	/**
@@ -756,6 +755,6 @@ public class AdminFacade extends AbstractSegueFacade {
 	 * @throws NoUserLoggedInException - if we are unable to tell because they are not logged in.
 	 */
 	private boolean isUserStaff(final HttpServletRequest request) throws NoUserLoggedInException {
-		return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR));
+		return isUserStaff(userManager, request);
 	}
 }
