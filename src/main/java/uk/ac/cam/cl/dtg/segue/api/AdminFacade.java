@@ -707,7 +707,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@Path("users/event_data/over_time")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public Response getEventDataForUser(@Context final Request request,
+	public Response getEventDataForAllUsers(@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
 			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
 			@QueryParam("events") final String events) {
