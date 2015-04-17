@@ -275,13 +275,12 @@ public class UsersFacade extends AbstractSegueFacade {
 			final RegisteredUser userObject,
 			@Context final HttpServletRequest request) {
 		try {
-			userManager.resetPassword(token, userObject);
 			
-			RegisteredUserDTO userDTOByEmail = userManager.getUserDTOByEmail(userObject.getEmail());
+			RegisteredUserDTO userDTO = userManager.resetPassword(token, userObject);
 			
-			this.getLogManager().logEvent(userDTOByEmail, request,
+			this.getLogManager().logEvent(userDTO, request,
 					PASSWORD_RESET_REQUEST_SUCCESSFUL,
-					ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
+					ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
 			
 		} catch (InvalidTokenException e) {
 			SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
@@ -295,12 +294,7 @@ public class UsersFacade extends AbstractSegueFacade {
 			log.error(errorMsg, e);
 			SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg);
 			return error.toResponse();
-		} catch (NoUserException e) {
-			log.error(
-					"Unable to find user by email during password reset flow - after success. "
-					+ "Something went very wrong.",
-					e);
-		}
+		} 
 		
 		return Response.ok().build();
 	}

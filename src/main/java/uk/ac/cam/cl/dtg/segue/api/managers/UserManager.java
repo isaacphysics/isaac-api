@@ -996,7 +996,7 @@ public class UserManager {
 	 * @throws SegueDatabaseException
 	 *             - If there is an internal database error.
 	 */
-	public final void resetPassword(final String token, final RegisteredUser userObject) throws InvalidTokenException,
+	public final RegisteredUserDTO resetPassword(final String token, final RegisteredUser userObject) throws InvalidTokenException,
 			InvalidPasswordException, SegueDatabaseException {
 		// Ensure new password is valid
 		if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
@@ -1025,6 +1025,7 @@ public class UserManager {
 		// Save user
 		this.database.createOrUpdateUser(user);
 		log.info(String.format("Password Reset for user (%s) has completed successfully.", userObject.getDbId()));
+		return this.convertUserDOToUserDTO(user);
 	}
 
 	/**
