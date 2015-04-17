@@ -152,7 +152,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 		// Trim the "=" padding off the end of the base64 encoded token so that the URL that is
 		// eventually generated is correctly parsed in email clients
 		String token = new String(Base64.encodeBase64(computeHash(UUID.randomUUID().toString(),
-				userToAttachToken.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "");
+				userToAttachToken.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "").replace("/", "");
 		
 		userToAttachToken.setResetToken(token);
 
