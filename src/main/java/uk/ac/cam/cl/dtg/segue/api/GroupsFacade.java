@@ -109,6 +109,47 @@ public class GroupsFacade extends AbstractSegueFacade {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}
+	
+	/**
+	 * Get all groups owned by the user id provided.
+	 * 
+	 * ADMIN Only end point.
+	 * 
+	 * @param request
+	 *            - so we can identify the current user.
+	 * @param userId
+	 *            - so we can lookup the group ownership information.
+	 * @return List of user associations.
+	 */
+	@GET
+	@Path("/{user_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getGroupsForGivenUser(@Context final HttpServletRequest request,
+			@PathParam("user_id") final String userId) {
+		try {
+			if (null == userId || userId.isEmpty()) {
+				return new SegueErrorResponse(Status.BAD_REQUEST,
+						"You must provide a valid user id to access this endpoint.").toResponse();
+			}
+			
+			if (!isUserAnAdmin(userManager, request)) {
+				SegueErrorResponse.getIncorrectRoleResponse();
+			}
+			
+			RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
+			
+			List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
+			return Response.ok(groups).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to create user group. ", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.NOT_FOUND,
+					"Unable to locate the user with the id provided: " + userId).toResponse();
+		} 
+	}
 
 	/**
 	 * Function to allow users to create a group.
