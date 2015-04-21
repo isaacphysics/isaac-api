@@ -291,6 +291,10 @@ public final class Constants {
 	public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
 	public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
 	
+	public static final String POSTGRES_DB_URL = "POSTGRES_DB_URL";
+	public static final String POSTGRES_DB_USER = "POSTGRES_DB_USER";
+	public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
+	
 	// Logging component
 	public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
 	public static final String LOG_TABLE_NAME = "loggedEvents";
