@@ -28,7 +28,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -95,16 +97,29 @@ public class GroupsFacade extends AbstractSegueFacade {
 	 * 
 	 * @param request
 	 *            - so we can identify the current user.
-	 * @return List of user associations.
+	 * @param cacheRequest
+	 *            - so that we can control caching of this endpoint
+	 * @return List of groups for the current user.
 	 */
 	@GET
 	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getGroupsForCurrentUser(@Context final HttpServletRequest request) {
+	public Response getGroupsForCurrentUser(@Context final HttpServletRequest request,
+			@Context final Request cacheRequest) {
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 			List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user);
-			return Response.ok(groups).build();
+			
+			// Calculate the ETag based user id and groups they own
+			EntityTag etag = new EntityTag(user.getDbId().hashCode() + groups.toString().hashCode() + "");
+			Response cachedResponse = generateCachedResponse(cacheRequest, etag,
+					Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+
+			return Response.ok(groups).tag(etag)
+					.cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();		
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -252,6 +267,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 	/**
 	 * List all group membership.
 	 * @param request - for authentication
+	 * @param cacheRequest
+	 *            - so that we can control caching of this endpoint
 	 * @param groupId - to look up info for a group.
 	 * @return List of registered users.
 	 */
@@ -260,6 +277,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getUsersInGroup(
 			@Context final HttpServletRequest request,
+			@Context final Request cacheRequest,
 			@PathParam("group_id") final String groupId) {
 		if (null == groupId || groupId.isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
@@ -277,6 +295,14 @@ public class GroupsFacade extends AbstractSegueFacade {
 			List<UserSummaryDTO> summarisedMemberInfo 
 				= userManager.convertToUserSummaryObjectList(groupManager.getUsersInGroup(group));
 
+			// Calculate the ETag based user id and groups they own
+			EntityTag etag = new EntityTag(group.getId().hashCode() + summarisedMemberInfo.toString().hashCode() + "");
+			Response cachedResponse = generateCachedResponse(cacheRequest, etag,
+					Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+			
 			Collections.sort(summarisedMemberInfo, new Comparator<UserSummaryDTO>() {
 				@Override
 				public int compare(final UserSummaryDTO arg0, final UserSummaryDTO arg1) {
@@ -286,7 +312,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 			
 			associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
 			
-			return Response.ok(summarisedMemberInfo).build();
+			return Response.ok(summarisedMemberInfo).tag(etag)
+					.cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
@@ -336,6 +363,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 	/**
 	 * Remove User from a Group.
 	 * @param request - for authentication
+	 * @param cacheRequest
+	 *            - so that we can control caching of this endpoint
 	 * @param groupId - group of interest.
 	 * @param userId - user to remove.
 	 * @return 200 containing new list of users in the group or error response
@@ -345,6 +374,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)	
 	public Response removeUserFromGroup(@Context final HttpServletRequest request,
+			@Context final Request cacheRequest,
 			@PathParam("group_id") final String groupId, 
 			@PathParam("user_id") final String userId) {
 		if (null == groupId || groupId.isEmpty()) {
@@ -364,8 +394,8 @@ public class GroupsFacade extends AbstractSegueFacade {
 			RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
 			
 			groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
-
-			return this.getUsersInGroup(request, groupId);
+			
+			return this.getUsersInGroup(request, cacheRequest, groupId);
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to add user to a group. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
