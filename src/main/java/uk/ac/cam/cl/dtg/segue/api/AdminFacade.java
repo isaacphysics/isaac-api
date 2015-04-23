@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -62,6 +63,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.locations.ILocationResolver;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -79,6 +81,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
 	private StatisticsManager statsManager;
 
+	private ILocationResolver locationResolver;
+
 	/**
 	 * Create an instance of the administrators facade.
 	 * 
@@ -92,15 +96,18 @@ public class AdminFacade extends AbstractSegueFacade {
 	 *            - So we can log events of interest.
 	 * @param statsManager
 	 *            - So we can report high level stats.
+	 * @param locationResolver
+	 *            - for geocoding if we need it.
 	 */
 	@Inject
 	public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
 			final ContentVersionController contentVersionController, final ILogManager logManager,
-			final StatisticsManager statsManager) {
+			final StatisticsManager statsManager, final ILocationResolver locationResolver) {
 		super(properties, logManager);
 		this.userManager = userManager;
 		this.contentVersionController = contentVersionController;
 		this.statsManager = statsManager;
+		this.locationResolver = locationResolver;
 	}
 
 	/**
@@ -703,7 +710,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	 *         events.
 	 */
 	@GET
-	@Path("users/event_data/over_time")
+	@Path("/users/event_data/over_time")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public Response getEventDataForAllUsers(@Context final Request request,
@@ -735,6 +742,45 @@ public class AdminFacade extends AbstractSegueFacade {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
 	}	
+	
+	/**
+	 * Get the ip address location information.
+	 * 
+	 * @param request
+	 *            - request information used for caching.
+	 * @param httpServletRequest
+	 *            - the request which may contain session information.
+	 * @param ipaddress
+	 *            - ip address to geocode.
+	 * @return Returns a location from an ip address
+	 */
+	@GET
+	@Path("/geocode_ip")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response findIP(@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest,
+			@QueryParam("ip") final String ipaddress) {
+		
+		if (null == ipaddress) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"You must specify the ip address you are interested in.").toResponse();
+		}
+		
+		try {
+			if (!isUserAnAdmin(httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.").toResponse();
+			}
+
+			return Response.ok(locationResolver.getLocationInformation(ipaddress)).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (IOException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to contact server to resolve location information", e).toResponse();
+		}
+	}		
 	
 	/**
 	 * Is the current user an admin.

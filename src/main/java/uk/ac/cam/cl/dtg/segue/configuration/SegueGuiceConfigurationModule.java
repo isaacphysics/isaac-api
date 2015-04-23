@@ -75,6 +75,8 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
+import uk.ac.cam.cl.dtg.util.locations.ILocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -174,6 +176,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
 		
 		this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
+		
+		// IP address geocoding
+		this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
 	}
 
 	/**
@@ -217,7 +222,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private void configureSegueSearch() {
 		bind(ISearchProvider.class).to(ElasticSearchProvider.class);
 	}
-
+	
 	/**
 	 * Configure user security related classes.
 	 */
@@ -273,7 +278,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		// Allows GitDb to take over content Management
 		bind(IContentManager.class).to(GitContentManager.class);
-
 	}
 
 	/**
@@ -632,6 +636,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return communicator;
 	}
+	
+	/**
+	 * This provides an instance of the location resolver.
+	 *
+	 * @param apiKey
+	 *            - for using the third party service.
+	 * @return The singleton instance of EmailCommunicator
+	 */
+	@Inject
+	@Provides
+	private ILocationResolver getIPLocator(
+			@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
+		
+		return new IPInfoDBLocationResolver(apiKey);
+	}	
 
 	/**
 	 * This method will pre-register the mapper class so that content objects

@@ -308,6 +308,9 @@ public final class Constants {
 	public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
 	public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
 	
+	// IP Geocoding stuff
+	public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
+	
 	/*
 	 * Default values.
 	 */
