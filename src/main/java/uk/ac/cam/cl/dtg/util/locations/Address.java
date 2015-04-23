@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dos.content;
+package uk.ac.cam.cl.dtg.util.locations;
 
 /**
  *
@@ -24,6 +24,7 @@ public class Address {
 	private String town;
 	private String county;
 	private String postalCode;
+	private String country;
 	
 	/**
 	 * Address.
@@ -32,6 +33,24 @@ public class Address {
 		
 	}
 	
+	/**
+	 * @param addressLine1 - as a string
+	 * @param addressLine2 -  as a string
+	 * @param town - as a string
+	 * @param county - as a string
+	 * @param postalCode - as a string
+	 * @param country - as a string
+	 */
+	public Address(final String addressLine1, final String addressLine2, final String town,
+			final String county, final String postalCode, final String country) {
+		this.addressLine1 = addressLine1;
+		this.addressLine2 = addressLine2;
+		this.town = town;
+		this.county = county;
+		this.postalCode = postalCode;
+		this.country = country;
+	}
+
 	/**
 	 * Gets the addressLine1.
 	 * @return the addressLine1
@@ -101,6 +120,22 @@ public class Address {
 	 */
 	public void setPostalCode(final String postalCode) {
 		this.postalCode = postalCode;
+	}
+
+	/**
+	 * Gets the country.
+	 * @return the country
+	 */
+	public String getCountry() {
+		return country;
+	}
+
+	/**
+	 * Sets the country.
+	 * @param country the country to set
+	 */
+	public void setCountry(final String country) {
+		this.country = country;
 	}
 	
 }
