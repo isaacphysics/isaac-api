@@ -306,7 +306,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *            - request information used for caching.
 	 * @param httpServletRequest
 	 *            - the request which may contain session information.
-	 * @param userId
+	 * @param userIdOfInterest
 	 *            - userId of interest - currently only supports looking at own data.
 	 * @param fromDate
 	 *            - date to start search
@@ -322,7 +322,7 @@ public class UsersFacade extends AbstractSegueFacade {
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
 	public Response getEventDataForUser(@Context final Request request,
-			@Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final String userId,
+			@Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final String userIdOfInterest,
 			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
 			@QueryParam("events") final String events) {
 		
@@ -340,17 +340,26 @@ public class UsersFacade extends AbstractSegueFacade {
 			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 			
 			// decide if the user is allowed to view this data.
-			if (!currentUser.getDbId().equals(userId)) {
+			if (!currentUser.getDbId().equals(userIdOfInterest) && !isUserAnAdmin(userManager, httpServletRequest)) {
 				return SegueErrorResponse.getIncorrectRoleResponse();
 			}
 
+			RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+			
 			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager
 					.getEventLogsByDateAndUserList(Lists.newArrayList(events.split(",")), new Date(fromDate),
-							new Date(toDate), Arrays.asList(currentUser));
+							new Date(toDate), Arrays.asList(userOfInterest));
 
 			return Response.ok(eventLogsByDate).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to find user with the id provided.")
+					.toResponse();
+		} catch (SegueDatabaseException e) {
+			log.error("Unable to look up user event history for user " + userIdOfInterest, e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
+					.toResponse();
 		}
 	}	
 	
