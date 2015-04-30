@@ -18,8 +18,10 @@ package uk.ac.cam.cl.dtg.segue.api;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -54,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -63,7 +66,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.locations.ILocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -81,7 +84,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
 	private StatisticsManager statsManager;
 
-	private ILocationResolver locationResolver;
+	private LocationHistoryManager locationManager;
 
 	/**
 	 * Create an instance of the administrators facade.
@@ -96,18 +99,19 @@ public class AdminFacade extends AbstractSegueFacade {
 	 *            - So we can log events of interest.
 	 * @param statsManager
 	 *            - So we can report high level stats.
-	 * @param locationResolver
+	 * @param locationManager
 	 *            - for geocoding if we need it.
 	 */
 	@Inject
 	public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
 			final ContentVersionController contentVersionController, final ILogManager logManager,
-			final StatisticsManager statsManager, final ILocationResolver locationResolver) {
+			final StatisticsManager statsManager,
+			final LocationHistoryManager locationManager) {
 		super(properties, logManager);
 		this.userManager = userManager;
 		this.contentVersionController = contentVersionController;
 		this.statsManager = statsManager;
-		this.locationResolver = locationResolver;
+		this.locationManager = locationManager;
 	}
 
 	/**
@@ -768,19 +772,88 @@ public class AdminFacade extends AbstractSegueFacade {
 		}
 		
 		try {
-			if (!isUserAnAdmin(httpServletRequest)) {
+			if (!isUserStaff(httpServletRequest)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be logged in as an admin to access this function.").toResponse();
+						"You must be logged in as staff to access this function.").toResponse();
 			}
 
-			return Response.ok(locationResolver.getLocationInformation(ipaddress)).build();
+			return Response.ok(locationManager.getLocationResolver().resolveAllLocationInformation(ipaddress)).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (IOException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
 					"Unable to contact server to resolve location information", e).toResponse();
+		} catch (LocationServerException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"Problem resolving ip address", e).toResponse();			
 		}
-	}		
+	}
+	
+	/**
+	 * Batch job to start ip address processing.
+	 * 
+	 * Temporary endpoint for use once by admin user.
+	 * 
+	 * @param request
+	 *            - request information used for caching.
+	 * @param httpServletRequest
+	 *            - the request which may contain session information.
+	 * @return Returns a location from an ip address
+	 */
+	@POST
+	@Path("/create_geocode_history")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response createHistory(@Context final Request request,
+			@Context final HttpServletRequest httpServletRequest) {
+		
+		try {
+			if (!isUserAnAdmin(httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be logged in as an admin to access this function.").toResponse();
+			}
+
+			final Set<String> ipAddressesAlreadyGeoCoded = new HashSet<String>();
+			log.info("Starting batch processing job for historic geocoding data..");
+			final Set<String> allIpAddresses = super.getLogManager().getAllIpAddresses();
+			final int updateInterval = 15;
+			Thread generateLocationInfoJob = new Thread() {
+				@Override
+				public void run() {
+					int i = 0;
+					for (String ipAddress : allIpAddresses) {
+						String ipAddressOfInterest = ipAddress.split(",")[0];
+						
+						if (!ipAddressesAlreadyGeoCoded.contains(ipAddressOfInterest)) {
+							ipAddressesAlreadyGeoCoded.add(ipAddressOfInterest);
+							if (i % updateInterval == 0) {
+								log.info("Batch job processing: " + i + "/" + allIpAddresses.size()
+										+ " complete");
+							}
+							
+							try {
+								locationManager.refreshLocation(ipAddressOfInterest);
+
+							} catch (SegueDatabaseException | IOException e) {
+								log.error("Failed to resolve ip address on batch run: " + ipAddressOfInterest, e);
+							}
+						}
+						i++;
+					}
+					log.info("Batch processing complete.");
+					
+				}
+			};
+			generateLocationInfoJob.setDaemon(true);
+			generateLocationInfoJob.start();
+			
+			return Response.ok().build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} 
+	}
+	
+		
 	
 	/**
 	 * Is the current user an admin.
