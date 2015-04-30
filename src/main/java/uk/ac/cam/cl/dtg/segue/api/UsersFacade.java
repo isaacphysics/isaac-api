@@ -410,7 +410,8 @@ public class UsersFacade extends AbstractSegueFacade {
 					&& 
 					!existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
 				log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
-						+ userObjectFromClient.getEmail() + " to " + userObjectFromClient.getRole());
+						+ userObjectFromClient.getEmail() + "[" + userObjectFromClient.getDbId() + "]"
+						+ " to " + userObjectFromClient.getRole());
 			}
 
 			RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);

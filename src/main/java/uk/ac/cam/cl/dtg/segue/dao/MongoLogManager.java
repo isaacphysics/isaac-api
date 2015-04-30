@@ -15,9 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -43,6 +45,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
+import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
@@ -66,6 +69,8 @@ public class MongoLogManager implements ILogManager {
 	
 	private final boolean loggingEnabled;
 
+	private LocationHistoryManager locationManager;
+
 	/**
 	 * Create an instance of the log manager.
 	 * 
@@ -76,13 +81,21 @@ public class MongoLogManager implements ILogManager {
 	 * @param loggingEnabled
 	 *            - should logging be enabled. True means that log messages will
 	 *            be saved false is that they wont.
+	 * @param locationManager
+	 *            - Allows us to geocode ip addresses.
 	 */
 	@Inject
 	public MongoLogManager(final DB database, final ObjectMapper objectMapper,
-			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
+			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
+			final LocationHistoryManager locationManager) {
 		this.database = database;
+		
 		this.objectMapper = objectMapper;
+		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		MongoJackModule.configure(objectMapper);
+		
 		this.loggingEnabled = loggingEnabled;
+		this.locationManager = locationManager;
 	}
 
 	@Override
@@ -101,7 +114,7 @@ public class MongoLogManager implements ILogManager {
 			
 		} catch (JsonProcessingException e) {
 			log.error("Unable to serialize eventDetails as json string", e);
-		}
+		} 
 	}
 	
 	@Override
@@ -155,9 +168,6 @@ public class MongoLogManager implements ILogManager {
 	
 	@Override
 	public List<LogEvent> getLogsByType(final String type) {
-		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		MongoJackModule.configure(objectMapper);
-		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
@@ -187,9 +197,6 @@ public class MongoLogManager implements ILogManager {
 		} else {
 			newToDate = toDate;
 		}
-		
-		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		MongoJackModule.configure(objectMapper);
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
@@ -224,14 +231,29 @@ public class MongoLogManager implements ILogManager {
 	
 	@Override
 	public Long getLogCountByType(final String type) {
-		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		MongoJackModule.configure(objectMapper);
+
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		BasicDBObject query = new BasicDBObject("eventType", type);
 		return jc.count(query);
+	}
+	
+	@Override
+	public Set<String> getAllIpAddresses() {
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				String.class, this.objectMapper);
+		Set<String> results = Sets.newHashSet();
+		
+		for (LogEvent e : jc.find()) {
+			if (e.getIpAddress() != null) {
+				results.add(e.getIpAddress());	
+			}
+		}
+		
+		return results;
 	}
 	
 	@Override
@@ -386,9 +408,6 @@ public class MongoLogManager implements ILogManager {
 			throw new IllegalArgumentException("UserId or anonymousUserId must be set.");
 		}
 		
-		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		MongoJackModule.configure(objectMapper);
-		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
@@ -410,7 +429,18 @@ public class MongoLogManager implements ILogManager {
 			logEvent.setEventDetails(eventDetails);			
 		}
 		
-		logEvent.setIpAddress(ipAddress);
+		if (ipAddress != null) {
+			logEvent.setIpAddress(ipAddress);
+			
+			try {
+				// split based on the fact that we usually get ip addresses of the form
+				// [user_ip], [balancer/gateway_ip] 
+				locationManager.refreshLocation(ipAddress.split(",")[0]);
+			} catch (SegueDatabaseException | IOException e1) {
+				log.error("Unable to record location information for ip Address: " + ipAddress, e1);
+			}			
+		}
+		
 		logEvent.setTimestamp(new Date());
 
 		try {

@@ -137,5 +137,81 @@ public class Address {
 	public void setCountry(final String country) {
 		this.country = country;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((addressLine1 == null) ? 0 : addressLine1.hashCode());
+		result = prime * result + ((addressLine2 == null) ? 0 : addressLine2.hashCode());
+		result = prime * result + ((country == null) ? 0 : country.hashCode());
+		result = prime * result + ((county == null) ? 0 : county.hashCode());
+		result = prime * result + ((postalCode == null) ? 0 : postalCode.hashCode());
+		result = prime * result + ((town == null) ? 0 : town.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof Address)) {
+			return false;
+		}
+		Address other = (Address) obj;
+		if (addressLine1 == null) {
+			if (other.addressLine1 != null) {
+				return false;
+			}
+		} else if (!addressLine1.equals(other.addressLine1)) {
+			return false;
+		}
+		if (addressLine2 == null) {
+			if (other.addressLine2 != null) {
+				return false;
+			}
+		} else if (!addressLine2.equals(other.addressLine2)) {
+			return false;
+		}
+		if (country == null) {
+			if (other.country != null) {
+				return false;
+			}
+		} else if (!country.equals(other.country)) {
+			return false;
+		}
+		if (county == null) {
+			if (other.county != null) {
+				return false;
+			}
+		} else if (!county.equals(other.county)) {
+			return false;
+		}
+		if (postalCode == null) {
+			if (other.postalCode != null) {
+				return false;
+			}
+		} else if (!postalCode.equals(other.postalCode)) {
+			return false;
+		}
+		if (town == null) {
+			if (other.town != null) {
+				return false;
+			}
+		} else if (!town.equals(other.town)) {
+			return false;
+		}
+		return true;
+	}
 	
 }

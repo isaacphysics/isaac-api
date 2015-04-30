@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -78,7 +79,7 @@ public interface ILogManager {
 	 *            - the user object of the newly registered user.
 	 */
 	void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId);
-
+	
 	/**
 	 * To enable some simple analytics we provide a way to query logs by event
 	 * type.
@@ -141,6 +142,11 @@ public interface ILogManager {
 	 */
 	List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate,
 			List<RegisteredUserDTO> usersOfInterest);
+	
+	/**
+	 * @return get a set of all ip addresses ever seen in the log events.
+	 */
+	Set<String> getAllIpAddresses();
 	
 	/**
 	 * @param userType

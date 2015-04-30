@@ -79,7 +79,7 @@ public class PgEventBookings implements EventBookings {
 					Long id = generatedKeys.getLong(1);
 					return new PgEventBooking(ds, id, userId, eventId, creationDate);
 				} else {
-					throw new SQLException("Creating user failed, no ID obtained.");
+					throw new SQLException("Creating event booking failed, no ID obtained.");
 				}
 			}
 

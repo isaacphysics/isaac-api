@@ -48,6 +48,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
@@ -62,6 +63,8 @@ import uk.ac.cam.cl.dtg.segue.dao.users.MongoUserDataManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -278,6 +281,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		// Allows GitDb to take over content Management
 		bind(IContentManager.class).to(GitContentManager.class);
+		
+		bind(LocationHistory.class).to(PgLocationHistory.class);
 	}
 
 	/**
@@ -374,16 +379,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 *            - database reference
 	 * @param objectMapper - A configured object mapper so that we can serialize objects logged.
 	 * @param loggingEnabled - boolean to determine if we should persist log messages.
+	 * @param lhm - location history manager
 	 * @return A fully configured LogManager
 	 */
 	@Inject
 	@Provides
 	@Singleton
 	private ILogManager getLogManager(final DB database, final ObjectMapper objectMapper,
-			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled) {
+			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
 		if (null == logManager) {
 			logManager = new MongoLogManager(database,
-					objectMapper, loggingEnabled);
+					objectMapper, loggingEnabled, lhm);
 			log.info("Creating singleton of LogManager");
 			if (loggingEnabled) {
 				log.info("Log manager configured to record logging.");

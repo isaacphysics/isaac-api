@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.util.locations;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author sac92
  *
@@ -23,14 +26,19 @@ public class Location {
 	private Address address;
 	private Double latitude;
 	private Double longitude;
-	
+
 	/**
 	 * 
-	 * @param address includes postal address information. 
-	 * @param latitude - as a decimal value
-	 * @param longitude - as a decimal value
+	 * @param address
+	 *            includes postal address information.
+	 * @param latitude
+	 *            - as a decimal value
+	 * @param longitude
+	 *            - as a decimal value
 	 */
-	public Location(final Address address, final Double latitude, final Double longitude) {
+	@JsonCreator
+	public Location(@JsonProperty("address") final Address address,
+			@JsonProperty("latitude") final Double latitude, @JsonProperty("longitude") final Double longitude) {
 		this.address = address;
 		this.latitude = latitude;
 		this.longitude = longitude;
@@ -38,6 +46,7 @@ public class Location {
 
 	/**
 	 * Gets the address.
+	 * 
 	 * @return the address
 	 */
 	public Address getAddress() {
@@ -46,6 +55,7 @@ public class Location {
 
 	/**
 	 * Gets the latitude.
+	 * 
 	 * @return the latitude
 	 */
 	public Double getLatitude() {
@@ -54,9 +64,66 @@ public class Location {
 
 	/**
 	 * Gets the longitude.
+	 * 
 	 * @return the longitude
 	 */
 	public Double getLongitude() {
 		return longitude;
-	}	
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((address == null) ? 0 : address.hashCode());
+		result = prime * result + ((latitude == null) ? 0 : latitude.hashCode());
+		result = prime * result + ((longitude == null) ? 0 : longitude.hashCode());
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof Location)) {
+			return false;
+		}
+		Location other = (Location) obj;
+		if (address == null) {
+			if (other.address != null) {
+				return false;
+			}
+		} else if (!address.equals(other.address)) {
+			return false;
+		}
+		if (latitude == null) {
+			if (other.latitude != null) {
+				return false;
+			}
+		} else if (!latitude.equals(other.latitude)) {
+			return false;
+		}
+		if (longitude == null) {
+			if (other.longitude != null) {
+				return false;
+			}
+		} else if (!longitude.equals(other.longitude)) {
+			return false;
+		}
+		return true;
+	}
 }
