@@ -65,10 +65,54 @@ ALTER SEQUENCE event_bookings_id_seq OWNED BY event_bookings.id;
 
 
 --
+-- Name: ip_location_history; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE ip_location_history (
+    id integer NOT NULL,
+    ip_address text NOT NULL,
+    location_information jsonb,
+    created timestamp without time zone,
+    last_lookup timestamp without time zone,
+    is_current boolean DEFAULT true
+);
+
+
+ALTER TABLE ip_location_history OWNER TO rutherford;
+
+--
+-- Name: ip_location_history_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE ip_location_history_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE ip_location_history_id_seq OWNER TO rutherford;
+
+--
+-- Name: ip_location_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE ip_location_history_id_seq OWNED BY ip_location_history.id;
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY event_bookings ALTER COLUMN id SET DEFAULT nextval('event_bookings_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY ip_location_history ALTER COLUMN id SET DEFAULT nextval('ip_location_history_id_seq'::regclass);
 
 
 --
@@ -85,6 +129,14 @@ ALTER TABLE ONLY event_bookings
 
 ALTER TABLE ONLY event_bookings
     ADD CONSTRAINT "eventbooking id pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: id pky; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY ip_location_history
+    ADD CONSTRAINT "id pky" PRIMARY KEY (id);
 
 
 --
