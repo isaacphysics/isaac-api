@@ -30,6 +30,8 @@ import com.google.inject.Inject;
 /**
  * Concrete implemention of a geocoder using the third party IPInfoDB service.
  * 
+ * http://www.ipinfodb.com/
+ * 
  */
 public class IPInfoDBLocationResolver implements ILocationResolver {
 	/**
