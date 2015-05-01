@@ -63,6 +63,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -516,6 +517,8 @@ public class AdminFacade extends AbstractSegueFacade {
 	 *            - if searching by familyName
 	 * @param role
 	 *            - if searching by role
+	 * @param schoolOther
+	 *            - if searching by school other field.
 	 * @return a userDTO or a segue error response
 	 */
 	@GET
@@ -526,7 +529,8 @@ public class AdminFacade extends AbstractSegueFacade {
 			@Context final Request request,
 			@QueryParam("id") final String userId, @QueryParam("email") @Nullable final String email,
 			@QueryParam("familyName") @Nullable final String familyName,
-			@QueryParam("role") @Nullable final Role role) {
+			@QueryParam("role") @Nullable final Role role,
+			@QueryParam("schoolOther") @Nullable final String schoolOther) {
 
 		RegisteredUserDTO currentUser;
 		try {
@@ -555,6 +559,10 @@ public class AdminFacade extends AbstractSegueFacade {
 			
 			if (null != role) {
 				userPrototype.setRole(role);	
+			} 
+			
+			if (null != schoolOther) {
+				userPrototype.setSchoolOther(schoolOther);	
 			}
 
 			List<RegisteredUserDTO> findUsers = this.userManager.findUsers(userPrototype);
