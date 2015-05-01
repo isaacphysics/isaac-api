@@ -241,7 +241,7 @@ public class SchoolListReader {
 							schoolArray[fieldNameMapping.get(Constants.SCHOOL_URN_FIELDNAME)],
 							schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME)],
 							schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)],
-							null);
+							null, School.SchoolDataSource.GOVERNMENT);
 
 					// check if school has a post code as some of them do not.
 					if (schoolArray.length - 1 == fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)) {

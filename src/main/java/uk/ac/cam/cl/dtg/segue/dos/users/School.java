@@ -29,6 +29,20 @@ public class School {
 	private String postcode;
 
 	/**
+	 * Enum to represent where this school object was created.
+	 */
+	public enum SchoolDataSource {
+		GOVERNMENT, USER_ENTERED;
+		
+		@Override
+		public String toString() {
+			return this.name();
+		}
+	}
+	
+	private SchoolDataSource dataSource;
+	
+	/**
 	 * Default Constructor for mappers.
 	 */
 	public School() {
@@ -46,13 +60,16 @@ public class School {
 	 *            - name of the school.
 	 * @param postcode
 	 *            -postcode of the school
+	 * @param dataSource
+	 *            -dataSource of this information
 	 */
 	public School(final String urn, final String establishmentNumber, final String name,
-			final String postcode) {
+			final String postcode, final SchoolDataSource dataSource) {
 		this.urn = urn;
 		this.establishmentNumber = establishmentNumber;
 		this.name = name;
 		this.postcode = postcode;
+		this.dataSource = dataSource;
 	}
 
 	/**
@@ -129,6 +146,22 @@ public class School {
 		this.postcode = postcode;
 	}
 	
+	/**
+	 * Gets the verifiedSchool.
+	 * @return the verifiedSchool
+	 */
+	public SchoolDataSource getDataSource() {
+		return dataSource;
+	}
+
+	/**
+	 * Sets the dataSource.
+	 * @param dataSource the dataSource to set
+	 */
+	public void setDataSource(final SchoolDataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
