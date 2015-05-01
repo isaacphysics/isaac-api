@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -277,26 +278,36 @@ public class StatisticsManager {
 			return cachedOutput;
 		}
 		
-		Map<School, Integer> map = getUsersBySchool();
+		Map<School, List<RegisteredUserDTO>> map = getUsersBySchool();
 		
 		final String school = "school";
 		final String connections = "connections";
+		final String teachers = "teachers";
 		final String numberActive = "numberActiveLastThirtyDays";
 		final int thirtyDays = 30;
 		
 		Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
 		List<Map<String, Object>> result = Lists.newArrayList();
-		for (Entry<School, Integer> e : map.entrySet()) {
+		for (Entry<School, List<RegisteredUserDTO>> e : map.entrySet()) {
 			RegisteredUserDTO prototype = new RegisteredUserDTO();
 			prototype.setSchoolId(e.getKey().getUrn());
 			
-			List<RegisteredUserDTO> usersBySchool = this.userManager.findUsers(prototype);
+			List<RegisteredUserDTO> teachersConnected = Lists.newArrayList();
+			for (RegisteredUserDTO user : e.getValue()) {
+				if (user.getRole() != null && user.getRole().equals(Role.TEACHER)) {
+					teachersConnected.add(user);
+				}
+			}
 			
-			result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue(), numberActive,
-					getNumberOfUsersActiveForLastNDays(usersBySchool, lastSeenUserMap,
+			result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue().size(), 
+					teachers, teachersConnected.size(), 
+					numberActive, getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap,
 							thirtyDays).size()));
 		}
 	
+		// TODO get school other data.
+		
+		
 		Collections.sort(result, new Comparator<Map<String, Object>>() {
 			/**
 			 * Descending numerical order
@@ -326,12 +337,13 @@ public class StatisticsManager {
 	 * @return A map of schools to integers (representing the number of registered users)
 	 * @throws UnableToIndexSchoolsException 
 	 */
-	public Map<School, Integer> getUsersBySchool() throws UnableToIndexSchoolsException {
+	public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException {
 		List<RegisteredUserDTO> users;
-		Map<School, Integer> usersBySchool = Maps.newHashMap();
+		Map<School, List<RegisteredUserDTO>> usersBySchool = Maps.newHashMap();
 		
 		try {
 			users = userManager.findUsers(new RegisteredUserDTO());
+			
 			for (RegisteredUserDTO user : users) {
 				if (user.getSchoolId() == null) {
 					continue;
@@ -342,10 +354,12 @@ public class StatisticsManager {
 					continue;
 				}
 				
-				if (usersBySchool.containsKey(s)) {
-					usersBySchool.put(s, usersBySchool.get(s) + 1); 
+				if (!usersBySchool.containsKey(s)) {
+					List<RegisteredUserDTO> userList = Lists.newArrayList();
+					userList.add(user);
+					usersBySchool.put(s, userList); 
 				} else {
-					usersBySchool.put(s, 1); 
+					usersBySchool.get(s).add(user);
 				}
 			}
 			
