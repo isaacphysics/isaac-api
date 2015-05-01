@@ -76,7 +76,7 @@ public class LocationHistoryManager {
 		if (ipAddress == null || ipAddress.startsWith("localhost") || ipAddress.contains("0:0:0:0:0:0:0:1")
 				|| ipAddress.contains("127.0.0.1")) {
 			// do not record
-			log.info("Not geocoding ip address as it looks like localhost: " + ipAddress);
+			log.debug("Not geocoding ip address as it looks like localhost: " + ipAddress);
 			return;
 		}
 		
