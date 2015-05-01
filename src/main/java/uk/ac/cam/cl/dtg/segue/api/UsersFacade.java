@@ -20,7 +20,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -60,12 +62,14 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -363,6 +367,39 @@ public class UsersFacade extends AbstractSegueFacade {
 		}
 	}	
 	
+	/**
+	 * Get a Set of all schools reported by users in the school other field.
+	 * 
+	 * @return list of strings.
+	 */
+	@GET
+	@Path("users/schools_other")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response getAllSchoolOtherResponses() {
+		try {
+			List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
+			
+			Set<School> schoolOthers = Sets.newHashSet();
+			
+			for (RegisteredUserDTO user : users) {
+				if (user.getSchoolOther() != null) {
+					School pseudoSchool = new School();
+					pseudoSchool.setUrn("PS_" + user.getSchoolOther().hashCode());
+					pseudoSchool.setName(user.getSchoolOther());
+					pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
+					schoolOthers.add(pseudoSchool);
+				}
+			}
+			
+			return Response.ok(schoolOthers).build();
+		} catch (SegueDatabaseException e) {
+			log.error("Unable to contact the database", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
+					.toResponse();
+		}
+		
+	}
 	
 	/**
 	 * Update a user object.
