@@ -180,23 +180,20 @@ public interface ILogManager {
 	 * @return the last log event.
 	 */
 	LogEvent getLastLogForUser(AbstractSegueUserDTO prototype);
-
+	
 	/**
-	 * A more efficient way of getting the last access date for all users.
+	 * A more efficient way of getting the last log for all users.
 	 * 
 	 * @param qualifyingLogEventType
 	 *            - the log event type to include in the data.
-	 * @return Map<String, Date> where string is the user id and the date is the
-	 *         last access date.
+	 * @return  where string is the user id and the logevent is the most recent
 	 */
-	Map<String, Date> getLastAccessForAllUsers(@Nullable final String qualifyingLogEventType);
+	Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType);
 
 	/**
-	 * A more efficient way of getting the last access date for all users.
+	 * A more efficient way of getting the last log for all users.
 	 * 
-	 * @return Map<String, Date> where string is the user id and the date is the
-	 *         last access date.
+	 * @return where string is the user id and the logevent is the most recent
 	 */
-	Map<String, Date> getLastAccessForAllUsers();
-	
+	Map<String, LogEvent> getLastLogForAllUsers();
 }

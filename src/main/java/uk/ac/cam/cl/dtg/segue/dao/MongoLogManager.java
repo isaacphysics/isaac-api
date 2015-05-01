@@ -353,30 +353,31 @@ public class MongoLogManager implements ILogManager {
 	}
 	
 	@Override
-	public Map<String, Date> getLastAccessForAllUsers() {
-		return this.getLastAccessForAllUsers(null);
+	public Map<String, LogEvent> getLastLogForAllUsers() {
+		return this.getLastLogForAllUsers(null);
 	}
 	
 	@Override
-	public Map<String, Date> getLastAccessForAllUsers(@Nullable final String qualifyingLogEventType) {
+	public Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType) {
 		List<LogEvent> allLogsByUserType;
 		if (qualifyingLogEventType != null) {
-			allLogsByUserType = this.getAllLogsByUserTypeAndEvent(RegisteredUserDTO.class, qualifyingLogEventType);
+			allLogsByUserType = this.getAllLogsByUserTypeAndEvent(RegisteredUserDTO.class,
+					qualifyingLogEventType);
 		} else {
 			allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
 		}
-		
-		Map<String, Date> results = Maps.newHashMap();
-		
+
+		Map<String, LogEvent> results = Maps.newHashMap();
+
 		for (LogEvent log : allLogsByUserType) {
 			if (results.containsKey((String) log.getUserId())) {
-				
-				if (results.get((String) log.getUserId()).before(log.getTimestamp())) {
-					results.put((String) log.getUserId(), log.getTimestamp());
+
+				if (results.get((String) log.getUserId()).getTimestamp().before(log.getTimestamp())) {
+					results.put((String) log.getUserId(), log);
 				}
-				
+
 			} else {
-				results.put((String) log.getUserId(), log.getTimestamp());
+				results.put((String) log.getUserId(), log);
 			}
 		}
 		return results;

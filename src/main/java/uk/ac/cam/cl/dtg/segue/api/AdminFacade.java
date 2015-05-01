@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -63,7 +64,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -132,6 +132,35 @@ public class AdminFacade extends AbstractSegueFacade {
 			}
 			
 			return Response.ok(statsManager.outputGeneralStatistics()).build();
+		} catch (SegueDatabaseException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		}
+	}
+	
+	/**
+	 * Locations stats.
+	 * 
+	 * @param request - to determine access.
+	 * @return stats
+	 */
+	@GET
+	@Path("/stats/users/last_locations")
+	@Produces(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response getLastLocations(@Context final HttpServletRequest request) {
+		try {
+			if (!isUserStaff(request)) {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an admin to access this endpoint.").toResponse();
+			}
+			
+			Calendar threshold = Calendar.getInstance(); 
+			threshold.setTime(new Date());
+			threshold.add(Calendar.MONTH, -1);
+			
+			return Response.ok(statsManager.getLocationInformation(threshold.getTime())).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
@@ -785,7 +814,7 @@ public class AdminFacade extends AbstractSegueFacade {
 						"You must be logged in as staff to access this function.").toResponse();
 			}
 
-			return Response.ok(locationManager.getLocationResolver().resolveAllLocationInformation(ipaddress)).build();
+			return Response.ok(locationManager.resolveAllLocationInformation(ipaddress)).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (IOException e) {

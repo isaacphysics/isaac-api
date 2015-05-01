@@ -42,14 +42,18 @@ import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
  * @author sac92
  *
  */
-public class LocationHistoryManager {
+public class LocationHistoryManager implements ILocationResolver {
 	private static final Logger log = LoggerFactory.getLogger(LocationHistoryManager.class);
 	private static final int LOCATION_UPDATE_FREQUENCY_IN_DAYS = 30;
 	private static final int NON_PERSISTENT_CACHE_TIME_IN_HOURS = 1;
 	
 	private final LocationHistory dao;
 	private final ILocationResolver locationResolver;
-	private Cache<String, String> locationCache; 
+	private final Cache<String, Location> locationCache; 
+	
+	// used to try and reduce load on external services.
+	// TODO: we can probably remove this given that I could not see any restriction in the AUP.
+	private final int externalServiceDelayInMiliSeconds = 250;
 	
 	/**
 	 * @param dao - the location history data access object.
@@ -62,7 +66,7 @@ public class LocationHistoryManager {
 
 		// This cache is here to prevent lots of needless look ups to the database. 
 		locationCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS)
-				.<String, String> build();
+				.<String, Location> build();
 	}
 	
 	/**
@@ -87,11 +91,10 @@ public class LocationHistoryManager {
 		
 		// do we have an existing location for this ip address.
 		LocationHistoryEvent latestByIPAddress = dao.getLatestByIPAddress(ipAddress);
-		// used to try and reduce load on external services.
-		// TODO: we can probably remove this given that I could not see any restriction in the AUP.
-		final int externalServiceDelayInMiliSeconds = 250;
+		Location locationToCache;
 		try {
 			if (latestByIPAddress != null) {
+				locationToCache = latestByIPAddress.getLocationInformation();
 				Calendar locationExpiry = Calendar.getInstance(); 
 				locationExpiry.setTime(latestByIPAddress.getLastUpdated());
 				locationExpiry.add(Calendar.DATE, LOCATION_UPDATE_FREQUENCY_IN_DAYS);
@@ -99,37 +102,57 @@ public class LocationHistoryManager {
 				if (new Date().after(locationExpiry.getTime())) {
 					// lookup to see if ip location data is different. If so update it.
 					Location locationInformation = locationResolver.resolveAllLocationInformation(ipAddress);
+					
 					Thread.sleep(externalServiceDelayInMiliSeconds);
+					
 					if (locationInformation.equals(latestByIPAddress.getLocationInformation())) {
 						dao.updateLocationEventDate(latestByIPAddress.getId(), true);
 						log.debug("Ip address location is the same. Refreshing.");
+
 					} else {
 						dao.updateLocationEventDate(latestByIPAddress.getId(), false);
-						dao.storeLocationEvent(ipAddress, locationInformation);
+						locationToCache = dao.storeLocationEvent(ipAddress, locationInformation)
+								.getLocationInformation();
 						log.debug("Location Info Different. Updating to new value.");
 					}
-				} else {
-					// we don't need to refresh yet.
-					log.debug(String.format("We don't need to refresh (%s) until %s", ipAddress,
-							locationExpiry.getTime()));
 				}
 			} else {
 				Location locationInformation = locationResolver.resolveAllLocationInformation(ipAddress);
-				dao.storeLocationEvent(ipAddress, locationInformation);
+				locationToCache = dao.storeLocationEvent(ipAddress, locationInformation).getLocationInformation();
 			}
 			
-			this.locationCache.put(ipAddress, ipAddress);
+			this.locationCache.put(ipAddress, locationToCache);
 			
 		} catch (LocationServerException | InterruptedException e) {
 			log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e);
 		}
 	}
 	
+	@Override
+	public Location resolveAllLocationInformation(final String ipAddress) throws IOException,
+			LocationServerException {
+		return locationResolver.resolveAllLocationInformation(ipAddress);
+		
+	}
+
+	@Override
+	public Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException {
+		return locationResolver.resolveCountryOnly(ipAddress);
+	}
+	
 	/**
-	 * getLocationResolver.
-	 * @return locationResolver
+	 * Get the latest location information held by our history.
+	 * 
+	 * @param ipAddress that we are interested in.
+	 * @return latest location info for that ip address. or null if we have no data.
+	 * @throws SegueDatabaseException - if we cannot resolve the location from our database
 	 */
-	public ILocationResolver getLocationResolver() {
-		return this.locationResolver;
+	public Location getLocationFromHistory(final String ipAddress) throws SegueDatabaseException {
+		LocationHistoryEvent latestByIPAddress = dao.getLatestByIPAddress(ipAddress);
+		if (null == latestByIPAddress) {
+			return null;
+		}
+		
+		return latestByIPAddress.getLocationInformation();
 	}
 }

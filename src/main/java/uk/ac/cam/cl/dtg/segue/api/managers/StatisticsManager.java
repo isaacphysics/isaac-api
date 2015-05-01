@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -48,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.locations.Location;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -72,10 +74,12 @@ public class StatisticsManager {
 	private IContentManager contentManager;
 	
 	private Cache<String, Object> statsCache;
+	private LocationHistoryManager locationHistoryManager;
 	
 	private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
 	private static final String GENERAL_STATS = "GENERAL_STATS";
 	private static final String SCHOOL_STATS = "SCHOOL_STATS";
+	private static final String LOCATION_STATS = "LOCATION_STATS";
 	private static final int STATS_EVICTION_INTERVAL_MINUTES = 10;
 	
 	/**
@@ -85,17 +89,20 @@ public class StatisticsManager {
 	 * @param schoolManager - to query School information
 	 * @param versionManager - to query live version information
 	 * @param contentManager - to query content 
+	 * @param locationHistoryManager 
 	 */
 	@Inject
 	public StatisticsManager(final UserManager userManager, final ILogManager logManager,
 			final SchoolListReader schoolManager, final ContentVersionController versionManager,
-			final IContentManager contentManager) {
+			final IContentManager contentManager, final LocationHistoryManager locationHistoryManager) {
 		this.userManager = userManager;
 		this.logManager = logManager;
 		this.schoolManager = schoolManager;
 		
 		this.versionManager = versionManager;
 		this.contentManager = contentManager;
+		
+		this.locationHistoryManager = locationHistoryManager;
 		
 		this.statsCache = CacheBuilder.newBuilder()
 				.expireAfterWrite(STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
@@ -411,7 +418,7 @@ public class StatisticsManager {
 	 * @return a list of userId's to last event timestamp
 	 */
 	public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) {
-		return this.logManager.getLastAccessForAllUsers(qualifyingLogEvent);
+		return this.convertFromLogEventToDateMap(this.logManager.getLastLogForAllUsers(qualifyingLogEvent));
 	}
 	
 	/**
@@ -621,6 +628,41 @@ public class StatisticsManager {
 	}
 	
 	/**
+	 * getRecentLocationInformation.
+	 * 
+	 * @param threshold - the earliest date to include in the search.
+	 * @return the list of all locations we know about..
+	 * @throws SegueDatabaseException if we can't read from the database.
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<Location> getLocationInformation(final Date threshold) throws SegueDatabaseException {
+		if (this.statsCache.getIfPresent(LOCATION_STATS) != null) {
+			return (Set<Location>) this.statsCache.getIfPresent(LOCATION_STATS);
+		}
+		
+		Set<Location> result = Sets.newHashSet();
+		
+		for (LogEvent e : logManager.getLastLogForAllUsers().values()) {
+
+			if (e.getTimestamp().before(threshold)) {
+				continue;
+			}
+			
+			if (e.getIpAddress() != null) {
+				Location locationFromHistory = locationHistoryManager.getLocationFromHistory(e.getIpAddress()
+						.split(",")[0]);
+				if (locationFromHistory != null) {
+					result.add(locationFromHistory);
+				}
+			}
+		}
+		
+		this.statsCache.put(LOCATION_STATS, result);
+		
+		return result;
+	}
+	
+	/**
 	 * Utility method to get a load of question pages by id in one go.
 	 * 
 	 * @param ids to search for
@@ -651,5 +693,17 @@ public class StatisticsManager {
 		}
 		
 		return questionIdToQuestionMap;
+	}
+	
+	/**
+	 * @param input - containing more information than necessary.
+	 * @return converted map
+	 */
+	private Map<String, Date> convertFromLogEventToDateMap(final Map<String, LogEvent> input) {
+		Map<String, Date> result = Maps.newHashMap();
+		for (Entry<String, LogEvent> e: input.entrySet()) {
+			result.put(e.getKey(), e.getValue().getTimestamp());
+		}
+		return result;
 	}
 }
