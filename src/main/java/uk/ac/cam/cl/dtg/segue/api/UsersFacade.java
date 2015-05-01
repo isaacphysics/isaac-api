@@ -370,13 +370,14 @@ public class UsersFacade extends AbstractSegueFacade {
 	/**
 	 * Get a Set of all schools reported by users in the school other field.
 	 * 
+	 * @param request for caching purposes.
 	 * @return list of strings.
 	 */
 	@GET
 	@Path("users/schools_other")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public Response getAllSchoolOtherResponses() {
+	public Response getAllSchoolOtherResponses(@Context final Request request) {
 		try {
 			List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 			
@@ -392,13 +393,20 @@ public class UsersFacade extends AbstractSegueFacade {
 				}
 			}
 			
-			return Response.ok(schoolOthers).build();
+			EntityTag etag = new EntityTag(schoolOthers.toString().hashCode() + "");
+			Response cachedResponse = generateCachedResponse(request, etag,
+					Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+			
+			return Response.ok(schoolOthers).tag(etag)
+					.cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (SegueDatabaseException e) {
 			log.error("Unable to contact the database", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")
 					.toResponse();
 		}
-		
 	}
 	
 	/**
