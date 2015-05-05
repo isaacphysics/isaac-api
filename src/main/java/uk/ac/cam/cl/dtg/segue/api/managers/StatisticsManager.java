@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -556,7 +557,7 @@ public class StatisticsManager {
 		}
 		return result;
 	}
-
+	
 	/**
 	 * getEventLogsByDate.
 	 *
@@ -569,13 +570,17 @@ public class StatisticsManager {
 	 * @param userList
 	 *            - user prototype to filter events. e.g. user(s) with a
 	 *            particular id or role.
+	 * @param binDataByMonth
+	 *            - shall we group data by the first of every month?
 	 * @return Map of eventType --> map of dates and frequency
 	 */
 	public Map<String, Map<LocalDate, Integer>> getEventLogsByDateAndUserList(
 			final Collection<String> eventTypes, final Date fromDate, final Date toDate,
-			final List<RegisteredUserDTO> userList) {
+			final List<RegisteredUserDTO> userList, final boolean binDataByMonth) {
+		Validate.notNull(eventTypes);
+		
 		Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
-
+		
 		for (String typeOfInterest : eventTypes) {
 			List<LogEvent> logsByType = this.logManager.getLogsByType(typeOfInterest, fromDate, toDate, userList);
 
@@ -584,7 +589,23 @@ public class StatisticsManager {
 			}
 
 			for (LogEvent log : logsByType) {
-				LocalDate dateGroup = new LocalDate(log.getTimestamp());
+				LocalDate dateGroup;
+				if (binDataByMonth) {
+					Calendar logDate = new GregorianCalendar();
+					logDate.setTime(log.getTimestamp());
+					
+					Calendar binnedDate = Calendar.getInstance();
+					binnedDate.set(Calendar.DAY_OF_MONTH, 1);
+					binnedDate.set(Calendar.MONTH, logDate.get(Calendar.MONTH));
+					binnedDate.set(Calendar.YEAR, logDate.get(Calendar.YEAR));
+						
+					dateGroup = new LocalDate(binnedDate.getTime());
+			
+				} else {
+					dateGroup = new LocalDate(log.getTimestamp());
+				}
+				
+				 
 				if (result.get(typeOfInterest).containsKey(dateGroup)) {
 					result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
 				} else {

@@ -19,9 +19,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -69,6 +71,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -328,7 +331,13 @@ public class UsersFacade extends AbstractSegueFacade {
 	public Response getEventDataForUser(@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest, @PathParam("user_id") final String userIdOfInterest,
 			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-			@QueryParam("events") final String events) {
+			@QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+		final boolean binData;
+		if (null == bin || !bin) {
+			binData = false;
+		} else {
+			binData = true;
+		}
 		
 		if (null == events) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -352,8 +361,8 @@ public class UsersFacade extends AbstractSegueFacade {
 			
 			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager
 					.getEventLogsByDateAndUserList(Lists.newArrayList(events.split(",")), new Date(fromDate),
-							new Date(toDate), Arrays.asList(userOfInterest));
-
+							new Date(toDate), Arrays.asList(userOfInterest), binData);
+			
 			return Response.ok(eventLogsByDate).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
