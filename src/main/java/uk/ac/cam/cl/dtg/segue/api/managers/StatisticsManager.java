@@ -593,14 +593,9 @@ public class StatisticsManager {
 				if (binDataByMonth) {
 					Calendar logDate = new GregorianCalendar();
 					logDate.setTime(log.getTimestamp());
-					
-					Calendar binnedDate = Calendar.getInstance();
-					binnedDate.set(Calendar.DAY_OF_MONTH, 1);
-					binnedDate.set(Calendar.MONTH, logDate.get(Calendar.MONTH));
-					binnedDate.set(Calendar.YEAR, logDate.get(Calendar.YEAR));
+					logDate.set(Calendar.DAY_OF_MONTH, 1);
 						
-					dateGroup = new LocalDate(binnedDate.getTime());
-			
+					dateGroup = new LocalDate(logDate.getTime());
 				} else {
 					dateGroup = new LocalDate(log.getTimestamp());
 				}
