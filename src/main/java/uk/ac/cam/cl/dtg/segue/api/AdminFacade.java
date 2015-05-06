@@ -67,6 +67,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -143,13 +144,15 @@ public class AdminFacade extends AbstractSegueFacade {
 	 * Locations stats.
 	 * 
 	 * @param request - to determine access.
+	 * @param requestForCaching - to speed up access.
 	 * @return stats
 	 */
 	@GET
 	@Path("/stats/users/last_locations")
 	@Produces(MediaType.APPLICATION_JSON)
 	@GZIP
-	public Response getLastLocations(@Context final HttpServletRequest request) {
+	public Response getLastLocations(@Context final HttpServletRequest request,
+			@Context final Request requestForCaching) {
 		try {
 			if (!isUserStaff(request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN,
@@ -159,8 +162,19 @@ public class AdminFacade extends AbstractSegueFacade {
 			Calendar threshold = Calendar.getInstance(); 
 			threshold.setTime(new Date());
 			threshold.add(Calendar.MONTH, -1);
+
+			Collection<Location> locationInformation = statsManager.getLocationInformation(threshold.getTime());
 			
-			return Response.ok(statsManager.getLocationInformation(threshold.getTime())).build();
+			// Calculate the ETag 
+			EntityTag etag = new EntityTag(locationInformation.hashCode() + "");
+
+			Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+			
+			return Response.ok(locationInformation).tag(etag)
+					.cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
@@ -736,8 +750,9 @@ public class AdminFacade extends AbstractSegueFacade {
 	
 	/**
 	 * Get the event data for a specified user.
-	 * 
 	 * @param request
+	 *            - request information used authentication
+	 * @param requestForCaching
 	 *            - request information used for caching.
 	 * @param httpServletRequest
 	 *            - the request which may contain session information.
@@ -758,6 +773,7 @@ public class AdminFacade extends AbstractSegueFacade {
 	@GZIP
 	public Response getEventDataForAllUsers(@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
+			@Context final Request requestForCaching,
 			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
 			@QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
 		
@@ -787,7 +803,16 @@ public class AdminFacade extends AbstractSegueFacade {
 			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager.getEventLogsByDate(
 					Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
 
-			return Response.ok(eventLogsByDate).build();
+			// Calculate the ETag 
+			EntityTag etag = new EntityTag(eventLogsByDate.hashCode() + "");
+
+			Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+			if (cachedResponse != null) {
+				return cachedResponse;
+			}
+			
+			return Response.ok(eventLogsByDate).tag(etag)
+					.cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
