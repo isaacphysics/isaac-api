@@ -231,13 +231,27 @@ public class MongoLogManager implements ILogManager {
 	
 	@Override
 	public Long getLogCountByType(final String type) {
-
-		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
 				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		BasicDBObject query = new BasicDBObject("eventType", type);
 		return jc.count(query);
+	}
+	
+	@Override
+	public Set<String> getAllEventTypes() {
+		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				String.class, this.objectMapper);
+		Set<String> results = Sets.newHashSet();
+	
+		for (Object e : jc.distinct("eventType")) {
+			if (e instanceof String) {
+				results.add((String) e);	
+			}				
+		}
+		
+		return results;
 	}
 	
 	@Override

@@ -196,4 +196,10 @@ public interface ILogManager {
 	 * @return where string is the user id and the logevent is the most recent
 	 */
 	Map<String, LogEvent> getLastLogForAllUsers();
+	
+	/**
+	 * returns a set of event types known about from the db.
+	 * @return Set of event types.
+	 */
+	Set<String> getAllEventTypes();
 }

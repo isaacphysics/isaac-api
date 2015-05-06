@@ -533,10 +533,12 @@ public class StatisticsManager {
 	 *            - of interest
 	 * @param toDate
 	 *            - of interest
+	 * @param binDataByMonth
+	 *            - shall we group data by the first of every month?
 	 * @return Map of eventType --> map of dates and frequency
 	 */
 	public Map<String, Map<LocalDate, Integer>> getEventLogsByDate(final Collection<String> eventTypes,
-			final Date fromDate, final Date toDate) {
+			final Date fromDate, final Date toDate, final boolean binDataByMonth) {
 		Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
 
 		for (String typeOfInterest : eventTypes) {
@@ -547,7 +549,7 @@ public class StatisticsManager {
 			}
 
 			for (LogEvent log : logsByType) {
-				LocalDate dateGroup = new LocalDate(log.getTimestamp());
+				LocalDate dateGroup = this.getDateGroup(log, binDataByMonth);
 				if (result.get(typeOfInterest).containsKey(dateGroup)) {
 					result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
 				} else {
@@ -589,18 +591,8 @@ public class StatisticsManager {
 			}
 
 			for (LogEvent log : logsByType) {
-				LocalDate dateGroup;
-				if (binDataByMonth) {
-					Calendar logDate = new GregorianCalendar();
-					logDate.setTime(log.getTimestamp());
-					logDate.set(Calendar.DAY_OF_MONTH, 1);
-						
-					dateGroup = new LocalDate(logDate.getTime());
-				} else {
-					dateGroup = new LocalDate(log.getTimestamp());
-				}
+				LocalDate dateGroup = this.getDateGroup(log, binDataByMonth);
 				
-				 
 				if (result.get(typeOfInterest).containsKey(dateGroup)) {
 					result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
 				} else {
@@ -721,5 +713,26 @@ public class StatisticsManager {
 			result.put(e.getKey(), e.getValue().getTimestamp());
 		}
 		return result;
+	}
+	
+	/**
+	 * Get a date object that is configured correctly.
+	 * 
+	 * @param log containing a valid timestamp
+	 * @param binDataByMonth whether we should bin the date by month or not.
+	 * @return the local date either as per the log event or with the day of the month set to 1.
+	 */
+	private LocalDate getDateGroup(final LogEvent log, final boolean binDataByMonth) {
+		LocalDate dateGroup;
+		if (binDataByMonth) {
+			Calendar logDate = new GregorianCalendar();
+			logDate.setTime(log.getTimestamp());
+			logDate.set(Calendar.DAY_OF_MONTH, 1);
+				
+			dateGroup = new LocalDate(logDate.getTime());
+		} else {
+			dateGroup = new LocalDate(log.getTimestamp());
+		}
+		return dateGroup;
 	}
 }

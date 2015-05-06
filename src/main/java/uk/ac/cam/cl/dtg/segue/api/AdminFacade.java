@@ -746,7 +746,9 @@ public class AdminFacade extends AbstractSegueFacade {
 	 * @param toDate
 	 *            - date to end search
 	 * @param events
-	 *            - comma separated list of events of interest.
+	 *            - comma separated list of events of interest.,
+	 * @param bin
+	 *            - Should we group data into the first day of the month? true or false.
 	 * @return Returns a map of eventType to Map of dates to total number of
 	 *         events.
 	 */
@@ -757,7 +759,14 @@ public class AdminFacade extends AbstractSegueFacade {
 	public Response getEventDataForAllUsers(@Context final Request request,
 			@Context final HttpServletRequest httpServletRequest,
 			@QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-			@QueryParam("events") final String events) {
+			@QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+		
+		final boolean binData;
+		if (null == bin || !bin) {
+			binData = false;
+		} else {
+			binData = true;
+		}
 		
 		if (null == events) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -776,7 +785,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			}
 
 			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager.getEventLogsByDate(
-					Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate));
+					Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
 
 			return Response.ok(eventLogsByDate).build();
 		} catch (NoUserLoggedInException e) {

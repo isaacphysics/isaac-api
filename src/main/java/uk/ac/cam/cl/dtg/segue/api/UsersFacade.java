@@ -321,6 +321,8 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *            - date to end search
 	 * @param events
 	 *            - comma separated list of events of interest.
+	 * @param bin
+	 *            - Should we group data into the first day of the month? true or false.
 	 * @return Returns a map of eventType to Map of dates to total number of
 	 *         events.
 	 */

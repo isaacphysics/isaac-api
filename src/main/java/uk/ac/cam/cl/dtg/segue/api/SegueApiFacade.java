@@ -817,6 +817,28 @@ public class SegueApiFacade extends AbstractSegueFacade {
 	}
 
 	/**
+	 * Gets the current version of the segue application.
+	 * 
+	 * @param request for caching
+	 * @return segue version as a string wrapped in a response.
+	 */
+	@GET
+	@Path("info/log_event_types")
+	@Produces(MediaType.APPLICATION_JSON)
+	public final Response getLogEventTypes(@Context final Request request) {
+		ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>()
+				.put("results", getLogManager().getAllEventTypes()).build();
+
+		EntityTag etag = new EntityTag(result.toString().hashCode() + "");
+		Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_ONE_DAY);
+		if (cachedResponse != null) {
+			return cachedResponse;
+		}
+		
+		return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(CACHE_FOR_ONE_DAY)).build();
+	}
+	
+	/**
 	 * Gets the current mode that the segue application is running in.
 	 * 
 	 * @param request
