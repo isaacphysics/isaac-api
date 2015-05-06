@@ -19,11 +19,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
@@ -67,11 +66,11 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -85,7 +84,8 @@ import com.google.inject.Inject;
 public class UsersFacade extends AbstractSegueFacade {
 	private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
 	private final UserManager userManager;
-	private StatisticsManager statsManager;
+	private final StatisticsManager statsManager;
+	private final UserAssociationManager userAssociationManager;
 
 	/**
 	 * Construct an instance of the UsersFacade.
@@ -98,13 +98,16 @@ public class UsersFacade extends AbstractSegueFacade {
 	 *            - so we can log interesting events.
 	 * @param statsManager
 	 *            - so we can view stats on interesting events.  
+	 * @param userAssociationManager
+	 *            - so we can check permissions..  
 	 */
 	@Inject
 	public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
-			final StatisticsManager statsManager) {
+			final StatisticsManager statsManager, final UserAssociationManager userAssociationManager) {
 		super(properties, logManager);
 		this.userManager = userManager;
 		this.statsManager = statsManager;
+		this.userAssociationManager = userAssociationManager;
 	}
 
 	/**
@@ -354,13 +357,16 @@ public class UsersFacade extends AbstractSegueFacade {
 		try {
 			RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 			
+			RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+			
+			UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+			
 			// decide if the user is allowed to view this data.
-			if (!currentUser.getDbId().equals(userIdOfInterest) && !isUserAnAdmin(userManager, httpServletRequest)) {
+			if (!currentUser.getDbId().equals(userIdOfInterest)
+					&& !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
 				return SegueErrorResponse.getIncorrectRoleResponse();
 			}
 
-			RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
-			
 			Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager
 					.getEventLogsByDateAndUserList(Lists.newArrayList(events.split(",")), new Date(fromDate),
 							new Date(toDate), Arrays.asList(userOfInterest), binData);

@@ -549,7 +549,7 @@ public class UserManager {
 		}
 		
 		for (Role roleToMatch : validRoles) {
-			if (user.getRole().equals(roleToMatch)) {
+			if (user.getRole() != null && user.getRole().equals(roleToMatch)) {
 				return true;
 			}
 		}

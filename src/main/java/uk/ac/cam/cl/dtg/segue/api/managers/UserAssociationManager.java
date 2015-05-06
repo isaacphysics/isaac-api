@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -231,6 +232,6 @@ public class UserAssociationManager {
 	public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
 		return currentUser.getDbId().equals(userRequested.getDbId())
 				|| this.associationDatabase.hasValidAssociation(currentUser.getDbId(),
-						userRequested.getDbId());
+						userRequested.getDbId()) || Role.ADMIN.equals(currentUser.getRole());
 	}
 }

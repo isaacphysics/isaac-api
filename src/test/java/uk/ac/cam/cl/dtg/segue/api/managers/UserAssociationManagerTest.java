@@ -28,8 +28,10 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 /**
  * Test class for the user Association class.
@@ -267,5 +269,122 @@ public class UserAssociationManagerTest {
 		}
 
 		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
+	}
+	
+	@Test
+	public final void userAssociationManager_hasPermissionUserIsTheOwner_trueShouldBeRetured()
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
+
+		String someGroupOwnerUserId = "17659214141";
+
+		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
+		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+		expect(someRegisteredUserGrantingAccess.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		
+		replay(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
+		
+		if (!managerUnderTest.hasPermission(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary)) {
+			fail("If the user id of the owner and the requester are the same always return true.");	
+		}
+
+		verify(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
+	}
+	
+	@Test
+	public final void userAssociationManager_hasPermissionUserIsAdmin_trueShouldBeRetured()
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
+
+		String someUserIdGrantingAccess = "89745531132231213";
+		String someGroupOwnerUserId = "17659214141";
+
+		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+
+		
+		expect(someUserRequestingAccess.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		
+		expect(someUserRequestingAccess.getRole()).andReturn(Role.ADMIN).anyTimes();
+		
+		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		
+		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
+		
+		if (!managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
+			fail("If the user requesting access is an admin they should always have access.");	
+		}
+
+		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
+	}
+	
+	@Test
+	public final void userAssociationManager_hasPermissionUserHasValidAssociation_trueShouldBeRetured()
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
+
+		String someUserIdGrantingAccess = "89745531132231213";
+		String someGroupOwnerUserId = "17659214141";
+
+		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+
+		
+		expect(someUserRequestingAccess.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		
+		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
+		
+		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		
+		expect(
+				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+						someUserIdGrantingAccess)).andReturn(true).once();
+		
+		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+		
+		if (!managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
+			fail("If the user requesting access has a valid association they should have permission");	
+		}
+
+		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+	}
+	
+	@Test
+	public final void userAssociationManager_NoPermissionUserHasNoValidAssociation_falseShouldBeRetured()
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
+
+		String someUserIdNotGrantingAccess = "89745531132231213";
+		String someGroupOwnerUserId = "17659214141";
+
+		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
+
+		
+		expect(someUserRequestingAccess.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		
+		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
+		
+		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
+		
+		expect(
+				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
+						someUserIdNotGrantingAccess)).andReturn(false).once();
+		
+		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+		
+		if (managerUnderTest.hasPermission(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary)) {
+			fail("This user should not have access as they are not an admin and do not have a valid association.");	
+		}
+
+		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
 	}
 }
