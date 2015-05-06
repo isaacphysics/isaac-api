@@ -147,7 +147,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 						"You must provide a valid user id to access this endpoint.").toResponse();
 			}
 			
-			if (!isUserAnAdmin(userManager, request)) {
+			if (!isUserStaff(userManager, request)) {
 				SegueErrorResponse.getIncorrectRoleResponse();
 			}
 			
@@ -288,7 +288,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			
 			UserGroupDTO group = groupManager.getGroupById(groupId);
 			
-			if (!group.getOwnerId().equals(user.getDbId())) {
+			if (!group.getOwnerId().equals(user.getDbId()) && !isUserAnAdmin(userManager, request)) {
 				return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
 			}
 			
