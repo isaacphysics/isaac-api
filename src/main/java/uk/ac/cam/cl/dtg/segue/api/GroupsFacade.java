@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -154,7 +156,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 			RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
 			
 			List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
-			return Response.ok(groups).build();
+			return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
