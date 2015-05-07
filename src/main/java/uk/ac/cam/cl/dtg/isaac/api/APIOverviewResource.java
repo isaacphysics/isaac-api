@@ -301,7 +301,7 @@ public class APIOverviewResource {
 
 		List<ResourceDescription> descriptions = ResourceDescription
 				.fromBoundResourceInvokers(registry.getBounded().entrySet());
-		log.info("Requesting endpoint list from api using json view.");
+		log.debug("Requesting endpoint list from api using json view.");
 		return descriptions;
 	}
 
@@ -318,7 +318,7 @@ public class APIOverviewResource {
 	public Response getAvailableEndpointsHtml(
 			@Context final HttpServletRequest request, 
 			@Context final Dispatcher dispatcher) {
-		log.info("Requesting endpoint list from api using HTML view.");
+		log.debug("Requesting endpoint list from api using HTML view.");
 		
 		Injector injector = Guice.createInjector(
 				new SegueGuiceConfigurationModule());
@@ -396,6 +396,5 @@ public class APIOverviewResource {
 		}
 
 		return Response.ok(sb.toString()).build();
-
 	}
 }
