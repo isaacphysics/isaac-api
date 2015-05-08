@@ -167,7 +167,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			request.setClientAuthentication(new ClientParametersAuthentication(
 					clientId, clientSecret));
 			request.setRedirectUri(callbackUri);
-
+			log.info("Making token request to facebook " + TOKEN_EXCHANGE_URL + " " + request.toString());
 			HttpResponse response = request.executeUnparsed();
 			String data = inputStreamToString(response.getContent());
 			
@@ -177,7 +177,11 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			// Parse data, data will look something like:
 			String accessToken = null;
 			Long expires = null;
-
+			if (responseMap.get("error") != null) {
+				throw new CodeExchangeException("Server responded with the following error"
+						+ responseMap.get("error") + " given the request" + request.toString());
+			}
+			
 			if (responseMap.get("access_token") != null && responseMap.get("expires_in") != null) {
 				accessToken = (String) responseMap.get("access_token");
 				expires = Long.valueOf((Integer) responseMap.get("expires_in"));
@@ -210,8 +214,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 			return internalReferenceToken;
 		} catch (IOException e) {
-			String message = "An error occurred during code exchange ";
-			log.error(message, e);
+			String message = "An error occurred during code exchange";
 			throw new CodeExchangeException(message, e);
 		}
 	}
