@@ -168,23 +168,18 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 					clientId, clientSecret));
 			request.setRedirectUri(callbackUri);
 			log.info("Making token request to facebook " + TOKEN_EXCHANGE_URL + " " + request.toString());
-			HttpResponse response = request.executeUnparsed();
-			String data = inputStreamToString(response.getContent());
-			
-			@SuppressWarnings("unchecked")
-			Map<String, Object> responseMap = new ObjectMapper().readValue(data, HashMap.class);
-			
-			// Parse data, data will look something like:
+			TokenResponse response = request.execute();
+			log.info("Token " + response.toPrettyString());
 			String accessToken = null;
 			Long expires = null;
-			if (responseMap.get("error") != null) {
+			if (response.get("error") != null) {
 				throw new CodeExchangeException("Server responded with the following error"
-						+ responseMap.get("error") + " given the request" + request.toString());
+						+ response.get("error") + " given the request" + request.toString());
 			}
 			
-			if (responseMap.get("access_token") != null && responseMap.get("expires_in") != null) {
-				accessToken = (String) responseMap.get("access_token");
-				expires = Long.valueOf((Integer) responseMap.get("expires_in"));
+			if (response.getAccessToken() != null && response.getExpiresInSeconds() != null) {
+				accessToken = response.getAccessToken();
+				expires = response.getExpiresInSeconds();
 			} else {
 				throw new IOException(
 						"access_token or expires_in values were not found");	
