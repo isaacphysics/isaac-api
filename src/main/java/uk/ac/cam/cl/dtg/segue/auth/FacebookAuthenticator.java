@@ -23,6 +23,8 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
@@ -39,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.FacebookTokenInfo;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
@@ -77,9 +80,13 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private final String clientSecret;
 	private final String callbackUri;
 	private final Collection<String> requestedScopes;
-
-	private static final String AUTH_URL = "https://graph.facebook.com/oauth/authorize";
-	private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/oauth/access_token";
+	
+	private static final String FACEBOOK_API_VERSION = "2.3";
+	
+	private static final String AUTH_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
+			+ "/oauth/authorize";
+	private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
+			+ "/oauth/access_token";
 	private static final String USER_INFO_URL = "https://graph.facebook.com/me";
 	private static final String TOKEN_VERIFICATION_URL = "https://graph.facebook.com/debug_token";
 
@@ -161,36 +168,22 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 					clientId, clientSecret));
 			request.setRedirectUri(callbackUri);
 
-			// TokenResponse response = request.execute();
-			// As of 17-07-14 Facebook API does not comply with Section 5.1 of
-			// the OAuth2 spec and therefore executeUnparsed() must be used as
-			// plain text is returned and not JSON
-
 			HttpResponse response = request.executeUnparsed();
 			String data = inputStreamToString(response.getContent());
-
+			
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = new ObjectMapper().readValue(data, HashMap.class);
+			
 			// Parse data, data will look something like:
-			// access_token=VALUE&expires=VALUE
 			String accessToken = null;
 			Long expires = null;
-			String[] pairs = data.split("&");
-			for (String pair : pairs) {
-				String[] kv = pair.split("=");
-				if (kv.length != 2) {
-					throw new RuntimeException("Unexpected auth response");
-				} else {
-					if (kv[0].equals("access_token")) {
-						accessToken = kv[1];
-					}
-					if (kv[0].equals("expires")) {
-						expires = Long.valueOf(kv[1]);
-					}
-				}
-			}
 
-			if (accessToken == null || expires == null) {
+			if (responseMap.get("access_token") != null && responseMap.get("expires_in") != null) {
+				accessToken = (String) responseMap.get("access_token");
+				expires = Long.valueOf((Integer) responseMap.get("expires_in"));
+			} else {
 				throw new IOException(
-						"access_token or expires values were not found");
+						"access_token or expires_in values were not found");	
 			}
 
 			TokenResponse tokenResponse = new TokenResponse();
@@ -217,8 +210,9 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 			return internalReferenceToken;
 		} catch (IOException e) {
-			log.error("An error occurred during code exchange: " + e);
-			throw new CodeExchangeException();
+			String message = "An error occurred during code exchange ";
+			log.error(message, e);
+			throw new CodeExchangeException(message, e);
 		}
 	}
 
