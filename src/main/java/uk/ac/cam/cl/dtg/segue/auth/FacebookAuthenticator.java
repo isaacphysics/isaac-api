@@ -167,9 +167,9 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			request.setClientAuthentication(new ClientParametersAuthentication(
 					clientId, clientSecret));
 			request.setRedirectUri(callbackUri);
-			log.info("Making token request to facebook " + TOKEN_EXCHANGE_URL + " " + request.toString());
+			
 			TokenResponse response = request.execute();
-			log.info("Token " + response.toPrettyString());
+
 			String accessToken = null;
 			Long expires = null;
 			if (response.get("error") != null) {
