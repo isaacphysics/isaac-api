@@ -132,7 +132,8 @@ public class AdminFacade extends AbstractSegueFacade {
 						"You must be an admin to access this endpoint.").toResponse();
 			}
 			
-			return Response.ok(statsManager.outputGeneralStatistics()).build();
+			return Response.ok(statsManager.outputGeneralStatistics())
+					.cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
@@ -165,15 +166,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
 			Collection<Location> locationInformation = statsManager.getLocationInformation(threshold.getTime());
 			
-			// Calculate the ETag 
-			EntityTag etag = new EntityTag(locationInformation.hashCode() + "");
-
-			Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-			if (cachedResponse != null) {
-				return cachedResponse;
-			}
-			
-			return Response.ok(locationInformation).tag(etag)
+			return Response.ok(locationInformation)
 					.cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
 		} catch (SegueDatabaseException e) {
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
