@@ -20,6 +20,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,6 +144,8 @@ public class LocationHistoryManager implements ILocationResolver {
 	 * @throws SegueDatabaseException - if we cannot resolve the location from our database
 	 */
 	public Location getLocationFromHistory(final String ipAddress) throws SegueDatabaseException {
+		Validate.notBlank(ipAddress, "You must provide an ipAddress.");
+		
 		Location cachedLocation = locationCache.getIfPresent(ipAddress);
 		if (cachedLocation != null) {
 			return cachedLocation;
@@ -153,6 +156,9 @@ public class LocationHistoryManager implements ILocationResolver {
 			return null;
 		}
 		
-		return latestByIPAddress.getLocationInformation();
+		Location locationInformation = latestByIPAddress.getLocationInformation();
+		locationCache.put(ipAddress, locationInformation);
+		
+		return locationInformation;
 	}
 }

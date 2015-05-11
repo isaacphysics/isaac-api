@@ -784,7 +784,7 @@ public class AdminFacade extends AbstractSegueFacade {
 			binData = true;
 		}
 		
-		if (null == events) {
+		if (null == events || events.isEmpty()) {
 			return new SegueErrorResponse(Status.BAD_REQUEST,
 					"You must specify the events you are interested in.").toResponse();
 		}

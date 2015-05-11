@@ -358,7 +358,7 @@ public class MongoLogManager implements ILogManager {
 		}
 		
 		List<LogEvent> results = jc.find(q).sort(new BasicDBObject("_id", -1)).limit(1).toArray();
-		
+
 		if (results.size() > 0) {
 			return results.get(0);
 		} else {

@@ -312,9 +312,6 @@ public class StatisticsManager {
 					numberActive, getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap,
 							thirtyDays).size()));
 		}
-	
-		// TODO get school other data.
-		
 		
 		Collections.sort(result, new Comparator<Map<String, Object>>() {
 			/**
@@ -651,7 +648,6 @@ public class StatisticsManager {
 		Set<Location> result = Sets.newHashSet();
 		
 		for (LogEvent e : logManager.getLastLogForAllUsers().values()) {
-
 			if (e.getTimestamp().before(threshold)) {
 				continue;
 			}
