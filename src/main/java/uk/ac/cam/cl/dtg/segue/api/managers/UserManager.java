@@ -1301,7 +1301,7 @@ public class UserManager {
 			log.debug("Valid user session continuing...");
 			return true;
 		} else {
-			log.info("Invalid HMAC detected for user id " + userId);
+			log.debug("Invalid HMAC detected for user id " + userId);
 			return false;
 		}
 	}
