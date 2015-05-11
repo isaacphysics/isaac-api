@@ -117,7 +117,7 @@ public class StatisticsManager {
 	 * @return ImmutableMap<String, String> (stat name, stat value)
 	 * @throws SegueDatabaseException 
 	 */
-	public Map<String, Object> outputGeneralStatistics() throws SegueDatabaseException {
+	public synchronized Map<String, Object> outputGeneralStatistics() throws SegueDatabaseException {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> cachedOutput = (Map<String, Object>) this.statsCache.getIfPresent(GENERAL_STATS);
 		if (cachedOutput != null) {
@@ -655,7 +655,7 @@ public class StatisticsManager {
 			if (e.getTimestamp().before(threshold)) {
 				continue;
 			}
-			
+
 			if (e.getIpAddress() != null) {
 				Location locationFromHistory = locationHistoryManager.getLocationFromHistory(e.getIpAddress()
 						.split(",")[0]);
