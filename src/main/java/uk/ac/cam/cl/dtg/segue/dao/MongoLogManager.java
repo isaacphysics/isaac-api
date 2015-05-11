@@ -69,7 +69,7 @@ public class MongoLogManager implements ILogManager {
 	
 	private final boolean loggingEnabled;
 
-	private LocationHistoryManager locationManager;
+	private final LocationHistoryManager locationManager;
 
 	/**
 	 * Create an instance of the log manager.
