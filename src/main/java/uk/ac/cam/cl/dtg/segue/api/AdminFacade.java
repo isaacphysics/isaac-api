@@ -427,8 +427,8 @@ public class AdminFacade extends AbstractSegueFacade {
 	public synchronized Response getCurrentIndexQueue(@Context final HttpServletRequest request) {
 		try {
 			if (isUserAnAdmin(request)) {		
-				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put(
-						"queue", contentVersionController.getToIndexQueue().toString()).build();
+				ImmutableMap<String, Object> response = new ImmutableMap.Builder<String, Object>().put(
+						"queue", contentVersionController.getToIndexQueue()).build();
 
 				return Response.ok(response).build();
 			} else {
@@ -455,19 +455,19 @@ public class AdminFacade extends AbstractSegueFacade {
 	public synchronized Response deleteAllInCurrentIndexQueue(@Context final HttpServletRequest request) {
 		try {
 			if (isUserAnAdmin(request)) {
-				log.info("Admin user requested to empty indexer queue.");
+				RegisteredUserDTO u = userManager.getCurrentRegisteredUser(request);
+				log.info(String.format("Admin user (%s) requested to empty indexer queue.", u.getEmail()));
 				
 				contentVersionController.cleanUpTheIndexQueue();
 				
-				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put(
-						"queue", contentVersionController.getToIndexQueue().toString()).build();
+				ImmutableMap<String, Object> response = new ImmutableMap.Builder<String, Object>().put(
+						"queue", contentVersionController.getToIndexQueue()).build();
 
 				return Response.ok(response).build();
 			} else {
 				return new SegueErrorResponse(Status.FORBIDDEN,
 						"You must be an administrator to use this function.").toResponse();
 			}
-
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		}
