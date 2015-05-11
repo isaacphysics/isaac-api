@@ -52,7 +52,7 @@ public class EventBookingPersistenceManager {
 		this.database = database;
 		this.userManager = userManager;
 		this.versionManager = versionManager;
-		this.dao = new PgEventBookings(database.getDatabaseConnection());
+		this.dao = new PgEventBookings(database);
 	}
 	
 	/**
@@ -71,7 +71,7 @@ public class EventBookingPersistenceManager {
 	 * @throws SegueDatabaseException - if an error occurs.
 	 */
 	public EventBookingDTO getBookingById(final Long bookingId) throws SegueDatabaseException {
-		return this.convertToDTO(new PgEventBooking(database.getDatabaseConnection(), bookingId));
+		return this.convertToDTO(new PgEventBooking(database, bookingId));
 	}
 
 	

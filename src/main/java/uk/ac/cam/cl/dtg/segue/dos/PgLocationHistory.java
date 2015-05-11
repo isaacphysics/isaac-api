@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -63,9 +64,9 @@ public class PgLocationHistory implements LocationHistory {
 	public LocationHistoryEvent getLatestByIPAddress(final String ipAddress) throws SegueDatabaseException {
 		Validate.notBlank(ipAddress);
 
-		try {
+		try (Connection conn = database.getDatabaseConnection()) {
 			PreparedStatement pst;
-			pst = database.getDatabaseConnection().prepareStatement(
+			pst = conn.prepareStatement(
 					"Select * FROM ip_location_history "
 					+ "WHERE ip_address = ? AND is_current = ? "
 					+ "ORDER BY last_lookup DESC");
@@ -91,9 +92,9 @@ public class PgLocationHistory implements LocationHistory {
 	public List<LocationHistoryEvent> getAllByIPAddress(final String ipAddress) throws SegueDatabaseException {
 		Validate.notBlank(ipAddress);
 
-		try {
+		try (Connection conn = database.getDatabaseConnection()) {
 			PreparedStatement pst;
-			pst = database.getDatabaseConnection().prepareStatement(
+			pst = conn.prepareStatement(
 					"Select * FROM ip_location_history WHERE ip_address = ? ORDER BY created ASC");
 			pst.setString(1, ipAddress);
 			ResultSet results = pst.executeQuery();
@@ -131,9 +132,9 @@ public class PgLocationHistory implements LocationHistory {
 	public void updateLocationEventDate(final Long id, final boolean isCurrent) throws SegueDatabaseException {
 		Validate.notNull(id);
 
-		try {
+		try (Connection conn = database.getDatabaseConnection()) {
 			// create our java preparedstatement using a sql update query
-			PreparedStatement ps = database.getDatabaseConnection().prepareStatement(
+			PreparedStatement ps = conn.prepareStatement(
 					"UPDATE ip_location_history SET last_lookup = ?, is_current=? WHERE id = ?");
 
 			ps.setTimestamp(1, new java.sql.Timestamp(new Date().getTime()));
@@ -160,14 +161,14 @@ public class PgLocationHistory implements LocationHistory {
 	private LocationHistoryEvent createNewEvent(final String ipAddress, final Location location)
 		throws SegueDatabaseException, JsonProcessingException {
 		PreparedStatement pst;
-		try {
+		try (Connection conn = database.getDatabaseConnection()) {
 			Date creationDate = new Date();
 
 			PGobject jsonObject = new PGobject();
 			jsonObject.setType("jsonb");
 			jsonObject.setValue(new ObjectMapper().writeValueAsString(location));
 
-			pst = database.getDatabaseConnection().prepareStatement(
+			pst = conn.prepareStatement(
 					"INSERT INTO ip_location_history "
 							+ "(id, ip_address, location_information, created, last_lookup, is_current) "
 							+ "VALUES (DEFAULT, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);

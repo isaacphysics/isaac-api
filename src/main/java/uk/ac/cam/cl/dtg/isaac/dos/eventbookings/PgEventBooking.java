@@ -23,13 +23,14 @@ import java.util.Date;
 
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
  * @author sac92
  *
  */
 public class PgEventBooking implements EventBooking {
-	private Connection ds;
+	private PostgresSqlDb ds;
 	private Long bookingId;
 	private String userId;
 	private String eventId;
@@ -45,7 +46,7 @@ public class PgEventBooking implements EventBooking {
 	 * @throws SegueDatabaseException
 	 *             - if we cannot complete the operation.
 	 */
-	public PgEventBooking(final Connection ds, final Long bookingId) throws SegueDatabaseException {
+	public PgEventBooking(final PostgresSqlDb ds, final Long bookingId) throws SegueDatabaseException {
 		this.ds = ds;
 		this.bookingId = bookingId;
 		this.populateBookingDetails();
@@ -65,7 +66,7 @@ public class PgEventBooking implements EventBooking {
 	 * @param created
 	 *            - the date the booking was made.
 	 */
-	public PgEventBooking(final Connection ds, final Long bookingId, final String userId,
+	public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final String userId,
 			final String eventId, final Date created) {
 		this.ds = ds;
 		this.bookingId = bookingId;
@@ -107,13 +108,13 @@ public class PgEventBooking implements EventBooking {
 			return;
 		}
 
-		try {
+		try (Connection conn = ds.getDatabaseConnection()) {
 			PreparedStatement pst;
 			if (bookingId != null) {
-				pst = ds.prepareStatement("Select * FROM event_bookings WHERE id = ?");
+				pst = conn.prepareStatement("Select * FROM event_bookings WHERE id = ?");
 				pst.setLong(1, bookingId);
 			} else if (userId != null && eventId != null) {
-				pst = ds.prepareStatement("Select * FROM event_bookings WHERE user_id = ? AND event_id = ?");
+				pst = conn.prepareStatement("Select * FROM event_bookings WHERE user_id = ? AND event_id = ?");
 				pst.setString(1, userId);
 				pst.setString(2, eventId);
 			} else {

@@ -797,7 +797,7 @@ public class AdminFacade extends AbstractSegueFacade {
 					Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
 
 			// Calculate the ETag 
-			EntityTag etag = new EntityTag(eventLogsByDate.hashCode() + "");
+			EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
 
 			Response cachedResponse = generateCachedResponse(requestForCaching, etag);
 			if (cachedResponse != null) {
@@ -916,8 +916,6 @@ public class AdminFacade extends AbstractSegueFacade {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} 
 	}
-	
-		
 	
 	/**
 	 * Is the current user an admin.

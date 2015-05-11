@@ -323,8 +323,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
 		} catch (SegueDatabaseException e) {
+			String message = "Database error ocurred while trying to retrieve all event booking information.";
+			log.error(message, e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error ocurred while trying to retrieve all event booking information.")
+					message)
 					.toResponse();
 		}
 	}
