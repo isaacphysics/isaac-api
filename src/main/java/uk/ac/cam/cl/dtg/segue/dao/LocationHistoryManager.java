@@ -116,6 +116,7 @@ public class LocationHistoryManager implements ILocationResolver {
 			}
 			
 			this.locationCache.put(ipAddress, locationToCache);
+			log.debug("Location Cache currently has " + locationCache.size() + " ip addresses");
 			
 		} catch (LocationServerException e) {
 			log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e);
@@ -142,6 +143,11 @@ public class LocationHistoryManager implements ILocationResolver {
 	 * @throws SegueDatabaseException - if we cannot resolve the location from our database
 	 */
 	public Location getLocationFromHistory(final String ipAddress) throws SegueDatabaseException {
+		Location cachedLocation = locationCache.getIfPresent(ipAddress);
+		if (cachedLocation != null) {
+			return cachedLocation;
+		}
+		
 		LocationHistoryEvent latestByIPAddress = dao.getLatestByIPAddress(ipAddress);
 		if (null == latestByIPAddress) {
 			return null;
