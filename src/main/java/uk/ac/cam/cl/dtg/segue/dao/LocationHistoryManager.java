@@ -51,10 +51,6 @@ public class LocationHistoryManager implements ILocationResolver {
 	private final ILocationResolver locationResolver;
 	private final Cache<String, Location> locationCache; 
 	
-	// used to try and reduce load on external services.
-	// TODO: we can probably remove this given that I could not see any restriction in the AUP.
-	private final int externalServiceDelayInMiliSeconds = 250;
-	
 	/**
 	 * @param dao - the location history data access object.
 	 * @param locationResolver - the external location resolver.
@@ -103,8 +99,6 @@ public class LocationHistoryManager implements ILocationResolver {
 					// lookup to see if ip location data is different. If so update it.
 					Location locationInformation = locationResolver.resolveAllLocationInformation(ipAddress);
 					
-					Thread.sleep(externalServiceDelayInMiliSeconds);
-					
 					if (locationInformation.equals(latestByIPAddress.getLocationInformation())) {
 						dao.updateLocationEventDate(latestByIPAddress.getId(), true);
 						log.debug("Ip address location is the same. Refreshing.");
@@ -123,7 +117,7 @@ public class LocationHistoryManager implements ILocationResolver {
 			
 			this.locationCache.put(ipAddress, locationToCache);
 			
-		} catch (LocationServerException | InterruptedException e) {
+		} catch (LocationServerException e) {
 			log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e);
 		}
 	}

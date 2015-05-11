@@ -75,16 +75,13 @@ public class PgLocationHistory implements LocationHistory {
 			
 			ResultSet results = pst.executeQuery();
 			
-			List<LocationHistoryEvent> returnResult = Lists.newArrayList();
 			while (results.next()) {
-				returnResult.add(buildPgLocationEntry(results));
+				return buildPgLocationEntry(results);
 			}
 
-			if (returnResult.isEmpty()) {
-				return null;
-			}
-			
-			return returnResult.get(0);
+			// we must not have found anything.
+			return null;
+
 		} catch (SQLException e) {
 			throw new SegueDatabaseException("Postgres exception", e);
 		}
