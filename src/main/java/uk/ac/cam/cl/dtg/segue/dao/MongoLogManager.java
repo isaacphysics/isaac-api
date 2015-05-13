@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
@@ -49,7 +50,6 @@ import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 
@@ -64,7 +64,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class MongoLogManager implements ILogManager {
 	private static final Logger log = LoggerFactory.getLogger(MongoLogManager.class);
 
-	private final DB database;
+	private final MongoDb database;
 	private final ObjectMapper objectMapper;
 	
 	private final boolean loggingEnabled;
@@ -85,7 +85,7 @@ public class MongoLogManager implements ILogManager {
 	 *            - Allows us to geocode ip addresses.
 	 */
 	@Inject
-	public MongoLogManager(final DB database, final ObjectMapper objectMapper,
+	public MongoLogManager(final MongoDb database, final ObjectMapper objectMapper,
 			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
 			final LocationHistoryManager locationManager) {
 		this.database = database;
@@ -140,7 +140,7 @@ public class MongoLogManager implements ILogManager {
 		Validate.notNull(newUserId);
 		
 		JacksonDBCollection<DBObject, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), DBObject.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), DBObject.class,
 				String.class, this.objectMapper);
 		
 		BasicDBObject updateQuery = new BasicDBObject();
@@ -169,7 +169,7 @@ public class MongoLogManager implements ILogManager {
 	@Override
 	public List<LogEvent> getLogsByType(final String type) {
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		List<LogEvent> results = jc.find(DBQuery.is("eventType", type)).toArray();
@@ -199,7 +199,7 @@ public class MongoLogManager implements ILogManager {
 		}
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		BasicDBObject queryDateRange = new BasicDBObject("timestamp", //
@@ -232,7 +232,7 @@ public class MongoLogManager implements ILogManager {
 	@Override
 	public Long getLogCountByType(final String type) {
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		BasicDBObject query = new BasicDBObject("eventType", type);
 		return jc.count(query);
@@ -241,7 +241,7 @@ public class MongoLogManager implements ILogManager {
 	@Override
 	public Set<String> getAllEventTypes() {
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		Set<String> results = Sets.newHashSet();
 	
@@ -257,7 +257,7 @@ public class MongoLogManager implements ILogManager {
 	@Override
 	public Set<String> getAllIpAddresses() {
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		Set<String> results = Sets.newHashSet();
 		
@@ -279,7 +279,7 @@ public class MongoLogManager implements ILogManager {
 		}
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		List<LogEvent> results = jc
@@ -300,7 +300,7 @@ public class MongoLogManager implements ILogManager {
 		Validate.notBlank(eventType);
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
 				this.objectMapper);
 
 		Query q = DBQuery.and(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class)),
@@ -316,7 +316,7 @@ public class MongoLogManager implements ILogManager {
 		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		Query q;
@@ -341,7 +341,7 @@ public class MongoLogManager implements ILogManager {
 		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 		
 		Query q;
@@ -424,7 +424,7 @@ public class MongoLogManager implements ILogManager {
 		}
 		
 		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
+				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
 				String.class, this.objectMapper);
 
 		LogEvent logEvent = new LogEvent();

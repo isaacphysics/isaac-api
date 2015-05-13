@@ -26,7 +26,7 @@ import com.mongodb.MongoClient;
  */
 public class MongoDb {
 	private final MongoClient client;
-	private final DB db;
+	private final String databaseName;
 	
 	/**
 	 * Create a mongo db wrapper for a given mongodb database.
@@ -37,7 +37,7 @@ public class MongoDb {
 	@Inject
 	public MongoDb(final MongoClient client, final String databaseName) {
 		this.client = client;
-		db = this.client.getDB(databaseName);
+		this.databaseName = databaseName;
 	}
 
 	/**
@@ -46,6 +46,6 @@ public class MongoDb {
 	 * @return DB handle
 	 */
 	public DB getDB() {
-		return db;
+		return this.client.getDB(databaseName);
 	}
 }

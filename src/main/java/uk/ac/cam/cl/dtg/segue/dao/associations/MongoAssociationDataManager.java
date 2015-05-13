@@ -29,12 +29,12 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 
 /**
  * MongoAssociationDataManager.
@@ -46,7 +46,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 
 	private static final Logger log = LoggerFactory.getLogger(MongoAssociationDataManager.class);
 
-	private final DB database;
+	private final MongoDb database;
 
 	/**
 	 * PostgresAssociationDataManager.
@@ -55,7 +55,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	 *            - preconfigured connection
 	 */
 	@Inject
-	public MongoAssociationDataManager(final DB database) {
+	public MongoAssociationDataManager(final MongoDb database) {
 		this.database = database;
 
 		initialiseDataManager();
@@ -67,7 +67,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 		Validate.notNull(token);
 
 		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
+				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
 				String.class);
 
 		WriteResult<AssociationToken, String> result = jacksonCollection.save(token);
@@ -88,7 +88,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 		//Validate.isTrue(!token.getOwnerUserId().equals(userIdGrantingAccess), "You can't grant access to yourself.");
 		
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
 		WriteResult<UserAssociation, String> result = associationCollection.save(new UserAssociation(null,
 				userIdGrantingAccess, token.getOwnerUserId(), new Date()));
@@ -103,7 +103,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	public void deleteAssociation(final String ownerUserId, final String userIdWithAccess)
 		throws SegueDatabaseException {
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
 		Query query = DBQuery.and(DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, ownerUserId),
 				DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userIdWithAccess));
@@ -119,7 +119,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	@Override
 	public boolean hasValidAssociation(final String userIdRequestingAccess, final String ownerUserId) {
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
 		Query query = DBQuery.and(DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, ownerUserId),
 				DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userIdRequestingAccess));
@@ -138,7 +138,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 		Validate.notBlank(userId);
 		
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
 		Query query = DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, userId);
 		
@@ -150,7 +150,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	@Override
 	public AssociationToken lookupAssociationToken(final String tokenCode) {
 		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
+				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
 				String.class);
 
 		return jacksonCollection.findOne(DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, tokenCode));
@@ -159,7 +159,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	@Override
 	public AssociationToken getAssociationTokenByGroupId(final String groupId) {
 		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
+				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
 				String.class);
 		AssociationToken token = jacksonCollection.findOne(new BasicDBObject(Constants.GROUP_FK, groupId));
 		
@@ -171,7 +171,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 		Validate.notBlank(userId);
 		
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
 		Query query = DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userId);
 		
@@ -185,7 +185,7 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	 * the required indices.
 	 */
 	private void initialiseDataManager() {
-		database.getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME).ensureIndex(
+		database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME).ensureIndex(
 				new BasicDBObject(Constants.ASSOCIATION_TOKEN_FIELDNAME, 1),
 				Constants.ASSOCIATION_TOKEN_FIELDNAME, true);
 	}

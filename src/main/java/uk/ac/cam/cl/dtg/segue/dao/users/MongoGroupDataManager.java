@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.GroupMembership;
 
@@ -36,7 +37,6 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 
 /**
  * MongoAssociationDataManager.
@@ -49,9 +49,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	
 	private static final Logger log = LoggerFactory.getLogger(MongoGroupDataManager.class);
 
-	private final DB database;
-	private final JacksonDBCollection<UserGroup, String> groupCollection;
-	private final JacksonDBCollection<GroupMembership, String> groupMembershipCollection;
+	private final MongoDb database;
 
 	/**
 	 * PostgresAssociationDataManager.
@@ -60,19 +58,13 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	 *            - preconfigured connection
 	 */
 	@Inject
-	public MongoGroupDataManager(final DB database) {
+	public MongoGroupDataManager(final MongoDb database) {
 		this.database = database;
-		
-		groupCollection = JacksonDBCollection.wrap(this.database.getCollection(GROUP_COLLECTION_NAME),
-				UserGroup.class, String.class);
-		groupMembershipCollection = JacksonDBCollection
-				.wrap(this.database.getCollection(GROUP_MEMBERSHIP_COLLECTION_NAME), GroupMembership.class,
-						String.class);
 	}
 
 	@Override
 	public UserGroup createGroup(final UserGroup group) throws SegueDatabaseException {
-		WriteResult<UserGroup, String> result = groupCollection.save(group);
+		WriteResult<UserGroup, String> result = getGroupCollection().save(group);
 		if (result.getError() != null) {
 			log.error("Error during database update " + result.getError());
 			throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
@@ -85,7 +77,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 
 	@Override
 	public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
-		WriteResult<UserGroup, String> result = groupCollection.updateById(group.getId(), group);
+		WriteResult<UserGroup, String> result = getGroupCollection().updateById(group.getId(), group);
 		if (result.getError() != null) {
 			log.error("Error during database update " + result.getError());
 			throw new SegueDatabaseException("MongoDB encountered an exception while editing a new group: "
@@ -97,7 +89,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	
 	@Override
 	public void addUserToGroup(final String userId, final String groupId) throws SegueDatabaseException {
-		WriteResult<GroupMembership, String> result = groupMembershipCollection.save(new GroupMembership(
+		WriteResult<GroupMembership, String> result = getGroupMembershipCollection().save(new GroupMembership(
 				null, groupId, userId));
 
 		if (result.getError() != null) {
@@ -112,7 +104,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 		Query query = DBQuery.and(DBQuery.is(Constants.GROUP_FK, groupId),
 				DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId));
 
-		WriteResult<GroupMembership, String> result = groupMembershipCollection.remove(query);
+		WriteResult<GroupMembership, String> result = getGroupMembershipCollection().remove(query);
 
 		if (result.getError() != null) {
 			log.error("Error during database update " + result.getError());
@@ -126,28 +118,28 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	public List<UserGroup> getGroupsByOwner(final String ownerUserId) {
 		Query query = DBQuery.is(Constants.OWNER_USER_ID_FKEY_FIELDNAME, ownerUserId);
 
-		DBCursor<UserGroup> result = groupCollection.find(query).sort(new BasicDBObject(GROUP_NAME_FIELD , 1));
+		DBCursor<UserGroup> result = getGroupCollection().find(query).sort(new BasicDBObject(GROUP_NAME_FIELD , 1));
 
 		return result.toArray();
 	}
 	
 	@Override
 	public UserGroup findById(final String groupId) {
-		return groupCollection.findOneById(groupId);
+		return getGroupCollection().findOneById(groupId);
 	}
 	
 	@Override
 	public void deleteGroup(final String groupId) throws SegueDatabaseException {
 		Query query = DBQuery.is(Constants.GROUP_FK, groupId);
 
-		WriteResult<GroupMembership, String> cascadeDeleteResult = groupMembershipCollection.remove(query);
+		WriteResult<GroupMembership, String> cascadeDeleteResult = getGroupMembershipCollection().remove(query);
 		
 		if (cascadeDeleteResult.getError() != null) {
 			throw new SegueDatabaseException(
 					"Unable to delete group from database - failed on deleting membership information.");
 		}
 
-		WriteResult<UserGroup, String> result = groupCollection.removeById(groupId);
+		WriteResult<UserGroup, String> result = getGroupCollection().removeById(groupId);
 		
 		if (result.getError() != null) {
 			throw new SegueDatabaseException("Unable to delete group from database");
@@ -158,7 +150,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	public List<String> getGroupMemberIds(final String groupId) {
 		Query query = DBQuery.is(Constants.GROUP_FK, groupId);
 		
-		DBCursor<GroupMembership> results = groupMembershipCollection.find(query);
+		DBCursor<GroupMembership> results = getGroupMembershipCollection().find(query);
 		
 		List<String> userIds = Lists.newArrayList();
 		for (GroupMembership gm : results.toArray()) {
@@ -172,7 +164,7 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 	public Collection<UserGroup> getGroupMembershipList(final String userId) throws SegueDatabaseException {
 		Query query = DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId);
 		
-		DBCursor<GroupMembership> results = groupMembershipCollection.find(query);
+		DBCursor<GroupMembership> results = getGroupMembershipCollection().find(query);
 		
 		Set<UserGroup> groups = Sets.newHashSet();
 		for (GroupMembership gm : results.toArray()) {
@@ -183,5 +175,25 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 		}
 		
 		return groups;
+	}
+	
+	/**
+	 * Gets a new connection to the group collection.
+	 * @return jackson configured collection
+	 */
+	private JacksonDBCollection<UserGroup, String> getGroupCollection() {
+		return JacksonDBCollection.wrap(this.database.getDB().getCollection(GROUP_COLLECTION_NAME),
+				UserGroup.class, String.class);
+		
+	}
+	
+	/**
+	 * Gets a new connection to the group member collection.
+	 * @return jackson configured collection
+	 */
+	private JacksonDBCollection<GroupMembership, String> getGroupMembershipCollection() {
+		return JacksonDBCollection
+				.wrap(this.database.getDB().getCollection(GROUP_MEMBERSHIP_COLLECTION_NAME), GroupMembership.class,
+						String.class);
 	}
 }

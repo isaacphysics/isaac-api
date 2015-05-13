@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
@@ -61,7 +62,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	private static final Logger log = LoggerFactory
 			.getLogger(MongoUserDataManager.class);
 
-	private final DB database;
+	private final MongoDb database;
 	private final ContentMapper contentMapper;
 	
 	private static final String USER_COLLECTION_NAME = "users";
@@ -76,7 +77,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	 * @param contentMapper - The preconfigured content mapper for pojo mapping.
 	 */
 	@Inject
-	public MongoUserDataManager(final DB database, final ContentMapper contentMapper) {
+	public MongoUserDataManager(final MongoDb database, final ContentMapper contentMapper) {
 		this.database = database;
 		this.contentMapper = contentMapper;
 		initialiseDataManager();
@@ -85,7 +86,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Override
 	public final RegisteredUser createOrUpdateUser(final RegisteredUser user) throws SegueDatabaseException {
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 
 		try {
@@ -112,7 +113,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		Validate.notBlank(id, "The id field must not be blank.");
 		
 		JacksonDBCollection<RegisteredUser, String> userCollection = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 			
 		try {
@@ -162,7 +163,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		MongoJackModule.configure(objectMapper);
 				
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class, objectMapper);
 		try {
 			// Do database query using plain mongodb so we only have to read from
@@ -188,7 +189,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		}
 
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 		try {
 			// Do database query using plain mongodb so we only have to read from
@@ -212,7 +213,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		}
 		
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -232,7 +233,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		Validate.notNull(usersToLocate);
 		// have to have another instance of this as not thread-safe with own mapper.
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -260,7 +261,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		}
 
 		JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class,
 				String.class);
 		try {
 			// Do database query using plain mongodb so we only have to read from
@@ -286,7 +287,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		MongoJackModule.configure(objectMapper);
 		
 		JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class,
+				database.getDB().getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class,
 				String.class, objectMapper);
 
 		try {
@@ -345,7 +346,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		MongoJackModule.configure(objectMapper);
 		
 		JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class,
+				database.getDB().getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class,
 				String.class, objectMapper);
 
 		try {
@@ -377,7 +378,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		}
 
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
-				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+				.wrap(database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 
 		LinkedAccount linkAccount = jc.findOne(DBQuery.and(DBQuery.is(
@@ -406,7 +407,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	@Override
 	public boolean hasALinkedAccount(final RegisteredUser user) throws SegueDatabaseException {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
-				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+				.wrap(database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 
 		BasicDBObject query = new BasicDBObject(
@@ -435,7 +436,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		Validate.notEmpty(user.getDbId());
 		
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
-				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+				.wrap(database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 		try {
 			BasicDBObject query = new BasicDBObject(
@@ -464,7 +465,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		Validate.notNull(provider);
 		
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
-				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+				.wrap(database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 		
 		DBQuery.Query linkAccountToDeleteQuery = DBQuery.and(DBQuery.is(
@@ -485,7 +486,7 @@ public class MongoUserDataManager implements IUserDataManager {
 	public boolean linkAuthProviderToAccount(final RegisteredUser user,
 			final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException {
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
-				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+				.wrap(database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 		try {			
 			DBQuery.Query existingLinkAccount = DBQuery.and(
@@ -528,7 +529,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		MongoJackModule.configure(objectMapper);
 				
 		JacksonDBCollection<BasicDBObject, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(USER_COLLECTION_NAME), BasicDBObject.class,
+				database.getDB().getCollection(USER_COLLECTION_NAME), BasicDBObject.class,
 				String.class, objectMapper);
 
 		Query q = DBQuery.is("_id", new ObjectId(userId));
@@ -556,7 +557,8 @@ public class MongoUserDataManager implements IUserDataManager {
 	 */
 	private void initialiseDataManager() {
 		log.info("Initializing Mongo DB user collection indices.");
-		database.getCollection(USER_COLLECTION_NAME).ensureIndex(
+		DB conn = database.getDB();
+		conn.getCollection(USER_COLLECTION_NAME).ensureIndex(
 				new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, 1),
 				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, true);
 		
@@ -564,7 +566,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		linkedAccountIndex.put(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, 1);
 		linkedAccountIndex.put(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, 1);
 		
-		database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME).ensureIndex(linkedAccountIndex,
+		conn.getCollection(LINKED_ACCOUNT_COLLECTION_NAME).ensureIndex(linkedAccountIndex,
 				"LinkedAccountIndex", true);
 	}
 	
@@ -588,7 +590,7 @@ public class MongoUserDataManager implements IUserDataManager {
 		}
 		
 		JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection
-				.wrap(database.getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
+				.wrap(database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME),
 						LinkedAccount.class, String.class);
 		
 		DBQuery.Query linkAccountToDeleteQuery = DBQuery.is(

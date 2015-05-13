@@ -92,7 +92,6 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.mongodb.DB;
 import com.mongodb.MongoClient;
 
 /**
@@ -385,7 +384,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	@Provides
 	@Singleton
-	private ILogManager getLogManager(final DB database, final ObjectMapper objectMapper,
+	private ILogManager getLogManager(final MongoDb database, final ObjectMapper objectMapper,
 			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
 		if (null == logManager) {
 			logManager = new MongoLogManager(database,
@@ -466,7 +465,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Provides
 	@Singleton
 	private static IUserDataManager getUserDataManager(
-			final DB database, final ContentMapper contentMapper) {
+			final MongoDb database, final ContentMapper contentMapper) {
 		if (null == userDataManager) {
 			userDataManager = new MongoUserDataManager(database, contentMapper);
 			log.info("Creating singleton of MongoUserDataManager");
@@ -570,7 +569,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Provides
 	@Singleton
 	@Inject
-	private static DB getMongoDB(
+	private static MongoDb getMongoDB(
 			@Named(Constants.MONGO_DB_HOSTNAME) final String host,
 			@Named(Constants.MONGO_DB_PORT) final String port,
 			@Named(Constants.SEGUE_DB_NAME) final String dbName)
@@ -583,7 +582,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			log.info("Created Singleton of MongoDb wrapper");
 		}
 
-		return mongoDB.getDB();
+		return mongoDB;
 	}
 
 	/**
@@ -721,7 +720,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			final String databaseName, final Class<T> classType) {
 		Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
 
-		return new MongoAppDataManager<T>(mongoDB.getDB(), databaseName,
+		return new MongoAppDataManager<T>(mongoDB, databaseName,
 				classType);
 	}
 }

@@ -29,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
+import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 
 import com.google.inject.Inject;
-import com.mongodb.DB;
 import com.mongodb.MongoException;
 
 /**
@@ -44,7 +44,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	private static final Logger log = LoggerFactory
 			.getLogger(MongoAppDataManager.class);
 
-	private final DB database;
+	private final MongoDb database;
 	private final String collectionName;
 	private final Class<T> typeParamaterClass;
 
@@ -60,7 +60,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	 *            - the string name identifying this database / table.
 	 */
 	@Inject
-	public MongoAppDataManager(final DB database, final String collectionName,
+	public MongoAppDataManager(final MongoDb database, final String collectionName,
 			final Class<T> typeParameterClass) {
 		this.database = database;
 		this.collectionName = collectionName;
@@ -76,7 +76,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	@Override
 	public final String save(final T objectToSave) throws SegueDatabaseException {
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(collectionName), typeParamaterClass,
+				database.getDB().getCollection(collectionName), typeParamaterClass,
 				String.class);
 
 		WriteResult<T, String> r;
@@ -99,7 +99,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	@Override
 	public void delete(final String objectId) throws SegueDatabaseException {
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(collectionName), typeParamaterClass,
+				database.getDB().getCollection(collectionName), typeParamaterClass,
 				String.class);
 
 		WriteResult<T, String> r;
@@ -121,7 +121,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	@Override
 	public final T getById(final String id) throws SegueDatabaseException {
 		Validate.notNull(id);
-		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getCollection(collectionName),
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getDB().getCollection(collectionName),
 				typeParamaterClass, String.class);
 
 		T result;
@@ -138,7 +138,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	public final T updateField(final String objectId, final String fieldName, final Object value)
 		throws SegueDatabaseException {
 		Validate.notNull(objectId);
-		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getCollection(collectionName),
+		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(database.getDB().getCollection(collectionName),
 				typeParamaterClass, String.class);
 
 		T result;
@@ -189,7 +189,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 		}
 
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(collectionName), typeParamaterClass,
+				database.getDB().getCollection(collectionName), typeParamaterClass,
 				String.class);
 		
 		List<T> result;
@@ -206,7 +206,7 @@ public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
 	@Override
 	public List<T> findAll() throws SegueDatabaseException {
 		JacksonDBCollection<T, String> jc = JacksonDBCollection.wrap(
-				database.getCollection(collectionName), typeParamaterClass,
+				database.getDB().getCollection(collectionName), typeParamaterClass,
 				String.class);
 		return jc.find().toArray();
 	}
