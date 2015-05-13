@@ -41,7 +41,7 @@ public class MongoDb {
 	}
 
 	/**
-	 * Provides a handle to the local MongoDB instance.
+	 * Provides a handle to the local MongoDB instance from the connection pool.
 	 * 
 	 * @return DB handle
 	 */
