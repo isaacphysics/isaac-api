@@ -20,7 +20,7 @@ import java.util.Date;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 
 /**
- *
+ * LocationHistoryEvent.
  */
 public interface LocationHistoryEvent {
 	/**

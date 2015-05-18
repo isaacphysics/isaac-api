@@ -21,8 +21,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.common.lang3.Validate;
 import org.postgresql.util.PGobject;
@@ -30,6 +32,7 @@ import org.postgresql.util.PGobject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -87,6 +90,45 @@ public class PgLocationHistory implements LocationHistory {
 			throw new SegueDatabaseException("Postgres exception", e);
 		}
 	}
+	
+	@Override
+	public Map<String, LocationHistoryEvent> getLatestByIPAddresses(final Collection<String> ipAddresses)
+		throws SegueDatabaseException {
+		
+
+		try (Connection conn = database.getDatabaseConnection()) {
+
+			// This is a nasty hack to make a prepared statement using the sql IN operator.
+			StringBuilder builder = new StringBuilder();
+			for (int i = 0; i < ipAddresses.size(); i++) {
+			    builder.append("?,");
+			}
+			
+			PreparedStatement pst;
+			pst = conn.prepareStatement("Select * FROM ip_location_history " + "WHERE ip_address IN ("
+					+ builder.deleteCharAt(builder.length() - 1).toString() + ") AND is_current = ? "
+					+ "ORDER BY last_lookup DESC");
+			
+			int index = 1;
+			for (String s : ipAddresses) {
+				pst.setString(index++, s);
+			}
+		
+			pst.setBoolean(index++, true);
+			
+			ResultSet results = pst.executeQuery();
+			Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();
+			
+			while (results.next()) {
+				PgLocationEvent buildPgLocationEntry = buildPgLocationEntry(results);
+				resultToReturn.put(buildPgLocationEntry.getIpAddress(), buildPgLocationEntry);
+			}
+
+			return resultToReturn;
+		} catch (SQLException e) {
+			throw new SegueDatabaseException("Postgres exception", e);
+		}
+	}	
 	
 	@Override
 	public List<LocationHistoryEvent> getAllByIPAddress(final String ipAddress) throws SegueDatabaseException {

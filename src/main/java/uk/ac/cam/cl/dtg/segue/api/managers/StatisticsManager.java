@@ -646,20 +646,19 @@ public class StatisticsManager {
 		}
 		
 		Set<Location> result = Sets.newHashSet();
+		Collection<String> ipAddresses = Lists.newArrayList();
 		
 		for (LogEvent e : logManager.getLastLogForAllUsers().values()) {
-			if (e.getTimestamp().before(threshold)) {
+			if (e.getTimestamp().before(threshold) || e.getIpAddress() == null) {
 				continue;
 			}
-
-			if (e.getIpAddress() != null) {
-				Location locationFromHistory = locationHistoryManager.getLocationFromHistory(e.getIpAddress()
-						.split(",")[0]);
-				if (locationFromHistory != null) {
-					result.add(locationFromHistory);
-				}
-			}
+			
+			ipAddresses.add(e.getIpAddress().split(",")[0]);
 		}
+
+		Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsFromHistory(ipAddresses);
+		
+		result.addAll(locationsFromHistory.values());
 		
 		this.statsCache.put(LOCATION_STATS, result);
 		

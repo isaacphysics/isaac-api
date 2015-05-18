@@ -17,13 +17,17 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Maps;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
@@ -160,5 +164,26 @@ public class LocationHistoryManager implements ILocationResolver {
 		locationCache.put(ipAddress, locationInformation);
 		
 		return locationInformation;
+	}
+	
+	/**
+	 * Get the latest location information held by our history.
+	 * 
+	 * @param ipAddresses that we are interested in.
+	 * @return latest location info for that ip address. or null if we have no data.
+	 * @throws SegueDatabaseException - if we cannot resolve the location from our database
+	 */
+	public Map<String, Location> getLocationsFromHistory(final Collection<String> ipAddresses)
+		throws SegueDatabaseException {
+
+		Map<String, LocationHistoryEvent> latestByIPAddresses = dao.getLatestByIPAddresses(ipAddresses);
+		Map <String, Location> resultToReturn = Maps.newHashMap();
+		
+		for (Entry<String, LocationHistoryEvent> e : latestByIPAddresses.entrySet()) {
+			resultToReturn.put(e.getKey(), e.getValue().getLocationInformation());
+			locationCache.put(e.getKey(), e.getValue().getLocationInformation());
+		}
+		
+		return resultToReturn;
 	}
 }

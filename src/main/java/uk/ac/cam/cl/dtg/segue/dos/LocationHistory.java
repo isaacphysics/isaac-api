@@ -15,7 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -68,4 +70,13 @@ public interface LocationHistory {
 	 */
 	void updateLocationEventDate(final Long id, boolean isCurrent) throws
 			SegueDatabaseException;
+
+	/**
+	 * Utility method to allow requesting IP addresses in one single db request.
+	 * @param ipAddress - list of ip addresses of interest. - if null then all ips will be returned.
+	 * @return Map of Ip address to location history event.
+	 * @throws SegueDatabaseException - if we cannot talk to the db.
+	 */
+	Map<String, LocationHistoryEvent> getLatestByIPAddresses(Collection<String> ipAddress)
+		throws SegueDatabaseException;
 }
