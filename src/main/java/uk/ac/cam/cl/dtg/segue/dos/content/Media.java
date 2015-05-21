@@ -15,12 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.MediaDTO;
+
 /**
  * Media (Abstract) Domain Object To be used anywhere that a figure should be
  * displayed in the CMS.
  * 
  */
 @JsonContentType("media")
+@DTOMapping(MediaDTO.class)
 public abstract class Media extends Content {
 	protected String src;
 	protected String altText;
