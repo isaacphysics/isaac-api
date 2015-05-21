@@ -69,6 +69,8 @@ public class MongoUserDataManager implements IUserDataManager {
 	private static final String LINKED_ACCOUNT_COLLECTION_NAME = "linkedAccounts";
 	private static final String QUESTION_ATTEMPTS_COLLECTION_NAME = "questionAttempts";
 
+	private static Boolean initialised = false;
+	
 	/**
 	 * Creates a new user data maanger object.
 	 * 
@@ -80,7 +82,10 @@ public class MongoUserDataManager implements IUserDataManager {
 	public MongoUserDataManager(final MongoDb database, final ContentMapper contentMapper) {
 		this.database = database;
 		this.contentMapper = contentMapper;
-		initialiseDataManager();
+		
+		if (!initialised) {
+			initialiseDataManager();	
+		}
 	}
 
 	@Override
@@ -561,13 +566,14 @@ public class MongoUserDataManager implements IUserDataManager {
 		conn.getCollection(USER_COLLECTION_NAME).ensureIndex(
 				new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, 1),
 				Constants.LOCAL_AUTH_EMAIL_FIELDNAME, true);
-		
+
 		BasicDBObject linkedAccountIndex = new BasicDBObject();
 		linkedAccountIndex.put(Constants.LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME, 1);
 		linkedAccountIndex.put(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, 1);
 		
 		conn.getCollection(LINKED_ACCOUNT_COLLECTION_NAME).ensureIndex(linkedAccountIndex,
 				"LinkedAccountIndex", true);
+		initialised = true;
 	}
 	
 	/**
