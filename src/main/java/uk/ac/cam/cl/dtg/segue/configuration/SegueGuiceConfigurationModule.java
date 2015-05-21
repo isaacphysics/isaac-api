@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -690,12 +690,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	/**
 	 * Gets the segue classes that should be registered as context listeners.
 	 * 
-	 * TODO: we probably want to make this so that apps can register things too.
 	 * @return the list of context listener classes (these should all be singletons).
 	 */
-	public static List<Class <? extends ServletContextListener>> getRegisteredContextListenerClasses() {
-		List<Class <? extends ServletContextListener>> contextListeners = Lists.newArrayList();
-		contextListeners.add(ContentVersionController.class);
+	public static Collection<Class <? extends ServletContextListener>> getRegisteredContextListenerClasses() {
+		
+		if (null == contextListeners) {
+			contextListeners = Lists.newArrayList();	
+			Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
+			Set<Class<? extends ServletContextListener>> subTypes = 
+				     reflections.getSubTypesOf(ServletContextListener.class);
+			
+			for (Class<? extends ServletContextListener> contextListener : subTypes) {
+				contextListeners.add(contextListener);	
+			}
+		}
+	
 		return contextListeners;
 	}
 	
