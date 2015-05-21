@@ -65,6 +65,7 @@ import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.segue.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
@@ -666,6 +667,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private void buildDefaultJsonTypeMap() {
 		// We need to pre-register different content objects here for the
 		// auto-mapping to work
+		// TODO: Now that we have the jsonType annotation we should auto generate these.
 		mapper.registerJsonTypeAndDTOMapping(Content.class);
 		mapper.registerJsonTypeAndDTOMapping(SeguePage.class);
 		mapper.registerJsonTypeAndDTOMapping(Choice.class);
@@ -675,6 +677,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		mapper.registerJsonTypeAndDTOMapping(Image.class);
 		mapper.registerJsonTypeAndDTOMapping(Figure.class);
 		mapper.registerJsonTypeAndDTOMapping(Video.class);
+		mapper.registerJsonTypeAndDTOMapping(AnvilApp.class);
 	}
 
 	/**
