@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
  * value and a unit to be stored.
  */
 @DTOMapping(QuantityDTO.class)
-@JsonType("quantity")
+@JsonContentType("quantity")
 public class Quantity extends Choice {
 	private String units;
 

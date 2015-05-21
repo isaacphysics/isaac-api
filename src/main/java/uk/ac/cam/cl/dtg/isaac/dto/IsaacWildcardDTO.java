@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
@@ -33,7 +33,7 @@ import java.util.Set;
  * TODO: make sure mapping is completed.
  * ********************************************
  */
-@JsonType("isaacWildcard")
+@JsonContentType("isaacWildcard")
 public class IsaacWildcardDTO extends ContentDTO {
 	protected String description;
 	protected String url;

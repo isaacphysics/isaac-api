@@ -29,7 +29,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JsonType {
+public @interface JsonContentType {
 
 	/**
 	 * gets the string value associated with the jsonType annotation. 

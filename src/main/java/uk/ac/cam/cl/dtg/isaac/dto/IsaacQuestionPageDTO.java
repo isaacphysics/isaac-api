@@ -18,7 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * IsaacQuestion Page DTO.
  *
  */
-@JsonType("isaacQuestionPage")
+@JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPageDTO extends SeguePageDTO {
 	protected Float passMark;
 

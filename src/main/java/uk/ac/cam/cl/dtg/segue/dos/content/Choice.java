@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
  * 
  */
 @DTOMapping(ChoiceDTO.class)
-@JsonType("choice")
+@JsonContentType("choice")
 public class Choice extends Content {
 	protected boolean correct;
 	protected ContentBase explanation;

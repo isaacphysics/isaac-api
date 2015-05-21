@@ -41,7 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
@@ -215,7 +215,7 @@ public class ContentMapper {
 	public synchronized void registerJsonType(final Class<? extends Content> cls) {
 		Validate.notNull(cls, "Class cannot be null.");
 
-		JsonType jt = cls.getAnnotation(JsonType.class);
+		JsonContentType jt = cls.getAnnotation(JsonContentType.class);
 		if (jt != null) {
 			jsonTypes.put(jt.value(), cls);
 		} else {

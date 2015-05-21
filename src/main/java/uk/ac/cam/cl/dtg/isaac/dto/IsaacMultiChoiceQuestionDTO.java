@@ -15,13 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 
 /**
  * Content DO for isaacMultiChoiceQuestions.
  *
  */
-@JsonType("isaacMultiChoiceQuestion")
+@JsonContentType("isaacMultiChoiceQuestion")
 public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionBaseDTO {
 	
 }

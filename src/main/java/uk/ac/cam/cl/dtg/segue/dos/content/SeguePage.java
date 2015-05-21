@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 @DTOMapping(SeguePageDTO.class)
-@JsonType("page")
+@JsonContentType("page")
 public class SeguePage extends Content {
 	private String summary;
 	

@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 
 import java.util.List;
 import java.util.Set;
@@ -31,7 +31,7 @@ import java.util.Set;
  * IsaacWildcard
  * Represents gameboard advertising space.
  */
-@JsonType("isaacWildcard")
+@JsonContentType("isaacWildcard")
 @DTOMapping(IsaacWildcardDTO.class)
 public class IsaacWildcard extends Content {
 	protected String description;

@@ -22,7 +22,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.VideoDTO;
  *
  */
 @DTOMapping(VideoDTO.class)
-@JsonType("video")
+@JsonContentType("video")
 public class Video extends Media {
 
 }

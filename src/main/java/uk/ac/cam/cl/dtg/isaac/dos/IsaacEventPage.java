@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 
 /**
@@ -36,7 +36,7 @@ import uk.ac.cam.cl.dtg.util.locations.Address;
  *
  */
 @DTOMapping(IsaacEventPageDTO.class)
-@JsonType("isaacEventPage")
+@JsonContentType("isaacEventPage")
 public class IsaacEventPage extends Content {
 	private Date date;
 	private Address location;

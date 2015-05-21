@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
@@ -35,7 +35,7 @@ import uk.ac.cam.cl.dtg.util.locations.Address;
  * DO for isaac Event.
  *
  */
-@JsonType("isaacEventPage")
+@JsonContentType("isaacEventPage")
 public class IsaacEventPageDTO extends ContentDTO {
 	private Date date;
 	private Address location;

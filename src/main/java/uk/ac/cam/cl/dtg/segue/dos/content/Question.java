@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
  * 
  */
 @DTOMapping(QuestionDTO.class)
-@JsonType("question")
+@JsonContentType("question")
 public class Question extends Content {
 
 	protected ContentBase answer;

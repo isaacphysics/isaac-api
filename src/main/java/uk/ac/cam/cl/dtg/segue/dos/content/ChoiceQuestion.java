@@ -26,7 +26,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
  * 
  */
 @DTOMapping(ChoiceQuestionDTO.class)
-@JsonType("choiceQuestion")
+@JsonContentType("choiceQuestion")
 @ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestion extends Question {
 	protected List<Choice> choices;
@@ -53,6 +53,4 @@ public class ChoiceQuestion extends Question {
 	public final void setChoices(final List<Choice> choices) {
 		this.choices = choices;
 	}
-
-
 }

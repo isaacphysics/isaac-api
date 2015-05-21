@@ -24,14 +24,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 /**
  * IsaacQuestion Page DO.
  *
  */
 @DTOMapping(IsaacQuestionPageDTO.class)
-@JsonType("isaacQuestionPage")
+@JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPage extends SeguePage {
 	protected Float passMark;
 	

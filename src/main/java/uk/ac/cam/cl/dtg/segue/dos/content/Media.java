@@ -20,7 +20,7 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
  * displayed in the CMS.
  * 
  */
-@JsonType("media")
+@JsonContentType("media")
 public abstract class Media extends Content {
 	protected String src;
 	protected String altText;

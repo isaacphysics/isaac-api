@@ -20,7 +20,7 @@ import java.util.List;
 import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
@@ -29,7 +29,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
  * DO for isaacNumericQuestions.
  * 
  */
-@JsonType("isaacNumericQuestion")
+@JsonContentType("isaacNumericQuestion")
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
 	private Boolean requireUnits;

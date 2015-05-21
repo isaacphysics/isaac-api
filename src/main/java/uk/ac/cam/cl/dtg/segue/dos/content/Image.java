@@ -21,7 +21,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
  * Image is in any picture.
  */
 @DTOMapping(ImageDTO.class)
-@JsonType("image")
+@JsonContentType("image")
 public class Image extends Media {
 	private String clickUrl;
 	private String clickTarget;

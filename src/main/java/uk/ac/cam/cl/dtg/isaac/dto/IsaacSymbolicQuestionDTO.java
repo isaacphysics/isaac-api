@@ -15,13 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 
 /**
  * Isaac Symbolic Question DO.
  *
  */
-@JsonType("isaacSymbolicQuestion")
+@JsonContentType("isaacSymbolicQuestion")
 public class IsaacSymbolicQuestionDTO extends IsaacQuestionBaseDTO {
 	public IsaacSymbolicQuestionDTO() {
 		super();

@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.AnvilAppDTO;
  *
  */
 @DTOMapping(AnvilAppDTO.class)
-@JsonType("anvilApp")
+@JsonContentType("anvilApp")
 public class AnvilApp extends Content {
 	private String appId;
 	private String appAccessKey;

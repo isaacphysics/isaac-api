@@ -17,14 +17,14 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacFastTrackQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 
 /**
  * IsaacFastTrackQuestion Page DO.
  *
  */
 @DTOMapping(IsaacFastTrackQuestionPageDTO.class)
-@JsonType("isaacFastTrackQuestionPage")
+@JsonContentType("isaacFastTrackQuestionPage")
 public class IsaacFastTrackQuestionPage extends IsaacQuestionPage {
 
 }

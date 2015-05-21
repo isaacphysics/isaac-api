@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletContextListener;
 
@@ -30,6 +31,7 @@ import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.Client;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,16 +67,8 @@ import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.content.AnvilApp;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.Figure;
-import uk.ac.cam.cl.dtg.segue.dos.content.Image;
-import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
-import uk.ac.cam.cl.dtg.segue.dos.content.Video;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -664,20 +658,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * 
 	 * It requires that the class definition has the JsonType("XYZ") annotation
 	 */
+	@SuppressWarnings("unchecked")
 	private void buildDefaultJsonTypeMap() {
 		// We need to pre-register different content objects here for the
 		// auto-mapping to work
-		// TODO: Now that we have the jsonType annotation we should auto generate these.
-		mapper.registerJsonTypeAndDTOMapping(Content.class);
-		mapper.registerJsonTypeAndDTOMapping(SeguePage.class);
-		mapper.registerJsonTypeAndDTOMapping(Choice.class);
-		mapper.registerJsonTypeAndDTOMapping(Quantity.class);
-		mapper.registerJsonTypeAndDTOMapping(Question.class);
-		mapper.registerJsonTypeAndDTOMapping(ChoiceQuestion.class);
-		mapper.registerJsonTypeAndDTOMapping(Image.class);
-		mapper.registerJsonTypeAndDTOMapping(Figure.class);
-		mapper.registerJsonTypeAndDTOMapping(Video.class);
-		mapper.registerJsonTypeAndDTOMapping(AnvilApp.class);
+		
+		Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
+		Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(JsonContentType.class);
+	     
+		for (Class<?> classToAdd : annotated) {
+			if (Content.class.isAssignableFrom(classToAdd)) {
+				mapper.registerJsonTypeAndDTOMapping((Class<Content>) classToAdd);
+			}
+		}
 	}
 
 	/**

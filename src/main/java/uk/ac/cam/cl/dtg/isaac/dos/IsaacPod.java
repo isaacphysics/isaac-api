@@ -26,14 +26,14 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 
 /**
  * DO for isaac featured profiles.
  *
  */
 @DTOMapping(IsaacPodDTO.class)
-@JsonType("isaacPod")
+@JsonContentType("isaacPod")
 public class IsaacPod extends Content {
 	private Image image;
 	private String url;

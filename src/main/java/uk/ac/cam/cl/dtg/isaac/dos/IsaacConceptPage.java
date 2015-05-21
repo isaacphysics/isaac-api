@@ -17,7 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacConceptPageDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonType;
+import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 
 /**
@@ -25,7 +25,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
  *
  */
 @DTOMapping(IsaacConceptPageDTO.class)
-@JsonType("isaacConceptPage")
+@JsonContentType("isaacConceptPage")
 public class IsaacConceptPage extends SeguePage {
 
 }

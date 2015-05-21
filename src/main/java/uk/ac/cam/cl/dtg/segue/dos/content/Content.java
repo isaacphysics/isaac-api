@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * 
  */
 @DTOMapping(ContentDTO.class)
-@JsonType("content")
+@JsonContentType("content")
 public class Content extends ContentBase {
 	protected String title;
 	protected String subtitle;
