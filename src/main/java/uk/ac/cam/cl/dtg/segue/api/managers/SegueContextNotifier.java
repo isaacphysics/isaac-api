@@ -47,6 +47,7 @@ public class SegueContextNotifier implements ServletContextListener {
 				// we probably don't want to register ourself.
 				continue;
 			}
+			
 			log.debug("Registering context listener: " + segueListener.toString());
 			listeners.add(injector.getInstance(segueListener));
 		}
