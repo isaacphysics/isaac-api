@@ -67,8 +67,6 @@ import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -99,6 +97,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	// we only ever want there to be one instance of each of these.
 	private static MongoDb mongoDB = null;
+	private static PostgresSqlDb postgresclient;
 	
 	private static ContentMapper mapper = null;
 	private static ContentVersionController contentVersionController = null;
@@ -107,21 +106,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static Client elasticSearchClient = null;
 	
 	private static UserManager userManager = null;
-	private static IUserDataManager userDataManager = null;
+
 	private static GoogleClientSecrets googleClientSecrets = null;
-
-	private static ICommunicator communicator = null;
-
-	private static PropertiesLoader configLocationProperties;
 	
+	private static PropertiesLoader configLocationProperties;
 	private PropertiesLoader globalProperties = null;
 
 	private UserAssociationManager userAssociationManager = null;
 
 	private static ILogManager logManager;
 
-	private static PostgresSqlDb postgresclient;
-	
 	private static Collection<Class <? extends ServletContextListener>> contextListeners;
 
 	/**
@@ -278,6 +272,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 		bind(IContentManager.class).to(GitContentManager.class);
 		
 		bind(LocationHistory.class).to(PgLocationHistory.class);
+		
+		bind(IUserDataManager.class).to(MongoUserDataManager.class);
+		
+		bind(ICommunicator.class).to(EmailCommunicator.class);
 	}
 
 	/**
@@ -354,7 +352,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	@Provides
 	@Singleton
-	private GitContentManager getContentManager(final GitDb database,
+	private static GitContentManager getContentManager(final GitDb database,
 			final ISearchProvider searchProvider,
 			final ContentMapper contentMapper) {
 		if (null == contentManager) {
@@ -380,7 +378,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	@Provides
 	@Singleton
-	private ILogManager getLogManager(final MongoDb database, final ObjectMapper objectMapper,
+	private static ILogManager getLogManager(final MongoDb database, final ObjectMapper objectMapper,
 			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
 		if (null == logManager) {
 			logManager = new MongoLogManager(database,
@@ -405,10 +403,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Inject
 	@Provides
 	@Singleton
-	private ContentMapper getContentMapper() {
+	private static ContentMapper getContentMapper() {
 		if (null == mapper) {
-			mapper = new ContentMapper();
-			this.buildDefaultJsonTypeMap();
+			String packageToSearchForValidContentDOs = "uk.ac.cam.cl.dtg.segue";
+			mapper = new ContentMapper(packageToSearchForValidContentDOs);
 			log.info("Initialising Content Mapper");
 		}
 
@@ -427,6 +425,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 *            - list of known providers.
 	 * @param communicator - so that we can send e-mails.
 	 * @param logManager - so that we can log interesting user based events.
+	 * @param mapperFacade - for DO and DTO mapping. 
 	 * @return Content version controller with associated dependencies.
 	 */
 	@Inject
@@ -436,40 +435,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			final IUserDataManager database,
 			final PropertiesLoader properties,
 			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-			final ICommunicator communicator, final ILogManager logManager) {
+			final ICommunicator communicator, final ILogManager logManager, final MapperFacade mapperFacade) {
 
 		if (null == userManager) {
 			userManager = new UserManager(database, properties, providersToRegister,
-					this.getDOtoDTOMapper(), communicator, logManager);
+					mapperFacade, communicator, logManager);
 			log.info("Creating singleton of UserManager");
 		}
 
 		return userManager;
 	}
-
-	/**
-	 * This provides a singleton of the IUserDataManager for the segue
-	 * facade.
-	 * 
-	 * @param database
-	 *            - to use for persistence.
-	 * @param contentMapper
-	 *            - the instance of a content mapper to use.
-	 * @return Content version controller with associated dependencies.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private static IUserDataManager getUserDataManager(
-			final MongoDb database, final ContentMapper contentMapper) {
-		if (null == userDataManager) {
-			userDataManager = new MongoUserDataManager(database, contentMapper);
-			log.info("Creating singleton of MongoUserDataManager");
-		}
-
-		return userDataManager;
-	}
-
 
 	/**
 	 * This provides a singleton of the UserAssociationManager for the Authorisation
@@ -504,8 +479,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Provides
 	@Singleton
 	@Inject
-	public MapperFacade getDOtoDTOMapper() {
-		return this.getContentMapper().getAutoMapper();
+	public static MapperFacade getDOtoDTOMapper() {
+		return SegueGuiceConfigurationModule.getContentMapper().getAutoMapper();
 	}
 
 	/**
@@ -609,31 +584,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return postgresclient;
 	}
-
-	/**
-	 * This provides a singleton of the ICommunicator for the segue
-	 * facade.
-	 *
-	 * @param smtpServer
-	 *            - SMTP Server Address
-	 * @param mailFromAddress
-	 *            - The default address emails should be sent from
-	 * @return The singleton instance of EmailCommunicator
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private ICommunicator getCommunicator(
-			@Named(Constants.MAILER_SMTP_SERVER) final String smtpServer,
-			@Named(Constants.MAIL_FROM_ADDRESS) final String mailFromAddress) {
-
-		if (null == communicator) {
-			communicator = new EmailCommunicator(smtpServer, mailFromAddress);
-			log.info("Creating singleton of EmailCommunicator");
-		}
-
-		return communicator;
-	}
 	
 	/**
 	 * This provides an instance of the location resolver.
@@ -646,30 +596,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	@Provides
 	private ILocationResolver getIPLocator(
 			@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-		
 		return new IPInfoDBLocationResolver(apiKey);
 	}	
-
-	/**
-	 * This method will pre-register the mapper class so that content objects
-	 * can be mapped.
-	 * 
-	 * It requires that the class definition has the JsonType("XYZ") annotation
-	 */
-	@SuppressWarnings("unchecked")
-	private void buildDefaultJsonTypeMap() {
-		// We need to pre-register different content objects here for the
-		// auto-mapping to work
-		
-		Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
-		Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(JsonContentType.class);
-	     
-		for (Class<?> classToAdd : annotated) {
-			if (Content.class.isAssignableFrom(classToAdd)) {
-				mapper.registerJsonTypeAndDTOMapping((Class<Content>) classToAdd);
-			}
-		}
-	}
 
 	/**
 	 * Utility method to make the syntax of property bindings clearer.

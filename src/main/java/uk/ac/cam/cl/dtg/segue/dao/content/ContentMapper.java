@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.MapperFacade;
@@ -29,6 +30,7 @@ import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +83,29 @@ public class ContentMapper {
 	public ContentMapper() {
 		jsonTypes = Maps.newConcurrentMap();
 		mapOfDOsToDTOs = Maps.newConcurrentMap();
+	}
+	
+	/**
+	 * Alternative constructor that will attempt to search for valid types to pre-register.
+	 * @param packageToSearch
+	 *            - string representing the parent package to search for content
+	 *            classes. e.g. uk.ac.cam.cl.dtg.segue
+	 */
+	@SuppressWarnings("unchecked")
+	public ContentMapper(final String packageToSearch) {
+		this();
+		Validate.notBlank(packageToSearch);
+
+		// We need to pre-register different content objects here for the
+		// auto-mapping to work
+		Reflections reflections = new Reflections(packageToSearch);
+		Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(JsonContentType.class);
+	     
+		for (Class<?> classToAdd : annotated) {
+			if (Content.class.isAssignableFrom(classToAdd)) {
+				this.registerJsonTypeAndDTOMapping((Class<Content>) classToAdd);
+			}
+		}
 	}
 
 	/**
