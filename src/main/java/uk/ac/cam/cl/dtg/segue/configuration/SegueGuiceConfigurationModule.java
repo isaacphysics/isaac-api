@@ -87,7 +87,6 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.mongodb.MongoClient;
 
 /**
  * This class is responsible for injecting configuration values for persistence
@@ -122,6 +121,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static ILogManager logManager;
 
 	private static PostgresSqlDb postgresclient;
+	
+	private static Collection<Class <? extends ServletContextListener>> contextListeners;
 
 	/**
 	 * Create a SegueGuiceConfigurationModule.
@@ -569,11 +570,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			@Named(Constants.MONGO_DB_PORT) final String port,
 			@Named(Constants.SEGUE_DB_NAME) final String dbName)
 		throws UnknownHostException {
-
 		if (null == mongoDB) {
-			MongoClient client = new MongoClient(host, Integer.parseInt(port));
-			MongoDb newMongoDB = new MongoDb(client, dbName);
-			mongoDB = newMongoDB;
+			mongoDB = new MongoDb(host, Integer.parseInt(port), dbName);
 			log.info("Created Singleton of MongoDb wrapper");
 		}
 

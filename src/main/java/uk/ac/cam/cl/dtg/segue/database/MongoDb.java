@@ -15,6 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
+import java.net.UnknownHostException;
+
+import org.elasticsearch.common.lang3.Validate;
+
 import com.google.inject.Inject;
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
@@ -31,14 +35,25 @@ public class MongoDb {
 	/**
 	 * Create a mongo db wrapper for a given mongodb database.
 	 * 
-	 * @param client - Mongo client pre-configured with hostname and port details.
+	 * @param host
+	 *            - database host to connect to.
+	 * @param port
+	 *            - port that the mongodb service is running on.
 	 * @param databaseName - The database name that this MongoDb instance should focus on.
+	 * @throws UnknownHostException - if we cannot resolve the host
+	 * @throws NumberFormatException - if the port number cannot be
 	 */
 	@Inject
-	public MongoDb(final MongoClient client, final String databaseName) {
-		this.client = client;
+	public MongoDb(final String host, final Integer port, final String databaseName)
+		throws NumberFormatException, UnknownHostException {
+		Validate.notBlank(databaseName);
+		Validate.notBlank(host);
+		Validate.notNull(port);
+		
+		this.client = new MongoClient(host, port);
 		this.databaseName = databaseName;
 	}
+
 
 	/**
 	 * Provides a handle to the local MongoDB instance from the connection pool.
