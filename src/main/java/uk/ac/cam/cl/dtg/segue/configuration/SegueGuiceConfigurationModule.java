@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import ma.glasnost.orika.MapperFacade;
@@ -91,13 +92,13 @@ import com.google.inject.name.Names;
  * related classes.
  * 
  */
-public class SegueGuiceConfigurationModule extends AbstractModule {
+public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
 	private static final Logger log = LoggerFactory
 			.getLogger(SegueGuiceConfigurationModule.class);
 
 	// we only ever want there to be one instance of each of these.
 	private static MongoDb mongoDB = null;
-	private static PostgresSqlDb postgresclient;
+	private static PostgresSqlDb postgresDB;
 	
 	private static ContentMapper mapper = null;
 	private static ContentVersionController contentVersionController = null;
@@ -110,7 +111,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	private static GoogleClientSecrets googleClientSecrets = null;
 	
 	private static PropertiesLoader configLocationProperties;
-	private PropertiesLoader globalProperties = null;
+	private static PropertiesLoader globalProperties = null;
 
 	private UserAssociationManager userAssociationManager = null;
 
@@ -122,15 +123,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 * Create a SegueGuiceConfigurationModule.
 	 */
 	public SegueGuiceConfigurationModule() {
-		try {
-			configLocationProperties = new PropertiesLoader(
-					"/config/segue-config-location.properties");
-			
-			globalProperties = new PropertiesLoader(
-					configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+		if (globalProperties == null || configLocationProperties == null) {
+			try {
+				configLocationProperties = new PropertiesLoader(
+						"/config/segue-config-location.properties");
+				
+				globalProperties = new PropertiesLoader(
+						configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
 
-		} catch (IOException e) {
-			log.error("Error loading properties file.", e);
+			} catch (IOException e) {
+				log.error("Error loading properties file.", e);
+			}
 		}
 	}
 
@@ -573,16 +576,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 			@Named(Constants.POSTGRES_DB_USER) final String username,
 			@Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
 
-		if (null == postgresclient) {
+		if (null == postgresDB) {
 			try {
-				postgresclient = new PostgresSqlDb(databaseUrl, username, password);
+				postgresDB = new PostgresSqlDb(databaseUrl, username, password);
 				log.info("Created Singleton of PostgresDb wrapper");
 			} catch (ClassNotFoundException e) {
 				log.error("Unable to locate postgres driver.", e);
 			}
 		}
 
-		return postgresclient;
+		return postgresDB;
 	}
 	
 	/**
@@ -653,5 +656,32 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 		return new MongoAppDataManager<T>(mongoDB, databaseName,
 				classType);
+	}
+
+	@Override
+	public void contextInitialized(final ServletContextEvent sce) {
+		// nothing needed
+	}
+
+	@Override
+	public void contextDestroyed(final ServletContextEvent sce) {
+		// Close all resoureces we hold.
+		log.info("Segue Config Module notified of shutdown. Releasing resources");
+		elasticSearchClient.close();
+		elasticSearchClient = null;
+		
+		try {
+			mongoDB.close();
+			mongoDB = null;		
+		} catch (IOException e) {
+			log.error("Unable to close external connection", e);
+		}
+		
+		try {
+			postgresDB.close();
+			postgresDB = null;
+		} catch (IOException e) {
+			log.error("Unable to close external connection", e);
+		}
 	}
 }

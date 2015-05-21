@@ -15,8 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
@@ -26,7 +29,7 @@ import com.google.inject.Inject;
  * PostgresSqlDb adapter.
  *
  */
-public class PostgresSqlDb {
+public class PostgresSqlDb implements Closeable {
 
 	private final PoolProperties p;
 	
@@ -79,5 +82,10 @@ public class PostgresSqlDb {
 	 */
 	public Connection getDatabaseConnection() throws SQLException {
         return dataSource.getConnection();
+	}
+
+	@Override
+	public void close() throws IOException {
+		this.dataSource.close();
 	}
 }

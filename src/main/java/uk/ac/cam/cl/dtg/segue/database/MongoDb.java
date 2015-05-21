@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 import org.elasticsearch.common.lang3.Validate;
@@ -28,7 +30,7 @@ import com.mongodb.MongoClient;
  * 
  * This represents an immutable wrapped client for a MongoDb database.
  */
-public class MongoDb {
+public class MongoDb implements Closeable {
 	private final MongoClient client;
 	private final String databaseName;
 	
@@ -62,5 +64,11 @@ public class MongoDb {
 	 */
 	public DB getDB() {
 		return this.client.getDB(databaseName);
+	}
+
+
+	@Override
+	public void close() throws IOException {
+		client.close();
 	}
 }
