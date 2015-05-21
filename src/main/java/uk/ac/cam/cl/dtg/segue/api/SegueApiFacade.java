@@ -133,7 +133,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 			final QuestionManager questionManager, final ICommunicator communicator,
 			final ILogManager logManager) {
 		super(properties, logManager);
-		// this.properties = properties;
+		
 		this.questionManager = questionManager;
 		this.communicator = communicator;
 
