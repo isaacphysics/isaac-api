@@ -86,6 +86,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.mongodb.MongoClientOptions;
 
 /**
  * This class is responsible for injecting configuration values for persistence
@@ -185,9 +186,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	private void configureDataPersistence() throws IOException {
 		// Setup different persistence bindings
 		// MongoDb
-		this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME,
-				globalProperties);
+		this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
 		this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
+		this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
+		this.bindConstantToProperty(Constants.MONGO_CONNECTION_TIMEOUT, globalProperties);
+		this.bindConstantToProperty(Constants.MONGO_SOCKET_TIMEOUT, globalProperties);
+		
 		this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
 		// postgres
@@ -536,6 +540,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	 *            - port that the mongodb service is running on.
 	 * @param dbName
 	 *            - the name of the database to configure the wrapper to use.
+	 * @param connectionsPerHost
+	 *            - the number of connections available from the pool
+	 * @param connectTimeout
+	 *            - time out for individual tcp connections
+	 * @param socketTimeout
+	 *            - socket timeout
 	 * @return MongoDB db object preconfigured to work with the segue database.
 	 * @throws UnknownHostException
 	 *             - when we are unable to access the host.
@@ -546,10 +556,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	private static MongoDb getMongoDB(
 			@Named(Constants.MONGO_DB_HOSTNAME) final String host,
 			@Named(Constants.MONGO_DB_PORT) final String port,
-			@Named(Constants.SEGUE_DB_NAME) final String dbName)
+			@Named(Constants.SEGUE_DB_NAME) final String dbName,
+			@Named(Constants.MONGO_CONNECTIONS_PER_HOST) final String connectionsPerHost,
+			@Named(Constants.MONGO_CONNECTION_TIMEOUT) final String connectTimeout,
+			@Named(Constants.MONGO_SOCKET_TIMEOUT) final String socketTimeout)
 		throws UnknownHostException {
 		if (null == mongoDB) {
-			mongoDB = new MongoDb(host, Integer.parseInt(port), dbName);
+			MongoClientOptions options = MongoClientOptions.builder().autoConnectRetry(true)
+					.connectionsPerHost(Integer.parseInt(connectionsPerHost))
+					.connectTimeout(Integer.parseInt(connectTimeout))
+					.socketTimeout(Integer.parseInt(socketTimeout)).build();
+
+			mongoDB = new MongoDb(host, Integer.parseInt(port), dbName, options);
 			log.info("Created Singleton of MongoDb wrapper");
 		}
 
