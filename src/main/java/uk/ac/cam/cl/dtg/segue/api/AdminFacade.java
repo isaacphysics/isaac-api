@@ -414,6 +414,42 @@ public class AdminFacade extends AbstractSegueFacade {
 	}
 	
 	/**
+	 * This method will delete all cached data from the CMS and any search
+	 * indices.
+	 * 
+	 * @param request
+	 *            - containing user session information.
+	 * 
+	 * @return the latest version id that will be cached if content is
+	 *         requested.
+	 */
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/reload_properties")
+	public synchronized Response reloadProperties(@Context final HttpServletRequest request) {
+		try {
+			if (isUserAnAdmin(request)) {
+				log.info("Triggering properties reload ...");
+				this.getProperties().triggerPropertiesRefresh();
+
+				ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put(
+						"result", "success").build();
+
+				return Response.ok(response).build();
+			} else {
+				return new SegueErrorResponse(Status.FORBIDDEN,
+						"You must be an administrator to use this function.").toResponse();
+			}
+
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (IOException e) {
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+					"Unable to trigger properties refresh", e).toResponse();
+		}
+	}	
+	
+	/**
 	 * This method will show a string representation of all jobs in the to index queue.
 	 * 
 	 * @param request
