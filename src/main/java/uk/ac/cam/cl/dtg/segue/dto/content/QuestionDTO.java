@@ -42,7 +42,7 @@ public class QuestionDTO extends ContentDTO {
 	 * Gets the answer.
 	 * @return the answer
 	 */
-	public final ContentBaseDTO getAnswer() {
+	public ContentBaseDTO getAnswer() {
 		return answer;
 	}
 

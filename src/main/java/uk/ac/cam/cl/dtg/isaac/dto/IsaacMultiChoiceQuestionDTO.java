@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 
 /**
  * Content DO for isaacMultiChoiceQuestions.
@@ -23,5 +26,10 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
  */
 @JsonContentType("isaacMultiChoiceQuestion")
 public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionBaseDTO {
-	
+
+	@JsonIgnore
+	@Override
+	public ContentBaseDTO getAnswer() {
+		return super.getAnswer();
+	}
 }

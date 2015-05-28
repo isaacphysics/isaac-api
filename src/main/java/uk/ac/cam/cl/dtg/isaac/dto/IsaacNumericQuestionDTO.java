@@ -17,11 +17,13 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacNumericValidator;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
@@ -100,7 +102,14 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
 	 * Sets the significantFigures.
 	 * @param significantFigures the significantFigures to set
 	 */
-	public void setSignificantFigures(Integer significantFigures) {
+	public void setSignificantFigures(final Integer significantFigures) {
 		this.significantFigures = significantFigures;
+	}
+	
+	// stop the answer being returned for this type of question
+	@JsonIgnore
+	@Override
+	public ContentBaseDTO getAnswer() {
+		return super.getAnswer();
 	}
 }
