@@ -85,7 +85,7 @@ public class UserAssociationManagerTest {
 		
 		replay(dummyAssociationDataManager, dummyGroupDataManager);
 
-		AssociationToken someGeneratedToken = managerUnderTest.getAssociationToken(someRegisteredUser,
+		AssociationToken someGeneratedToken = managerUnderTest.generateAssociationToken(someRegisteredUser,
 				someAssociatedGroupId);
 
 		assertTrue(someGeneratedToken != null);

@@ -211,7 +211,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 		
 		try {
 			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);			
-			AssociationToken token = associationManager.getAssociationToken(user, groupId);
+			AssociationToken token = associationManager.generateAssociationToken(user, groupId);
 			
 			return Response.ok(token).build();
 		} catch (SegueDatabaseException e) {
@@ -224,6 +224,51 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 		}
 	}
 
+	/**
+	 * Function to allow user to find out the account owner of a particular token.
+	 * This allows them to know if they really want to grant access or not.
+	 * 
+	 * @param request
+	 *            - so we can find out who the current user is
+	 * @param token
+	 *            - so we look up the owner.
+	 * @return a Response containing a user summary object or a
+	 *         SegueErrorResponse.
+	 */
+	@GET
+	@Path("/token/{token}/owner")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@GZIP
+	public Response getTokenUserSummary(@Context final HttpServletRequest request,
+			@PathParam("token") final String token) {
+		if (null == token || token.isEmpty()) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
+		}
+		RegisteredUserDTO currentRegisteredUser = null;
+		try {
+			// ensure the user is logged in
+			currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
+			RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
+					token).getOwnerUserId());
+			
+			return Response.ok(userManager.convertToUserSummaryObject(userDTO)).build();
+		} catch (NoUserLoggedInException e) {
+			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (InvalidUserAssociationTokenException e) {
+			log.info(String.format(
+					"User (%s) attempted to use token (%s) but it is invalid or no longer exists.",
+					currentRegisteredUser, token));
+			return new SegueErrorResponse(Status.BAD_REQUEST,
+					"The token provided is Invalid or no longer exists.").toResponse();
+		} catch (SegueDatabaseException e) {
+			log.error("Database error while trying to get association token. ", e);
+			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+		} catch (NoUserException e) {
+			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
+		}
+	}	
+	
 	/**
 	 * Function to allow users to use an AssociationToken to create a new
 	 * association.

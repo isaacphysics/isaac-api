@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 public class QuestionValidationResponseDTO {
 	private String questionId;
 	private ChoiceDTO answer;
-	private boolean correct;
+	private Boolean correct;
 	private Content explanation;
 	private Date dateAttempted;
 	
@@ -47,7 +47,7 @@ public class QuestionValidationResponseDTO {
 	 * @param dateAttempted - 
 	 */
 	public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer,
-			final boolean correct, final Content explanation, final Date dateAttempted) {
+			final Boolean correct, final Content explanation, final Date dateAttempted) {
 		this.questionId = questionId;
 		this.answer = answer;
 		this.correct = correct;
@@ -91,7 +91,7 @@ public class QuestionValidationResponseDTO {
 	 * Gets the correct.
 	 * @return the correct
 	 */
-	public final boolean isCorrect() {
+	public final Boolean isCorrect() {
 		return correct;
 	}
 
@@ -99,7 +99,7 @@ public class QuestionValidationResponseDTO {
 	 * Sets the correct.
 	 * @param correct the correct to set
 	 */
-	public final void setCorrect(final boolean correct) {
+	public final void setCorrect(final Boolean correct) {
 		this.correct = correct;
 	}
 

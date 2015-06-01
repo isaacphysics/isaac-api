@@ -78,7 +78,7 @@ public class UserAssociationManager {
 	 *             - If an error occurred while interacting with the database.
 	 * @throws UserGroupNotFoundException - if the group specified does not exist. 
 	 */
-	public AssociationToken getAssociationToken(final RegisteredUserDTO registeredUser,
+	public AssociationToken generateAssociationToken(final RegisteredUserDTO registeredUser,
 			final String associatedGroupId) throws SegueDatabaseException, UserGroupNotFoundException {
 		Validate.notNull(registeredUser);
 		
@@ -102,6 +102,25 @@ public class UserAssociationManager {
 				associatedGroupId);
 		
 		return associationDatabase.saveAssociationToken(associationToken);
+	}
+	
+	/**
+	 * getTokenOwner - allows users to identify who they are granting
+	 * permissions to before they do perform the grant.
+	 * 
+	 * @param token - the token to look up.
+	 * @return AssociationToken - So that you can identify the owner user.
+	 * @throws InvalidUserAssociationTokenException 
+	 */
+	public AssociationToken lookupTokenDetails(final String token) throws InvalidUserAssociationTokenException {
+		Validate.notBlank(token);
+		AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
+		
+		if (null == lookedupToken) {
+			throw new InvalidUserAssociationTokenException("The group token provided does not exist or is invalid.");
+		}
+		
+		return lookedupToken;
 	}
 	
 	/**
