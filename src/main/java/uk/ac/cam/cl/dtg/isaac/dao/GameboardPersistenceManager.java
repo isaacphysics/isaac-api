@@ -15,6 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dao;
 
+import static com.google.common.collect.Maps.immutableEntry;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -31,31 +37,29 @@ import org.elasticsearch.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Sets;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
-import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import static java.util.concurrent.TimeUnit.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static com.google.common.collect.Maps.*;
+
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Sets;
+import com.google.inject.Inject;
 
 /**
  * This class is responsible for managing and persisting user data.
  */
 public class GameboardPersistenceManager {
+
 	private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
 
 	private static final Integer CACHE_TARGET_SIZE = 142;
@@ -616,15 +620,15 @@ public class GameboardPersistenceManager {
 		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
 		fieldsToMap.put(
-				immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+                immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
 						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIds);
 
 		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
-				Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
 		// Search for questions that match the ids.
 		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
-				questionIds.size());
+                questionIds.size());
 
 		List<ContentDTO> questionsForGameboard = results.getResults();
 
@@ -639,19 +643,21 @@ public class GameboardPersistenceManager {
 		
 		return gameboardReadyQuestions;
 	}
-	
+
     /**
      * Helper method to get a list of question ids from a dto.
-     * @param gameboardDTO - to extract.
+     * 
+     * @param gameboardDTO
+     *            - to extract.
      * @return List of question ids for the gameboard provided.
      */
-    private static List<String> getQuestionIds(final GameboardDTO gameboardDTO) {    	
-    	List<String> listOfQuestionIds = Lists.newArrayList();
-    	
+    private static List<String> getQuestionIds(final GameboardDTO gameboardDTO) {
+        List<String> listOfQuestionIds = Lists.newArrayList();
+
         if (gameboardDTO.getQuestions() == null || gameboardDTO.getQuestions().isEmpty()) {
-        	return listOfQuestionIds;
+            return listOfQuestionIds;
         }
-        
+
         for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
             if (gameItem.getId() == null || gameItem.getId().isEmpty()) {
                 continue;

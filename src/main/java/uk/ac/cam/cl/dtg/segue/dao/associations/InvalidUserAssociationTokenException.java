@@ -19,13 +19,15 @@ package uk.ac.cam.cl.dtg.segue.dao.associations;
  * Exception indicating that something is wrong with the token provided.
  */
 public class InvalidUserAssociationTokenException extends Exception {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * Exception indicating that something is wrong with the token provided.
-	 * @param message - explaining the issue.
-	 */
-	public InvalidUserAssociationTokenException(final String message) {
-		super(message);
-	}
+    /**
+     * Exception indicating that something is wrong with the token provided.
+     * 
+     * @param message
+     *            - explaining the issue.
+     */
+    public InvalidUserAssociationTokenException(final String message) {
+        super(message);
+    }
 }

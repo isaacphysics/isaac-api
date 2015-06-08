@@ -46,136 +46,130 @@ import com.google.inject.Injector;
  * @author Stephen Cummins
  */
 public class URIManager {
-	private static final Logger log = LoggerFactory.getLogger(URIManager.class);
-	
-	private final Map<Class<?>, String> typeToURLPrefixMapping;
-	
-	/**
-	 * Default constructor for URI manager.
-	 */
-	public URIManager() {
-		typeToURLPrefixMapping = Maps.newHashMap();
-	}
-	
-	/**
-	 * Injectable constructor.
-	 * 
-	 * @param typeToURLPrefixMapping - A map that maps type information to a URL prefix.
-	 */
-	@Inject
-	public URIManager(final Map<Class<?>, String> typeToURLPrefixMapping) {
-		this.typeToURLPrefixMapping = typeToURLPrefixMapping;
-	}
-	
-	/**
-	 * Register a new url mapping.
-	 * 
-	 * @param type - Type of object that this mapping relates.
-	 * @param uriPrefix - the URI prefix to prepend.
-	 */
-	public void registerKnownURLMapping(final Class<?> type, final String uriPrefix) {
-		this.typeToURLPrefixMapping.put(type, uriPrefix);
-	}
-	
-	/**
-	 * Get a url prefix by the type information provided.
-	 * @param typeInformation - the class representing the type of interest.
-	 * @return the url prefix to prepend with the object id.
-	 */
-	public String getURLPrefix(final Class<?> typeInformation) {
-		return this.typeToURLPrefixMapping.get(typeInformation);
-	}
-	
-	/**
-	 * Generate a URI that will enable us to find an object again.
-	 * 
-	 * @param content
-	 *            the content object of interest
-	 * @return null if we are unable to generate the URL or a string that
-	 *         represents the url combined with any proxypath information
-	 *         required.
-	 */
-	public static String generateApiUrl(final ContentDTO content) {
-		Injector injector = Guice.createInjector(
-				new IsaacGuiceConfigurationModule(),
-				new SegueGuiceConfigurationModule());
-		String proxyPath = injector.getInstance(PropertiesLoader.class)
-				.getProperty(PROXY_PATH);
+    private static final Logger log = LoggerFactory.getLogger(URIManager.class);
 
-		String resourceUrl = null;
-		try {
-			// TODO fix this stuff to be less horrid
-			if (content instanceof ImageDTO) {
-				resourceUrl = proxyPath + "/api/images/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			} else if (content.getType().toLowerCase().contains("question")) {
-				resourceUrl = proxyPath + "/api/pages/questions/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			} else if (content.getType().toLowerCase().contains("concept")) {
-				resourceUrl = proxyPath + "/api/pages/concepts/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			} else {
-				resourceUrl = proxyPath + "/api/pages/"
-						+ URLEncoder.encode(content.getId(), "UTF-8");
-			}
-		} catch (UnsupportedEncodingException e) {
-			log.error("Url generation for resource id " + content.getId()
-					+ " failed. ", e);
-		}
+    private final Map<Class<?>, String> typeToURLPrefixMapping;
 
-		return resourceUrl;
-	}
-	
-	/**
-	 * Helper method to store redirect urls for a user going through external
-	 * authentication. This is particularly useful for when the user returns from 3rd party authentication.
-	 * 
-	 * @param request
-	 *            - the request to store the session variable in.
-	 * @param urls
-	 *            - A map containing the possible redirect locations.
-	 */
-	public static void storeRedirectUrl(final HttpServletRequest request,
-			final Map<String, String> urls) {
-		request.getSession().setAttribute(Constants.REDIRECT_URL_PARAM_NAME,
-				urls);
-	}
+    /**
+     * Default constructor for URI manager.
+     */
+    public URIManager() {
+        typeToURLPrefixMapping = Maps.newHashMap();
+    }
 
-	/**
-	 * Helper method to retrieve the users redirect URL from their session.
-	 * 
-	 * Note: Using this method will clear the session variable as it is equivalent to a stack.
-	 * 
-	 * This is particularly useful for when the user returns from 3rd party authentication.
-	 * 
-	 * @param request
-	 *            - the request where the redirect url is stored (session
-	 *            variable).
-	 * @param urlToRetrieve - the key for the url you wish to retrieve.
-	 * @return the URI containing the users desired uri. If URL is null then
-	 *         returns /
-	 * @throws URISyntaxException
-	 *             - if the session retrieved is an invalid URI.
-	 */
-	public static URI loadRedirectUrl(final HttpServletRequest request, final String urlToRetrieve)
-		throws URISyntaxException {
-		@SuppressWarnings("unchecked")
-		Map<String, String> urlMap = (Map<String, String>) request.getSession().getAttribute(
-				Constants.REDIRECT_URL_PARAM_NAME);
-		
-		if (null == urlMap) {
-			log.warn("No redirect url has been set for this session. Returning URI with root path. / ");
-			return new URI("/");
-		}
-		
-		String url = urlMap.get(urlToRetrieve);
-		
-		request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);
-		
-		if (null == url) {
-			return new URI("/");
-		}
+    /**
+     * Injectable constructor.
+     * 
+     * @param typeToURLPrefixMapping
+     *            - A map that maps type information to a URL prefix.
+     */
+    @Inject
+    public URIManager(final Map<Class<?>, String> typeToURLPrefixMapping) {
+        this.typeToURLPrefixMapping = typeToURLPrefixMapping;
+    }
 
-		return new URI(url);
-	}
+    /**
+     * Register a new url mapping.
+     * 
+     * @param type
+     *            - Type of object that this mapping relates.
+     * @param uriPrefix
+     *            - the URI prefix to prepend.
+     */
+    public void registerKnownURLMapping(final Class<?> type, final String uriPrefix) {
+        this.typeToURLPrefixMapping.put(type, uriPrefix);
+    }
+
+    /**
+     * Get a url prefix by the type information provided.
+     * 
+     * @param typeInformation
+     *            - the class representing the type of interest.
+     * @return the url prefix to prepend with the object id.
+     */
+    public String getURLPrefix(final Class<?> typeInformation) {
+        return this.typeToURLPrefixMapping.get(typeInformation);
+    }
+
+    /**
+     * Generate a URI that will enable us to find an object again.
+     * 
+     * @param content
+     *            the content object of interest
+     * @return null if we are unable to generate the URL or a string that represents the url combined with any proxypath
+     *         information required.
+     */
+    public static String generateApiUrl(final ContentDTO content) {
+        Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(),
+                new SegueGuiceConfigurationModule());
+        String proxyPath = injector.getInstance(PropertiesLoader.class).getProperty(PROXY_PATH);
+
+        String resourceUrl = null;
+        try {
+            // TODO fix this stuff to be less horrid
+            if (content instanceof ImageDTO) {
+                resourceUrl = proxyPath + "/api/images/" + URLEncoder.encode(content.getId(), "UTF-8");
+            } else if (content.getType().toLowerCase().contains("question")) {
+                resourceUrl = proxyPath + "/api/pages/questions/" + URLEncoder.encode(content.getId(), "UTF-8");
+            } else if (content.getType().toLowerCase().contains("concept")) {
+                resourceUrl = proxyPath + "/api/pages/concepts/" + URLEncoder.encode(content.getId(), "UTF-8");
+            } else {
+                resourceUrl = proxyPath + "/api/pages/" + URLEncoder.encode(content.getId(), "UTF-8");
+            }
+        } catch (UnsupportedEncodingException e) {
+            log.error("Url generation for resource id " + content.getId() + " failed. ", e);
+        }
+
+        return resourceUrl;
+    }
+
+    /**
+     * Helper method to store redirect urls for a user going through external authentication. This is particularly
+     * useful for when the user returns from 3rd party authentication.
+     * 
+     * @param request
+     *            - the request to store the session variable in.
+     * @param urls
+     *            - A map containing the possible redirect locations.
+     */
+    public static void storeRedirectUrl(final HttpServletRequest request, final Map<String, String> urls) {
+        request.getSession().setAttribute(Constants.REDIRECT_URL_PARAM_NAME, urls);
+    }
+
+    /**
+     * Helper method to retrieve the users redirect URL from their session.
+     * 
+     * Note: Using this method will clear the session variable as it is equivalent to a stack.
+     * 
+     * This is particularly useful for when the user returns from 3rd party authentication.
+     * 
+     * @param request
+     *            - the request where the redirect url is stored (session variable).
+     * @param urlToRetrieve
+     *            - the key for the url you wish to retrieve.
+     * @return the URI containing the users desired uri. If URL is null then returns /
+     * @throws URISyntaxException
+     *             - if the session retrieved is an invalid URI.
+     */
+    public static URI loadRedirectUrl(final HttpServletRequest request, final String urlToRetrieve)
+            throws URISyntaxException {
+        @SuppressWarnings("unchecked")
+        Map<String, String> urlMap = (Map<String, String>) request.getSession().getAttribute(
+                Constants.REDIRECT_URL_PARAM_NAME);
+
+        if (null == urlMap) {
+            log.warn("No redirect url has been set for this session. Returning URI with root path. / ");
+            return new URI("/");
+        }
+
+        String url = urlMap.get(urlToRetrieve);
+
+        request.getSession().removeAttribute(Constants.REDIRECT_URL_PARAM_NAME);
+
+        if (null == url) {
+            return new URI("/");
+        }
+
+        return new URI(url);
+    }
 }

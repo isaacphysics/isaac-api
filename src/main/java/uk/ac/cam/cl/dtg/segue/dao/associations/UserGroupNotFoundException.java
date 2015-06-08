@@ -20,14 +20,16 @@ package uk.ac.cam.cl.dtg.segue.dao.associations;
  * 
  */
 public class UserGroupNotFoundException extends Exception {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * Create a new DuplicateAccountException.
-	 * @param message - message to add
-	 */
-	public UserGroupNotFoundException(final String message) {
-		super(message);
-	}
+    /**
+     * Create a new DuplicateAccountException.
+     * 
+     * @param message
+     *            - message to add
+     */
+    public UserGroupNotFoundException(final String message) {
+        super(message);
+    }
 
 }

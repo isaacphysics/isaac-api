@@ -16,17 +16,18 @@
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 /**
- * ContentVersionUnavailableException.
- * The version specified does not exist.
+ * ContentVersionUnavailableException. The version specified does not exist.
  */
 public class ContentVersionUnavailableException extends ContentManagerException {
-	private static final long serialVersionUID = 5449604370735908349L;
+    private static final long serialVersionUID = 5449604370735908349L;
 
-	/**
-	 * Exception that occurred at the content manager DAO layer.
-	 * @param message - explaining the problem
-	 */
-	public ContentVersionUnavailableException(final String message) {
-		super(message);
-	}
+    /**
+     * Exception that occurred at the content manager DAO layer.
+     * 
+     * @param message
+     *            - explaining the problem
+     */
+    public ContentVersionUnavailableException(final String message) {
+        super(message);
+    }
 }

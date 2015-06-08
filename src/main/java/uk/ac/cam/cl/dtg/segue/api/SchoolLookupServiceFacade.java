@@ -42,50 +42,49 @@ import com.google.inject.Inject;
  */
 @Path("/schools")
 public class SchoolLookupServiceFacade {
-	private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
+    private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
 
-	private SchoolListReader schoolListReader;
-	
-	/**
-	 * Injectable constructor.
-	 * @param schoolListReader - Instance of schools list Reader to initialise. 
-	 */
-	@Inject
-	public SchoolLookupServiceFacade(final SchoolListReader schoolListReader) {
-		this.schoolListReader = schoolListReader;
-		
-		// initialise schools list asynchronously.
-		this.schoolListReader.prepareSchoolList();
-	}
+    private SchoolListReader schoolListReader;
 
-	/**
-	 * Rest Endpoint that will return you a list of schools based on the query
-	 * you provide.
-	 * 
-	 * @param searchQuery
-	 *            - query to search fields against.
-	 * @return A response containing a list of school objects or a
-	 *         SegueErrorResponse.
-	 */
-	@GET
-	@Path("/")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response schoolSearch(@QueryParam("query") final String searchQuery) {
-		if (null == searchQuery || searchQuery.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query")
-					.toResponse();
-		}
+    /**
+     * Injectable constructor.
+     * 
+     * @param schoolListReader
+     *            - Instance of schools list Reader to initialise.
+     */
+    @Inject
+    public SchoolLookupServiceFacade(final SchoolListReader schoolListReader) {
+        this.schoolListReader = schoolListReader;
 
-		List<School> list;
-		try {
-			list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);
-		} catch (UnableToIndexSchoolsException e) {
-			String message = "Unable to create / access the index of schools for the schools service.";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message, e).toResponse();
-		}
+        // initialise schools list asynchronously.
+        this.schoolListReader.prepareSchoolList();
+    }
 
-		return Response.ok(list).build();
-	}
+    /**
+     * Rest Endpoint that will return you a list of schools based on the query you provide.
+     * 
+     * @param searchQuery
+     *            - query to search fields against.
+     * @return A response containing a list of school objects or a SegueErrorResponse.
+     */
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response schoolSearch(@QueryParam("query") final String searchQuery) {
+        if (null == searchQuery || searchQuery.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query").toResponse();
+        }
+
+        List<School> list;
+        try {
+            list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);
+        } catch (UnableToIndexSchoolsException e) {
+            String message = "Unable to create / access the index of schools for the schools service.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message, e).toResponse();
+        }
+
+        return Response.ok(list).build();
+    }
 }

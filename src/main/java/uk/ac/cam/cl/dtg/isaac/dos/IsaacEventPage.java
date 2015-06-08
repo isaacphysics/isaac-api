@@ -51,12 +51,16 @@ public class IsaacEventPage extends Content {
 	private EventStatus eventStatus;
 
 	@JsonCreator
-	public IsaacEventPage(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
-			@JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type, @JsonProperty("author") String author,
+	public IsaacEventPage(@JsonProperty("_id") String _id, 
+	        @JsonProperty("id") String id,
+			@JsonProperty("title") String title, 
+			@JsonProperty("subtitle") String subtitle,
+			@JsonProperty("type") String type, 
+			@JsonProperty("author") String author,
 			@JsonProperty("encoding") String encoding,
 			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
+			@JsonProperty("layout") String layout, 
+			@JsonProperty("children") List<ContentBase> children,
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
 			@JsonProperty("date") Date date, @JsonProperty("location") Address location,

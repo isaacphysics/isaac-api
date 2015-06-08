@@ -21,12 +21,13 @@ package uk.ac.cam.cl.dtg.segue.comm;
  * @author nr378
  */
 public class CommunicationException extends Exception {
-	private static final long serialVersionUID = 7797028995535006701L;
+    private static final long serialVersionUID = 7797028995535006701L;
 
-	/**
-	 * @param e 
-	 */
-	public CommunicationException(final Exception e) {
-		super(e);
-	}
+    /**
+     * @param e
+     *            parent exception
+     */
+    public CommunicationException(final Exception e) {
+        super(e);
+    }
 }

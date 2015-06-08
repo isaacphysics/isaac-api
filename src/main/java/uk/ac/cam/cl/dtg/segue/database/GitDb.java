@@ -51,439 +51,417 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 
 /**
- * This class is a representation of the Git Database and provides some helper
- * methods to allow file access.
+ * This class is a representation of the Git Database and provides some helper methods to allow file access.
  * 
- * It is responsible for providing basic functionality to search a specified Git
- * Repository and find files based on a given SHA.
+ * It is responsible for providing basic functionality to search a specified Git Repository and find files based on a
+ * given SHA.
  * 
  */
 public class GitDb {
-	private static final Logger log = LoggerFactory.getLogger(GitDb.class);
+    private static final Logger log = LoggerFactory.getLogger(GitDb.class);
 
-	private final String privateKey;
-	private final String sshFetchUrl;
+    private final String privateKey;
+    private final String sshFetchUrl;
 
-	private Git gitHandle;
+    private Git gitHandle;
 
-	/**
-	 * Create a new instance of a GitDb object
-	 * 
-	 * This will immediately try and connect to the Git folder specified to
-	 * check its validity.
-	 * 
-	 * @param repoLocation
-	 *            - location of the local git repository
-	 * @throws IOException
-	 *             - if we cannot access the repo location.
-	 */
-	public GitDb(final String repoLocation) throws IOException {
-		Validate.notBlank(repoLocation);
+    /**
+     * Create a new instance of a GitDb object
+     * 
+     * This will immediately try and connect to the Git folder specified to check its validity.
+     * 
+     * @param repoLocation
+     *            - location of the local git repository
+     * @throws IOException
+     *             - if we cannot access the repo location.
+     */
+    public GitDb(final String repoLocation) throws IOException {
+        Validate.notBlank(repoLocation);
 
-		// unused for this constructor
-		this.privateKey = null;
-		this.sshFetchUrl = null;
+        // unused for this constructor
+        this.privateKey = null;
+        this.sshFetchUrl = null;
 
-		gitHandle = Git.open(new File(repoLocation));
-	}
+        gitHandle = Git.open(new File(repoLocation));
+    }
 
-	/**
-	 * Create a new instance of a GitDb object
-	 * 
-	 * This will immediately try and connect to the Git folder specified to
-	 * check its validity.
-	 * 
-	 * This constructor is only necessary if we want to access a private
-	 * repository.
-	 * 
-	 * @param repoLocation
-	 *            - location of the local git repository
-	 * @param sshFetchUrl
-	 *            - location of the remote git repository (ssh url used for
-	 *            fetching only)
-	 * @param privateKeyFileLocation
-	 *            - location of the local private key file used to access the
-	 *            ssh FetchUrl
-	 * @throws IOException
-	 *             - if we cannot access the repo location.
-	 */
-	@Inject
-	public GitDb(final String repoLocation, final String sshFetchUrl, final String privateKeyFileLocation)
-		throws IOException {
-		Validate.notBlank(repoLocation);
+    /**
+     * Create a new instance of a GitDb object
+     * 
+     * This will immediately try and connect to the Git folder specified to check its validity.
+     * 
+     * This constructor is only necessary if we want to access a private repository.
+     * 
+     * @param repoLocation
+     *            - location of the local git repository
+     * @param sshFetchUrl
+     *            - location of the remote git repository (ssh url used for fetching only)
+     * @param privateKeyFileLocation
+     *            - location of the local private key file used to access the ssh FetchUrl
+     * @throws IOException
+     *             - if we cannot access the repo location.
+     */
+    @Inject
+    public GitDb(final String repoLocation, final String sshFetchUrl, final String privateKeyFileLocation)
+            throws IOException {
+        Validate.notBlank(repoLocation);
 
-		this.sshFetchUrl = sshFetchUrl;
-		this.privateKey = privateKeyFileLocation;
+        this.sshFetchUrl = sshFetchUrl;
+        this.privateKey = privateKeyFileLocation;
 
-		gitHandle = Git.open(new File(repoLocation));
-	}
+        gitHandle = Git.open(new File(repoLocation));
+    }
 
-	/**
-	 * Create a new instance of a GitDb object.
-	 * 
-	 * This is meant to be used for unit testing, allowing injection of a mocked
-	 * Git object.
-	 * 
-	 * @param gitHandle
-	 *            - The (probably mocked) Git object to use.
-	 */
-	public GitDb(final Git gitHandle) {
-		Validate.notNull(gitHandle);
+    /**
+     * Create a new instance of a GitDb object.
+     * 
+     * This is meant to be used for unit testing, allowing injection of a mocked Git object.
+     * 
+     * @param gitHandle
+     *            - The (probably mocked) Git object to use.
+     */
+    public GitDb(final Git gitHandle) {
+        Validate.notNull(gitHandle);
 
-		this.privateKey = null;
-		this.sshFetchUrl = null;
+        this.privateKey = null;
+        this.sshFetchUrl = null;
 
-		this.gitHandle = gitHandle;
-	}
+        this.gitHandle = gitHandle;
+    }
 
-	/**
-	 * getFileByCommitSHA
-	 * 
-	 * This method will access the git repository given a particular SHA and
-	 * will attempt to locate a unique file and return a bytearrayoutputstream
-	 * of the files contents.
-	 * 
-	 * @param sha
-	 *            to search in.
-	 * @param fullFilePath
-	 *            file path to search for e.g. /src/filename.json
-	 * @return the ByteArrayOutputStream - which you can extract the file
-	 *         contents via the toString method.
-	 * @throws IOException
-	 *             - if we cannot access the repo location.
-	 * @throws UnsupportedOperationException
-	 *             - This method is intended to only locate one file at a time.
-	 *             If your search matches multiple files then this exception
-	 *             will be thrown.
-	 */
-	public ByteArrayOutputStream getFileByCommitSHA(final String sha, final String fullFilePath)
-		throws IOException, UnsupportedOperationException {
-		if (null == sha || null == fullFilePath) {
-			return null;
-		}
+    /**
+     * getFileByCommitSHA
+     * 
+     * This method will access the git repository given a particular SHA and will attempt to locate a unique file and
+     * return a bytearrayoutputstream of the files contents.
+     * 
+     * @param sha
+     *            to search in.
+     * @param fullFilePath
+     *            file path to search for e.g. /src/filename.json
+     * @return the ByteArrayOutputStream - which you can extract the file contents via the toString method.
+     * @throws IOException
+     *             - if we cannot access the repo location.
+     * @throws UnsupportedOperationException
+     *             - This method is intended to only locate one file at a time. If your search matches multiple files
+     *             then this exception will be thrown.
+     */
+    public ByteArrayOutputStream getFileByCommitSHA(final String sha, final String fullFilePath) throws IOException,
+            UnsupportedOperationException {
+        if (null == sha || null == fullFilePath) {
+            return null;
+        }
 
-		ObjectId objectId = this.findGitObject(sha, fullFilePath);
+        ObjectId objectId = this.findGitObject(sha, fullFilePath);
 
-		if (null == objectId) {
-			return null;
-		}
+        if (null == objectId) {
+            return null;
+        }
 
-		Repository repository = gitHandle.getRepository();
-		ObjectLoader loader = repository.open(objectId);
+        Repository repository = gitHandle.getRepository();
+        ObjectLoader loader = repository.open(objectId);
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		loader.copyTo(out);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        loader.copyTo(out);
 
-		repository.close();
-		return out;
-	}
+        repository.close();
+        return out;
+    }
 
-	/**
-	 * This method will configure a treewalk object that can be used to navigate
-	 * the git repository.
-	 * 
-	 * @param sha
-	 *            - the version that the treewalk should be configured to search
-	 *            within.
-	 * @param searchString
-	 *            - the search string which can be a full path or simply a file
-	 *            extension.
-	 * @return A preconfigured treewalk object.
-	 * @throws IOException
-	 *             - if we cannot access the repo location.
-	 * @throws UnsupportedOperationException
-	 *             - if git does not support the operation requested.
-	 */
-	public TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
-			UnsupportedOperationException {
-		Validate.notBlank(sha);
-		Validate.notNull(searchString);
+    /**
+     * This method will configure a treewalk object that can be used to navigate the git repository.
+     * 
+     * @param sha
+     *            - the version that the treewalk should be configured to search within.
+     * @param searchString
+     *            - the search string which can be a full path or simply a file extension.
+     * @return A preconfigured treewalk object.
+     * @throws IOException
+     *             - if we cannot access the repo location.
+     * @throws UnsupportedOperationException
+     *             - if git does not support the operation requested.
+     */
+    public TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
+            UnsupportedOperationException {
+        Validate.notBlank(sha);
+        Validate.notNull(searchString);
 
-		ObjectId commitId = gitHandle.getRepository().resolve(sha);
-		if (null == commitId) {
-			log.error("Failed to buildGitIndex - Unable to locate resource with sha: " + sha);
-		} else {
-			RevWalk revWalk = new RevWalk(gitHandle.getRepository());
-			RevCommit commit = revWalk.parseCommit(commitId);
+        ObjectId commitId = gitHandle.getRepository().resolve(sha);
+        if (null == commitId) {
+            log.error("Failed to buildGitIndex - Unable to locate resource with sha: " + sha);
+        } else {
+            RevWalk revWalk = new RevWalk(gitHandle.getRepository());
+            RevCommit commit = revWalk.parseCommit(commitId);
 
-			RevTree tree = commit.getTree();
+            RevTree tree = commit.getTree();
 
-			TreeWalk treeWalk = new TreeWalk(gitHandle.getRepository());
-			treeWalk.addTree(tree);
-			treeWalk.setRecursive(true);
-			treeWalk.setFilter(PathSuffixFilter.create(searchString));
+            TreeWalk treeWalk = new TreeWalk(gitHandle.getRepository());
+            treeWalk.addTree(tree);
+            treeWalk.setRecursive(true);
+            treeWalk.setFilter(PathSuffixFilter.create(searchString));
 
-			return treeWalk;
-		}
-		return null;
-	}
+            return treeWalk;
+        }
+        return null;
+    }
 
-	/**
-	 * Get the git handle for the database.
-	 * 
-	 * @return the repository
-	 */
-	public Repository getGitRepository() {
-		return gitHandle.getRepository();
-	}
+    /**
+     * Get the git handle for the database.
+     * 
+     * @return the repository
+     */
+    public Repository getGitRepository() {
+        return gitHandle.getRepository();
+    }
 
-	/**
-	 * Attempt to verify if an object exists in the git repository for a given
-	 * sha and full path.
-	 * 
-	 * @param sha
-	 *            - the version that to search within.
-	 * @param fullfilePath
-	 *            - the full path of the file in git.
-	 * @return True if we can successfully find the object, false if not. False
-	 *         if we encounter an exception.
-	 */
-	public boolean verifyGitObject(final String sha, final String fullfilePath) {
-		try {
-			if (findGitObject(sha, fullfilePath) != null) {
-				return true;
-			}
-		} catch (UnsupportedOperationException | IOException e) {
-			return false;
-		}
-		return false;
-	}
+    /**
+     * Attempt to verify if an object exists in the git repository for a given sha and full path.
+     * 
+     * @param sha
+     *            - the version that to search within.
+     * @param fullfilePath
+     *            - the full path of the file in git.
+     * @return True if we can successfully find the object, false if not. False if we encounter an exception.
+     */
+    public boolean verifyGitObject(final String sha, final String fullfilePath) {
+        try {
+            if (findGitObject(sha, fullfilePath) != null) {
+                return true;
+            }
+        } catch (UnsupportedOperationException | IOException e) {
+            return false;
+        }
+        return false;
+    }
 
-	/**
-	 * Check that a commit sha exists within the git repository.
-	 * 
-	 * @param sha
-	 *            - the version that the treewalk should be configured to search
-	 *            within.
-	 * @return True if we have found the git sha false if not.
-	 */
-	public boolean verifyCommitExists(final String sha) {
-		if (null == sha) {
-			log.warn("Null version provided. Unable to verify commit exists.");
-			return false;
-		}
+    /**
+     * Check that a commit sha exists within the git repository.
+     * 
+     * @param sha
+     *            - the version that the treewalk should be configured to search within.
+     * @return True if we have found the git sha false if not.
+     */
+    public boolean verifyCommitExists(final String sha) {
+        if (null == sha) {
+            log.warn("Null version provided. Unable to verify commit exists.");
+            return false;
+        }
 
-		// we need to check that the local remote is up to date in order to
-		// determine if the commit exists or not.
-		this.pullLatestFromRemote();
+        // we need to check that the local remote is up to date in order to
+        // determine if the commit exists or not.
+        this.pullLatestFromRemote();
 
-		try {
-			Iterable<RevCommit> logs = gitHandle.log().all().call();
+        try {
+            Iterable<RevCommit> logs = gitHandle.log().all().call();
 
-			for (RevCommit rev : logs) {
-				if (rev.getName().equals(sha)) {
-					return true;
-				}
-			}
+            for (RevCommit rev : logs) {
+                if (rev.getName().equals(sha)) {
+                    return true;
+                }
+            }
 
-		} catch (NoHeadException e) {
-			log.error("Git returned a no head exception. Unable to list all commits.");
-			e.printStackTrace();
-		} catch (GitAPIException e) {
-			log.error("Git returned an API exception. Unable to list all commits.");
-			e.printStackTrace();
-		} catch (IOException e) {
-			log.error("Git returned an IO exception. Unable to list all commits.");
-			e.printStackTrace();
-		}
+        } catch (NoHeadException e) {
+            log.error("Git returned a no head exception. Unable to list all commits.");
+            e.printStackTrace();
+        } catch (GitAPIException e) {
+            log.error("Git returned an API exception. Unable to list all commits.");
+            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("Git returned an IO exception. Unable to list all commits.");
+            e.printStackTrace();
+        }
 
-		log.debug("Commit " + sha + " does not exist");
-		return false;
-	}
+        log.debug("Commit " + sha + " does not exist");
+        return false;
+    }
 
-	/**
-	 * Get the time of the commit specified.
-	 * 
-	 * @param sha
-	 *            - to search for.
-	 * @return integer value representing time since epoch.
-	 * @throws NotFoundException
-	 *             - if we cannot find the commit requested.
-	 */
-	public int getCommitTime(final String sha) throws NotFoundException {
-		Validate.notBlank(sha);
+    /**
+     * Get the time of the commit specified.
+     * 
+     * @param sha
+     *            - to search for.
+     * @return integer value representing time since epoch.
+     * @throws NotFoundException
+     *             - if we cannot find the commit requested.
+     */
+    public int getCommitTime(final String sha) throws NotFoundException {
+        Validate.notBlank(sha);
 
-		try {
-			Iterable<RevCommit> logs = gitHandle.log().all().call();
+        try {
+            Iterable<RevCommit> logs = gitHandle.log().all().call();
 
-			for (RevCommit rev : logs) {
-				if (rev.getName().equals(sha)) {
-					return rev.getCommitTime();
-				}
-			}
+            for (RevCommit rev : logs) {
+                if (rev.getName().equals(sha)) {
+                    return rev.getCommitTime();
+                }
+            }
 
-		} catch (NoHeadException e) {
-			log.error("Git returned a no head exception. Unable to list all commits.");
-			e.printStackTrace();
-		} catch (GitAPIException e) {
-			log.error("Git returned an API exception. Unable to list all commits.");
-			e.printStackTrace();
-		} catch (IOException e) {
-			log.error("Git returned an IO exception. Unable to list all commits.");
-			e.printStackTrace();
-		}
+        } catch (NoHeadException e) {
+            log.error("Git returned a no head exception. Unable to list all commits.");
+            e.printStackTrace();
+        } catch (GitAPIException e) {
+            log.error("Git returned an API exception. Unable to list all commits.");
+            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("Git returned an IO exception. Unable to list all commits.");
+            e.printStackTrace();
+        }
 
-		log.warn("Commit " + sha + " does not exist");
-		throw new NotFoundException("Commit " + sha + " does not exist");
-	}
+        log.warn("Commit " + sha + " does not exist");
+        throw new NotFoundException("Commit " + sha + " does not exist");
+    }
 
-	/**
-	 * Gets a complete list of commits with the most recent commit first.
-	 * 
-	 * Will return null if there is a problem and will write a log to the
-	 * configured logger with the stack trace.
-	 * 
-	 * @return List of the commit shas we have found in the git repository.
-	 */
-	public List<RevCommit> listCommits() {
-		List<RevCommit> logList = null;
-		try {
-			Iterable<RevCommit> logs = gitHandle.log().all().call();
-			logList = new ArrayList<RevCommit>();
+    /**
+     * Gets a complete list of commits with the most recent commit first.
+     * 
+     * Will return null if there is a problem and will write a log to the configured logger with the stack trace.
+     * 
+     * @return List of the commit shas we have found in the git repository.
+     */
+    public List<RevCommit> listCommits() {
+        List<RevCommit> logList = null;
+        try {
+            Iterable<RevCommit> logs = gitHandle.log().all().call();
+            logList = new ArrayList<RevCommit>();
 
-			for (RevCommit rev : logs) {
-				logList.add(rev);
-			}
+            for (RevCommit rev : logs) {
+                logList.add(rev);
+            }
 
-		} catch (GitAPIException e) {
-			log.error("Git returned an API exception. While trying to to list all commits.", e);
-		} catch (IOException e) {
-			log.error("Git returned an IO exception. While trying to to list all commits.", e);
-		}
+        } catch (GitAPIException e) {
+            log.error("Git returned an API exception. While trying to to list all commits.", e);
+        } catch (IOException e) {
+            log.error("Git returned an IO exception. While trying to to list all commits.", e);
+        }
 
-		return logList;
-	}
+        return logList;
+    }
 
-	/**
-	 * This method will execute a fetch on the configured remote git repository
-	 * and will return the latest sha.
-	 * 
-	 * @return The version id of the latest version after the fetch.
-	 */
-	public synchronized String pullLatestFromRemote() {
-		try {
-			SshSessionFactory factory = new JschConfigSessionFactory() {
-				@Override
-				public void configure(final Host hc, final com.jcraft.jsch.Session session) {
-					session.setConfig("StrictHostKeyChecking", "no");
-				}
+    /**
+     * This method will execute a fetch on the configured remote git repository and will return the latest sha.
+     * 
+     * @return The version id of the latest version after the fetch.
+     */
+    public synchronized String pullLatestFromRemote() {
+        try {
+            SshSessionFactory factory = new JschConfigSessionFactory() {
+                @Override
+                public void configure(final Host hc, final com.jcraft.jsch.Session session) {
+                    session.setConfig("StrictHostKeyChecking", "no");
+                }
 
-				@Override
-				protected JSch getJSch(final OpenSshConfig.Host hc, final org.eclipse.jgit.util.FS fs)
-					throws JSchException {
-					JSch jsch = super.getJSch(hc, fs);
-					jsch.removeAllIdentity();
+                @Override
+                protected JSch getJSch(final OpenSshConfig.Host hc, final org.eclipse.jgit.util.FS fs)
+                        throws JSchException {
+                    JSch jsch = super.getJSch(hc, fs);
+                    jsch.removeAllIdentity();
 
-					if (null != privateKey) {
-						jsch.addIdentity(privateKey);
-					}
+                    if (null != privateKey) {
+                        jsch.addIdentity(privateKey);
+                    }
 
-					return jsch;
-				}
-			};
+                    return jsch;
+                }
+            };
 
-			if (this.sshFetchUrl != null) {
-				SshSessionFactory.setInstance(factory);
-			}
+            if (this.sshFetchUrl != null) {
+                SshSessionFactory.setInstance(factory);
+            }
 
-			RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
-			gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
-			
-			log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+            RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
+            gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
-		} catch (GitAPIException e) {
-			log.error("Error while trying to pull the latest from the remote repository.", e);
-		}
-		return this.getHeadSha();
-	}
+            log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
 
-	/**
-	 * Retrieve the SHA that is at the head of the repository (based on all
-	 * fetched commits).
-	 * 
-	 * @return String of sha id
-	 */
-	public String getHeadSha() {
-		String result = null;
+        } catch (GitAPIException e) {
+            log.error("Error while trying to pull the latest from the remote repository.", e);
+        }
+        return this.getHeadSha();
+    }
 
-		try {
-			ObjectId fetchHead = gitHandle.getRepository().resolve(Constants.FETCH_HEAD);
-			if (null != fetchHead) {
-				result = fetchHead.getName();
-			} else {
-				log.warn("Problem fetching head from remote. Providing local head instead.");
-				result = gitHandle.getRepository().resolve(Constants.HEAD).getName();
-			}
+    /**
+     * Retrieve the SHA that is at the head of the repository (based on all fetched commits).
+     * 
+     * @return String of sha id
+     */
+    public String getHeadSha() {
+        String result = null;
 
-		} catch (RevisionSyntaxException | IOException e) {
-			log.error("Error getting the head from the repository.", e);
-		}
-		return result;
-	}
+        try {
+            ObjectId fetchHead = gitHandle.getRepository().resolve(Constants.FETCH_HEAD);
+            if (null != fetchHead) {
+                result = fetchHead.getName();
+            } else {
+                log.warn("Problem fetching head from remote. Providing local head instead.");
+                result = gitHandle.getRepository().resolve(Constants.HEAD).getName();
+            }
 
-	/**
-	 * Will find an object from the git repository if given a sha and a full git
-	 * path.
-	 * 
-	 * @param sha
-	 *            - to search for.
-	 * @param filename
-	 *            - of the file in git to locate.
-	 * @return ObjectId which will allow you to access information about the
-	 *         node.
-	 * @throws IOException
-	 *             - if we cannot access the repo location.
-	 * @throws UnsupportedOperationException
-	 *             - if git does not support the operation requested.
-	 */
-	private ObjectId findGitObject(final String sha, final String filename) throws IOException,
-			UnsupportedOperationException {
-		if (null == sha || null == filename) {
-			return null;
-		}
+        } catch (RevisionSyntaxException | IOException e) {
+            log.error("Error getting the head from the repository.", e);
+        }
+        return result;
+    }
 
-		Repository repository = gitHandle.getRepository();
+    /**
+     * Will find an object from the git repository if given a sha and a full git path.
+     * 
+     * @param sha
+     *            - to search for.
+     * @param filename
+     *            - of the file in git to locate.
+     * @return ObjectId which will allow you to access information about the node.
+     * @throws IOException
+     *             - if we cannot access the repo location.
+     * @throws UnsupportedOperationException
+     *             - if git does not support the operation requested.
+     */
+    private ObjectId findGitObject(final String sha, final String filename) throws IOException,
+            UnsupportedOperationException {
+        if (null == sha || null == filename) {
+            return null;
+        }
 
-		ObjectId commitId = repository.resolve(sha);
+        Repository repository = gitHandle.getRepository();
 
-		RevWalk revWalk = new RevWalk(repository);
-		RevCommit commit = revWalk.parseCommit(commitId);
+        ObjectId commitId = repository.resolve(sha);
 
-		RevTree tree = commit.getTree();
+        RevWalk revWalk = new RevWalk(repository);
+        RevCommit commit = revWalk.parseCommit(commitId);
 
-		TreeWalk treeWalk = new TreeWalk(repository);
-		treeWalk.addTree(tree);
-		treeWalk.setRecursive(true);
-		treeWalk.setFilter(PathFilter.create(filename));
+        RevTree tree = commit.getTree();
 
-		int count = 0;
-		ObjectId objectId = null;
-		String path = null;
-		while (treeWalk.next()) {
-			count++;
-			if (null == objectId) {
-				objectId = treeWalk.getObjectId(0);
-				path = treeWalk.getPathString();
-			} else if (count > 1) {
-				// throw exception if we find that there is more than one that
-				// matches the search.
-				StringBuilder sb = new StringBuilder();
-				sb.append("Multiple results have been found in the git repository for the following search: ");
-				sb.append(filename + ".");
-				sb.append(" in ");
-				sb.append(sha);
-				sb.append(" Unable to decide which one to return.");
-				throw new UnsupportedOperationException(sb.toString());
-			}
-		}
+        TreeWalk treeWalk = new TreeWalk(repository);
+        treeWalk.addTree(tree);
+        treeWalk.setRecursive(true);
+        treeWalk.setFilter(PathFilter.create(filename));
 
-		if (null == objectId) {
-			return null;
-		}
+        int count = 0;
+        ObjectId objectId = null;
+        String path = null;
+        while (treeWalk.next()) {
+            count++;
+            if (null == objectId) {
+                objectId = treeWalk.getObjectId(0);
+                path = treeWalk.getPathString();
+            } else if (count > 1) {
+                // throw exception if we find that there is more than one that
+                // matches the search.
+                StringBuilder sb = new StringBuilder();
+                sb.append("Multiple results have been found in the git repository for the following search: ");
+                sb.append(filename + ".");
+                sb.append(" in ");
+                sb.append(sha);
+                sb.append(" Unable to decide which one to return.");
+                throw new UnsupportedOperationException(sb.toString());
+            }
+        }
 
-		revWalk.dispose();
-		log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + filename + " found: "
-				+ path);
-		return objectId;
-	}
+        if (null == objectId) {
+            return null;
+        }
+
+        revWalk.dispose();
+        log.debug("Retrieved Commit Id: " + commitId.getName() + " Searching for: " + filename + " found: " + path);
+        return objectId;
+    }
 }

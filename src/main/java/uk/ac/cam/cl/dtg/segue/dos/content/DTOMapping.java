@@ -21,8 +21,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used to allow mapping of Domain Objects to 
- * string type identifiers.
+ * This annotation is used to allow mapping of Domain Objects to string type identifiers.
  * 
  * e.g. DTOClass(Content.class).
  *
@@ -31,10 +30,10 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DTOMapping {
 
-	/**
-	 * gets the DTO class that any Domain objects should be mapped to and from.
-	 * 
-	 * default is ContentDTO.class
-	 */
-	Class<? extends Object> value();
+    /**
+     * gets the DTO class that any Domain objects should be mapped to and from.
+     * 
+     * default is ContentDTO.class
+     */
+    Class<? extends Object> value();
 }

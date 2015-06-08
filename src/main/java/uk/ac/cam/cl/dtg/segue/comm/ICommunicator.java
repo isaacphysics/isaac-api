@@ -15,22 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-
 /**
  * 
  * @author nr378
  *
- * @param <T> the type of object it communicates
+ * @param <T>
+ *            the type of object it communicates
  */
 public interface ICommunicator<T extends ICommunicationMessage> {
 
-	/**
-	 * Send a message.
-	 * 
-	 * @param message 
-	 * @throws communicationException 
-	 */
-	public void sendMessage(final T message)
-		throws CommunicationException;
+    /**
+     * Send a message.
+     * 
+     * @param message
+     * @throws communicationException
+     */
+    public void sendMessage(final T message) throws CommunicationException;
 
 }

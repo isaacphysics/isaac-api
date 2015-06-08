@@ -23,45 +23,51 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 @DTOMapping(ImageDTO.class)
 @JsonContentType("image")
 public class Image extends Media {
-	private String clickUrl;
-	private String clickTarget;
-	
-	/**
-	 * Default constructor required for mapping purposes.
-	 */
-	public Image() {
+    private String clickUrl;
+    private String clickTarget;
 
-	}
+    /**
+     * Default constructor required for mapping purposes.
+     */
+    public Image() {
 
-	/**
-	 * Gets the clickUrl.
-	 * @return the clickUrl
-	 */
-	public String getClickUrl() {
-		return clickUrl;
-	}
+    }
 
-	/**
-	 * Sets the clickUrl.
-	 * @param clickUrl the clickUrl to set
-	 */
-	public void setClickUrl(final String clickUrl) {
-		this.clickUrl = clickUrl;
-	}
+    /**
+     * Gets the clickUrl.
+     * 
+     * @return the clickUrl
+     */
+    public String getClickUrl() {
+        return clickUrl;
+    }
 
-	/**
-	 * Gets the clickTarget.
-	 * @return the clickTarget
-	 */
-	public String getClickTarget() {
-		return clickTarget;
-	}
+    /**
+     * Sets the clickUrl.
+     * 
+     * @param clickUrl
+     *            the clickUrl to set
+     */
+    public void setClickUrl(final String clickUrl) {
+        this.clickUrl = clickUrl;
+    }
 
-	/**
-	 * Sets the clickTarget.
-	 * @param clickTarget the clickTarget to set
-	 */
-	public void setClickTarget(final String clickTarget) {
-		this.clickTarget = clickTarget;
-	}
+    /**
+     * Gets the clickTarget.
+     * 
+     * @return the clickTarget
+     */
+    public String getClickTarget() {
+        return clickTarget;
+    }
+
+    /**
+     * Sets the clickTarget.
+     * 
+     * @param clickTarget
+     *            the clickTarget to set
+     */
+    public void setClickTarget(final String clickTarget) {
+        this.clickTarget = clickTarget;
+    }
 }

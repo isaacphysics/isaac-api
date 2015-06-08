@@ -34,50 +34,39 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
  * This relies on the annotation {@link ValidatesWith} being used.
  */
 public class ChoiceQuestionValidator implements IValidator {
-	private static final Logger log = LoggerFactory
-			.getLogger(ChoiceQuestionValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(ChoiceQuestionValidator.class);
 
-	@Override
-	public final QuestionValidationResponseDTO validateQuestionResponse(
-			final Question question, final ChoiceDTO answer) {
-		Validate.notNull(question);
-		Validate.notNull(answer);
+    @Override
+    public final QuestionValidationResponseDTO validateQuestionResponse(final Question question, 
+            final ChoiceDTO answer) {
+        Validate.notNull(question);
+        Validate.notNull(answer);
 
-		// check that the question is of type ChoiceQuestion before we go ahead
-		ChoiceQuestion choiceQuestion = null;
-		if (question instanceof ChoiceQuestion) {
-			choiceQuestion = (ChoiceQuestion) question;
+        // check that the question is of type ChoiceQuestion before we go ahead
+        ChoiceQuestion choiceQuestion = null;
+        if (question instanceof ChoiceQuestion) {
+            choiceQuestion = (ChoiceQuestion) question;
 
-			if (null == choiceQuestion.getChoices()
-					|| choiceQuestion.getChoices().isEmpty()) {
-				log.warn("Question does not have any answers. "
-						+ question.getId() + " src: "
-						+ question.getCanonicalSourceFile());
-				return new QuestionValidationResponseDTO(question.getId(),
-						answer, false, null, new Date());
-			}
+            if (null == choiceQuestion.getChoices() || choiceQuestion.getChoices().isEmpty()) {
+                log.warn("Question does not have any answers. " + question.getId() + " src: "
+                        + question.getCanonicalSourceFile());
+                return new QuestionValidationResponseDTO(question.getId(), answer, false, null, new Date());
+            }
 
-			for (Choice choice : choiceQuestion.getChoices()) {
-				if (choice.getValue().equals(answer.getValue())) {
-					return new QuestionValidationResponseDTO(question.getId(),
-							answer, choice.isCorrect(),
-							(Content) choice.getExplanation(), new Date());
-				}
-			}
+            for (Choice choice : choiceQuestion.getChoices()) {
+                if (choice.getValue().equals(answer.getValue())) {
+                    return new QuestionValidationResponseDTO(question.getId(), answer, choice.isCorrect(),
+                            (Content) choice.getExplanation(), new Date());
+                }
+            }
 
-			log.info("Unable to find choice for question ( "
-					+ question.getId()
-					+ " ) matching the answer supplied ("
-					+ answer
-					+ "). Returning that it is incorrect with out an explanation.");
+            log.info("Unable to find choice for question ( " + question.getId() + " ) matching the answer supplied ("
+                    + answer + "). Returning that it is incorrect with out an explanation.");
 
-			return new QuestionValidationResponseDTO(question.getId(),
-					answer, false, null, new Date());
-		} else {
-			log.error("Expected to be able to cast the question as a ChoiceQuestion "
-					+ "but this cast failed.");
-			throw new ClassCastException(
-					"Incorrect type of question received. Unable to validate.");
-		}
-	}
+            return new QuestionValidationResponseDTO(question.getId(), answer, false, null, new Date());
+        } else {
+            log.error("Expected to be able to cast the question as a ChoiceQuestion " + "but this cast failed.");
+            throw new ClassCastException("Incorrect type of question received. Unable to validate.");
+        }
+    }
 }

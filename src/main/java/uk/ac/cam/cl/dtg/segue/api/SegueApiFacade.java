@@ -113,6 +113,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
     private EmailManager emailManager;
 
+
     /**
      * Constructor that allows pre-configuration of the segue api.
      * 
@@ -129,7 +130,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
      * @param questionManager
      *            - A question manager object responsible for managing questions and augmenting questions with user
      *            information.
+<<<<<<< HEAD
      * @param emailManager
+=======
+     * @param communicator
+>>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
      *            - An implementation of ICommunicator for sending communiques
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
@@ -144,6 +149,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         this.questionManager = questionManager;
         this.emailManager = emailManager;
+
 
         // We only want to do this if the mapper needs to be changed - I expect
         // the same instance to be injected from Guice each time.
@@ -1071,6 +1077,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         getLogManager()
                 .logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED, builder.toString());
+
 
         return Response.ok().build();
     }

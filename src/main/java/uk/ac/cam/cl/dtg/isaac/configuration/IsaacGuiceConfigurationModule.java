@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
+
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ASSIGNMENT_COLLECTION_NAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_COLLECTION_NAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.USERS_GAMEBOARD_COLLECTION_NAME;
@@ -97,7 +98,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      *            - The user manager instance for segue.
      * @param questionManager
      *            - The Question Manager object for segue.
+<<<<<<< HEAD
      * @param emailManager
+=======
+     * @param communicator
+>>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
      *            - The communication Manager object for segue.
      * @param logManager
      *            - The log Manager object for segue.

@@ -20,379 +20,361 @@ package uk.ac.cam.cl.dtg.segue.api;
  * 
  */
 public final class Constants {
-	/**
-	 * Name to use to describe the application to external services, e.g. 3rd
-	 * party authenticators.
-	 */
-	public static final String APPLICATION_NAME = "Segue";
+    /**
+     * Name to use to describe the application to external services, e.g. 3rd party authenticators.
+     */
+    public static final String APPLICATION_NAME = "Segue";
 
-	// General Configuration stuff
-	/**
-	 * Constant representing the key for the HOST_NAME property - Used for
-	 * establishing the Base URL for fully qualified urls.
-	 */
-	public static final String HOST_NAME = "HOST_NAME";
+    // General Configuration stuff
+    /**
+     * Constant representing the key for the HOST_NAME property - Used for establishing the Base URL for fully qualified
+     * urls.
+     */
+    public static final String HOST_NAME = "HOST_NAME";
 
-	/**
-	 * Constant representing the key for the DEFAULT_LANDING_URL_SUFFIX property
-	 * - Used for a default location of where authentication provider callbacks
-	 * should land..
-	 */
-	public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX";
+    /**
+     * Constant representing the key for the DEFAULT_LANDING_URL_SUFFIX property - Used for a default location of where
+     * authentication provider callbacks should land..
+     */
+    public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX";
 
-	/**
-	 * Constant representing the key for the MAILER_SMTP_SERVER property
-	 * - Address of the SMTP server.
-	 */
-	public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
+    /**
+     * Constant representing the key for the MAILER_SMTP_SERVER property - Address of the SMTP server.
+     */
+    public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
 
-	/**
-	 * Constant representing the key for the MAIL_FROM_ADDRESS property
-	 * - Email address to send mail from.
-	 */
-	public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
+    /**
+     * Constant representing the key for the MAIL_FROM_ADDRESS property - Email address to send mail from.
+     */
+    public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
 
-	/**
-	 * Constant representing the key for the maximum number of versions to
-	 * cache.
-	 */
-	public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
-	
-	/**
-	 * The path for the csv file containing the list of schools.
-	 */
-	public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
+    /**
+     * Constant representing the key for the maximum number of versions to cache.
+     */
+    public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
 
-	// GIT stuff
-	/**
-	 * Constant representing the key for the path to Local GIT instance.
-	 */
-	public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
+    /**
+     * The path for the csv file containing the list of schools.
+     */
+    public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
-	/**
-	 * Constant representing the key for the path to the ssh private key for
-	 * remote git repository.
-	 */
-	public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
+    // GIT stuff
+    /**
+     * Constant representing the key for the path to Local GIT instance.
+     */
+    public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
 
-	/**
-	 * Constant representing the key for the URL to remote git repository for
-	 * SSH traffic.
-	 */
-	public static final String REMOTE_GIT_SSH_URL = "REMOTE_GIT_SSH_URL";
+    /**
+     * Constant representing the key for the path to the ssh private key for remote git repository.
+     */
+    public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
 
-	/**
-	 * Constant representing the key for the configuration option indicating
-	 * whether or not unpublished content should be visible.
-	 */
-	public static final String SHOW_ONLY_PUBLISHED_CONTENT = "SHOW_ONLY_PUBLISHED_CONTENT";
+    /**
+     * Constant representing the key for the URL to remote git repository for SSH traffic.
+     */
+    public static final String REMOTE_GIT_SSH_URL = "REMOTE_GIT_SSH_URL";
 
-	/**
-	 * Constant representing the key for the version id of the content that
-	 * should be served initially.
-	 */
-	public static final String INITIAL_LIVE_VERSION = "INITIAL_LIVE_VERSION";
+    /**
+     * Constant representing the key for the configuration option indicating whether or not unpublished content should
+     * be visible.
+     */
+    public static final String SHOW_ONLY_PUBLISHED_CONTENT = "SHOW_ONLY_PUBLISHED_CONTENT";
 
-	/**
-	 * Constant representing the key for the location for the version config file..
-	 */
-	public static final String LIVE_VERSION_CONFIG_LOCATION = "LIVE_VERSION_CONFIG_LOCATION";
-	
-	/**
-	 * Constant representing the key for the location for the sesgue config file..
-	 */
-	public static final String GENERAL_CONFIG_LOCATION = "GENERAL_CONFIG_LOCATION";
-	
-	/**
-	 * Constant representing the key for the property id that represents whether
-	 * segue should track and load all git changes as they arrive on the
-	 * repository.
-	 */
-	public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
+    /**
+     * Constant representing the key for the version id of the content that should be served initially.
+     */
+    public static final String INITIAL_LIVE_VERSION = "INITIAL_LIVE_VERSION";
 
-	/**
-	 * Constant representing the key for the property id that represents whether
-	 * segue should track and load all git changes as they arrive on the
-	 * repository.
-	 */
-	public static final String CLEAR_CACHES_ON_APP_START = "CLEAR_CACHES_ON_APP_START";
+    /**
+     * Constant representing the key for the location for the version config file..
+     */
+    public static final String LIVE_VERSION_CONFIG_LOCATION = "LIVE_VERSION_CONFIG_LOCATION";
 
-	/**
-	 * Constant representing the segue application version.
-	 */
-	public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
-	
-	public static final String CONTENT_VERSION = "CONTENT_VERSION";
+    /**
+     * Constant representing the key for the location for the sesgue config file..
+     */
+    public static final String GENERAL_CONFIG_LOCATION = "GENERAL_CONFIG_LOCATION";
 
-	/**
-	 * Constant representing the segue application mode. e.g. either debug or production
-	 */
-	public static final String SEGUE_APP_ENVIRONMENT = "SEGUE_APP_ENVIRONMENT";
+    /**
+     * Constant representing the key for the property id that represents whether segue should track and load all git
+     * changes as they arrive on the repository.
+     */
+    public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
 
-	/**
-	 * Enum to describe types of server environment / profile.
-	 */
-	public enum EnvironmentType { PROD, DEV };
-	
-	// HMAC stuff
-	/**
-	 * Constant representing the key for the date signed property - used in HMAC
-	 * calculations.
-	 */
-	public static final String DATE_SIGNED = "DATE_SIGNED";
+    /**
+     * Constant representing the key for the property id that represents whether segue should track and load all git
+     * changes as they arrive on the repository.
+     */
+    public static final String CLEAR_CACHES_ON_APP_START = "CLEAR_CACHES_ON_APP_START";
 
-	/**
-	 * Constant representing the key for the Session id property - used in HMAC
-	 * calculations.
-	 */
-	public static final String SESSION_ID = "SESSION_ID";
+    /**
+     * Constant representing the segue application version.
+     */
+    public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
 
-	/**
-	 * Constant representing the key for the HMAC property - used in HMAC
-	 * calculations.
-	 */
-	public static final String HMAC = "HMAC";
+    public static final String CONTENT_VERSION = "CONTENT_VERSION";
 
-	public static final String SESSION_EXPIRY_SECONDS = "SESSION_EXPIRY_SECONDS";
-	
-	/**
-	 * Constant representing the key for the SESSION USER ID - used in HMAC
-	 * calculations.
-	 */
-	public static final String SESSION_USER_ID = "currentUserId";
+    /**
+     * Constant representing the segue application mode. e.g. either debug or production
+     */
+    public static final String SEGUE_APP_ENVIRONMENT = "SEGUE_APP_ENVIRONMENT";
 
-	/**
-	 * Constant representing the key for the HMAC Salt - used in HMAC
-	 * calculations.
-	 */
-	public static final String HMAC_SALT = "HMAC_SALT";
+    /**
+     * Enum to describe types of server environment / profile.
+     */
+    public enum EnvironmentType {
+        PROD, DEV
+    };
 
-	// Search stuff
-	/**
-	 * Constant representing the key for the ClusterName - used for Search
-	 * providers.
-	 */
-	public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_NAME";
+    // HMAC stuff
+    /**
+     * Constant representing the key for the date signed property - used in HMAC calculations.
+     */
+    public static final String DATE_SIGNED = "DATE_SIGNED";
 
-	/**
-	 * Constant representing the key for the address of the Search Cluster -
-	 * used for Search providers.
-	 */
-	public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
+    /**
+     * Constant representing the key for the Session id property - used in HMAC calculations.
+     */
+    public static final String SESSION_ID = "SESSION_ID";
 
-	/**
-	 * Constant representing the key for the port of the Search Cluster - used
-	 * for Search providers.
-	 */
-	public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
+    /**
+     * Constant representing the key for the HMAC property - used in HMAC calculations.
+     */
+    public static final String HMAC = "HMAC";
 
-	/**
-	 * Suffix to append to raw fields (minus dot separator) - these are fields
-	 * that the search engine should not do any processing on (e.g. no stemming)
-	 */
-	public static final String UNPROCESSED_SEARCH_FIELD_SUFFIX = "raw";
+    public static final String SESSION_EXPIRY_SECONDS = "SESSION_EXPIRY_SECONDS";
 
-	/**
-	 * Enum to represent sort orders.
-	 * 
-	 */
-	public enum SortOrder {
-		ASC, DESC
-	};
-	
-	/**
-	 * Enum to represent search boolean operators.
-	 * 
-	 */
-	public enum BooleanOperator {
-		AND, OR
-	};
-	
-	public static final String SCHOOLS_SEARCH_INDEX = "autocomplete_data";
-	public static final String SCHOOLS_SEARCH_TYPE = "schools";
+    /**
+     * Constant representing the key for the SESSION USER ID - used in HMAC calculations.
+     */
+    public static final String SESSION_USER_ID = "currentUserId";
 
-	// Federated Authentication Stuff
-	public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
+    /**
+     * Constant representing the key for the HMAC Salt - used in HMAC calculations.
+     */
+    public static final String HMAC_SALT = "HMAC_SALT";
 
-	/**
-	 * This constant will be used to determine if we are expecting a link account request or not.
-	 */
-	public static final String LINK_ACCOUNT_PARAM_NAME = "LINK_ACCOUNT_PARAM_NAME";
+    // Search stuff
+    /**
+     * Constant representing the key for the ClusterName - used for Search providers.
+     */
+    public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_NAME";
 
-	/**
-	 * This constant is used for matching against url params to prevent CSRF.
-	 */
-	public static final String STATE_PARAM_NAME = "state";
+    /**
+     * Constant representing the key for the address of the Search Cluster - used for Search providers.
+     */
+    public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
 
-	/**
-	 * This constant is used for matching against url params to prevent CSRF.
-	 */
-	public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
+    /**
+     * Constant representing the key for the port of the Search Cluster - used for Search providers.
+     */
+    public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
 
-	/**
-	 * Constant representing the key for the GOOGLE client secret location.
-	 */
-	public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
+    /**
+     * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
+     * processing on (e.g. no stemming)
+     */
+    public static final String UNPROCESSED_SEARCH_FIELD_SUFFIX = "raw";
 
-	/**
-	 * Constant representing the key for the GOOGLE OAUTH callback uri.
-	 */
-	public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
+    /**
+     * Enum to represent sort orders.
+     * 
+     */
+    public enum SortOrder {
+        ASC, DESC
+    };
 
-	/**
-	 * Constant representing the key for the GOOGLE OAUTH Scopes to be
-	 * requested.
-	 */
-	public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
+    /**
+     * Enum to represent search boolean operators.
+     * 
+     */
+    public enum BooleanOperator {
+        AND, OR
+    };
 
-	/**
-	 * Constant representing the key for the FACEBOOK OAUTH secret.
-	 */
-	public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
+    public static final String SCHOOLS_SEARCH_INDEX = "autocomplete_data";
+    public static final String SCHOOLS_SEARCH_TYPE = "schools";
 
-	/**
-	 * Constant representing the key for the FACEBOOK OAUTH client id.
-	 */
-	public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
+    // Federated Authentication Stuff
+    public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
 
-	/**
-	 * Constant representing the key for the FACEBOOK OAUTH callback uri.
-	 */
-	public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
+    /**
+     * This constant will be used to determine if we are expecting a link account request or not.
+     */
+    public static final String LINK_ACCOUNT_PARAM_NAME = "LINK_ACCOUNT_PARAM_NAME";
 
-	/**
-	 * Constant representing the key for the FACEBOOK OAUTH permissions to be
-	 * requested.
-	 */
-	public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
+    /**
+     * This constant is used for matching against url params to prevent CSRF.
+     */
+    public static final String STATE_PARAM_NAME = "state";
 
-	/**
-	 * Constant representing the key for the TWITTER OAUTH secret.
-	 */
-	public static final String TWITTER_SECRET = "TWITTER_SECRET";
+    /**
+     * This constant is used for matching against url params to prevent CSRF.
+     */
+    public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
 
-	/**
-	 * Constant representing the key for the TWITTER OAUTH client id.
-	 */
-	public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
+    /**
+     * Constant representing the key for the GOOGLE client secret location.
+     */
+    public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
 
-	/**
-	 * Constant representing the key for the TWITTER OAUTH callback uri.
-	 */
-	public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
-	
-	// Local authentication specific stuff
-	public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
-	public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
-	public static final String LOCAL_AUTH_RESET_TOKEN_FIELDNAME = "resetToken";
-	
-	// Database properties
-	public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";
-	public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
-	public static final String MONGO_CONNECTIONS_PER_HOST = "MONGO_CONNECTIONS_PER_HOST";
-	public static final String MONGO_CONNECTION_TIMEOUT = "MONGO_CONNECTION_TIMEOUT";
-	public static final String MONGO_SOCKET_TIMEOUT = "MONGO_SOCKET_TIMEOUT";
-	
-	public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
-	
-	public static final String POSTGRES_DB_URL = "POSTGRES_DB_URL";
-	public static final String POSTGRES_DB_USER = "POSTGRES_DB_USER";
-	public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
-	
-	// Logging component
-	public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
-	public static final String LOG_TABLE_NAME = "loggedEvents";
-	public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
-	public static final String MERGE_USER = "MERGE_USER";
-	public static final String LOG_OUT = "LOG_OUT";
-	public static final String CREATE_USER_ASSOCIATION = "CREATE_USER_ASSOCIATION";
-	public static final String REVOKE_USER_ASSOCIATION = "REVOKE_USER_ASSOCIATION";
-	public static final String PASSWORD_RESET_REQUEST_RECEIVED = "PASSWORD_RESET_REQUEST_RECEIVED";
-	public static final String PASSWORD_RESET_REQUEST_SUCCESSFUL = "PASSWORD_RESET_REQUEST_SUCCESSFUL";
-	public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
-	public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
-	
-	// IP Geocoding stuff
-	public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
-	
-	/*
-	 * Default values.
-	 */
-	public static final Integer DEFAULT_START_INDEX = 0;
-	public static final String DEFAULT_START_INDEX_AS_STRING = "0";
-	
-	public static final Integer DEFAULT_RESULTS_LIMIT = 10;
-	public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
-	
-	public static final Integer NO_SEARCH_LIMIT = -1;
-	
-	// Content model specific stuff
-	public static final String ID_FIELDNAME = "id";
-	public static final String TITLE_FIELDNAME = "title";
-	public static final String TYPE_FIELDNAME = "type";
-	public static final String TAGS_FIELDNAME = "tags";
-	public static final String VALUE_FIELDNAME = "value";
-	public static final String CHILDREN_FIELDNAME = "children";
-	public static final String LEVEL_FIELDNAME = "level";
-	
-	public static final String USER_ID_FKEY_FIELDNAME = "userId";
-	public static final String OWNER_USER_ID_FKEY_FIELDNAME = "ownerId";
-	public static final String USER_LAST_SEEN_FIELDNAME = "lastSeen";
+    /**
+     * Constant representing the key for the GOOGLE OAUTH callback uri.
+     */
+    public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
 
-	public static final String ID_SEPARATOR = "|";
-	public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
-	
-	// User persistence model stuff
-	public static final String LINKED_ACCOUNT_USER_DTO_FIELDNAME = "linkedAccounts";
-	public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
-	public static final String LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME = "localUserId";
-	public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
-	public static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
+    /**
+     * Constant representing the key for the GOOGLE OAUTH Scopes to be requested.
+     */
+    public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
 
-	// School List loading - raw data
-	public static final String SCHOOL_URN_FIELDNAME = "URN";
-	public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME = "EstablishmentNumber";
-	public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
-	public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
-	
-	// School List loading POJO fields
-	public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
-	public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME_POJO = "establishmentNumber";
-	public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
-	public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
-	
-	// cache settings
-	public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
-	
-	public static final int CACHE_FOR_FIVE_MINUTES = 18000;
-	public static final int CACHE_FOR_TEN_MINUTES = 36000;
-	public static final int CACHE_FOR_ONE_DAY = 86400;
-	public static final int CACHE_FOR_THIRTY_DAY = 2592000;
-	public static final int ANONYMOUS_SESSION_DURATION_IN_MINUTES = 40;
-	public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
+    /**
+     * Constant representing the key for the FACEBOOK OAUTH secret.
+     */
+    public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
 
-	public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
-	public static final int LAST_SEEN_UPDATE_FREQUENCY_MINUTES = 5;
+    /**
+     * Constant representing the key for the FACEBOOK OAUTH client id.
+     */
+    public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
 
-	/**
-	 * Redirect response field name.
-	 */
-	public static final String REDIRECT_URL = "redirectUrl";
+    /**
+     * Constant representing the key for the FACEBOOK OAUTH callback uri.
+     */
+    public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
 
-	public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
-	
-	public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
-	
-	public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
-	public static final String ASSOCIATION_USER_GRANTING_ACCESS = "userIdGrantingPermission";
-	public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";
+    /**
+     * Constant representing the key for the FACEBOOK OAUTH permissions to be requested.
+     */
+    public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
 
-	public static final String GROUP_FK = "groupId";
-	
-	/**
-	 * Private constructor to prevent this class being created.
-	 */
-	private Constants() {
-		// not allowed to create one of these as it wouldn't make sense.
-	}
+    /**
+     * Constant representing the key for the TWITTER OAUTH secret.
+     */
+    public static final String TWITTER_SECRET = "TWITTER_SECRET";
+
+    /**
+     * Constant representing the key for the TWITTER OAUTH client id.
+     */
+    public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
+
+    /**
+     * Constant representing the key for the TWITTER OAUTH callback uri.
+     */
+    public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
+
+    // Local authentication specific stuff
+    public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
+    public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
+    public static final String LOCAL_AUTH_RESET_TOKEN_FIELDNAME = "resetToken";
+
+    // Database properties
+    public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";
+    public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
+    public static final String MONGO_CONNECTIONS_PER_HOST = "MONGO_CONNECTIONS_PER_HOST";
+    public static final String MONGO_CONNECTION_TIMEOUT = "MONGO_CONNECTION_TIMEOUT";
+    public static final String MONGO_SOCKET_TIMEOUT = "MONGO_SOCKET_TIMEOUT";
+
+    public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
+
+    public static final String POSTGRES_DB_URL = "POSTGRES_DB_URL";
+    public static final String POSTGRES_DB_USER = "POSTGRES_DB_USER";
+    public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
+
+    // Logging component
+    public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
+    public static final String LOG_TABLE_NAME = "loggedEvents";
+    public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
+    public static final String MERGE_USER = "MERGE_USER";
+    public static final String LOG_OUT = "LOG_OUT";
+    public static final String CREATE_USER_ASSOCIATION = "CREATE_USER_ASSOCIATION";
+    public static final String REVOKE_USER_ASSOCIATION = "REVOKE_USER_ASSOCIATION";
+    public static final String PASSWORD_RESET_REQUEST_RECEIVED = "PASSWORD_RESET_REQUEST_RECEIVED";
+    public static final String PASSWORD_RESET_REQUEST_SUCCESSFUL = "PASSWORD_RESET_REQUEST_SUCCESSFUL";
+    public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
+    public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
+
+    // IP Geocoding stuff
+    public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
+
+    /*
+     * Default values.
+     */
+    public static final Integer DEFAULT_START_INDEX = 0;
+    public static final String DEFAULT_START_INDEX_AS_STRING = "0";
+
+    public static final Integer DEFAULT_RESULTS_LIMIT = 10;
+    public static final String DEFAULT_RESULTS_LIMIT_AS_STRING = "10";
+
+    public static final Integer NO_SEARCH_LIMIT = -1;
+
+    // Content model specific stuff
+    public static final String ID_FIELDNAME = "id";
+    public static final String TITLE_FIELDNAME = "title";
+    public static final String TYPE_FIELDNAME = "type";
+    public static final String TAGS_FIELDNAME = "tags";
+    public static final String VALUE_FIELDNAME = "value";
+    public static final String CHILDREN_FIELDNAME = "children";
+    public static final String LEVEL_FIELDNAME = "level";
+
+    public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String OWNER_USER_ID_FKEY_FIELDNAME = "ownerId";
+    public static final String USER_LAST_SEEN_FIELDNAME = "lastSeen";
+
+    public static final String ID_SEPARATOR = "|";
+    public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
+
+    // User persistence model stuff
+    public static final String LINKED_ACCOUNT_USER_DTO_FIELDNAME = "linkedAccounts";
+    public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
+    public static final String LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME = "localUserId";
+    public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
+    public static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
+
+    // School List loading - raw data
+    public static final String SCHOOL_URN_FIELDNAME = "URN";
+    public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME = "EstablishmentNumber";
+    public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
+    public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
+
+    // School List loading POJO fields
+    public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
+    public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME_POJO = "establishmentNumber";
+    public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
+    public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
+
+    // cache settings
+    public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
+
+    public static final int CACHE_FOR_FIVE_MINUTES = 18000;
+    public static final int CACHE_FOR_TEN_MINUTES = 36000;
+    public static final int CACHE_FOR_ONE_DAY = 86400;
+    public static final int CACHE_FOR_THIRTY_DAY = 2592000;
+    public static final int ANONYMOUS_SESSION_DURATION_IN_MINUTES = 40;
+    public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
+
+    public static final String ANONYMOUS_USER = "ANONYMOUS_USER";
+    public static final int LAST_SEEN_UPDATE_FREQUENCY_MINUTES = 5;
+
+    /**
+     * Redirect response field name.
+     */
+    public static final String REDIRECT_URL = "redirectUrl";
+
+    public static final String SEGUE_AUTH_COOKIE = "SEGUE_AUTH_COOKIE";
+
+    public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
+
+    public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
+    public static final String ASSOCIATION_USER_GRANTING_ACCESS = "userIdGrantingPermission";
+    public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";
+
+    public static final String GROUP_FK = "groupId";
+
+    /**
+     * Private constructor to prevent this class being created.
+     */
+    private Constants() {
+        // not allowed to create one of these as it wouldn't make sense.
+    }
 }

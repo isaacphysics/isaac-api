@@ -22,15 +22,15 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
  * 
  */
 public class AuthenticationProviderMappingException extends Exception {
-	private static final long serialVersionUID = -284452434569344L;
+    private static final long serialVersionUID = -284452434569344L;
 
-	/**
-	 * Creates an AuthenticationProviderMappingException.
-	 * 
-	 * @param message
-	 *            - to store with the exception.
-	 */
-	public AuthenticationProviderMappingException(final String message) {
-		super(message);
-	}
+    /**
+     * Creates an AuthenticationProviderMappingException.
+     * 
+     * @param message
+     *            - to store with the exception.
+     */
+    public AuthenticationProviderMappingException(final String message) {
+        super(message);
+    }
 }

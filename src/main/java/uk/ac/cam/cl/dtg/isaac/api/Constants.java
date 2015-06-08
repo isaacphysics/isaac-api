@@ -20,90 +20,92 @@ package uk.ac.cam.cl.dtg.isaac.api;
  *
  */
 public final class Constants {
-	public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
-	public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
-	public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
-	public static final String PROXY_PATH = "PROXY_PATH";
-	public static final String ANALYTICS_TRACKING_ID = "ANALYTICS_TRACKING_ID";
+    public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
+    public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
+    public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
+    public static final String PROXY_PATH = "PROXY_PATH";
+    public static final String ANALYTICS_TRACKING_ID = "ANALYTICS_TRACKING_ID";
 
-	/*
-	 * Subject specific constants.
-	 */
-	public static final String CONCEPT_TYPE = "isaacConceptPage";
-	public static final String QUESTION_TYPE = "isaacQuestionPage";
-	public static final String FAST_TRACK_QUESTION_TYPE = "isaacFastTrackQuestionPage";
-	public static final String WILDCARD_TYPE = "isaacWildcard";
-	public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
-	public static final String POD_FRAGMENT_TYPE = "isaacPod";
-	public static final String PAGE_TYPE = "page";
-	public static final String EVENT_TYPE = "isaacEventPage";
+    /*
+     * Subject specific constants.
+     */
+    public static final String CONCEPT_TYPE = "isaacConceptPage";
+    public static final String QUESTION_TYPE = "isaacQuestionPage";
+    public static final String FAST_TRACK_QUESTION_TYPE = "isaacFastTrackQuestionPage";
+    public static final String WILDCARD_TYPE = "isaacWildcard";
+    public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
+    public static final String POD_FRAGMENT_TYPE = "isaacPod";
+    public static final String PAGE_TYPE = "page";
+    public static final String EVENT_TYPE = "isaacEventPage";
 
-	public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
+    public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
-	public static final String GAMEBOARD_COLLECTION_NAME = "gameboards";
-	public static final String USERS_GAMEBOARD_COLLECTION_NAME = "UsersToGameboards";
-	
-	public static final String ASSIGNMENT_COLLECTION_NAME = "assignments";
-	public static final String GROUP_ASSIGNMENT_COLLECTION_NAME = "groupToAssignments";
-	
-	/**
-	 * Game specific variables.
-	 */
-	public static final int GAME_BOARD_TARGET_SIZE = 10;
-	
-	/**
-	 * GameboardItemState
-	 * Represents the potential states of a gameboard item.
-	 */
-	public enum GameboardItemState { PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED }
-	
-	/**
-	 * GameboardState
-	 * Represents the potential states of a gameboard.
-	 */
-	public enum GameboardState { COMPLETED, IN_PROGRESS, NOT_ATTEMPTED }
-	// field names
-	public static final String CREATED_DATE_FIELDNAME = "created";
-	public static final String VISITED_DATE_FIELDNAME = "lastVisited";
+    public static final String GAMEBOARD_COLLECTION_NAME = "gameboards";
+    public static final String USERS_GAMEBOARD_COLLECTION_NAME = "UsersToGameboards";
 
-	public static final String GAMEBOARD_ID_FKEY = "gameboardId";	
+    public static final String ASSIGNMENT_COLLECTION_NAME = "assignments";
+    public static final String GROUP_ASSIGNMENT_COLLECTION_NAME = "groupToAssignments";
 
-	public static final String EVENT_DATE_FIELDNAME = "date";
-	
-	public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
-	public static final Integer MAX_PODS_TO_RETURN = 10;
-	
-	// Log events
-	public static final String VIEW_QUESTION = "VIEW_QUESTION";
-	public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
-	public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
-	public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
-	public static final String GLOBAL_SITE_SEARCH = "GLOBAL_SITE_SEARCH";
-	public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
-	public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
-	public static final String VIEW_PAGE = "VIEW_PAGE";
-	public static final String PAGE_ID_FIELDNAME = "CONCEPT_ID";
-	public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
-	
-	
-	public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
-	public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
-	public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
-	public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
-	public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
-	
-	public static final String GENERATE_RANDOM_GAMEBOARD = "GENERATE_RANDOM_GAMEBOARD";
-	public static final String GAMEBOARD_LOG_FIELDNAME = "GAMEBOARD_LOG_FIELDNAME";
-	public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
-	
-	public static final String VIEW_USER_PROGRESS = "VIEW_USER_PROGRESS";
-	
-	public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
-	
-	/**
-	 * Private constructor to prevent this class being created.
-	 */
-	private Constants() {
-		// not allowed to create one of these as it wouldn't make sense.
-	}
+    /**
+     * Game specific variables.
+     */
+    public static final int GAME_BOARD_TARGET_SIZE = 10;
+
+    /**
+     * GameboardItemState Represents the potential states of a gameboard item.
+     */
+    public enum GameboardItemState {
+        PERFECT, PASSED, IN_PROGRESS, NOT_ATTEMPTED, FAILED
+    }
+
+    /**
+     * GameboardState Represents the potential states of a gameboard.
+     */
+    public enum GameboardState {
+        COMPLETED, IN_PROGRESS, NOT_ATTEMPTED
+    }
+
+    // field names
+    public static final String CREATED_DATE_FIELDNAME = "created";
+    public static final String VISITED_DATE_FIELDNAME = "lastVisited";
+
+    public static final String GAMEBOARD_ID_FKEY = "gameboardId";
+
+    public static final String EVENT_DATE_FIELDNAME = "date";
+
+    public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
+    public static final Integer MAX_PODS_TO_RETURN = 10;
+
+    // Log events
+    public static final String VIEW_QUESTION = "VIEW_QUESTION";
+    public static final String QUESTION_ID_LOG_FIELDNAME = "questionId";
+    public static final String ADD_BOARD_TO_PROFILE = "ADD_BOARD_TO_PROFILE";
+    public static final String DELETE_BOARD_FROM_PROFILE = "ADD_BOARD_TO_PROFILE";
+    public static final String GLOBAL_SITE_SEARCH = "GLOBAL_SITE_SEARCH";
+    public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
+    public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
+    public static final String VIEW_PAGE = "VIEW_PAGE";
+    public static final String PAGE_ID_FIELDNAME = "CONCEPT_ID";
+    public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
+
+    public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
+    public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
+    public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
+    public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
+    public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
+
+    public static final String GENERATE_RANDOM_GAMEBOARD = "GENERATE_RANDOM_GAMEBOARD";
+    public static final String GAMEBOARD_LOG_FIELDNAME = "GAMEBOARD_LOG_FIELDNAME";
+    public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
+
+    public static final String VIEW_USER_PROGRESS = "VIEW_USER_PROGRESS";
+
+    public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
+
+    /**
+     * Private constructor to prevent this class being created.
+     */
+    private Constants() {
+        // not allowed to create one of these as it wouldn't make sense.
+    }
 }

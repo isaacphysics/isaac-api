@@ -23,54 +23,52 @@ import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
 /**
- * ContentBaseOrikaConverter A specialist converter class to work with the Orika
- * automapper library.
+ * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
  * 
  * Responsible for converting Choice objects to their correct subtype.
  * 
  */
 public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceDTO> {
 
-	/**
-	 * Constructs an Orika Converter specialises in selecting the correct
-	 * subclass for choice objects.
-	 * 
-	 */
-	public ChoiceOrikaConverter() {
-		
-	}
+    /**
+     * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
+     * 
+     */
+    public ChoiceOrikaConverter() {
 
-	@Override
-	public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType) {
-		if (null == source) {
-			return null;
-		}
+    }
 
-		if (source instanceof Quantity) {
-			return super.mapperFacade.map(source, QuantityDTO.class);
-		} else {
-			// I would have expected this to cause an infinite loop / stack
-			// overflow but apparently it doesn't.
-			ChoiceDTO choiceDTO = new ChoiceDTO();
-			super.mapperFacade.map(source, choiceDTO);
-			return choiceDTO;
-		}
-	}
+    @Override
+    public ChoiceDTO convertTo(final Choice source, final Type<ChoiceDTO> destinationType) {
+        if (null == source) {
+            return null;
+        }
 
-	@Override
-	public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType) {
-		if (null == source) {
-			return null;
-		}
+        if (source instanceof Quantity) {
+            return super.mapperFacade.map(source, QuantityDTO.class);
+        } else {
+            // I would have expected this to cause an infinite loop / stack
+            // overflow but apparently it doesn't.
+            ChoiceDTO choiceDTO = new ChoiceDTO();
+            super.mapperFacade.map(source, choiceDTO);
+            return choiceDTO;
+        }
+    }
 
-		if (source instanceof QuantityDTO) {
-			return super.mapperFacade.map(source, Quantity.class);
-		} else {
-			// I would have expected this to cause an infinite loop / stack
-			// overflow but apparently it doesn't.
-			Choice choice = new Choice();
-			super.mapperFacade.map(source, choice);
-			return choice;
-		}
-	}
+    @Override
+    public Choice convertFrom(final ChoiceDTO source, final Type<Choice> destinationType) {
+        if (null == source) {
+            return null;
+        }
+
+        if (source instanceof QuantityDTO) {
+            return super.mapperFacade.map(source, Quantity.class);
+        } else {
+            // I would have expected this to cause an infinite loop / stack
+            // overflow but apparently it doesn't.
+            Choice choice = new Choice();
+            super.mapperFacade.map(source, choice);
+            return choice;
+        }
+    }
 }

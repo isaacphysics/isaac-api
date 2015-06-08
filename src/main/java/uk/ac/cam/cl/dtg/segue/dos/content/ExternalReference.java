@@ -19,38 +19,44 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
  *
  */
 public class ExternalReference {
-	private String title;
-	private String url;
-	
-	/**
-	 * Gets the title.
-	 * @return the title
-	 */
-	public String getTitle() {
-		return title;
-	}
-	
-	/**
-	 * Sets the title.
-	 * @param title the title to set
-	 */
-	public void setTitle(final String title) {
-		this.title = title;
-	}
-	
-	/**
-	 * Gets the url.
-	 * @return the url
-	 */
-	public String getUrl() {
-		return url;
-	}
-	
-	/**
-	 * Sets the url.
-	 * @param url the url to set
-	 */
-	public void setUrl(final String url) {
-		this.url = url;
-	}
+    private String title;
+    private String url;
+
+    /**
+     * Gets the title.
+     * 
+     * @return the title
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * Sets the title.
+     * 
+     * @param title
+     *            the title to set
+     */
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
+    /**
+     * Gets the url.
+     * 
+     * @return the url
+     */
+    public String getUrl() {
+        return url;
+    }
+
+    /**
+     * Sets the url.
+     * 
+     * @param url
+     *            the url to set
+     */
+    public void setUrl(final String url) {
+        this.url = url;
+    }
 }

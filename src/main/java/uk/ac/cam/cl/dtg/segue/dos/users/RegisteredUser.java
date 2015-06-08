@@ -407,6 +407,7 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
+<<<<<<< HEAD
      * Sets the email verification token.
      * 
      * @param verificationToken
@@ -445,6 +446,8 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
+=======
+>>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
      * Gets the lastUpdated.
      * 
      * @return the lastUpdated
@@ -511,5 +514,4 @@ public class RegisteredUser extends AbstractSegueUser {
         }
         return true;
     }
-
 }

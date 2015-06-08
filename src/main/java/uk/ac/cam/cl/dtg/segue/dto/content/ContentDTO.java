@@ -26,241 +26,235 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
 
 /**
- * Content Class (Data Transfer Object) This class represents a majority of
- * content types within the Content Management system. It is generalised to
- * encourage reuse as much as is appropriate. This object should be kept as
- * being easily serializable to enable it to be exposed via web views.
+ * Content Class (Data Transfer Object) This class represents a majority of content types within the Content Management
+ * system. It is generalised to encourage reuse as much as is appropriate. This object should be kept as being easily
+ * serializable to enable it to be exposed via web views.
  * 
  */
 public class ContentDTO extends ContentBaseDTO {
-	protected String title;
-	protected String subtitle;
-	protected String author;
-	protected String encoding;
-	protected String layout;
-	// this is the actual list of children content objects.
-	protected List<ContentBaseDTO> children;
-	protected String value;
-	protected String attribution;
-	protected List<ContentSummaryDTO> relatedContent;
-	protected Boolean published;
-	protected Integer level;
-	
-	@JsonCreator
-	public ContentDTO(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, 
-			@JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBaseDTO> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-			@JsonProperty("published") Boolean published,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level) {
-		this._id = _id;
-		this.id = id;
-		this.title = title;
-		this.subtitle = subtitle;
-		this.type = type != null ? type : "string";
-		this.author = author;
-		this.encoding = encoding;
-		this.setCanonicalSourceFile(canonicalSourceFile);
-		this.layout = layout;
-		this.value = value;
-		this.attribution = attribution;
-		this.relatedContent = relatedContent;
-		this.published = published;
-		this.children = children;
-		this.tags = tags;
-		this.level = level;
+    protected String title;
+    protected String subtitle;
+    protected String author;
+    protected String encoding;
+    protected String layout;
+    // this is the actual list of children content objects.
+    protected List<ContentBaseDTO> children;
+    protected String value;
+    protected String attribution;
+    protected List<ContentSummaryDTO> relatedContent;
+    protected Boolean published;
+    protected Integer level;
 
-		// useful for when we want to augment this POJO
-		if (null == this.children) {
-			this.children = new ArrayList<ContentBaseDTO>();
-		}
+    @JsonCreator
+    public ContentDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type, @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
+            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("level") Integer level) {
+        this._id = _id;
+        this.id = id;
+        this.title = title;
+        this.subtitle = subtitle;
+        this.type = type != null ? type : "string";
+        this.author = author;
+        this.encoding = encoding;
+        this.setCanonicalSourceFile(canonicalSourceFile);
+        this.layout = layout;
+        this.value = value;
+        this.attribution = attribution;
+        this.relatedContent = relatedContent;
+        this.published = published;
+        this.children = children;
+        this.tags = tags;
+        this.level = level;
 
-		if (null == this.tags) {
-			this.tags = new HashSet<String>();	
-		}
-	}
+        // useful for when we want to augment this POJO
+        if (null == this.children) {
+            this.children = new ArrayList<ContentBaseDTO>();
+        }
 
-	/**
-	 * Basic constructor to allow communication of a simple value.
-	 * 
-	 * @param value - value of the content to create.
-	 */
-	public ContentDTO(final String value) {
-		this.value = value;
-		this.type = "content";
-		this.encoding = "markdown";
+        if (null == this.tags) {
+            this.tags = new HashSet<String>();
+        }
+    }
 
-		// useful for when we want to augment this POJO
-		if (null == this.children) {
-			this.children = Lists.newArrayList();
-		}
+    /**
+     * Basic constructor to allow communication of a simple value.
+     * 
+     * @param value
+     *            - value of the content to create.
+     */
+    public ContentDTO(final String value) {
+        this.value = value;
+        this.type = "content";
+        this.encoding = "markdown";
 
-		if (null == this.tags) {
-			this.tags = Sets.newHashSet();
-		}
-	}
+        // useful for when we want to augment this POJO
+        if (null == this.children) {
+            this.children = Lists.newArrayList();
+        }
 
-	/**
-	 * Default constructor required for Jackson
-	 */
-	public ContentDTO() {
-		// useful for when we want to augment this POJO
-		this.children = Lists.newArrayList();
-		this.tags = Sets.newHashSet();
-	}
+        if (null == this.tags) {
+            this.tags = Sets.newHashSet();
+        }
+    }
 
-	public String getTitle() {
-		return title;
-	}
+    /**
+     * Default constructor required for Jackson
+     */
+    public ContentDTO() {
+        // useful for when we want to augment this POJO
+        this.children = Lists.newArrayList();
+        this.tags = Sets.newHashSet();
+    }
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+    public String getTitle() {
+        return title;
+    }
 
-	public String getSubtitle() {
-		return subtitle;
-	}
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-	public void setSubtitle(String subtitle) {
-		this.subtitle = subtitle;
-	}
+    public String getSubtitle() {
+        return subtitle;
+    }
 
-	public String getAuthor() {
-		return author;
-	}
+    public void setSubtitle(String subtitle) {
+        this.subtitle = subtitle;
+    }
 
-	public void setAuthor(String author) {
-		this.author = author;
-	}
+    public String getAuthor() {
+        return author;
+    }
 
-	public String getEncoding() {
-		return encoding;
-	}
+    public void setAuthor(String author) {
+        this.author = author;
+    }
 
-	public void setEncoding(String encoding) {
-		this.encoding = encoding;
-	}
+    public String getEncoding() {
+        return encoding;
+    }
 
-	public String getLayout() {
-		return layout;
-	}
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
 
-	public void setLayout(String layout) {
-		this.layout = layout;
-	}
+    public String getLayout() {
+        return layout;
+    }
 
-	public String getValue() {
-		return value;
-	}
+    public void setLayout(String layout) {
+        this.layout = layout;
+    }
 
-	public void setValue(String value) {
-		this.value = value;
-	}
+    public String getValue() {
+        return value;
+    }
 
-	public String getAttribution() {
-		return attribution;
-	}
+    public void setValue(String value) {
+        this.value = value;
+    }
 
-	public void setAttribution(String attribution) {
-		this.attribution = attribution;
-	}
+    public String getAttribution() {
+        return attribution;
+    }
 
-	public List<ContentSummaryDTO> getRelatedContent() {
-		return relatedContent;
-	}
+    public void setAttribution(String attribution) {
+        this.attribution = attribution;
+    }
 
-	public void setRelatedContent(List<ContentSummaryDTO> relatedContent) {
-		this.relatedContent = relatedContent;
-	}
+    public List<ContentSummaryDTO> getRelatedContent() {
+        return relatedContent;
+    }
 
-	public List<ContentBaseDTO> getChildren() {
-		return this.children;
-	}
-	
-	public void setChildren(List<ContentBaseDTO> children) {
-		this.children = children;
-	}
+    public void setRelatedContent(List<ContentSummaryDTO> relatedContent) {
+        this.relatedContent = relatedContent;
+    }
 
-	/**
-	 * Gets the published.
-	 * @return the published
-	 */
-	public Boolean getPublished() {
-		return published;
-	}
+    public List<ContentBaseDTO> getChildren() {
+        return this.children;
+    }
 
-	/**
-	 * Sets the published.
-	 * @param published the published to set
-	 */
-	public void setPublished(final Boolean published) {
-		this.published = published;
-	}
+    public void setChildren(List<ContentBaseDTO> children) {
+        this.children = children;
+    }
 
-	public Integer getLevel() {
-		return level;
-	}
+    /**
+     * Gets the published.
+     * 
+     * @return the published
+     */
+    public Boolean getPublished() {
+        return published;
+    }
 
-	public void setLevel(final Integer level) {
-		this.level = level;
-	}
+    /**
+     * Sets the published.
+     * 
+     * @param published
+     *            the published to set
+     */
+    public void setPublished(final Boolean published) {
+        this.published = published;
+    }
 
-	@Override
-	public boolean equals(final Object o) {
-		if (null == o || !(o instanceof ContentDTO))
-			return false;
+    public Integer getLevel() {
+        return level;
+    }
 
-		ContentDTO c = (ContentDTO) o;
-		boolean result = true;
+    public void setLevel(final Integer level) {
+        this.level = level;
+    }
 
-		if (this.id != null) {
-			result = result && this.id.equals(c.getId());
-		}
-		if (this.title != null) {
-			result = result && this.title.equals(c.getTitle());
-		}
-		if (this.value != null) {
-			result = result && this.value.equals(c.getValue());
-		}
-		if (this.canonicalSourceFile != null) {
-			result = result
-					&& this.canonicalSourceFile.equals(c
-							.getCanonicalSourceFile());
-		}
+    @Override
+    public boolean equals(final Object o) {
+        if (null == o || !(o instanceof ContentDTO))
+            return false;
 
-		return result;
-	}
+        ContentDTO c = (ContentDTO) o;
+        boolean result = true;
 
-	@Override
-	public int hashCode() {
-		int hashCode = 0;
+        if (this.id != null) {
+            result = result && this.id.equals(c.getId());
+        }
+        if (this.title != null) {
+            result = result && this.title.equals(c.getTitle());
+        }
+        if (this.value != null) {
+            result = result && this.value.equals(c.getValue());
+        }
+        if (this.canonicalSourceFile != null) {
+            result = result && this.canonicalSourceFile.equals(c.getCanonicalSourceFile());
+        }
 
-		if (this.id != null) {
-			hashCode = hashCode + this.id.hashCode();
-		}
-		if (this.title != null) {
-			hashCode = hashCode + this.title.hashCode();
-		}
-		if (this.value != null) {
-			hashCode = hashCode + this.value.hashCode();
-		}
+        return result;
+    }
 
-		return hashCode;
-	}
+    @Override
+    public int hashCode() {
+        int hashCode = 0;
 
-	@Override
-	public String toString() {
-		return super.toString() + " Title: " + this.title;
-	}
+        if (this.id != null) {
+            hashCode = hashCode + this.id.hashCode();
+        }
+        if (this.title != null) {
+            hashCode = hashCode + this.title.hashCode();
+        }
+        if (this.value != null) {
+            hashCode = hashCode + this.value.hashCode();
+        }
+
+        return hashCode;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " Title: " + this.title;
+    }
 
 }

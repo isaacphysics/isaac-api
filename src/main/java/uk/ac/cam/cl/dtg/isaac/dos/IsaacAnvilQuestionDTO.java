@@ -23,28 +23,31 @@ import uk.ac.cam.cl.dtg.segue.dto.content.AnvilAppDTO;
  *
  */
 public class IsaacAnvilQuestionDTO extends IsaacQuestionBaseDTO {
-	private AnvilAppDTO anvilApp;
+    private AnvilAppDTO anvilApp;
 
-	/**
-	 * IsaacAnvilQuestionDTO.
-	 */
-	public IsaacAnvilQuestionDTO() {
-		
-	}
-	
-	/**
-	 * Gets the anvilApp.
-	 * @return the anvilApp
-	 */
-	public AnvilAppDTO getAnvilApp() {
-		return anvilApp;
-	}
+    /**
+     * IsaacAnvilQuestionDTO.
+     */
+    public IsaacAnvilQuestionDTO() {
 
-	/**
-	 * Sets the anvilApp.
-	 * @param anvilApp the anvilApp to set
-	 */
-	public void setAnvilApp(final AnvilAppDTO anvilApp) {
-		this.anvilApp = anvilApp;
-	}
+    }
+
+    /**
+     * Gets the anvilApp.
+     * 
+     * @return the anvilApp
+     */
+    public AnvilAppDTO getAnvilApp() {
+        return anvilApp;
+    }
+
+    /**
+     * Sets the anvilApp.
+     * 
+     * @param anvilApp
+     *            the anvilApp to set
+     */
+    public void setAnvilApp(final AnvilAppDTO anvilApp) {
+        this.anvilApp = anvilApp;
+    }
 }

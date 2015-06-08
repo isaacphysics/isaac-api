@@ -37,58 +37,60 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 /**
  * QuestionValidationResponse deserializer
  * 
+<<<<<<< HEAD
  * This class requires the primary content base deserializer as a constructor
  * arguement.
+=======
+ * This class requires the primary content bas deserializer as a constructor arguement.
+>>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
  * 
  * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class QuestionValidationResponseDeserializer extends JsonDeserializer<QuestionValidationResponse> {
-	private ContentBaseDeserializer contentDeserializer;
-	private ChoiceDeserializer choiceDeserializer;
-	
-	/**
-	 * Create a QuestionValidationResponse deserializer.
-	 * 
-	 * @param contentDeserializer
-	 *            -
-	 * @param choiceDeserializer
-	 *            -
-	 */
-	public QuestionValidationResponseDeserializer(final ContentBaseDeserializer contentDeserializer,
-			final ChoiceDeserializer choiceDeserializer) {
-		this.contentDeserializer = contentDeserializer;
-		this.choiceDeserializer = choiceDeserializer;
-	}
+    private ContentBaseDeserializer contentDeserializer;
+    private ChoiceDeserializer choiceDeserializer;
 
-	@Override
-	public QuestionValidationResponse deserialize(final JsonParser jsonParser,
-			final DeserializationContext deserializationContext) throws IOException {
+    /**
+     * Create a QuestionValidationResponse deserializer.
+     * 
+     * @param contentDeserializer
+     *            -
+     * @param choiceDeserializer
+     *            -
+     */
+    public QuestionValidationResponseDeserializer(final ContentBaseDeserializer contentDeserializer,
+            final ChoiceDeserializer choiceDeserializer) {
+        this.contentDeserializer = contentDeserializer;
+        this.choiceDeserializer = choiceDeserializer;
+    }
 
-		SimpleModule contentDeserializerModule = new SimpleModule(
-				"ContentDeserializerModule");
-		contentDeserializerModule.addDeserializer(ContentBase.class,
-				contentDeserializer);
-		contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
+    @Override
+    public QuestionValidationResponse deserialize(final JsonParser jsonParser,
+            final DeserializationContext deserializationContext) throws IOException {
 
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(contentDeserializerModule);
-		
-		MongoJackModule.configure(mapper);
-		
-		ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
+        SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
+        contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+        contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
 
-		if (null == root.get("answer")) {
-			throw new JsonMappingException(
-					"Error: unable to parse content as there is no answer property within the json input.");			
-		}
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(contentDeserializerModule);
 
-		// Have to get the raw json out otherwise we dates do not serialize properly. 		
-		String jsonString = new ObjectMapper().writeValueAsString(root);
-		String questionResponseType = root.get("answer").get("type").textValue();
-		if (questionResponseType.equals("quantity")) {
-			return mapper.readValue(jsonString, QuantityValidationResponse.class);
-		} else {
-			return mapper.readValue(jsonString, QuestionValidationResponse.class);
-		}
-	}
+        MongoJackModule.configure(mapper);
+
+        ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
+
+        if (null == root.get("answer")) {
+            throw new JsonMappingException(
+                    "Error: unable to parse content as there is no answer property within the json input.");
+        }
+
+        // Have to get the raw json out otherwise we dates do not serialize properly.
+        String jsonString = new ObjectMapper().writeValueAsString(root);
+        String questionResponseType = root.get("answer").get("type").textValue();
+        if (questionResponseType.equals("quantity")) {
+            return mapper.readValue(jsonString, QuantityValidationResponse.class);
+        } else {
+            return mapper.readValue(jsonString, QuestionValidationResponse.class);
+        }
+    }
 }

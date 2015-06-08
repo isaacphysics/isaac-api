@@ -24,7 +24,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
  */
 @JsonContentType("isaacQuestionBase")
 public class IsaacQuestionBaseDTO extends ChoiceQuestionDTO {
-	public IsaacQuestionBaseDTO() {
-		super();
-	}
+    public IsaacQuestionBaseDTO() {
+        super();
+    }
 }

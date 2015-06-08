@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.comm;
 
 import java.util.ArrayList;
 
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -73,16 +72,7 @@ public class EmailCommunicatorTest {
 
         emailCommunicator = new EmailCommunicator("ppsw.cam.ac.uk", "cl-isaac-contact@lists.cam.ac.uk");
 
-        // emailCommunicator = EasyMock.createNiceMock(EmailCommunicator.class);
 
-        EmailCommunicationMessage email = new EmailCommunicationMessage(EmailParams.RECIPIENT_ADDRESS,
-                EmailParams.RECIPIENT_NAME, EmailParams.SUBJECT, EmailParams.MESSAGE);
-
-        emailCommunicator.sendMessage(email);
-
-        // EasyMock.expectLastCall().andThrow(new CommunicationException(null));
-
-        EasyMock.replay(emailCommunicator);
 
     }
 
@@ -92,11 +82,11 @@ public class EmailCommunicatorTest {
      * @throws CommunicationException
      */
     @Test
-    public final void testEmailConstruction() throws CommunicationException {
+    public final void testEmailConstruction() {
         // assertTrue(this.dummyMailer instanceof Mailer.class);
 
-        RegistrationConfirmation rc = new RegistrationConfirmation(emailCommunicator, seguePage, "alistair.stead",
-                "alistair.stead@gmail.com");
+        // RegistrationConfirmation rc = new RegistrationConfirmation(emailCommunicator, seguePage, "alistair.stead",
+        // "alistair.stead@gmail.com");
 
     }
 }

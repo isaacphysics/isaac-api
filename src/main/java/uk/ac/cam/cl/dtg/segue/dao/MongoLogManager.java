@@ -62,438 +62,435 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 public class MongoLogManager implements ILogManager {
-	private static final Logger log = LoggerFactory.getLogger(MongoLogManager.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoLogManager.class);
 
-	private final MongoDb database;
-	private final ObjectMapper objectMapper;
-	
-	private final boolean loggingEnabled;
+    private final MongoDb database;
+    private final ObjectMapper objectMapper;
 
-	private final LocationHistoryManager locationManager;
+    private final boolean loggingEnabled;
 
-	/**
-	 * Create an instance of the log manager.
-	 * 
-	 * @param database
-	 *            - instance of mongodb database.
-	 * @param objectMapper
-	 *            - used for serialising eventDetails into something useful.
-	 * @param loggingEnabled
-	 *            - should logging be enabled. True means that log messages will
-	 *            be saved false is that they wont.
-	 * @param locationManager
-	 *            - Allows us to geocode ip addresses.
-	 */
-	@Inject
-	public MongoLogManager(final MongoDb database, final ObjectMapper objectMapper,
-			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
-			final LocationHistoryManager locationManager) {
-		this.database = database;
-		
-		this.objectMapper = objectMapper;
-		this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		MongoJackModule.configure(objectMapper);
-		
-		this.loggingEnabled = loggingEnabled;
-		this.locationManager = locationManager;
-	}
+    private final LocationHistoryManager locationManager;
 
-	@Override
-	public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest,
-			final String eventType, final Object eventDetails) {
-		Validate.notNull(user);
+    /**
+     * Create an instance of the log manager.
+     * 
+     * @param database
+     *            - instance of mongodb database.
+     * @param objectMapper
+     *            - used for serialising eventDetails into something useful.
+     * @param loggingEnabled
+     *            - should logging be enabled. True means that log messages will be saved false is that they wont.
+     * @param locationManager
+     *            - Allows us to geocode ip addresses.
+     */
+    @Inject
+    public MongoLogManager(final MongoDb database, final ObjectMapper objectMapper,
+            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, 
+            final LocationHistoryManager locationManager) {
+        this.database = database;
 
-		try {
-			if (user instanceof RegisteredUserDTO) {
-				this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails,
-						getClientIpAddr(httpRequest));
-			} else {
-				this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-						getClientIpAddr(httpRequest));
-			}
-			
-		} catch (JsonProcessingException e) {
-			log.error("Unable to serialize eventDetails as json string", e);
-		} 
-	}
-	
-	@Override
-	public void logInternalEvent(final AbstractSegueUserDTO user, final String eventType, final Object eventDetails) {
-		Validate.notNull(user);
-		try {
-			if (user instanceof RegisteredUserDTO) {
-				this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails,
-						null);
-			} else {
-				this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-						null);
-			}
-			
-		} catch (JsonProcessingException e) {
-			log.error("Unable to serialize eventDetails as json string", e);
-		}
-	}
-	
-	@Override
-	public void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId) {
-		Validate.notBlank(oldUserId);
-		Validate.notNull(newUserId);
-		
-		JacksonDBCollection<DBObject, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), DBObject.class,
-				String.class, this.objectMapper);
-		
-		BasicDBObject updateQuery = new BasicDBObject();
-		BasicDBObject fieldsToUpdate = new BasicDBObject();
-		fieldsToUpdate.put("userId", newUserId);
-		fieldsToUpdate.put("anonymousUser", false);
-		updateQuery.append("$set", fieldsToUpdate);
-		
-		BasicDBObject searchQuery = new BasicDBObject();
-		searchQuery.append("userId", oldUserId);
-		
-		WriteResult<DBObject, String> result = jc.updateMulti(searchQuery, updateQuery);
-		
-		if (result.getError() != null) {
-			log.error("Error while trying to reassign anonymous user log events to registered user.");
-		}
-		
-		try {
-			this.persistLogEvent(newUserId, null, "USER_REGISTRATION",
-					ImmutableMap.of("anonymousUserId", oldUserId), null);
-		} catch (JsonProcessingException e) {
-			log.error("Unable to serialize json for merge event.", e);
-		}
-	}
-	
-	@Override
-	public List<LogEvent> getLogsByType(final String type) {
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		
-		List<LogEvent> results = jc.find(DBQuery.is("eventType", type)).toArray();
-		
-		return results;
-	}
-	
-	@Override
-	public List<LogEvent> getLogsByType(final String type, final Date fromDate) {		
-		return getLogsByType(type, fromDate, null);
-	}
-	
-	
-	@Override
-	public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate) {
-		return this.getLogsByType(type, fromDate, toDate, null);
-	}
-	
-	@Override
-	public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
-			final List<RegisteredUserDTO> usersOfInterest) {
-		Date newToDate;
-		if (null == toDate) {
-			newToDate = new Date();
-		} else {
-			newToDate = toDate;
-		}
-		
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		
-		BasicDBObject queryDateRange = new BasicDBObject("timestamp", //
+        this.objectMapper = objectMapper;
+        this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        MongoJackModule.configure(objectMapper);
+
+        this.loggingEnabled = loggingEnabled;
+        this.locationManager = locationManager;
+    }
+
+    @Override
+    public void logEvent(final AbstractSegueUserDTO user, final HttpServletRequest httpRequest, final String eventType,
+            final Object eventDetails) {
+        Validate.notNull(user);
+
+        try {
+            if (user instanceof RegisteredUserDTO) {
+                this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails,
+                        getClientIpAddr(httpRequest));
+            } else {
+                this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
+                        getClientIpAddr(httpRequest));
+            }
+
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize eventDetails as json string", e);
+        }
+    }
+
+    @Override
+    public void logInternalEvent(final AbstractSegueUserDTO user, final String eventType, final Object eventDetails) {
+        Validate.notNull(user);
+        try {
+            if (user instanceof RegisteredUserDTO) {
+                this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails, null);
+            } else {
+                this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails, null);
+            }
+
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize eventDetails as json string", e);
+        }
+    }
+
+    @Override
+    public void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId) {
+        Validate.notBlank(oldUserId);
+        Validate.notNull(newUserId);
+
+        JacksonDBCollection<DBObject, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), DBObject.class, String.class,
+                this.objectMapper);
+
+        BasicDBObject updateQuery = new BasicDBObject();
+        BasicDBObject fieldsToUpdate = new BasicDBObject();
+        fieldsToUpdate.put("userId", newUserId);
+        fieldsToUpdate.put("anonymousUser", false);
+        updateQuery.append("$set", fieldsToUpdate);
+
+        BasicDBObject searchQuery = new BasicDBObject();
+        searchQuery.append("userId", oldUserId);
+
+        WriteResult<DBObject, String> result = jc.updateMulti(searchQuery, updateQuery);
+
+        if (result.getError() != null) {
+            log.error("Error while trying to reassign anonymous user log events to registered user.");
+        }
+
+        try {
+            this.persistLogEvent(newUserId, null, "USER_REGISTRATION", ImmutableMap.of("anonymousUserId", oldUserId),
+                    null);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize json for merge event.", e);
+        }
+    }
+
+    @Override
+    public List<LogEvent> getLogsByType(final String type) {
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        List<LogEvent> results = jc.find(DBQuery.is("eventType", type)).toArray();
+
+        return results;
+    }
+
+    @Override
+    public List<LogEvent> getLogsByType(final String type, final Date fromDate) {
+        return getLogsByType(type, fromDate, null);
+    }
+
+    @Override
+    public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate) {
+        return this.getLogsByType(type, fromDate, toDate, null);
+    }
+
+    @Override
+    public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
+            final List<RegisteredUserDTO> usersOfInterest) {
+        Date newToDate;
+        if (null == toDate) {
+            newToDate = new Date();
+        } else {
+            newToDate = toDate;
+        }
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        BasicDBObject queryDateRange = new BasicDBObject("timestamp", //
                 new BasicDBObject("$gte", fromDate).append("$lt", newToDate));
-		
-		BasicDBObject andQuery = new BasicDBObject();
-		List<BasicDBObject> obj = Lists.newArrayList();
-		obj.add(queryDateRange);
-		obj.add(new BasicDBObject("eventType", type));
-	
-		if (null != usersOfInterest && usersOfInterest.size() > 0) {
-			BasicDBObject orQuery = new BasicDBObject();
-			
-			List<BasicDBObject> ids = Lists.newArrayList();
-			for (RegisteredUserDTO user : usersOfInterest) {
-				ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getDbId()));
-			}
-			
-			orQuery.put("$or", ids);
-			obj.add(orQuery);
-		}
-		
-		andQuery.put("$and", obj);
-		
-		List<LogEvent> results = jc.find(andQuery).toArray();
-		
-		return results;
-	}
-	
-	@Override
-	public Long getLogCountByType(final String type) {
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		BasicDBObject query = new BasicDBObject("eventType", type);
-		return jc.count(query);
-	}
-	
-	@Override
-	public Set<String> getAllEventTypes() {
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		Set<String> results = Sets.newHashSet();
-	
-		for (Object e : jc.distinct("eventType")) {
-			if (e instanceof String) {
-				results.add((String) e);	
-			}				
-		}
-		
-		return results;
-	}
-	
-	@Override
-	public Set<String> getAllIpAddresses() {
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		Set<String> results = Sets.newHashSet();
-		
-		for (LogEvent e : jc.find()) {
-			if (e.getIpAddress() != null) {
-				results.add(e.getIpAddress());	
-			}
-		}
-		
-		return results;
-	}
-	
-	@Override
-	public List<LogEvent> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
-		// sanity check
-		if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
-			throw new IllegalArgumentException(
-					"This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
-		}
-		
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		
-		List<LogEvent> results = jc
-				.find(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class))).toArray();
-		
-		return results;
-	}
-	
-	@Override
-	public List<LogEvent> getAllLogsByUserTypeAndEvent(final Class<? extends AbstractSegueUserDTO> userType,
-			final String eventType) {
-		// sanity check
-		if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
-			throw new IllegalArgumentException(
-					"This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
-		}
 
-		Validate.notBlank(eventType);
-		
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
-				this.objectMapper);
+        BasicDBObject andQuery = new BasicDBObject();
+        List<BasicDBObject> obj = Lists.newArrayList();
+        obj.add(queryDateRange);
+        obj.add(new BasicDBObject("eventType", type));
 
-		Query q = DBQuery.and(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class)),
-				DBQuery.is("eventType", eventType));
+        if (null != usersOfInterest && usersOfInterest.size() > 0) {
+            BasicDBObject orQuery = new BasicDBObject();
 
-		List<LogEvent> results = jc.find(q).toArray();
+            List<BasicDBObject> ids = Lists.newArrayList();
+            for (RegisteredUserDTO user : usersOfInterest) {
+                ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getDbId()));
+            }
 
-		return results;
-	}
+            orQuery.put("$or", ids);
+            obj.add(orQuery);
+        }
 
-	@Override
-	public List<LogEvent> getAllLogsByUser(final AbstractSegueUserDTO prototype) {
-		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
-		
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		
-		Query q;
-		if (prototype instanceof RegisteredUserDTO) {
-			RegisteredUserDTO user = (RegisteredUserDTO) prototype;
-			Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
-			
-			q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("_id", user.getDbId()));
-		} else if (prototype instanceof AnonymousUserDTO) {
-			AnonymousUserDTO user = (AnonymousUserDTO) prototype;
-			q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("_id", user.getSessionId()));
-		} else {
-			throw new IllegalArgumentException("Unknown user type provided.");
-		}
-		
-		List<LogEvent> results = jc.find(q).toArray();
-		return results;
-	}
-	
-	@Override
-	public LogEvent getLastLogForUser(final AbstractSegueUserDTO prototype) {
-		Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
-		
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
-		
-		Query q;
-		if (prototype instanceof RegisteredUserDTO) {
-			RegisteredUserDTO user = (RegisteredUserDTO) prototype;
-			Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
-			
-			q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("userId", user.getDbId()));
-		} else if (prototype instanceof AnonymousUserDTO) {
-			AnonymousUserDTO user = (AnonymousUserDTO) prototype;
-			q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("userId", user.getSessionId()));
-		} else {
-			throw new IllegalArgumentException("Unknown user type provided.");
-		}
-		
-		List<LogEvent> results = jc.find(q).sort(new BasicDBObject("_id", -1)).limit(1).toArray();
+        andQuery.put("$and", obj);
 
-		if (results.size() > 0) {
-			return results.get(0);
-		} else {
-			return null;
-		}
-	}
-	
-	@Override
-	public Map<String, LogEvent> getLastLogForAllUsers() {
-		return this.getLastLogForAllUsers(null);
-	}
-	
-	@Override
-	public Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType) {
-		List<LogEvent> allLogsByUserType;
-		if (qualifyingLogEventType != null) {
-			allLogsByUserType = this.getAllLogsByUserTypeAndEvent(RegisteredUserDTO.class,
-					qualifyingLogEventType);
-		} else {
-			allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
-		}
+        List<LogEvent> results = jc.find(andQuery).toArray();
 
-		Map<String, LogEvent> results = Maps.newHashMap();
+        return results;
+    }
 
-		for (LogEvent log : allLogsByUserType) {
-			if (results.containsKey((String) log.getUserId())) {
+    @Override
+    public Long getLogCountByType(final String type) {
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+        BasicDBObject query = new BasicDBObject("eventType", type);
+        return jc.count(query);
+    }
 
-				if (results.get((String) log.getUserId()).getTimestamp().before(log.getTimestamp())) {
-					results.put((String) log.getUserId(), log);
-				}
+    @Override
+    public Set<String> getAllEventTypes() {
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+        Set<String> results = Sets.newHashSet();
 
-			} else {
-				results.put((String) log.getUserId(), log);
-			}
-		}
-		return results;
-	}
-	
-	/**
-	 * log an event in the database.
-	 * 
-	 * @param userId
-	 *            -
-	 * @param anonymousUserId
-	 *            -
-	 * @param eventType
-	 *            -
-	 * @param eventDetails
-	 *            -
-	 * @param ipAddress
-	 *            -
-	 * @throws JsonProcessingException - if we are unable to serialize the eventDetails as a string.
-	 */
-	private void persistLogEvent(final String userId, final String anonymousUserId, final String eventType,
-			final Object eventDetails, final String ipAddress) throws JsonProcessingException {
-		// don't do anything if logging is not enabled.
-		if (!this.loggingEnabled) {
-			return;
-		}
-		
-		if (null == userId && null == anonymousUserId) {
-			throw new IllegalArgumentException("UserId or anonymousUserId must be set.");
-		}
-		
-		JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
-				database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class,
-				String.class, this.objectMapper);
+        for (Object e : jc.distinct("eventType")) {
+            if (e instanceof String) {
+                results.add((String) e);
+            }
+        }
 
-		LogEvent logEvent = new LogEvent();
+        return results;
+    }
 
-		if (null != userId) {
-			logEvent.setUserId(userId);
-			logEvent.setAnonymousUser(false);
-		} else {
-			logEvent.setUserId(anonymousUserId);
-			logEvent.setAnonymousUser(true);
-		}
+    @Override
+    public Set<String> getAllIpAddresses() {
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+        Set<String> results = Sets.newHashSet();
 
-		logEvent.setEventType(eventType);
-		
-		if (eventDetails != null) {
-			logEvent.setEventDetailsType(eventDetails.getClass().getCanonicalName());
-			logEvent.setEventDetails(eventDetails);			
-		}
-		
-		if (ipAddress != null) {
-			logEvent.setIpAddress(ipAddress);
-			
-			try {
-				// split based on the fact that we usually get ip addresses of the form
-				// [user_ip], [balancer/gateway_ip] 
-				locationManager.refreshLocation(ipAddress.split(",")[0]);
-			} catch (SegueDatabaseException | IOException e1) {
-				log.error("Unable to record location information for ip Address: " + ipAddress, e1);
-			}			
-		}
-		
-		logEvent.setTimestamp(new Date());
+        for (LogEvent e : jc.find()) {
+            if (e.getIpAddress() != null) {
+                results.add(e.getIpAddress());
+            }
+        }
 
-		try {
-			WriteResult<LogEvent, String> result = jc.insert(logEvent);
-			if (result.getError() != null) {
-				log.error("Error during log operation: " + result.getError());
-			}
-		} catch (MongoException e) {
-			log.error("MongoDb exception while trying to log a user event.");
-		}
-	}
-	
-	/**
-	 * Extract client ip address.
-	 * 
-	 * Solution retrieved from: 
-	 * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
-	 * 
-	 * @param request - to attempt to extract a valid Ip from.
-	 * @return string representation of the client's ip address.
-	 */
-	private static String getClientIpAddr(final HttpServletRequest request) {  
-        String ip = request.getHeader("X-Forwarded-For");  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("Proxy-Client-IP");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("WL-Proxy-Client-IP");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("HTTP_CLIENT_IP");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getRemoteAddr();  
-        }  
-        return ip;  
+        return results;
+    }
+
+    @Override
+    public List<LogEvent> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
+        // sanity check
+        if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
+            throw new IllegalArgumentException(
+                    "This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
+        }
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        List<LogEvent> results = jc.find(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class)))
+                .toArray();
+
+        return results;
+    }
+
+    @Override
+    public List<LogEvent> getAllLogsByUserTypeAndEvent(final Class<? extends AbstractSegueUserDTO> userType,
+            final String eventType) {
+        // sanity check
+        if (!userType.equals(RegisteredUserDTO.class) && !userType.equals(AnonymousUserDTO.class)) {
+            throw new IllegalArgumentException(
+                    "This method only accepts RegisteredUserDTO or AnonymousUserDTO parameters.");
+        }
+
+        Validate.notBlank(eventType);
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        Query q = DBQuery.and(DBQuery.is("anonymousUser", userType.equals(AnonymousUserDTO.class)),
+                DBQuery.is("eventType", eventType));
+
+        List<LogEvent> results = jc.find(q).toArray();
+
+        return results;
+    }
+
+    @Override
+    public List<LogEvent> getAllLogsByUser(final AbstractSegueUserDTO prototype) {
+        Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        Query q;
+        if (prototype instanceof RegisteredUserDTO) {
+            RegisteredUserDTO user = (RegisteredUserDTO) prototype;
+            Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
+
+            q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("_id", user.getDbId()));
+        } else if (prototype instanceof AnonymousUserDTO) {
+            AnonymousUserDTO user = (AnonymousUserDTO) prototype;
+            q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("_id", user.getSessionId()));
+        } else {
+            throw new IllegalArgumentException("Unknown user type provided.");
+        }
+
+        List<LogEvent> results = jc.find(q).toArray();
+        return results;
+    }
+
+    @Override
+    public LogEvent getLastLogForUser(final AbstractSegueUserDTO prototype) {
+        Validate.notNull(prototype, "You must provide a user object as a prototype for this search.");
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        Query q;
+        if (prototype instanceof RegisteredUserDTO) {
+            RegisteredUserDTO user = (RegisteredUserDTO) prototype;
+            Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
+
+            q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("userId", user.getDbId()));
+        } else if (prototype instanceof AnonymousUserDTO) {
+            AnonymousUserDTO user = (AnonymousUserDTO) prototype;
+            q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("userId", user.getSessionId()));
+        } else {
+            throw new IllegalArgumentException("Unknown user type provided.");
+        }
+
+        List<LogEvent> results = jc.find(q).sort(new BasicDBObject("_id", -1)).limit(1).toArray();
+
+        if (results.size() > 0) {
+            return results.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, LogEvent> getLastLogForAllUsers() {
+        return this.getLastLogForAllUsers(null);
+    }
+
+    @Override
+    public Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType) {
+        List<LogEvent> allLogsByUserType;
+        if (qualifyingLogEventType != null) {
+            allLogsByUserType = this.getAllLogsByUserTypeAndEvent(RegisteredUserDTO.class, qualifyingLogEventType);
+        } else {
+            allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
+        }
+
+        Map<String, LogEvent> results = Maps.newHashMap();
+
+        for (LogEvent log : allLogsByUserType) {
+            if (results.containsKey((String) log.getUserId())) {
+
+                if (results.get((String) log.getUserId()).getTimestamp().before(log.getTimestamp())) {
+                    results.put((String) log.getUserId(), log);
+                }
+
+            } else {
+                results.put((String) log.getUserId(), log);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * log an event in the database.
+     * 
+     * @param userId
+     *            -
+     * @param anonymousUserId
+     *            -
+     * @param eventType
+     *            -
+     * @param eventDetails
+     *            -
+     * @param ipAddress
+     *            -
+     * @throws JsonProcessingException
+     *             - if we are unable to serialize the eventDetails as a string.
+     */
+    private void persistLogEvent(final String userId, final String anonymousUserId, final String eventType,
+            final Object eventDetails, final String ipAddress) throws JsonProcessingException {
+        // don't do anything if logging is not enabled.
+        if (!this.loggingEnabled) {
+            return;
+        }
+
+        if (null == userId && null == anonymousUserId) {
+            throw new IllegalArgumentException("UserId or anonymousUserId must be set.");
+        }
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        LogEvent logEvent = new LogEvent();
+
+        if (null != userId) {
+            logEvent.setUserId(userId);
+            logEvent.setAnonymousUser(false);
+        } else {
+            logEvent.setUserId(anonymousUserId);
+            logEvent.setAnonymousUser(true);
+        }
+
+        logEvent.setEventType(eventType);
+
+        if (eventDetails != null) {
+            logEvent.setEventDetailsType(eventDetails.getClass().getCanonicalName());
+            logEvent.setEventDetails(eventDetails);
+        }
+
+        if (ipAddress != null) {
+            logEvent.setIpAddress(ipAddress);
+
+            try {
+                // split based on the fact that we usually get ip addresses of the form
+                // [user_ip], [balancer/gateway_ip]
+                locationManager.refreshLocation(ipAddress.split(",")[0]);
+            } catch (SegueDatabaseException | IOException e1) {
+                log.error("Unable to record location information for ip Address: " + ipAddress, e1);
+            }
+        }
+
+        logEvent.setTimestamp(new Date());
+
+        try {
+            WriteResult<LogEvent, String> result = jc.insert(logEvent);
+            if (result.getError() != null) {
+                log.error("Error during log operation: " + result.getError());
+            }
+        } catch (MongoException e) {
+            log.error("MongoDb exception while trying to log a user event.");
+        }
+    }
+
+    /**
+     * Extract client ip address.
+     * 
+     * Solution retrieved from:
+     * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
+     * 
+     * @param request
+     *            - to attempt to extract a valid Ip from.
+     * @return string representation of the client's ip address.
+     */
+    private static String getClientIpAddr(final HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 }

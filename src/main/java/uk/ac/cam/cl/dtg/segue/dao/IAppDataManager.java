@@ -20,41 +20,44 @@ package uk.ac.cam.cl.dtg.segue.dao;
  * 
  * @author Stephen Cummins
  *
- * @param <T> the type of data that this Manager can retrieve and save.
+ * @param <T>
+ *            the type of data that this Manager can retrieve and save.
  */
 public interface IAppDataManager<T> {
-	/**
-	 * Find an object by id.
-	 * 
-	 * @param id
-	 *            - id to search for
-	 * @return the object associated with the given id or null if not found.
-	 * @throws SegueDatabaseException
-	 *             - when a database error has occurred.
-	 */
-	T getById(String id) throws SegueDatabaseException;
-	
-	/**
-	 * Persist an object in the database.
-	 * 
-	 * @param preferredId
-	 *            - Allows you to express a preference of what ID the object
-	 *            should be saved under. This can be ignored. The return result is the id that was used.
-	 * @param objectToSave
-	 *            - the object that should be persisted.
-	 * @return the database unique id of the object saved.
-	 * @throws SegueDatabaseException
-	 *             - when a database error has occurred.
-	 */
-	String save(String preferredId, T objectToSave) throws SegueDatabaseException;
-	
-	/**
-	 * Delete a given object from the database.
-	 * 
-	 * The object should contain an _id field which is used for equality checking.
-	 * 
-	 * @param objectId - the id of the object to remove from the database.
-	 * @throws SegueDatabaseException - if there is a problem removing the item from the database.
-	 */
-	void delete(String objectId) throws SegueDatabaseException;
+    /**
+     * Find an object by id.
+     * 
+     * @param id
+     *            - id to search for
+     * @return the object associated with the given id or null if not found.
+     * @throws SegueDatabaseException
+     *             - when a database error has occurred.
+     */
+    T getById(String id) throws SegueDatabaseException;
+
+    /**
+     * Persist an object in the database.
+     * 
+     * @param preferredId
+     *            - Allows you to express a preference of what ID the object should be saved under. This can be ignored.
+     *            The return result is the id that was used.
+     * @param objectToSave
+     *            - the object that should be persisted.
+     * @return the database unique id of the object saved.
+     * @throws SegueDatabaseException
+     *             - when a database error has occurred.
+     */
+    String save(String preferredId, T objectToSave) throws SegueDatabaseException;
+
+    /**
+     * Delete a given object from the database.
+     * 
+     * The object should contain an _id field which is used for equality checking.
+     * 
+     * @param objectId
+     *            - the id of the object to remove from the database.
+     * @throws SegueDatabaseException
+     *             - if there is a problem removing the item from the database.
+     */
+    void delete(String objectId) throws SegueDatabaseException;
 }

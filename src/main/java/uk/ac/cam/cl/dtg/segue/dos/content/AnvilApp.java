@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.AnvilAppDTO;
 
-
-
 /**
  * @author sac92
  *
@@ -26,45 +24,51 @@ import uk.ac.cam.cl.dtg.segue.dto.content.AnvilAppDTO;
 @DTOMapping(AnvilAppDTO.class)
 @JsonContentType("anvilApp")
 public class AnvilApp extends Content {
-	private String appId;
-	private String appAccessKey;
-	
-	/**
+    private String appId;
+    private String appAccessKey;
+
+    /**
 	 * 
 	 */
-	public AnvilApp() {
-		// TODO Auto-generated constructor stub
-	}
+    public AnvilApp() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * Gets the appId.
-	 * @return the appId
-	 */
-	public String getAppId() {
-		return appId;
-	}
+    /**
+     * Gets the appId.
+     * 
+     * @return the appId
+     */
+    public String getAppId() {
+        return appId;
+    }
 
-	/**
-	 * Sets the appId.
-	 * @param appId the appId to set
-	 */
-	public void setAppId(final String appId) {
-		this.appId = appId;
-	}
+    /**
+     * Sets the appId.
+     * 
+     * @param appId
+     *            the appId to set
+     */
+    public void setAppId(final String appId) {
+        this.appId = appId;
+    }
 
-	/**
-	 * Gets the appAccessKey.
-	 * @return the appAccessKey
-	 */
-	public String getAppAccessKey() {
-		return appAccessKey;
-	}
+    /**
+     * Gets the appAccessKey.
+     * 
+     * @return the appAccessKey
+     */
+    public String getAppAccessKey() {
+        return appAccessKey;
+    }
 
-	/**
-	 * Sets the appAccessKey.
-	 * @param appAccessKey the appAccessKey to set
-	 */
-	public void setAppAccessKey(final String appAccessKey) {
-		this.appAccessKey = appAccessKey;
-	}
+    /**
+     * Sets the appAccessKey.
+     * 
+     * @param appAccessKey
+     *            the appAccessKey to set
+     */
+    public void setAppAccessKey(final String appAccessKey) {
+        this.appAccessKey = appAccessKey;
+    }
 }

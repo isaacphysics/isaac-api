@@ -68,360 +68,345 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 @Path("/events")
 public class EventsFacade extends AbstractIsaacFacade {
-	private static final Logger log = LoggerFactory
-			.getLogger(EventsFacade.class);
-	
-	private final ContentVersionController versionManager;
+    private static final Logger log = LoggerFactory.getLogger(EventsFacade.class);
 
-	private EventBookingPersistenceManager bookingManager;
+    private final ContentVersionController versionManager;
 
-	private UserManager userManager;
-	
-	/**
-	 * EventsFacade. 
-	 * 
-	 * @param properties
-	 *            - global properties map
-	 * @param logManager
-	 *            - for managing logs.
-	 * @param versionManager
-	 *            - for retrieving event content.
-	 * @param bookingManager
-	 *            - Instance of Booking Manager
-	 * @param userManager
-	 *            - Instance of User Manager
-	 */
-	@Inject
-	public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
-			final ContentVersionController versionManager,
-			final EventBookingPersistenceManager bookingManager,
-			final UserManager userManager) {
-		super(properties, logManager);
-		this.versionManager = versionManager;
-		this.bookingManager = bookingManager;
-		this.userManager = userManager;
-	}
-	
-	/**
-	 * REST end point to provide a list of events.
-	 * 
-	 * @param request
-	 *            - this allows us to check to see if a user is currently
-	 *            loggedin.
-	 * @param tags
-	 *            - a comma separated list of tags to include in the search.
-	 * @param startIndex
-	 *            - the initial index for the first result.
-	 * @param limit
-	 *            - the maximums number of results to return
-	 * @param sortOrder
-	 *            - flag to indicate preferred sort order.
-	 * @param showActiveOnly
-	 *            - true will impose filtering on the results. False
-	 *            will not. Defaults to false.
-	 * @param showInactiveOnly
-	 *            - true will impose filtering on the results. False
-	 *            will not. Defaults to false.
-	 * @return a Response containing a list of events objects or containing a
-	 *         SegueErrorResponse.
-	 */
-	@GET
-	@Path("/")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getEvents(
-			@Context final HttpServletRequest request,
-			@QueryParam("tags") final String tags, 
-			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-			@QueryParam("sort_by") final String sortOrder,
-			@QueryParam("show_active_only") final Boolean showActiveOnly,
-			@QueryParam("show_inactive_only") final Boolean showInactiveOnly) {
-		// TODO: filter by location
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		
-		Integer newLimit = null;
-		Integer newStartIndex = null;
-		if (limit != null) {
-			newLimit = limit;
-		}
-		
-		if (startIndex != null) {
-			newStartIndex = startIndex;
-		}
-		
-		if (tags != null) {
-			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-		}
-		
-		final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-		if (sortOrder != null && sortOrder.equals("title")) {
-			sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-					SortOrder.ASC);
-		} else {
-			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
-		}
-		
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
-		
-		Map<String, AbstractFilterInstruction> filterInstructions = null;
-		if (null == showActiveOnly || showActiveOnly) {
-			filterInstructions = Maps.newHashMap();
-			DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-			filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsFromNow);
-			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
-		} 
-		
-		if (showInactiveOnly != null && showInactiveOnly) {
-			if (showActiveOnly) {
-				return new SegueErrorResponse(Status.BAD_REQUEST,
-						"You cannot request both show active and in active only.").toResponse();
-			}
-			
-			filterInstructions = Maps.newHashMap();
-			DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-			filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsToNow);
-			sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
-		} 
-		
-		try {
-			ResultsWrapper<ContentDTO> findByFieldNames = this.versionManager.getContentManager()
-					.findByFieldNames(versionManager.getLiveVersion(),
-							SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), newStartIndex,
-							newLimit, sortInstructions, filterInstructions);
-			
-			return Response.ok(findByFieldNames).build();
-		} catch (ContentManagerException e) {
-			log.error("Error during event request", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error locating the content you requested.").toResponse();
-		}
-	}
-	
-	/**
-	 * REST end point to retrieve an event by id..
-	 * 
-	 * @param request
-	 *            - this allows us to check to see if a user is currently
-	 *            logged-in.
-	 * @param eventId
-	 *            - Id of the event of interest.
-	 * @return a Response containing a list of events objects or containing
-	 *         a SegueErrorResponse.
-	 */
-	@GET
-	@Path("/{event_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getEvent(
-			@Context final HttpServletRequest request,
-			@PathParam("event_id") final String eventId) {
-		
-		try {
-			ContentDTO c = this.versionManager.getContentManager().getContentById(
-					versionManager.getLiveVersion(), eventId);
+    private EventBookingPersistenceManager bookingManager;
 
-			if (null == c) {
-				return SegueErrorResponse.getResourceNotFoundResponse("The event requested could not be located");
-			}
-			
-			if (c instanceof IsaacEventPageDTO) {
-				return Response.ok(c).build();
-			} else {
-				return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-						"The content found is of the incorrect type.").toResponse();
-			}
+    private UserManager userManager;
 
-		} catch (ContentManagerException e) {
-			log.error("Error during event request", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Error locating the content you requested.").toResponse();
-		}
-	}
-	
-	/**
-	 * getAllEventBookings.
-	 * @param request - for authentication
-	 * @return a list of booking objects
-	 */
-	@GET
-	@Path("/bookings")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getAllEventBookings(@Context final HttpServletRequest request) {
-		try {			
-			if (!isUserStaff(userManager, request)) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin user to access this endpoint.").toResponse();
-			}
-			
-			return Response.ok(bookingManager.getAllBookings()).build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error ocurred while trying to retrieve all event booking information.")
-					.toResponse();
-		}
-	}
-	
-	/**
-	 * Find a booking by id.
-	 * @param request - for authentication
-	 * @param bookingId - the booking of interest.
-	 * @return The booking information.
-	 */
-	@GET
-	@Path("/bookings/{booking_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getEventBookingById(@Context final HttpServletRequest request,
-			@PathParam("booking_id") final String bookingId) {
-		try {
-			if (!isUserStaff(userManager, request)) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin user to access this endpoint.").toResponse();
-			}
-			
-			return Response.ok(bookingManager.getBookingById(Long.parseLong(bookingId))).build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (NumberFormatException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"The booking id provided is invalid.")
-					.toResponse();
-		}  catch (ResourceNotFoundException e) {
-			return new SegueErrorResponse(Status.NOT_FOUND,
-					"The booking you requested does not exist.")
-					.toResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error ocurred while trying to retrieve all event booking information.")
-					.toResponse();
-		}
-	}
+    /**
+     * EventsFacade.
+     * 
+     * @param properties
+     *            - global properties map
+     * @param logManager
+     *            - for managing logs.
+     * @param versionManager
+     *            - for retrieving event content.
+     * @param bookingManager
+     *            - Instance of Booking Manager
+     * @param userManager
+     *            - Instance of User Manager
+     */
+    @Inject
+    public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
+            final ContentVersionController versionManager, final EventBookingPersistenceManager bookingManager,
+            final UserManager userManager) {
+        super(properties, logManager);
+        this.versionManager = versionManager;
+        this.bookingManager = bookingManager;
+        this.userManager = userManager;
+    }
 
-	/**
-	 * gets a list of event bookings based on a given event id.
-	 * @param request - for authentication
-	 * @param eventId - the event of interest.
-	 * @return list of bookings.
-	 */
-	@GET
-	@Path("{event_id}/bookings")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
-			@PathParam("event_id") final String eventId) {
-		try {
-			if (!isUserStaff(userManager, request)) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin user to access this endpoint.").toResponse();
-			}
+    /**
+     * REST end point to provide a list of events.
+     * 
+     * @param request
+     *            - this allows us to check to see if a user is currently loggedin.
+     * @param tags
+     *            - a comma separated list of tags to include in the search.
+     * @param startIndex
+     *            - the initial index for the first result.
+     * @param limit
+     *            - the maximums number of results to return
+     * @param sortOrder
+     *            - flag to indicate preferred sort order.
+     * @param showActiveOnly
+     *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @param showInactiveOnly
+     *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @return a Response containing a list of events objects or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEvents(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+            @QueryParam("sort_by") final String sortOrder,
+            @QueryParam("show_active_only") final Boolean showActiveOnly,
+            @QueryParam("show_inactive_only") final Boolean showInactiveOnly) {
+        // TODO: filter by location
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-			return Response.ok(bookingManager.getBookingByEventId(eventId)).build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			String message = "Database error ocurred while trying to retrieve all event booking information.";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					message)
-					.toResponse();
-		}
-	}
-	
+        Integer newLimit = null;
+        Integer newStartIndex = null;
+        if (limit != null) {
+            newLimit = limit;
+        }
 
-	/**
-	 * createBooking.
-	 * 
-	 * @param request - for authentication
-	 * @param eventId - event id
-	 * @param userId - user id
-	 * @return the new booking
-	 */
-	@POST
-	@Path("{event_id}/bookings/{user_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response createBooking(@Context final HttpServletRequest request,
-			@PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
-		try {
-			if (!isUserStaff(userManager, request)) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin user to access this endpoint.").toResponse();
-			}
+        if (startIndex != null) {
+            newStartIndex = startIndex;
+        }
 
-			RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
-			
-			ContentDTO event = this.versionManager.getContentManager().getContentById(
-					versionManager.getLiveVersion(), eventId);
-			
-			// TODO: make it so anyone can book on to a future event.
-			
-			if (null == event) {
-				return new SegueErrorResponse(Status.NOT_FOUND,
-						"Unable to locate the event requested")
-						.toResponse();
-			}
-			
-			if (bookingManager.isUserBooked(eventId, userId)) {
-				return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.")
-						.toResponse();
-			}
-			
-			return Response.ok(bookingManager.createBooking(eventId, bookedUser.getDbId())).build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error ocurred while trying to retrieve all event booking information.")
-					.toResponse();
-		} catch (NoUserException e) {
-			return new SegueErrorResponse(Status.NOT_FOUND,
-					"Unable to locate the user requested")
-					.toResponse();
-		} catch (ContentManagerException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Content Database error ocurred while trying to retrieve all event booking information.")
-					.toResponse();
-		}
-	}
-	
-	/**
-	 * Delete a booking.
-	 * 
-	 * @param request - for authentication
-	 * @param eventId - event id
-	 * @param userId - user id
-	 * @return the new booking
-	 */
-	@DELETE
-	@Path("{event_id}/bookings/{user_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response deleteBooking(@Context final HttpServletRequest request,
-			@PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
-		try {
-			if (!isUserStaff(userManager, request)) {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You must be an admin user to access this endpoint.").toResponse();
-			}
-				
-			if (!bookingManager.isUserBooked(eventId, userId)) {
-				return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.")
-						.toResponse();
-			}
-			
-			bookingManager.deleteBooking(eventId, userId);
-			
-			return Response.noContent().build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Database error ocurred while trying to retrieve all event booking information.")
-					.toResponse();
-		} 
-	}	
+        if (tags != null) {
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+        }
+
+        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        if (sortOrder != null && sortOrder.equals("title")) {
+            sortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    SortOrder.ASC);
+        } else {
+            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+        }
+
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+
+        Map<String, AbstractFilterInstruction> filterInstructions = null;
+        if (null == showActiveOnly || showActiveOnly) {
+            filterInstructions = Maps.newHashMap();
+            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
+            filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsFromNow);
+            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+        }
+
+        if (showInactiveOnly != null && showInactiveOnly) {
+            if (showActiveOnly) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "You cannot request both show active and in active only.").toResponse();
+            }
+
+            filterInstructions = Maps.newHashMap();
+            DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
+            filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsToNow);
+            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+        }
+
+        try {
+            ResultsWrapper<ContentDTO> findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
+                    versionManager.getLiveVersion(), SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
+                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+
+            return Response.ok(findByFieldNames).build();
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
+        }
+    }
+
+    /**
+     * REST end point to retrieve an event by id..
+     * 
+     * @param request
+     *            - this allows us to check to see if a user is currently logged-in.
+     * @param eventId
+     *            - Id of the event of interest.
+     * @return a Response containing a list of events objects or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/{event_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEvent(@Context final HttpServletRequest request,
+            @PathParam("event_id") final String eventId) {
+
+        try {
+            ContentDTO c = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+                    eventId);
+
+            if (null == c) {
+                return SegueErrorResponse.getResourceNotFoundResponse("The event requested could not be located");
+            }
+
+            if (c instanceof IsaacEventPageDTO) {
+                return Response.ok(c).build();
+            } else {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                        "The content found is of the incorrect type.").toResponse();
+            }
+
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
+        }
+    }
+
+    /**
+     * getAllEventBookings.
+     * 
+     * @param request
+     *            - for authentication
+     * @return a list of booking objects
+     */
+    @GET
+    @Path("/bookings")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getAllEventBookings(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(bookingManager.getAllBookings()).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+        }
+    }
+
+    /**
+     * Find a booking by id.
+     * 
+     * @param request
+     *            - for authentication
+     * @param bookingId
+     *            - the booking of interest.
+     * @return The booking information.
+     */
+    @GET
+    @Path("/bookings/{booking_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEventBookingById(@Context final HttpServletRequest request,
+            @PathParam("booking_id") final String bookingId) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(bookingManager.getBookingById(Long.parseLong(bookingId))).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The booking id provided is invalid.").toResponse();
+        } catch (ResourceNotFoundException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "The booking you requested does not exist.").toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+        }
+    }
+
+    /**
+     * gets a list of event bookings based on a given event id.
+     * 
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - the event of interest.
+     * @return list of bookings.
+     */
+    @GET
+    @Path("{event_id}/bookings")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEventBookingByEventId(@Context final HttpServletRequest request,
+            @PathParam("event_id") final String eventId) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(bookingManager.getBookingByEventId(eventId)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String message = "Database error ocurred while trying to retrieve all event booking information.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * createBooking.
+     * 
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - event id
+     * @param userId
+     *            - user id
+     * @return the new booking
+     */
+    @POST
+    @Path("{event_id}/bookings/{user_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response createBooking(@Context final HttpServletRequest request,
+            @PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
+
+            ContentDTO event = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+                    eventId);
+
+            // TODO: make it so anyone can book on to a future event.
+
+            if (null == event) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the event requested").toResponse();
+            }
+
+            if (bookingManager.isUserBooked(eventId, userId)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.").toResponse();
+            }
+
+            return Response.ok(bookingManager.createBooking(eventId, bookedUser.getDbId())).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the user requested").toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content Database error ocurred while trying to retrieve all event booking information.")
+                    .toResponse();
+        }
+    }
+
+    /**
+     * Delete a booking.
+     * 
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - event id
+     * @param userId
+     *            - user id
+     * @return the new booking
+     */
+    @DELETE
+    @Path("{event_id}/bookings/{user_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response deleteBooking(@Context final HttpServletRequest request,
+            @PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            if (!bookingManager.isUserBooked(eventId, userId)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
+            }
+
+            bookingManager.deleteBooking(eventId, userId);
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+        }
+    }
 }

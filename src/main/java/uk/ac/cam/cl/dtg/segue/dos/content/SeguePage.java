@@ -30,46 +30,42 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @DTOMapping(SeguePageDTO.class)
 @JsonContentType("page")
 public class SeguePage extends Content {
-	private String summary;
-	
-	@JsonCreator
-	public SeguePage(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBase> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<String> relatedContent,
-			@JsonProperty("published") Boolean published,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level) {
-		
-		super(_id, id, title, subtitle, type, author, encoding,
-				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+    private String summary;
 
-	}
+    @JsonCreator
+    public SeguePage(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type, @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
+            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+            @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
+            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
 
-	public SeguePage() { }
-	
-	/**
-	 * Gets the summary.
-	 * @return the summary
-	 */
-	public final String getSummary() {
-		return summary;
-	}
+        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+                attribution, relatedContent, published, tags, level);
 
-	/**
-	 * Sets the summary.
-	 * @param summary the summary to set
-	 */
-	public final void setSummary(final String summary) {
-		this.summary = summary;
-	}
+    }
+
+    public SeguePage() {
+    }
+
+    /**
+     * Gets the summary.
+     * 
+     * @return the summary
+     */
+    public final String getSummary() {
+        return summary;
+    }
+
+    /**
+     * Sets the summary.
+     * 
+     * @param summary
+     *            the summary to set
+     */
+    public final void setSummary(final String summary) {
+        this.summary = summary;
+    }
 }

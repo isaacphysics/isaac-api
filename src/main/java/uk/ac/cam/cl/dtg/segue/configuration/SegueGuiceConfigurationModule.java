@@ -39,8 +39,11 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -118,6 +121,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static ILogManager logManager;
 
     private static EmailManager emailCommunicationQueue = null;
+
+    private static IMisuseMonitor misuseMonitor = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
 
@@ -394,6 +399,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
+     * <<<<<<< HEAD
+     * 
      * @param emailCommunicator
      *            the class the queue will send messages with
      * @return an instance of the queue
@@ -413,7 +420,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * This provides a singleton of the UserManager for various facades.
+     * ======= >>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d This provides a singleton of the UserManager for various
+     * facades.
      * 
      * @param database
      *            - IUserManager
@@ -466,6 +474,31 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return userAssociationManager;
+    }
+
+    /**
+     * Get singleton of misuseMonitor.
+     * 
+     * @param communicator
+     *            - so that the monitors can send e-mails.
+     * @param properties
+     *            - so that the monitors can look up email settings etc.
+     * @return gets the singleton of the misuse manager.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private IMisuseMonitor getMisuseMonitor(final EmailManager emailManager, final PropertiesLoader properties) {
+        if (null == misuseMonitor) {
+            misuseMonitor = new InMemoryMisuseMonitor();
+            log.info("Creating singleton of MisuseMonitor");
+
+            // register handlers segue specific handlers
+            misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
+                    new TokenOwnerLookupMisuseHandler(emailManager, properties));
+        }
+
+        return misuseMonitor;
     }
 
     /**

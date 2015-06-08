@@ -27,91 +27,100 @@ import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
  */
 public interface IAssociationDataManager {
 
-	/**
-	 * Generates a token with no group.
-	 * 
-	 * @param token
-	 *            - the token to save
-	 * @return an AssociationToken.
-	 * @throws SegueDatabaseException
-	 *             - if there is a database error.
-	 */
-	AssociationToken saveAssociationToken(final AssociationToken token)
-		throws SegueDatabaseException;
+    /**
+     * Generates a token with no group.
+     * 
+     * @param token
+     *            - the token to save
+     * @return an AssociationToken.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    AssociationToken saveAssociationToken(final AssociationToken token) throws SegueDatabaseException;
 
-	/**
-	 * Looksup an Association Token.
-	 * 
-	 * @param tokenCode
-	 *            the token code
-	 * @return an AssociationToken containing owner information and group id if
-	 *         set.
-	 */
-	AssociationToken lookupAssociationToken(final String tokenCode);
+    /**
+     * Looksup an Association Token.
+     * 
+     * @param tokenCode
+     *            the token code
+     * @return an AssociationToken containing owner information and group id if set.
+     */
+    AssociationToken lookupAssociationToken(final String tokenCode);
 
-	
-	/**
-	 * getAssociationTokenByGroupId.
-	 * @param groupId
-	 *            - id of the group to check.
-	 * @return token if the group has a token already otherwise null.
-	 */
-	AssociationToken getAssociationTokenByGroupId(String groupId);
-	
-	/**
-	 * Creates an association based on a token.
-	 * 
-	 * @param token
-	 *            - containing information about the user to grant access to and
-	 *            the group the userIdGrantingAccess should go into.
-	 * @param userIdGrantingAccess
-	 *            - This user is the user granting access to their data.
-	 * @throws SegueDatabaseException
-	 *             - if there is a database error.
-	 */
-	void createAssociation(AssociationToken token, String userIdGrantingAccess) throws SegueDatabaseException;
+    /**
+     * getAssociationTokenByGroupId.
+     * 
+     * @param groupId
+     *            - id of the group to check.
+     * @return token if the group has a token already otherwise null.
+     */
+    AssociationToken getAssociationTokenByGroupId(String groupId);
 
-	/**
-	 * Revoke permission to access personal data.
-	 * 
-	 * @param ownerUserId
-	 *            - the owner of the data.
-	 * @param userIdWithAccess
-	 *            - user who should no longer have access
-	 * @throws SegueDatabaseException
-	 *             - if there is a database error.
-	 */
-	void deleteAssociation(final String ownerUserId, final String userIdWithAccess)
-		throws SegueDatabaseException;
+    /**
+     * Deletes the token record but leaves associations intact.
+     * 
+     * @param token
+     *            - token to delete from the database.
+     * @throws SegueDatabaseException
+     *             - Database problem.
+     */
+    void deleteToken(String token) throws SegueDatabaseException;
 
-	/**
-	 * Determines whether the user has a valid association already.
-	 * 
-	 * @param userIdRequestingAccess
-	 *            - User who wishes to access someone elses' data.
-	 * @param ownerUserId
-	 *            - the owner of the data being accessed.
-	 * @return true if the userIdRequestingAccess has permission, false if not.
-	 */
-	boolean hasValidAssociation(String userIdRequestingAccess, String ownerUserId);
-	
-	/**
-	 * Get a list of user associations for a given user.
-	 * 
-	 * I.e. Who can currently view a users data.
-	 * 
-	 * @param userId - User to find the associations for.
-	 * @return the list of user associations.
-	 */
-	List<UserAssociation> getUserAssociations(String userId);
+    /**
+     * Creates an association based on a token.
+     * 
+     * @param token
+     *            - containing information about the user to grant access to and the group the userIdGrantingAccess
+     *            should go into.
+     * @param userIdGrantingAccess
+     *            - This user is the user granting access to their data.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    void createAssociation(AssociationToken token, String userIdGrantingAccess) throws SegueDatabaseException;
 
-	/**
-	 * Get a list of user associations that provide grant access for a given user.
-	 * 
-	 * I.e. Who can I currently see data for.
-	 * 
-	 * @param userId - User to find the associations for.
-	 * @return the list of user associations.
-	 */
-	List<UserAssociation> getUsersThatICanSee(String userId);
+    /**
+     * Revoke permission to access personal data.
+     * 
+     * @param ownerUserId
+     *            - the owner of the data.
+     * @param userIdWithAccess
+     *            - user who should no longer have access
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    void deleteAssociation(final String ownerUserId, final String userIdWithAccess) throws SegueDatabaseException;
+
+    /**
+     * Determines whether the user has a valid association already.
+     * 
+     * @param userIdRequestingAccess
+     *            - User who wishes to access someone elses' data.
+     * @param ownerUserId
+     *            - the owner of the data being accessed.
+     * @return true if the userIdRequestingAccess has permission, false if not.
+     */
+    boolean hasValidAssociation(String userIdRequestingAccess, String ownerUserId);
+
+    /**
+     * Get a list of user associations for a given user.
+     * 
+     * I.e. Who can currently view a users data.
+     * 
+     * @param userId
+     *            - User to find the associations for.
+     * @return the list of user associations.
+     */
+    List<UserAssociation> getUserAssociations(String userId);
+
+    /**
+     * Get a list of user associations that provide grant access for a given user.
+     * 
+     * I.e. Who can I currently see data for.
+     * 
+     * @param userId
+     *            - User to find the associations for.
+     * @return the list of user associations.
+     */
+    List<UserAssociation> getUsersThatICanSee(String userId);
 }

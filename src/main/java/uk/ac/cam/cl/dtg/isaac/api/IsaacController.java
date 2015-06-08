@@ -75,827 +75,770 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 /**
  * Isaac Controller
  * 
- * This class specifically caters for the Rutherford physics server and is
- * expected to provide extended functionality to the Segue api for use only on
- * the Isaac site.
+ * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
+ * the Segue api for use only on the Isaac site.
  * 
  */
 @Path("/")
 public class IsaacController extends AbstractIsaacFacade {
-	private static final Logger log = LoggerFactory
-			.getLogger(IsaacController.class);
+    private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
-	private final SegueApiFacade api;
-	private final MapperFacade mapper;
+    private final SegueApiFacade api;
+    private final MapperFacade mapper;
 
-	private final StatisticsManager statsManager;
+    private final StatisticsManager statsManager;
 
-	private final ContentVersionController versionManager;
-	
-	private final UserManager userManager;
-	private final UserAssociationManager associationManager;
+    private final ContentVersionController versionManager;
 
-	/**
-	 * Creates an instance of the isaac controller which provides the REST
-	 * endpoints for the isaac api.
-	 * 
-	 * @param api
-	 *            - Instance of segue Api
-	 * @param propertiesLoader
-	 *            - Instance of properties Loader
-	 * @param logManager
-	 *            - Instance of Log Manager
-	 * @param mapper
-	 *            - Instance of Mapper facade.
-	 * @param statsManager
-	 *            - Instance of the Statistics Manager.
-	 * @param versionManager
-	 *            - so we can find out the latest content version.
-	 * @param userManager 
-	 * 			  - So we can interrogate the user Manager.
-	 * @param associationManager 
-	 * 			  - So we can check user permissions.
-	 */
-	@Inject
-	public IsaacController(final SegueApiFacade api,
-			final PropertiesLoader propertiesLoader,
-			final ILogManager logManager,
-			final MapperFacade mapper,
-			final StatisticsManager statsManager,
-			final ContentVersionController versionManager,
-			final UserManager userManager,
-			final UserAssociationManager associationManager) {
-		super(propertiesLoader, logManager);
-		this.api = api;
-		this.mapper = mapper;
-		this.statsManager = statsManager;
-		this.versionManager = versionManager;
-		this.userManager = userManager;
-		this.associationManager = associationManager;
-	}
+    private final UserManager userManager;
+    private final UserAssociationManager associationManager;
 
-	/**
-	 * REST end point to provide a list of concepts.
-	 * 
-	 * Uses ETag caching to attempt to reduce load on the server.
-	 *
-	 * @param request
-	 *            - used to determine if we can return a cache response. 
-	 * @param ids
-	 *            - the ids of the concepts to request.
-	 * @param tags
-	 *            - a comma separated list of strings
-	 * @param startIndex
-	 *            - a string value to be converted into an integer which
-	 *            represents the start index of the results
-	 * @param limit
-	 *            - a string value to be converted into an integer that
-	 *            represents the number of results to return.
-	 * @return A response object which contains a list of concepts or an empty
-	 *         list.
-	 */
-	@GET
-	@Path("pages/concepts")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getConceptList(
-			@Context final Request request,
-			@QueryParam("ids") final String ids,
-			@QueryParam("tags") final String tags,
-			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+    /**
+     * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
+     * 
+     * @param api
+     *            - Instance of segue Api
+     * @param propertiesLoader
+     *            - Instance of properties Loader
+     * @param logManager
+     *            - Instance of Log Manager
+     * @param mapper
+     *            - Instance of Mapper facade.
+     * @param statsManager
+     *            - Instance of the Statistics Manager.
+     * @param versionManager
+     *            - so we can find out the latest content version.
+     * @param userManager
+     *            - So we can interrogate the user Manager.
+     * @param associationManager
+     *            - So we can check user permissions.
+     */
+    @Inject
+    public IsaacController(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
+            final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
+            final ContentVersionController versionManager, final UserManager userManager,
+            final UserAssociationManager associationManager) {
+        super(propertiesLoader, logManager);
+        this.api = api;
+        this.mapper = mapper;
+        this.statsManager = statsManager;
+        this.versionManager = versionManager;
+        this.userManager = userManager;
+        this.associationManager = associationManager;
+    }
 
-		StringBuilder etagCodeBuilder = new StringBuilder();
-		
-		Integer newLimit = null;
-		
-		if (limit != null) {
-			newLimit = limit;
-			etagCodeBuilder.append(limit.toString());
-		}
+    /**
+     * REST end point to provide a list of concepts.
+     * 
+     * Uses ETag caching to attempt to reduce load on the server.
+     *
+     * @param request
+     *            - used to determine if we can return a cache response.
+     * @param ids
+     *            - the ids of the concepts to request.
+     * @param tags
+     *            - a comma separated list of strings
+     * @param startIndex
+     *            - a string value to be converted into an integer which represents the start index of the results
+     * @param limit
+     *            - a string value to be converted into an integer that represents the number of results to return.
+     * @return A response object which contains a list of concepts or an empty list.
+     */
+    @GET
+    @Path("pages/concepts")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getConceptList(@Context final Request request, @QueryParam("ids") final String ids,
+            @QueryParam("tags") final String tags,
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
-		// options
-		if (ids != null) {
-			List<String> idsList = Arrays.asList(ids.split(","));
-			fieldsToMatch.put(ID_FIELDNAME, idsList);
-			newLimit = idsList.size();
-			etagCodeBuilder.append(ids);
-		}
+        StringBuilder etagCodeBuilder = new StringBuilder();
 
-		if (tags != null) {
-			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-			etagCodeBuilder.append(tags);
-		}
-		
-		// Calculate the ETag on last modified date of tags list
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
-				+ etagCodeBuilder.toString().hashCode() + "");
-		
-		Response cachedResponse = generateCachedResponse(request, etag);
-		
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
+        Integer newLimit = null;
 
-		return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-				.cacheControl(getCacheControl()).build();
-	}
+        if (limit != null) {
+            newLimit = limit;
+            etagCodeBuilder.append(limit.toString());
+        }
 
-	/**
-	 * Rest end point that gets a single concept based on a given id.
-	 * @param request - so we can deal with caching and ETags.
-	 * @param servletRequest - so we can extract user information for logging.
-	 * @param conceptId
-	 *            as a string
-	 * @return A Response object containing a concept object.
-	 */
-	@GET
-	@Path("pages/concepts/{concept_page_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getConcept(
-			@Context final Request request,
-			@Context final HttpServletRequest servletRequest,
-			@PathParam("concept_page_id") final String conceptId) {
-		if (null == conceptId || conceptId.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.")
-					.toResponse();
-		}
-		
-		// Calculate the ETag on current live version of the content
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
-				+ "byId".hashCode() + conceptId.hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag);
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
-		
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
+        // options
+        if (ids != null) {
+            List<String> idsList = Arrays.asList(ids.split(","));
+            fieldsToMatch.put(ID_FIELDNAME, idsList);
+            newLimit = idsList.size();
+            etagCodeBuilder.append(ids);
+        }
 
-		// options
-		if (null != conceptId) {
-			fieldsToMatch
-					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-							Arrays.asList(conceptId));
-		}
-		
-		Response result = this.findSingleResult(fieldsToMatch);
+        if (tags != null) {
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+            etagCodeBuilder.append(tags);
+        }
 
-		if (result.getEntity() instanceof SeguePageDTO) {
-			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-					.put(CONCEPT_ID_LOG_FIELDNAME, conceptId)
-					.put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
-					
-			// the request log
-			getLogManager().logEvent(userManager.getCurrentUser(servletRequest),
-					servletRequest, Constants.VIEW_CONCEPT, logEntry);
-		}
-		
-		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(getCacheControl()).tag(etag).build();
-		
-		return cachableResult;
-	}
+        // Calculate the ETag on last modified date of tags list
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
+                + etagCodeBuilder.toString().hashCode() + "");
 
-	/**
-	 * REST end point to provide a list of questions.
-	 * 
-	 * @param request
-	 *            - used to determine if we can return a cache response. 
-	 * @param ids
-	 *            - the ids of the concepts to request.
-	 * @param searchString
-	 *            - an optional search string to allow finding of questions by title.
-	 * @param tags
-	 *            - a comma separated list of strings
-	 * @param level
-	 *            - a string value to be converted into an integer which
-	 *            represents the levels that must match the questions returned.
-	 * @param startIndex
-	 *            - a string value to be converted into an integer which
-	 *            represents the start index of the results
-	 * @param limit
-	 *            - a string value to be converted into an integer that
-	 *            represents the number of results to return.
-	 * @return A response object which contains a list of questions or an empty
-	 *         list.
-	 */
-	@GET
-	@Path("pages/questions")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getQuestionList(
-			@Context final Request request,
-			@QueryParam("ids") final String ids,
-			@QueryParam("searchString") final String searchString,
-			@QueryParam("tags") final String tags,
-			@QueryParam("levels") final String level,
-			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-		StringBuilder etagCodeBuilder = new StringBuilder();
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
-		etagCodeBuilder.append(QUESTION_TYPE);
+        Response cachedResponse = generateCachedResponse(request, etag);
 
-		// defaults
-		int newLimit = DEFAULT_RESULTS_LIMIT;
-		int newStartIndex = 0;
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
 
-		// options
-		if (limit != null) {
-			newLimit = limit;
-		}
-		
-		if (startIndex != null) {
-			newStartIndex = startIndex;
-		}
+        return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag).cacheControl(getCacheControl())
+                .build();
+    }
 
-		if (ids != null && !ids.isEmpty()) {
-			List<String> idsList = Arrays.asList(ids.split(","));
-			fieldsToMatch.put(ID_FIELDNAME, idsList);
-			newLimit = idsList.size();
-			etagCodeBuilder.append(ids);
-		}
+    /**
+     * Rest end point that gets a single concept based on a given id.
+     * 
+     * @param request
+     *            - so we can deal with caching and ETags.
+     * @param servletRequest
+     *            - so we can extract user information for logging.
+     * @param conceptId
+     *            as a string
+     * @return A Response object containing a concept object.
+     */
+    @GET
+    @Path("pages/concepts/{concept_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getConcept(@Context final Request request, @Context final HttpServletRequest servletRequest,
+            @PathParam("concept_page_id") final String conceptId) {
+        if (null == conceptId || conceptId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a valid concept id.").toResponse();
+        }
 
-		if (tags != null && !tags.isEmpty()) {
-			fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
-			etagCodeBuilder.append(tags);
-		}
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + "byId".hashCode()
+                + conceptId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
 
-		if (level != null && !level.isEmpty()) {
-			fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
-			etagCodeBuilder.append(level);
-		}
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(CONCEPT_TYPE));
 
-		// Calculate the ETag on last modified date of tags list
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
-				+ etagCodeBuilder.toString().hashCode() + "");
-		
-		Response cachedResponse = generateCachedResponse(request, etag);
-		
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
+        // options
+        if (null != conceptId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(conceptId));
+        }
 
-		// Currently if you provide a search string we use a different
-		// library call. This is because the previous one does not allow fuzzy
-		// search.
-		if (searchString != null && !searchString.isEmpty()) {
-			ResultsWrapper<ContentDTO> c;
-			try {
-				c = api.segueSearch(searchString, versionManager.getLiveVersion(), fieldsToMatch,
-						newStartIndex, newLimit);
-			} catch (ContentManagerException e1) {
-				SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-						"Error locating the version requested", e1);
-				log.error(error.getErrorMessage(), e1);
-				return error.toResponse();
-			}
+        Response result = this.findSingleResult(fieldsToMatch);
 
-			ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-					this.extractContentSummaryFromList(c.getResults(),
-							this.getProperties().getProperty(PROXY_PATH)),
-					c.getTotalResults());
-			
-			return Response.ok(summarizedContent).tag(etag)
-					.cacheControl(getCacheControl()).build();
-		} else {
-			return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
-					.cacheControl(getCacheControl()).build();
-		}
-	}
+        if (result.getEntity() instanceof SeguePageDTO) {
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION, versionManager.getLiveVersion())
+                    .build();
 
-	/**
-	 * Rest end point that gets a single question page based on a given id.
-	 * 
-	 * @param questionId
-	 *            to find as a string
-	 * @param request
-	 *            - so that we can do etag and cache resolution.
-	 * @param httpServletRequest
-	 *            - so that we can try and determine if the user is logged in.
-	 *            This will allow us to augment the question objects with any
-	 *            recorded state.
-	 * @return A Response object containing a question page object or a
-	 *         SegueErrorResponse.
-	 */
-	@GET
-	@Path("pages/questions/{question_page_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getQuestion(
-			@Context final Request request,
-			@Context final HttpServletRequest httpServletRequest,
-			@PathParam("question_page_id") final String questionId) {
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            // the request log
+            getLogManager().logEvent(userManager.getCurrentUser(servletRequest), servletRequest,
+                    Constants.VIEW_CONCEPT, logEntry);
+        }
 
-		fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+                .cacheControl(getCacheControl()).tag(etag).build();
 
-		// options
-		if (null != questionId) {
-			fieldsToMatch
-					.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-		}
-		AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
-		Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
-		
-		try {
-			userQuestionAttempts = userManager.getQuestionAttemptsByUser(user);
-		} catch (SegueDatabaseException e) {
-			String message = "SegueDatabaseException whilst trying to retrieve user question data";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					message).toResponse();
-		}
-	
-		// Calculate the ETag 
-		EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
-		
-		Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
-		
-		Response response = this.findSingleResult(fieldsToMatch);
+        return cachableResult;
+    }
 
-		if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
-			SeguePageDTO content = (SeguePageDTO) response.getEntity();
+    /**
+     * REST end point to provide a list of questions.
+     * 
+     * @param request
+     *            - used to determine if we can return a cache response.
+     * @param ids
+     *            - the ids of the concepts to request.
+     * @param searchString
+     *            - an optional search string to allow finding of questions by title.
+     * @param tags
+     *            - a comma separated list of strings
+     * @param level
+     *            - a string value to be converted into an integer which represents the levels that must match the
+     *            questions returned.
+     * @param startIndex
+     *            - a string value to be converted into an integer which represents the start index of the results
+     * @param limit
+     *            - a string value to be converted into an integer that represents the number of results to return.
+     * @return A response object which contains a list of questions or an empty list.
+     */
+    @GET
+    @Path("pages/questions")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getQuestionList(@Context final Request request, @QueryParam("ids") final String ids,
+            @QueryParam("searchString") final String searchString, @QueryParam("tags") final String tags,
+            @QueryParam("levels") final String level,
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+        StringBuilder etagCodeBuilder = new StringBuilder();
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-			Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(), "contentVersion",
-					versionManager.getLiveVersion());
-			
-			String userId;
-			if (user instanceof AnonymousUserDTO) {
-				userId = ((AnonymousUserDTO) user).getSessionId();
-			} else {
-				userId = ((RegisteredUserDTO) user).getDbId();
-			}
-			
-			content = api.getQuestionManager().augmentQuestionObjects(content, userId,
-						userQuestionAttempts);
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
+        etagCodeBuilder.append(QUESTION_TYPE);
 
-			// the request log
-			getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
+        // defaults
+        int newLimit = DEFAULT_RESULTS_LIMIT;
+        int newStartIndex = 0;
 
-			// return augmented content.
-			return Response.ok(content).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
-					.tag(etag).build();
-			
-		} else {
-			String error = "Unable to locate a question with the id specified: " + questionId;
-			log.warn(error);
-			return SegueErrorResponse.getResourceNotFoundResponse(error);
-		}
-	}
+        // options
+        if (limit != null) {
+            newLimit = limit;
+        }
 
-	/**
-	 * Rest end point that searches the api for some search string.
-	 * 
-	 * @param request
-	 *            - so that we can handle caching of search responses.
-	 * @param httpServletRequest
-	 *            - so we can extract user information for logging.
-	 * @param searchString
-	 *            - to pass to the search engine.
-	 * @param types
-	 *            - a comma separated list of types to include in the search.
-	 * @param startIndex
-	 *            - the start index for the search results.
-	 * @param limit
-	 *            - the max number of results to return.
-	 * @return a response containing the search results (results wrapper) or an
-	 *         empty list.
-	 */
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	@Path("search/{searchString}")
-	@GZIP
-	public final Response search(@Context final Request request,
-			@Context final HttpServletRequest httpServletRequest,
-			@PathParam("searchString") final String searchString, @QueryParam("types") final String types,
-			@DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-			@DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
+        if (startIndex != null) {
+            newStartIndex = startIndex;
+        }
 
-		// Calculate the ETag on current live version of the content
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + searchString.hashCode()
-				+ types.hashCode() + "");
+        if (ids != null && !ids.isEmpty()) {
+            List<String> idsList = Arrays.asList(ids.split(","));
+            fieldsToMatch.put(ID_FIELDNAME, idsList);
+            newLimit = idsList.size();
+            etagCodeBuilder.append(ids);
+        }
 
-		Response cachedResponse = generateCachedResponse(request, etag);
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
+        if (tags != null && !tags.isEmpty()) {
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+            etagCodeBuilder.append(tags);
+        }
 
-		ResultsWrapper<ContentDTO> searchResults;
-		try {
-			Map<String, List<String>> typesThatMustMatch = null;
+        if (level != null && !level.isEmpty()) {
+            fieldsToMatch.put(LEVEL_FIELDNAME, Arrays.asList(level.split(",")));
+            etagCodeBuilder.append(level);
+        }
 
-			if (null != types) {
-				typesThatMustMatch = Maps.newHashMap();
-				typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
-			}
+        // Calculate the ETag on last modified date of tags list
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
+                + etagCodeBuilder.toString().hashCode() + "");
 
-			searchResults = versionManager.getContentManager().searchForContent(
-					versionManager.getLiveVersion(), searchString, typesThatMustMatch, startIndex, limit);
-		} catch (ContentManagerException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					"Unable to retrieve content requested", e).toResponse();
-		}
+        Response cachedResponse = generateCachedResponse(request, etag);
 
-		ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
-				.put(TYPE_FIELDNAME, types).put("searchString", searchString)
-				.put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
 
-		getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
-				GLOBAL_SITE_SEARCH, logMap);
+        // Currently if you provide a search string we use a different
+        // library call. This is because the previous one does not allow fuzzy
+        // search.
+        if (searchString != null && !searchString.isEmpty()) {
+            ResultsWrapper<ContentDTO> c;
+            try {
+                c = api.segueSearch(searchString, versionManager.getLiveVersion(), fieldsToMatch, newStartIndex,
+                        newLimit);
+            } catch (ContentManagerException e1) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                        "Error locating the version requested", e1);
+                log.error(error.getErrorMessage(), e1);
+                return error.toResponse();
+            }
 
-		return Response
-				.ok(this.extractContentSummaryFromResultsWrapper(searchResults, this.getProperties()
-						.getProperty(PROXY_PATH))).tag(etag).cacheControl(getCacheControl()).build();
-	}
-	
-	/**
-	 * Rest end point that gets a single page based on a given id.
-	 * 
-	 * @param request - so we can deal with caching.
-	 * @param httpServletRequest - so that we can extract user information.
-	 * @param pageId
-	 *            as a string
-	 * @return A Response object containing a page object or containing a SegueErrorResponse.
-	 */
-	@GET
-	@Path("pages/{page}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getPage(
-			@Context final Request request,
-			@Context final HttpServletRequest httpServletRequest,
-			@PathParam("page") final String pageId) {
-		// Calculate the ETag on current live version of the content
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
-				+ pageId.hashCode() + "");
-		
-		Response cachedResponse = generateCachedResponse(request, etag);
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
-		
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
+            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+                    this.extractContentSummaryFromList(c.getResults(), this.getProperties().getProperty(PROXY_PATH)),
+                    c.getTotalResults());
 
-		// options
-		if (null != pageId) {
-			fieldsToMatch.put(ID_FIELDNAME + "."
-					+ UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
-		}
-		
-		Response result = this.findSingleResult(fieldsToMatch);
-		
-		if (result.getEntity() instanceof SeguePageDTO) {
-			ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-					.put(PAGE_ID_LOG_FIELDNAME, pageId)
-					.put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
-					
-			// the request log
-			getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest),
-					httpServletRequest, Constants.VIEW_PAGE, logEntry);			
-		}
-		
-		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(getCacheControl()).tag(etag).build();
-		return cachableResult;
-	}
+            return Response.ok(summarizedContent).tag(etag).cacheControl(getCacheControl()).build();
+        } else {
+            return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag).cacheControl(getCacheControl())
+                    .build();
+        }
+    }
 
-	
-	/**
-	 * Rest end point that gets a single page fragment based on a given id.
-	 * @param request - so that we can deal with caching.
-	 * @param fragmentId
-	 *            as a string
-	 * @return A Response object containing a page fragment object or containing
-	 *         a SegueErrorResponse.
-	 */
-	@GET
-	@Path("pages/fragments/{fragment_id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getPageFragment(
-			@Context final Request request,
-			@PathParam("fragment_id") final String fragmentId) {
-		
-		// Calculate the ETag on current live version of the content
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
-				+ fragmentId.hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag);
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
-		
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
+    /**
+     * Rest end point that gets a single question page based on a given id.
+     * 
+     * @param questionId
+     *            to find as a string
+     * @param request
+     *            - so that we can do etag and cache resolution.
+     * @param httpServletRequest
+     *            - so that we can try and determine if the user is logged in. This will allow us to augment the
+     *            question objects with any recorded state.
+     * @return A Response object containing a question page object or a SegueErrorResponse.
+     */
+    @GET
+    @Path("pages/questions/{question_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getQuestion(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest, 
+            @PathParam("question_page_id") final String questionId) {
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-		// options
-		if (null != fragmentId) {
-			fieldsToMatch.put(ID_FIELDNAME + "."
-					+ UNPROCESSED_SEARCH_FIELD_SUFFIX,
-					Arrays.asList(fragmentId));
-		}
-		Response result = this.findSingleResult(fieldsToMatch);
-		
-		Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-				.cacheControl(getCacheControl()).tag(etag).build();
-		
-		return cachableResult;
-	}
+        fieldsToMatch.put("type", Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
-	/**
-	 * Rest end point that gets a all of the content marked as being type
-	 * "pods".
-	 * 
-	 * @param request
-	 *            - so that we can deal with caching.
-	 * @return A Response object containing a page fragment object or containing
-	 *         a SegueErrorResponse.
-	 */
-	@GET
-	@Path("pages/pods")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getPodList(
-			@Context final Request request) {
-		
-		// Calculate the ETag on current live version of the content
-		// NOTE: Assumes that the latest version of the content is being used.
-		EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + "");
-		Response cachedResponse = generateCachedResponse(request, etag);
-		if (cachedResponse != null) {
-			return cachedResponse;
-		}
-		
-		Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-		fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
+        // options
+        if (null != questionId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
+        }
+        AbstractSegueUserDTO user = userManager.getCurrentUser(httpServletRequest);
+        Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
 
-		ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
-				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
-		
-		Response cachableResult = Response.ok(pods)
-				.cacheControl(getCacheControl()).tag(etag).build();
-		
-		return cachableResult;
-	}
-	
+        try {
+            userQuestionAttempts = userManager.getQuestionAttemptsByUser(user);
+        } catch (SegueDatabaseException e) {
+            String message = "SegueDatabaseException whilst trying to retrieve user question data";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
 
-	/**
-	 * Rest end point to allow images to be requested from the database.
-	 * 
-	 * @param request
-	 *            - used for intelligent cache responses.
-	 * @param path
-	 *            of image in the database
-	 * @return a Response containing the image file contents or containing a
-	 *         SegueErrorResponse.
-	 */
-	@GET
-	@Produces("*/*")
-	@Path("images/{path:.*}")
-	@Cache
-	@GZIP
-	public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
-		// entity tags etc are already added by segue
-		return api.getImageFileContent(request, versionManager.getLiveVersion(), path);
-	}
-	
-	/**
-	 * Get some statistics out of how many questions the user has completed.
-	 * @param request - so we can find the current user.
-	 * @return a map containing the information.
-	 */
-	@GET
-	@Path("users/current_user/progress")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
-		RegisteredUserDTO user;
-		try {
-			user = userManager.getCurrentRegisteredUser(request);
-		} catch (NoUserLoggedInException e1) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		}
-		
-		return getUserProgressInformation(request, user.getDbId());
-	}
-	
-	/**
-	 * Get some statistics out of how many questions the user has completed.
-	 * 
-	 * Only users with permission can use this endpoint.
-	 * 
-	 * @param request - so we can authenticate the current user.
-	 * @param userIdOfInterest - to look up the user of interest
-	 * @return a map containing the information.
-	 */
-	@GET
-	@Path("users/{user_id}/progress")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public final Response getUserProgressInformation(@Context final HttpServletRequest request,
-			@PathParam("user_id") final String userIdOfInterest) {
-		RegisteredUserDTO user;
-		UserSummaryDTO userOfInterestSummary;
-		RegisteredUserDTO userOfInterestFull;
-		try {
-			user = userManager.getCurrentRegisteredUser(request);
-			userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
-			userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
-			
-			if (associationManager.hasPermission(user, userOfInterestSummary)) {
-				Map<String, Object> userQuestionInformation = statsManager
-						.getUserQuestionInformation(userOfInterestFull);
-				
-				this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
-						ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getDbId()));
-				
-				return Response.ok(userQuestionInformation).build();	
-			} else {
-				return new SegueErrorResponse(Status.FORBIDDEN,
-						"You do not have permission to view this users data.").toResponse();
-			}
-		} catch (NoUserLoggedInException e1) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (NoUserException e) {
-			return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
-		} catch (SegueDatabaseException e) {
-			String message = "Error whilst trying to access user statistics.";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					message).toResponse();
-		} catch (ContentManagerException e) {
-			String message = "Error whilst trying to access user statistics; Content cannot be resolved";
-			log.error(message, e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-					message).toResponse();
-		}
-	}	
-	
-	/**
-	 * This method will extract basic information from a content object so the
-	 * lighter ContentInfo object can be sent to the client instead.
-	 * 
-	 * @param content
-	 *            - the content object to summarise
-	 * @param proxyPath
-	 *            - the path prefix used for augmentation of urls
-	 * @return ContentSummaryDTO.
-	 */
-	private ContentSummaryDTO extractContentSummary(final ContentDTO content,
-			final String proxyPath) {
-		if (null == content) {
-			return null;
-		}
+        // Calculate the ETag
+        EntityTag etag = new EntityTag(questionId.hashCode() + userQuestionAttempts.toString().hashCode() + "");
 
-		// try auto-mapping
-		ContentSummaryDTO contentInfo = mapper.map(content,
-				ContentSummaryDTO.class);
-		contentInfo.setUrl(URIManager.generateApiUrl(content));
+        Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
 
-		return contentInfo;
-	}
+        Response response = this.findSingleResult(fieldsToMatch);
 
-	/**
-	 * Utility method to convert a list of content objects into a list of
-	 * ContentSummaryDTO Objects.
-	 * 
-	 * @param contentList
-	 *            - the list of content to summarise.
-	 * @param proxyPath
-	 *            - the path used for augmentation of urls.
-	 * @return list of shorter ContentSummaryDTO objects.
-	 */
-	private List<ContentSummaryDTO> extractContentSummaryFromList(
-			final List<ContentDTO> contentList, final String proxyPath) {
-		if (null == contentList) {
-			return null;
-		}
+        if (response.getEntity() != null && response.getEntity() instanceof IsaacQuestionPageDTO) {
+            SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
-		List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
+            Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
+                    "contentVersion", versionManager.getLiveVersion());
 
-		for (ContentDTO content : contentList) {
-			ContentSummaryDTO contentInfo = extractContentSummary(content,
-					proxyPath);
-			if (null != contentInfo) {
-				listOfContentInfo.add(contentInfo);
-			}
-		}
-		return listOfContentInfo;
-	}
+            String userId;
+            if (user instanceof AnonymousUserDTO) {
+                userId = ((AnonymousUserDTO) user).getSessionId();
+            } else {
+                userId = ((RegisteredUserDTO) user).getDbId();
+            }
 
+            content = api.getQuestionManager().augmentQuestionObjects(content, userId, userQuestionAttempts);
 
-	/**
-	 * Utility method to convert a ResultsWrapper of content objects into one
-	 * with ContentSummaryDTO objects.
-	 * 
-	 * @param contentList
-	 *            - the list of content to summarise.
-	 * @param proxyPath
-	 *            - the path used for augmentation of urls.
-	 * @return list of shorter ContentSummaryDTO objects.
-	 */
-	private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
-			final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
-		if (null == contentList) {
-			return null;
-		}
+            // the request log
+            getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
 
-		ResultsWrapper<ContentSummaryDTO> contentSummaryResults 
-			= new ResultsWrapper<ContentSummaryDTO>(
-				new ArrayList<ContentSummaryDTO>(),
-				contentList.getTotalResults());
+            // return augmented content.
+            return Response.ok(content).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).tag(etag).build();
 
-		for (ContentDTO content : contentList.getResults()) {
-			ContentSummaryDTO contentInfo = extractContentSummary(content,
-					proxyPath);
-			if (null != contentInfo) {
-				contentSummaryResults.getResults().add(contentInfo);
-			}
-		}
-		return contentSummaryResults;
-	}
+        } else {
+            String error = "Unable to locate a question with the id specified: " + questionId;
+            log.warn(error);
+            return SegueErrorResponse.getResourceNotFoundResponse(error);
+        }
+    }
 
-	/**
-	 * For use when we expect to only find a single result.
-	 * 
-	 * By default related content ContentSummary objects will be fully
-	 * augmented.
-	 * 
-	 * @param fieldsToMatch
-	 *            - expects a map of the form fieldname -> list of queries to
-	 *            match
-	 * @return A Response containing a single conceptPage or containing a
-	 *         SegueErrorResponse.
-	 */
-	private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-		ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(versionManager.getLiveVersion(),
-				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
-																						// type
-																						// checking.
-		ContentDTO c = null;
-		if (resultList.getResults().size() > 1) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
-					+ resultList.getResults().size() + ") returned error. For search query: "
-					+ fieldsToMatch.values()).toResponse();
-		} else if (resultList.getResults().isEmpty()) {
-			return new SegueErrorResponse(Status.NOT_FOUND,
-					"No content found that matches the query with parameters: " + fieldsToMatch.values())
-					.toResponse();
-		} else {
-			c = resultList.getResults().get(0);
-		}
+    /**
+     * Rest end point that searches the api for some search string.
+     * 
+     * @param request
+     *            - so that we can handle caching of search responses.
+     * @param httpServletRequest
+     *            - so we can extract user information for logging.
+     * @param searchString
+     *            - to pass to the search engine.
+     * @param types
+     *            - a comma separated list of types to include in the search.
+     * @param startIndex
+     *            - the start index for the search results.
+     * @param limit
+     *            - the max number of results to return.
+     * @return a response containing the search results (results wrapper) or an empty list.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("search/{searchString}")
+    @GZIP
+    public final Response search(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+            @PathParam("searchString") final String searchString, @QueryParam("types") final String types,
+            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
-		try {
-			return Response.ok(api.augmentContentWithRelatedContent(versionManager.getLiveVersion(), c)).build();
-		} catch (ContentManagerException e1) {
-			SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-					"Error locating the version requested", e1);
-			log.error(error.getErrorMessage(), e1);
-			return error.toResponse();
-		}
-	}
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + searchString.hashCode()
+                + types.hashCode() + "");
 
-	/**
-	 * Helper method to query segue for a list of content objects.
-	 * 
-	 * This method will only use the latest version of the content.
-	 * 
-	 * @param fieldsToMatch
-	 *            - expects a map of the form fieldname -> list of queries to
-	 *            match
-	 * @param startIndex
-	 *            - the initial index for the first result.
-	 * @param limit
-	 *            - the maximums number of results to return
-	 * @return Response builder containing a list of content summary objects or
-	 *         containing a SegueErrorResponse
-	 */
-	private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
-			final Integer startIndex, final Integer limit) {
-		ResultsWrapper<ContentDTO> c;
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
 
-		c = api.findMatchingContent(versionManager.getLiveVersion(),
-				SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
+        ResultsWrapper<ContentDTO> searchResults;
+        try {
+            Map<String, List<String>> typesThatMustMatch = null;
 
-		ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-				this.extractContentSummaryFromList(c.getResults(), this.getProperties().getProperty(PROXY_PATH)),
-				c.getTotalResults());
+            if (null != types) {
+                typesThatMustMatch = Maps.newHashMap();
+                typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
+            }
 
-		return Response.ok(summarizedContent);
-	}
+            searchResults = versionManager.getContentManager().searchForContent(versionManager.getLiveVersion(),
+                    searchString, typesThatMustMatch, startIndex, limit);
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to retrieve content requested", e)
+                    .toResponse();
+        }
+
+        ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>().put(TYPE_FIELDNAME, types)
+                .put("searchString", searchString).put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
+
+        getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                GLOBAL_SITE_SEARCH, logMap);
+
+        return Response
+                .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
+                        this.getProperties().getProperty(PROXY_PATH))).tag(etag).cacheControl(getCacheControl())
+                .build();
+    }
+
+    /**
+     * Rest end point that gets a single page based on a given id.
+     * 
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param pageId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("pages/{page}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getPage(@Context final Request request, @Context final HttpServletRequest httpServletRequest,
+            @PathParam("page") final String pageId) {
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + pageId.hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
+
+        // options
+        if (null != pageId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(pageId));
+        }
+
+        Response result = this.findSingleResult(fieldsToMatch);
+
+        if (result.getEntity() instanceof SeguePageDTO) {
+            ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
+                    .put(PAGE_ID_LOG_FIELDNAME, pageId).put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
+
+            // the request log
+            getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
+                    Constants.VIEW_PAGE, logEntry);
+        }
+
+        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+                .cacheControl(getCacheControl()).tag(etag).build();
+        return cachableResult;
+    }
+
+    /**
+     * Rest end point that gets a single page fragment based on a given id.
+     * 
+     * @param request
+     *            - so that we can deal with caching.
+     * @param fragmentId
+     *            as a string
+     * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("pages/fragments/{fragment_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getPageFragment(@Context final Request request,
+            @PathParam("fragment_id") final String fragmentId) {
+
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + fragmentId.hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
+
+        // options
+        if (null != fragmentId) {
+            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
+        }
+        Response result = this.findSingleResult(fieldsToMatch);
+
+        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+                .cacheControl(getCacheControl()).tag(etag).build();
+
+        return cachableResult;
+    }
+
+    /**
+     * Rest end point that gets a all of the content marked as being type "pods".
+     * 
+     * @param request
+     *            - so that we can deal with caching.
+     * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("pages/pods")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getPodList(@Context final Request request) {
+
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + "");
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
+
+        ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
+                SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+
+        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl()).tag(etag).build();
+
+        return cachableResult;
+    }
+
+    /**
+     * Rest end point to allow images to be requested from the database.
+     * 
+     * @param request
+     *            - used for intelligent cache responses.
+     * @param path
+     *            of image in the database
+     * @return a Response containing the image file contents or containing a SegueErrorResponse.
+     */
+    @GET
+    @Produces("*/*")
+    @Path("images/{path:.*}")
+    @Cache
+    @GZIP
+    public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
+        // entity tags etc are already added by segue
+        return api.getImageFileContent(request, versionManager.getLiveVersion(), path);
+    }
+
+    /**
+     * Get some statistics out of how many questions the user has completed.
+     * 
+     * @param request
+     *            - so we can find the current user.
+     * @return a map containing the information.
+     */
+    @GET
+    @Path("users/current_user/progress")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getCurrentUserProgressInformation(@Context final HttpServletRequest request) {
+        RegisteredUserDTO user;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        return getUserProgressInformation(request, user.getDbId());
+    }
+
+    /**
+     * Get some statistics out of how many questions the user has completed.
+     * 
+     * Only users with permission can use this endpoint.
+     * 
+     * @param request
+     *            - so we can authenticate the current user.
+     * @param userIdOfInterest
+     *            - to look up the user of interest
+     * @return a map containing the information.
+     */
+    @GET
+    @Path("users/{user_id}/progress")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getUserProgressInformation(@Context final HttpServletRequest request,
+            @PathParam("user_id") final String userIdOfInterest) {
+        RegisteredUserDTO user;
+        UserSummaryDTO userOfInterestSummary;
+        RegisteredUserDTO userOfInterestFull;
+        try {
+            user = userManager.getCurrentRegisteredUser(request);
+            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
+
+            if (associationManager.hasPermission(user, userOfInterestSummary)) {
+                Map<String, Object> userQuestionInformation = statsManager
+                        .getUserQuestionInformation(userOfInterestFull);
+
+                this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getDbId()));
+
+                return Response.ok(userQuestionInformation).build();
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to view this users data.")
+                        .toResponse();
+            }
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("No user found with this id");
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to access user statistics.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (ContentManagerException e) {
+            String message = "Error whilst trying to access user statistics; Content cannot be resolved";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+    }
+
+    /**
+     * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
+     * the client instead.
+     * 
+     * @param content
+     *            - the content object to summarise
+     * @param proxyPath
+     *            - the path prefix used for augmentation of urls
+     * @return ContentSummaryDTO.
+     */
+    private ContentSummaryDTO extractContentSummary(final ContentDTO content, final String proxyPath) {
+        if (null == content) {
+            return null;
+        }
+
+        // try auto-mapping
+        ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
+        contentInfo.setUrl(URIManager.generateApiUrl(content));
+
+        return contentInfo;
+    }
+
+    /**
+     * Utility method to convert a list of content objects into a list of ContentSummaryDTO Objects.
+     * 
+     * @param contentList
+     *            - the list of content to summarise.
+     * @param proxyPath
+     *            - the path used for augmentation of urls.
+     * @return list of shorter ContentSummaryDTO objects.
+     */
+    private List<ContentSummaryDTO> extractContentSummaryFromList(final List<ContentDTO> contentList,
+            final String proxyPath) {
+        if (null == contentList) {
+            return null;
+        }
+
+        List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
+
+        for (ContentDTO content : contentList) {
+            ContentSummaryDTO contentInfo = extractContentSummary(content, proxyPath);
+            if (null != contentInfo) {
+                listOfContentInfo.add(contentInfo);
+            }
+        }
+        return listOfContentInfo;
+    }
+
+    /**
+     * Utility method to convert a ResultsWrapper of content objects into one with ContentSummaryDTO objects.
+     * 
+     * @param contentList
+     *            - the list of content to summarise.
+     * @param proxyPath
+     *            - the path used for augmentation of urls.
+     * @return list of shorter ContentSummaryDTO objects.
+     */
+    private ResultsWrapper<ContentSummaryDTO> extractContentSummaryFromResultsWrapper(
+            final ResultsWrapper<ContentDTO> contentList, final String proxyPath) {
+        if (null == contentList) {
+            return null;
+        }
+
+        ResultsWrapper<ContentSummaryDTO> contentSummaryResults = new ResultsWrapper<ContentSummaryDTO>(
+                new ArrayList<ContentSummaryDTO>(), contentList.getTotalResults());
+
+        for (ContentDTO content : contentList.getResults()) {
+            ContentSummaryDTO contentInfo = extractContentSummary(content, proxyPath);
+            if (null != contentInfo) {
+                contentSummaryResults.getResults().add(contentInfo);
+            }
+        }
+        return contentSummaryResults;
+    }
+
+    /**
+     * For use when we expect to only find a single result.
+     * 
+     * By default related content ContentSummary objects will be fully augmented.
+     * 
+     * @param fieldsToMatch
+     *            - expects a map of the form fieldname -> list of queries to match
+     * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
+     */
+    private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
+        ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(versionManager.getLiveVersion(),
+                SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+                                                                                        // type
+                                                                                        // checking.
+        ContentDTO c = null;
+        if (resultList.getResults().size() > 1) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
+                    + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
+                    .toResponse();
+        } else if (resultList.getResults().isEmpty()) {
+            return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: "
+                    + fieldsToMatch.values()).toResponse();
+        } else {
+            c = resultList.getResults().get(0);
+        }
+
+        try {
+            return Response.ok(api.augmentContentWithRelatedContent(versionManager.getLiveVersion(), c)).build();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+                    e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        }
+    }
+
+    /**
+     * Helper method to query segue for a list of content objects.
+     * 
+     * This method will only use the latest version of the content.
+     * 
+     * @param fieldsToMatch
+     *            - expects a map of the form fieldname -> list of queries to match
+     * @param startIndex
+     *            - the initial index for the first result.
+     * @param limit
+     *            - the maximums number of results to return
+     * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
+     */
+    private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
+            final Integer startIndex, final Integer limit) {
+        ResultsWrapper<ContentDTO> c;
+
+        c = api.findMatchingContent(versionManager.getLiveVersion(),
+                SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
+
+        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+                this.extractContentSummaryFromList(c.getResults(), this.getProperties().getProperty(PROXY_PATH)),
+                c.getTotalResults());
+
+        return Response.ok(summarizedContent);
+    }
 }

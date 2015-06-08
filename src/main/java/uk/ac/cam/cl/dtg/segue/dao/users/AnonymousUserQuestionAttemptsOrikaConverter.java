@@ -27,53 +27,50 @@ import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.metadata.Type;
 
 /**
- * AnonymousQuestionAttemptsOrikaConverter A specialist converter class to work
- * with the Orika automapper library.
+ * AnonymousQuestionAttemptsOrikaConverter A specialist converter class to work with the Orika automapper library.
  * 
- * Responsible for converting question attempt maps from their DO state to their DTO state.
- * It seems ORIKA is not good at converting between highly nested data structures.
+ * Responsible for converting question attempt maps from their DO state to their DTO state. It seems ORIKA is not good
+ * at converting between highly nested data structures.
  */
 public class AnonymousUserQuestionAttemptsOrikaConverter
-		extends
-		CustomConverter<Map<String, Map<String, List<QuestionValidationResponse>>>, 
-		Map<String, Map<String, List<QuestionValidationResponseDTO>>>> {
+        extends
+        CustomConverter<Map<String, Map<String, List<QuestionValidationResponse>>>, 
+        Map<String, Map<String, List<QuestionValidationResponseDTO>>>> {
 
-	/**
-	 * Constructs an Orika Converter specialises in selecting the correct
-	 * subclass for choice objects.
-	 * 
-	 */
-	public AnonymousUserQuestionAttemptsOrikaConverter() {
+    /**
+     * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
+     * 
+     */
+    public AnonymousUserQuestionAttemptsOrikaConverter() {
 
-	}
+    }
 
-	@Override
-	public Map<String, Map<String, List<QuestionValidationResponseDTO>>> convert(
-			final Map<String, Map<String, List<QuestionValidationResponse>>> source,
-			final Type<? extends Map<String, Map<String, List<QuestionValidationResponseDTO>>>> destinationType) {
-		// convert in one direction
-		if (null == source) {
-			return null;
-		}
+    @Override
+    public Map<String, Map<String, List<QuestionValidationResponseDTO>>> convert(
+            final Map<String, Map<String, List<QuestionValidationResponse>>> source,
+            final Type<? extends Map<String, Map<String, List<QuestionValidationResponseDTO>>>> destinationType) {
+        // convert in one direction
+        if (null == source) {
+            return null;
+        }
 
-		if (!(source instanceof Map)) {
-			return null;
-		}
+        if (!(source instanceof Map)) {
+            return null;
+        }
 
-		// now map the hard question attempts stuff.
-		Map<String, Map<String, List<QuestionValidationResponseDTO>>> newMap = Maps.newHashMap();
-		for (Map.Entry<String, Map<String, List<QuestionValidationResponse>>> page : source
-				.entrySet()) {
-			Map<String, List<QuestionValidationResponseDTO>> attemptsMap = Maps.newHashMap();
-			for (Map.Entry<String, List<QuestionValidationResponse>> questionEntry : page.getValue().entrySet()) {
-				List<QuestionValidationResponseDTO> dtoList = Lists.newArrayList();
-				for (QuestionValidationResponse dto : questionEntry.getValue()) {
-					dtoList.add(this.mapperFacade.map(dto, QuestionValidationResponseDTO.class));
-				}
-				attemptsMap.put(questionEntry.getKey(), dtoList);
-			}
-			newMap.put(page.getKey(), attemptsMap);
-		}
-		return newMap;
-	}
+        // now map the hard question attempts stuff.
+        Map<String, Map<String, List<QuestionValidationResponseDTO>>> newMap = Maps.newHashMap();
+        for (Map.Entry<String, Map<String, List<QuestionValidationResponse>>> page : source.entrySet()) {
+            Map<String, List<QuestionValidationResponseDTO>> attemptsMap = Maps.newHashMap();
+            for (Map.Entry<String, List<QuestionValidationResponse>> questionEntry : page.getValue().entrySet()) {
+                List<QuestionValidationResponseDTO> dtoList = Lists.newArrayList();
+                for (QuestionValidationResponse dto : questionEntry.getValue()) {
+                    dtoList.add(this.mapperFacade.map(dto, QuestionValidationResponseDTO.class));
+                }
+                attemptsMap.put(questionEntry.getKey(), dtoList);
+            }
+            newMap.put(page.getKey(), attemptsMap);
+        }
+        return newMap;
+    }
 }

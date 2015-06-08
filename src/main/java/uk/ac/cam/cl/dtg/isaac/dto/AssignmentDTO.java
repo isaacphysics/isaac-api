@@ -25,144 +25,160 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This class is the Data Transfer Object used to store Assignments in the isaac CMS.
  */
 public class AssignmentDTO {
-	@ObjectId
-	@JsonProperty("_id")
-	private String id;
-	private String gameboardId;
-	private GameboardDTO gameboard;
-	private String groupId;
-	private String ownerUserId;
-	private Date creationDate;
-	
-	/**
-	 * Complete AssignmentDTO constructor with all dependencies.
-	 * 
-	 * @param id
-	 *            - unique id for the gameboard
-	 * @param gameboardId
-	 *            - The gameboard to assign as homework.
-	 * @param ownerUserId
-	 *            - User id of the owner of the gameboard.
-	 * @param groupId
-	 *            - Group id who should be assigned the game board.
-	 * @param creationDate
-	 *            - the date the assignment was created.
-	 */
-	public AssignmentDTO(final String id, final String gameboardId, final String ownerUserId,
-			final String groupId, final Date creationDate) {
-		this.id = id;
-		this.gameboardId = gameboardId;
-		this.ownerUserId = ownerUserId;
-		this.groupId = groupId;
-		this.creationDate = creationDate;
-	}
-	
-	/**
-	 * Default constructor required for AutoMapping.
-	 */
-	public AssignmentDTO() {
+    @ObjectId
+    @JsonProperty("_id")
+    private String id;
+    private String gameboardId;
+    private GameboardDTO gameboard;
+    private String groupId;
+    private String ownerUserId;
+    private Date creationDate;
 
-	}
+    /**
+     * Complete AssignmentDTO constructor with all dependencies.
+     * 
+     * @param id
+     *            - unique id for the gameboard
+     * @param gameboardId
+     *            - The gameboard to assign as homework.
+     * @param ownerUserId
+     *            - User id of the owner of the gameboard.
+     * @param groupId
+     *            - Group id who should be assigned the game board.
+     * @param creationDate
+     *            - the date the assignment was created.
+     */
+    public AssignmentDTO(final String id, final String gameboardId, final String ownerUserId, final String groupId,
+            final Date creationDate) {
+        this.id = id;
+        this.gameboardId = gameboardId;
+        this.ownerUserId = ownerUserId;
+        this.groupId = groupId;
+        this.creationDate = creationDate;
+    }
 
-	/**
-	 * Gets the id.
-	 * @return the id
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public String getId() {
-		return id;
-	}
+    /**
+     * Default constructor required for AutoMapping.
+     */
+    public AssignmentDTO() {
 
-	/**
-	 * Sets the id.
-	 * @param id the id to set
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public void setId(final String id) {
-		this.id = id;
-	}
+    }
 
-	/**
-	 * Gets the gameboardId.
-	 * @return the gameboardId
-	 */
-	public String getGameboardId() {
-		return gameboardId;
-	}
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * Sets the gameboardId.
-	 * @param gameboardId the gameboardId to set
-	 */
-	public void setGameboardId(final String gameboardId) {
-		this.gameboardId = gameboardId;
-	}
+    /**
+     * Sets the id.
+     * 
+     * @param id
+     *            the id to set
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public void setId(final String id) {
+        this.id = id;
+    }
 
-	/**
-	 * Gets the gameboardDTO.
-	 * @return the gameboardDTO
-	 */
-	public GameboardDTO getGameboard() {
-		return gameboard;
-	}
-	
+    /**
+     * Gets the gameboardId.
+     * 
+     * @return the gameboardId
+     */
+    public String getGameboardId() {
+        return gameboardId;
+    }
 
-	/**
-	 * Sets the gameboardDTO.
-	 * @param gameboardDTO the gameboardDTO to set
-	 */
-	public void setGameboard(final GameboardDTO gameboardDTO) {
-		this.gameboard = gameboardDTO;
-	}
-	
+    /**
+     * Sets the gameboardId.
+     * 
+     * @param gameboardId
+     *            the gameboardId to set
+     */
+    public void setGameboardId(final String gameboardId) {
+        this.gameboardId = gameboardId;
+    }
 
-	/**
-	 * Gets the groupId.
-	 * @return the groupId
-	 */
-	public String getGroupId() {
-		return groupId;
-	}
+    /**
+     * Gets the gameboardDTO.
+     * 
+     * @return the gameboardDTO
+     */
+    public GameboardDTO getGameboard() {
+        return gameboard;
+    }
 
-	/**
-	 * Sets the groupId.
-	 * @param groupId the groupId to set
-	 */
-	public void setGroupId(final String groupId) {
-		this.groupId = groupId;
-	}
+    /**
+     * Sets the gameboardDTO.
+     * 
+     * @param gameboardDTO
+     *            the gameboardDTO to set
+     */
+    public void setGameboard(final GameboardDTO gameboardDTO) {
+        this.gameboard = gameboardDTO;
+    }
 
-	/**
-	 * Gets the ownerUserId.
-	 * @return the ownerUserId
-	 */
-	public String getOwnerUserId() {
-		return ownerUserId;
-	}
+    /**
+     * Gets the groupId.
+     * 
+     * @return the groupId
+     */
+    public String getGroupId() {
+        return groupId;
+    }
 
-	/**
-	 * Sets the ownerUserId.
-	 * @param ownerUserId the ownerUserId to set
-	 */
-	public void setOwnerUserId(final String ownerUserId) {
-		this.ownerUserId = ownerUserId;
-	}
+    /**
+     * Sets the groupId.
+     * 
+     * @param groupId
+     *            the groupId to set
+     */
+    public void setGroupId(final String groupId) {
+        this.groupId = groupId;
+    }
 
-	/**
-	 * Gets the creationDate.
-	 * @return the creationDate
-	 */
-	public Date getCreationDate() {
-		return creationDate;
-	}
+    /**
+     * Gets the ownerUserId.
+     * 
+     * @return the ownerUserId
+     */
+    public String getOwnerUserId() {
+        return ownerUserId;
+    }
 
-	/**
-	 * Sets the creationDate.
-	 * @param creationDate the creationDate to set
-	 */
-	public void setCreationDate(final Date creationDate) {
-		this.creationDate = creationDate;
-	}
+    /**
+     * Sets the ownerUserId.
+     * 
+     * @param ownerUserId
+     *            the ownerUserId to set
+     */
+    public void setOwnerUserId(final String ownerUserId) {
+        this.ownerUserId = ownerUserId;
+    }
+
+    /**
+     * Gets the creationDate.
+     * 
+     * @return the creationDate
+     */
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    /**
+     * Sets the creationDate.
+     * 
+     * @param creationDate
+     *            the creationDate to set
+     */
+    public void setCreationDate(final Date creationDate) {
+        this.creationDate = creationDate;
+    }
 }
