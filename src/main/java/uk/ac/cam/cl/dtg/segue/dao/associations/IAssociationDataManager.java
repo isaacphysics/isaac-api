@@ -49,7 +49,6 @@ public interface IAssociationDataManager {
 	 */
 	AssociationToken lookupAssociationToken(final String tokenCode);
 
-	
 	/**
 	 * getAssociationTokenByGroupId.
 	 * @param groupId
@@ -57,6 +56,14 @@ public interface IAssociationDataManager {
 	 * @return token if the group has a token already otherwise null.
 	 */
 	AssociationToken getAssociationTokenByGroupId(String groupId);
+
+	/**
+	 * Deletes the token record but leaves associations intact.
+	 * 
+	 * @param token - token to delete from the database.
+	 * @throws SegueDatabaseException - Database problem.
+	 */
+	void deleteToken(String token) throws SegueDatabaseException;
 	
 	/**
 	 * Creates an association based on a token.

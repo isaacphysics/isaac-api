@@ -39,8 +39,11 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -115,6 +118,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	private static PropertiesLoader globalProperties = null;
 
 	private UserAssociationManager userAssociationManager = null;
+	
+	private static IMisuseMonitor misuseMonitor = null;
 
 	private static ILogManager logManager;
 
@@ -476,6 +481,23 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
 		return userAssociationManager;
 	}
+	
+
+    @Inject
+    @Provides
+    @Singleton
+    private IMisuseMonitor getMisuseMonitor(final ICommunicator communicator, final PropertiesLoader properties) {
+        if (null == misuseMonitor) {
+            misuseMonitor = new InMemoryMisuseMonitor();
+            log.info("Creating singleton of MisuseMonitor");
+            
+            // register handlers segue specific handlers
+            misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
+                    new TokenOwnerLookupMisuseHandler(communicator, properties));
+        }
+
+        return misuseMonitor;
+    }
 	
 	/**
 	 * Gets the instance of the dozer mapper object.

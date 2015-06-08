@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -437,14 +438,21 @@ public class GroupsFacade extends AbstractSegueFacade {
 			}
 			
 			groupManager.deleteGroup(groupBasedOnId);
-			//TODO: old assignments should probably be cleaned up?
-			
-			return Response.noContent().build();
+			// clean up old association tokens.
+			associationManager.deleteAssociationTokenByGroupId(groupBasedOnId.getId());
 		} catch (SegueDatabaseException e) {
 			log.error("Database error while trying to add user to a group. ", e);
 			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
 		} catch (NoUserLoggedInException e) {
 			return SegueErrorResponse.getNotLoggedInResponse();
+		} catch (InvalidUserAssociationTokenException e) {
+			log.error(
+					String.format(
+							"Attempted to clean up token database for group id: %s, "
+							+ "but it failed as the token did not exist.",
+							groupId), e);
 		}
+		
+		return Response.noContent().build();
 	}
 }

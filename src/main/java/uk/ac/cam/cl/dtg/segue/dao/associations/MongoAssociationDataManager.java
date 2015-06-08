@@ -82,10 +82,25 @@ public class MongoAssociationDataManager implements IAssociationDataManager {
 	}
 
 	@Override
+	public void deleteToken(final String token) throws SegueDatabaseException {
+		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
+				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
+				String.class);
+		
+		Query query = DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, token);
+
+		WriteResult<AssociationToken, String> result = jacksonCollection.remove(query);
+		if (result.getError() != null) {
+			log.error("Error during database update " + result.getError());
+			throw new SegueDatabaseException(
+					"MongoDB encountered an exception while deleting an association: " + result.getError());
+		}
+	}
+	
+	@Override
 	public void createAssociation(final AssociationToken token, final String userIdGrantingAccess)
 		throws SegueDatabaseException {
 		Validate.notNull(token);
-		//Validate.isTrue(!token.getOwnerUserId().equals(userIdGrantingAccess), "You can't grant access to yourself.");
 		
 		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
 				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);

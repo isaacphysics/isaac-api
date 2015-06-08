@@ -40,8 +40,12 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
+import uk.ac.cam.cl.dtg.segue.api.managers.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -62,254 +66,262 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 @Path("/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
-	private final UserManager userManager;
-	private final UserAssociationManager associationManager;
+    private final UserManager userManager;
+    private final UserAssociationManager associationManager;
 
-	private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
+    private IMisuseMonitor misuseMonitor;
 
-	/**
-	 * Create an instance of the authentication Facade.
-	 * 
-	 * @param properties
-	 *            - properties loader for the application
-	 * @param userManager
-	 *            - user manager for the application
-	 * @param logManager
-	 *            - so we can log interesting events.
-	 * @param associationManager
-	 *            - so that we can create associations.
-	 */
-	@Inject
-	public AuthorisationFacade(final PropertiesLoader properties, final UserManager userManager,
-			final ILogManager logManager, final UserAssociationManager associationManager) {
-		super(properties, logManager);
-		this.userManager = userManager;
-		this.associationManager = associationManager;
-	}
+    /**
+     * Create an instance of the authentication Facade.
+     * 
+     * @param properties
+     *            - properties loader for the application
+     * @param userManager
+     *            - user manager for the application
+     * @param logManager
+     *            - so we can log interesting events.
+     * @param associationManager
+     *            - so that we can create associations.
+     */
+    @Inject
+    public AuthorisationFacade(final PropertiesLoader properties, final UserManager userManager,
+            final ILogManager logManager, final UserAssociationManager associationManager,
+            final IMisuseMonitor misuseMonitor) {
+        super(properties, logManager);
+        this.userManager = userManager;
+        this.associationManager = associationManager;
+        this.misuseMonitor = misuseMonitor;
+    }
 
-	/**
-	 * Get all users who can see my data.
-	 * 
-	 * @param request
-	 *            - so we can identify the current user.
-	 * @return List of user associations.
-	 */
-	@GET
-	@Path("/")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response getUsersWithAccess(@Context final HttpServletRequest request) {
-		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+    /**
+     * Get all users who can see my data.
+     * 
+     * @param request
+     *            - so we can identify the current user.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUsersWithAccess(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-			List<String> userIdsWithAccess = Lists.newArrayList();
-			for (UserAssociation a : associationManager.getAssociations(user)) {
-				userIdsWithAccess.add(a.getUserIdReceivingPermission());
-			}
+            List<String> userIdsWithAccess = Lists.newArrayList();
+            for (UserAssociation a : associationManager.getAssociations(user)) {
+                userIdsWithAccess.add(a.getUserIdReceivingPermission());
+            }
 
-			return Response.ok(
-					userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
-					.build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		}
-	}
-	
-	/**
-	 * Revoke a user association.
-	 * 
-	 * @param request
-	 *            - so we can find out the current user
-	 * @param userIdToRevoke
-	 *            - so we can delete any associations that the user might have.
-	 * @return response with no content or a segueErrorResponse
-	 */
-	@DELETE
-	@Path("/{userId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response revokeAssociation(@Context final HttpServletRequest request,
-			@PathParam("userId") final String userIdToRevoke) {
-		if (null == userIdToRevoke || userIdToRevoke.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.")
-					.toResponse();
-		}
+            return Response.ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
+                    .build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        }
+    }
 
-		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-			RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
-			associationManager.revokeAssociation(user, userToRevoke);
+    /**
+     * Revoke a user association.
+     * 
+     * @param request
+     *            - so we can find out the current user
+     * @param userIdToRevoke
+     *            - so we can delete any associations that the user might have.
+     * @return response with no content or a segueErrorResponse
+     */
+    @DELETE
+    @Path("/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response revokeAssociation(@Context final HttpServletRequest request,
+            @PathParam("userId") final String userIdToRevoke) {
+        if (null == userIdToRevoke || userIdToRevoke.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.").toResponse();
+        }
 
-			this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
-					ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdToRevoke));
-			
-			return Response.status(Status.NO_CONTENT).build();
-		} catch (SegueDatabaseException e) {
-			log.error("Database error while trying to get association token. ", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (NoUserException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
-		}
-	}	
-	
-	/**
-	 * Get all users whose data I can see.
-	 * 
-	 * @param request
-	 *            - so we can identify the current user.
-	 * @return List of user associations.
-	 */
-	@GET
-	@Path("/other_users")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response getCurrentAccessRights(@Context final HttpServletRequest request) {
-		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
+            associationManager.revokeAssociation(user, userToRevoke);
 
-			List<String> userIdsGrantingAccess = Lists.newArrayList();
-			for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
-				userIdsGrantingAccess.add(a.getUserIdGrantingPermission());
-			}
+            this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userIdToRevoke));
 
-			return Response.ok(
-					userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsGrantingAccess)))
-					.build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (SegueDatabaseException e) {
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		}
-	}
+            return Response.status(Status.NO_CONTENT).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to revoke").toResponse();
+        }
+    }
 
-	/**
-	 * Function to allow users to create an AssociationToken.
-	 * 
-	 * This token can be used by another user to grant view permissions to their
-	 * user data.
-	 * 
-	 * @param request
-	 *            - so we can find out who the current user is
-	 * @param groupId
-	 *            - GroupId must exist.
-	 * @return a Response containing an association token or a
-	 *         SegueErrorResponse.
-	 */
-	@GET
-	@Path("/token/{groupId}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response getAssociationToken(@Context final HttpServletRequest request,
-			@PathParam("groupId") final String groupId) {
-		if (null == groupId || groupId.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
-		}
-		
-		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);			
-			AssociationToken token = associationManager.generateAssociationToken(user, groupId);
-			
-			return Response.ok(token).build();
-		} catch (SegueDatabaseException e) {
-			log.error("Database error while trying to get association token. ", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (UserGroupNotFoundException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Error connecting to group", e).toResponse();
-		}
-	}
+    /**
+     * Get all users whose data I can see.
+     * 
+     * @param request
+     *            - so we can identify the current user.
+     * @return List of user associations.
+     */
+    @GET
+    @Path("/other_users")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getCurrentAccessRights(@Context final HttpServletRequest request) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-	/**
-	 * Function to allow user to find out the account owner of a particular token.
-	 * This allows them to know if they really want to grant access or not.
-	 * 
-	 * @param request
-	 *            - so we can find out who the current user is
-	 * @param token
-	 *            - so we look up the owner.
-	 * @return a Response containing a user summary object or a
-	 *         SegueErrorResponse.
-	 */
-	@GET
-	@Path("/token/{token}/owner")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response getTokenUserSummary(@Context final HttpServletRequest request,
-			@PathParam("token") final String token) {
-		if (null == token || token.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
-		}
-		RegisteredUserDTO currentRegisteredUser = null;
-		try {
-			// ensure the user is logged in
-			currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
-			RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
-					token).getOwnerUserId());
-			
-			return Response.ok(userManager.convertToUserSummaryObject(userDTO)).build();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (InvalidUserAssociationTokenException e) {
-			log.info(String.format(
-					"User (%s) attempted to use token (%s) but it is invalid or no longer exists.",
-					currentRegisteredUser, token));
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"The token provided is Invalid or no longer exists.").toResponse();
-		} catch (SegueDatabaseException e) {
-			log.error("Database error while trying to get association token. ", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		} catch (NoUserException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
-		}
-	}	
-	
-	/**
-	 * Function to allow users to use an AssociationToken to create a new
-	 * association.
-	 * 
-	 * @param request
-	 *            - so we can find out who the current user is
-	 * @param token
-	 *            - so we can create a group for associated users to fall into.
-	 * @return a Response containing an association token or a
-	 *         SegueErrorResponse.
-	 */
-	@POST
-	@Path("/use_token/{token}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
-	@GZIP
-	public Response useToken(@Context final HttpServletRequest request,
-			@PathParam("token") final String token) {
-		if (null == token || token.isEmpty()) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
-		}
+            List<String> userIdsGrantingAccess = Lists.newArrayList();
+            for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
+                userIdsGrantingAccess.add(a.getUserIdGrantingPermission());
+            }
 
-		try {
-			RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            return Response
+                    .ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsGrantingAccess)))
+                    .build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        }
+    }
 
-			associationManager.createAssociationWithToken(token, user);
-			
-			this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
-					ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, token));
-			
-			return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
-		} catch (SegueDatabaseException e) {
-			log.error("Database error while trying to get association token. ", e);
-			return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-		} catch (NoUserLoggedInException e) {
-			return SegueErrorResponse.getNotLoggedInResponse();
-		} catch (UserAssociationException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to create association", e).toResponse();
-		} catch (InvalidUserAssociationTokenException e) {
-			return new SegueErrorResponse(Status.BAD_REQUEST,
-					"The token provided is Invalid or no longer exists.").toResponse();
-		}
-	}
+    /**
+     * Function to allow users to create an AssociationToken.
+     * 
+     * This token can be used by another user to grant view permissions to their user data.
+     * 
+     * @param request
+     *            - so we can find out who the current user is
+     * @param groupId
+     *            - GroupId must exist.
+     * @return a Response containing an association token or a SegueErrorResponse.
+     */
+    @GET
+    @Path("/token/{groupId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getAssociationToken(@Context final HttpServletRequest request,
+            @PathParam("groupId") final String groupId) {
+        if (null == groupId || groupId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+            AssociationToken token = associationManager.generateAssociationToken(user, groupId);
+
+            return Response.ok(token).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (UserGroupNotFoundException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Error connecting to group", e).toResponse();
+        }
+    }
+
+    /**
+     * Function to allow user to find out the account owner of a particular token. This allows them to know if they
+     * really want to grant access or not.
+     * 
+     * @param request
+     *            - so we can find out who the current user is
+     * @param token
+     *            - so we look up the owner.
+     * @return a Response containing a user summary object or a SegueErrorResponse.
+     */
+    @GET
+    @Path("/token/{token}/owner")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getTokenOwnerUserSummary(@Context final HttpServletRequest request,
+            @PathParam("token") final String token) {
+        if (null == token || token.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
+        }
+        
+        RegisteredUserDTO currentRegisteredUser = null;
+        try {
+            // ensure the user is logged in
+            currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
+        
+            if (misuseMonitor.hasMisused(currentRegisteredUser.getDbId(),
+                    TokenOwnerLookupMisuseHandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+            
+            misuseMonitor.notifyEvent(currentRegisteredUser.getDbId(),
+                    TokenOwnerLookupMisuseHandler.class.toString());
+            
+            RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
+                    currentRegisteredUser, token).getOwnerUserId());
+            
+            return Response.ok(userManager.convertToUserSummaryObject(userDTO)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (InvalidUserAssociationTokenException e) {
+            log.info(String.format("User (%s) attempted to use token (%s) but it is invalid or no longer exists.",
+                    currentRegisteredUser, token));
+
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is Invalid or no longer exists.")
+                    .toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
+        } catch (SegueResourceMisuseException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You have exceeded the number of requests allowed for this endpoint").toResponse();
+        }
+    }
+
+    /**
+     * Function to allow users to use an AssociationToken to create a new association.
+     * 
+     * @param request
+     *            - so we can find out who the current user is
+     * @param token
+     *            - so we can create a group for associated users to fall into.
+     * @return a Response containing an association token or a SegueErrorResponse.
+     */
+    @POST
+    @Path("/use_token/{token}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response useToken(@Context final HttpServletRequest request, @PathParam("token") final String token) {
+        if (null == token || token.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
+        }
+
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            associationManager.createAssociationWithToken(token, user);
+
+            this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
+                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, token));
+
+            return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get association token. ", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (UserAssociationException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to create association", e).toResponse();
+        } catch (InvalidUserAssociationTokenException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is Invalid or no longer exists.")
+                    .toResponse();
+        }
+    }
 }

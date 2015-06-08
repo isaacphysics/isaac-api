@@ -105,14 +105,34 @@ public class UserAssociationManager {
 	}
 	
 	/**
-	 * getTokenOwner - allows users to identify who they are granting
-	 * permissions to before they do perform the grant.
+	 * Cleans up old tokens - for use when associated group is deleted.
 	 * 
+	 * @param groupId - to use as search term.
+	 * @throws InvalidUserAssociationTokenException - if we can't find the token.
+	 * @throws SegueDatabaseException - if a database error occurs. 
+	 */
+	public void deleteAssociationTokenByGroupId(final String groupId)
+		throws InvalidUserAssociationTokenException, SegueDatabaseException {
+		AssociationToken associationTokenByGroupId = associationDatabase
+				.getAssociationTokenByGroupId(groupId);
+		if (null == associationTokenByGroupId) {
+			throw new InvalidUserAssociationTokenException(
+					"The group token provided does not exist or is invalid.");
+		}
+
+		associationDatabase.deleteToken(associationTokenByGroupId.getToken());
+	}
+	
+	/**
+	 * lookupTokenDetails - get a token from the database.
+	 * @param userMakingRequest - the user making the request for auditing purposes.
 	 * @param token - the token to look up.
 	 * @return AssociationToken - So that you can identify the owner user.
 	 * @throws InvalidUserAssociationTokenException 
 	 */
-	public AssociationToken lookupTokenDetails(final String token) throws InvalidUserAssociationTokenException {
+	public AssociationToken lookupTokenDetails(final RegisteredUserDTO userMakingRequest, final String token)
+		throws InvalidUserAssociationTokenException {
+		Validate.notNull(userMakingRequest);
 		Validate.notBlank(token);
 		AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
 		
