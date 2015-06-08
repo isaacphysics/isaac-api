@@ -43,157 +43,157 @@ import com.mongodb.BasicDBObject;
  * 
  */
 public class MongoGroupDataManager implements IUserGroupDataManager {
-	private static final String GROUP_COLLECTION_NAME = "userGroups";
-	private static final String GROUP_MEMBERSHIP_COLLECTION_NAME = "groupMemberships";
-	private static final String GROUP_NAME_FIELD = "groupName";
-	
-	private static final Logger log = LoggerFactory.getLogger(MongoGroupDataManager.class);
+    private static final String GROUP_COLLECTION_NAME = "userGroups";
+    private static final String GROUP_MEMBERSHIP_COLLECTION_NAME = "groupMemberships";
+    private static final String GROUP_NAME_FIELD = "groupName";
 
-	private final MongoDb database;
+    private static final Logger log = LoggerFactory.getLogger(MongoGroupDataManager.class);
 
-	/**
-	 * PostgresAssociationDataManager.
-	 * 
-	 * @param database
-	 *            - preconfigured connection
-	 */
-	@Inject
-	public MongoGroupDataManager(final MongoDb database) {
-		this.database = database;
-	}
+    private final MongoDb database;
 
-	@Override
-	public UserGroup createGroup(final UserGroup group) throws SegueDatabaseException {
-		WriteResult<UserGroup, String> result = getGroupCollection().save(group);
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
-					+ result.getError());
-		}
+    /**
+     * PostgresAssociationDataManager.
+     * 
+     * @param database
+     *            - preconfigured connection
+     */
+    @Inject
+    public MongoGroupDataManager(final MongoDb database) {
+        this.database = database;
+    }
 
-		group.setId(result.getSavedId());
-		return group;
-	}
+    @Override
+    public UserGroup createGroup(final UserGroup group) throws SegueDatabaseException {
+        WriteResult<UserGroup, String> result = getGroupCollection().save(group);
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
+                    + result.getError());
+        }
 
-	@Override
-	public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
-		WriteResult<UserGroup, String> result = getGroupCollection().updateById(group.getId(), group);
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException("MongoDB encountered an exception while editing a new group: "
-					+ result.getError());
-		}
+        group.setId(result.getSavedId());
+        return group;
+    }
 
-		return group;
-	}
-	
-	@Override
-	public void addUserToGroup(final String userId, final String groupId) throws SegueDatabaseException {
-		WriteResult<GroupMembership, String> result = getGroupMembershipCollection().save(new GroupMembership(
-				null, groupId, userId));
+    @Override
+    public UserGroup editGroup(final UserGroup group) throws SegueDatabaseException {
+        WriteResult<UserGroup, String> result = getGroupCollection().updateById(group.getId(), group);
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while editing a new group: "
+                    + result.getError());
+        }
 
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
-					+ result.getError());
-		}
-	}
+        return group;
+    }
 
-	@Override
-	public void removeUserFromGroup(final String userId, final String groupId) throws SegueDatabaseException {
-		Query query = DBQuery.and(DBQuery.is(Constants.GROUP_FK, groupId),
-				DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId));
+    @Override
+    public void addUserToGroup(final String userId, final String groupId) throws SegueDatabaseException {
+        WriteResult<GroupMembership, String> result = getGroupMembershipCollection().save(
+                new GroupMembership(null, groupId, userId));
 
-		WriteResult<GroupMembership, String> result = getGroupMembershipCollection().remove(query);
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while creating a new group: "
+                    + result.getError());
+        }
+    }
 
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException(
-					"MongoDB encountered an exception while removing a user from a group: "
-							+ result.getError());
-		}
-	}
+    @Override
+    public void removeUserFromGroup(final String userId, final String groupId) throws SegueDatabaseException {
+        Query query = DBQuery.and(DBQuery.is(Constants.GROUP_FK, groupId),
+                DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId));
 
-	@Override
-	public List<UserGroup> getGroupsByOwner(final String ownerUserId) {
-		Query query = DBQuery.is(Constants.OWNER_USER_ID_FKEY_FIELDNAME, ownerUserId);
+        WriteResult<GroupMembership, String> result = getGroupMembershipCollection().remove(query);
 
-		DBCursor<UserGroup> result = getGroupCollection().find(query).sort(new BasicDBObject(GROUP_NAME_FIELD , 1));
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while removing a user from a group: "
+                    + result.getError());
+        }
+    }
 
-		return result.toArray();
-	}
-	
-	@Override
-	public UserGroup findById(final String groupId) {
-		return getGroupCollection().findOneById(groupId);
-	}
-	
-	@Override
-	public void deleteGroup(final String groupId) throws SegueDatabaseException {
-		Query query = DBQuery.is(Constants.GROUP_FK, groupId);
+    @Override
+    public List<UserGroup> getGroupsByOwner(final String ownerUserId) {
+        Query query = DBQuery.is(Constants.OWNER_USER_ID_FKEY_FIELDNAME, ownerUserId);
 
-		WriteResult<GroupMembership, String> cascadeDeleteResult = getGroupMembershipCollection().remove(query);
-		
-		if (cascadeDeleteResult.getError() != null) {
-			throw new SegueDatabaseException(
-					"Unable to delete group from database - failed on deleting membership information.");
-		}
+        DBCursor<UserGroup> result = getGroupCollection().find(query).sort(new BasicDBObject(GROUP_NAME_FIELD, 1));
 
-		WriteResult<UserGroup, String> result = getGroupCollection().removeById(groupId);
-		
-		if (result.getError() != null) {
-			throw new SegueDatabaseException("Unable to delete group from database");
-		}
-	}
+        return result.toArray();
+    }
 
-	@Override
-	public List<String> getGroupMemberIds(final String groupId) {
-		Query query = DBQuery.is(Constants.GROUP_FK, groupId);
-		
-		DBCursor<GroupMembership> results = getGroupMembershipCollection().find(query);
-		
-		List<String> userIds = Lists.newArrayList();
-		for (GroupMembership gm : results.toArray()) {
-			userIds.add(gm.getUserId());
-		}
-		
-		return userIds;
-	}
+    @Override
+    public UserGroup findById(final String groupId) {
+        return getGroupCollection().findOneById(groupId);
+    }
 
-	@Override
-	public Collection<UserGroup> getGroupMembershipList(final String userId) throws SegueDatabaseException {
-		Query query = DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId);
-		
-		DBCursor<GroupMembership> results = getGroupMembershipCollection().find(query);
-		
-		Set<UserGroup> groups = Sets.newHashSet();
-		for (GroupMembership gm : results.toArray()) {
-			UserGroup group = this.findById(gm.getGroupId());
-			if (group != null) {
-				groups.add(group);	
-			}
-		}
-		
-		return groups;
-	}
-	
-	/**
-	 * Gets a new connection to the group collection.
-	 * @return jackson configured collection
-	 */
-	private JacksonDBCollection<UserGroup, String> getGroupCollection() {
-		return JacksonDBCollection.wrap(this.database.getDB().getCollection(GROUP_COLLECTION_NAME),
-				UserGroup.class, String.class);
-		
-	}
-	
-	/**
-	 * Gets a new connection to the group member collection.
-	 * @return jackson configured collection
-	 */
-	private JacksonDBCollection<GroupMembership, String> getGroupMembershipCollection() {
-		return JacksonDBCollection
-				.wrap(this.database.getDB().getCollection(GROUP_MEMBERSHIP_COLLECTION_NAME), GroupMembership.class,
-						String.class);
-	}
+    @Override
+    public void deleteGroup(final String groupId) throws SegueDatabaseException {
+        Query query = DBQuery.is(Constants.GROUP_FK, groupId);
+
+        WriteResult<GroupMembership, String> cascadeDeleteResult = getGroupMembershipCollection().remove(query);
+
+        if (cascadeDeleteResult.getError() != null) {
+            throw new SegueDatabaseException(
+                    "Unable to delete group from database - failed on deleting membership information.");
+        }
+
+        WriteResult<UserGroup, String> result = getGroupCollection().removeById(groupId);
+
+        if (result.getError() != null) {
+            throw new SegueDatabaseException("Unable to delete group from database");
+        }
+    }
+
+    @Override
+    public List<String> getGroupMemberIds(final String groupId) {
+        Query query = DBQuery.is(Constants.GROUP_FK, groupId);
+
+        DBCursor<GroupMembership> results = getGroupMembershipCollection().find(query);
+
+        List<String> userIds = Lists.newArrayList();
+        for (GroupMembership gm : results.toArray()) {
+            userIds.add(gm.getUserId());
+        }
+
+        return userIds;
+    }
+
+    @Override
+    public Collection<UserGroup> getGroupMembershipList(final String userId) throws SegueDatabaseException {
+        Query query = DBQuery.is(Constants.USER_ID_FKEY_FIELDNAME, userId);
+
+        DBCursor<GroupMembership> results = getGroupMembershipCollection().find(query);
+
+        Set<UserGroup> groups = Sets.newHashSet();
+        for (GroupMembership gm : results.toArray()) {
+            UserGroup group = this.findById(gm.getGroupId());
+            if (group != null) {
+                groups.add(group);
+            }
+        }
+
+        return groups;
+    }
+
+    /**
+     * Gets a new connection to the group collection.
+     * 
+     * @return jackson configured collection
+     */
+    private JacksonDBCollection<UserGroup, String> getGroupCollection() {
+        return JacksonDBCollection.wrap(this.database.getDB().getCollection(GROUP_COLLECTION_NAME), UserGroup.class,
+                String.class);
+
+    }
+
+    /**
+     * Gets a new connection to the group member collection.
+     * 
+     * @return jackson configured collection
+     */
+    private JacksonDBCollection<GroupMembership, String> getGroupMembershipCollection() {
+        return JacksonDBCollection.wrap(this.database.getDB().getCollection(GROUP_MEMBERSHIP_COLLECTION_NAME),
+                GroupMembership.class, String.class);
+    }
 }

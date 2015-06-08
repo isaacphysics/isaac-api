@@ -40,41 +40,40 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 public class InMemoryMisuseMonitor implements IMisuseMonitor {
     // Cache of the form agentIdentifier --> Event --> Date, number
     private final Cache<String, Map<String, Map.Entry<Date, Integer>>> nonPersistentDatabase;
-    
+
     private final Map<String, IMisuseHandler> handlerMap;
-    
+
     private static final Logger log = LoggerFactory.getLogger(InMemoryMisuseMonitor.class);
-    
+
     /**
      * Creates a misuse monitor that just uses non-persistent storage.
      */
     @Inject
     public InMemoryMisuseMonitor() {
-        nonPersistentDatabase = CacheBuilder.newBuilder()
-        .expireAfterAccess(2, TimeUnit.DAYS)
-        .<String,  Map<String, Map.Entry<Date, Integer>>> build();
+        nonPersistentDatabase = CacheBuilder.newBuilder().expireAfterAccess(2, TimeUnit.DAYS)
+                .<String, Map<String, Map.Entry<Date, Integer>>> build();
         handlerMap = Maps.newConcurrentMap();
     }
-    
+
     @Override
     public void registerHandler(final String eventToHandle, final IMisuseHandler handler) {
         handlerMap.put(eventToHandle, handler);
     }
-    
+
     @Override
-    public synchronized void notifyEvent(final String agentIdentifier, final String eventLabel) 
+    public synchronized void notifyEvent(final String agentIdentifier, final String eventLabel)
             throws SegueResourceMisuseException {
         Validate.notBlank(agentIdentifier);
         Validate.notBlank(eventLabel);
-        
+
         IMisuseHandler handler = handlerMap.get(eventLabel);
         Validate.notNull(handler, "No handler has been registered for " + eventLabel);
-        
+
         Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
-        
+
         if (null == existingHistory) {
             existingHistory = Maps.newConcurrentMap();
-            
+
             existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
             nonPersistentDatabase.put(agentIdentifier, existingHistory);
         } else {
@@ -83,17 +82,17 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
                 existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
                 log.info("New Event " + existingHistory.get(eventLabel));
             } else {
-               
+
                 // deal with expired events
                 if (isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())) {
                     existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
-                    log.info("Event expired starting count over");
+                    log.debug("Event expired starting count over");
                 } else {
                     // last events not expired yet so add them.
                     existingHistory.put(eventLabel, immutableEntry(entry.getKey(), entry.getValue() + 1));
-                    log.info("Event NOT expired so adding one " + existingHistory.get(eventLabel));
+                    log.debug("Event NOT expired so adding one " + existingHistory.get(eventLabel));
                 }
-                
+
                 entry = existingHistory.get(eventLabel);
 
                 // deal with threshold violations
@@ -101,11 +100,11 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
                     handler.executeSoftThresholdAction(String.format(
                             "(%s) has exceeded the soft limit specified by (%s)", agentIdentifier, eventLabel));
                 }
-                
+
                 if (handler.getHardThreshold() != null && entry.getValue() > handler.getHardThreshold()) {
-                    String errMessage = String.format(
-                            "(%s) has exceeded the hard limit specified by (%s)", agentIdentifier, eventLabel);
-                    
+                    String errMessage = String.format("(%s) has exceeded the hard limit specified by (%s)",
+                            agentIdentifier, eventLabel);
+
                     handler.executeHardThresholdAction(errMessage);
                     throw new SegueResourceMisuseException("Exceeded resource usage limit on " + eventLabel);
                 }
@@ -116,22 +115,22 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
     @Override
     public boolean hasMisused(final String agentIdentifier, final String eventToCheck) {
         Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
-        
+
         if (null == existingHistory || existingHistory.get(eventToCheck) == null) {
             return false;
         }
 
         Entry<Date, Integer> entry = existingHistory.get(eventToCheck);
         IMisuseHandler handler = handlerMap.get(eventToCheck);
-        
+
         if (isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())
                 && entry.getValue() >= handler.getHardThreshold()) {
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Helper to work out whether we can reset the counter or not.
      * 
@@ -145,11 +144,11 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         Calendar entryExpiry = Calendar.getInstance();
         entryExpiry.setTime(mapEntryDate);
         entryExpiry.add(Calendar.SECOND, secondsUntilExpiry);
-        
+
         if (entryExpiry.getTime().after(new Date())) {
             return false;
         }
-        
+
         return true;
     }
 }

@@ -24,226 +24,232 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This class is the Domain Object used to store gameboards in the segue CMS.
- * The primary difference between this DO and the Gameboard DTO is the references to 
- * gameboardItems are ids rather than full objects.
+ * This class is the Domain Object used to store gameboards in the segue CMS. The primary difference between this DO and
+ * the Gameboard DTO is the references to gameboardItems are ids rather than full objects.
  */
 public class GameboardDO {
-	@JsonProperty("_id")
-	private String id;
-	private String title;
-	private List<String> questions;
-	private IsaacWildcard wildCard;
-	private Integer wildCardPosition;
-	private Date creationDate;
-	private GameFilter gameFilter;
-	private String ownerUserId;
-	private GameboardCreationMethod creationMethod;
-	
-	/**
-	 * Complete gameboard constructor with all dependencies.
-	 * 
-	 * @param id
-	 *            - unique id for the gameboard
-	 * @param title
-	 *            - optional title for gameboard.
-	 * @param questions
-	 *            - list of gameboard items (shallow questions).
-	 * @param wildCard
-	 *            - wildcard content object for advertising purposes.
-	 * @param wildcardPosition
-	 *            - position for where the front end should display this.
-	 * @param creationDate
-	 *            - Date in which the gameboard was created.
-	 * @param gameFilter
-	 *            - simple DO that represents the filter criteria used to creat
-	 *            the gameboard.
-	 * @param ownerUserId
-	 *            - User id of the owner of the gameboard.
-	 * @param creationMethod
-	 *            - Method used to construct this game board.
-	 */
-	public GameboardDO(final String id, final String title,
-			final List<String> questions, final IsaacWildcard wildCard,
-			final Integer wildcardPosition, final Date creationDate,
-			final GameFilter gameFilter, final String ownerUserId, 
-			final GameboardCreationMethod creationMethod) {
-		this.id = id;
-		this.title = title;
-		this.questions = questions;
-		this.wildCard = wildCard;
-		this.wildCardPosition = wildcardPosition;
-		this.creationDate = creationDate;
-		this.gameFilter = gameFilter;
-		this.ownerUserId = ownerUserId;	
-		this.creationMethod = creationMethod;
-	}
-	
-	/**
-	 * Default constructor required for AutoMapping.
-	 */
-	public GameboardDO() {
-		this.questions = new ArrayList<String>();
-	}
-	
-	/**
-	 * Gets the id.
-	 * 
-	 * @return the id
-	 */
-	public final String getId() {
-		return id;
-	}
+    @JsonProperty("_id")
+    private String id;
+    private String title;
+    private List<String> questions;
+    private IsaacWildcard wildCard;
+    private Integer wildCardPosition;
+    private Date creationDate;
+    private GameFilter gameFilter;
+    private String ownerUserId;
+    private GameboardCreationMethod creationMethod;
 
-	/**
-	 * Sets the id.
-	 * 
-	 * @param id
-	 *            the id to set
-	 */
-	public final void setId(final String id) {
-		this.id = id;
-	}
+    /**
+     * Complete gameboard constructor with all dependencies.
+     * 
+     * @param id
+     *            - unique id for the gameboard
+     * @param title
+     *            - optional title for gameboard.
+     * @param questions
+     *            - list of gameboard items (shallow questions).
+     * @param wildCard
+     *            - wildcard content object for advertising purposes.
+     * @param wildcardPosition
+     *            - position for where the front end should display this.
+     * @param creationDate
+     *            - Date in which the gameboard was created.
+     * @param gameFilter
+     *            - simple DO that represents the filter criteria used to creat the gameboard.
+     * @param ownerUserId
+     *            - User id of the owner of the gameboard.
+     * @param creationMethod
+     *            - Method used to construct this game board.
+     */
+    public GameboardDO(final String id, final String title, final List<String> questions, final IsaacWildcard wildCard,
+            final Integer wildcardPosition, final Date creationDate, final GameFilter gameFilter,
+            final String ownerUserId, final GameboardCreationMethod creationMethod) {
+        this.id = id;
+        this.title = title;
+        this.questions = questions;
+        this.wildCard = wildCard;
+        this.wildCardPosition = wildcardPosition;
+        this.creationDate = creationDate;
+        this.gameFilter = gameFilter;
+        this.ownerUserId = ownerUserId;
+        this.creationMethod = creationMethod;
+    }
 
-	/**
-	 * Gets the title.
-	 * @return the title
-	 */
-	public final String getTitle() {
-		return title;
-	}
-	
+    /**
+     * Default constructor required for AutoMapping.
+     */
+    public GameboardDO() {
+        this.questions = new ArrayList<String>();
+    }
 
-	/**
-	 * Sets the title.
-	 * @param title the title to set
-	 */
-	public final void setTitle(final String title) {
-		this.title = title;
-	}
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    public final String getId() {
+        return id;
+    }
 
-	/**
-	 * Gets the gameboardItem ids.
-	 * 
-	 * @return the gameboardItems (ids)
-	 */
-	public final List<String> getQuestions() {
-		return questions;
-	}
+    /**
+     * Sets the id.
+     * 
+     * @param id
+     *            the id to set
+     */
+    public final void setId(final String id) {
+        this.id = id;
+    }
 
-	/**
-	 * Sets the gameboardItem ids.
-	 * 
-	 * @param questions
-	 *            the gameboardItems ids to set
-	 */
-	public final void setQuestions(final List<String> questions) {
-		this.questions = questions;
-	}
+    /**
+     * Gets the title.
+     * 
+     * @return the title
+     */
+    public final String getTitle() {
+        return title;
+    }
 
-	/**
-	 * Gets the wildCard.
-	 * 
-	 * @return the wildCard
-	 */
-	public final IsaacWildcard getWildCard() {
-		return wildCard;
-	}
+    /**
+     * Sets the title.
+     * 
+     * @param title
+     *            the title to set
+     */
+    public final void setTitle(final String title) {
+        this.title = title;
+    }
 
-	/**
-	 * Sets the wildCard.
-	 * 
-	 * @param wildCard
-	 *            the wildCard to set
-	 */
-	public final void setWildCard(final IsaacWildcard wildCard) {
-		this.wildCard = wildCard;
-	}
+    /**
+     * Gets the gameboardItem ids.
+     * 
+     * @return the gameboardItems (ids)
+     */
+    public final List<String> getQuestions() {
+        return questions;
+    }
 
-	/**
-	 * Gets the wildCardPosition.
-	 * @return the wildCardPosition
-	 */
-	public final Integer getWildCardPosition() {
-		return wildCardPosition;
-	}
-	
+    /**
+     * Sets the gameboardItem ids.
+     * 
+     * @param questions
+     *            the gameboardItems ids to set
+     */
+    public final void setQuestions(final List<String> questions) {
+        this.questions = questions;
+    }
 
-	/**
-	 * Sets the wildCardPosition.
-	 * @param wildCardPosition the wildCardPosition to set
-	 */
-	public final void setWildCardPosition(final Integer wildCardPosition) {
-		this.wildCardPosition = wildCardPosition;
-	}
+    /**
+     * Gets the wildCard.
+     * 
+     * @return the wildCard
+     */
+    public final IsaacWildcard getWildCard() {
+        return wildCard;
+    }
 
-	/**
-	 * Gets the creationDate.
-	 * 
-	 * @return the creationDate
-	 */
-	public final Date getCreationDate() {
-		return creationDate;
-	}
+    /**
+     * Sets the wildCard.
+     * 
+     * @param wildCard
+     *            the wildCard to set
+     */
+    public final void setWildCard(final IsaacWildcard wildCard) {
+        this.wildCard = wildCard;
+    }
 
-	/**
-	 * Sets the creationDate.
-	 * 
-	 * @param creationDate
-	 *            the creationDate to set
-	 */
-	public final void setCreationDate(final Date creationDate) {
-		this.creationDate = creationDate;
-	}
+    /**
+     * Gets the wildCardPosition.
+     * 
+     * @return the wildCardPosition
+     */
+    public final Integer getWildCardPosition() {
+        return wildCardPosition;
+    }
 
-	/**
-	 * Gets the gameFilter.
-	 * 
-	 * @return the gameFilter
-	 */
-	public final GameFilter getGameFilter() {
-		return gameFilter;
-	}
+    /**
+     * Sets the wildCardPosition.
+     * 
+     * @param wildCardPosition
+     *            the wildCardPosition to set
+     */
+    public final void setWildCardPosition(final Integer wildCardPosition) {
+        this.wildCardPosition = wildCardPosition;
+    }
 
-	/**
-	 * Sets the gameFilter.
-	 * 
-	 * @param gameFilter
-	 *            the gameFilter to set
-	 */
-	public final void setGameFilter(final GameFilter gameFilter) {
-		this.gameFilter = gameFilter;
-	}
+    /**
+     * Gets the creationDate.
+     * 
+     * @return the creationDate
+     */
+    public final Date getCreationDate() {
+        return creationDate;
+    }
 
-	/**
-	 * Gets the userId.
-	 * @return the userId
-	 */
-	public final String getOwnerUserId() {
-		return ownerUserId;
-	}
+    /**
+     * Sets the creationDate.
+     * 
+     * @param creationDate
+     *            the creationDate to set
+     */
+    public final void setCreationDate(final Date creationDate) {
+        this.creationDate = creationDate;
+    }
 
-	/**
-	 * Sets the ownerUserId.
-	 * @param ownerUserId the ownerUserId to set
-	 */
-	public final void setOwnerUserId(final String ownerUserId) {
-		this.ownerUserId = ownerUserId;
-	}
+    /**
+     * Gets the gameFilter.
+     * 
+     * @return the gameFilter
+     */
+    public final GameFilter getGameFilter() {
+        return gameFilter;
+    }
 
-	/**
-	 * Gets the creationMethod.
-	 * @return the creationMethod
-	 */
-	public GameboardCreationMethod getCreationMethod() {
-		return creationMethod;
-	}
+    /**
+     * Sets the gameFilter.
+     * 
+     * @param gameFilter
+     *            the gameFilter to set
+     */
+    public final void setGameFilter(final GameFilter gameFilter) {
+        this.gameFilter = gameFilter;
+    }
 
-	/**
-	 * Sets the creationMethod.
-	 * @param creationMethod the creationMethod to set
-	 */
-	public void setCreationMethod(final GameboardCreationMethod creationMethod) {
-		this.creationMethod = creationMethod;
-	}
+    /**
+     * Gets the userId.
+     * 
+     * @return the userId
+     */
+    public final String getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    /**
+     * Sets the ownerUserId.
+     * 
+     * @param ownerUserId
+     *            the ownerUserId to set
+     */
+    public final void setOwnerUserId(final String ownerUserId) {
+        this.ownerUserId = ownerUserId;
+    }
+
+    /**
+     * Gets the creationMethod.
+     * 
+     * @return the creationMethod
+     */
+    public GameboardCreationMethod getCreationMethod() {
+        return creationMethod;
+    }
+
+    /**
+     * Sets the creationMethod.
+     * 
+     * @param creationMethod
+     *            the creationMethod to set
+     */
+    public void setCreationMethod(final GameboardCreationMethod creationMethod) {
+        this.creationMethod = creationMethod;
+    }
 }

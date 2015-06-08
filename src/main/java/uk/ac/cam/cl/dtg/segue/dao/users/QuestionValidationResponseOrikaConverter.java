@@ -23,57 +23,55 @@ import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
 /**
- * QuestionValidationResponseOrikaConverter A specialist converter class to work
- * with the Orika automapper library.
+ * QuestionValidationResponseOrikaConverter A specialist converter class to work with the Orika automapper library.
  * 
  * Responsible for converting QuestionValidationResponse objects to their correct subtype.
  * 
  */
 public class QuestionValidationResponseOrikaConverter extends
-	BidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
+        BidirectionalConverter<QuestionValidationResponse, QuestionValidationResponseDTO> {
 
-	/**
-	 * Constructs an Orika Converter specialises in selecting the correct
-	 * subclass for choice objects.
-	 * 
-	 */
-	public QuestionValidationResponseOrikaConverter() {
+    /**
+     * Constructs an Orika Converter specialises in selecting the correct subclass for choice objects.
+     * 
+     */
+    public QuestionValidationResponseOrikaConverter() {
 
-	}
+    }
 
-	@Override
-	public QuestionValidationResponseDTO convertTo(final QuestionValidationResponse source,
-			final Type<QuestionValidationResponseDTO> destinationType) {
-		if (null == source) {
-			return null;
-		}
+    @Override
+    public QuestionValidationResponseDTO convertTo(final QuestionValidationResponse source,
+            final Type<QuestionValidationResponseDTO> destinationType) {
+        if (null == source) {
+            return null;
+        }
 
-		if (source instanceof QuantityValidationResponse) {
-			return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
-		} else {
-			// I would have expected this to cause an infinite loop / stack
-			// overflow but apparently it doesn't.
-			QuestionValidationResponseDTO questionValidationResponseDTO = new QuestionValidationResponseDTO();
-			super.mapperFacade.map(source, questionValidationResponseDTO);
-			return questionValidationResponseDTO;
-		}
-	}
+        if (source instanceof QuantityValidationResponse) {
+            return super.mapperFacade.map(source, QuantityValidationResponseDTO.class);
+        } else {
+            // I would have expected this to cause an infinite loop / stack
+            // overflow but apparently it doesn't.
+            QuestionValidationResponseDTO questionValidationResponseDTO = new QuestionValidationResponseDTO();
+            super.mapperFacade.map(source, questionValidationResponseDTO);
+            return questionValidationResponseDTO;
+        }
+    }
 
-	@Override
-	public QuestionValidationResponse convertFrom(final QuestionValidationResponseDTO source,
-			final Type<QuestionValidationResponse> destinationType) {
-		if (null == source) {
-			return null;
-		}
+    @Override
+    public QuestionValidationResponse convertFrom(final QuestionValidationResponseDTO source,
+            final Type<QuestionValidationResponse> destinationType) {
+        if (null == source) {
+            return null;
+        }
 
-		if (source instanceof QuantityValidationResponseDTO) {
-			return super.mapperFacade.map(source, QuantityValidationResponse.class);
-		} else {
-			// I would have expected this to cause an infinite loop / stack
-			// overflow but apparently it doesn't.
-			QuestionValidationResponse questionValidationResponse = new QuestionValidationResponse();
-			super.mapperFacade.map(source, questionValidationResponse);
-			return questionValidationResponse;
-		}
-	}
+        if (source instanceof QuantityValidationResponseDTO) {
+            return super.mapperFacade.map(source, QuantityValidationResponse.class);
+        } else {
+            // I would have expected this to cause an infinite loop / stack
+            // overflow but apparently it doesn't.
+            QuestionValidationResponse questionValidationResponse = new QuestionValidationResponse();
+            super.mapperFacade.map(source, questionValidationResponse);
+            return questionValidationResponse;
+        }
+    }
 }

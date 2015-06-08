@@ -41,167 +41,161 @@ import com.mongodb.BasicDBObject;
  * 
  */
 public class MongoAssociationDataManager implements IAssociationDataManager {
-	private static final String ASSOCIATION_COLLECTION_NAME = "userAssociations";
-	private static final String ASSOCIATION_TOKENS_COLLECTION_NAME = "userAssociationsTokens";
+    private static final String ASSOCIATION_COLLECTION_NAME = "userAssociations";
+    private static final String ASSOCIATION_TOKENS_COLLECTION_NAME = "userAssociationsTokens";
 
-	private static final Logger log = LoggerFactory.getLogger(MongoAssociationDataManager.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoAssociationDataManager.class);
 
-	private final MongoDb database;
+    private final MongoDb database;
 
-	/**
-	 * PostgresAssociationDataManager.
-	 * 
-	 * @param database
-	 *            - preconfigured connection
-	 */
-	@Inject
-	public MongoAssociationDataManager(final MongoDb database) {
-		this.database = database;
+    /**
+     * PostgresAssociationDataManager.
+     * 
+     * @param database
+     *            - preconfigured connection
+     */
+    @Inject
+    public MongoAssociationDataManager(final MongoDb database) {
+        this.database = database;
 
-		initialiseDataManager();
-	}
+        initialiseDataManager();
+    }
 
-	@Override
-	public AssociationToken saveAssociationToken(final AssociationToken token)
-		throws SegueDatabaseException {
-		Validate.notNull(token);
+    @Override
+    public AssociationToken saveAssociationToken(final AssociationToken token) throws SegueDatabaseException {
+        Validate.notNull(token);
 
-		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
-				String.class);
+        JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class, String.class);
 
-		WriteResult<AssociationToken, String> result = jacksonCollection.save(token);
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException(
-					"MongoDB encountered an exception while creating a new user account: "
-							+ result.getError());
-		}
+        WriteResult<AssociationToken, String> result = jacksonCollection.save(token);
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while creating a new user account: "
+                    + result.getError());
+        }
 
-		return result.getSavedObject();
-	}
+        return result.getSavedObject();
+    }
 
-	@Override
-	public void deleteToken(final String token) throws SegueDatabaseException {
-		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
-				String.class);
-		
-		Query query = DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, token);
+    @Override
+    public void deleteToken(final String token) throws SegueDatabaseException {
+        JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class, String.class);
 
-		WriteResult<AssociationToken, String> result = jacksonCollection.remove(query);
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException(
-					"MongoDB encountered an exception while deleting an association: " + result.getError());
-		}
-	}
-	
-	@Override
-	public void createAssociation(final AssociationToken token, final String userIdGrantingAccess)
-		throws SegueDatabaseException {
-		Validate.notNull(token);
-		
-		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+        Query query = DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, token);
 
-		WriteResult<UserAssociation, String> result = associationCollection.save(new UserAssociation(null,
-				userIdGrantingAccess, token.getOwnerUserId(), new Date()));
+        WriteResult<AssociationToken, String> result = jacksonCollection.remove(query);
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while deleting an association: "
+                    + result.getError());
+        }
+    }
 
-		if (result.getError() != null) {
-			throw new SegueDatabaseException("Unable to create association in the database.");
-		}
+    @Override
+    public void createAssociation(final AssociationToken token, final String userIdGrantingAccess)
+            throws SegueDatabaseException {
+        Validate.notNull(token);
 
-	}
+        JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
-	@Override
-	public void deleteAssociation(final String ownerUserId, final String userIdWithAccess)
-		throws SegueDatabaseException {
-		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+        WriteResult<UserAssociation, String> result = associationCollection.save(new UserAssociation(null,
+                userIdGrantingAccess, token.getOwnerUserId(), new Date()));
 
-		Query query = DBQuery.and(DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, ownerUserId),
-				DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userIdWithAccess));
+        if (result.getError() != null) {
+            throw new SegueDatabaseException("Unable to create association in the database.");
+        }
 
-		WriteResult<UserAssociation, String> result = associationCollection.remove(query);
-		if (result.getError() != null) {
-			log.error("Error during database update " + result.getError());
-			throw new SegueDatabaseException(
-					"MongoDB encountered an exception while deleting an association: " + result.getError());
-		}
-	}
+    }
 
-	@Override
-	public boolean hasValidAssociation(final String userIdRequestingAccess, final String ownerUserId) {
-		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+    @Override
+    public void deleteAssociation(final String ownerUserId, final String userIdWithAccess)
+            throws SegueDatabaseException {
+        JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
-		Query query = DBQuery.and(DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, ownerUserId),
-				DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userIdRequestingAccess));
+        Query query = DBQuery.and(DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, ownerUserId),
+                DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userIdWithAccess));
 
-		UserAssociation userAssociation = associationCollection.findOne(query);
+        WriteResult<UserAssociation, String> result = associationCollection.remove(query);
+        if (result.getError() != null) {
+            log.error("Error during database update " + result.getError());
+            throw new SegueDatabaseException("MongoDB encountered an exception while deleting an association: "
+                    + result.getError());
+        }
+    }
 
-		if (null != userAssociation) {
-			return true;
-		}
+    @Override
+    public boolean hasValidAssociation(final String userIdRequestingAccess, final String ownerUserId) {
+        JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
-		return false;
-	}
-	
-	@Override
-	public List<UserAssociation> getUserAssociations(final String userId) {
-		Validate.notBlank(userId);
-		
-		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+        Query query = DBQuery.and(DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, ownerUserId),
+                DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userIdRequestingAccess));
 
-		Query query = DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, userId);
-		
-		DBCursor<UserAssociation> results = associationCollection.find(query);
+        UserAssociation userAssociation = associationCollection.findOne(query);
 
-		return results.toArray();
-	}
+        if (null != userAssociation) {
+            return true;
+        }
 
-	@Override
-	public AssociationToken lookupAssociationToken(final String tokenCode) {
-		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
-				String.class);
+        return false;
+    }
 
-		return jacksonCollection.findOne(DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, tokenCode));
-	}
+    @Override
+    public List<UserAssociation> getUserAssociations(final String userId) {
+        Validate.notBlank(userId);
 
-	@Override
-	public AssociationToken getAssociationTokenByGroupId(final String groupId) {
-		JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class,
-				String.class);
-		AssociationToken token = jacksonCollection.findOne(new BasicDBObject(Constants.GROUP_FK, groupId));
-		
-		return token;
-	}
+        JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
 
-	@Override
-	public List<UserAssociation> getUsersThatICanSee(final String userId) {
-		Validate.notBlank(userId);
-		
-		JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(
-				database.getDB().getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+        Query query = DBQuery.is(Constants.ASSOCIATION_USER_GRANTING_ACCESS, userId);
 
-		Query query = DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userId);
-		
-		DBCursor<UserAssociation> results = associationCollection.find(query);
+        DBCursor<UserAssociation> results = associationCollection.find(query);
 
-		return results.toArray();
-	}
-	
-	/**
-	 * This method ensures that the collection is setup correctly and has all of
-	 * the required indices.
-	 */
-	private void initialiseDataManager() {
-		database.getDB().getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME).ensureIndex(
-				new BasicDBObject(Constants.ASSOCIATION_TOKEN_FIELDNAME, 1),
-				Constants.ASSOCIATION_TOKEN_FIELDNAME, true);
-	}
+        return results.toArray();
+    }
+
+    @Override
+    public AssociationToken lookupAssociationToken(final String tokenCode) {
+        JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class, String.class);
+
+        return jacksonCollection.findOne(DBQuery.is(Constants.ASSOCIATION_TOKEN_FIELDNAME, tokenCode));
+    }
+
+    @Override
+    public AssociationToken getAssociationTokenByGroupId(final String groupId) {
+        JacksonDBCollection<AssociationToken, String> jacksonCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME), AssociationToken.class, String.class);
+        AssociationToken token = jacksonCollection.findOne(new BasicDBObject(Constants.GROUP_FK, groupId));
+
+        return token;
+    }
+
+    @Override
+    public List<UserAssociation> getUsersThatICanSee(final String userId) {
+        Validate.notBlank(userId);
+
+        JacksonDBCollection<UserAssociation, String> associationCollection = JacksonDBCollection.wrap(database.getDB()
+                .getCollection(ASSOCIATION_COLLECTION_NAME), UserAssociation.class, String.class);
+
+        Query query = DBQuery.is(Constants.ASSOCIATION_USER_RECEIVING_ACCESS, userId);
+
+        DBCursor<UserAssociation> results = associationCollection.find(query);
+
+        return results.toArray();
+    }
+
+    /**
+     * This method ensures that the collection is setup correctly and has all of the required indices.
+     */
+    private void initialiseDataManager() {
+        database.getDB()
+                .getCollection(ASSOCIATION_TOKENS_COLLECTION_NAME)
+                .ensureIndex(new BasicDBObject(Constants.ASSOCIATION_TOKEN_FIELDNAME, 1),
+                        Constants.ASSOCIATION_TOKEN_FIELDNAME, true);
+    }
 }

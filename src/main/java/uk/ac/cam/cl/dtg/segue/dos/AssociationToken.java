@@ -20,106 +20,116 @@ import org.mongojack.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * AssociationToken. This allows one user to request permission to view other
- * users details.
+ * AssociationToken. This allows one user to request permission to view other users details.
  * 
  * This token will be used to make new associations between users.
  */
 public class AssociationToken {
-	private String id;
-	private String token;
-	private String ownerUserId;
-	private String groupId;
-	
-	/**
+    private String id;
+    private String token;
+    private String ownerUserId;
+    private String groupId;
+
+    /**
 	 * 
 	 */
-	public AssociationToken() {
-		
-	}
-	
-	/**
-	 * AssociationToken - Default Constructor.
-	 * 
-	 * @param token
-	 *            - unique id and token string.
-	 * @param ownerUserId
-	 *            - id of user who should be granted permission
-	 * @param groupId
-	 *            - group / label that users who use this token should be put in
-	 *            / labelled.
-	 */
-	public AssociationToken(final String token, final String ownerUserId, final String groupId) {
-		this.token = token;
-		this.ownerUserId = ownerUserId;
-		this.groupId = groupId;
-	}
+    public AssociationToken() {
 
-	/**
-	 * Gets the id.
-	 * @return the id
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public String getId() {
-		return id;
-	}
+    }
 
-	/**
-	 * Sets the id.
-	 * @param id the id to set
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public void setId(final String id) {
-		this.id = id;
-	}
+    /**
+     * AssociationToken - Default Constructor.
+     * 
+     * @param token
+     *            - unique id and token string.
+     * @param ownerUserId
+     *            - id of user who should be granted permission
+     * @param groupId
+     *            - group / label that users who use this token should be put in / labelled.
+     */
+    public AssociationToken(final String token, final String ownerUserId, final String groupId) {
+        this.token = token;
+        this.ownerUserId = ownerUserId;
+        this.groupId = groupId;
+    }
 
-	/**
-	 * Gets the token.
-	 * @return the token
-	 */
-	public String getToken() {
-		return token;
-	}
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * Sets the token.
-	 * @param token the token to set
-	 */
-	public void setToken(final String token) {
-		this.token = token;
-	}
+    /**
+     * Sets the id.
+     * 
+     * @param id
+     *            the id to set
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public void setId(final String id) {
+        this.id = id;
+    }
 
-	/**
-	 * Gets the ownerUserId.
-	 * @return the ownerUserId
-	 */
-	public String getOwnerUserId() {
-		return ownerUserId;
-	}
+    /**
+     * Gets the token.
+     * 
+     * @return the token
+     */
+    public String getToken() {
+        return token;
+    }
 
-	/**
-	 * Sets the ownerUserId.
-	 * @param ownerUserId the ownerUserId to set
-	 */
-	public void setOwnerUserId(final String ownerUserId) {
-		this.ownerUserId = ownerUserId;
-	}
+    /**
+     * Sets the token.
+     * 
+     * @param token
+     *            the token to set
+     */
+    public void setToken(final String token) {
+        this.token = token;
+    }
 
-	/**
-	 * Gets the groupId.
-	 * @return the groupId
-	 */
-	public String getGroupId() {
-		return groupId;
-	}
+    /**
+     * Gets the ownerUserId.
+     * 
+     * @return the ownerUserId
+     */
+    public String getOwnerUserId() {
+        return ownerUserId;
+    }
 
-	/**
-	 * Sets the groupId.
-	 * @param groupId the groupId to set
-	 */
-	public void setGroupId(final String groupId) {
-		this.groupId = groupId;
-	}
+    /**
+     * Sets the ownerUserId.
+     * 
+     * @param ownerUserId
+     *            the ownerUserId to set
+     */
+    public void setOwnerUserId(final String ownerUserId) {
+        this.ownerUserId = ownerUserId;
+    }
+
+    /**
+     * Gets the groupId.
+     * 
+     * @return the groupId
+     */
+    public String getGroupId() {
+        return groupId;
+    }
+
+    /**
+     * Sets the groupId.
+     * 
+     * @param groupId
+     *            the groupId to set
+     */
+    public void setGroupId(final String groupId) {
+        this.groupId = groupId;
+    }
 }

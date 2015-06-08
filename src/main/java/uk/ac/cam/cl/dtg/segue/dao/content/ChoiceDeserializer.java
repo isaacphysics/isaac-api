@@ -32,48 +32,46 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 /**
  * Choice deserializer
  * 
- * This class requires the primary content bas deserializer as a constructor
- * arguement.
+ * This class requires the primary content bas deserializer as a constructor arguement.
  * 
  * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class ChoiceDeserializer extends JsonDeserializer<Choice> {
-	private ContentBaseDeserializer contentDeserializer;
-	/**
-	 * Creates a Choice deserializer that is used by jackson to handle
-	 * polymorphic types.
-	 * 
-	 * @param contentDeserializer - Instance of a contentBase deserializer needed to deserialize nested content.
-	 */
-	public ChoiceDeserializer(final ContentBaseDeserializer contentDeserializer) {
-		this.contentDeserializer = contentDeserializer;
-	}
+    private ContentBaseDeserializer contentDeserializer;
 
-	@Override
-	public Choice deserialize(final JsonParser jsonParser,
-			final DeserializationContext deserializationContext) throws IOException {
+    /**
+     * Creates a Choice deserializer that is used by jackson to handle polymorphic types.
+     * 
+     * @param contentDeserializer
+     *            - Instance of a contentBase deserializer needed to deserialize nested content.
+     */
+    public ChoiceDeserializer(final ContentBaseDeserializer contentDeserializer) {
+        this.contentDeserializer = contentDeserializer;
+    }
 
-		SimpleModule contentDeserializerModule = new SimpleModule(
-				"ContentDeserializerModule");
-		contentDeserializerModule.addDeserializer(ContentBase.class,
-				contentDeserializer);
+    @Override
+    public Choice deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
+            throws IOException {
 
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(contentDeserializerModule);
+        SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
+        contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
 
-		ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(contentDeserializerModule);
 
-		if (null == root.get("type")) {
-			throw new JsonMappingException(
-					"Error: unable to parse content as there is no type property within the json input.");			
-		}
+        ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
 
-		String contentType = root.get("type").textValue();
+        if (null == root.get("type")) {
+            throw new JsonMappingException(
+                    "Error: unable to parse content as there is no type property within the json input.");
+        }
 
-		if (contentType.equals("quantity")) {
-			return mapper.readValue(root.toString(), Quantity.class);
-		} else {
-			return mapper.readValue(root.toString(), Choice.class);
-		}
-	}
+        String contentType = root.get("type").textValue();
+
+        if (contentType.equals("quantity")) {
+            return mapper.readValue(root.toString(), Quantity.class);
+        } else {
+            return mapper.readValue(root.toString(), Choice.class);
+        }
+    }
 }

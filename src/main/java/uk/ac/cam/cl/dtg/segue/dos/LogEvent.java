@@ -26,172 +26,204 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 public class LogEvent {
-	private String id;
-	private String eventType;
-	private String eventDetailsType;
-	private Object eventDetails;
-	private String userId;
-	private boolean anonymousUser;
-	private String ipAddress;
-	private Date timestamp;
-	
-	/**
-	 * Create a log event.
-	 */
-	public LogEvent() {
-		
-	}
+    private String id;
+    private String eventType;
+    private String eventDetailsType;
+    private Object eventDetails;
+    private String userId;
+    private boolean anonymousUser;
+    private String ipAddress;
+    private Date timestamp;
 
-	/**
-	 * Create a log event.
-	 * @param eventType - the type of event
-	 * @param eventDetailsType - the details type i.e. a class canonical name.
-	 * @param eventDetails - the object containing extra information
-	 * @param userId - of the user carryingout the operation.
-	 * @param anonymousUser - is this an anonymouse user
-	 * @param ipAddress - IP address of the user
-	 * @param timestamp - when the log happened.
-	 */
-	public LogEvent(final String eventType, final String eventDetailsType, final Object eventDetails,
-			final String userId, final boolean anonymousUser, final String ipAddress, final Date timestamp) {
-		this.eventType = eventType;
-		this.eventDetailsType = eventDetailsType;
-		this.eventDetails = eventDetails;
-		this.userId = userId;
-		this.anonymousUser = anonymousUser;
-		this.ipAddress = ipAddress;
-		this.timestamp = timestamp;
-	}
+    /**
+     * Create a log event.
+     */
+    public LogEvent() {
 
-	/**
-	 * Gets the id.
-	 * @return the id
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public String getId() {
-		return id;
-	}
+    }
 
-	/**
-	 * Sets the id.
-	 * @param id the id to set
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public void setId(final String id) {
-		this.id = id;
-	}
+    /**
+     * Create a log event.
+     * 
+     * @param eventType
+     *            - the type of event
+     * @param eventDetailsType
+     *            - the details type i.e. a class canonical name.
+     * @param eventDetails
+     *            - the object containing extra information
+     * @param userId
+     *            - of the user carryingout the operation.
+     * @param anonymousUser
+     *            - is this an anonymouse user
+     * @param ipAddress
+     *            - IP address of the user
+     * @param timestamp
+     *            - when the log happened.
+     */
+    public LogEvent(final String eventType, final String eventDetailsType, final Object eventDetails,
+            final String userId, final boolean anonymousUser, final String ipAddress, final Date timestamp) {
+        this.eventType = eventType;
+        this.eventDetailsType = eventDetailsType;
+        this.eventDetails = eventDetails;
+        this.userId = userId;
+        this.anonymousUser = anonymousUser;
+        this.ipAddress = ipAddress;
+        this.timestamp = timestamp;
+    }
 
-	/**
-	 * Gets the eventType.
-	 * @return the eventType
-	 */
-	public String getEventType() {
-		return eventType;
-	}
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * Sets the eventType.
-	 * @param eventType the eventType to set
-	 */
-	public void setEventType(final String eventType) {
-		this.eventType = eventType;
-	}
+    /**
+     * Sets the id.
+     * 
+     * @param id
+     *            the id to set
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public void setId(final String id) {
+        this.id = id;
+    }
 
-	/**
-	 * Gets the eventDetailsType.
-	 * @return the eventDetailsType
-	 */
-	public String getEventDetailsType() {
-		return eventDetailsType;
-	}
+    /**
+     * Gets the eventType.
+     * 
+     * @return the eventType
+     */
+    public String getEventType() {
+        return eventType;
+    }
 
-	/**
-	 * Sets the eventDetailsType.
-	 * @param eventDetailsType the eventDetailsType to set
-	 */
-	public void setEventDetailsType(final String eventDetailsType) {
-		this.eventDetailsType = eventDetailsType;
-	}
+    /**
+     * Sets the eventType.
+     * 
+     * @param eventType
+     *            the eventType to set
+     */
+    public void setEventType(final String eventType) {
+        this.eventType = eventType;
+    }
 
-	/**
-	 * Gets the eventDetails.
-	 * @return the eventDetails
-	 */
-	public Object getEventDetails() {
-		return eventDetails;
-	}
+    /**
+     * Gets the eventDetailsType.
+     * 
+     * @return the eventDetailsType
+     */
+    public String getEventDetailsType() {
+        return eventDetailsType;
+    }
 
-	/**
-	 * Sets the eventDetails.
-	 * @param eventDetails the eventDetails to set
-	 */
-	public void setEventDetails(final Object eventDetails) {
-		this.eventDetails = eventDetails;
-	}
+    /**
+     * Sets the eventDetailsType.
+     * 
+     * @param eventDetailsType
+     *            the eventDetailsType to set
+     */
+    public void setEventDetailsType(final String eventDetailsType) {
+        this.eventDetailsType = eventDetailsType;
+    }
 
-	/**
-	 * Gets the userId.
-	 * @return the userId
-	 */
-	public String getUserId() {
-		return userId;
-	}
+    /**
+     * Gets the eventDetails.
+     * 
+     * @return the eventDetails
+     */
+    public Object getEventDetails() {
+        return eventDetails;
+    }
 
-	/**
-	 * Sets the userId.
-	 * @param userId the userId to set
-	 */
-	public void setUserId(final String userId) {
-		this.userId = userId;
-	}
+    /**
+     * Sets the eventDetails.
+     * 
+     * @param eventDetails
+     *            the eventDetails to set
+     */
+    public void setEventDetails(final Object eventDetails) {
+        this.eventDetails = eventDetails;
+    }
 
-	/**
-	 * Gets the anonymousUser.
-	 * @return the anonymousUser
-	 */
-	public boolean isAnonymousUser() {
-		return anonymousUser;
-	}
+    /**
+     * Gets the userId.
+     * 
+     * @return the userId
+     */
+    public String getUserId() {
+        return userId;
+    }
 
-	/**
-	 * Sets the anonymousUser.
-	 * @param anonymousUser the anonymousUser to set
-	 */
-	public void setAnonymousUser(final boolean anonymousUser) {
-		this.anonymousUser = anonymousUser;
-	}
+    /**
+     * Sets the userId.
+     * 
+     * @param userId
+     *            the userId to set
+     */
+    public void setUserId(final String userId) {
+        this.userId = userId;
+    }
 
-	/**
-	 * Gets the ipAddress.
-	 * @return the ipAddress
-	 */
-	public String getIpAddress() {
-		return ipAddress;
-	}
+    /**
+     * Gets the anonymousUser.
+     * 
+     * @return the anonymousUser
+     */
+    public boolean isAnonymousUser() {
+        return anonymousUser;
+    }
 
-	/**
-	 * Sets the ipAddress.
-	 * @param ipAddress the ipAddress to set
-	 */
-	public void setIpAddress(final String ipAddress) {
-		this.ipAddress = ipAddress;
-	}
+    /**
+     * Sets the anonymousUser.
+     * 
+     * @param anonymousUser
+     *            the anonymousUser to set
+     */
+    public void setAnonymousUser(final boolean anonymousUser) {
+        this.anonymousUser = anonymousUser;
+    }
 
-	/**
-	 * Gets the timestamp.
-	 * @return the timestamp
-	 */
-	public Date getTimestamp() {
-		return timestamp;
-	}
+    /**
+     * Gets the ipAddress.
+     * 
+     * @return the ipAddress
+     */
+    public String getIpAddress() {
+        return ipAddress;
+    }
 
-	/**
-	 * Sets the timestamp.
-	 * @param timestamp the timestamp to set
-	 */
-	public void setTimestamp(final Date timestamp) {
-		this.timestamp = timestamp;
-	}
+    /**
+     * Sets the ipAddress.
+     * 
+     * @param ipAddress
+     *            the ipAddress to set
+     */
+    public void setIpAddress(final String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    /**
+     * Gets the timestamp.
+     * 
+     * @return the timestamp
+     */
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    /**
+     * Sets the timestamp.
+     * 
+     * @param timestamp
+     *            the timestamp to set
+     */
+    public void setTimestamp(final Date timestamp) {
+        this.timestamp = timestamp;
+    }
 }

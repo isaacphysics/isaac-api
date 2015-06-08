@@ -29,45 +29,51 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonContentType("isaacNumericQuestion")
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestion extends IsaacQuestionBase {
-	private Boolean requireUnits;
-	private Integer significantFigures;
+    private Boolean requireUnits;
+    private Integer significantFigures;
 
-	/**
-	 * Gets the requireUnits.
-	 * @return the requireUnits
-	 */
-	public final Boolean getRequireUnits() {
-		if (requireUnits == null) {
-			return true;
-		}
-		
-		return requireUnits;
-	}
+    /**
+     * Gets the requireUnits.
+     * 
+     * @return the requireUnits
+     */
+    public final Boolean getRequireUnits() {
+        if (requireUnits == null) {
+            return true;
+        }
 
-	/**
-	 * Sets the requireUnits.
-	 * @param requireUnits the requireUnits to set
-	 */
-	public final void setRequireUnits(final Boolean requireUnits) {
-		this.requireUnits = requireUnits;
-	}
-	
-	/**
-	 * Gets the expected number of significant figures.
-	 * @return the number of sig figs.
-	 */
-	public int getSignificantFigures() {
-		if (null == significantFigures) {
-			return 2;
-		}
-		return significantFigures;
-	}
+        return requireUnits;
+    }
 
-	/**
-	 * Sets the required number of significant figures.
-	 * @param significantFigures - number of significant figures expected
-	 */
-	public void setSignificantFigures(final Integer significantFigures) {
-		this.significantFigures = significantFigures;
-	}
+    /**
+     * Sets the requireUnits.
+     * 
+     * @param requireUnits
+     *            the requireUnits to set
+     */
+    public final void setRequireUnits(final Boolean requireUnits) {
+        this.requireUnits = requireUnits;
+    }
+
+    /**
+     * Gets the expected number of significant figures.
+     * 
+     * @return the number of sig figs.
+     */
+    public int getSignificantFigures() {
+        if (null == significantFigures) {
+            return 2;
+        }
+        return significantFigures;
+    }
+
+    /**
+     * Sets the required number of significant figures.
+     * 
+     * @param significantFigures
+     *            - number of significant figures expected
+     */
+    public void setSignificantFigures(final Integer significantFigures) {
+        this.significantFigures = significantFigures;
+    }
 }

@@ -24,5 +24,5 @@ package uk.ac.cam.cl.dtg.segue.search;
  *
  */
 public abstract class AbstractFilterInstruction {
-	
+
 }

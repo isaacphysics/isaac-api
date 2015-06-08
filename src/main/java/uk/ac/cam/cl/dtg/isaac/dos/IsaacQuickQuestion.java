@@ -25,5 +25,5 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 @DTOMapping(IsaacQuickQuestionDTO.class)
 @JsonContentType("isaacQuestion")
 public class IsaacQuickQuestion extends IsaacQuestionBase {
-	
+
 }

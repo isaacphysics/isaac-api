@@ -33,91 +33,90 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
  */
 @JsonContentType("isaacFeaturedProfile")
 public class IsaacFeaturedProfileDTO extends ContentDTO {
-	private String emailAddress;
-	private ImageDTO image;
-	private String homepage;
+    private String emailAddress;
+    private ImageDTO image;
+    private String homepage;
 
-	@JsonCreator
-	public IsaacFeaturedProfileDTO(@JsonProperty("_id") String _id,
-			@JsonProperty("id") String id, @JsonProperty("title") String title,
-			@JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type,
-			@JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout,
-			@JsonProperty("children") List<ContentBaseDTO> children,
-			@JsonProperty("value") String value,
-			@JsonProperty("attribution") String attribution,
-			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-			@JsonProperty("version") boolean published,
-			@JsonProperty("tags") Set<String> tags,
-			@JsonProperty("level") Integer level,
-			@JsonProperty("src") String src,
-			@JsonProperty("altText") String altText,
-			@JsonProperty("emailAddress") String emailAddress,
-			@JsonProperty("image") ImageDTO image,
-			@JsonProperty("homepage") String homepage) {
-		super(_id, id, title, subtitle, type, author, encoding,
-				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+    @JsonCreator
+    public IsaacFeaturedProfileDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type, @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
+            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("level") Integer level, @JsonProperty("src") String src,
+            @JsonProperty("altText") String altText, @JsonProperty("emailAddress") String emailAddress,
+            @JsonProperty("image") ImageDTO image, @JsonProperty("homepage") String homepage) {
+        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+                attribution, relatedContent, published, tags, level);
 
-		this.emailAddress = emailAddress;
-		this.image = image;
-	}
+        this.emailAddress = emailAddress;
+        this.image = image;
+    }
 
-	/**
-	 * Default constructor required for Jackson.
-	 */
-	public IsaacFeaturedProfileDTO() {
+    /**
+     * Default constructor required for Jackson.
+     */
+    public IsaacFeaturedProfileDTO() {
 
-	}
+    }
 
-	/**
-	 * Gets the emailAddress.
-	 * @return the emailAddress
-	 */
-	public String getEmailAddress() {
-		return emailAddress;
-	}
+    /**
+     * Gets the emailAddress.
+     * 
+     * @return the emailAddress
+     */
+    public String getEmailAddress() {
+        return emailAddress;
+    }
 
-	/**
-	 * Sets the emailAddress.
-	 * @param emailAddress the emailAddress to set
-	 */
-	public void setEmailAddress(final String emailAddress) {
-		this.emailAddress = emailAddress;
-	}
+    /**
+     * Sets the emailAddress.
+     * 
+     * @param emailAddress
+     *            the emailAddress to set
+     */
+    public void setEmailAddress(final String emailAddress) {
+        this.emailAddress = emailAddress;
+    }
 
-	/**
-	 * Gets the image.
-	 * @return the image
-	 */
-	public ImageDTO getImage() {
-		return image;
-	}
+    /**
+     * Gets the image.
+     * 
+     * @return the image
+     */
+    public ImageDTO getImage() {
+        return image;
+    }
 
-	/**
-	 * Sets the image.
-	 * @param image the image to set
-	 */
-	public void setImage(final ImageDTO image) {
-		this.image = image;
-	}
-	
-	/**
-	 * Gets the homepage.
-	 * @return the homepage
-	 */
-	public String getHomepage() {
-		return homepage;
-	}
+    /**
+     * Sets the image.
+     * 
+     * @param image
+     *            the image to set
+     */
+    public void setImage(final ImageDTO image) {
+        this.image = image;
+    }
 
-	/**
-	 * Sets the homepage.
-	 * @param homepage the homepage to set
-	 */
-	public void setHomepage(final String homepage) {
-		this.homepage = homepage;
-	}	
+    /**
+     * Gets the homepage.
+     * 
+     * @return the homepage
+     */
+    public String getHomepage() {
+        return homepage;
+    }
+
+    /**
+     * Sets the homepage.
+     * 
+     * @param homepage
+     *            the homepage to set
+     */
+    public void setHomepage(final String homepage) {
+        this.homepage = homepage;
+    }
 }

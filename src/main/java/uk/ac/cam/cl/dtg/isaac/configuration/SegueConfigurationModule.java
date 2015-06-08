@@ -27,29 +27,29 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 
 /**
- * Segue Configuration module for Isaac. 
+ * Segue Configuration module for Isaac.
  * 
  * This is used to register isaac specific DOs and DTOs with Segue.
  */
 public class SegueConfigurationModule implements ISegueDTOConfigurationModule {
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<Class<? extends Content>> getContentDataTransferObjectMap() {
-		List<Class<? extends Content>> supplementaryContentDOs = Lists.newArrayList();
-		
-		// We need to different content objects here for the
-		// auto-mapping to work
-		
-		Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.isaac");
-		Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(JsonContentType.class);
-	     
-		for (Class<?> classToAdd : annotated) {
-			if (Content.class.isAssignableFrom(classToAdd)) {
-				supplementaryContentDOs.add((Class<Content>) classToAdd);
-			}
-		}
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<Class<? extends Content>> getContentDataTransferObjectMap() {
+        List<Class<? extends Content>> supplementaryContentDOs = Lists.newArrayList();
 
-		return supplementaryContentDOs;
-	}
+        // We need to different content objects here for the
+        // auto-mapping to work
+
+        Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.isaac");
+        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(JsonContentType.class);
+
+        for (Class<?> classToAdd : annotated) {
+            if (Content.class.isAssignableFrom(classToAdd)) {
+                supplementaryContentDOs.add((Class<Content>) classToAdd);
+            }
+        }
+
+        return supplementaryContentDOs;
+    }
 }

@@ -37,161 +37,180 @@ import uk.ac.cam.cl.dtg.util.locations.Address;
  */
 @JsonContentType("isaacEventPage")
 public class IsaacEventPageDTO extends ContentDTO {
-	private Date date;
-	private Address location;
+    private Date date;
+    private Address location;
 
-	private List<ExternalReference> preResources;
-	private List<ExternalReference> postResources;
+    private List<ExternalReference> preResources;
+    private List<ExternalReference> postResources;
 
-	private ImageDTO eventThumbnail;
+    private ImageDTO eventThumbnail;
 
-	private Integer numberOfPlaces;
+    private Integer numberOfPlaces;
 
-	private EventStatus eventStatus;
+    private EventStatus eventStatus;
 
-	@JsonCreator
-	public IsaacEventPageDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
-			@JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
-			@JsonProperty("type") String type, @JsonProperty("author") String author,
-			@JsonProperty("encoding") String encoding,
-			@JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-			@JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
-			@JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
-			@JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
-			@JsonProperty("date") Date date, @JsonProperty("location") Address location,
-			@JsonProperty("preResources") List<ExternalReference> preResources,
-			@JsonProperty("postResources") List<ExternalReference> postResources,
-			@JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
-			@JsonProperty("numberOfPlaces") Integer numberOfPlaces,
-			@JsonProperty("EventStatus") EventStatus eventStatus) {
-		super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
-				null, relatedContent, published, tags, null);
+    @JsonCreator
+    public IsaacEventPageDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type, @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBaseDTO> children,
+            @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
+            @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
+            @JsonProperty("date") Date date, @JsonProperty("location") Address location,
+            @JsonProperty("preResources") List<ExternalReference> preResources,
+            @JsonProperty("postResources") List<ExternalReference> postResources,
+            @JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
+            @JsonProperty("numberOfPlaces") Integer numberOfPlaces, @JsonProperty("EventStatus") EventStatus eventStatus) {
+        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
+                relatedContent, published, tags, null);
 
-		this.date = date;
-		this.location = location;
-		this.preResources = preResources;
-		this.postResources = postResources;
-		this.eventThumbnail = eventThumbnail;
-		this.numberOfPlaces = numberOfPlaces;
-		this.eventStatus = eventStatus;
-	}
+        this.date = date;
+        this.location = location;
+        this.preResources = preResources;
+        this.postResources = postResources;
+        this.eventThumbnail = eventThumbnail;
+        this.numberOfPlaces = numberOfPlaces;
+        this.eventStatus = eventStatus;
+    }
 
-	/**
-	 * Default constructor required for Jackson.
-	 */
-	public IsaacEventPageDTO() {
+    /**
+     * Default constructor required for Jackson.
+     */
+    public IsaacEventPageDTO() {
 
-	}
+    }
 
-	/**
-	 * Gets the date.
-	 * @return the date
-	 */
-	public Date getDate() {
-		return date;
-	}
+    /**
+     * Gets the date.
+     * 
+     * @return the date
+     */
+    public Date getDate() {
+        return date;
+    }
 
-	/**
-	 * Sets the date.
-	 * @param date the date to set
-	 */
-	public void setDate(final Date date) {
-		this.date = date;
-	}
+    /**
+     * Sets the date.
+     * 
+     * @param date
+     *            the date to set
+     */
+    public void setDate(final Date date) {
+        this.date = date;
+    }
 
-	/**
-	 * Gets the location.
-	 * @return the location
-	 */
-	public Address getLocation() {
-		return location;
-	}
+    /**
+     * Gets the location.
+     * 
+     * @return the location
+     */
+    public Address getLocation() {
+        return location;
+    }
 
-	/**
-	 * Sets the location.
-	 * @param location the location to set
-	 */
-	public void setLocation(final Address location) {
-		this.location = location;
-	}
+    /**
+     * Sets the location.
+     * 
+     * @param location
+     *            the location to set
+     */
+    public void setLocation(final Address location) {
+        this.location = location;
+    }
 
-	/**
-	 * Gets the preResources.
-	 * @return the preResources
-	 */
-	public List<ExternalReference> getPreResources() {
-		return preResources;
-	}
+    /**
+     * Gets the preResources.
+     * 
+     * @return the preResources
+     */
+    public List<ExternalReference> getPreResources() {
+        return preResources;
+    }
 
-	/**
-	 * Sets the preResources.
-	 * @param preResources the preResources to set
-	 */
-	public void setPreResources(final List<ExternalReference> preResources) {
-		this.preResources = preResources;
-	}
+    /**
+     * Sets the preResources.
+     * 
+     * @param preResources
+     *            the preResources to set
+     */
+    public void setPreResources(final List<ExternalReference> preResources) {
+        this.preResources = preResources;
+    }
 
-	/**
-	 * Gets the postResources.
-	 * @return the postResources
-	 */
-	public List<ExternalReference> getPostResources() {
-		return postResources;
-	}
+    /**
+     * Gets the postResources.
+     * 
+     * @return the postResources
+     */
+    public List<ExternalReference> getPostResources() {
+        return postResources;
+    }
 
-	/**
-	 * Sets the postResources.
-	 * @param postResources the postResources to set
-	 */
-	public void setPostResources(final List<ExternalReference> postResources) {
-		this.postResources = postResources;
-	}
+    /**
+     * Sets the postResources.
+     * 
+     * @param postResources
+     *            the postResources to set
+     */
+    public void setPostResources(final List<ExternalReference> postResources) {
+        this.postResources = postResources;
+    }
 
-	/**
-	 * Gets the eventThumbnail.
-	 * @return the eventThumbnail
-	 */
-	public ImageDTO getEventThumbnail() {
-		return eventThumbnail;
-	}
+    /**
+     * Gets the eventThumbnail.
+     * 
+     * @return the eventThumbnail
+     */
+    public ImageDTO getEventThumbnail() {
+        return eventThumbnail;
+    }
 
-	/**
-	 * Sets the eventThumbnail.
-	 * @param eventThumbnail the eventThumbnail to set
-	 */
-	public void setEventThumbnail(final ImageDTO eventThumbnail) {
-		this.eventThumbnail = eventThumbnail;
-	}
+    /**
+     * Sets the eventThumbnail.
+     * 
+     * @param eventThumbnail
+     *            the eventThumbnail to set
+     */
+    public void setEventThumbnail(final ImageDTO eventThumbnail) {
+        this.eventThumbnail = eventThumbnail;
+    }
 
-	/**
-	 * Gets the numberOfPlaces.
-	 * @return the numberOfPlaces
-	 */
-	public Integer getNumberOfPlaces() {
-		return numberOfPlaces;
-	}
+    /**
+     * Gets the numberOfPlaces.
+     * 
+     * @return the numberOfPlaces
+     */
+    public Integer getNumberOfPlaces() {
+        return numberOfPlaces;
+    }
 
-	/**
-	 * Sets the numberOfPlaces.
-	 * @param numberOfPlaces the numberOfPlaces to set
-	 */
-	public void setNumberOfPlaces(final Integer numberOfPlaces) {
-		this.numberOfPlaces = numberOfPlaces;
-	}
+    /**
+     * Sets the numberOfPlaces.
+     * 
+     * @param numberOfPlaces
+     *            the numberOfPlaces to set
+     */
+    public void setNumberOfPlaces(final Integer numberOfPlaces) {
+        this.numberOfPlaces = numberOfPlaces;
+    }
 
-	/**
-	 * Gets the eventStatus.
-	 * @return the eventStatus
-	 */
-	public EventStatus getEventStatus() {
-		return eventStatus;
-	}
+    /**
+     * Gets the eventStatus.
+     * 
+     * @return the eventStatus
+     */
+    public EventStatus getEventStatus() {
+        return eventStatus;
+    }
 
-	/**
-	 * Sets the eventStatus.
-	 * @param eventStatus the eventStatus to set
-	 */
-	public void setEventStatus(final EventStatus eventStatus) {
-		this.eventStatus = eventStatus;
-	}
+    /**
+     * Sets the eventStatus.
+     * 
+     * @param eventStatus
+     *            the eventStatus to set
+     */
+    public void setEventStatus(final EventStatus eventStatus) {
+        this.eventStatus = eventStatus;
+    }
 }

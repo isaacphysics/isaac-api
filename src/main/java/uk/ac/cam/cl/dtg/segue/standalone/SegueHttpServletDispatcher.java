@@ -31,6 +31,6 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 // @WebInitParam(name = "resteasy.servlet.mapping.prefix", value="/segue/api/")
 // })
 public class SegueHttpServletDispatcher extends HttpServletDispatcher {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
 }

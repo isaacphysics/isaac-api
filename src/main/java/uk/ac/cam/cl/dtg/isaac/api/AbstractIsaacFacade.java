@@ -24,12 +24,15 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  */
 public class AbstractIsaacFacade extends AbstractSegueFacade {
 
-	/**
-	 * AbstractIsaacFacade.
-	 * @param properties - globally available properties.
-	 * @param logManager - log manager to support logging user actions.
-	 */
-	public AbstractIsaacFacade(final PropertiesLoader properties, final ILogManager logManager) {
-		super(properties, logManager);
-	}
+    /**
+     * AbstractIsaacFacade.
+     * 
+     * @param properties
+     *            - globally available properties.
+     * @param logManager
+     *            - log manager to support logging user actions.
+     */
+    public AbstractIsaacFacade(final PropertiesLoader properties, final ILogManager logManager) {
+        super(properties, logManager);
+    }
 }

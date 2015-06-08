@@ -34,66 +34,72 @@ import com.mongodb.ServerAddress;
  * This represents an immutable wrapped client for a MongoDb database.
  */
 public class MongoDb implements Closeable {
-	private final MongoClient client;
-	private final String databaseName;
-	
-	/**
-	 * Create a mongo db wrapper for a given mongodb database.
-	 * 
-	 * @param host
-	 *            - database host to connect to.
-	 * @param port
-	 *            - port that the mongodb service is running on.
-	 * @param options
-	 *            - Options for the mongo connection pool.
-	 * @param databaseName - The database name that this MongoDb instance should focus on.
-	 * @throws UnknownHostException - if we cannot resolve the host
-	 * @throws NumberFormatException - if the port number cannot be
-	 */
-	@Inject
-	public MongoDb(final String host, final Integer port, final String databaseName, final MongoClientOptions options)
-		throws NumberFormatException, UnknownHostException {
-		Validate.notBlank(databaseName);
-		Validate.notBlank(host);
-		Validate.notNull(port);
+    private final MongoClient client;
+    private final String databaseName;
 
-		this.client = new MongoClient(Arrays.asList(new ServerAddress(host, port)), options);
-		this.databaseName = databaseName;
-	}
-	
-	/**
-	 * Create a mongo db wrapper for a given mongodb database.
-	 * 
-	 * @param host
-	 *            - database host to connect to.
-	 * @param port
-	 *            - port that the mongodb service is running on.
+    /**
+     * Create a mongo db wrapper for a given mongodb database.
+     * 
+     * @param host
+     *            - database host to connect to.
+     * @param port
+     *            - port that the mongodb service is running on.
+     * @param options
+     *            - Options for the mongo connection pool.
+     * @param databaseName
+     *            - The database name that this MongoDb instance should focus on.
+     * @throws UnknownHostException
+     *             - if we cannot resolve the host
+     * @throws NumberFormatException
+     *             - if the port number cannot be
+     */
+    @Inject
+    public MongoDb(final String host, final Integer port, final String databaseName, final MongoClientOptions options)
+            throws NumberFormatException, UnknownHostException {
+        Validate.notBlank(databaseName);
+        Validate.notBlank(host);
+        Validate.notNull(port);
 
-	 * @param databaseName - The database name that this MongoDb instance should focus on.
-	 * @throws UnknownHostException - if we cannot resolve the host
-	 * @throws NumberFormatException - if the port number cannot be
-	 */
-	public MongoDb(final String host, final Integer port, final String databaseName)
-		throws NumberFormatException, UnknownHostException {
-		Validate.notBlank(databaseName);
-		Validate.notBlank(host);
-		Validate.notNull(port);
+        this.client = new MongoClient(Arrays.asList(new ServerAddress(host, port)), options);
+        this.databaseName = databaseName;
+    }
 
-		this.client = new MongoClient(Arrays.asList(new ServerAddress(host, port)));
-		this.databaseName = databaseName;
-	}
+    /**
+     * Create a mongo db wrapper for a given mongodb database.
+     * 
+     * @param host
+     *            - database host to connect to.
+     * @param port
+     *            - port that the mongodb service is running on.
+     * 
+     * @param databaseName
+     *            - The database name that this MongoDb instance should focus on.
+     * @throws UnknownHostException
+     *             - if we cannot resolve the host
+     * @throws NumberFormatException
+     *             - if the port number cannot be
+     */
+    public MongoDb(final String host, final Integer port, final String databaseName) throws NumberFormatException,
+            UnknownHostException {
+        Validate.notBlank(databaseName);
+        Validate.notBlank(host);
+        Validate.notNull(port);
 
-	/**
-	 * Provides a handle to the local MongoDB instance from the connection pool.
-	 * 
-	 * @return DB handle
-	 */
-	public DB getDB() {
-		return this.client.getDB(databaseName);
-	}
+        this.client = new MongoClient(Arrays.asList(new ServerAddress(host, port)));
+        this.databaseName = databaseName;
+    }
 
-	@Override
-	public void close() throws IOException {
-		client.close();
-	}
+    /**
+     * Provides a handle to the local MongoDB instance from the connection pool.
+     * 
+     * @return DB handle
+     */
+    public DB getDB() {
+        return this.client.getDB(databaseName);
+    }
+
+    @Override
+    public void close() throws IOException {
+        client.close();
+    }
 }

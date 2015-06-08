@@ -24,28 +24,32 @@ import java.util.Date;
  *
  */
 public interface EventBooking {
-	
-	/**
-	 * Getter for booking Id.
-	 * @return booking Id
-	 */
-	Long getId();
-	
-	/**
-	 * Getter for User Id.
-	 * @return User Id
-	 */
-	String getUserId();
-	
-	/**
-	 * Getter for event id.
-	 * @return event id
-	 */
-	String getEventId();
-	
-	/**
-	 * Getter for Creation date.
-	 * @return creation date
-	 */
-	Date getCreationDate();
+
+    /**
+     * Getter for booking Id.
+     * 
+     * @return booking Id
+     */
+    Long getId();
+
+    /**
+     * Getter for User Id.
+     * 
+     * @return User Id
+     */
+    String getUserId();
+
+    /**
+     * Getter for event id.
+     * 
+     * @return event id
+     */
+    String getEventId();
+
+    /**
+     * Getter for Creation date.
+     * 
+     * @return creation date
+     */
+    Date getCreationDate();
 }

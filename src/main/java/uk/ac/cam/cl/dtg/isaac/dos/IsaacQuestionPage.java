@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
+
 /**
  * IsaacQuestion Page DO.
  *
@@ -33,42 +34,35 @@ import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 @DTOMapping(IsaacQuestionPageDTO.class)
 @JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPage extends SeguePage {
-	protected Float passMark;
-	
-	@JsonCreator
-	public IsaacQuestionPage(@JsonProperty("_id") String _id,
-	                     @JsonProperty("id") String id, @JsonProperty("title") String title,
-	                     @JsonProperty("subtitle") String subtitle,
-	                     @JsonProperty("type") String type,
-	                     @JsonProperty("author") String author,
-	                     @JsonProperty("encoding") String encoding,
-	                     @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
-	                     @JsonProperty("layout") String layout,
-	                     @JsonProperty("children") List<ContentBase> children,
-	                     @JsonProperty("value") String value,
-	                     @JsonProperty("attribution") String attribution,
-	                     @JsonProperty("relatedContent") List<String> relatedContent,
-	                     @JsonProperty("published") boolean published,
-	                     @JsonProperty("tags") Set<String> tags,
-	                     @JsonProperty("level") Integer level,
-	                     @JsonProperty("passMark") Float passMark) {
-		super(_id, id, title, subtitle, type, author, encoding,
-				canonicalSourceFile, layout, children, value, attribution,
-				relatedContent, published, tags, level);
+    protected Float passMark;
 
-		this.passMark = passMark;
-	}
+    @JsonCreator
+    public IsaacQuestionPage(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+            @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
+            @JsonProperty("type") String type, @JsonProperty("author") String author,
+            @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
+            @JsonProperty("layout") String layout, @JsonProperty("children") List<ContentBase> children,
+            @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
+            @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") boolean published,
+            @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level,
+            @JsonProperty("passMark") Float passMark) {
+        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+                attribution, relatedContent, published, tags, level);
 
-	/**
-	 * Default constructor required for Jackson
-	 */
-	public IsaacQuestionPage() { }
+        this.passMark = passMark;
+    }
 
-	public Float getPassMark() {
-		return passMark;
-	}
+    /**
+     * Default constructor required for Jackson.
+     */
+    public IsaacQuestionPage() {
+    }
 
-	public void setPassMark(Float passMark) {
-		this.passMark = passMark;
-	}
+    public Float getPassMark() {
+        return passMark;
+    }
+
+    public void setPassMark(Float passMark) {
+        this.passMark = passMark;
+    }
 }

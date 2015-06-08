@@ -20,47 +20,51 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  *
  */
 public class ImageDTO extends MediaDTO {
-	private String clickUrl;
-	private String clickTarget;
-	
-	/**
-	 * Constructor for Mappers. 
-	 */
-	public ImageDTO() {
+    private String clickUrl;
+    private String clickTarget;
 
-	}
-	
-	/**
-	 * Gets the clickUrl.
-	 * @return the clickUrl
-	 */
-	public String getClickUrl() {
-		return clickUrl;
-	}
-	
+    /**
+     * Constructor for Mappers.
+     */
+    public ImageDTO() {
 
-	/**
-	 * Sets the clickUrl.
-	 * @param clickUrl the clickUrl to set
-	 */
-	public void setClickUrl(final String clickUrl) {
-		this.clickUrl = clickUrl;
-	}
-	
+    }
 
-	/**
-	 * Gets the clickTarget.
-	 * @return the clickTarget
-	 */
-	public String getClickTarget() {
-		return clickTarget;
-	}
-	
-	/**
-	 * Sets the clickTarget.
-	 * @param clickTarget the clickTarget to set
-	 */
-	public void setClickTarget(final String clickTarget) {
-		this.clickTarget = clickTarget;
-	}	
+    /**
+     * Gets the clickUrl.
+     * 
+     * @return the clickUrl
+     */
+    public String getClickUrl() {
+        return clickUrl;
+    }
+
+    /**
+     * Sets the clickUrl.
+     * 
+     * @param clickUrl
+     *            the clickUrl to set
+     */
+    public void setClickUrl(final String clickUrl) {
+        this.clickUrl = clickUrl;
+    }
+
+    /**
+     * Gets the clickTarget.
+     * 
+     * @return the clickTarget
+     */
+    public String getClickTarget() {
+        return clickTarget;
+    }
+
+    /**
+     * Sets the clickTarget.
+     * 
+     * @param clickTarget
+     *            the clickTarget to set
+     */
+    public void setClickTarget(final String clickTarget) {
+        this.clickTarget = clickTarget;
+    }
 }

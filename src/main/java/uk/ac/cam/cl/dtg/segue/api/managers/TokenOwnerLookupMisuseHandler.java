@@ -29,20 +29,20 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 /**
  * Handler to deal with token ownership requests.
  * 
- * Preventing users from overusing this endpoint is important as some email address information is exposed
- * for identity verification purposes.
+ * Preventing users from overusing this endpoint is important as some email address information is exposed for identity
+ * verification purposes.
  *
  */
 public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(TokenOwnerLookupMisuseHandler.class);
-    
+
     public static final Integer SOFT_THRESHOLD = 50;
     public static final Integer HARD_THRESHOLD = 200;
     public static final Integer ACCOUNTING_INTERVAL = 86400;
 
     private ICommunicator communicator;
     private PropertiesLoader properties;
-    
+
     /**
      * @param communicator
      *            - so we can send e-mails if the threshold limits have been reached.
@@ -50,18 +50,19 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public TokenOwnerLookupMisuseHandler(final ICommunicator communicator,
-            final PropertiesLoader properties) {
+    public TokenOwnerLookupMisuseHandler(final ICommunicator communicator, final PropertiesLoader properties) {
         this.communicator = communicator;
         this.properties = properties;
     }
-    
+
     @Override
     public Integer getSoftThreshold() {
         return SOFT_THRESHOLD;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
      */
     @Override
@@ -78,7 +79,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     public void executeSoftThresholdAction(final String message) {
         final String subject = "Soft Threshold limit reached for TokenOwnershipRequest endpoint";
         try {
-            communicator.sendMessage(properties.getProperty(Constants.MAIL_FROM_ADDRESS), 
+            communicator.sendMessage(properties.getProperty(Constants.MAIL_FROM_ADDRESS),
                     properties.getProperty(Constants.MAIL_FROM_ADDRESS), subject, message);
             log.warn("Soft threshold limit reached" + message);
         } catch (CommunicationException e) {
@@ -90,7 +91,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     public void executeHardThresholdAction(final String message) {
         final String subject = "HARD Threshold limit reached for TokenOwnershipRequest endpoint";
         try {
-            communicator.sendMessage(properties.getProperty(Constants.MAIL_FROM_ADDRESS), 
+            communicator.sendMessage(properties.getProperty(Constants.MAIL_FROM_ADDRESS),
                     properties.getProperty(Constants.MAIL_FROM_ADDRESS), subject, message);
             log.warn("Hard threshold limit reached" + message);
         } catch (CommunicationException e) {

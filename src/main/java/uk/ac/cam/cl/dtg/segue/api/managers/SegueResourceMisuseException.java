@@ -20,13 +20,15 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
  *
  */
 public class SegueResourceMisuseException extends Exception {
-	private static final long serialVersionUID = 5038779595514003323L;
-	
-	/**
-	 * Exception to indicate possible misuse of an endpoint.
-	 * @param message - to explain the misuse conditions.
-	 */
-	public SegueResourceMisuseException(final String message) {
-		super(message);
-	}
+    private static final long serialVersionUID = 5038779595514003323L;
+
+    /**
+     * Exception to indicate possible misuse of an endpoint.
+     * 
+     * @param message
+     *            - to explain the misuse conditions.
+     */
+    public SegueResourceMisuseException(final String message) {
+        super(message);
+    }
 }

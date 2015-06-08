@@ -22,16 +22,16 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
  * 
  */
 public class AuthenticationCodeException extends Exception {
-	private static final long serialVersionUID = -5464852652296975735L;
+    private static final long serialVersionUID = -5464852652296975735L;
 
-	/**
-	 * Creates an AuthenticationCode Exception.
-	 * 
-	 * @param msg
-	 *            - message to include with the exception.
-	 */
-	public AuthenticationCodeException(final String msg) {
-		super(msg);
-	}
+    /**
+     * Creates an AuthenticationCode Exception.
+     * 
+     * @param msg
+     *            - message to include with the exception.
+     */
+    public AuthenticationCodeException(final String msg) {
+        super(msg);
+    }
 
 }

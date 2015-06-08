@@ -18,26 +18,23 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
 /**
- * This interface provides a mechanism for monitoring and imposing limits on 
- * resource access.
+ * This interface provides a mechanism for monitoring and imposing limits on resource access.
  */
-public interface IMisuseMonitor {	
+public interface IMisuseMonitor {
 
-	/**
-	 * Method to notify the monitor that an event which is protected has been triggered.
-	 *  
-	 * @param agentIdentifier
-	 *            - a unique identifier for the agent using the resource
-	 * @param eventLabel
-	 *            - event describing the use of the resource and any threshold
-	 *            criteria.
-	 * @throws SegueResourceMisuseException
-	 *             - this only happens when the hard threshold has been reached
-	 *             and indicates possible misuse.
-	 */
-	void notifyEvent(final String agentIdentifier, final String eventLabel) throws SegueResourceMisuseException;
-	
-	/**
+    /**
+     * Method to notify the monitor that an event which is protected has been triggered.
+     * 
+     * @param agentIdentifier
+     *            - a unique identifier for the agent using the resource
+     * @param eventLabel
+     *            - event describing the use of the resource and any threshold criteria.
+     * @throws SegueResourceMisuseException
+     *             - this only happens when the hard threshold has been reached and indicates possible misuse.
+     */
+    void notifyEvent(final String agentIdentifier, final String eventLabel) throws SegueResourceMisuseException;
+
+    /**
      * Allows inspection of internal state such that we can give early warning as to whether user has reached threshold
      * before an event notification / exception takes place.
      * 
@@ -48,7 +45,7 @@ public interface IMisuseMonitor {
      * @return true if the user has reached the hard limit defined and they would trigger an exception if they used
      *         notifyEvent.
      */
-	boolean hasMisused(String agentIdentifier, String eventToCheck);
+    boolean hasMisused(String agentIdentifier, String eventToCheck);
 
     /**
      * Only one handler is allowed per event string and subsequent calls to this method with the same event will replace

@@ -25,150 +25,177 @@ import java.util.List;
  * 
  */
 public class ContentSummaryDTO {
-	private String id;
-	private String title;
-	private String summary;
-	private String type;
-	private String level;
-	private List<String> tags;
-	private String url;
+    private String id;
+    private String title;
+    private String summary;
+    private String type;
+    private String level;
+    private List<String> tags;
+    private String url;
 
-	/**
-	 *  Private constructor required for Dozer.
-	 */
-	public ContentSummaryDTO() {
-		tags = new ArrayList<String>();
-	}
+    /**
+     * Private constructor required for Dozer.
+     */
+    public ContentSummaryDTO() {
+        tags = new ArrayList<String>();
+    }
 
-	/**
-	 * Full constructor.
-	 * @param id - id
-	 * @param title - title
-	 * @param type - type
-	 * @param level - level
-	 * @param tags - tags
-	 * @param url - url
-	 */
-	public ContentSummaryDTO(final String id, final String title, final String type,
-			final String level, final List<String> tags, final String url) {
-		this.id = id;
-		this.type = type;
-		this.level = level;
-		this.tags = tags;
-		this.title = title;
-		this.url = url;
-	}
+    /**
+     * Full constructor.
+     * 
+     * @param id
+     *            - id
+     * @param title
+     *            - title
+     * @param type
+     *            - type
+     * @param level
+     *            - level
+     * @param tags
+     *            - tags
+     * @param url
+     *            - url
+     */
+    public ContentSummaryDTO(final String id, final String title, final String type, final String level,
+            final List<String> tags, final String url) {
+        this.id = id;
+        this.type = type;
+        this.level = level;
+        this.tags = tags;
+        this.title = title;
+        this.url = url;
+    }
 
-	/**
-	 * Gets the id.
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * Sets the id.
-	 * @param id the id to set
-	 */
-	public void setId(final String id) {
-		this.id = id;
-	}
+    /**
+     * Sets the id.
+     * 
+     * @param id
+     *            the id to set
+     */
+    public void setId(final String id) {
+        this.id = id;
+    }
 
-	/**
-	 * Gets the title.
-	 * @return the title
-	 */
-	public String getTitle() {
-		return title;
-	}
+    /**
+     * Gets the title.
+     * 
+     * @return the title
+     */
+    public String getTitle() {
+        return title;
+    }
 
-	/**
-	 * Sets the title.
-	 * @param title the title to set
-	 */
-	public void setTitle(final String title) {
-		this.title = title;
-	}
+    /**
+     * Sets the title.
+     * 
+     * @param title
+     *            the title to set
+     */
+    public void setTitle(final String title) {
+        this.title = title;
+    }
 
-	/**
-	 * Gets the summary.
-	 * @return the summary
-	 */
-	public String getSummary() {
-		return summary;
-	}
+    /**
+     * Gets the summary.
+     * 
+     * @return the summary
+     */
+    public String getSummary() {
+        return summary;
+    }
 
-	/**
-	 * Sets the summary.
-	 * @param summary the summary to set
-	 */
-	public void setSummary(final String summary) {
-		this.summary = summary;
-	}
+    /**
+     * Sets the summary.
+     * 
+     * @param summary
+     *            the summary to set
+     */
+    public void setSummary(final String summary) {
+        this.summary = summary;
+    }
 
-	/**
-	 * Gets the type.
-	 * @return the type
-	 */
-	public String getType() {
-		return type;
-	}
+    /**
+     * Gets the type.
+     * 
+     * @return the type
+     */
+    public String getType() {
+        return type;
+    }
 
-	/**
-	 * Sets the type.
-	 * @param type the type to set
-	 */
-	public void setType(final String type) {
-		this.type = type;
-	}
+    /**
+     * Sets the type.
+     * 
+     * @param type
+     *            the type to set
+     */
+    public void setType(final String type) {
+        this.type = type;
+    }
 
-	/**
-	 * Gets the tags.
-	 * @return the tags
-	 */
-	public List<String> getTags() {
-		return tags;
-	}
+    /**
+     * Gets the tags.
+     * 
+     * @return the tags
+     */
+    public List<String> getTags() {
+        return tags;
+    }
 
-	/**
-	 * Sets the tags.
-	 * @param tags the tags to set
-	 */
-	public void setTags(final List<String> tags) {
-		this.tags = tags;
-	}
+    /**
+     * Sets the tags.
+     * 
+     * @param tags
+     *            the tags to set
+     */
+    public void setTags(final List<String> tags) {
+        this.tags = tags;
+    }
 
-	/**
-	 * Gets the level.
-	 * @return the level
-	 */
-	public String getLevel() {
-		return level;
-	}
-	
+    /**
+     * Gets the level.
+     * 
+     * @return the level
+     */
+    public String getLevel() {
+        return level;
+    }
 
-	/**
-	 * Sets the level.
-	 * @param level the level to set
-	 */
-	public void setLevel(final String level) {
-		this.level = level;
-	}
+    /**
+     * Sets the level.
+     * 
+     * @param level
+     *            the level to set
+     */
+    public void setLevel(final String level) {
+        this.level = level;
+    }
 
-	/**
-	 * Gets the url.
-	 * @return the url
-	 */
-	public String getUrl() {
-		return url;
-	}
+    /**
+     * Gets the url.
+     * 
+     * @return the url
+     */
+    public String getUrl() {
+        return url;
+    }
 
-	/**
-	 * Sets the url.
-	 * @param url the url to set
-	 */
-	public void setUrl(final String url) {
-		this.url = url;
-	}
+    /**
+     * Sets the url.
+     * 
+     * @param url
+     *            the url to set
+     */
+    public void setUrl(final String url) {
+        this.url = url;
+    }
 }

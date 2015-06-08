@@ -27,9 +27,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 @JsonContentType("isaacMultiChoiceQuestion")
 public class IsaacMultiChoiceQuestionDTO extends IsaacQuestionBaseDTO {
 
-	@JsonIgnore
-	@Override
-	public ContentBaseDTO getAnswer() {
-		return super.getAnswer();
-	}
+    @JsonIgnore
+    @Override
+    public ContentBaseDTO getAnswer() {
+        return super.getAnswer();
+    }
 }

@@ -22,6 +22,6 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
  * 
  */
 public class InvalidTokenException extends Exception {
-	private static final long serialVersionUID = 1611435348546518932L;
+    private static final long serialVersionUID = 1611435348546518932L;
 
 }

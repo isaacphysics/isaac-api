@@ -24,95 +24,101 @@ import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import com.google.api.client.util.Maps;
 
 /**
- * Data Transfer Object to represent an anonymous user of the system. 
+ * Data Transfer Object to represent an anonymous user of the system.
  * 
  */
 public class AnonymousUserDTO extends AbstractSegueUserDTO {
-	private String sessionId;
-	private Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts;
-	private Date dateCreated;
-	
-	/**
-	 * Default constructor required for Jackson.
-	 */
-	public AnonymousUserDTO() {
-		temporaryQuestionAttempts = Maps.newHashMap();
-	}
-	
-	/**
-	 * Full constructor for the AnonymousUser object.
-	 * 
-	 * @param sessionId
-	 *            - Our session Unique ID
-	 */
-	public AnonymousUserDTO(final String sessionId) {
-		temporaryQuestionAttempts = Maps.newHashMap();
-		this.sessionId = sessionId;
-	}
+    private String sessionId;
+    private Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts;
+    private Date dateCreated;
 
-	/** 
-	 * Full constructor for the AnonymousUser object.
-	 * 
-	 * @param sessionId
-	 *            - Our session Unique ID
-	 * @param temporaryQuestionAttempts - attempts.
-	 */
-	public AnonymousUserDTO(final String sessionId,
-			final Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts) {
-		this.temporaryQuestionAttempts = temporaryQuestionAttempts;
-		this.sessionId = sessionId;
-	}
+    /**
+     * Default constructor required for Jackson.
+     */
+    public AnonymousUserDTO() {
+        temporaryQuestionAttempts = Maps.newHashMap();
+    }
 
-	/**
-	 * Gets the sessionId.
-	 * 
-	 * @return the sessionId
-	 */
-	public String getSessionId() {
-		return sessionId;
-	}
+    /**
+     * Full constructor for the AnonymousUser object.
+     * 
+     * @param sessionId
+     *            - Our session Unique ID
+     */
+    public AnonymousUserDTO(final String sessionId) {
+        temporaryQuestionAttempts = Maps.newHashMap();
+        this.sessionId = sessionId;
+    }
 
-	/**
-	 * Sets the sessionId.
-	 * 
-	 * @param sessionId
-	 *            the sessionId to set
-	 */
-	public void setSessionId(final String sessionId) {
-		this.sessionId = sessionId;
-	}
+    /**
+     * Full constructor for the AnonymousUser object.
+     * 
+     * @param sessionId
+     *            - Our session Unique ID
+     * @param temporaryQuestionAttempts
+     *            - attempts.
+     */
+    public AnonymousUserDTO(final String sessionId,
+            final Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts) {
+        this.temporaryQuestionAttempts = temporaryQuestionAttempts;
+        this.sessionId = sessionId;
+    }
 
-	/**
-	 * Gets the temporaryQuestionAttempts.
-	 * 
-	 * @return the temporaryQuestionAttempts
-	 */
-	public Map<String, Map<String, List<QuestionValidationResponseDTO>>> getTemporaryQuestionAttempts() {
-		return temporaryQuestionAttempts;
-	}
+    /**
+     * Gets the sessionId.
+     * 
+     * @return the sessionId
+     */
+    public String getSessionId() {
+        return sessionId;
+    }
 
-	/**
-	 * Sets the temporaryQuestionAttempts.
-	 * @param temporaryQuestionAttempts the temporaryQuestionAttempts to set
-	 */
-	public void setTemporaryQuestionAttempts(
-			final Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts) {
-		this.temporaryQuestionAttempts = temporaryQuestionAttempts;
-	}
+    /**
+     * Sets the sessionId.
+     * 
+     * @param sessionId
+     *            the sessionId to set
+     */
+    public void setSessionId(final String sessionId) {
+        this.sessionId = sessionId;
+    }
 
-	/**
-	 * Gets the dateCreated.
-	 * @return the dateCreated
-	 */
-	public Date getDateCreated() {
-		return dateCreated;
-	}
+    /**
+     * Gets the temporaryQuestionAttempts.
+     * 
+     * @return the temporaryQuestionAttempts
+     */
+    public Map<String, Map<String, List<QuestionValidationResponseDTO>>> getTemporaryQuestionAttempts() {
+        return temporaryQuestionAttempts;
+    }
 
-	/**
-	 * Sets the dateCreated.
-	 * @param dateCreated the dateCreated to set
-	 */
-	public void setDateCreated(final Date dateCreated) {
-		this.dateCreated = dateCreated;
-	}
+    /**
+     * Sets the temporaryQuestionAttempts.
+     * 
+     * @param temporaryQuestionAttempts
+     *            the temporaryQuestionAttempts to set
+     */
+    public void setTemporaryQuestionAttempts(
+            final Map<String, Map<String, List<QuestionValidationResponseDTO>>> temporaryQuestionAttempts) {
+        this.temporaryQuestionAttempts = temporaryQuestionAttempts;
+    }
+
+    /**
+     * Gets the dateCreated.
+     * 
+     * @return the dateCreated
+     */
+    public Date getDateCreated() {
+        return dateCreated;
+    }
+
+    /**
+     * Sets the dateCreated.
+     * 
+     * @param dateCreated
+     *            the dateCreated to set
+     */
+    public void setDateCreated(final Date dateCreated) {
+        this.dateCreated = dateCreated;
+    }
 }

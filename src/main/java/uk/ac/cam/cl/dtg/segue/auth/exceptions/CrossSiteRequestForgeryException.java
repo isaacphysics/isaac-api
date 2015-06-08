@@ -22,15 +22,15 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
  * 
  */
 public class CrossSiteRequestForgeryException extends Exception {
-	private static final long serialVersionUID = -8542483814754486874L;
+    private static final long serialVersionUID = -8542483814754486874L;
 
-	/**
-	 * Create a CSRF Exception.
-	 * 
-	 * @param msg
-	 *            - message to attach to the exception.
-	 */
-	public CrossSiteRequestForgeryException(final String msg) {
-		super(msg);
-	}
+    /**
+     * Create a CSRF Exception.
+     * 
+     * @param msg
+     *            - message to attach to the exception.
+     */
+    public CrossSiteRequestForgeryException(final String msg) {
+        super(msg);
+    }
 }

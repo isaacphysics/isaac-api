@@ -20,37 +20,41 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
  * 
  */
 public interface IMisuseHandler {
-	
-	/**
-	 * Get the number of times we can see this event before the warning condition is fired.
-	 * 
-	 * @return the trigger number for a warning. Can be null
-	 */
-	Integer getSoftThreshold();
-	
-	/**
-	 * Get the number of times we can see this event before a security exception is thrown.
-	 * 
-	 * @return the trigger threshold for an error. Can be null.
-	 */
-	Integer getHardThreshold(); 
-	
-	/**
-	 * The accounting interval represents when we reset our internal counter.
-	 * 
-	 * @return an integer value in seconds. 
-	 */
-	Integer getAccountingIntervalInSeconds();
-	
-	/**
-	 * Optional method to execute when soft threshold has been reached.
-	 * @param message - human readable input to the action - optional
-	 */
-	void executeSoftThresholdAction(final String message);
 
-	/**
+    /**
+     * Get the number of times we can see this event before the warning condition is fired.
+     * 
+     * @return the trigger number for a warning. Can be null
+     */
+    Integer getSoftThreshold();
+
+    /**
+     * Get the number of times we can see this event before a security exception is thrown.
+     * 
+     * @return the trigger threshold for an error. Can be null.
+     */
+    Integer getHardThreshold();
+
+    /**
+     * The accounting interval represents when we reset our internal counter.
+     * 
+     * @return an integer value in seconds.
+     */
+    Integer getAccountingIntervalInSeconds();
+
+    /**
+     * Optional method to execute when soft threshold has been reached.
+     * 
+     * @param message
+     *            - human readable input to the action - optional
+     */
+    void executeSoftThresholdAction(final String message);
+
+    /**
      * Optional method to execute when hard threshold has been reached before exception is thrown.
-     * @param message - human readable input to the action - optional
-	 */
-	void executeHardThresholdAction(final String message);
+     * 
+     * @param message
+     *            - human readable input to the action - optional
+     */
+    void executeHardThresholdAction(final String message);
 }

@@ -23,33 +23,38 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
  * LocationHistoryEvent.
  */
 public interface LocationHistoryEvent {
-	/**
-	 * Gets the id.
-	 * @return the id
-	 */
-	Long getId();
-	
-	/**
-	 * Gets the ipAddress.
-	 * @return the ipAddress
-	 */
-	String getIpAddress();
-	
-	/**
-	 * Gets the locationInformation.
-	 * @return the locationInformation
-	 */
-	Location getLocationInformation();
-	
-	/**
-	 * Gets the created.
-	 * @return the created
-	 */
-	Date getCreated();
-	
-	/**
-	 * Gets the lastUpdated.
-	 * @return the lastUpdated
-	 */
-	Date getLastUpdated();
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    Long getId();
+
+    /**
+     * Gets the ipAddress.
+     * 
+     * @return the ipAddress
+     */
+    String getIpAddress();
+
+    /**
+     * Gets the locationInformation.
+     * 
+     * @return the locationInformation
+     */
+    Location getLocationInformation();
+
+    /**
+     * Gets the created.
+     * 
+     * @return the created
+     */
+    Date getCreated();
+
+    /**
+     * Gets the lastUpdated.
+     * 
+     * @return the lastUpdated
+     */
+    Date getLastUpdated();
 }

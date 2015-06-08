@@ -45,7 +45,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -83,6 +82,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      *            - so we can log interesting events.
      * @param associationManager
      *            - so that we can create associations.
+     * @param misuseMonitor
+     *            - so that we can prevent overuse of protected resources.
      */
     @Inject
     public AuthorisationFacade(final PropertiesLoader properties, final UserManager userManager,
@@ -247,23 +248,22 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         if (null == token || token.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Token value must be specified.").toResponse();
         }
-        
+
         RegisteredUserDTO currentRegisteredUser = null;
         try {
             // ensure the user is logged in
             currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
-        
+
             if (misuseMonitor.hasMisused(currentRegisteredUser.getDbId(),
                     TokenOwnerLookupMisuseHandler.class.toString())) {
                 throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
             }
-            
-            misuseMonitor.notifyEvent(currentRegisteredUser.getDbId(),
-                    TokenOwnerLookupMisuseHandler.class.toString());
-            
+
+            misuseMonitor.notifyEvent(currentRegisteredUser.getDbId(), TokenOwnerLookupMisuseHandler.class.toString());
+
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
-            
+
             return Response.ok(userManager.convertToUserSummaryObject(userDTO)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

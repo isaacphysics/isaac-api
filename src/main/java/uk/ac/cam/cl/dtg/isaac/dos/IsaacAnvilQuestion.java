@@ -26,29 +26,32 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 @DTOMapping(IsaacAnvilQuestionDTO.class)
 @JsonContentType("isaacAnvilQuestion")
 public class IsaacAnvilQuestion extends IsaacQuestionBase {
-	private AnvilApp anvilApp;
-	
-	/**
+    private AnvilApp anvilApp;
+
+    /**
 	 * 
 	 */
-	public IsaacAnvilQuestion() {
+    public IsaacAnvilQuestion() {
 
-	}
+    }
 
-	/**
-	 * Gets the anvilApp.
-	 * @return the anvilApp
-	 */
-	public AnvilApp getAnvilApp() {
-		return anvilApp;
-	}
+    /**
+     * Gets the anvilApp.
+     * 
+     * @return the anvilApp
+     */
+    public AnvilApp getAnvilApp() {
+        return anvilApp;
+    }
 
-	/**
-	 * Sets the anvilApp.
-	 * @param anvilApp the anvilApp to set
-	 */
-	public void setAnvilApp(final AnvilApp anvilApp) {
-		this.anvilApp = anvilApp;
-	}
+    /**
+     * Sets the anvilApp.
+     * 
+     * @param anvilApp
+     *            the anvilApp to set
+     */
+    public void setAnvilApp(final AnvilApp anvilApp) {
+        this.anvilApp = anvilApp;
+    }
 
 }

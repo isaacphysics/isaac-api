@@ -174,6 +174,6 @@ public class AssignmentDO {
 		} else if (!id.equals(other.id)) {
 			return false;
 		}
-		return true;
-	}
+        return true;
+    }
 }

@@ -27,95 +27,107 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class GroupMembership {
-	private String id;
-	private String groupId;
-	private String userId;
-	private Date created;
-	
-	/**
-	 * Default Constructor.
-	 */
-	public GroupMembership() {
-		
-	}
-	
-	/**
-	 * @param id 
-	 * @param groupId 
-	 * @param userId 
-	 */
-	public GroupMembership(final String id, final String groupId, final String userId) {
-		this.id = id;
-		this.groupId = groupId;
-		this.userId = userId;
-		this.created = new Date();
-	}
+    private String id;
+    private String groupId;
+    private String userId;
+    private Date created;
 
-	/**
-	 * Gets the id.
-	 * @return the id
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public String getId() {
-		return id;
-	}
+    /**
+     * Default Constructor.
+     */
+    public GroupMembership() {
 
-	/**
-	 * Sets the id.
-	 * @param id the id to set
-	 */
-	@JsonProperty("_id")
-	@ObjectId
-	public void setId(final String id) {
-		this.id = id;
-	}
+    }
 
-	/**
-	 * Gets the groupId.
-	 * @return the groupId
-	 */
-	public String getGroupId() {
-		return groupId;
-	}
+    /**
+     * @param id - unqiue association id 
+     * @param groupId - the group id
+     * @param userId - the user id
+     */
+    public GroupMembership(final String id, final String groupId, final String userId) {
+        this.id = id;
+        this.groupId = groupId;
+        this.userId = userId;
+        this.created = new Date();
+    }
 
-	/**
-	 * Sets the groupId.
-	 * @param groupId the groupId to set
-	 */
-	public void setGroupId(final String groupId) {
-		this.groupId = groupId;
-	}
+    /**
+     * Gets the id.
+     * 
+     * @return the id
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * Gets the userId.
-	 * @return the userId
-	 */
-	public String getUserId() {
-		return userId;
-	}
+    /**
+     * Sets the id.
+     * 
+     * @param id
+     *            the id to set
+     */
+    @JsonProperty("_id")
+    @ObjectId
+    public void setId(final String id) {
+        this.id = id;
+    }
 
-	/**
-	 * Sets the userId.
-	 * @param userId the userId to set
-	 */
-	public void setUserId(final String userId) {
-		this.userId = userId;
-	}
+    /**
+     * Gets the groupId.
+     * 
+     * @return the groupId
+     */
+    public String getGroupId() {
+        return groupId;
+    }
 
-	/**
-	 * Gets the created.
-	 * @return the created
-	 */
-	public Date getCreated() {
-		return created;
-	}
+    /**
+     * Sets the groupId.
+     * 
+     * @param groupId
+     *            the groupId to set
+     */
+    public void setGroupId(final String groupId) {
+        this.groupId = groupId;
+    }
 
-	/**
-	 * Sets the created.
-	 * @param created the created to set
-	 */
-	public void setCreated(final Date created) {
-		this.created = created;
-	}
+    /**
+     * Gets the userId.
+     * 
+     * @return the userId
+     */
+    public String getUserId() {
+        return userId;
+    }
+
+    /**
+     * Sets the userId.
+     * 
+     * @param userId
+     *            the userId to set
+     */
+    public void setUserId(final String userId) {
+        this.userId = userId;
+    }
+
+    /**
+     * Gets the created.
+     * 
+     * @return the created
+     */
+    public Date getCreated() {
+        return created;
+    }
+
+    /**
+     * Sets the created.
+     * 
+     * @param created
+     *            the created to set
+     */
+    public void setCreated(final Date created) {
+        this.created = created;
+    }
 }

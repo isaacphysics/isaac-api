@@ -20,12 +20,13 @@ package uk.ac.cam.cl.dtg.util.locations;
  *
  */
 public class LocationServerException extends Exception {
-	private static final long serialVersionUID = 720962151324298309L;
+    private static final long serialVersionUID = 720962151324298309L;
 
-	/**
-	 * @param message for the exception
-	 */
-	public LocationServerException(final String message) {
-		super(message);
-	}
+    /**
+     * @param message
+     *            for the exception
+     */
+    public LocationServerException(final String message) {
+        super(message);
+    }
 }

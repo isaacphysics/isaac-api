@@ -24,136 +24,160 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
  *
  */
 public class EventBookingDTO {
-	private Long bookingId;
-	
-	private UserSummaryDTO userBooked;
-	
-	private String eventId;
-	
-	private String eventTitle;
-	
-	private Date eventDate;
-	
-	private Date bookingDate;
+    private Long bookingId;
 
-	/**
-	 * 
-	 */
-	public EventBookingDTO() {
-		
-	}
-	
-	/**
-	 * @param bookingId 
-	 * @param userBooked 
-	 * @param eventId 
-	 * @param eventTitle 
-	 * @param eventDate 
-	 * @param bookingDate 
-	 */
-	public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final String eventId,
-			final String eventTitle, final Date eventDate, final Date bookingDate) {
-		this.bookingId = bookingId;
-		this.userBooked = userBooked;
-		this.eventId = eventId;
-		this.eventTitle = eventTitle;
-		this.eventDate = eventDate;
-		this.bookingDate = bookingDate;
-	}
+    private UserSummaryDTO userBooked;
 
-	/**
-	 * Gets the bookingId.
-	 * @return the bookingId
-	 */
-	public Long getBookingId() {
-		return bookingId;
-	}
+    private String eventId;
 
-	/**
-	 * Sets the bookingId.
-	 * @param bookingId the bookingId to set
-	 */
-	public void setBookingId(final Long bookingId) {
-		this.bookingId = bookingId;
-	}
+    private String eventTitle;
 
-	/**
-	 * Gets the userBooked.
-	 * @return the userBooked
-	 */
-	public UserSummaryDTO getUserBooked() {
-		return userBooked;
-	}
+    private Date eventDate;
 
-	/**
-	 * Sets the userBooked.
-	 * @param userBooked the userBooked to set
-	 */
-	public void setUserBooked(final UserSummaryDTO userBooked) {
-		this.userBooked = userBooked;
-	}
+    private Date bookingDate;
 
-	/**
-	 * Gets the eventId.
-	 * @return the eventId
-	 */
-	public String getEventId() {
-		return eventId;
-	}
+    /**
+     * EventBookingDTO.
+     */
+    public EventBookingDTO() {
 
-	/**
-	 * Sets the eventId.
-	 * @param eventId the eventId to set
-	 */
-	public void setEventId(final String eventId) {
-		this.eventId = eventId;
-	}
+    }
 
-	/**
-	 * Gets the eventTitle.
-	 * @return the eventTitle
-	 */
-	public String getEventTitle() {
-		return eventTitle;
-	}
+    /**
+     * @param bookingId
+     *            - id of the booking
+     * @param userBooked
+     *            - the user summary of the user booked on the event.
+     * @param eventId
+     *            - the event id
+     * @param eventTitle
+     *            - event title
+     * @param eventDate
+     *            - date of the event
+     * @param bookingDate
+     *            booking date.
+     */
+    public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final String eventId,
+            final String eventTitle, final Date eventDate, final Date bookingDate) {
+        this.bookingId = bookingId;
+        this.userBooked = userBooked;
+        this.eventId = eventId;
+        this.eventTitle = eventTitle;
+        this.eventDate = eventDate;
+        this.bookingDate = bookingDate;
+    }
 
-	/**
-	 * Sets the eventTitle.
-	 * @param eventTitle the eventTitle to set
-	 */
-	public void setEventTitle(final String eventTitle) {
-		this.eventTitle = eventTitle;
-	}
+    /**
+     * Gets the bookingId.
+     * 
+     * @return the bookingId
+     */
+    public Long getBookingId() {
+        return bookingId;
+    }
 
-	/**
-	 * Gets the eventDate.
-	 * @return the eventDate
-	 */
-	public Date getEventDate() {
-		return eventDate;
-	}
+    /**
+     * Sets the bookingId.
+     * 
+     * @param bookingId
+     *            the bookingId to set
+     */
+    public void setBookingId(final Long bookingId) {
+        this.bookingId = bookingId;
+    }
 
-	/**
-	 * Sets the eventDate.
-	 * @param eventDate the eventDate to set
-	 */
-	public void setEventDate(final Date eventDate) {
-		this.eventDate = eventDate;
-	}
+    /**
+     * Gets the userBooked.
+     * 
+     * @return the userBooked
+     */
+    public UserSummaryDTO getUserBooked() {
+        return userBooked;
+    }
 
-	/**
-	 * Gets the bookingDate.
-	 * @return the bookingDate
-	 */
-	public Date getBookingDate() {
-		return bookingDate;
-	}
+    /**
+     * Sets the userBooked.
+     * 
+     * @param userBooked
+     *            the userBooked to set
+     */
+    public void setUserBooked(final UserSummaryDTO userBooked) {
+        this.userBooked = userBooked;
+    }
 
-	/**
-	 * Sets the bookingDate.
-	 * @param bookingDate the bookingDate to set
-	 */
-	public void setBookingDate(final Date bookingDate) {
-		this.bookingDate = bookingDate;
-	}	
+    /**
+     * Gets the eventId.
+     * 
+     * @return the eventId
+     */
+    public String getEventId() {
+        return eventId;
+    }
+
+    /**
+     * Sets the eventId.
+     * 
+     * @param eventId
+     *            the eventId to set
+     */
+    public void setEventId(final String eventId) {
+        this.eventId = eventId;
+    }
+
+    /**
+     * Gets the eventTitle.
+     * 
+     * @return the eventTitle
+     */
+    public String getEventTitle() {
+        return eventTitle;
+    }
+
+    /**
+     * Sets the eventTitle.
+     * 
+     * @param eventTitle
+     *            the eventTitle to set
+     */
+    public void setEventTitle(final String eventTitle) {
+        this.eventTitle = eventTitle;
+    }
+
+    /**
+     * Gets the eventDate.
+     * 
+     * @return the eventDate
+     */
+    public Date getEventDate() {
+        return eventDate;
+    }
+
+    /**
+     * Sets the eventDate.
+     * 
+     * @param eventDate
+     *            the eventDate to set
+     */
+    public void setEventDate(final Date eventDate) {
+        this.eventDate = eventDate;
+    }
+
+    /**
+     * Gets the bookingDate.
+     * 
+     * @return the bookingDate
+     */
+    public Date getBookingDate() {
+        return bookingDate;
+    }
+
+    /**
+     * Sets the bookingDate.
+     * 
+     * @param bookingDate
+     *            the bookingDate to set
+     */
+    public void setBookingDate(final Date bookingDate) {
+        this.bookingDate = bookingDate;
+    }
 }

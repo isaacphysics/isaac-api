@@ -19,17 +19,19 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * DuplicateAssignmentException.
+ * 
  * @author sac92
  */
 public class DuplicateAssignmentException extends SegueDatabaseException {
-	private static final long serialVersionUID = -1086026219080089421L;
+    private static final long serialVersionUID = -1086026219080089421L;
 
-	/**
-	 * DuplicateAssignmentException.
-	 * If an assignment already exists.
-	 * @param message - to provide for the exception
-	 */
-	public DuplicateAssignmentException(final String message) {
-		super(message);
-	}
+    /**
+     * DuplicateAssignmentException. If an assignment already exists.
+     * 
+     * @param message
+     *            - to provide for the exception
+     */
+    public DuplicateAssignmentException(final String message) {
+        super(message);
+    }
 }

@@ -34,82 +34,87 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonContentType("isaacNumericQuestion")
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
-	private Boolean requireUnits;
-	private Integer significantFigures;
-	
-	/**
-	 * Gets the requireUnits.
-	 * @return the requireUnits
-	 */
-	public final Boolean getRequireUnits() {
-		if (requireUnits == null) {
-			return true;
-		}
-		
-		return requireUnits;
-	}
+    private Boolean requireUnits;
+    private Integer significantFigures;
 
-	/**
-	 * Sets the requireUnits.
-	 * @param requireUnits the requireUnits to set
-	 */
-	public final void setRequireUnits(final Boolean requireUnits) {
-		this.requireUnits = requireUnits;
-	}
+    /**
+     * Gets the requireUnits.
+     * 
+     * @return the requireUnits
+     */
+    public final Boolean getRequireUnits() {
+        if (requireUnits == null) {
+            return true;
+        }
 
-	@Override
-	public final List<ChoiceDTO> getChoices() {
-		// we do not want the choice list to be displayed to users.
-		return null;
-	}
-	
-	/**
-	 * Gets the knownUnits.
-	 * 
-	 * This is a hack so that the frontend can display all units available as a
-	 * drop down list.
-	 * 
-	 * @return the knownUnits
-	 */
-	public List<String> getKnownUnits() {
-		List<String> unitsToReturn = Lists.newArrayList();
-		
-		for (ChoiceDTO c : this.choices) {
-			if (c instanceof QuantityDTO) {
-				QuantityDTO quantity = (QuantityDTO) c;
-				if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
-					unitsToReturn.add(quantity.getUnits());	
-				}
-			}
-		}
-		
-		if (unitsToReturn.isEmpty()) {
-			return null;	
-		}
-		
-		return unitsToReturn;
-	}
+        return requireUnits;
+    }
 
-	/**
-	 * Gets the significantFigures.
-	 * @return the significantFigures
-	 */
-	public Integer getSignificantFigures() {
-		return significantFigures;
-	}
+    /**
+     * Sets the requireUnits.
+     * 
+     * @param requireUnits
+     *            the requireUnits to set
+     */
+    public final void setRequireUnits(final Boolean requireUnits) {
+        this.requireUnits = requireUnits;
+    }
 
-	/**
-	 * Sets the significantFigures.
-	 * @param significantFigures the significantFigures to set
-	 */
-	public void setSignificantFigures(final Integer significantFigures) {
-		this.significantFigures = significantFigures;
-	}
-	
-	// stop the answer being returned for this type of question
-	@JsonIgnore
-	@Override
-	public ContentBaseDTO getAnswer() {
-		return super.getAnswer();
-	}
+    @Override
+    public final List<ChoiceDTO> getChoices() {
+        // we do not want the choice list to be displayed to users.
+        return null;
+    }
+
+    /**
+     * Gets the knownUnits.
+     * 
+     * This is a hack so that the frontend can display all units available as a drop down list.
+     * 
+     * @return the knownUnits
+     */
+    public List<String> getKnownUnits() {
+        List<String> unitsToReturn = Lists.newArrayList();
+
+        for (ChoiceDTO c : this.choices) {
+            if (c instanceof QuantityDTO) {
+                QuantityDTO quantity = (QuantityDTO) c;
+                if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
+                    unitsToReturn.add(quantity.getUnits());
+                }
+            }
+        }
+
+        if (unitsToReturn.isEmpty()) {
+            return null;
+        }
+
+        return unitsToReturn;
+    }
+
+    /**
+     * Gets the significantFigures.
+     * 
+     * @return the significantFigures
+     */
+    public Integer getSignificantFigures() {
+        return significantFigures;
+    }
+
+    /**
+     * Sets the significantFigures.
+     * 
+     * @param significantFigures
+     *            the significantFigures to set
+     */
+    public void setSignificantFigures(final Integer significantFigures) {
+        this.significantFigures = significantFigures;
+    }
+
+    // stop the answer being returned for this type of question
+    @JsonIgnore
+    @Override
+    public ContentBaseDTO getAnswer() {
+        return super.getAnswer();
+    }
 }

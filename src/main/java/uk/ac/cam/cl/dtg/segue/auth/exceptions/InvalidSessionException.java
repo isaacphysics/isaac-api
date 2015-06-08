@@ -22,20 +22,22 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
  * 
  */
 public class InvalidSessionException extends Exception {
-	private static final long serialVersionUID = -7076860992181969046L;
-	
-	/**
-	 * Default constructor.
-	 */
-	public InvalidSessionException() {
-		
-	}
-	
-	/**
-	 * Constructor with message.
-	 * @param message - error message
-	 */
-	public InvalidSessionException(final String message) {
-		super(message);
-	}
+    private static final long serialVersionUID = -7076860992181969046L;
+
+    /**
+     * Default constructor.
+     */
+    public InvalidSessionException() {
+
+    }
+
+    /**
+     * Constructor with message.
+     * 
+     * @param message
+     *            - error message
+     */
+    public InvalidSessionException(final String message) {
+        super(message);
+    }
 }

@@ -21,98 +21,113 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * User Summary object.
  */
 public class UserSummaryDTO extends AbstractSegueUserDTO {
-	private String databaseId;
-	private String givenName;
-	private String familyName;
-	private String email;
-	private boolean authorisedFullAccess;
-	
-	/**
-	 * UserSummaryDTO.
-	 */
-	public UserSummaryDTO() {
-		
-	}
-	
-	/**
-	 * Gets the databaseId.
-	 * @return the databaseId
-	 */
-	@JsonProperty("_id")
-	public String getDbId() {
-		return databaseId;
-	}
-	
-	/**
-	 * Sets the databaseId.
-	 * @param databaseId the databaseId to set
-	 */
-	@JsonProperty("_id")
-	public void setDbId(final String databaseId) {
-		this.databaseId = databaseId;
-	}
-	
-	/**
-	 * Gets the givenName.
-	 * @return the givenName
-	 */
-	public String getGivenName() {
-		return givenName;
-	}
-	
-	/**
-	 * Sets the givenName.
-	 * @param givenName the givenName to set
-	 */
-	public void setGivenName(final String givenName) {
-		this.givenName = givenName;
-	}
-	
-	/**
-	 * Gets the familyName.
-	 * @return the familyName
-	 */
-	public String getFamilyName() {
-		return familyName;
-	}
-	
-	/**
-	 * Sets the familyName.
-	 * @param familyName the familyName to set
-	 */
-	public void setFamilyName(final String familyName) {
-		this.familyName = familyName;
-	}
+    private String databaseId;
+    private String givenName;
+    private String familyName;
+    private String email;
+    private boolean authorisedFullAccess;
 
-	/**
-	 * Gets the email.
-	 * @return the email
-	 */
-	public String getEmail() {
-		return email;
-	}
+    /**
+     * UserSummaryDTO.
+     */
+    public UserSummaryDTO() {
 
-	/**
-	 * Sets the email.
-	 * @param email the email to set
-	 */
-	public void setEmail(final String email) {
-		this.email = email;
-	}
+    }
 
-	/**
-	 * Gets the authorisedFullAccess.
-	 * @return the authorisedFullAccess
-	 */
-	public boolean isAuthorisedFullAccess() {
-		return authorisedFullAccess;
-	}
+    /**
+     * Gets the databaseId.
+     * 
+     * @return the databaseId
+     */
+    @JsonProperty("_id")
+    public String getDbId() {
+        return databaseId;
+    }
 
-	/**
-	 * Sets the authorisedFullAccess.
-	 * @param authorisedFullAccess the authorisedFullAccess to set
-	 */
-	public void setAuthorisedFullAccess(final boolean authorisedFullAccess) {
-		this.authorisedFullAccess = authorisedFullAccess;
-	}
+    /**
+     * Sets the databaseId.
+     * 
+     * @param databaseId
+     *            the databaseId to set
+     */
+    @JsonProperty("_id")
+    public void setDbId(final String databaseId) {
+        this.databaseId = databaseId;
+    }
+
+    /**
+     * Gets the givenName.
+     * 
+     * @return the givenName
+     */
+    public String getGivenName() {
+        return givenName;
+    }
+
+    /**
+     * Sets the givenName.
+     * 
+     * @param givenName
+     *            the givenName to set
+     */
+    public void setGivenName(final String givenName) {
+        this.givenName = givenName;
+    }
+
+    /**
+     * Gets the familyName.
+     * 
+     * @return the familyName
+     */
+    public String getFamilyName() {
+        return familyName;
+    }
+
+    /**
+     * Sets the familyName.
+     * 
+     * @param familyName
+     *            the familyName to set
+     */
+    public void setFamilyName(final String familyName) {
+        this.familyName = familyName;
+    }
+
+    /**
+     * Gets the email.
+     * 
+     * @return the email
+     */
+    public String getEmail() {
+        return email;
+    }
+
+    /**
+     * Sets the email.
+     * 
+     * @param email
+     *            the email to set
+     */
+    public void setEmail(final String email) {
+        this.email = email;
+    }
+
+    /**
+     * Gets the authorisedFullAccess.
+     * 
+     * @return the authorisedFullAccess
+     */
+    public boolean isAuthorisedFullAccess() {
+        return authorisedFullAccess;
+    }
+
+    /**
+     * Sets the authorisedFullAccess.
+     * 
+     * @param authorisedFullAccess
+     *            the authorisedFullAccess to set
+     */
+    public void setAuthorisedFullAccess(final boolean authorisedFullAccess) {
+        this.authorisedFullAccess = authorisedFullAccess;
+    }
 }

@@ -25,120 +25,140 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
  *
  */
 public class QuestionValidationResponseDTO {
-	private String questionId;
-	private ChoiceDTO answer;
-	private Boolean correct;
-	private Content explanation;
-	private Date dateAttempted;
-	
-	/**
-	 * Default Constructor for mappers. 
-	 */
-	public QuestionValidationResponseDTO() {
+    private String questionId;
+    private ChoiceDTO answer;
+    private Boolean correct;
+    private Content explanation;
+    private Date dateAttempted;
 
-	}
-	
-	/**
-	 * Full constructor. 
-	 * @param questionId - 
-	 * @param answer - 
-	 * @param correct -
-	 * @param explanation - 
-	 * @param dateAttempted - 
-	 */
-	public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer,
-			final Boolean correct, final Content explanation, final Date dateAttempted) {
-		this.questionId = questionId;
-		this.answer = answer;
-		this.correct = correct;
-		this.explanation = explanation;
-		this.dateAttempted = dateAttempted;
-	}
+    /**
+     * Default Constructor for mappers.
+     */
+    public QuestionValidationResponseDTO() {
 
-	/**
-	 * Gets the questionId.
-	 * @return the questionId
-	 */
-	public final String getQuestionId() {
-		return questionId;
-	}
+    }
 
-	/**
-	 * Sets the questionId.
-	 * @param questionId the questionId to set
-	 */
-	public final void setQuestionId(final String questionId) {
-		this.questionId = questionId;
-	}
+    /**
+     * Full constructor.
+     * 
+     * @param questionId
+     *            -
+     * @param answer
+     *            -
+     * @param correct
+     *            -
+     * @param explanation
+     *            -
+     * @param dateAttempted
+     *            -
+     */
+    public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
+            final Content explanation, final Date dateAttempted) {
+        this.questionId = questionId;
+        this.answer = answer;
+        this.correct = correct;
+        this.explanation = explanation;
+        this.dateAttempted = dateAttempted;
+    }
 
-	/**
-	 * Gets the answer.
-	 * @return the answer
-	 */
-	public final ChoiceDTO getAnswer() {
-		return answer;
-	}
+    /**
+     * Gets the questionId.
+     * 
+     * @return the questionId
+     */
+    public final String getQuestionId() {
+        return questionId;
+    }
 
-	/**
-	 * Sets the answer.
-	 * @param answer the answer to set
-	 */
-	public final void setAnswer(final ChoiceDTO answer) {
-		this.answer = answer;
-	}
+    /**
+     * Sets the questionId.
+     * 
+     * @param questionId
+     *            the questionId to set
+     */
+    public final void setQuestionId(final String questionId) {
+        this.questionId = questionId;
+    }
 
-	/**
-	 * Gets the correct.
-	 * @return the correct
-	 */
-	public final Boolean isCorrect() {
-		return correct;
-	}
+    /**
+     * Gets the answer.
+     * 
+     * @return the answer
+     */
+    public final ChoiceDTO getAnswer() {
+        return answer;
+    }
 
-	/**
-	 * Sets the correct.
-	 * @param correct the correct to set
-	 */
-	public final void setCorrect(final Boolean correct) {
-		this.correct = correct;
-	}
+    /**
+     * Sets the answer.
+     * 
+     * @param answer
+     *            the answer to set
+     */
+    public final void setAnswer(final ChoiceDTO answer) {
+        this.answer = answer;
+    }
 
-	/**
-	 * Gets the explanation.
-	 * @return the explanation
-	 */
-	public final Content getExplanation() {
-		return explanation;
-	}
+    /**
+     * Gets the correct.
+     * 
+     * @return the correct
+     */
+    public final Boolean isCorrect() {
+        return correct;
+    }
 
-	/**
-	 * Sets the explanation.
-	 * @param explanation the explanation to set
-	 */
-	public final void setExplanation(final Content explanation) {
-		this.explanation = explanation;
-	}
-	
-	/**
-	 * Gets the dateAttempted.
-	 * @return the dateAttempted
-	 */
-	public Date getDateAttempted() {
-		return dateAttempted;
-	}
+    /**
+     * Sets the correct.
+     * 
+     * @param correct
+     *            the correct to set
+     */
+    public final void setCorrect(final Boolean correct) {
+        this.correct = correct;
+    }
 
-	/**
-	 * Sets the dateAttempted.
-	 * @param dateAttempted the dateAttempted to set
-	 */
-	public void setDateAttempted(final Date dateAttempted) {
-		this.dateAttempted = dateAttempted;
-	}
+    /**
+     * Gets the explanation.
+     * 
+     * @return the explanation
+     */
+    public final Content getExplanation() {
+        return explanation;
+    }
 
-	@Override
-	public String toString() {
-		return "QuestionValidationResponseDTO [questionId=" + questionId + ", answer=" + answer
-				+ ", correct=" + correct + ", explanation=" + explanation + ", dateAttempted="
-				+ dateAttempted + "]";
-	}
+    /**
+     * Sets the explanation.
+     * 
+     * @param explanation
+     *            the explanation to set
+     */
+    public final void setExplanation(final Content explanation) {
+        this.explanation = explanation;
+    }
+
+    /**
+     * Gets the dateAttempted.
+     * 
+     * @return the dateAttempted
+     */
+    public Date getDateAttempted() {
+        return dateAttempted;
+    }
+
+    /**
+     * Sets the dateAttempted.
+     * 
+     * @param dateAttempted
+     *            the dateAttempted to set
+     */
+    public void setDateAttempted(final Date dateAttempted) {
+        this.dateAttempted = dateAttempted;
+    }
+
+    @Override
+    public String toString() {
+        return "QuestionValidationResponseDTO [questionId=" + questionId + ", answer=" + answer + ", correct="
+                + correct + ", explanation=" + explanation + ", dateAttempted=" + dateAttempted + "]";
+    }
 }

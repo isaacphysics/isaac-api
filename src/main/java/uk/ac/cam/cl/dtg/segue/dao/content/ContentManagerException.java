@@ -20,13 +20,15 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
  *
  */
 public class ContentManagerException extends Exception {
-	private static final long serialVersionUID = -4900667815265966457L;
+    private static final long serialVersionUID = -4900667815265966457L;
 
-	/**
-	 * Exception that occurred at the content manager DAO layer.
-	 * @param message - explaining the problem
-	 */
-	public ContentManagerException(final String message) {
-		super(message);
-	}
+    /**
+     * Exception that occurred at the content manager DAO layer.
+     * 
+     * @param message
+     *            - explaining the problem
+     */
+    public ContentManagerException(final String message) {
+        super(message);
+    }
 }

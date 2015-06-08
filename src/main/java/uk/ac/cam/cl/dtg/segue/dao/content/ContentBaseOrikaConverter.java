@@ -26,56 +26,48 @@ import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.metadata.Type;
 
 /**
- * ContentBaseOrikaConverter A specialist converter class to work with the Orika
- * automapper library.
+ * ContentBaseOrikaConverter A specialist converter class to work with the Orika automapper library.
  * 
  * Responsible for converting Content objects to their correct subtype.
  * 
  */
-public class ContentBaseOrikaConverter extends
-		CustomConverter<ContentBase, ContentBaseDTO> {
-	private static final Logger log = LoggerFactory
-			.getLogger(ContentBaseOrikaConverter.class);
+public class ContentBaseOrikaConverter extends CustomConverter<ContentBase, ContentBaseDTO> {
+    private static final Logger log = LoggerFactory.getLogger(ContentBaseOrikaConverter.class);
 
-	private ContentMapper contentMapper;
+    private ContentMapper contentMapper;
 
-	/**
-	 * Constructs an Orika Converter specialises in selecting the correct
-	 * subclass for content objects.
-	 * 
-	 * @param contentMapper
-	 *            - An instance of a preconfigured content mapper that knows
-	 *            about the content inheritance hierarchy.
-	 */
-	public ContentBaseOrikaConverter(final ContentMapper contentMapper) {
-		this.contentMapper = contentMapper;
-	}
+    /**
+     * Constructs an Orika Converter specialises in selecting the correct subclass for content objects.
+     * 
+     * @param contentMapper
+     *            - An instance of a preconfigured content mapper that knows about the content inheritance hierarchy.
+     */
+    public ContentBaseOrikaConverter(final ContentMapper contentMapper) {
+        this.contentMapper = contentMapper;
+    }
 
-	@Override
-	public ContentBaseDTO convert(final ContentBase source,
-			final Type<? extends ContentBaseDTO> destinationType) {
+    @Override
+    public ContentBaseDTO convert(final ContentBase source, final Type<? extends ContentBaseDTO> destinationType) {
 
-		if (null == source) {
-			return null;
-		}
+        if (null == source) {
+            return null;
+        }
 
-		Class<? extends Content> contentClass = contentMapper
-				.getClassByType(source.getType());
+        Class<? extends Content> contentClass = contentMapper.getClassByType(source.getType());
 
-		if (contentClass == null) {
-			// if we cannot figure out what content object default to content.
-			contentClass = Content.class;
-		}
+        if (contentClass == null) {
+            // if we cannot figure out what content object default to content.
+            contentClass = Content.class;
+        }
 
-		Class<? extends ContentDTO> destinationClass = contentMapper
-				.getDTOClassByDOClass(contentClass);
+        Class<? extends ContentDTO> destinationClass = contentMapper.getDTOClassByDOClass(contentClass);
 
-		if (destinationClass == null) {
-			log.error("Error - unable to locate DTO class from DO class ");
-			return null;
-		}
+        if (destinationClass == null) {
+            log.error("Error - unable to locate DTO class from DO class ");
+            return null;
+        }
 
-		return super.mapperFacade.map(source, destinationClass);
-	}
+        return super.mapperFacade.map(source, destinationClass);
+    }
 
 }

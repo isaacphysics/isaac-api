@@ -39,57 +39,55 @@ import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 /**
- * This class registers the resteasy handlers. The name is important since it is
- * used as a String in HttpServletDispatcherV3
+ * This class registers the resteasy handlers. The name is important since it is used as a String in
+ * HttpServletDispatcherV3
  * 
  * @author acr31
  * 
  */
 public class IsaacApplicationRegister extends Application {
-	private Set<Object> singletons;
-	
-	/**
-	 * Default constructor.
-	 */
-	public IsaacApplicationRegister() {
-		singletons = new HashSet<Object>();
-	}
+    private Set<Object> singletons;
 
-	@Override
-	public final Set<Object> getSingletons() {
-		// check to see if we have already registered singletons as we don't want this happening more than once.
-		if (singletons.isEmpty()) {
-			// Registers segue singleton endpoints as /isaac/segue/api
-			Injector injector = Guice.createInjector(
-					new SchoolLookupConfigurationModule(),
-					new IsaacGuiceConfigurationModule(),
-					new SegueGuiceConfigurationModule());
-			
-			// invoke optional service initialisation
-			this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));	
-			
-			// initialise segue framework. 
-			this.singletons.add(injector.getInstance(SegueApiFacade.class));
-			this.singletons.add(injector.getInstance(UsersFacade.class));
-			this.singletons.add(injector.getInstance(AuthenticationFacade.class));
-			this.singletons.add(injector.getInstance(AdminFacade.class));
-			this.singletons.add(injector.getInstance(AuthorisationFacade.class));
-			this.singletons.add(injector.getInstance(AssignmentFacade.class));
-			this.singletons.add(injector.getInstance(GroupsFacade.class));
-			this.singletons.add(injector.getInstance(GameboardsFacade.class));
-			this.singletons.add(injector.getInstance(IsaacController.class));
-			this.singletons.add(injector.getInstance(EventsFacade.class));
-		}
+    /**
+     * Default constructor.
+     */
+    public IsaacApplicationRegister() {
+        singletons = new HashSet<Object>();
+    }
 
-		return this.singletons;
-	}
+    @Override
+    public final Set<Object> getSingletons() {
+        // check to see if we have already registered singletons as we don't want this happening more than once.
+        if (singletons.isEmpty()) {
+            // Registers segue singleton endpoints as /isaac/segue/api
+            Injector injector = Guice.createInjector(new SchoolLookupConfigurationModule(),
+                    new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
 
-	@Override
-	public final Set<Class<?>> getClasses() {
-		Set<Class<?>> result = new HashSet<Class<?>>();
-		//result.add(IsaacController.class);
-		result.add(APIOverviewResource.class);
-		result.add(RestEasyJacksonConfiguration.class);
-		return result;
-	}
+            // invoke optional service initialisation
+            this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
+
+            // initialise segue framework.
+            this.singletons.add(injector.getInstance(SegueApiFacade.class));
+            this.singletons.add(injector.getInstance(UsersFacade.class));
+            this.singletons.add(injector.getInstance(AuthenticationFacade.class));
+            this.singletons.add(injector.getInstance(AdminFacade.class));
+            this.singletons.add(injector.getInstance(AuthorisationFacade.class));
+            this.singletons.add(injector.getInstance(AssignmentFacade.class));
+            this.singletons.add(injector.getInstance(GroupsFacade.class));
+            this.singletons.add(injector.getInstance(GameboardsFacade.class));
+            this.singletons.add(injector.getInstance(IsaacController.class));
+            this.singletons.add(injector.getInstance(EventsFacade.class));
+        }
+
+        return this.singletons;
+    }
+
+    @Override
+    public final Set<Class<?>> getClasses() {
+        Set<Class<?>> result = new HashSet<Class<?>>();
+        // result.add(IsaacController.class);
+        result.add(APIOverviewResource.class);
+        result.add(RestEasyJacksonConfiguration.class);
+        return result;
+    }
 }
