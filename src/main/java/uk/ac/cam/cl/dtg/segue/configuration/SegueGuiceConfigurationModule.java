@@ -48,12 +48,13 @@ import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
-import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -89,617 +90,593 @@ import com.google.inject.name.Names;
 import com.mongodb.MongoClientOptions;
 
 /**
- * This class is responsible for injecting configuration values for persistence
- * related classes.
+ * This class is responsible for injecting configuration values for persistence related classes.
  * 
  */
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
-	private static final Logger log = LoggerFactory
-			.getLogger(SegueGuiceConfigurationModule.class);
+    private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
-	// we only ever want there to be one instance of each of these.
-	private static MongoDb mongoDB = null;
-	private static PostgresSqlDb postgresDB;
-	
-	private static ContentMapper mapper = null;
-	private static ContentVersionController contentVersionController = null;
-	
-	private static GitContentManager contentManager = null;
-	private static Client elasticSearchClient = null;
-	
-	private static UserManager userManager = null;
+    // we only ever want there to be one instance of each of these.
+    private static MongoDb mongoDB = null;
+    private static PostgresSqlDb postgresDB;
 
-	private static GoogleClientSecrets googleClientSecrets = null;
-	
-	private static PropertiesLoader configLocationProperties;
-	private static PropertiesLoader globalProperties = null;
+    private static ContentMapper mapper = null;
+    private static ContentVersionController contentVersionController = null;
 
-	private UserAssociationManager userAssociationManager = null;
+    private static GitContentManager contentManager = null;
+    private static Client elasticSearchClient = null;
 
-	private static ILogManager logManager;
+    private static UserManager userManager = null;
 
-	private static Collection<Class <? extends ServletContextListener>> contextListeners;
+    private static GoogleClientSecrets googleClientSecrets = null;
 
-	/**
-	 * Create a SegueGuiceConfigurationModule.
-	 */
-	public SegueGuiceConfigurationModule() {
-		if (globalProperties == null || configLocationProperties == null) {
-			try {
-				configLocationProperties = new PropertiesLoader(
-						"/config/segue-config-location.properties");
-				
-				globalProperties = new PropertiesLoader(
-						configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+    private static PropertiesLoader configLocationProperties;
+    private static PropertiesLoader globalProperties = null;
 
-			} catch (IOException e) {
-				log.error("Error loading properties file.", e);
-			}
-		}
-	}
+    private UserAssociationManager userAssociationManager = null;
 
-	@Override
-	protected void configure() {
-		try {
-			this.configureProperties();
-			this.configureDataPersistence();
-			this.configureSegueSearch();
-			this.configureAuthenticationProviders();
-			this.configureApplicationManagers();
+    private static ILogManager logManager;
 
-		} catch (IOException e) {
-			e.printStackTrace();
-			log.error("IOException during setup process.");
-		}
-	}
+    private static EmailManager emailCommunicationQueue = null;
 
-	/**
-	 * Extract properties and bind them to constants.
-	 */
-	private void configureProperties() {
-		// Properties loader
-		bind(PropertiesLoader.class).toInstance(globalProperties);
+    private static Collection<Class<? extends ServletContextListener>> contextListeners;
 
-		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME,
-				globalProperties);
-		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS,
-				globalProperties);
-		this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT,
-				globalProperties);
+    /**
+     * Create a SegueGuiceConfigurationModule.
+     */
+    public SegueGuiceConfigurationModule() {
+        if (globalProperties == null || configLocationProperties == null) {
+            try {
+                configLocationProperties = new PropertiesLoader("/config/segue-config-location.properties");
 
-		this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
-		this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
-		this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
-		
-		this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
-		
-		// IP address geocoding
-		this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
-	}
+                globalProperties = new PropertiesLoader(
+                        configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
 
-	/**
-	 * Configure all things persistency.
-	 * 
-	 * @throws IOException
-	 *             - when we cannot load the database.
-	 */
-	private void configureDataPersistence() throws IOException {
-		// Setup different persistence bindings
-		// MongoDb
-		this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
-		this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
-		this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
-		this.bindConstantToProperty(Constants.MONGO_CONNECTION_TIMEOUT, globalProperties);
-		this.bindConstantToProperty(Constants.MONGO_SOCKET_TIMEOUT, globalProperties);
-		
-		this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
+            } catch (IOException e) {
+                log.error("Error loading properties file.", e);
+            }
+        }
+    }
 
-		// postgres
-		this.bindConstantToProperty(Constants.POSTGRES_DB_URL, globalProperties);
-		this.bindConstantToProperty(Constants.POSTGRES_DB_USER, globalProperties);
-		this.bindConstantToProperty(Constants.POSTGRES_DB_PASSWORD, globalProperties);
-		
-		// GitDb
-		bind(GitDb.class)
-				.toInstance(
-						new GitDb(
-								globalProperties
-										.getProperty(Constants.LOCAL_GIT_DB),
-								globalProperties
-										.getProperty(Constants.REMOTE_GIT_SSH_URL),
-								globalProperties
-										.getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
-		
-		bind(IUserGroupDataManager.class).to(MongoGroupDataManager.class);
-		
-		bind(IAssociationDataManager.class).to(MongoAssociationDataManager.class);
-	}
+    @Override
+    protected void configure() {
+        try {
+            this.configureProperties();
+            this.configureDataPersistence();
+            this.configureSegueSearch();
+            this.configureAuthenticationProviders();
+            this.configureApplicationManagers();
 
-	/**
-	 * Configure segue search classes.
-	 */
-	private void configureSegueSearch() {
-		bind(ISearchProvider.class).to(ElasticSearchProvider.class);
-	}
-	
-	/**
-	 * Configure user security related classes.
-	 */
-	private void configureAuthenticationProviders() {
-		this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error("IOException during setup process.");
+        }
+    }
 
-		// Configure security providers
-		// Google
-		this.bindConstantToProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION,
-				globalProperties);
-		this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI,
-				globalProperties);
-		this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES,
-				globalProperties);
+    /**
+     * Extract properties and bind them to constants.
+     */
+    private void configureProperties() {
+        // Properties loader
+        bind(PropertiesLoader.class).toInstance(globalProperties);
 
-		// Facebook
-		this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
-		this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID,
-				globalProperties);
-		this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI,
-				globalProperties);
-		this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES,
-				globalProperties);
+        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
+        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
+        this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT, globalProperties);
 
-		// Twitter
-		this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
-		this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID,
-				globalProperties);
-		this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI,
-				globalProperties);
+        this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
+        this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
+        this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
 
-		// Register a map of security providers
-		MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder
-				.newMapBinder(binder(), AuthenticationProvider.class,
-						IAuthenticator.class);
-		mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(
-				GoogleAuthenticator.class);
-		mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(
-				FacebookAuthenticator.class);
-		mapBinder.addBinding(AuthenticationProvider.TWITTER).to(
-				TwitterAuthenticator.class);
-		mapBinder.addBinding(AuthenticationProvider.SEGUE).to(
-				SegueLocalAuthenticator.class);
+        this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
 
-	}
+        // IP address geocoding
+        this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
+    }
 
-	/**
-	 * Deals with application data managers.
-	 */
-	private void configureApplicationManagers() {
-		// Allows Mongo to take over Content Management
-		// bind(IContentManager.class).to(MongoContentManager.class);
+    /**
+     * Configure all things persistency.
+     * 
+     * @throws IOException
+     *             - when we cannot load the database.
+     */
+    private void configureDataPersistence() throws IOException {
+        // Setup different persistence bindings
+        // MongoDb
+        this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
+        this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
+        this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
+        this.bindConstantToProperty(Constants.MONGO_CONNECTION_TIMEOUT, globalProperties);
+        this.bindConstantToProperty(Constants.MONGO_SOCKET_TIMEOUT, globalProperties);
 
-		// Allows GitDb to take over content Management
-		bind(IContentManager.class).to(GitContentManager.class);
-		
-		bind(LocationHistory.class).to(PgLocationHistory.class);
-		
-		bind(IUserDataManager.class).to(MongoUserDataManager.class);
-		
-		bind(ICommunicator.class).to(EmailCommunicator.class);
-	}
+        this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
-	/**
-	 * This provides a singleton of the elasticSearch client that can be used by
-	 * Guice.
-	 * 
-	 * The client is threadsafe so we don't need to keep creating new ones.
-	 * 
-	 * @param clusterName
-	 *            - The name of the cluster to create.
-	 * @param address
-	 *            - address of the cluster to create.
-	 * @param port
-	 *            - port of the custer to create.
-	 * @return Client to be injected into ElasticSearch Provider.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private static Client getSearchConnectionInformation(
-			@Named(Constants.SEARCH_CLUSTER_NAME) final String clusterName,
-			@Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
-			@Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
-		if (null == elasticSearchClient) {
-			elasticSearchClient = ElasticSearchProvider.getTransportClient(
-					clusterName, address, port);
-			log.info("Creating singleton of ElasticSearchProvider");
-		}
+        // postgres
+        this.bindConstantToProperty(Constants.POSTGRES_DB_URL, globalProperties);
+        this.bindConstantToProperty(Constants.POSTGRES_DB_USER, globalProperties);
+        this.bindConstantToProperty(Constants.POSTGRES_DB_PASSWORD, globalProperties);
 
-		return elasticSearchClient;
-	}
+        // GitDb
+        bind(GitDb.class).toInstance(
+                new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties
+                        .getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties
+                        .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
 
-	/**
-	 * This provides a singleton of the contentVersionController for the segue
-	 * facade.
-	 * 
-	 * @param generalProperties
-	 *            - properties loader
-	 * @param contentManager
-	 *            - content manager (with associated persistence links).
-	 * @return Content version controller with associated dependencies.
-	 * @throws IOException - if we can't load the properties file for live version.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private static ContentVersionController getContentVersionController(
-			final PropertiesLoader generalProperties,
-			final IContentManager contentManager) throws IOException {
-		
-		PropertiesManager versionPropertiesLoader = new PropertiesManager(
-				configLocationProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
-		
-		if (null == contentVersionController) {
-			contentVersionController = new ContentVersionController(generalProperties, versionPropertiesLoader,
-					contentManager);
-			log.info("Creating singleton of ContentVersionController");
-		}
-		return contentVersionController;
-	}
+        bind(IUserGroupDataManager.class).to(MongoGroupDataManager.class);
 
-	/**
-	 * This provides a singleton of the git content manager for the segue
-	 * facade.
-	 * 
-	 * @param database
-	 *            - database reference
-	 * @param searchProvider
-	 *            - search provider to use
-	 * @param contentMapper
-	 *            - content mapper to use.
-	 * @return a fully configured content Manager.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private static GitContentManager getContentManager(final GitDb database,
-			final ISearchProvider searchProvider,
-			final ContentMapper contentMapper) {
-		if (null == contentManager) {
-			contentManager = new GitContentManager(database, searchProvider,
-					contentMapper);
-			log.info("Creating singleton of ContentManager");
-		}
+        bind(IAssociationDataManager.class).to(MongoAssociationDataManager.class);
+    }
 
-		return contentManager;
-	}
-	
-	/**
-	 * This provides a singleton of the LogManager for the Segue
-	 * facade.
-	 * 
-	 * @param database
-	 *            - database reference
-	 * @param objectMapper - A configured object mapper so that we can serialize objects logged.
-	 * @param loggingEnabled - boolean to determine if we should persist log messages.
-	 * @param lhm - location history manager
-	 * @return A fully configured LogManager
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private static ILogManager getLogManager(final MongoDb database, final ObjectMapper objectMapper,
-			@Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
-		if (null == logManager) {
-			logManager = new MongoLogManager(database,
-					objectMapper, loggingEnabled, lhm);
-			log.info("Creating singleton of LogManager");
-			if (loggingEnabled) {
-				log.info("Log manager configured to record logging.");
-			} else {
-				log.info("Log manager configured NOT to record logging.");
-			}
-		}
+    /**
+     * Configure segue search classes.
+     */
+    private void configureSegueSearch() {
+        bind(ISearchProvider.class).to(ElasticSearchProvider.class);
+    }
 
-		return logManager;
-	}
+    /**
+     * Configure user security related classes.
+     */
+    private void configureAuthenticationProviders() {
+        this.bindConstantToProperty(Constants.HMAC_SALT, globalProperties);
 
-	/**
-	 * This provides a singleton of the contentVersionController for the segue
-	 * facade.
-	 * 
-	 * @return Content version controller with associated dependencies.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private static ContentMapper getContentMapper() {
-		if (null == mapper) {
-			String packageToSearchForValidContentDOs = "uk.ac.cam.cl.dtg.segue";
-			mapper = new ContentMapper(packageToSearchForValidContentDOs);
-			log.info("Initialising Content Mapper");
-		}
+        // Configure security providers
+        // Google
+        this.bindConstantToProperty(Constants.GOOGLE_CLIENT_SECRET_LOCATION, globalProperties);
+        this.bindConstantToProperty(Constants.GOOGLE_CALLBACK_URI, globalProperties);
+        this.bindConstantToProperty(Constants.GOOGLE_OAUTH_SCOPES, globalProperties);
 
-		return mapper;
-	}
+        // Facebook
+        this.bindConstantToProperty(Constants.FACEBOOK_SECRET, globalProperties);
+        this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID, globalProperties);
+        this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
+        this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
 
-	/**
-	 * This provides a singleton of the UserManager for various
-	 * facades.
-	 * 
-	 * @param database
-	 *            - IUserManager
-	 * @param properties
-	 *            - properties loader
-	 * @param providersToRegister
-	 *            - list of known providers.
-	 * @param communicator - so that we can send e-mails.
-	 * @param logManager - so that we can log interesting user based events.
-	 * @param mapperFacade - for DO and DTO mapping. 
-	 * @return Content version controller with associated dependencies.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private UserManager getUserManager(
-			final IUserDataManager database,
-			final PropertiesLoader properties,
-			final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-			final ICommunicator communicator, final ILogManager logManager, final MapperFacade mapperFacade) {
+        // Twitter
+        this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);
+        this.bindConstantToProperty(Constants.TWITTER_CLIENT_ID, globalProperties);
+        this.bindConstantToProperty(Constants.TWITTER_CALLBACK_URI, globalProperties);
 
-		if (null == userManager) {
-			userManager = new UserManager(database, properties, providersToRegister,
-					mapperFacade, communicator, logManager);
-			log.info("Creating singleton of UserManager");
-		}
+        // Register a map of security providers
+        MapBinder<AuthenticationProvider, IAuthenticator> mapBinder = MapBinder.newMapBinder(binder(),
+                AuthenticationProvider.class, IAuthenticator.class);
+        mapBinder.addBinding(AuthenticationProvider.GOOGLE).to(GoogleAuthenticator.class);
+        mapBinder.addBinding(AuthenticationProvider.FACEBOOK).to(FacebookAuthenticator.class);
+        mapBinder.addBinding(AuthenticationProvider.TWITTER).to(TwitterAuthenticator.class);
+        mapBinder.addBinding(AuthenticationProvider.SEGUE).to(SegueLocalAuthenticator.class);
 
-		return userManager;
-	}
+    }
 
-	/**
-	 * This provides a singleton of the UserAssociationManager for the Authorisation
-	 * facade.
-	 * 
-	 * @param database
-	 *            - IUserManager
-	 * @param userGroupDatabase
-	 *            - group database
-	 *            
-	 * @return Content version controller with associated dependencies.
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private UserAssociationManager getAssociationManager(
-			final IAssociationDataManager database, final GroupManager userGroupDatabase) {
-		if (null == userAssociationManager) {
-			userAssociationManager = new UserAssociationManager(database, userGroupDatabase);
-			log.info("Creating singleton of UserAssociationManager");
-		}
+    /**
+     * Deals with application data managers.
+     */
+    private void configureApplicationManagers() {
+        // Allows Mongo to take over Content Management
+        // bind(IContentManager.class).to(MongoContentManager.class);
 
-		return userAssociationManager;
-	}
-	
-	/**
-	 * Gets the instance of the dozer mapper object.
-	 * 
-	 * @return a preconfigured instance of an Auto Mapper. This is specialised
-	 *         for mapping SegueObjects.
-	 */
-	@Provides
-	@Singleton
-	@Inject
-	public static MapperFacade getDOtoDTOMapper() {
-		return SegueGuiceConfigurationModule.getContentMapper().getAutoMapper();
-	}
+        // Allows GitDb to take over content Management
+        bind(IContentManager.class).to(GitContentManager.class);
 
-	/**
-	 * @return segue version currently running.
-	 */
-	public static String getSegueVersion() {
-		if (configLocationProperties != null) {
-			return configLocationProperties.getProperty(Constants.SEGUE_APP_VERSION);
-		}
-		log.warn("Unable to read segue version property");
-		return "UNKNOWN";
-	}
-	
-	/**
-	 * Gets the instance of the GoogleClientSecrets object.
-	 * 
-	 * @param clientSecretLocation
-	 *            - The path to the client secrets json file
-	 * @return GoogleClientSecrets
-	 * @throws IOException
-	 *             - when we are unable to access the google client file.
-	 */
-	@Provides
-	@Singleton
-	@Inject
-	private static GoogleClientSecrets getGoogleClientSecrets(
-			@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation)
-		throws IOException {
-		if (null == googleClientSecrets) {
-			Validate.notNull(clientSecretLocation, "Missing resource %s",
-					clientSecretLocation);
+        bind(LocationHistory.class).to(PgLocationHistory.class);
 
-			// load up the client secrets from the file system.
-			InputStream inputStream = new FileInputStream(clientSecretLocation);
-			InputStreamReader isr = new InputStreamReader(inputStream);
+        bind(IUserDataManager.class).to(MongoUserDataManager.class);
 
-			googleClientSecrets = GoogleClientSecrets.load(
-					new JacksonFactory(), isr);
-		}
+        bind(ICommunicator.class).to(EmailCommunicator.class);
+    }
 
-		return googleClientSecrets;
-	}
+    /**
+     * This provides a singleton of the elasticSearch client that can be used by Guice.
+     * 
+     * The client is threadsafe so we don't need to keep creating new ones.
+     * 
+     * @param clusterName
+     *            - The name of the cluster to create.
+     * @param address
+     *            - address of the cluster to create.
+     * @param port
+     *            - port of the custer to create.
+     * @return Client to be injected into ElasticSearch Provider.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static Client getSearchConnectionInformation(
+            @Named(Constants.SEARCH_CLUSTER_NAME) final String clusterName,
+            @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
+            @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
+        if (null == elasticSearchClient) {
+            elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
+            log.info("Creating singleton of ElasticSearchProvider");
+        }
 
-	/**
-	 * Gets the instance of the mongodb client object.
-	 * 
-	 * @param host
-	 *            - database host to connect to.
-	 * @param port
-	 *            - port that the mongodb service is running on.
-	 * @param dbName
-	 *            - the name of the database to configure the wrapper to use.
-	 * @param connectionsPerHost
-	 *            - the number of connections available from the pool
-	 * @param connectTimeout
-	 *            - time out for individual tcp connections
-	 * @param socketTimeout
-	 *            - socket timeout
-	 * @return MongoDB db object preconfigured to work with the segue database.
-	 * @throws UnknownHostException
-	 *             - when we are unable to access the host.
-	 */
-	@Provides
-	@Singleton
-	@Inject
-	private static MongoDb getMongoDB(
-			@Named(Constants.MONGO_DB_HOSTNAME) final String host,
-			@Named(Constants.MONGO_DB_PORT) final String port,
-			@Named(Constants.SEGUE_DB_NAME) final String dbName,
-			@Named(Constants.MONGO_CONNECTIONS_PER_HOST) final String connectionsPerHost,
-			@Named(Constants.MONGO_CONNECTION_TIMEOUT) final String connectTimeout,
-			@Named(Constants.MONGO_SOCKET_TIMEOUT) final String socketTimeout)
-		throws UnknownHostException {
-		if (null == mongoDB) {
-			MongoClientOptions options = MongoClientOptions.builder().autoConnectRetry(true)
-					.connectionsPerHost(Integer.parseInt(connectionsPerHost))
-					.connectTimeout(Integer.parseInt(connectTimeout))
-					.socketTimeout(Integer.parseInt(socketTimeout)).build();
+        return elasticSearchClient;
+    }
 
-			mongoDB = new MongoDb(host, Integer.parseInt(port), dbName, options);
-			log.info("Created Singleton of MongoDb wrapper");
-		}
+    /**
+     * This provides a singleton of the contentVersionController for the segue facade.
+     * 
+     * @param generalProperties
+     *            - properties loader
+     * @param contentManager
+     *            - content manager (with associated persistence links).
+     * @return Content version controller with associated dependencies.
+     * @throws IOException
+     *             - if we can't load the properties file for live version.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static ContentVersionController getContentVersionController(final PropertiesLoader generalProperties,
+            final IContentManager contentManager) throws IOException {
 
-		return mongoDB;
-	}
+        PropertiesManager versionPropertiesLoader = new PropertiesManager(
+                configLocationProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
 
-	/**
-	 * Gets the instance of the postgres connection wrapper.
-	 * 
-	 * @param databaseUrl
-	 *            - database to connect to.
-	 * @param username
-	 *            - port that the mongodb service is running on.
-	 * @param password
-	 *            - the name of the database to configure the wrapper to use.
-	 * @return PostgresSqlDb db object preconfigured to work with the segue database.
-	 * @throws SQLException - If we cannot create the connection.
-	 */
-	@Provides
-	@Singleton
-	@Inject
-	private static PostgresSqlDb getPostgresDB(
-			@Named(Constants.POSTGRES_DB_URL) final String databaseUrl,
-			@Named(Constants.POSTGRES_DB_USER) final String username,
-			@Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
+        if (null == contentVersionController) {
+            contentVersionController = new ContentVersionController(generalProperties, versionPropertiesLoader,
+                    contentManager);
+            log.info("Creating singleton of ContentVersionController");
+        }
+        return contentVersionController;
+    }
 
-		if (null == postgresDB) {
-			try {
-				postgresDB = new PostgresSqlDb(databaseUrl, username, password);
-				log.info("Created Singleton of PostgresDb wrapper");
-			} catch (ClassNotFoundException e) {
-				log.error("Unable to locate postgres driver.", e);
-			}
-		}
+    /**
+     * This provides a singleton of the git content manager for the segue facade.
+     * 
+     * @param database
+     *            - database reference
+     * @param searchProvider
+     *            - search provider to use
+     * @param contentMapper
+     *            - content mapper to use.
+     * @return a fully configured content Manager.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
+            final ContentMapper contentMapper) {
+        if (null == contentManager) {
+            contentManager = new GitContentManager(database, searchProvider, contentMapper);
+            log.info("Creating singleton of ContentManager");
+        }
 
-		return postgresDB;
-	}
-	
-	/**
-	 * This provides an instance of the location resolver.
-	 *
-	 * @param apiKey
-	 *            - for using the third party service.
-	 * @return The singleton instance of EmailCommunicator
-	 */
-	@Inject
-	@Provides
-	private ILocationResolver getIPLocator(
-			@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-		return new IPInfoDBLocationResolver(apiKey);
-	}	
+        return contentManager;
+    }
 
-	/**
-	 * Utility method to make the syntax of property bindings clearer.
-	 * 
-	 * @param propertyLabel
-	 *            - Key for a given property
-	 * @param propertyLoader
-	 *            - property loader to use
-	 */
-	private void bindConstantToProperty(final String propertyLabel,
-			final PropertiesLoader propertyLoader) {
-		bindConstant().annotatedWith(Names.named(propertyLabel)).to(
-				propertyLoader.getProperty(propertyLabel));
-	}
+    /**
+     * This provides a singleton of the LogManager for the Segue facade.
+     * 
+     * @param database
+     *            - database reference
+     * @param objectMapper
+     *            - A configured object mapper so that we can serialize objects logged.
+     * @param loggingEnabled
+     *            - boolean to determine if we should persist log messages.
+     * @param lhm
+     *            - location history manager
+     * @return A fully configured LogManager
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static ILogManager getLogManager(final MongoDb database, final ObjectMapper objectMapper,
+            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
+        if (null == logManager) {
+            logManager = new MongoLogManager(database, objectMapper, loggingEnabled, lhm);
+            log.info("Creating singleton of LogManager");
+            if (loggingEnabled) {
+                log.info("Log manager configured to record logging.");
+            } else {
+                log.info("Log manager configured NOT to record logging.");
+            }
+        }
 
-	/**
-	 * Gets the segue classes that should be registered as context listeners.
-	 * 
-	 * @return the list of context listener classes (these should all be singletons).
-	 */
-	public static Collection<Class <? extends ServletContextListener>> getRegisteredContextListenerClasses() {
-		
-		if (null == contextListeners) {
-			contextListeners = Lists.newArrayList();	
-			Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
-			Set<Class<? extends ServletContextListener>> subTypes = 
-				     reflections.getSubTypesOf(ServletContextListener.class);
-			
-			for (Class<? extends ServletContextListener> contextListener : subTypes) {
-				contextListeners.add(contextListener);	
-			}
-		}
-	
-		return contextListeners;
-	}
-	
-	/**
-	 * Segue utility method for providing a new instance of an application
-	 * manager.
-	 * 
-	 * @param databaseName
-	 *            - the database / table name - should be unique.
-	 * @param classType
-	 *            - the class type that represents what can be managed by this
-	 *            app manager.
-	 * @param <T>
-	 *            the type that can be managed by this App Manager.
-	 * @return the application manager ready to use.
-	 */
-	public static <T> IAppDatabaseManager<T> getAppDataManager(
-			final String databaseName, final Class<T> classType) {
-		Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
+        return logManager;
+    }
 
-		return new MongoAppDataManager<T>(mongoDB, databaseName,
-				classType);
-	}
+    /**
+     * This provides a singleton of the contentVersionController for the segue facade.
+     * 
+     * @return Content version controller with associated dependencies.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static ContentMapper getContentMapper() {
+        if (null == mapper) {
+            String packageToSearchForValidContentDOs = "uk.ac.cam.cl.dtg.segue";
+            mapper = new ContentMapper(packageToSearchForValidContentDOs);
+            log.info("Initialising Content Mapper");
+        }
 
-	@Override
-	public void contextInitialized(final ServletContextEvent sce) {
-		// nothing needed
-	}
+        return mapper;
+    }
 
-	@Override
-	public void contextDestroyed(final ServletContextEvent sce) {
-		// Close all resoureces we hold.
-		log.info("Segue Config Module notified of shutdown. Releasing resources");
-		elasticSearchClient.close();
-		elasticSearchClient = null;
-		
-		try {
-			mongoDB.close();
-			mongoDB = null;		
-		} catch (IOException e) {
-			log.error("Unable to close external connection", e);
-		}
-		
-		try {
-			postgresDB.close();
-			postgresDB = null;
-		} catch (IOException e) {
-			log.error("Unable to close external connection", e);
-		}
-	}
+    /**
+     * @param emailCommunicator
+     *            the class the queue will send messages with
+     * @return an instance of the queue
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
+            final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
+            final ContentVersionController contentVersionController) {
+        if (null == emailCommunicationQueue) {
+            emailCommunicationQueue = new EmailManager(emailCommunicator, properties, database,
+                    contentVersionController);
+            log.info("Creating singleton of EmailCommunicationQueue");
+        }
+        return emailCommunicationQueue;
+    }
+
+    /**
+     * This provides a singleton of the UserManager for various facades.
+     * 
+     * @param database
+     *            - IUserManager
+     * @param properties
+     *            - properties loader
+     * @param providersToRegister
+     *            - list of known providers.
+     * @param communicator
+     *            - so that we can send e-mails.
+     * @param logManager
+     *            - so that we can log interesting user based events.
+     * @param mapperFacade
+     *            - for DO and DTO mapping.
+     * @return Content version controller with associated dependencies.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private UserManager getUserManager(final IUserDataManager database, final PropertiesLoader properties,
+            final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final EmailManager emailQueue,
+            final ILogManager logManager, final MapperFacade mapperFacade) {
+
+        if (null == userManager) {
+            userManager = new UserManager(database, properties, providersToRegister, mapperFacade, emailQueue,
+                    logManager);
+            log.info("Creating singleton of UserManager");
+        }
+
+        return userManager;
+    }
+
+    /**
+     * This provides a singleton of the UserAssociationManager for the Authorisation facade.
+     * 
+     * @param database
+     *            - IUserManager
+     * @param userGroupDatabase
+     *            - group database
+     * 
+     * @return Content version controller with associated dependencies.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private UserAssociationManager getAssociationManager(final IAssociationDataManager database,
+            final GroupManager userGroupDatabase) {
+        if (null == userAssociationManager) {
+            userAssociationManager = new UserAssociationManager(database, userGroupDatabase);
+            log.info("Creating singleton of UserAssociationManager");
+        }
+
+        return userAssociationManager;
+    }
+
+    /**
+     * Gets the instance of the dozer mapper object.
+     * 
+     * @return a preconfigured instance of an Auto Mapper. This is specialised for mapping SegueObjects.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    public static MapperFacade getDOtoDTOMapper() {
+        return SegueGuiceConfigurationModule.getContentMapper().getAutoMapper();
+    }
+
+    /**
+     * @return segue version currently running.
+     */
+    public static String getSegueVersion() {
+        if (configLocationProperties != null) {
+            return configLocationProperties.getProperty(Constants.SEGUE_APP_VERSION);
+        }
+        log.warn("Unable to read segue version property");
+        return "UNKNOWN";
+    }
+
+    /**
+     * Gets the instance of the GoogleClientSecrets object.
+     * 
+     * @param clientSecretLocation
+     *            - The path to the client secrets json file
+     * @return GoogleClientSecrets
+     * @throws IOException
+     *             - when we are unable to access the google client file.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static GoogleClientSecrets getGoogleClientSecrets(
+            @Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation) throws IOException {
+        if (null == googleClientSecrets) {
+            Validate.notNull(clientSecretLocation, "Missing resource %s", clientSecretLocation);
+
+            // load up the client secrets from the file system.
+            InputStream inputStream = new FileInputStream(clientSecretLocation);
+            InputStreamReader isr = new InputStreamReader(inputStream);
+
+            googleClientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
+        }
+
+        return googleClientSecrets;
+    }
+
+    /**
+     * Gets the instance of the mongodb client object.
+     * 
+     * @param host
+     *            - database host to connect to.
+     * @param port
+     *            - port that the mongodb service is running on.
+     * @param dbName
+     *            - the name of the database to configure the wrapper to use.
+     * @param connectionsPerHost
+     *            - the number of connections available from the pool
+     * @param connectTimeout
+     *            - time out for individual tcp connections
+     * @param socketTimeout
+     *            - socket timeout
+     * @return MongoDB db object preconfigured to work with the segue database.
+     * @throws UnknownHostException
+     *             - when we are unable to access the host.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static MongoDb getMongoDB(@Named(Constants.MONGO_DB_HOSTNAME) final String host,
+            @Named(Constants.MONGO_DB_PORT) final String port, @Named(Constants.SEGUE_DB_NAME) final String dbName,
+            @Named(Constants.MONGO_CONNECTIONS_PER_HOST) final String connectionsPerHost,
+            @Named(Constants.MONGO_CONNECTION_TIMEOUT) final String connectTimeout,
+            @Named(Constants.MONGO_SOCKET_TIMEOUT) final String socketTimeout) throws UnknownHostException {
+        if (null == mongoDB) {
+            MongoClientOptions options = MongoClientOptions.builder().autoConnectRetry(true)
+                    .connectionsPerHost(Integer.parseInt(connectionsPerHost))
+                    .connectTimeout(Integer.parseInt(connectTimeout)).socketTimeout(Integer.parseInt(socketTimeout))
+                    .build();
+
+            mongoDB = new MongoDb(host, Integer.parseInt(port), dbName, options);
+            log.info("Created Singleton of MongoDb wrapper");
+        }
+
+        return mongoDB;
+    }
+
+    /**
+     * Gets the instance of the postgres connection wrapper.
+     * 
+     * @param databaseUrl
+     *            - database to connect to.
+     * @param username
+     *            - port that the mongodb service is running on.
+     * @param password
+     *            - the name of the database to configure the wrapper to use.
+     * @return PostgresSqlDb db object preconfigured to work with the segue database.
+     * @throws SQLException
+     *             - If we cannot create the connection.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static PostgresSqlDb getPostgresDB(@Named(Constants.POSTGRES_DB_URL) final String databaseUrl,
+            @Named(Constants.POSTGRES_DB_USER) final String username,
+            @Named(Constants.POSTGRES_DB_PASSWORD) final String password) throws SQLException {
+
+        if (null == postgresDB) {
+            try {
+                postgresDB = new PostgresSqlDb(databaseUrl, username, password);
+                log.info("Created Singleton of PostgresDb wrapper");
+            } catch (ClassNotFoundException e) {
+                log.error("Unable to locate postgres driver.", e);
+            }
+        }
+
+        return postgresDB;
+    }
+
+    /**
+     * This provides an instance of the location resolver.
+     *
+     * @param apiKey
+     *            - for using the third party service.
+     * @return The singleton instance of EmailCommunicator
+     */
+    @Inject
+    @Provides
+    private ILocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
+        return new IPInfoDBLocationResolver(apiKey);
+    }
+
+    /**
+     * Utility method to make the syntax of property bindings clearer.
+     * 
+     * @param propertyLabel
+     *            - Key for a given property
+     * @param propertyLoader
+     *            - property loader to use
+     */
+    private void bindConstantToProperty(final String propertyLabel, final PropertiesLoader propertyLoader) {
+        bindConstant().annotatedWith(Names.named(propertyLabel)).to(propertyLoader.getProperty(propertyLabel));
+    }
+
+    /**
+     * Gets the segue classes that should be registered as context listeners.
+     * 
+     * @return the list of context listener classes (these should all be singletons).
+     */
+    public static Collection<Class<? extends ServletContextListener>> getRegisteredContextListenerClasses() {
+
+        if (null == contextListeners) {
+            contextListeners = Lists.newArrayList();
+            Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
+            Set<Class<? extends ServletContextListener>> subTypes = reflections
+                    .getSubTypesOf(ServletContextListener.class);
+
+            for (Class<? extends ServletContextListener> contextListener : subTypes) {
+                contextListeners.add(contextListener);
+            }
+        }
+
+        return contextListeners;
+    }
+
+    /**
+     * Segue utility method for providing a new instance of an application manager.
+     * 
+     * @param databaseName
+     *            - the database / table name - should be unique.
+     * @param classType
+     *            - the class type that represents what can be managed by this app manager.
+     * @param <T>
+     *            the type that can be managed by this App Manager.
+     * @return the application manager ready to use.
+     */
+    public static <T> IAppDatabaseManager<T> getAppDataManager(final String databaseName, final Class<T> classType) {
+        Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
+
+        return new MongoAppDataManager<T>(mongoDB, databaseName, classType);
+    }
+
+    @Override
+    public void contextInitialized(final ServletContextEvent sce) {
+        // nothing needed
+    }
+
+    @Override
+    public void contextDestroyed(final ServletContextEvent sce) {
+        // Close all resoureces we hold.
+        log.info("Segue Config Module notified of shutdown. Releasing resources");
+        elasticSearchClient.close();
+        elasticSearchClient = null;
+
+        try {
+            mongoDB.close();
+            mongoDB = null;
+        } catch (IOException e) {
+            log.error("Unable to close external connection", e);
+        }
+
+        try {
+            postgresDB.close();
+            postgresDB = null;
+        } catch (IOException e) {
+            log.error("Unable to close external connection", e);
+        }
+    }
 }

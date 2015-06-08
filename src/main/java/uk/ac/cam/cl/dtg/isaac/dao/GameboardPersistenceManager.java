@@ -430,7 +430,6 @@ public class GameboardPersistenceManager {
 				}
 			}
 		}	
-		
 		return gameboards;
 	}
 	

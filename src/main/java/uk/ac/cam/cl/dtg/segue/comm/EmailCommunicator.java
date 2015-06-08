@@ -15,18 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import javax.mail.MessagingException;
+
 import org.apache.commons.lang3.Validate;
+
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
-import javax.mail.MessagingException;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 /**
  * @author nr378
  */
-public class EmailCommunicator implements ICommunicator {
+public class EmailCommunicator implements ICommunicator<EmailCommunicationMessage> {
 	private Mailer mailer;
 	private String fromAddress;
 
@@ -40,11 +42,11 @@ public class EmailCommunicator implements ICommunicator {
 	 *            the smtp server to use to send e-mails. Must be open for this
 	 *            implementation.
 	 * @param fromAddress
-	 *            - The email address to to show as the from address.
+	 *            - The email address to show as the from address.
 	 */
 	@Inject
 	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
-			@Named(Constants.MAIL_FROM_ADDRESS) final String fromAddress) {
+							 @Named(Constants.MAIL_FROM_ADDRESS) final String fromAddress) {
 		Validate.notNull(smtpAddress);
 		Validate.notNull(fromAddress);
 
@@ -54,22 +56,30 @@ public class EmailCommunicator implements ICommunicator {
 		this.mailer = new Mailer(smtpAddress, fromAddress);
 	}
 
-	@Override
-	public void sendMessage(final String recipientAddress, final String recipientName, final String subject,
-			final String message) throws CommunicationException {
 
+	/**
+	 * @param email to be sent
+	 * @throws CommunicationException
+	 */
+	@Override
+	public void sendMessage(final EmailCommunicationMessage email)
+			throws CommunicationException {
+		
 		// Construct message
 		StringBuilder messageBuilder = new StringBuilder();
-		messageBuilder.append(String.format("Hello %s,\n\n", recipientName));
-		messageBuilder.append(message);
+		messageBuilder.append(String.format("Hello %s,\n\n", email.getRecipientName()));
+		messageBuilder.append(email.getMessage());
 		messageBuilder.append(String.format("\n\n%s", SIGNATURE));
 
 		// Send email
 		try {
-			mailer.sendMail(new String[] { recipientAddress }, this.fromAddress,
-					String.format("%s - %s", subject, SIGNATURE), messageBuilder.toString());
+			mailer.sendMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
+							String.format("%s - %s", email.getSubject(), SIGNATURE), messageBuilder.toString());
 		} catch (MessagingException e) {
 			throw new CommunicationException(e);
 		}
 	}
+
+
+
 }

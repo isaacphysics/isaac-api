@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 /**
  * Choice deserializer
  * 
- * This class requires the primary content bas deserializer as a constructor
+ * This class requires the primary content base deserializer as a constructor
  * arguement.
  * 
  * It is to allow subclasses of the choices object to be detected correctly.

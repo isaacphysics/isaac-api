@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Nick Rogers
+ * Copyright 2015 Alistair Stead
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 
-/**
- * 
- * @author nr378
- *
- * @param <T> the type of object it communicates
- */
-public interface ICommunicator<T extends ICommunicationMessage> {
-
-	/**
-	 * Send a message.
-	 * 
-	 * @param message 
-	 * @throws communicationException 
-	 */
-	public void sendMessage(final T message)
-		throws CommunicationException;
-
+public interface ICommunicationMessage {
+	
 }

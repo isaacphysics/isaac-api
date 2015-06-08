@@ -15,11 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static org.easymock.EasyMock.and;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
 import ma.glasnost.orika.MapperFacade;
 
 import org.easymock.Capture;
@@ -28,6 +36,7 @@ import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
@@ -46,7 +55,7 @@ public class GroupManagerTest {
 	private PropertiesLoader dummyPropertiesLoader;
 
 	private MapperFacade dummyMapper;
-	private ICommunicator dummyCommunicator;
+	private ICommunicator<EmailCommunicationMessage> dummyCommunicator;
 	private SimpleDateFormat sdf;
 	
 	private IUserGroupDataManager groupDataManager;
