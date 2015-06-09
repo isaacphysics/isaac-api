@@ -54,6 +54,10 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Date lastUpdated;
     private Date lastSeen;
 
+    private String emailVerificationToken;
+    private Date emailVerificationExpiryDate;
+    private boolean emailVerified = false;
+
     /**
      * Full constructor for the User object.
      * 
@@ -88,6 +92,51 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.gender = gender;
         this.registrationDate = registrationDate;
         this.schoolId = schoolId;
+    }
+
+    /**
+     * @return the emailVerificationToken
+     */
+    public String getEmailVerificationToken() {
+        return emailVerificationToken;
+    }
+
+    /**
+     * @param emailVerificationToken
+     *            the emailVerificationToken to set
+     */
+    public void setEmailVerificationToken(String emailVerificationToken) {
+        this.emailVerificationToken = emailVerificationToken;
+    }
+
+    /**
+     * @return the emailVerificationExpiryDate
+     */
+    public Date getEmailVerificationExpiryDate() {
+        return emailVerificationExpiryDate;
+    }
+
+    /**
+     * @param emailVerificationExpiryDate
+     *            the emailVerificationExpiryDate to set
+     */
+    public void setEmailVerificationExpiryDate(Date emailVerificationExpiryDate) {
+        this.emailVerificationExpiryDate = emailVerificationExpiryDate;
+    }
+
+    /**
+     * @return the emailVerified
+     */
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    /**
+     * @param emailVerified
+     *            the emailVerified to set
+     */
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     /**

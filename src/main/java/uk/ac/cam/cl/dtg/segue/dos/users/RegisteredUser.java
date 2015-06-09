@@ -52,6 +52,7 @@ public class RegisteredUser extends AbstractSegueUser {
 
     private String emailVerificationToken;
     private Date emailVerificationTokenExpiry;
+    private Boolean emailVerified;
 
     private Date lastUpdated;
     private Date lastSeen;
@@ -85,6 +86,12 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - resetExpiry for local segue authentication.
      * @param lastUpdated
      *            - the date this user was last updated.
+     * @param emailVerificationToken
+     *            - the most recent token generated to verify email addresses
+     * @param emailVerificationTokenExpiry
+     *            - the expiry date of the most recent token
+     * @param emailVerified
+     *            - whether the user has verified their email or not
      */
     @JsonCreator
     public RegisteredUser(@JsonProperty("_id") final String databaseId,
@@ -94,7 +101,10 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("schoolId") final String schoolId, @JsonProperty("password") final String password,
             @JsonProperty("resetToken") final String resetToken, @JsonProperty("resetExpiry") final Date resetExpiry,
-            @JsonProperty("lastUpdated") final Date lastUpdated) {
+            @JsonProperty("lastUpdated") final Date lastUpdated,
+            @JsonProperty("emailVerificationToken") final String emailVerificationToken,
+            @JsonProperty("emailVerificationTokenExpiry") final Date emailVerificationTokenExpiry, 
+            @JsonProperty("emailVerified") final Boolean emailVerified) {
         this.databaseId = databaseId;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -108,6 +118,24 @@ public class RegisteredUser extends AbstractSegueUser {
         this.resetToken = resetToken;
         this.resetExpiry = resetExpiry;
         this.lastUpdated = lastUpdated;
+        this.emailVerificationToken = emailVerificationToken;
+        this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
+        this.emailVerified = emailVerified;
+    }
+
+    /**
+     * @return the emailVerified
+     */
+    public Boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    /**
+     * @param emailVerified
+     *            - sets whether email has been verified
+     */
+    public void setEmailVerified(final Boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     /**

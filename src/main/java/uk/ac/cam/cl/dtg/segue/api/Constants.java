@@ -267,6 +267,7 @@ public final class Constants {
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
     public static final String LOCAL_AUTH_RESET_TOKEN_FIELDNAME = "resetToken";
+    public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
 
     // Database properties
     public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";

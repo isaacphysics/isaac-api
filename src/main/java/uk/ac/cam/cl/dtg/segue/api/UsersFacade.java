@@ -15,7 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -244,7 +246,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validatePasswordResetRequest(@PathParam("token") final String token) {
+    public Response validateEmailResetRequest(@PathParam("token") final String token) {
         try {
             if (userManager.validatePasswordResetToken(token)) {
                 return Response.ok().build();
@@ -373,6 +375,78 @@ public class UsersFacade extends AbstractSegueFacade {
                     .toResponse();
         }
     }
+
+
+    /**
+     * End point that allows a local user to generate an email verification request.
+     * 
+     * Step 1 of email verification process - send user an e-mail
+     * 
+     * @param userObject
+     *            - A user object containing the email of the user requesting a reset
+     * @param request
+     *            - For logging purposes.
+     * @return a successful response regardless of whether the email exists or an error code if there is a technical
+     *         fault
+     */
+    @POST
+    @Path("users/verifyemail")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response generateEmailVerificationToken(final RegisteredUserDTO userObject,
+            @Context final HttpServletRequest request) {
+        if (null == userObject) {
+            log.debug("User is null");
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
+        }
+
+        try {
+            userManager.emailVerificationRequest(userObject);
+
+            this.getLogManager()
+                    .logEvent(userManager.getCurrentUser(request), request, PASSWORD_RESET_REQUEST_RECEIVED,
+                            ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
+
+            return Response.ok().build();
+        } catch (CommunicationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error sending verification message.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (Exception e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Error generate email verification token.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
+
+    /**
+     * End point that verifies whether or not an email validation token is valid.
+     * 
+     * Optional Step 2 - validate token is correct
+     * 
+     * @param email
+     *            - A user's email address
+     * @param token
+     *            - A password reset token
+     * @return Success if the token is valid, otherwise returns not found
+     */
+    @GET
+    @Path("users/verifyemail/{token}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response validatePasswordResetRequest(@PathParam("token") final String token) throws SegueDatabaseException {
+        if (userManager.validateEmailVerification(token)) {
+            return Response.ok().build();
+        }
+
+        SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Invalid password reset token.");
+        log.debug(String.format("Invalid password reset token: %s", token));
+        return error.toResponse();
+    }
+
+
 
     /**
      * Get a Set of all schools reported by users in the school other field.

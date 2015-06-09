@@ -96,6 +96,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
@@ -135,7 +136,7 @@ public class UserManager {
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final MapperFacade dtoMapper;
 
-    private final EmailManager emailQueue;
+    private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
 
     /**
@@ -204,7 +205,7 @@ public class UserManager {
         this.registeredAuthProviders = providersToRegister;
         this.dtoMapper = dtoMapper;
 
-        this.emailQueue = emailQueue;
+        this.emailManager = emailQueue;
         this.serializationMapper = new ObjectMapper();
     }
 
@@ -804,8 +805,27 @@ public class UserManager {
                     + " no longer has a way of authenticating. Reverting change.");
         }
 
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
+        try {
+            authenticator.createEmailVerificationTokenForUser(userToSave);
+        } catch (NoSuchAlgorithmException e1) {
+            log.error("Creation of email verification token failed: " + e1.getMessage());
+        } catch (InvalidKeySpecException e1) {
+            log.error("Creation of email verification token failed: " + e1.getMessage());
+        }
+
+        // send an email confirmation
+        try {
+            emailManager.sendRegistrationConfirmation(userToSave);
+        } catch (ContentManagerException e) {
+            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+        }
+
         // save the user
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+
 
         this.createSession(request, response, userToReturn);
 
@@ -940,7 +960,109 @@ public class UserManager {
         this.database.createOrUpdateUser(user);
 
         log.info(String.format("Sending password reset message to %s", user.getEmail()));
-        this.sendPasswordResetMessage(user);
+        try {
+            this.emailManager.sendPasswordReset(user);
+        } catch (ContentManagerException e) {
+            log.debug("ContentManagerException " + e.getMessage());
+        }
+    }
+
+    /**
+     * This method will use an email address to check a local user exists and if so, will send an email with a unique
+     * token to allow a password reset. This method does not indicate whether or not the email actually existed.
+     *
+     * @param userObject
+     *            - A user object containing the email address of the user to reset the password for.
+     * @throws NoSuchAlgorithmException
+     *             - if the configured algorithm is not valid.
+     * @throws InvalidKeySpecException
+     *             - if the preconfigured key spec is invalid.
+     * @throws CommunicationException
+     *             - if a fault occurred whilst sending the communique
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    public final void emailVerificationRequest(final RegisteredUserDTO userObject) throws InvalidKeySpecException,
+            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
+        RegisteredUser user = this.findUserByEmail(userObject.getEmail());
+
+        if (user == null) {
+            // Email address does not exist in the DB
+            // Fail silently
+            return;
+        }
+
+        if (this.database.hasALinkedAccount(user) && (user.getPassword() == null || user.getPassword().isEmpty())) {
+            // User is not authenticated locally
+            this.sendFederatedAuthenticatorVerificationMessage(user);
+            return;
+        }
+
+        // User is valid and authenticated locally, proceed with reset
+        // Generate token
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
+        user = authenticator.createEmailVerificationTokenForUser(user);
+
+        // Save user object
+        this.database.createOrUpdateUser(user);
+
+        log.info(String.format("Sending password reset message to %s", user.getEmail()));
+        try {
+            this.emailManager.sendEmailVerification(user);
+        } catch (ContentManagerException e) {
+            log.debug("ContentManagerException " + e.getMessage());
+        }
+    }
+
+    /**
+     * @param user
+     */
+    private void sendFederatedAuthenticatorVerificationMessage(RegisteredUser user) throws CommunicationException,
+            SegueDatabaseException {
+        // Get the user's federated authenticators
+        List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
+        List<String> providerNames = new ArrayList<>();
+        for (AuthenticationProvider provider : providers) {
+            IAuthenticator authenticator = this.registeredAuthProviders.get(provider);
+            if (!(authenticator instanceof IFederatedAuthenticator)) {
+                continue;
+            }
+
+            String providerName = provider.name().toLowerCase();
+            providerName = providerName.substring(0, 1).toUpperCase() + providerName.substring(1);
+            providerNames.add(providerName);
+        }
+
+        String providerString;
+        if (providerNames.size() == 1) {
+            providerString = providerNames.get(0);
+        } else {
+            StringBuilder providersBuilder = new StringBuilder();
+            for (int i = 0; i < providerNames.size(); i++) {
+                if (i == providerNames.size() - 1) {
+                    providersBuilder.append(" and ");
+                } else if (i > 1) {
+                    providersBuilder.append(", ");
+                }
+                providersBuilder.append(providerNames.get(i));
+            }
+            providerString = providersBuilder.toString();
+        }
+
+        String providerWord = "provider";
+        if (providerNames.size() > 1) {
+            providerWord += "s";
+        }
+
+        try {
+            this.emailManager.sendFederatedPasswordReset(user, providerString, providerWord);
+        } catch (ContentManagerException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+
     }
 
     /**
@@ -959,6 +1081,20 @@ public class UserManager {
                 .get(AuthenticationProvider.SEGUE);
 
         return authenticator.isValidResetToken(this.findUserByResetToken(token));
+    }
+
+    /**
+     * @param token
+     *            - token used to verify email address
+     * @return - whether the token is valid or not
+     * @throws SegueDatabaseException
+     *             - exception if token cannot be validated
+     */
+    public boolean validateEmailVerification(final String token) throws SegueDatabaseException {
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
+        return authenticator.isValidEmailVerificationToken(this.findUserByVerificationToken(token));
     }
 
     /**
@@ -1166,6 +1302,23 @@ public class UserManager {
             return null;
         }
         return this.database.getByResetToken(token);
+    }
+
+    /**
+     * Library method that allows the ap i to locate a user object from the database based on a given unique email
+     * verification token.
+     *
+     * @param token
+     *            - to search for.
+     * @return user or null if we cannot find it.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    private RegisteredUser findUserByVerificationToken(final String token) throws SegueDatabaseException {
+        if (null == token) {
+            return null;
+        }
+        return this.database.getByEmailVerificationToken(token);
     }
 
     /**
@@ -1780,33 +1933,9 @@ public class UserManager {
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(), subject,
                 message);
 
-        emailQueue.addToQueue(e);
+        emailManager.addToQueue(e);
     }
 
-    /**
-     * This method will send a password reset message to a user.
-     *
-     * @param emailQueue
-     *            injected email queue
-     * @param user
-     *            - a user with the givenName, email and token fields set
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
-     */
-    @Inject
-    private void sendPasswordResetMessage(final RegisteredUser user) throws CommunicationException {
-        String hostName = properties.getProperty(HOST_NAME);
-        String subject = "Password Reset";
-
-        // Construct message
-        String message = String.format("Please follow this link to reset your password: https://%s/resetpassword/%s",
-                hostName, user.getResetToken());
-
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(), subject,
-                message);
-
-        emailQueue.addToQueue(e);
-    }
 
     /**
      * Temporarily Record Anonymous User Question Information in the anonymous user object provided.
@@ -2011,4 +2140,5 @@ public class UserManager {
         }
 
     }
+
 }

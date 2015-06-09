@@ -26,7 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 /**
- * @author nr378
+ * @author nr378 and Alistair Stead
  */
 public class EmailCommunicator implements ICommunicator<EmailCommunicationMessage> {
 	private Mailer mailer;
@@ -65,16 +65,9 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	public void sendMessage(final EmailCommunicationMessage email)
 			throws CommunicationException {
 		
-		// Construct message
-		StringBuilder messageBuilder = new StringBuilder();
-		messageBuilder.append(String.format("Hello %s,\n\n", email.getRecipientName()));
-		messageBuilder.append(email.getMessage());
-		messageBuilder.append(String.format("\n\n%s", SIGNATURE));
-
-		// Send email
 		try {
 			mailer.sendMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-							String.format("%s - %s", email.getSubject(), SIGNATURE), messageBuilder.toString());
+                    String.format("%s - %s", email.getSubject(), SIGNATURE), email.getMessage());
 		} catch (MessagingException e) {
 			throw new CommunicationException(e);
 		}

@@ -104,4 +104,9 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * @return true if the reset token is valid
      */
     boolean isValidResetToken(final RegisteredUser user);
+
+    /**
+     * 
+     */
+    boolean isValidEmailVerificationToken(final RegisteredUser user);
 }

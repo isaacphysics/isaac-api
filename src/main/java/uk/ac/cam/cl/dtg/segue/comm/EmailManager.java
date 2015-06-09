@@ -9,12 +9,19 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
@@ -24,40 +31,49 @@ import com.google.inject.Inject;
  *
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
-    private final PropertiesLoader properties;
+    private final PropertiesLoader globalProperties;
     private final IUserDataManager userDataManager;
     private final ContentVersionController contentVersionController;
+    private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
+    private final int MINIMUM_TAG_LENGTH = 4;
+    private final String sig = "Isaac Physics Project";
 
     /**
      * @param communicator
-     * 
-     * 
      *            class we'll use to send the actual email.
+     * @param properties
+     *            global properties used to get host name
+     * @param userDataManager
+     *            data manager used for authentication
+     * @param contentVersionController
+     *            content for email templates
      */
     @Inject
-    public EmailManager(final EmailCommunicator communicator, final PropertiesLoader properties,
+    public EmailManager(final EmailCommunicator communicator, final PropertiesLoader globalProperties,
             final IUserDataManager userDataManager, final ContentVersionController contentVersionController) {
         super(communicator);
-        this.properties = properties;
+        this.globalProperties = globalProperties;
         this.userDataManager = userDataManager;
         this.contentVersionController = contentVersionController;
     }
 
     /**
+     * Method to parse and replace template elements with the form {{TAG}}.
+     * 
      * @param page
      *            SeguePage that contains SeguePage child with template value
      * @param properties
      *            list of properties from which we can fill in the template
      * @return template with completed fields
      */
-    private String completeTemplateWithProperties(final SeguePage page, final Properties properties) {
+    private String completeTemplateWithProperties(final SeguePageDTO page, final Properties templateProperties) {
 
-        ArrayList<ContentBase> children = (ArrayList<ContentBase>) page.getChildren();
-        if (!(children.size() == 1 && children.get(0) instanceof SeguePage)) {
+        ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) page.getChildren();
+        if (!(children.size() == 1 && children.get(0) instanceof ContentDTO)) {
             throw new IllegalArgumentException("SeguePage does not contain child for email template!");
         }
 
-        String template = ((SeguePage) children.get(0)).getValue();
+        String template = ((ContentDTO) children.get(0)).getValue();
 
         Pattern p = Pattern.compile("\\{\\{[A-Za-z]+\\}\\}");
         Matcher m = p.matcher(template);
@@ -66,14 +82,20 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         while (m.find()) {
             if (template != null && m.start() >= 0 && m.end() <= template.length()) {
                 String tag = template.substring(m.start() + offset, m.end() + offset);
+
+                if (tag.length() <= MINIMUM_TAG_LENGTH) {
+                    log.info("Skipped email template tag with no contents: " + tag);
+                    break;
+                }
+
                 String strippedTag = tag.substring(2, tag.length() - 2);
 
                 // Check all properties required in the page are in the properties list
-                if (properties.containsKey(strippedTag)) {
+                if (templateProperties.containsKey(strippedTag)) {
                     String start = template.substring(0, m.start() + offset);
                     String end = template.substring(m.end() + offset, template.length());
-                    template = start + properties.getProperty(strippedTag) + end;
-                    offset += properties.getProperty(strippedTag).length() - tag.length();
+                    template = start + templateProperties.getProperty(strippedTag) + end;
+                    offset += templateProperties.getProperty(strippedTag).length() - tag.length();
                 } else {
                     throw new IllegalArgumentException("Email template contains tag that was not provided! - " + tag);
                 }
@@ -86,68 +108,166 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * @param user
      *            - user object used to complete template
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
      */
-    public void sendPasswordReset(RegisteredUser user) {
+    public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
 
         SegueLocalAuthenticator auth = new SegueLocalAuthenticator(userDataManager);
 
         try {
-            user = auth.createPasswordResetTokenForUser(user);
+            auth.createPasswordResetTokenForUser(user);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }
 
-        // ContentVersionController
+        ContentDTO c = contentVersionController.getContentManager().getContentById(
+                    contentVersionController.getLiveVersion(), "email-template-password-reset");
 
-        String hostName = properties.getProperty(HOST_NAME);
+        SeguePageDTO segueContent = null;
+
+        if (c instanceof SeguePageDTO) {
+            segueContent = (SeguePageDTO) c;
+        } else {
+            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        }
+
+
+        String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, user.getResetToken());
 
+        // TODO turn these into constants
         Properties p = new Properties();
-        p.put("user", user.getGivenName());
+        p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
-        p.put("verificationURL", verificationURL);
+        p.put("resetURL", verificationURL);
+        p.put("sig", sig);
 
-        // SeguePage page = userManager.
 
-        // String message = completeTemplateWithProperties(page, p);
-        // EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-        // page.getTitle(), message);
+        String message = completeTemplateWithProperties(segueContent, p);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
+                segueContent.getTitle(), message);
 
-        // this.addToQueue(e);
+        this.addToQueue(e);
     }
 
     /**
-     * Sends email registration confirmation using email registration template.
+     * Sends email registration confirmation using email registration template. Assumes that a verification code has
+     * been successfully generated.
      * 
      * @param user
      *            - user object used to complete template
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
      */
-    public void sendRegistrationConfirmation(final RegisteredUser user) {
+    public void sendRegistrationConfirmation(final RegisteredUser user) throws ContentManagerException,
+            SegueDatabaseException {
 
-        // SegueLocalAuthenticator auth = new SegueLocalAuthenticator(userDataManager);
-        // try {
-        // user = auth.createEmailVerificationTokenForUser(user);
-        // } catch (NoSuchAlgorithmException e) {
-        // // TODO Auto-generated catch block
-        // e.printStackTrace();
-        // } catch (InvalidKeySpecException e) {
-        // // TODO Auto-generated catch block
-        // e.printStackTrace();
-        // }
+        ContentDTO c = contentVersionController.getContentManager().getContentById(
+                contentVersionController.getLiveVersion(), "email-template-registration-confirmation");
 
-        String verificationURL = getVerificationURL(user.getEmail(), user.getEmailVerificationToken());
+        SeguePageDTO segueContent = null;
+
+        if (c instanceof SeguePageDTO) {
+            segueContent = (SeguePageDTO) c;
+        } else {
+            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        }
+
+        String verificationURL = getVerificationURL(user.getEmailVerificationToken());
 
         Properties p = new Properties();
-        p.put("user", user);
+        p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("verificationURL", verificationURL);
-        // String message = EmailTemplateParser.completeTemplateWithProperties(emailTemplate, p);
-        // EmailCommunicationMessage e = new EmailCommunicationMessage(emailAddress, user, emailTemplate.getTitle(),
-        // message);
+        p.put("sig", sig);
+        String message = completeTemplateWithProperties(segueContent, p);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
+                + user.getFamilyName(), segueContent.getTitle(), message);
 
-        // this.addToQueue(e);
+        this.addToQueue(e);
+    }
+
+    /**
+     * Sends email verification using email verification template. Assumes that a verification code has been
+     * successfully generated.
+     * 
+     * @param user
+     *            - user object used to complete template
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEmailVerification(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
+
+        ContentDTO c = contentVersionController.getContentManager().getContentById(
+                contentVersionController.getLiveVersion(), "email-template-email-verification");
+
+        SeguePageDTO segueContent = null;
+
+        if (c instanceof SeguePageDTO) {
+            segueContent = (SeguePageDTO) c;
+        } else {
+            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        }
+
+        String verificationURL = getVerificationURL(user.getEmailVerificationToken());
+
+        Properties p = new Properties();
+        p.put("givenname", user.getGivenName());
+        p.put("email", user.getEmail());
+        p.put("verificationURL", verificationURL);
+        p.put("sig", sig);
+        String message = completeTemplateWithProperties(segueContent, p);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
+                + user.getFamilyName(), segueContent.getTitle(), message);
+
+        this.addToQueue(e);
+    }
+
+    /**
+     * Sends email verification using email verification template. Assumes that a verification code has been
+     * successfully generated.
+     * 
+     * @param user
+     *            - user object used to complete template
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendFederatedPasswordReset(final RegisteredUser user, final String providerString,
+            final String providerWord) throws ContentManagerException,
+            SegueDatabaseException {
+
+        ContentDTO c = contentVersionController.getContentManager().getContentById(
+                contentVersionController.getLiveVersion(), "email-template-federated-password-reset");
+
+        SeguePageDTO segueContent = null;
+
+        if (c instanceof SeguePageDTO) {
+            segueContent = (SeguePageDTO) c;
+        } else {
+            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        }
+
+        Properties p = new Properties();
+        p.put("givenname", user.getGivenName());
+        p.put("providerString", providerString);
+        p.put("providerWord", providerWord);
+        p.put("sig", sig);
+        String message = completeTemplateWithProperties(segueContent, p);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
+                + user.getFamilyName(), segueContent.getTitle(), message);
+
+        this.addToQueue(e);
     }
 
     /**
@@ -159,12 +279,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            - hash generated from email address
      * @return full URL string
      */
-    private String getVerificationURL(final String emailAddress, final String hash) {
+    private String getVerificationURL(final String hash) {
 
-        String hostName = properties.getProperty(HOST_NAME);
+        String hostName = globalProperties.getProperty(HOST_NAME);
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("https://%s/emailverification?email=%s&hash=%s", hostName, emailAddress, hash));
+        sb.append(String.format("https://%s/verifyemail/%s", hostName, hash));
         return sb.toString();
     }
 

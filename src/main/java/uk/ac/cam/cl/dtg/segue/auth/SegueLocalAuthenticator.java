@@ -181,6 +181,14 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         return user != null && user.getResetExpiry().after(now);
     }
 
+    @Override
+    public boolean isValidEmailVerificationToken(RegisteredUser user) {
+
+        Date now = new Date();
+
+        return user != null && user.getEmailVerificationTokenExpiry().after(now);
+    }
+
     /**
      * Hash the password using the preconfigured hashing function.
      *
@@ -243,4 +251,5 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         return new String(Base64.encodeBase64(salt));
     }
+
 }

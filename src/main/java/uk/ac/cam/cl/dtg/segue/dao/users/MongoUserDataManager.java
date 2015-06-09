@@ -23,22 +23,14 @@ import org.apache.commons.lang3.Validate;
 import org.bson.types.ObjectId;
 import org.mongojack.DBCursor;
 import org.mongojack.DBQuery;
+import org.mongojack.DBQuery.Query;
 import org.mongojack.DBSort;
 import org.mongojack.DBUpdate;
 import org.mongojack.JacksonDBCollection;
 import org.mongojack.WriteResult;
-import org.mongojack.DBQuery.Query;
 import org.mongojack.internal.MongoJackModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.MongoException;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
@@ -51,6 +43,14 @@ import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.inject.Inject;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.MongoException;
 
 /**
  * This class is responsible for managing and persisting user data.
@@ -269,6 +269,27 @@ public class MongoUserDataManager implements IUserDataManager {
             // the database once.
             RegisteredUser user = jc
                     .findOne(new BasicDBObject(Constants.LOCAL_AUTH_RESET_TOKEN_FIELDNAME, token.trim()));
+
+            return user;
+        } catch (MongoException e) {
+            String errorMessage = "MongoDB encountered an exception "
+                    + "while attempting to find a user account by email address.";
+            log.error(errorMessage, e);
+            throw new SegueDatabaseException(errorMessage, e);
+        }
+    }
+
+    @Override
+    public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
+        if (null == token) {
+            return null;
+        }
+
+        JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(USER_COLLECTION_NAME), RegisteredUser.class, String.class);
+        try {
+            RegisteredUser user = jc.findOne(new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME,
+                    token.trim()));
 
             return user;
         } catch (MongoException e) {
@@ -581,4 +602,5 @@ public class MongoUserDataManager implements IUserDataManager {
 
         jc.remove(linkAccountToDeleteQuery);
     }
+
 }
