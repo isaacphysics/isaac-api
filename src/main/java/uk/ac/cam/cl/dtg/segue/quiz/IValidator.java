@@ -22,6 +22,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 /**
  * Interface that allows the quiz engine to validate questions and answers.
  * 
+ * Note: It is expected that the classes implementing this interface can be automatically instantiated using the default
+ * constructor.
+ * 
  * @author Stephen Cummins
  *
  */
