@@ -56,7 +56,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     private String emailVerificationToken;
     private Date emailVerificationExpiryDate;
-    private boolean emailVerified = false;
+    private Boolean emailVerified;
 
     /**
      * Full constructor for the User object.
@@ -127,7 +127,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     /**
      * @return the emailVerified
      */
-    public boolean isEmailVerified() {
+    public Boolean isEmailVerified() {
         return emailVerified;
     }
 
@@ -135,7 +135,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param emailVerified
      *            the emailVerified to set
      */
-    public void setEmailVerified(boolean emailVerified) {
+    public void setEmailVerified(Boolean emailVerified) {
         this.emailVerified = emailVerified;
     }
 
