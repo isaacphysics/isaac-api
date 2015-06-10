@@ -57,7 +57,7 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	}
 
 
-	    /**
+    /**
      * @param email
      *            - message to be sent. Will be plain text if no HTML is provided
      * @throws CommunicationException

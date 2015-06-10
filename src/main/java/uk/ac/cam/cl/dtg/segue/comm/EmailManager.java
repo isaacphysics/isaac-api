@@ -65,8 +65,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param templateProperties
      *            list of properties from which we can fill in the template
      * @return template with completed fields
+     * @throws IllegalArgumentException
+     *             - exception when the provided page object is incorrect
      */
-    private String completeTemplateWithProperties(final SeguePageDTO page, final Properties templateProperties) {
+    private String completeTemplateWithProperties(final SeguePageDTO page, final Properties templateProperties)
+            throws IllegalArgumentException {
 
         ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) page.getChildren();
         if (!(children.size() == 1 && children.get(0) instanceof ContentDTO)) {
@@ -149,8 +152,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
 
         String message = completeTemplateWithProperties(segueContent, p);
+
+        String htmlMessage = "<html><head><meta charset='utf-8'><title>JS Bin</title></head><body>";
+        htmlMessage += message;
+        htmlMessage += "</body></html>";
+
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), message, null);
+                segueContent.getTitle(), message, htmlMessage);
 
         this.addToQueue(e);
     }
@@ -228,8 +236,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("verificationURL", verificationURL);
         p.put("sig", sig);
         String message = completeTemplateWithProperties(segueContent, p);
+
+        String htmlMessage = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>JS Bin</title></head><body>";
+        htmlMessage += message;
+        htmlMessage += "</body></html>";
+
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
-                + user.getFamilyName(), segueContent.getTitle(), message, null);
+                + user.getFamilyName(), segueContent.getTitle(), message, htmlMessage);
 
         this.addToQueue(e);
     }
@@ -269,9 +282,15 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("providerString", providerString);
         p.put("providerWord", providerWord);
         p.put("sig", sig);
+        // TODO deal with the potential exception here
         String message = completeTemplateWithProperties(segueContent, p);
+        
+        String htmlMessage = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>JS Bin</title></head><body>";
+        htmlMessage += message;
+        htmlMessage += "</body></html>";
+        
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
-                + user.getFamilyName(), segueContent.getTitle(), message, null);
+                + user.getFamilyName(), segueContent.getTitle(), message, htmlMessage);
 
         this.addToQueue(e);
     }

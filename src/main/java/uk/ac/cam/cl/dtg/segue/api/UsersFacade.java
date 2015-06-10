@@ -426,7 +426,7 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
-    @GET
+    @POST
     @Path("users/verifyemail/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP

@@ -15,16 +15,29 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.ArrayList;
 
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
+import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.MongoContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the user manager class.
@@ -32,21 +45,13 @@ import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
  */
 public class EmailCommunicatorTest {
     private EmailCommunicator emailCommunicator;
-    private SeguePage seguePage;
+    private RegisteredUser user;
     private static final Logger log = LoggerFactory.getLogger(APIOverviewResource.class);
+    private EmailCommunicationMessage email = null;
+    private PropertiesLoader mockPropertiesLoader;
+    ContentVersionController mockContentVersionController;
+    MongoContentManager mockContentManager;
 
-    /**
-     * Fields for the test.
-     * 
-     * @author Alistair Stead
-     *
-     */
-    class EmailParams {
-        static final String RECIPIENT_ADDRESS = "";
-        static final String RECIPIENT_NAME = "";
-        static final String SUBJECT = "";
-        static final String MESSAGE = "";
-    }
 
     /**
      * Initial configuration of tests.
@@ -57,36 +62,242 @@ public class EmailCommunicatorTest {
     @Before
     public final void setUp() throws Exception {
 
-        String content = "Hi, {{user}}.\nThanks for registering!\nYour Isaac email address is: "
-                + "</a href='mailto:{{email}}'>{{email}}<a>.\n" + "address</a>\n{{sig}}";
 
-        ArrayList<ContentBase> children = new ArrayList<ContentBase>();
+        // Create dummy user
+        user = new RegisteredUser();
+        user.setEmail("test@test.com");
+        user.setGivenName("tester");
 
-        SeguePage child = new SeguePage(null, null, "content", null, null, null, null, null, null, null, content, null,
-                null, null, null, 0);
+        // Create dummy email communicator
+        emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
 
-        children.add(child);
+        mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
+        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org");
 
-        seguePage = new SeguePage("someid", "subtitle", "page", "ags46", "markdown", "canonical-source-file", null,
-                null, null, children, null, null, null, false, null, 0);
+        EasyMock.replay(mockPropertiesLoader);
 
-        emailCommunicator = new EmailCommunicator("ppsw.cam.ac.uk", "cl-isaac-contact@lists.cam.ac.uk");
+        mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
+        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion");
 
+        // Create content manager
+        mockContentManager = EasyMock.createMock(MongoContentManager.class);
 
+        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager);
+        EasyMock.replay(mockContentVersionController);
 
     }
 
+    public SeguePageDTO createDummyEmailTemplate(String template) {
+
+        ArrayList<ContentBaseDTO> children = new ArrayList<ContentBaseDTO>();
+
+        ContentDTO child = new ContentDTO(null, null, "content", null, null, null, null, null, null, null,
+ template,
+                null, null, null, null, 0);
+
+        children.add(child);
+
+        SeguePageDTO seguePage = new SeguePageDTO("01234",
+                "email-template-registration-confirmation", "title", "subtitle", "page", "ags46", "markdown",
+                "canonical-source-file", null, children, null, null, null, false, null, 0);
+        
+        return seguePage;
+    }
+
     /**
-     * Verify that the correct type of email is created.
+     * Verifies that email templates are parsed and replaced correctly.
      * 
      * @throws CommunicationException
      */
     @Test
-    public final void testEmailConstruction() {
-        // assertTrue(this.dummyMailer instanceof Mailer.class);
+    public final void testValidEmailRegistrationTemplate() {
+        
+        SeguePageDTO template = createDummyEmailTemplate("Hi, {{givenname}}."
+                + "\nThanks for registering!\nYour Isaac email address is: "
+                + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
 
-        // RegistrationConfirmation rc = new RegistrationConfirmation(emailCommunicator, seguePage, "alistair.stead",
-        // "alistair.stead@gmail.com");
+        try {
+            EasyMock.expect(
+                    mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
+                    .andReturn(template);
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+        
+        final Capture<EmailCommunicationMessage> capturedArgument = new Capture<EmailCommunicationMessage>();
+        
+        //Mock the emailCommunicator methods so we can see what is sent
+        try {
+            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
+                    EasyMock.isA(EmailCommunicationMessage.class)));
+        } catch (CommunicationException e1) {
+            e1.printStackTrace();
+            Assert.fail();
+        }
+        
+        EasyMock.replay(emailCommunicator);
+
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
+                mockContentVersionController);
+        try {
+            manager.sendRegistrationConfirmation(user);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        final String expectedMessage = "Hi, tester.\nThanks for registering!\nYour Isaac email address is: "
+                + "</a href='mailto:test@test.com'>test@test.com<a>.\n" + "address</a>\nIsaac Physics Project";
+
+        // Wait for the emailQueue to spin up and send our message
+        int i = 0;
+        while (!capturedArgument.hasCaptured() && i < 5) {
+            try {
+                Thread.sleep(100);
+                i++;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Assert.fail();
+            }
+        }
+        email = capturedArgument.getValue();
+        assertNotNull(email);
+        assertEquals(expectedMessage, email.getPlainTextMessage());
+        System.out.println(email.getPlainTextMessage());
 
     }
+
+    /**
+     * Verify that if there are extra tags the system doesn't recognise, there will be an exception, and the email won't
+     * be sent.
+     * 
+     * @throws CommunicationException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public final void testInvalidEmailRegistrationTemplate() {
+        SeguePageDTO template = createDummyEmailTemplate("Hi, {{givenname}} {{surname}}.\n"
+                + "Thanks for registering!\nYour Isaac email address is: "
+                + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
+
+
+        // Create content manager
+        try {
+            EasyMock.expect(
+                    mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
+                    .andReturn(template);
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+
+        final Capture<EmailCommunicationMessage> capturedArgument = new Capture<EmailCommunicationMessage>();
+
+        // Mock the emailCommunicator methods so we can see what is sent
+        try {
+            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
+                    EasyMock.isA(EmailCommunicationMessage.class)));
+        } catch (CommunicationException e1) {
+            e1.printStackTrace();
+            Assert.fail();
+        }
+
+        EasyMock.replay(emailCommunicator);
+
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
+                mockContentVersionController);
+        try {
+            manager.sendRegistrationConfirmation(user);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+    }
+
+    /**
+     * Verify that the system responds correctly when there are fewer tags than expected in the email template.
+     */
+    @Test
+    public final void testTaglessTemplate() {
+        SeguePageDTO template = createDummyEmailTemplate("this is a template with no tags");
+
+        PropertiesLoader mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
+        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org");
+
+        EasyMock.replay(mockPropertiesLoader);
+
+        ContentVersionController mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
+        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion");
+
+        // Create content manager
+        MongoContentManager mockContentManager = EasyMock.createMock(MongoContentManager.class);
+        try {
+            EasyMock.expect(
+                    mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
+                    .andReturn(template);
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager);
+        EasyMock.replay(mockContentVersionController);
+
+        final Capture<EmailCommunicationMessage> capturedArgument = new Capture<EmailCommunicationMessage>();
+
+        // Mock the emailCommunicator methods so we can see what is sent
+        try {
+            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
+                    EasyMock.isA(EmailCommunicationMessage.class)));
+        } catch (CommunicationException e1) {
+            e1.printStackTrace();
+            Assert.fail();
+        }
+
+        EasyMock.replay(emailCommunicator);
+
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
+                mockContentVersionController);
+        try {
+            manager.sendRegistrationConfirmation(user);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        // Wait for the emailQueue to spin up and send our message
+        int i = 0;
+        while (!capturedArgument.hasCaptured() && i < 5) {
+            try {
+                Thread.sleep(100);
+                i++;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Assert.fail();
+            }
+        }
+        email = capturedArgument.getValue();
+        assertNotNull(email);
+        assertEquals("this is a template with no tags", email.getPlainTextMessage());
+        System.out.println(email.getPlainTextMessage());
+
+    }
+
 }
