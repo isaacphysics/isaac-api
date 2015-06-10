@@ -344,10 +344,12 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 * @return Defaults to http client creation.
 	 */
 	public static Client getTransportClient(final String clusterName, final String address, final int port) {
-		Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName).build();
+        Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName)
+                .put("client.transport.ping_timeout", "20s").build();
 		TransportClient transportClient = new TransportClient(settings);
 		InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(address, port);
 		transportClient = transportClient.addTransportAddress(transportAddress);
+		log.info("Elastic Search Transport client created with settings: " + settings.toDelimitedString(' '));
 		return transportClient;
 	}
 
