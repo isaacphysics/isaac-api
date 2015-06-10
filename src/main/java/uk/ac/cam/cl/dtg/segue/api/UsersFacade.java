@@ -380,8 +380,6 @@ public class UsersFacade extends AbstractSegueFacade {
     /**
      * End point that allows a local user to generate an email verification request.
      * 
-     * Step 1 of email verification process - send user an e-mail
-     * 
      * @param userObject
      *            - A user object containing the email of the user requesting a reset
      * @param request
@@ -424,10 +422,6 @@ public class UsersFacade extends AbstractSegueFacade {
     /**
      * End point that verifies whether or not an email validation token is valid.
      * 
-     * Optional Step 2 - validate token is correct
-     * 
-     * @param email
-     *            - A user's email address
      * @param token
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
@@ -436,14 +430,8 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/verifyemail/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validatePasswordResetRequest(@PathParam("token") final String token) throws SegueDatabaseException {
-        if (userManager.validateEmailVerification(token)) {
-            return Response.ok().build();
-        }
-
-        SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Invalid password reset token.");
-        log.debug(String.format("Invalid password reset token: %s", token));
-        return error.toResponse();
+    public Response validatePasswordResetRequest(@PathParam("token") final String token) {
+        return userManager.processEmailVerification(token);
     }
 
 

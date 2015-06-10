@@ -182,11 +182,10 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     }
 
     @Override
-    public boolean isValidEmailVerificationToken(RegisteredUser user) {
-
+    public boolean isValidEmailVerificationToken(final String token, final RegisteredUser user) {
         Date now = new Date();
-
-        return user != null && user.getEmailVerificationTokenExpiry().after(now);
+        return user != null && user.getEmailVerificationToken().equals(token)
+                && user.getEmailVerificationTokenExpiry().after(now);
     }
 
     /**

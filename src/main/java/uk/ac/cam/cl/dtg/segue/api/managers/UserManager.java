@@ -1090,11 +1090,33 @@ public class UserManager {
      * @throws SegueDatabaseException
      *             - exception if token cannot be validated
      */
-    public boolean validateEmailVerification(final String token) throws SegueDatabaseException {
+    public Response processEmailVerification(final String token) {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        return authenticator.isValidEmailVerificationToken(this.findUserByVerificationToken(token));
+        RegisteredUser user;
+        try {
+            user = this.findUserByVerificationToken(token);
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error processing your request.");
+            log.error(String.format("Recieved an invalid email token request"));
+            return error.toResponse();
+        }
+
+        if (user != null && user.getEmailVerified()) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "This user has already been verified.");
+            return error.toResponse();
+        } else if (authenticator.isValidEmailVerificationToken(token, user)) {
+            user.setEmailVerified(true);
+            return Response.ok().build();
+        } else {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The token is either invalid or has expired.");
+            log.debug(String.format("Recieved an invalid email token request"));
+            return error.toResponse();
+        }
     }
 
     /**
@@ -1305,7 +1327,7 @@ public class UserManager {
     }
 
     /**
-     * Library method that allows the ap i to locate a user object from the database based on a given unique email
+     * Library method that allows the api to locate a user object from the database based on a given unique email
      * verification token.
      *
      * @param token

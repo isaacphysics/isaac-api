@@ -106,7 +106,13 @@ public interface IPasswordAuthenticator extends IAuthenticator {
     boolean isValidResetToken(final RegisteredUser user);
 
     /**
+     * This method tests whether the verification token is valid.
      * 
+     * @param token
+     *            - verification token send to the user
+     * @param user
+     *            - user
+     * @return - the validity of the token
      */
-    boolean isValidEmailVerificationToken(final RegisteredUser user);
+    boolean isValidEmailVerificationToken(final String token, final RegisteredUser user);
 }
