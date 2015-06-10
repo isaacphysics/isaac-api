@@ -69,7 +69,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * @return true if there are messages left on the queue
      */
     public boolean messagesLeftOnQueue() {
-        log.info("Email queue size:" + messageQueue.size());
+        log.info("Message queue size:" + messageQueue.size());
         return messageQueue.size() > 0;
     }
 
@@ -92,7 +92,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
         @Override
         public void run() {
             while (messagesLeftOnQueue()) {
-                // Send the actual email
+                // Send the actual message
                 try {
                     T item = getLatestQueueItem();
                     communicator.sendMessage(item);

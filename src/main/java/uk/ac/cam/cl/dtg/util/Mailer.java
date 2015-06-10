@@ -20,11 +20,14 @@ import java.util.Properties;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or
@@ -70,7 +73,7 @@ public class Mailer {
 	 * @throws MessagingException - if we cannot send the message for some reason.
 	 * @throws AddressException - if the address is not valid.
 	 */
-	public void sendMail(final String[] recipient, final String from, final String subject,
+	public void sendPlainTextMail(final String[] recipient, final String from, final String subject,
 			final String contents) throws MessagingException, AddressException {
 
 		Properties p = new Properties();
@@ -105,6 +108,72 @@ public class Mailer {
 			Transport.send(msg);
 		}
 	}
+
+    /**
+     * Utility method to allow us to send multipart messages using HTML and plain text.
+     *
+     * 
+     * @param recipient
+     *            - string array of recipients that the message should be sent to
+     * @param from
+     *            - the e-mail address that should be used as the reply-to address (e.g. the true senders address)
+     * @param subject
+     *            - The message subject
+     * @param plainText
+     *            - The message body
+     * @param html
+     *            - The message body in html
+     * @throws MessagingException
+     *             - if we cannot send the message for some reason.
+     * @throws AddressException
+     *             - if the address is not valid.
+     */
+    public void sendMultiPartMail(final String[] recipient, final String from, final String subject,
+            final String plainText, final String html) throws MessagingException, AddressException {
+        Properties p = new Properties();
+        p.put("mail.smtp.host", smtpAddress);
+
+        if (null != smtpPort) {
+            p.put("mail.smtp.port", smtpPort);
+        }
+
+        p.put("mail.smtp.starttls.enable", "true");
+
+        Session s = Session.getDefaultInstance(p);
+        Message msg = new MimeMessage(s);
+
+        // Create the text part
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText(plainText, "utf-8");
+
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        htmlPart.setContent(html, "text/html; charset=utf-8");
+
+        Multipart multiPart = new MimeMultipart("alternative");
+        multiPart.addBodyPart(textPart);
+        multiPart.addBodyPart(htmlPart);
+
+        msg.setContent(multiPart);
+
+        InternetAddress sentBy = null;
+        InternetAddress[] sender = new InternetAddress[1];
+        InternetAddress[] recievers = new InternetAddress[recipient.length];
+
+        sentBy = new InternetAddress(mailAddress);
+        sender[0] = new InternetAddress(from);
+        for (int i = 0; i < recipient.length; i++) {
+            recievers[i] = new InternetAddress(recipient[i]);
+        }
+
+        if (sentBy != null && sender != null && recievers != null) {
+            msg.setFrom(sentBy);
+            msg.setReplyTo(sender);
+            msg.setRecipients(RecipientType.TO, recievers);
+            msg.setSubject(subject);
+
+            Transport.send(msg);
+        }
+    }
 
 	/**
 	 * Gets the smtpAddress.

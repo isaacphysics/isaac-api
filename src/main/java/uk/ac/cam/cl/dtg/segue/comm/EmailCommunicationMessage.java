@@ -23,7 +23,7 @@ package uk.ac.cam.cl.dtg.segue.comm;
  */
 public class EmailCommunicationMessage implements ICommunicationMessage {
 	
-	private final String message;
+    private final String plainTextMessage;
 	
 	private final String recipientAddress;
 	
@@ -31,13 +31,21 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 	
 	private final String subject;
 	
+    private final String htmlMessage;
 	
-	/**
-	 * @return the message
-	 */
-	public String getMessage() {
-		return message;
+    /**
+     * @return the plain text message
+     */
+    public String getPlainTextMessage() {
+        return plainTextMessage;
 	}
+
+    /**
+     * @return the html message
+     */
+    public String getHTMLMessage() {
+        return htmlMessage;
+    }
 
 	/**
 	 * @return the recipientAddress
@@ -61,23 +69,27 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 	}
 
 
-	/**
-	 * 
-	 * @param recipientAddress 
-	 * 			address of user
-	 * @param recipientName
-	 * 			user name 
-	 * @param subject
-	 * 			subject of email
-	 * @param message
-	 * 			message in email
-	 */
+	    /**
+     * 
+     * @param recipientAddress
+     *            address of user
+     * @param recipientName
+     *            user name
+     * @param subject
+     *            subject of email
+     * @param plainTextMessage
+     *            message in email
+     * @param htmlMessage
+     *            message in email
+     */
 	public EmailCommunicationMessage(final String recipientAddress, 
-					final String recipientName, final String subject, final String message) {
-		this.message = message;
+ final String recipientName, final String subject,
+            final String plainTextMessage, final String htmlMessage) {
+        this.plainTextMessage = plainTextMessage;
 		this.recipientAddress = recipientAddress;
 		this.recipientName = recipientName;
 		this.subject = subject;
+        this.htmlMessage = htmlMessage;
 	}
 
 }

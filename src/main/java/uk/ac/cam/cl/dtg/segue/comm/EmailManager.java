@@ -41,7 +41,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * @param communicator
      *            class we'll use to send the actual email.
-     * @param properties
+     * @param globalProperties
      *            global properties used to get host name
      * @param userDataManager
      *            data manager used for authentication
@@ -62,7 +62,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 
      * @param page
      *            SeguePage that contains SeguePage child with template value
-     * @param properties
+     * @param templateProperties
      *            list of properties from which we can fill in the template
      * @return template with completed fields
      */
@@ -150,7 +150,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String message = completeTemplateWithProperties(segueContent, p);
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), message);
+                segueContent.getTitle(), message, null);
 
         this.addToQueue(e);
     }
@@ -180,7 +180,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
         }
 
-        String verificationURL = getVerificationURL(user.getEmailVerificationToken());
+        String verificationURL = String.format("https://%s/verifyemail/%s", globalProperties.getProperty(HOST_NAME),
+                user.getEmailVerificationToken());
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
@@ -189,7 +190,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", sig);
         String message = completeTemplateWithProperties(segueContent, p);
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
-                + user.getFamilyName(), segueContent.getTitle(), message);
+                + user.getFamilyName(), segueContent.getTitle(), message, null);
 
         this.addToQueue(e);
     }
@@ -218,7 +219,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
         }
 
-        String verificationURL = getVerificationURL(user.getEmailVerificationToken());
+        String verificationURL = String.format("https://%s/verifyemail/%s", globalProperties.getProperty(HOST_NAME),
+                user.getEmailVerificationToken());
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
@@ -227,7 +229,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", sig);
         String message = completeTemplateWithProperties(segueContent, p);
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
-                + user.getFamilyName(), segueContent.getTitle(), message);
+                + user.getFamilyName(), segueContent.getTitle(), message, null);
 
         this.addToQueue(e);
     }
@@ -238,6 +240,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 
      * @param user
      *            - user object used to complete template
+     * @param providerString
+     *            - the provider
+     * @param providerWord
+     *            - the provider
      * @throws ContentManagerException
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
@@ -265,27 +271,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", sig);
         String message = completeTemplateWithProperties(segueContent, p);
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName() + " "
-                + user.getFamilyName(), segueContent.getTitle(), message);
+                + user.getFamilyName(), segueContent.getTitle(), message, null);
 
         this.addToQueue(e);
-    }
-
-    /**
-     * Creates the URL with appropriate arguments for verification.
-     * 
-     * @param emailAddress
-     *            user email address
-     * @param hash
-     *            - hash generated from email address
-     * @return full URL string
-     */
-    private String getVerificationURL(final String hash) {
-
-        String hostName = globalProperties.getProperty(HOST_NAME);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("https://%s/verifyemail/%s", hostName, hash));
-        return sb.toString();
     }
 
 }

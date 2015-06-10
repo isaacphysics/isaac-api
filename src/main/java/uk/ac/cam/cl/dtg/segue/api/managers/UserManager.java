@@ -92,7 +92,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
-import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -1941,21 +1940,16 @@ public class UserManager {
             providersString = providersBuilder.toString();
         }
 
-        String subject = "Password Reset";
         String providerWord = "provider";
         if (providerNames.size() > 1) {
             providerWord += "s";
         }
 
-        // Construct message
-        String message = String.format("You requested a password reset however you use %s to log in to our site. You"
-                + " need go to your authentication %s to reset your password.", providersString, providerWord);
-
-        // Send message
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(), subject,
-                message);
-
-        emailManager.addToQueue(e);
+        try {
+            emailManager.sendFederatedPasswordReset(user, providersString, providerWord);
+        } catch (ContentManagerException e1) {
+            log.error(String.format("Error sending federated email verification message"));
+        }
     }
 
 

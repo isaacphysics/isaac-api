@@ -1071,7 +1071,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
         builder.append(form.get("message"));
 
         EmailCommunicationMessage email = new EmailCommunicationMessage(this.getProperties().getProperty(
-                "MAIL_RECEIVERS"), "Administrator", "Contact Us Form", builder.toString());
+                "MAIL_RECEIVERS"), "Administrator", "Contact Us Form", builder.toString(), null);
 
         emailManager.addToQueue(email);
 
