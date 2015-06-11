@@ -131,7 +131,7 @@ public class StatisticsManager {
         } else {
             log.info("Calculating General Statistics");
         }
-        
+
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
@@ -149,9 +149,10 @@ public class StatisticsManager {
         List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
-        
+        Map<String, Date> lastSeenMap = Maps.newHashMap();
+
         log.info("Calculating general stats - 1. User details");
-        
+
         // build user stats
         for (RegisteredUserDTO user : users) {
             if (user.getGender() == null) {
@@ -207,6 +208,13 @@ public class StatisticsManager {
                     hasOtherSchool.add(user);
                 }
             }
+
+            if (user.getLastSeen() != null) {
+                lastSeenMap.put(user.getDbId(), user.getLastSeen());
+            } else if (user.getRegistrationDate() != null) {
+                lastSeenMap.put(user.getDbId(), user.getRegistrationDate());
+            }
+
         }
 
         ib.put("maleUsers", "" + male.size());
@@ -224,47 +232,45 @@ public class StatisticsManager {
         ib.put("hasNoSchool", "" + hasNoSchool.size());
         ib.put("hasSchoolOther", "" + hasOtherSchool.size());
 
-        Map<String, Date> lastSeenUserMap = this.getLastSeenUserMap();
-        
         log.info("Calculating general stats - 2. Last seen map");
-        
+
         final int sevenDays = 7;
         final int thirtyDays = 30;
 
         List<RegisteredUserDTO> nonStaffUsers = Lists.newArrayList();
         nonStaffUsers.addAll(teacherRole);
         nonStaffUsers.addAll(studentOrUnknownRole);
-        
+
         log.info("Calculating general stats - 3. Last seen map - teachers");
-        
+
         ib.put("activeTeachersLastWeek",
-                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, sevenDays).size());
+                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, sevenDays).size());
         ib.put("activeTeachersLastThirtyDays",
-                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, thirtyDays).size());
-        
+                "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, thirtyDays).size());
+
         log.info("Calculating general stats - 4. Last seen map - students");
-        
+
         ib.put("activeStudentsLastWeek",
-                "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap, sevenDays).size());
+                "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenMap, sevenDays).size());
         ib.put("activeStudentsLastThirtyDays",
-                "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap, thirtyDays).size());
+                "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenMap, thirtyDays).size());
 
         ib.put("activeUsersLastWeek",
-                "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, sevenDays).size());
+                "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, sevenDays).size());
         ib.put("activeUsersLastThirtyDays",
-                "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays).size());
-        
+                "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, thirtyDays).size());
+
         log.info("Calculating general stats - 5. Last seen map - Questions - teachers");
-        
+
         Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
 
         ib.put("questionsAnsweredLastWeekTeachers",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, sevenDays).size());
         ib.put("questionsAnsweredLastThirtyDaysTeachers",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, thirtyDays).size());
-        
+
         log.info("Calculating general stats - 6. Last seen map - Questions - students");
-        
+
         ib.put("questionsAnsweredLastWeekStudents",
                 ""
                         + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
@@ -287,9 +293,9 @@ public class StatisticsManager {
      *         numberActiveLastThirtyDays.
      * 
      * @throws UnableToIndexSchoolsException
-     *             -
+     *             - if there is a problem getting school details.
      * @throws SegueDatabaseException
-     *             -
+     *             - if there is a database exception.
      */
     public List<Map<String, Object>> getSchoolStatistics() throws UnableToIndexSchoolsException, SegueDatabaseException {
         @SuppressWarnings("unchecked")
@@ -427,7 +433,24 @@ public class StatisticsManager {
      * @return a list of userId's to last event timestamp
      */
     public Map<String, Date> getLastSeenUserMap() {
-        return this.getLastSeenUserMap(null);
+        Map<String, Date> lastSeenMap = Maps.newHashMap();
+        
+        try {
+            List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
+            
+            for (RegisteredUserDTO user : users) {
+                if (user.getLastSeen() != null) {
+                    lastSeenMap.put(user.getDbId(), user.getLastSeen());
+                } else if (user.getRegistrationDate() != null) {
+                    lastSeenMap.put(user.getDbId(), user.getRegistrationDate());
+                }
+            }
+            
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to get last seen user map", e);
+        }
+        
+        return lastSeenMap;
     }
 
     /**
@@ -719,6 +742,7 @@ public class StatisticsManager {
      */
     private Map<String, Date> convertFromLogEventToDateMap(final Map<String, LogEvent> input) {
         Map<String, Date> result = Maps.newHashMap();
+
         for (Entry<String, LogEvent> e : input.entrySet()) {
             result.put(e.getKey(), e.getValue().getTimestamp());
         }
