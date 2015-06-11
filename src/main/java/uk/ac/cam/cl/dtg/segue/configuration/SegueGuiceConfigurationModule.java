@@ -176,6 +176,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.HOST_NAME, globalProperties);
         this.bindConstantToProperty(Constants.MAILER_SMTP_SERVER, globalProperties);
         this.bindConstantToProperty(Constants.MAIL_FROM_ADDRESS, globalProperties);
+        this.bindConstantToProperty(Constants.SERVER_ADMIN_ADDRESS, globalProperties);
 
         this.bindConstantToProperty(Constants.LOGGING_ENABLED, globalProperties);
 

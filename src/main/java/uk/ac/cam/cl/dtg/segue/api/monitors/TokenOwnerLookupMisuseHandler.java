@@ -78,8 +78,8 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     public void executeSoftThresholdAction(final String message) {
         final String subject = "Soft Threshold limit reached for TokenOwnershipRequest endpoint";
         EmailCommunicationMessage e = new EmailCommunicationMessage(
-                properties.getProperty(Constants.MAIL_FROM_ADDRESS),
-                properties.getProperty(Constants.MAIL_FROM_ADDRESS), subject, message, null);
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, null);
         emailManager.addToQueue(e);
         log.warn("Soft threshold limit reached" + message);
 
@@ -90,8 +90,8 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
         final String subject = "HARD Threshold limit reached for TokenOwnershipRequest endpoint";
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(
-                properties.getProperty(Constants.MAIL_FROM_ADDRESS),
-                properties.getProperty(Constants.MAIL_FROM_ADDRESS), subject, message, null);
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, null);
         emailManager.addToQueue(e);
         log.warn("Hard threshold limit reached" + message);
 

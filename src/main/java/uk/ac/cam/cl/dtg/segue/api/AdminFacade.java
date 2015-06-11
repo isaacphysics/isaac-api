@@ -132,7 +132,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
                         .toResponse();
             }
-
+            
             return Response.ok(statsManager.outputGeneralStatistics())
                     .cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
         } catch (SegueDatabaseException e) {

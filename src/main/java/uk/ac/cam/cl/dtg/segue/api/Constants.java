@@ -47,6 +47,12 @@ public final class Constants {
      * Constant representing the key for the MAIL_FROM_ADDRESS property - Email address to send mail from.
      */
     public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
+    
+    /**
+     * Constant representing the key for the SERVER_ADMIN_ADDRESS property - Email address to send admin related emails
+     * to.
+     */
+    public static final String SERVER_ADMIN_ADDRESS = "SERVER_ADMIN_ADDRESS";
 
     /**
      * Constant representing the key for the maximum number of versions to cache.
