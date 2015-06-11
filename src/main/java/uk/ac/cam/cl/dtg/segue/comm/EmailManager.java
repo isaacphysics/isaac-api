@@ -129,17 +129,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             e.printStackTrace();
         }
 
-        ContentDTO c = contentVersionController.getContentManager().getContentById(
-                    contentVersionController.getLiveVersion(), "email-template-password-reset");
-
-        SeguePageDTO segueContent = null;
-
-        if (c instanceof SeguePageDTO) {
-            segueContent = (SeguePageDTO) c;
-        } else {
-            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
+        
+        if (!segueContent.getPublished()) {
+            log.debug("Password reset message not sent due to unpublished template!");
+            return;
         }
-
 
         String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, user.getResetToken());
@@ -178,15 +173,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendRegistrationConfirmation(final RegisteredUser user) throws ContentManagerException,
             SegueDatabaseException {
 
-        ContentDTO c = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), "email-template-registration-confirmation");
-
-        SeguePageDTO segueContent = null;
-
-        if (c instanceof SeguePageDTO) {
-            segueContent = (SeguePageDTO) c;
-        } else {
-            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation");
+        
+        if (!segueContent.getPublished()) {
+            log.debug("Email registration confirmation email not sent due to unpublished template!");
+            return;
         }
 
         String verificationURL = String.format("https://%s/verifyemail/%s", globalProperties.getProperty(HOST_NAME),
@@ -215,17 +206,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void sendEmailVerification(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
+    public void sendEmailVerification(final RegisteredUser user) throws ContentManagerException, 
+                                                                        SegueDatabaseException {
 
-        ContentDTO c = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), "email-template-email-verification");
-
-        SeguePageDTO segueContent = null;
-
-        if (c instanceof SeguePageDTO) {
-            segueContent = (SeguePageDTO) c;
-        } else {
-            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-email-verification");
+        
+        if (!segueContent.getPublished()) {
+            log.debug("Email verification message not sent due to unpublished template!");
+            return;
         }
 
         String verificationURL = String.format("https://%s/verifyemail/%s", globalProperties.getProperty(HOST_NAME),
@@ -267,15 +255,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             final String providerWord) throws ContentManagerException,
             SegueDatabaseException {
 
-        ContentDTO c = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), "email-template-federated-password-reset");
-
-        SeguePageDTO segueContent = null;
-
-        if (c instanceof SeguePageDTO) {
-            segueContent = (SeguePageDTO) c;
-        } else {
-            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
+        
+        if (!segueContent.getPublished()) {
+            log.debug("Federated password reset message not sent due to unpublished template!");
+            return;
         }
 
         Properties p = new Properties();
@@ -294,6 +278,33 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 + user.getFamilyName(), segueContent.getTitle(), message, htmlMessage);
 
         this.addToQueue(e);
+    }
+    
+    /**
+     * Returns the SegueDTO we will use as an email template.
+     * 
+     * @param id  
+     *          - the content id of the email template required
+     * @return  - the SegueDTO content object
+     * @throws SegueDatabaseException 
+     *          - error if database cannot be accessed
+     * @throws ContentManagerException 
+     *          - error if there is a problem accessing content
+     */
+    private SeguePageDTO getSegueDTOEmailTemplate(final String id) 
+            throws SegueDatabaseException, ContentManagerException {
+        ContentDTO c = contentVersionController.getContentManager().getContentById(
+                contentVersionController.getLiveVersion(), id);
+
+        SeguePageDTO segueContentDTO = null;
+
+        if (c instanceof SeguePageDTO) {
+            segueContentDTO = (SeguePageDTO) c;
+        } else {
+            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+        }
+        
+        return segueContentDTO;
     }
 
 }
