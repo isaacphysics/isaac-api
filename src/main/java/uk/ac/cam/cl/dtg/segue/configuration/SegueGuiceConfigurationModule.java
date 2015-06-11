@@ -413,10 +413,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
-            final ContentVersionController contentVersionController) {
+            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator) {
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, properties, database,
-                    contentVersionController);
+                    contentVersionController, authenticator);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;

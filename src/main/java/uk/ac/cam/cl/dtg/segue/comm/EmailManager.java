@@ -34,6 +34,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private final PropertiesLoader globalProperties;
     private final IUserDataManager userDataManager;
     private final ContentVersionController contentVersionController;
+    private final SegueLocalAuthenticator authenticator;
     private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
     private final int MINIMUM_TAG_LENGTH = 4;
     private final String sig = "Isaac Physics Project";
@@ -50,11 +51,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final PropertiesLoader globalProperties,
-            final IUserDataManager userDataManager, final ContentVersionController contentVersionController) {
+            final IUserDataManager userDataManager, final ContentVersionController contentVersionController,
+            final SegueLocalAuthenticator authenticator) {
         super(communicator);
         this.globalProperties = globalProperties;
         this.userDataManager = userDataManager;
         this.contentVersionController = contentVersionController;
+        this.authenticator = authenticator;
     }
 
     /**
@@ -83,7 +86,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         int offset = 0;
 
         while (m.find()) {
-            if (template != null && m.start() >= 0 && m.end() <= template.length()) {
+            if (template != null && m.start() + offset >= 0 && m.end() + offset <= template.length()) {
                 String tag = template.substring(m.start() + offset, m.end() + offset);
 
                 if (tag.length() <= MINIMUM_TAG_LENGTH) {
@@ -118,10 +121,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
 
-        SegueLocalAuthenticator auth = new SegueLocalAuthenticator(userDataManager);
-
         try {
-            auth.createPasswordResetTokenForUser(user);
+            authenticator.createPasswordResetTokenForUser(user);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {

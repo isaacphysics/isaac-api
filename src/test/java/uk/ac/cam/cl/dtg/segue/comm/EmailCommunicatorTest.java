@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.MongoContentManager;
@@ -49,8 +51,10 @@ public class EmailCommunicatorTest {
     private static final Logger log = LoggerFactory.getLogger(APIOverviewResource.class);
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
-    ContentVersionController mockContentVersionController;
-    MongoContentManager mockContentManager;
+    private ContentVersionController mockContentVersionController;
+    private MongoContentManager mockContentManager;
+    private Capture<EmailCommunicationMessage> capturedArgument;
+    private SegueLocalAuthenticator mockAuthenticator;
 
 
     /**
@@ -85,8 +89,53 @@ public class EmailCommunicatorTest {
         EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager);
         EasyMock.replay(mockContentVersionController);
 
+        capturedArgument = new Capture<EmailCommunicationMessage>();
+
+        // Mock the emailCommunicator methods so we can see what is sent
+        try {
+            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
+                    EasyMock.isA(EmailCommunicationMessage.class)));
+        } catch (CommunicationException e1) {
+            e1.printStackTrace();
+            Assert.fail();
+        }
+
+        EasyMock.replay(emailCommunicator);
+        System.out.println("setup");
+        
+        mockAuthenticator = EasyMock.createMock(SegueLocalAuthenticator.class);
+        
+        EasyMock.expect(mockAuthenticator.createEmailVerificationTokenForUser(user)).andAnswer(
+                new IAnswer<RegisteredUser>() {
+
+                    @Override
+                    public RegisteredUser answer() throws Throwable {
+                        user.setEmailVerificationToken("emailVerificationToken");
+                        return user;
+                    }
+            
+                });
+
+        EasyMock.expect(mockAuthenticator.createPasswordResetTokenForUser(user)).andAnswer(
+                new IAnswer<RegisteredUser>() {
+
+                    @Override
+                    public RegisteredUser answer() throws Throwable {
+                        user.setResetToken("resetToken");
+                        return user;
+                    }
+
+                });
+
+        EasyMock.replay(mockAuthenticator);
+
+
     }
 
+    /**
+     * @param template
+     * @return
+     */
     public SeguePageDTO createDummyEmailTemplate(String template) {
 
         ArrayList<ContentBaseDTO> children = new ArrayList<ContentBaseDTO>();
@@ -126,22 +175,10 @@ public class EmailCommunicatorTest {
             e.printStackTrace();
             Assert.fail();
         }
-        
-        final Capture<EmailCommunicationMessage> capturedArgument = new Capture<EmailCommunicationMessage>();
-        
-        //Mock the emailCommunicator methods so we can see what is sent
-        try {
-            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
-                    EasyMock.isA(EmailCommunicationMessage.class)));
-        } catch (CommunicationException e1) {
-            e1.printStackTrace();
-            Assert.fail();
-        }
-        
-        EasyMock.replay(emailCommunicator);
+
 
         EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController);
+                mockContentVersionController, mockAuthenticator);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -174,6 +211,118 @@ public class EmailCommunicatorTest {
     }
 
     /**
+     * Verifies that email templates are parsed and replaced correctly.
+     * 
+     * @throws CommunicationException
+     */
+    @Test
+    public final void testFederatedEmailRegistrationTemplate() {
+
+        SeguePageDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nYou requested a "
+                + "password reset. However you use {{providerString}} to log in to our site. You need"
+                + " to go to your authentication {{providerWord}} to reset your password.\n\nRegards,\n\n{{sig}}");
+
+
+        try {
+            EasyMock.expect(
+mockContentManager.getContentById("liveversion", "email-template-federated-password-reset"))
+                    .andReturn(template);
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
+                mockContentVersionController, mockAuthenticator);
+        try {
+            manager.sendFederatedPasswordReset(user, "testString", "testWord");
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        final String expectedMessage = "Hello, tester.\n\nYou requested a password reset. "
+                + "However you use testString to log in to our site. You need to go to your "
+                + "authentication testWord to reset your password.\n\nRegards,\n\nIsaac Physics Project";
+
+        // Wait for the emailQueue to spin up and send our message
+        int i = 0;
+        while (!capturedArgument.hasCaptured() && i < 5) {
+            try {
+                Thread.sleep(100);
+                i++;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Assert.fail();
+            }
+        }
+        email = capturedArgument.getValue();
+        assertNotNull(email);
+        assertEquals(expectedMessage, email.getPlainTextMessage());
+        System.out.println(email.getPlainTextMessage());
+
+    }
+
+    /**
+     * Verifies that email templates are parsed and replaced correctly.
+     * 
+     * @throws CommunicationException
+     */
+    @Test
+    public final void testPasswordResetEmailTemplate() {
+
+        SeguePageDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nA request has been "
+                + "made to reset the password for the account: </a href='mailto:{{email}}'>{{email}}<a>"
+                + ".\n\nTo reset your password <a href='{{resetURL}}'>Click Here</a>\n\nRegards,\n\n{{sig}}");
+
+        try {
+            EasyMock.expect(mockContentManager.getContentById("liveversion", "email-template-password-reset"))
+                    .andReturn(template);
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
+                mockContentVersionController, mockAuthenticator);
+        try {
+            manager.sendPasswordReset(user);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+        final String expectedMessage = "Hello, tester.\n\nA request has been "
+                + "made to reset the password for the account: </a href='mailto:test@test.com'>test@test.com<a>"
+                + ".\n\nTo reset your password <a href='https://dev.isaacphysics.org/resetpassword/resetToken'>Click Here</a>\n\nRegards,\n\nIsaac Physics Project";
+
+        // Wait for the emailQueue to spin up and send our message
+        int i = 0;
+        while (!capturedArgument.hasCaptured() && i < 5) {
+            try {
+                Thread.sleep(100);
+                i++;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Assert.fail();
+            }
+        }
+        email = capturedArgument.getValue();
+        assertNotNull(email);
+        assertEquals(expectedMessage, email.getPlainTextMessage());
+    }
+
+    /**
      * Verify that if there are extra tags the system doesn't recognise, there will be an exception, and the email won't
      * be sent.
      * 
@@ -199,21 +348,8 @@ public class EmailCommunicatorTest {
         }
 
 
-        final Capture<EmailCommunicationMessage> capturedArgument = new Capture<EmailCommunicationMessage>();
-
-        // Mock the emailCommunicator methods so we can see what is sent
-        try {
-            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
-                    EasyMock.isA(EmailCommunicationMessage.class)));
-        } catch (CommunicationException e1) {
-            e1.printStackTrace();
-            Assert.fail();
-        }
-
-        EasyMock.replay(emailCommunicator);
-
         EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController);
+                mockContentVersionController, mockAuthenticator);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -257,21 +393,10 @@ public class EmailCommunicatorTest {
         EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager);
         EasyMock.replay(mockContentVersionController);
 
-        final Capture<EmailCommunicationMessage> capturedArgument = new Capture<EmailCommunicationMessage>();
 
-        // Mock the emailCommunicator methods so we can see what is sent
-        try {
-            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
-                    EasyMock.isA(EmailCommunicationMessage.class)));
-        } catch (CommunicationException e1) {
-            e1.printStackTrace();
-            Assert.fail();
-        }
-
-        EasyMock.replay(emailCommunicator);
 
         EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController);
+                mockContentVersionController, mockAuthenticator);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
