@@ -68,7 +68,7 @@ public class MisuseMonitorTest {
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
         TokenOwnerLookupMisuseHandler tokenOwnerLookupMisuseHandler = new TokenOwnerLookupMisuseHandler(
                 dummyCommunicator, dummyPropertiesLoader);
-        
+
         misuseMonitor.registerHandler(event, tokenOwnerLookupMisuseHandler);
 
         dummyCommunicator.addToQueue(EasyMock.isA(EmailCommunicationMessage.class));
