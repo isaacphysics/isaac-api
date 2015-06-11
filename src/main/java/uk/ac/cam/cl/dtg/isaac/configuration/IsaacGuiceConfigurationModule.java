@@ -193,7 +193,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         if (null == assignmentPersistenceManager) {
             assignmentPersistenceManager = new AssignmentPersistenceManager(api.requestAppDataManager(
                     ASSIGNMENT_COLLECTION_NAME, AssignmentDO.class), mapper);
-            log.info("Creating Singleton of GameboardPersistenceManager");
+            log.info("Creating Singleton of AssignmentPersistenceManager");
         }
 
         return assignmentPersistenceManager;

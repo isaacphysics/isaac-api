@@ -636,7 +636,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     private ILocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
-        log.info("Creating new location resolver");
         return new IPInfoDBLocationResolver(apiKey);
     }
 
