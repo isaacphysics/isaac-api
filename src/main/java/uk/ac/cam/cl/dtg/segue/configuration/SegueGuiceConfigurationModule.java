@@ -118,11 +118,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 
 	private static ICommunicator communicator = null;
 
-	private static PropertiesLoader configLocationProperties;
+	private static PropertiesLoader configLocationProperties = null;
 	
-	private PropertiesLoader globalProperties = null;
+	private static PropertiesLoader globalProperties = null;
 
-	private UserAssociationManager userAssociationManager = null;
+	private static UserAssociationManager userAssociationManager = null;
 
 	private static ILogManager logManager;
 
@@ -133,12 +133,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule {
 	 */
 	public SegueGuiceConfigurationModule() {
 		try {
-			configLocationProperties = new PropertiesLoader(
-					"/config/segue-config-location.properties");
-			
-			globalProperties = new PropertiesLoader(
-					configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+			if (null == configLocationProperties) {
+	            configLocationProperties = new PropertiesLoader(
+	                    "/config/segue-config-location.properties");
+			    
+			}
 
+			if (null == globalProperties) {
+	            globalProperties = new PropertiesLoader(
+	                    configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));			    
+			}
 		} catch (IOException e) {
 			log.error("Error loading properties file.", e);
 		}
