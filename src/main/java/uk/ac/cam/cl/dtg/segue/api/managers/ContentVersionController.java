@@ -31,14 +31,14 @@ import javax.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.api.client.util.Lists;
-import com.google.common.collect.Queues;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
+
+import com.google.api.client.util.Lists;
+import com.google.common.collect.Queues;
+import com.google.inject.Inject;
 
 /**
  * ContentVersionController This Class is responsible for talking to the content manager and tracking what version of

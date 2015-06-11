@@ -131,7 +131,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
         
-        if (!segueContent.getPublished()) {
+        if (segueContent == null || !segueContent.getPublished()) {
             log.debug("Password reset message not sent due to unpublished template!");
             return;
         }
@@ -175,7 +175,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation");
         
-        if (!segueContent.getPublished()) {
+        if (segueContent == null || !segueContent.getPublished()) {
             log.debug("Email registration confirmation email not sent due to unpublished template!");
             return;
         }
@@ -211,7 +211,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-email-verification");
         
-        if (!segueContent.getPublished()) {
+        if (segueContent == null || !segueContent.getPublished()) {
             log.debug("Email verification message not sent due to unpublished template!");
             return;
         }
@@ -257,7 +257,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
         
-        if (!segueContent.getPublished()) {
+        if (segueContent == null || !segueContent.getPublished()) {
             log.debug("Federated password reset message not sent due to unpublished template!");
             return;
         }
