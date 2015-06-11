@@ -124,7 +124,7 @@ public class StatisticsManager {
 			log.debug("Using cached statistics.");
 			return cachedOutput;
 		}
-		
+		log.info("Calculating general stats");
 		List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 
 		ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
@@ -142,7 +142,7 @@ public class StatisticsManager {
 		List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
 		List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
 		List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
-		
+		log.info("Calculating general stats - 1. User details");
 		// build user stats
 		for (RegisteredUserDTO user : users) {
 			if (user.getGender() == null) {
@@ -216,19 +216,19 @@ public class StatisticsManager {
 		ib.put("hasSchoolOther", "" + hasOtherSchool.size());
 		
 		Map<String, Date> lastSeenUserMap = this.getLastSeenUserMap();
-		
+		log.info("Calculating general stats - 2. Last seen map");
 		final int sevenDays = 7;
 		final int thirtyDays = 30;
 		
 		List<RegisteredUserDTO> nonStaffUsers = Lists.newArrayList();
 		nonStaffUsers.addAll(teacherRole);
 		nonStaffUsers.addAll(studentOrUnknownRole);
-		
+		log.info("Calculating general stats - 3. Last seen map - teachers");
 		ib.put("activeTeachersLastWeek",
 				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, sevenDays).size());
 		ib.put("activeTeachersLastThirtyDays",
 				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMap, thirtyDays).size());
-
+		log.info("Calculating general stats - 4. Last seen map - students");
 		ib.put("activeStudentsLastWeek",
 				""
 						+ this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMap,
@@ -244,7 +244,7 @@ public class StatisticsManager {
 		ib.put("activeUsersLastThirtyDays",
 				"" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenUserMap, thirtyDays)
 								.size());
-
+		log.info("Calculating general stats - 5. Last seen map - Questions - teachers");
 		Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
 
 		ib.put("questionsAnsweredLastWeekTeachers",
@@ -253,7 +253,7 @@ public class StatisticsManager {
 		ib.put("questionsAnsweredLastThirtyDaysTeachers",
 				"" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions,
 								thirtyDays).size());
-		
+		log.info("Calculating general stats - 6. Last seen map - Questions - students");
 		ib.put("questionsAnsweredLastWeekStudents",
 				"" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
 								sevenDays).size());
