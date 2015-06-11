@@ -345,7 +345,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 	 */
 	public static Client getTransportClient(final String clusterName, final String address, final int port) {
         Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName)
-                .put("client.transport.ping_timeout", "20s").build();
+                .put("client.transport.ping_timeout", "10s").build();
 		TransportClient transportClient = new TransportClient(settings);
 		InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(address, port);
 		transportClient = transportClient.addTransportAddress(transportAddress);
