@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
 import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
@@ -88,6 +89,7 @@ public class IsaacApplicationRegister extends Application {
         // result.add(IsaacController.class);
         result.add(APIOverviewResource.class);
         result.add(RestEasyJacksonConfiguration.class);
+        result.add(PerformanceMonitor.class);
         return result;
     }
 }

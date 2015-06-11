@@ -130,8 +130,6 @@ public class StatisticsManager {
             return cachedOutput;
         }
         
-        log.info("Calculating general stats");
-        
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
 
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
