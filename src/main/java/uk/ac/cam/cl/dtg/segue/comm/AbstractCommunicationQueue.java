@@ -20,8 +20,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
-
 /**
  * Abstract message queue class.
  *
@@ -34,7 +32,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
 
     private LinkedBlockingQueue<T> messageQueue = new LinkedBlockingQueue<T>();
 
-    private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractCommunicationQueue.class);
 
     private ICommunicator<T> communicator;
 

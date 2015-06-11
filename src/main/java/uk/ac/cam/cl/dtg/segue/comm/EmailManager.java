@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -35,7 +34,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private final IUserDataManager userDataManager;
     private final ContentVersionController contentVersionController;
     private final SegueLocalAuthenticator authenticator;
-    private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private final int MINIMUM_TAG_LENGTH = 4;
     private final String sig = "Isaac Physics Project";
 
@@ -149,7 +148,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String message = completeTemplateWithProperties(segueContent, p);
 
-        String htmlMessage = "<html><head><meta charset='utf-8'><title>JS Bin</title></head><body>";
+        String htmlMessage = "<html><head><meta charset='utf-8'><title>Isaac Physics</title></head><body>";
         htmlMessage += message;
         htmlMessage += "</body></html>";
 
