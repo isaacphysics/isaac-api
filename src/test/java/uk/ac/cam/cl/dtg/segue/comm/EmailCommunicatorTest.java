@@ -128,27 +128,24 @@ public class EmailCommunicatorTest {
                 });
 
         EasyMock.replay(mockAuthenticator);
-
-
     }
 
     /**
-     * @param template
-     * @return
+     * @param template - id of the template
+     * @return - SegueDTO object
      */
-    public SeguePageDTO createDummyEmailTemplate(String template) {
+    public SeguePageDTO createDummyEmailTemplate(final String template) {
 
         ArrayList<ContentBaseDTO> children = new ArrayList<ContentBaseDTO>();
 
-        ContentDTO child = new ContentDTO(null, null, "content", null, null, null, null, null, null, null,
- template,
-                null, null, null, null, 0);
+        ContentDTO child = new ContentDTO(null, null, "content", null, null, null, 
+                null, null, null, null, template, null, null, null, null, 0);
 
         children.add(child);
 
         SeguePageDTO seguePage = new SeguePageDTO("01234",
                 "email-template-registration-confirmation", "title", "subtitle", "page", "ags46", "markdown",
-                "canonical-source-file", null, children, null, null, null, false, null, 0);
+                "canonical-source-file", null, children, null, null, null, true, null, 0);
         
         return seguePage;
     }
