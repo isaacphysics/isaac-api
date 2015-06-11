@@ -22,23 +22,23 @@ package uk.ac.cam.cl.dtg.segue.comm;
  *
  */
 public class EmailCommunicationMessage implements ICommunicationMessage {
-	
+
     private final String plainTextMessage;
-	
-	private final String recipientAddress;
-	
-	private final String recipientName;
-	
-	private final String subject;
-	
+
+    private final String recipientAddress;
+
+    private final String recipientName;
+
+    private final String subject;
+
     private final String htmlMessage;
-	
+
     /**
      * @return the plain text message
      */
     public String getPlainTextMessage() {
         return plainTextMessage;
-	}
+    }
 
     /**
      * @return the html message
@@ -47,29 +47,28 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         return htmlMessage;
     }
 
-	/**
-	 * @return the recipientAddress
-	 */
-	public String getRecipientAddress() {
-		return recipientAddress;
-	}
+    /**
+     * @return the recipientAddress
+     */
+    public String getRecipientAddress() {
+        return recipientAddress;
+    }
 
-	/**
-	 * @return the recipientName
-	 */
-	public String getRecipientName() {
-		return recipientName;
-	}
+    /**
+     * @return the recipientName
+     */
+    public String getRecipientName() {
+        return recipientName;
+    }
 
-	/**
-	 * @return the subject
-	 */
-	public String getSubject() {
-		return subject;
-	}
+    /**
+     * @return the subject
+     */
+    public String getSubject() {
+        return subject;
+    }
 
-
-	    /**
+    /**
      * 
      * @param recipientAddress
      *            address of user
@@ -82,14 +81,13 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param htmlMessage
      *            message in email
      */
-	public EmailCommunicationMessage(final String recipientAddress, 
- final String recipientName, final String subject,
+    public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
             final String plainTextMessage, final String htmlMessage) {
         this.plainTextMessage = plainTextMessage;
-		this.recipientAddress = recipientAddress;
-		this.recipientName = recipientName;
-		this.subject = subject;
+        this.recipientAddress = recipientAddress;
+        this.recipientName = recipientName;
+        this.subject = subject;
         this.htmlMessage = htmlMessage;
-	}
+    }
 
 }
