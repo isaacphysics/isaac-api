@@ -113,10 +113,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     private static GoogleClientSecrets googleClientSecrets = null;
 
-    private static PropertiesLoader configLocationProperties;
+    private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
 
-    private UserAssociationManager userAssociationManager = null;
+    private static UserAssociationManager userAssociationManager = null;
 
     private static ILogManager logManager;
 
@@ -132,11 +132,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     public SegueGuiceConfigurationModule() {
         if (globalProperties == null || configLocationProperties == null) {
             try {
-                configLocationProperties = new PropertiesLoader("/config/segue-config-location.properties");
+                if (null == configLocationProperties) {
+                    configLocationProperties = new PropertiesLoader("/config/segue-config-location.properties");
 
-                globalProperties = new PropertiesLoader(
-                        configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+                }
 
+                if (null == globalProperties) {
+                    globalProperties = new PropertiesLoader(
+                            configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+                }
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
@@ -399,7 +403,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * <<<<<<< HEAD
      * 
      * @param emailCommunicator
      *            the class the queue will send messages with
@@ -420,8 +423,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * ======= >>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d This provides a singleton of the UserManager for various
-     * facades.
+     * This provides a singleton of the UserManager for various facades.
      * 
      * @param database
      *            - IUserManager
@@ -429,7 +431,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - properties loader
      * @param providersToRegister
      *            - list of known providers.
-     * @param communicator
+     * @param emailQueue
      *            - so that we can send e-mails.
      * @param logManager
      *            - so that we can log interesting user based events.
@@ -633,6 +635,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     private ILocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
+        log.info("Creating new location resolver");
         return new IPInfoDBLocationResolver(apiKey);
     }
 
