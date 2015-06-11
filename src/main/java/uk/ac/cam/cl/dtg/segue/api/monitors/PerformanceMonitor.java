@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 @Provider
 @ServerInterceptor
 public class PerformanceMonitor implements ContainerRequestFilter, ContainerResponseFilter {
-
     private static final Logger log = LoggerFactory.getLogger(PerformanceMonitor.class);
 
     @Context
@@ -72,11 +71,11 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
             log.debug(String.format("Request: %s %s took %dms", requestContext.getMethod(), request.getUri()
                     .getRequestUri().toURL().toString(), timeInMs));
         } else if (timeInMs > WARNING_THRESHOLD && timeInMs < ERROR_THRESHOLD) {
-            log.warn(String.format("Performance Warning: Request: %s %s took %dms and exceed threshold of %d",
+            log.warn(String.format("Performance Warning: Request: %s %s took %dms and exceeded threshold of %d",
                     requestContext.getMethod(), request.getUri().getRequestUri().toURL().toString(), timeInMs,
                     WARNING_THRESHOLD));
         } else {
-            log.error(String.format("Performance Alert: Request: %s %s took %dms and exceed threshold of %d",
+            log.error(String.format("Performance Alert: Request: %s %s took %dms and exceeded threshold of %d",
                     requestContext.getMethod(), request.getUri().getRequestUri().toURL().toString(), timeInMs,
                     ERROR_THRESHOLD));
         }
