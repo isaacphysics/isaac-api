@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 
 /**
  * Isaac Symbolic Question DO.
@@ -23,7 +26,17 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
  */
 @JsonContentType("isaacSymbolicQuestion")
 public class IsaacSymbolicQuestionDTO extends IsaacQuestionBaseDTO {
+    
+    /**
+     * 
+     */
     public IsaacSymbolicQuestionDTO() {
         super();
+    }
+    
+    @JsonIgnore
+    @Override
+    public ContentBaseDTO getAnswer() {
+        return super.getAnswer();
     }
 }

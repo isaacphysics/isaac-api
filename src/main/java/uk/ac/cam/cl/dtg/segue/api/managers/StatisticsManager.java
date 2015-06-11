@@ -128,6 +128,8 @@ public class StatisticsManager {
         if (cachedOutput != null) {
             log.debug("Using cached statistics.");
             return cachedOutput;
+        } else {
+            log.info("Calculating General Statistics");
         }
         
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
@@ -295,6 +297,8 @@ public class StatisticsManager {
         if (cachedOutput != null) {
             log.debug("Using cached statistics.");
             return cachedOutput;
+        } else {
+            log.info("Calculating School Statistics");
         }
 
         Map<School, List<RegisteredUserDTO>> map = getUsersBySchool();
