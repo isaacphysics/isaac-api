@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -63,6 +64,7 @@ import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoGroupDataManager;
@@ -123,6 +125,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static EmailManager emailCommunicationQueue = null;
 
     private static IMisuseMonitor misuseMonitor = null;
+    
+    private static StatisticsManager statsManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
 
@@ -182,6 +186,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         // IP address geocoding
         this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
+        
+        this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
+        
     }
 
     /**
@@ -626,6 +633,41 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return postgresDB;
     }
 
+    /**
+     * Gets the instance of the StatisticsManager.
+     * 
+     * @param userManager
+     *            - dependency
+     * @param logManager
+     *            - dependency
+     * @param schoolManager
+     *            - dependency
+     * @param versionManager
+     *            - dependency
+     * @param contentManager
+     *            - dependency
+     * @param locationHistoryManager
+     *            - dependency
+     * @return stats manager
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static StatisticsManager getStatsManager(final UserManager userManager, final ILogManager logManager,
+            final SchoolListReader schoolManager, final ContentVersionController versionManager,
+            final IContentManager contentManager, final LocationHistoryManager locationHistoryManager) {
+
+        if (null == statsManager) {
+
+            statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
+                    contentManager, locationHistoryManager);
+            log.info("Created Singleton of Statistics Manager");
+
+        }
+
+        return statsManager;
+    }
+    
     /**
      * This provides an instance of the location resolver.
      *

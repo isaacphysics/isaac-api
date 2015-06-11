@@ -223,11 +223,10 @@ public class StatisticsManager {
         ib.put("hasSchool", "" + hasSchool.size());
         ib.put("hasNoSchool", "" + hasNoSchool.size());
         ib.put("hasSchoolOther", "" + hasOtherSchool.size());
-
-        Map<String, Date> lastSeenUserMap = this.getLastSeenUserMap();
         
         log.info("Calculating general stats - 2. Last seen map");
-        
+        Map<String, Date> lastSeenUserMap = this.getLastSeenUserMap();
+
         final int sevenDays = 7;
         final int thirtyDays = 30;
 
@@ -719,6 +718,7 @@ public class StatisticsManager {
      */
     private Map<String, Date> convertFromLogEventToDateMap(final Map<String, LogEvent> input) {
         Map<String, Date> result = Maps.newHashMap();
+
         for (Entry<String, LogEvent> e : input.entrySet()) {
             result.put(e.getKey(), e.getValue().getTimestamp());
         }

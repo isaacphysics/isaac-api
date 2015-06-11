@@ -377,7 +377,7 @@ public class MongoLogManager implements ILogManager {
         }
 
         Map<String, LogEvent> results = Maps.newHashMap();
-
+        
         for (LogEvent log : allLogsByUserType) {
             if (results.containsKey((String) log.getUserId())) {
 
