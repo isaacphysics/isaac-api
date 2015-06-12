@@ -81,12 +81,12 @@ public class EmailCommunicatorTest {
         EasyMock.replay(mockPropertiesLoader);
 
         mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
-        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion");
+        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion").anyTimes();
 
         // Create content manager
         mockContentManager = EasyMock.createMock(MongoContentManager.class);
 
-        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager);
+        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
         EasyMock.replay(mockContentVersionController);
 
         capturedArgument = new Capture<EmailCommunicationMessage>();
@@ -238,8 +238,10 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
+            log.debug(e.getMessage());
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
+            log.debug(e.getMessage());
             Assert.fail();
         }
 
@@ -276,12 +278,19 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
         SeguePageDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nA request has been "
                 + "made to reset the password for the account: </a href='mailto:{{email}}'>{{email}}<a>"
                 + ".\n\nTo reset your password <a href='{{resetURL}}'>Click Here</a>\n\nRegards,\n\n{{sig}}");
+        
+        SeguePageDTO htmlTemplate = createDummyEmailTemplate("{{content}}");
+        
 
         try {
             EasyMock.expect(mockContentManager.getContentById("liveversion", "email-template-password-reset"))
-                    .andReturn(template);
+                    .andReturn(template).once();
+          
+            EasyMock.expect(mockContentManager.getContentById("liveversion", "email-template-html"))
+                    .andReturn(htmlTemplate).once();
 
             EasyMock.replay(mockContentManager);
+            
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
@@ -419,7 +428,6 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
         assertNotNull(email);
         assertEquals("this is a template with no tags", email.getPlainTextMessage());
         System.out.println(email.getPlainTextMessage());
-
     }
-
+ 
 }
