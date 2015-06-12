@@ -62,40 +62,41 @@ import com.google.inject.name.Named;
  *
  */
 public class GoogleAuthenticator implements IOAuth2Authenticator {
+    private static final Logger log = LoggerFactory.getLogger(GoogleAuthenticator.class);
 
-	private static final Logger log = LoggerFactory
-			.getLogger(GoogleAuthenticator.class);
+    private final JsonFactory jsonFactory;
+    private final HttpTransport httpTransport;
 
-	private final JsonFactory jsonFactory;
-	private final HttpTransport httpTransport;
+    private final GoogleClientSecrets clientSecrets;
 
-	private final GoogleClientSecrets clientSecrets;
+    private final String callbackUri;
+    private final Collection<String> requestedScopes;
 
-	private final String callbackUri;
-	private final Collection<String> requestedScopes;
+    // weak cache for mapping userInformation to credentials temporarily
+    private static WeakHashMap<String, Credential> credentialStore;
+    private static GoogleIdTokenVerifier tokenVerifier;
 
-	// weak cache for mapping userInformation to credentials temporarily
-	private static WeakHashMap<String, Credential> credentialStore;
-	private static GoogleIdTokenVerifier tokenVerifier;
-	
-	private static final int SALT_SIZE_BITS = 130;
-	private static final int RADIX_FOR_SALT = 32;
+    private static final int SALT_SIZE_BITS = 130;
+    private static final int RADIX_FOR_SALT = 32;
 
-	/**
-	 * Construct a google authenticator.
-	 * 
-	 * @param clientSecretLocation - external file containing the secret provided by the google service.
-	 * @param callbackUri - The allowed URI for callbacks as registered with google.
-	 * @param requestedScopes - The scopes that will be granted to Segue.
-	 * @throws IOException - if we cannot load the secret file.
-	 */
-	@Inject
-	public GoogleAuthenticator(
-	        @Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation,
-			@Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
-			@Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
-		this.jsonFactory = new JacksonFactory();
-		this.httpTransport = new NetHttpTransport();
+    /**
+     * Construct a google authenticator.
+     * 
+     * @param clientSecretLocation
+     *            - external file containing the secret provided by the google service.
+     * @param callbackUri
+     *            - The allowed URI for callbacks as registered with google.
+     * @param requestedScopes
+     *            - The scopes that will be granted to Segue.
+     * @throws IOException
+     *             - if we cannot load the secret file.
+     */
+    @Inject
+    public GoogleAuthenticator(@Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation,
+            @Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
+            @Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
+        this.jsonFactory = new JacksonFactory();
+        this.httpTransport = new NetHttpTransport();
 
         Validate.notBlank(clientSecretLocation, "Missing resource %s", clientSecretLocation);
 
@@ -104,37 +105,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         InputStreamReader isr = new InputStreamReader(inputStream);
 
         clientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
-        
-		this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
-		this.callbackUri = callbackUri;
 
-		if (null == credentialStore) {
-			credentialStore = new WeakHashMap<String, Credential>();
-		}
-
-		if (null == tokenVerifier) {
-			tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
-					jsonFactory);			
-		}
-	}
-	
-	/**
-     * Construct a google authenticator with all of its required dependencies.
-     * 
-     * @param clientSecret - external file containing the secret provided by the google service.
-     * @param callbackUri - The allowed URI for callbacks as registered with google.
-     * @param requestedScopes - The scopes that will be granted to Segue.
-     * @throws IOException - if we cannot load the secret file.
-     */
-    public GoogleAuthenticator(
-            final GoogleClientSecrets clientSecret,
-            @Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
-            @Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
-        this.jsonFactory = new JacksonFactory();
-        this.httpTransport = new NetHttpTransport();
-        
-        clientSecrets = clientSecret;
-        
         this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
         this.callbackUri = callbackUri;
 
@@ -143,150 +114,163 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         }
 
         if (null == tokenVerifier) {
-            tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
-                    jsonFactory);           
+            tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
         }
     }
 
-	@Override
-	public AuthenticationProvider getAuthenticationProvider() {
-		return AuthenticationProvider.GOOGLE;
-	}
-	
-	@Override
-	public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
-		GoogleAuthorizationCodeRequestUrl urlBuilder = null;
-		urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets
-				.getDetails().getClientId(), callbackUri, requestedScopes);
-		// .setAccessType("online") // these can be used to force approval each
-		// time the user logs in if we wish.
-		// .setApprovalPrompt("force");
+    /**
+     * Construct a google authenticator with all of its required dependencies.
+     * 
+     * @param clientSecret
+     *            - external file containing the secret provided by the google service.
+     * @param callbackUri
+     *            - The allowed URI for callbacks as registered with google.
+     * @param requestedScopes
+     *            - The scopes that will be granted to Segue.
+     * @throws IOException
+     *             - if we cannot load the secret file.
+     */
+    public GoogleAuthenticator(final GoogleClientSecrets clientSecret,
+            @Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
+            @Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
+        this.jsonFactory = new JacksonFactory();
+        this.httpTransport = new NetHttpTransport();
 
-		urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
+        clientSecrets = clientSecret;
 
-		return urlBuilder.build();
-	}
+        this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
+        this.callbackUri = callbackUri;
 
-	@Override
-	public String extractAuthCode(final String url) throws IOException {
-		AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(
-				url.toString());
+        if (null == credentialStore) {
+            credentialStore = new WeakHashMap<String, Credential>();
+        }
 
-		if (authResponse.getError() == null) {
-			log.debug("User granted access to our app.");
-		} else {
-			log.debug("User denied access to our app.");
-		}
+        if (null == tokenVerifier) {
+            tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
+        }
+    }
 
-		return authResponse.getCode();
-	}
+    @Override
+    public AuthenticationProvider getAuthenticationProvider() {
+        return AuthenticationProvider.GOOGLE;
+    }
 
-	@Override
-	public synchronized String exchangeCode(final String authorizationCode)
-		throws IOException, CodeExchangeException {
-		try {
-			GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
-					httpTransport, jsonFactory, clientSecrets.getDetails()
-							.getClientId(), clientSecrets.getDetails()
-								.getClientSecret(), authorizationCode, callbackUri)
-					.execute();
+    @Override
+    public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
+        GoogleAuthorizationCodeRequestUrl urlBuilder = null;
+        urlBuilder = new GoogleAuthorizationCodeRequestUrl(clientSecrets.getDetails().getClientId(), callbackUri,
+                requestedScopes);
+        // .setAccessType("online") // these can be used to force approval each
+        // time the user logs in if we wish.
+        // .setApprovalPrompt("force");
 
-			// I don't really want to use the flow storage but it seems to be
-			// easier to get credentials this way.
-			GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-					httpTransport, jsonFactory, clientSecrets.getDetails()
-							.getClientId(), clientSecrets.getDetails()
-								.getClientSecret(), requestedScopes)
-					.setDataStoreFactory(
-							MemoryDataStoreFactory.getDefaultInstance())
-					.build();
+        urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
 
-			Credential credential = flow.createAndStoreCredential(response,
-					authorizationCode);
-			String internalReferenceToken = UUID.randomUUID().toString();
-			credentialStore.put(internalReferenceToken, credential);
-			flow.getCredentialDataStore().clear();
+        return urlBuilder.build();
+    }
 
-			return internalReferenceToken;
-		} catch (IOException e) {
-			log.error("An error occurred during code exchange: " + e);
-			throw new CodeExchangeException();
-		}
-	}
+    @Override
+    public String extractAuthCode(final String url) throws IOException {
+        AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url.toString());
 
-	@Override
-	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
-		throws NoUserException, IOException,
-			AuthenticatorSecurityException {
-		Credential credentials = credentialStore.get(internalProviderReference);
-		if (verifyAccessTokenIsValid(credentials)) {
-			log.debug("Successful Verification of access token with provider.");
-		} else {
-			log.error("Unable to verify access token - it could be an indication of fraud.");
-			throw new AuthenticatorSecurityException(
-					"Access token is invalid - the client id returned by the identity provider does not match ours.");
-		}
-		Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(),
-				new JacksonFactory(), credentials).setApplicationName(
-				Constants.APPLICATION_NAME).build();
-		Userinfoplus userInfo = null;
+        if (authResponse.getError() == null) {
+            log.debug("User granted access to our app.");
+        } else {
+            log.debug("User denied access to our app.");
+        }
 
-		try {
-			userInfo = userInfoService.userinfo().get().execute();
-			log.debug("Retrieved User info from google: "
-					+ userInfo.toPrettyString());
-		} catch (IOException e) {
-			log.error("An IO error occurred while trying to retrieve user information: "
-					+ e);
-		}
-		if (userInfo != null && userInfo.getId() != null) {
-			return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(),
-					userInfo.getFamilyName(), userInfo.getEmail(), null, null,
-					null);
+        return authResponse.getCode();
+    }
 
-		} else {
-			throw new NoUserException();
-		}
-	}
+    @Override
+    public synchronized String exchangeCode(final String authorizationCode) throws IOException, CodeExchangeException {
+        try {
+            GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(httpTransport, jsonFactory,
+                    clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(),
+                    authorizationCode, callbackUri).execute();
 
-	@Override
-	public String getAntiForgeryStateToken() {
-		String antiForgerySalt = new BigInteger(SALT_SIZE_BITS, new SecureRandom())
-				.toString(RADIX_FOR_SALT);
+            // I don't really want to use the flow storage but it seems to be
+            // easier to get credentials this way.
+            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, jsonFactory,
+                    clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret(),
+                    requestedScopes).setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance()).build();
 
-		String antiForgeryStateToken = "google" + antiForgerySalt;
+            Credential credential = flow.createAndStoreCredential(response, authorizationCode);
+            String internalReferenceToken = UUID.randomUUID().toString();
+            credentialStore.put(internalReferenceToken, credential);
+            flow.getCredentialDataStore().clear();
 
-		return antiForgeryStateToken;
-	}
+            return internalReferenceToken;
+        } catch (IOException e) {
+            log.error("An error occurred during code exchange: " + e);
+            throw new CodeExchangeException();
+        }
+    }
 
-	/**
-	 * This method will contact the identity provider to verify that the token
-	 * is valid for our application.
-	 * 
-	 * This check is intended to mitigate against the confused deputy problem;
-	 * although I suspect the google client might already do this.
-	 * 
-	 * @param credentials - the credential object for the token verification.
-	 * @return true if the token passes our validation false if not.
-	 */
-	private boolean verifyAccessTokenIsValid(final Credential credentials) {
-		Validate.notNull(credentials, "Credentials cannot be null");
+    @Override
+    public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
+            throws NoUserException, IOException, AuthenticatorSecurityException {
+        Credential credentials = credentialStore.get(internalProviderReference);
+        if (verifyAccessTokenIsValid(credentials)) {
+            log.debug("Successful Verification of access token with provider.");
+        } else {
+            log.error("Unable to verify access token - it could be an indication of fraud.");
+            throw new AuthenticatorSecurityException(
+                    "Access token is invalid - the client id returned by the identity provider does not match ours.");
+        }
+        Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials)
+                .setApplicationName(Constants.APPLICATION_NAME).build();
+        Userinfoplus userInfo = null;
 
-		Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory,
-				credentials).setApplicationName(Constants.APPLICATION_NAME)
-				.build();
-		try {
-			Tokeninfo tokeninfo = oauth2.tokeninfo()
-					.setAccessToken(credentials.getAccessToken()).execute();
+        try {
+            userInfo = userInfoService.userinfo().get().execute();
+            log.debug("Retrieved User info from google: " + userInfo.toPrettyString());
+        } catch (IOException e) {
+            log.error("An IO error occurred while trying to retrieve user information: " + e);
+        }
+        if (userInfo != null && userInfo.getId() != null) {
+            return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),
+                    userInfo.getEmail(), null, null, null);
 
-			if (tokeninfo.getAudience().equals(
-					clientSecrets.getDetails().getClientId())) {
-				return true;
-			}
-		} catch (IOException e) {
-			log.error("IO error while trying to validate oauth2 security token.");
-			e.printStackTrace();
-		}
-		return false;
-	}
+        } else {
+            throw new NoUserException();
+        }
+    }
+
+    @Override
+    public String getAntiForgeryStateToken() {
+        String antiForgerySalt = new BigInteger(SALT_SIZE_BITS, new SecureRandom()).toString(RADIX_FOR_SALT);
+
+        String antiForgeryStateToken = "google" + antiForgerySalt;
+
+        return antiForgeryStateToken;
+    }
+
+    /**
+     * This method will contact the identity provider to verify that the token is valid for our application.
+     * 
+     * This check is intended to mitigate against the confused deputy problem; although I suspect the google client
+     * might already do this.
+     * 
+     * @param credentials
+     *            - the credential object for the token verification.
+     * @return true if the token passes our validation false if not.
+     */
+    private boolean verifyAccessTokenIsValid(final Credential credentials) {
+        Validate.notNull(credentials, "Credentials cannot be null");
+
+        Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credentials).setApplicationName(
+                Constants.APPLICATION_NAME).build();
+        try {
+            Tokeninfo tokeninfo = oauth2.tokeninfo().setAccessToken(credentials.getAccessToken()).execute();
+
+            if (tokeninfo.getAudience().equals(clientSecrets.getDetails().getClientId())) {
+                return true;
+            }
+        } catch (IOException e) {
+            log.error("IO error while trying to validate oauth2 security token.");
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
