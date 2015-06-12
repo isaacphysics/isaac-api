@@ -151,7 +151,7 @@ public class StatisticsManager {
         List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
         Map<String, Date> lastSeenMap = Maps.newHashMap();
 
-        log.info("Calculating general stats - 1. User details");
+        log.debug("Calculating general stats - 1. User details");
 
         // build user stats
         for (RegisteredUserDTO user : users) {
@@ -232,7 +232,7 @@ public class StatisticsManager {
         ib.put("hasNoSchool", "" + hasNoSchool.size());
         ib.put("hasSchoolOther", "" + hasOtherSchool.size());
 
-        log.info("Calculating general stats - 2. Last seen map");
+        log.debug("Calculating general stats - 2. Last seen map");
 
         final int sevenDays = 7;
         final int thirtyDays = 30;
@@ -260,7 +260,7 @@ public class StatisticsManager {
         ib.put("activeUsersLastThirtyDays",
                 "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, thirtyDays).size());
 
-        log.info("Calculating general stats - 5. Last seen map - Questions - teachers");
+        log.debug("Calculating general stats - 5. Last seen map - Questions - teachers");
 
         Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
 
@@ -269,7 +269,7 @@ public class StatisticsManager {
         ib.put("questionsAnsweredLastThirtyDaysTeachers",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, thirtyDays).size());
 
-        log.info("Calculating general stats - 6. Last seen map - Questions - students");
+        log.debug("Calculating general stats - 6. Last seen map - Questions - students");
 
         ib.put("questionsAnsweredLastWeekStudents",
                 ""
