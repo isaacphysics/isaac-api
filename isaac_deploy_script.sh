@@ -15,11 +15,11 @@ ISAAC_APP_DEPLOY_FILE="isaac-app.tar.gz"
 
 # Shutdown apache
 echo "Shutting down apache so that maintenance page shows..."
-sudo service apache2 stop
+sudo systemctl stop apache2
 
 # Shut down api server to stop database access
 echo "Shutting down the API to stop database access."
-sudo service tomcat8 stop
+sudo systemctl stop tomcat8
 
 # Delete and rename existing api files
 echo "Backing up last API war file... to $ISAAC_API_DEPLOY_LOCATION/$ISAAC_API_DEPLOY_FILE.bak"
@@ -36,7 +36,7 @@ sudo chown tomcat8 $ISAAC_API_DEPLOY_LOCATION/$ISAAC_API_DEPLOY_FILE
 sudo chgrp tomcat8 $ISAAC_API_DEPLOY_LOCATION/$ISAAC_API_DEPLOY_FILE
 
 echo "Starting up tomcat"
-sudo service tomcat8 start
+sudo systemctl start tomcat8
 
 # Unpack isaac-app into apache root.
 echo "Unpacking Isaac App distribution."
@@ -51,6 +51,6 @@ echo "Polling api to trigger reindex operation."
 wget --spider http://localhost:8080/isaac-api/api
 
 echo "Starting apache."
-sudo service apache2 start
+sudo systemctl start apache2
 
 echo "Upgrade script complete."
