@@ -24,7 +24,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -52,6 +52,8 @@ import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -72,12 +74,14 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     private final String callbackUri;
     private final Collection<String> requestedScopes;
 
-    // weak cache for mapping userInformation to credentials temporarily
-    private static WeakHashMap<String, Credential> credentialStore;
+    // cache for mapping userInformation to credentials temporarily
+    private static Cache<String, Credential> credentialStore;
     private static GoogleIdTokenVerifier tokenVerifier;
 
     private static final int SALT_SIZE_BITS = 130;
     private static final int RADIX_FOR_SALT = 32;
+    
+    private static final int CREDENTIAL_CACHE_TTL_MINUTES = 10; 
 
     /**
      * Construct a google authenticator.
@@ -110,7 +114,9 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         this.callbackUri = callbackUri;
 
         if (null == credentialStore) {
-            credentialStore = new WeakHashMap<String, Credential>();
+            credentialStore = CacheBuilder.newBuilder()
+                    .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
+                    .<String, Credential> build();
         }
 
         if (null == tokenVerifier) {
@@ -142,14 +148,16 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         this.callbackUri = callbackUri;
 
         if (null == credentialStore) {
-            credentialStore = new WeakHashMap<String, Credential>();
+            credentialStore = CacheBuilder.newBuilder()
+                    .expireAfterAccess(CREDENTIAL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
+                    .<String, Credential> build();
         }
 
         if (null == tokenVerifier) {
             tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
         }
     }
-
+    
     @Override
     public AuthenticationProvider getAuthenticationProvider() {
         return AuthenticationProvider.GOOGLE;
@@ -210,7 +218,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
     @Override
     public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
             throws NoUserException, IOException, AuthenticatorSecurityException {
-        Credential credentials = credentialStore.get(internalProviderReference);
+        Credential credentials = credentialStore.getIfPresent(internalProviderReference);        
         if (verifyAccessTokenIsValid(credentials)) {
             log.debug("Successful Verification of access token with provider.");
         } else {
@@ -218,6 +226,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
             throw new AuthenticatorSecurityException(
                     "Access token is invalid - the client id returned by the identity provider does not match ours.");
         }
+        
         Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credentials)
                 .setApplicationName(Constants.APPLICATION_NAME).build();
         Userinfoplus userInfo = null;
