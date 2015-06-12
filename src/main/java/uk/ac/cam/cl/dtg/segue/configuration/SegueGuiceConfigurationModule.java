@@ -15,10 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.configuration;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -82,8 +79,6 @@ import uk.ac.cam.cl.dtg.util.locations.ILocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -112,8 +107,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static Client elasticSearchClient = null;
 
     private static UserManager userManager = null;
-
-    private static GoogleClientSecrets googleClientSecrets = null;
 
     private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
@@ -532,33 +525,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
         log.warn("Unable to read segue version property");
         return "UNKNOWN";
-    }
-
-    /**
-     * Gets the instance of the GoogleClientSecrets object.
-     * 
-     * @param clientSecretLocation
-     *            - The path to the client secrets json file
-     * @return GoogleClientSecrets
-     * @throws IOException
-     *             - when we are unable to access the google client file.
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static GoogleClientSecrets getGoogleClientSecrets(
-            @Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation) throws IOException {
-        if (null == googleClientSecrets) {
-            Validate.notNull(clientSecretLocation, "Missing resource %s", clientSecretLocation);
-
-            // load up the client secrets from the file system.
-            InputStream inputStream = new FileInputStream(clientSecretLocation);
-            InputStreamReader isr = new InputStreamReader(inputStream);
-
-            googleClientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
-        }
-
-        return googleClientSecrets;
     }
 
     /**

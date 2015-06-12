@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -79,21 +82,29 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 	private static final int RADIX_FOR_SALT = 32;
 
 	/**
-	 * Construct a google authenticator with all of its required dependencies.
+	 * Construct a google authenticator.
 	 * 
-	 * @param clientSecrets - secret provided by the google service.
+	 * @param clientSecretLocation - external file containing the secret provided by the google service.
 	 * @param callbackUri - The allowed URI for callbacks as registered with google.
 	 * @param requestedScopes - The scopes that will be granted to Segue.
+	 * @throws IOException - if we cannot load the secret file.
 	 */
 	@Inject
 	public GoogleAuthenticator(
-			final GoogleClientSecrets clientSecrets,
+	        @Named(Constants.GOOGLE_CLIENT_SECRET_LOCATION) final String clientSecretLocation,
 			@Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
-			@Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) {
+			@Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
 		this.jsonFactory = new JacksonFactory();
 		this.httpTransport = new NetHttpTransport();
 
-		this.clientSecrets = clientSecrets;
+        Validate.notBlank(clientSecretLocation, "Missing resource %s", clientSecretLocation);
+
+        // load up the client secrets from the file system.
+        InputStream inputStream = new FileInputStream(clientSecretLocation);
+        InputStreamReader isr = new InputStreamReader(inputStream);
+
+        clientSecrets = GoogleClientSecrets.load(new JacksonFactory(), isr);
+        
 		this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
 		this.callbackUri = callbackUri;
 
@@ -106,6 +117,36 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
 					jsonFactory);			
 		}
 	}
+	
+	/**
+     * Construct a google authenticator with all of its required dependencies.
+     * 
+     * @param clientSecret - external file containing the secret provided by the google service.
+     * @param callbackUri - The allowed URI for callbacks as registered with google.
+     * @param requestedScopes - The scopes that will be granted to Segue.
+     * @throws IOException - if we cannot load the secret file.
+     */
+    public GoogleAuthenticator(
+            final GoogleClientSecrets clientSecret,
+            @Named(Constants.GOOGLE_CALLBACK_URI) final String callbackUri,
+            @Named(Constants.GOOGLE_OAUTH_SCOPES) final String requestedScopes) throws IOException {
+        this.jsonFactory = new JacksonFactory();
+        this.httpTransport = new NetHttpTransport();
+        
+        clientSecrets = clientSecret;
+        
+        this.requestedScopes = Arrays.asList(requestedScopes.split(";"));
+        this.callbackUri = callbackUri;
+
+        if (null == credentialStore) {
+            credentialStore = new WeakHashMap<String, Credential>();
+        }
+
+        if (null == tokenVerifier) {
+            tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
+                    jsonFactory);           
+        }
+    }
 
 	@Override
 	public AuthenticationProvider getAuthenticationProvider() {
