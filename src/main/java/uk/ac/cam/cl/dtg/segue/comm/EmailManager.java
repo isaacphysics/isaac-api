@@ -144,13 +144,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("email", user.getEmail());
         p.put("resetURL", verificationURL);
         p.put("sig", sig);
-
-
+        
         String message = completeTemplateWithProperties(segueContent, p);
-
-        String htmlMessage = "<html><head><meta charset='utf-8'><title>Isaac Physics</title></head><body>";
-        htmlMessage += message;
-        htmlMessage += "</body></html>";
+        
+        //Get HTML
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        
+        if (segueContent == null || !segueContent.getPublished()) {
+            //Don't return - plain text will still be sent as backup
+            log.debug("HTML email template could not be found!");
+        }
+        
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", message);
+        htmlTemplateProperties.put("email", user.getEmail());
+        
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
                 segueContent.getTitle(), message, htmlMessage);
