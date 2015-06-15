@@ -2,8 +2,6 @@ package uk.ac.cam.cl.dtg.segue.comm;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -120,13 +118,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
 
-        try {
-            authenticator.createPasswordResetTokenForUser(user);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        }
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
         
@@ -134,6 +125,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             log.debug("Password reset message not sent due to unpublished template!");
             return;
         }
+        
 
         String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, user.getResetToken());

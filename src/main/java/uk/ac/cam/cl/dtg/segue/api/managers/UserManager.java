@@ -942,7 +942,8 @@ public class UserManager {
             log.error(
                     String.format("Unable to locate user with email (%s) while "
                             + "trying to generate a reset token. Failing silently."),
-                    userObject.getEmail());
+                    userObject == null ? "null email address" : userObject.getEmail());
+
             return;
         }
 
