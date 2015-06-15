@@ -289,6 +289,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
         } catch (InvalidTokenException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");
+            log.error("Invalid password reset token supplied: " + token);
             return error.toResponse();
         } catch (InvalidPasswordException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "No password supplied.");
