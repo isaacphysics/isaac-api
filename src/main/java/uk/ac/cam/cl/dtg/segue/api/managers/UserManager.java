@@ -939,6 +939,10 @@ public class UserManager {
         if (user == null) {
             // Email address does not exist in the DB
             // Fail silently
+            log.error(
+                    String.format("Unable to locate user with email (%s) while "
+                            + "trying to generate a reset token. Failing silently."),
+                    userObject.getEmail());
             return;
         }
 
