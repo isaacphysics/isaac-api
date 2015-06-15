@@ -941,8 +941,8 @@ public class UserManager {
             // Fail silently
             log.error(
                     String.format("Unable to locate user with email (%s) while "
-                            + "trying to generate a reset token. Failing silently."),
-                    userObject.getEmail());
+                            + "trying to generate a reset token. Failing silently.",
+                    userObject.getEmail()));
             return;
         }
 
