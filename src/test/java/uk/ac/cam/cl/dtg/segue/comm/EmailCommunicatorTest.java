@@ -71,6 +71,7 @@ public class EmailCommunicatorTest {
         user = new RegisteredUser();
         user.setEmail("test@test.com");
         user.setGivenName("tester");
+        user.setResetToken("resetToken");
 
         // Create dummy email communicator
         emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
@@ -116,16 +117,6 @@ public class EmailCommunicatorTest {
             
                 });
 
-        EasyMock.expect(mockAuthenticator.createPasswordResetTokenForUser(user)).andAnswer(
-                new IAnswer<RegisteredUser>() {
-
-                    @Override
-                    public RegisteredUser answer() throws Throwable {
-                        user.setResetToken("resetToken");
-                        return user;
-                    }
-
-                });
 
         EasyMock.replay(mockAuthenticator);
     }
