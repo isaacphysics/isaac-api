@@ -64,6 +64,12 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
             throws IOException {
         StopWatch timer = (StopWatch) request.getAttribute("timer");
         request.removeAttribute("timer");
+        
+        if (null == timer) {
+            // no timer started don't continue
+            return;
+        }
+        
         timer.stop();
         long timeInMs = timer.getTime();
 
