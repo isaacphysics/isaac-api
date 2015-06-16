@@ -20,6 +20,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIV
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -225,12 +227,12 @@ public class UsersFacade extends AbstractSegueFacade {
                     "Error sending reset message.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        } catch (Exception e) {
+        } catch (SegueDatabaseException | InvalidKeySpecException | NoSuchAlgorithmException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error generate password reset token.", e);
+                    "Error generating password reset token.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        }
+        } 
     }
 
     /**
@@ -412,12 +414,12 @@ public class UsersFacade extends AbstractSegueFacade {
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error generate email verification token.", e);
+                    "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        }
+        } 
     }
 
     /**
