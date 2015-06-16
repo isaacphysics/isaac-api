@@ -1130,6 +1130,7 @@ public class UserManager {
      *            - the password reset token
      * @param userObject
      *            - the supplied user DO
+     * @return the user which has had the password reset.           
      * @throws InvalidTokenException
      *             - If the token provided is invalid.
      * @throws InvalidPasswordException
@@ -1164,9 +1165,10 @@ public class UserManager {
         user.setResetExpiry(null);
 
         // Save user
-        this.database.createOrUpdateUser(user);
-        log.info(String.format("Password Reset for user (%s) has completed successfully.", userObject.getDbId()));
-        return this.convertUserDOToUserDTO(user);
+        RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
+        log.info(String.format("Password Reset for user (%s) has completed successfully.", 
+                createOrUpdateUser.getDbId()));
+        return this.convertUserDOToUserDTO(createOrUpdateUser);
     }
 
     /**
