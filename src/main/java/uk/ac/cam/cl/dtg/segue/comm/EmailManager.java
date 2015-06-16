@@ -258,7 +258,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
         
         if (segueContent == null || !segueContent.getPublished()) {
-            log.debug("Federated password reset message not sent due to unpublished template!");
+            log.warn("Federated password reset message not sent due to unpublished template!");
             return;
         }
 
@@ -296,6 +296,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         ContentDTO c = contentVersionController.getContentManager().getContentById(
                 contentVersionController.getLiveVersion(), id);
 
+        if (null == c) {
+            log.warn(String.format("E-mail template %s does not exist!", id));
+            return null;
+        }
+        
         SeguePageDTO segueContentDTO = null;
 
         if (c instanceof SeguePageDTO) {
