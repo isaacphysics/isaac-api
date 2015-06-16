@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
@@ -147,7 +148,7 @@ public class EmailCommunicatorTest {
      * @throws CommunicationException
      */
     @Test
-    public final void testValidEmailRegistrationTemplate() {
+    public final void sendRegistrationConfirmation_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
         
         SeguePageDTO template = createDummyEmailTemplate("Hi, {{givenname}}."
                 + "\nThanks for registering!\nYour Isaac email address is: "
@@ -204,7 +205,7 @@ public class EmailCommunicatorTest {
      * @throws CommunicationException
      */
     @Test
-    public final void testFederatedEmailRegistrationTemplate() {
+    public final void sendFederatedPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
 
         SeguePageDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nYou requested a "
                 + "password reset. However you use {{providerString}} to log in to our site. You need"
@@ -264,7 +265,7 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
      * @throws CommunicationException
      */
     @Test
-    public final void testPasswordResetEmailTemplate() {
+    public final void sendPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
 
         SeguePageDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nA request has been "
                 + "made to reset the password for the account: </a href='mailto:{{email}}'>{{email}}<a>"
@@ -326,7 +327,7 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
      * @throws CommunicationException
      */
     @Test(expected = IllegalArgumentException.class)
-    public final void testInvalidEmailRegistrationTemplate() {
+    public final void sendRegistrationConfirmation_checkForInvalidTemplateTags_throwIllegalArgumentException() {
         SeguePageDTO template = createDummyEmailTemplate("Hi, {{givenname}} {{surname}}.\n"
                 + "Thanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
@@ -356,14 +357,13 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
             e.printStackTrace();
             Assert.fail();
         }
-
     }
 
     /**
      * Verify that the system responds correctly when there are fewer tags than expected in the email template.
      */
     @Test
-    public final void testTaglessTemplate() {
+    public final void sendRegistrationConfirmation_checkTemplatesWithNoTagsWorks_emailIsGeneratedWithoutTemplateContent() {
         SeguePageDTO template = createDummyEmailTemplate("this is a template with no tags");
 
         PropertiesLoader mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
@@ -419,6 +419,53 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
         assertNotNull(email);
         assertEquals("this is a template with no tags", email.getPlainTextMessage());
         System.out.println(email.getPlainTextMessage());
+    }
+    
+    
+    /**
+     * Make sure that when the templates are published:false, that the method reacts appropriately. 
+     */
+    @Test 
+    public void sendRegistrationConfirmation_checkNullContentDTO_exceptionThrownAndDealtWith(){
+        
+        try {
+            EasyMock.expect(
+                    mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
+                    .andReturn(null);
+
+            EasyMock.replay(mockContentManager);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
+                mockContentVersionController, mockAuthenticator);
+        try {
+            manager.sendRegistrationConfirmation(user);
+        } catch (ContentManagerException e) {
+            e.printStackTrace();
+            Assert.fail();
+        } catch (SegueDatabaseException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
+
+
+        // Wait for the emailQueue to spin up and send our message (if it exists)
+        int i = 0;
+        while (!capturedArgument.hasCaptured() && i < 5) {
+            try {
+                Thread.sleep(100);
+                i++;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Assert.fail();
+            }
+        }
+        // We expect there to be nothing captured because the content was not returned
+        assertFalse(capturedArgument.hasCaptured());
     }
  
 }
