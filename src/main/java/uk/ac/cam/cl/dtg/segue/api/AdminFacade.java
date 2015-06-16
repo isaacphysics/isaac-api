@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Collection;
@@ -155,7 +158,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/stats/users/last_locations")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response getLastLocations(@Context final HttpServletRequest request, @Context final Request requestForCaching) {
+    public Response getLastLocations(@Context final HttpServletRequest request,
+            @Context final Request requestForCaching) {
         try {
             if (!isUserStaff(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
@@ -881,6 +885,49 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+    /**
+     * Get current perf log for analytics purposes.
+     * 
+     * @param request
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @return Returns a location from an ip address
+     */
+    @GET
+    @Path("/view_perf_log")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
+                + File.separator + "logs" + File.separator + "perf.log"));) {
+            if (!isUserAnAdmin(httpServletRequest)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as staff to access this function.").toResponse();
+            }
+
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                
+                if (line.contains("callback")) {
+                    // strip out query params that are provided on callback urls for security.
+                    output.append(line.substring(0, line.indexOf("?")));
+                } else {
+                    output.append(line);    
+                }
+                output.append("\n");
+            }
+
+            return Response.ok(output.toString()).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable to read the log file requested", e).toResponse();
+        }
+    }
+    
     /**
      * Batch job to start ip address processing.
      * 
