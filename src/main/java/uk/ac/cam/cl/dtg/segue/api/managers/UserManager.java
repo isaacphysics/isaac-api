@@ -941,8 +941,8 @@ public class UserManager {
             // Fail silently
             log.error(
                     String.format("Unable to locate user with email (%s) while "
-                            + "trying to generate a reset token. Failing silently."),
-                    userObject == null ? "null email address" : userObject.getEmail());
+                            + "trying to generate a reset token. Failing silently.",
+                    userObject == null ? "null email address" : userObject.getEmail()));
 
             return;
         }
@@ -1513,6 +1513,7 @@ public class UserManager {
      *            - String representation of the provider requested
      * @return the FederatedAuthenticator object which can be used to get a user.
      * @throws AuthenticationProviderMappingException
+     *             if we are unable to locate the provider requested.
      */
     private IAuthenticator mapToProvider(final String provider) throws AuthenticationProviderMappingException {
         Validate.notEmpty(provider, "Provider name must not be empty or null if we are going "
