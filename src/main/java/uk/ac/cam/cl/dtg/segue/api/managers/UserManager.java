@@ -1108,7 +1108,7 @@ public class UserManager {
             return error.toResponse();
         }
 
-        if (user != null && user.getEmailVerified() != null && user.getEmailVerified() == true) {
+        if (user != null && user.getEmailVerified() != null && user.getEmailVerified()) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "This user has already been verified.");
             return error.toResponse();
