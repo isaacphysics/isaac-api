@@ -241,14 +241,14 @@ public class StatisticsManager {
         nonStaffUsers.addAll(teacherRole);
         nonStaffUsers.addAll(studentOrUnknownRole);
 
-        log.info("Calculating general stats - 3. Last seen map - teachers");
+        log.debug("Calculating general stats - 3. Last seen map - teachers");
 
         ib.put("activeTeachersLastWeek",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, sevenDays).size());
         ib.put("activeTeachersLastThirtyDays",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, thirtyDays).size());
 
-        log.info("Calculating general stats - 4. Last seen map - students");
+        log.debug("Calculating general stats - 4. Last seen map - students");
 
         ib.put("activeStudentsLastWeek",
                 "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenMap, sevenDays).size());
