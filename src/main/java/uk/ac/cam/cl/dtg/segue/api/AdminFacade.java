@@ -640,7 +640,8 @@ public class AdminFacade extends AbstractSegueFacade {
             List<RegisteredUserDTO> findUsers = this.userManager.findUsers(userPrototype);
 
             // Calculate the ETag
-            EntityTag etag = new EntityTag(findUsers.toString().hashCode() + userPrototype.toString().hashCode() + "");
+            EntityTag etag = new EntityTag(findUsers.size() + findUsers.toString().hashCode()
+                    + userPrototype.toString().hashCode() + "");
 
             Response cachedResponse = generateCachedResponse(request, etag);
             if (cachedResponse != null) {
