@@ -22,10 +22,8 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -63,11 +61,15 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
@@ -928,11 +930,9 @@ public class AdminFacade extends AbstractSegueFacade {
                     "Unable to read the log file requested", e).toResponse();
         }
     }
-    
+
     /**
-     * Batch job to start ip address processing.
-     * 
-     * Temporary endpoint for use once by admin user.
+     * Get current questionMetaData for analytics purposes.
      * 
      * @param request
      *            - request information used for caching.
@@ -940,57 +940,39 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - the request which may contain session information.
      * @return Returns a location from an ip address
      */
-    @POST
-    @Path("/create_geocode_history")
+    @GET
+    @Path("/download_meta_data")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response createHistory(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
-
+    public Response getMetaData(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try {
             if (!isUserAnAdmin(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
+                        "You must be logged in as staff to access this function.").toResponse();
             }
 
-            final Set<String> ipAddressesAlreadyGeoCoded = new HashSet<String>();
-            log.info("Starting batch processing job for historic geocoding data..");
-            final Set<String> allIpAddresses = super.getLogManager().getAllIpAddresses();
-            final int updateInterval = 15;
-            Thread generateLocationInfoJob = new Thread() {
-                @Override
-                public void run() {
-                    int i = 0;
-                    for (String ipAddress : allIpAddresses) {
-                        String ipAddressOfInterest = ipAddress.split(",")[0];
+            ResultsWrapper<ContentDTO> allByType = contentVersionController.getContentManager().getAllByTypeRegEx(
+                    contentVersionController.getLiveVersion(), ".*", 0, -1);
 
-                        if (!ipAddressesAlreadyGeoCoded.contains(ipAddressOfInterest)) {
-                            ipAddressesAlreadyGeoCoded.add(ipAddressOfInterest);
-                            if (i % updateInterval == 0) {
-                                log.info("Batch job processing: " + i + "/" + allIpAddresses.size() + " complete");
-                            }
+//            ResultsWrapper<ContentDTO> allByType = contentVersionController.getContentManager().getAllByType(
+//                    contentVersionController.getLiveVersion(), "isaac.*Question", 0, -1);
+            
+            List<ContentSummaryDTO> results = Lists.newArrayList();
+            for (ContentDTO c : allByType.getResults()) {
+                results.add(contentVersionController.getContentManager().extractContentSummary(c));
+            }
 
-                            try {
-                                locationManager.refreshLocation(ipAddressOfInterest);
-
-                            } catch (SegueDatabaseException | IOException e) {
-                                log.error("Failed to resolve ip address on batch run: " + ipAddressOfInterest, e);
-                            }
-                        }
-                        i++;
-                    }
-                    log.info("Batch processing complete.");
-
-                }
-            };
-            generateLocationInfoJob.setDaemon(true);
-            generateLocationInfoJob.start();
-
-            return Response.ok().build();
+            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<ContentSummaryDTO>(results,
+                    allByType.getTotalResults());
+            return Response.ok(toReturn).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read the log file requested", e)
+                    .toResponse();
         }
-    }
-
+    }   
+    
     /**
      * Is the current user an admin.
      * 

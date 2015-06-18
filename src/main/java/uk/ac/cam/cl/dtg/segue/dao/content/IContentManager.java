@@ -376,7 +376,24 @@ public interface IContentManager {
     ContentDTO populateRelatedContent(String version, ContentDTO contentDTO) throws ContentManagerException;
 
     /**
-     * Convenience method to convert content into a summarised version. 
+     * Allows us to find things by type (regex).
+     * @param version
+     *            - version of the content to search against.
+     * @param regex
+     *            - regex to search for.
+     * @param startIndex
+     *            - start index for results
+     * @param limit
+     *            - the maximum number of results to return -1 will attempt to return all results.
+     * @return ResultsWrapper of objects that match the id prefix.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
+    ResultsWrapper<ContentDTO> getAllByTypeRegEx(String version, String regex, int startIndex, int limit)
+            throws ContentManagerException;
+
+    /**
+     * Convenience method to convert content into a summarised version.
      * 
      * Note: This method does not attempt to generate the url property.
      *  

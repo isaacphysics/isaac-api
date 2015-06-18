@@ -111,7 +111,8 @@ public class GitContentManager implements IContentManager {
         this.tagsList = new ConcurrentHashMap<String, Set<String>>();
         this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
 
-        searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
+        searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
+                Constants.TYPE_FIELDNAME));
     }
 
     /**
@@ -180,6 +181,20 @@ public class GitContentManager implements IContentManager {
 
         ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
                 Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix, startIndex, limit);
+
+        List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+
+        return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+    }
+    
+    @Override
+    public ResultsWrapper<ContentDTO> getAllByTypeRegEx(final String version, final String regex, final int startIndex,
+            final int limit) throws ContentManagerException {
+
+        this.ensureCache(version);
+
+        ResultsWrapper<String> searchHits = this.searchProvider.findByRegEx(version, CONTENT_TYPE,
+                Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, regex, startIndex, limit);
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
