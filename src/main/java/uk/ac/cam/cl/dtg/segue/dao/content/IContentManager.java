@@ -373,7 +373,7 @@ public interface IContentManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    ContentDTO populateContentSummaries(String version, ContentDTO contentDTO) throws ContentManagerException;
+    ContentDTO populateRelatedContent(String version, ContentDTO contentDTO) throws ContentManagerException;
 
     /**
      * Convenience method to convert content into a summarised version. 

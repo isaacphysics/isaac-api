@@ -459,7 +459,7 @@ public class GitContentManager implements IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     @Override
-    public ContentDTO populateContentSummaries(final String version, final ContentDTO contentDTO)
+    public ContentDTO populateRelatedContent(final String version, final ContentDTO contentDTO)
             throws ContentManagerException {
         if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
             return contentDTO;

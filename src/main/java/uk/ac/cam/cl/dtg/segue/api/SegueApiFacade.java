@@ -1152,6 +1152,6 @@ public class SegueApiFacade extends AbstractSegueFacade {
      */
     public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
             throws ContentManagerException {
-        return this.contentVersionController.getContentManager().populateContentSummaries(version, contentToAugment);
+        return this.contentVersionController.getContentManager().populateRelatedContent(version, contentToAugment);
     }
 }
