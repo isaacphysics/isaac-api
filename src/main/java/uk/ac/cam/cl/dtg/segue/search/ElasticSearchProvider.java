@@ -56,6 +56,7 @@ import org.elasticsearch.index.query.PrefixQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeFilterBuilder;
+import org.elasticsearch.index.query.RegexpQueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -369,6 +370,18 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         return resultList;
     }
+    
+    @Override
+    public ResultsWrapper<String> findByRegEx(final String index, final String indexType, final String fieldname,
+            final String regex, final int startIndex, final int limit) {
+        ResultsWrapper<String> resultList;
+
+        RegexpQueryBuilder query = QueryBuilders.regexpQuery(fieldname, regex);
+
+        resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
+
+        return resultList;
+    }    
 
     /**
      * Utility method to convert sort instructions form external classes into something Elastic search can use.

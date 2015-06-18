@@ -269,6 +269,29 @@ public interface ISearchProvider {
      */
     ResultsWrapper<String> findByPrefix(String index, String indexType, String fieldname, String prefix,
             int startIndex, int limit);
+    
+    /**
+     * Find content by a regex.
+     * 
+     * Note: the fieldname specified must be be declared as a raw field (i.e. should be specified as unanalyzed). See
+     * {@link #registerRawStringFields(List)}
+     * 
+     * @param index
+     *            index that the content is stored in
+     * @param indexType
+     *            - type of index as registered with search provider.
+     * @param fieldname
+     *            - fieldName to search within.
+     * @param regex
+     *            - regex to search for.
+     * @param startIndex
+     *            - start index for results
+     * @param limit
+     *            - the maximum number of results to return -1 will attempt to return all results.
+     * @return A list of results that match the id prefix.
+     */
+    ResultsWrapper<String> findByRegEx(String index, String indexType, String fieldname, String regex, int startIndex,
+            int limit);    
 
     /**
      * Clear a specific index from the search providers cache.
