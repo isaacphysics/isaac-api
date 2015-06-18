@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dos;
+package uk.ac.cam.cl.dtg.isaac.dto;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.AnvilAppDTO;
 
 /**

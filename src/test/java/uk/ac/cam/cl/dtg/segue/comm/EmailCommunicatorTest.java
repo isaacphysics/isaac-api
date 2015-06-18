@@ -35,7 +35,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.MongoContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -53,7 +53,7 @@ public class EmailCommunicatorTest {
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
     private ContentVersionController mockContentVersionController;
-    private MongoContentManager mockContentManager;
+    private IContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
 
@@ -86,7 +86,7 @@ public class EmailCommunicatorTest {
         EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion").anyTimes();
 
         // Create content manager
-        mockContentManager = EasyMock.createMock(MongoContentManager.class);
+        mockContentManager = EasyMock.createMock(IContentManager.class);
 
         EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
         EasyMock.replay(mockContentVersionController);
@@ -375,7 +375,7 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
         EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion");
 
         // Create content manager
-        MongoContentManager mockContentManager = EasyMock.createMock(MongoContentManager.class);
+        IContentManager mockContentManager = EasyMock.createMock(IContentManager.class);
         try {
             EasyMock.expect(
                     mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))

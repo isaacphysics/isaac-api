@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos;
 
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacAnvilQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
