@@ -491,6 +491,18 @@ public class GitContentManager implements IContentManager {
         return contentDTO;
     }
 
+    @Override
+    public ContentSummaryDTO extractContentSummary(final ContentDTO content) {
+        if (null == content) {
+            return null;
+        }
+
+        // try auto-mapping
+        ContentSummaryDTO contentInfo = mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
+
+        return contentInfo;
+    }
+    
     /**
      * This method will send off the information in the git cache to the search provider for indexing.
      * 
