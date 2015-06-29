@@ -29,15 +29,15 @@ import java.util.Map;
 import org.elasticsearch.common.lang3.Validate;
 import org.postgresql.util.PGobject;
 
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.util.locations.Location;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.util.locations.Location;
 
 /**
  * @author sac92
@@ -257,5 +257,32 @@ public class PgLocationHistory implements LocationHistory {
 
         return new PgLocationEvent(results.getLong("id"), results.getString("ip_address"), location,
                 results.getTimestamp("created"), results.getTimestamp("last_lookup"));
+    }
+
+    @Override
+    public Map<String, LocationHistoryEvent> getLatestByIPAddresses(final Date fromDate, final Date toDate)
+            throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection()) {
+
+            PreparedStatement pst;
+            pst = conn.prepareStatement("Select * FROM ip_location_history "
+                    + "WHERE last_lookup BETWEEN ? AND ? AND is_current = ? ORDER BY last_lookup DESC");
+           
+            pst.setDate(1, new java.sql.Date(fromDate.getTime()));
+            pst.setDate(2, new java.sql.Date(toDate.getTime()));
+            pst.setBoolean(3, true);
+
+            ResultSet results = pst.executeQuery();
+            Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();
+
+            while (results.next()) {
+                PgLocationEvent buildPgLocationEntry = buildPgLocationEntry(results);
+                resultToReturn.put(buildPgLocationEntry.getIpAddress(), buildPgLocationEntry);
+            }
+
+            return resultToReturn;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
     }
 }

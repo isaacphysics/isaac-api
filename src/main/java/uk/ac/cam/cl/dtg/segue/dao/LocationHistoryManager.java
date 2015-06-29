@@ -184,14 +184,34 @@ public class LocationHistoryManager implements ILocationResolver {
     public Map<String, Location> getLocationsFromHistory(final Collection<String> ipAddresses)
             throws SegueDatabaseException {
 
-        Map<String, LocationHistoryEvent> latestByIPAddresses = dao.getLatestByIPAddresses(ipAddresses);
-        Map<String, Location> resultToReturn = Maps.newHashMap();
+        Map<String, LocationHistoryEvent> latestByIPAddresses = dao.getLatestByIPAddresses(ipAddresses);    
 
-        for (Entry<String, LocationHistoryEvent> e : latestByIPAddresses.entrySet()) {
+        return this.convertToIPLocationMap(latestByIPAddresses);
+    }
+    
+    /**
+     * @param fromDate - lower bound for inclusion in the results.
+     * @param toDate - upper bound for inclusion in the results.
+     * @return get the last locations and ip addresses by date range.
+     * @throws SegueDatabaseException if the database fails to retreive required information
+     */
+    public Map<String, Location> getLocationsByLastAccessDate(final Date fromDate, final Date toDate)
+            throws SegueDatabaseException {
+        return this.convertToIPLocationMap(dao.getLatestByIPAddresses(fromDate, toDate));
+    }
+    
+    /**
+     * @param toConvert the map to convert
+     * @return map of ip address to location
+     */
+    private Map<String, Location> convertToIPLocationMap(final Map<String, LocationHistoryEvent> toConvert) {
+        Map<String, Location> resultToReturn = Maps.newHashMap();
+        for (Entry<String, LocationHistoryEvent> e : toConvert.entrySet()) {
             resultToReturn.put(e.getKey(), e.getValue().getLocationInformation());
             locationCache.put(e.getKey(), e.getValue().getLocationInformation());
         }
-
+        
         return resultToReturn;
     }
+    
 }

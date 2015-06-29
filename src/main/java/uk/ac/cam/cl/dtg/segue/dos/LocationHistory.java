@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -92,4 +93,18 @@ public interface LocationHistory {
      */
     Map<String, LocationHistoryEvent> getLatestByIPAddresses(Collection<String> ipAddress)
             throws SegueDatabaseException;
+    
+    /**
+     * Utility method to get all locations lastAccessed between a certain date range.
+     * 
+     * @param fromDate
+     *            - to filter locations
+     * @param toDate
+     *            - to filter loctions
+     * @return Map of Ip address to location history event.
+     * @throws SegueDatabaseException
+     *             - if something goes wrong with the database.
+     */
+    Map<String, LocationHistoryEvent> getLatestByIPAddresses(Date fromDate, Date toDate)
+            throws SegueDatabaseException;    
 }

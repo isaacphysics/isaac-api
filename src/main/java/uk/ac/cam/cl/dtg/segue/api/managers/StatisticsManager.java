@@ -692,7 +692,8 @@ public class StatisticsManager {
             ipAddresses.add(e.getIpAddress().split(",")[0]);
         }
 
-        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsFromHistory(ipAddresses);
+        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(threshold,
+                new Date());
 
         result.addAll(locationsFromHistory.values());
 
