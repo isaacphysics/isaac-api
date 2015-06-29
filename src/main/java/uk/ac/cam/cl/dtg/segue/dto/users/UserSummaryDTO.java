@@ -130,4 +130,21 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     public void setAuthorisedFullAccess(final boolean authorisedFullAccess) {
         this.authorisedFullAccess = authorisedFullAccess;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("UserSummaryDTO [databaseId=");
+        builder.append(databaseId);
+        builder.append(", givenName=");
+        builder.append(givenName);
+        builder.append(", familyName=");
+        builder.append(familyName);
+        builder.append(", email=");
+        builder.append(email);
+        builder.append(", authorisedFullAccess=");
+        builder.append(authorisedFullAccess);
+        builder.append("]");
+        return builder.toString();
+    }
 }
