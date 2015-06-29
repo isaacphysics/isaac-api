@@ -295,7 +295,8 @@ public class GroupsFacade extends AbstractSegueFacade {
                     .getUsersInGroup(group));
 
             // Calculate the ETag based user id and groups they own
-            EntityTag etag = new EntityTag(group.getId().hashCode() + summarisedMemberInfo.toString().hashCode() + "");
+            EntityTag etag = new EntityTag(group.getId().hashCode() + summarisedMemberInfo.toString().hashCode()
+                    + summarisedMemberInfo.size() + "");
             Response cachedResponse = generateCachedResponse(cacheRequest, etag,
                     Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
@@ -423,7 +424,8 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{group_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteGroup(@Context final HttpServletRequest request, @PathParam("group_id") final String groupId) {
+    public Response deleteGroup(@Context final HttpServletRequest request, 
+            @PathParam("group_id") final String groupId) {
         if (null == groupId || groupId.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group name must be specified.").toResponse();
         }

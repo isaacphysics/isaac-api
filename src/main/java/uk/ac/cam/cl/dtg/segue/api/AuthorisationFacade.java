@@ -116,7 +116,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
-                    .build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
