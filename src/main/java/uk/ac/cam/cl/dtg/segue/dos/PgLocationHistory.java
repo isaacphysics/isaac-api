@@ -266,11 +266,10 @@ public class PgLocationHistory implements LocationHistory {
 
             PreparedStatement pst;
             pst = conn.prepareStatement("Select * FROM ip_location_history "
-                    + "WHERE last_lookup BETWEEN ? AND ? AND is_current = ? ORDER BY last_lookup DESC");
+                    + "WHERE last_lookup BETWEEN ? AND ? AND is_current = TRUE ORDER BY last_lookup DESC");
            
             pst.setDate(1, new java.sql.Date(fromDate.getTime()));
             pst.setDate(2, new java.sql.Date(toDate.getTime()));
-            pst.setBoolean(3, true);
 
             ResultSet results = pst.executeQuery();
             Map<String, LocationHistoryEvent> resultToReturn = Maps.newHashMap();

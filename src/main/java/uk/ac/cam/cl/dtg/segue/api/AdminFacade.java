@@ -921,7 +921,8 @@ public class AdminFacade extends AbstractSegueFacade {
                 }
                 output.append("\n");
             }
-
+            log.info(String.format("User (%s) has accessed the perf logs.",
+                    userManager.getCurrentRegisteredUser(httpServletRequest).getEmail()));
             return Response.ok(output.toString()).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -946,16 +947,13 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getMetaData(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try {
-            if (!isUserAnAdmin(httpServletRequest)) {
+            if (!isUserStaff(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
             }
 
             ResultsWrapper<ContentDTO> allByType = contentVersionController.getContentManager().getAllByTypeRegEx(
                     contentVersionController.getLiveVersion(), ".*", 0, -1);
-
-//            ResultsWrapper<ContentDTO> allByType = contentVersionController.getContentManager().getAllByType(
-//                    contentVersionController.getLiveVersion(), "isaac.*Question", 0, -1);
             
             List<ContentSummaryDTO> results = Lists.newArrayList();
             for (ContentDTO c : allByType.getResults()) {

@@ -682,15 +682,6 @@ public class StatisticsManager {
         }
 
         Set<Location> result = Sets.newHashSet();
-        Collection<String> ipAddresses = Lists.newArrayList();
-
-        for (LogEvent e : logManager.getLastLogForAllUsers().values()) {
-            if (e.getTimestamp().before(threshold) || e.getIpAddress() == null) {
-                continue;
-            }
-
-            ipAddresses.add(e.getIpAddress().split(",")[0]);
-        }
 
         Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(threshold,
                 new Date());
