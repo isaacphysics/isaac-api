@@ -15,13 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
+import io.swagger.jaxrs.config.BeanConfig;
+
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.ws.rs.core.Application;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
@@ -38,6 +37,13 @@ import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * This class registers the resteasy handlers. The name is important since it is used as a String in
@@ -48,12 +54,19 @@ import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
  */
 public class IsaacApplicationRegister extends Application {
     private Set<Object> singletons;
-
+    
+    private final Injector injector;
+    
     /**
      * Default constructor.
      */
     public IsaacApplicationRegister() {
         singletons = new HashSet<Object>();
+
+        injector = Guice.createInjector(new SchoolLookupConfigurationModule(),
+                new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+        
+        setupSwaggerApiAdvertiser();
     }
 
     @Override
@@ -61,9 +74,6 @@ public class IsaacApplicationRegister extends Application {
         // check to see if we have already registered singletons as we don't want this happening more than once.
         if (singletons.isEmpty()) {
             // Registers segue singleton endpoints as /isaac/segue/api
-            Injector injector = Guice.createInjector(new SchoolLookupConfigurationModule(),
-                    new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
-
             // invoke optional service initialisation
             this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
 
@@ -86,10 +96,34 @@ public class IsaacApplicationRegister extends Application {
     @Override
     public final Set<Class<?>> getClasses() {
         Set<Class<?>> result = new HashSet<Class<?>>();
-        // result.add(IsaacController.class);
         result.add(APIOverviewResource.class);
+        
         result.add(RestEasyJacksonConfiguration.class);
         result.add(PerformanceMonitor.class);
+        
+        result.add(io.swagger.jaxrs.listing.ApiListingResource.class);
+        result.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+        
         return result;
+    }
+    
+    /**
+     * Configure and setup Swagger (advertises api endpoints via app_root/swagger.json).
+     */
+    private void setupSwaggerApiAdvertiser() {
+        PropertiesLoader propertiesLoader = injector.getInstance(PropertiesLoader.class);
+        String proxyPath = propertiesLoader.getProperty(PROXY_PATH);
+        
+        BeanConfig beanConfig = new BeanConfig();
+        beanConfig.setVersion(propertiesLoader.getProperty(SEGUE_APP_VERSION));
+        
+        if (!proxyPath.equals("/")) {
+            beanConfig.setBasePath(proxyPath + "/api");
+        } else {
+            beanConfig.setBasePath("/api");    
+        }
+        
+        beanConfig.setResourcePackage("uk.ac.cam.cl.dtg");
+        beanConfig.setScan(true);        
     }
 }

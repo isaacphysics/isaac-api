@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import io.swagger.annotations.Api;
+
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,6 +52,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * @author Stephen Cummins
  */
 @Path("/auth")
+@Api(value = "/auth")
 public class AuthenticationFacade extends AbstractSegueFacade {
 
     private final UserManager userManager;

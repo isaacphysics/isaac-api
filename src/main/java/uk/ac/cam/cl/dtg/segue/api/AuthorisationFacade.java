@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import io.swagger.annotations.Api;
 
 import java.util.List;
 
@@ -64,6 +65,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * @author Stephen Cummins
  */
 @Path("/authorisations")
+@Api(value = "/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
     private final UserManager userManager;
     private final UserAssociationManager associationManager;

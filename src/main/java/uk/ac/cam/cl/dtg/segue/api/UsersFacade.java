@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
+import io.swagger.annotations.Api;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -86,6 +87,7 @@ import com.google.inject.Inject;
  * 
  */
 @Path("/")
+@Api(value = "/users")
 public class UsersFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
     private final UserManager userManager;

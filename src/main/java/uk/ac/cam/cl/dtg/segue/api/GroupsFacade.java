@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import io.swagger.annotations.Api;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -63,6 +64,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * @author Stephen Cummins
  */
 @Path("/groups")
+@Api(value = "/groups")
 public class GroupsFacade extends AbstractSegueFacade {
     private final UserManager userManager;
 

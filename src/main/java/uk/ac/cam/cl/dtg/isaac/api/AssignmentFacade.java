@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import io.swagger.annotations.Api;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,6 +76,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/assignments")
+@Api(value = "/assignments")
 public class AssignmentFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 

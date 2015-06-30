@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import io.swagger.annotations.Api;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -83,6 +85,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 @Path("/admin")
+@Api(value = "/admin")
 public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 

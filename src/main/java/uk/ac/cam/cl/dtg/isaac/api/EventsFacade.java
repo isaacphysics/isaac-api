@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import io.swagger.annotations.Api;
+
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -67,6 +69,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * Games boards Facade.
  */
 @Path("/events")
+@Api(value = "/events")
 public class EventsFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(EventsFacade.class);
 

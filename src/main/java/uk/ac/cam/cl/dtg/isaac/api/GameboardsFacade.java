@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+import io.swagger.annotations.Api;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,6 +79,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
  * Games boards Facade.
  */
 @Path("/")
+@Api(value = "/gameboards")
 public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserManager userManager;

@@ -53,7 +53,6 @@ import com.google.inject.Singleton;
  * 
  */
 public class IsaacGuiceConfigurationModule extends AbstractModule {
-
     private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
 
     private static SegueApiFacade segueApi = null;
@@ -67,7 +66,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      * Creates a new isaac guice configuration module.
      */
     public IsaacGuiceConfigurationModule() {
-
+        
     }
 
     @Override

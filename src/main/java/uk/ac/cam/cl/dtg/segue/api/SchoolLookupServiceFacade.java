@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import io.swagger.annotations.Api;
+
 import java.util.List;
 
 import javax.ws.rs.GET;
@@ -41,6 +43,7 @@ import com.google.inject.Inject;
  * 
  */
 @Path("/schools")
+@Api(value = "/schools")
 public class SchoolLookupServiceFacade {
     private static final Logger log = LoggerFactory.getLogger(SchoolLookupServiceFacade.class);
 

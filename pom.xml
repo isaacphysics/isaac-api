@@ -10,10 +10,12 @@
 
 	<properties>
 		<segue.version>1.3.11-SNAPSHOT</segue.version>
-		<resteasy.version>3.0.6.Final</resteasy.version>
+		<resteasy.version>3.0.11.Final</resteasy.version>
 		<log4j.version>1.2.17</log4j.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<powermock.version>1.5.2</powermock.version>
+		<postgresql.version>9.3-1102-jdbc41</postgresql.version>
+		<swagger-ui-version>2.1.0</swagger-ui-version>
 	</properties>
 	<repositories>
 		<repository>
@@ -31,8 +33,17 @@
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.0.1</version>
 			<scope>provided</scope>
+		</dependency> 
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>jaxrs-api</artifactId>
+			<version>${resteasy.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>${resteasy.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
@@ -47,25 +58,23 @@
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-multipart-provider</artifactId>
 			<version>${resteasy.version}</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>resteasy-jaxrs</artifactId>
-					<groupId>org.jboss.resteasy</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-cache-core</artifactId>
+			<artifactId>resteasy-guice</artifactId>
 			<version>${resteasy.version}</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>jaxrs-api</artifactId>
-					<groupId>org.jboss.resteasy</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
-
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.inject.extensions</groupId>
+			<artifactId>guice-multibindings</artifactId>
+			<version>3.0</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
@@ -77,17 +86,13 @@
 			<artifactId>orika-core</artifactId>
 			<version>1.4.5</version>
 		</dependency>
-
-		<dependency>
-			<groupId>com.google.inject.extensions</groupId>
-			<artifactId>guice-multibindings</artifactId>
-			<version>3.0</version>
-		</dependency>
+		
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>11.0.1</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client</artifactId>
@@ -104,6 +109,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		
 		<dependency>
 			<groupId>com.google.http-client</groupId>
 			<artifactId>google-http-client-jackson2</artifactId>
@@ -120,18 +126,27 @@
 			<artifactId>twitter4j-core</artifactId>
 			<version>4.0.2</version>
 		</dependency>
-
-		<dependency>
-			<groupId>com.google.inject</groupId>
-			<artifactId>guice</artifactId>
-			<version>3.0</version>
-		</dependency>
 		
 		<dependency>
 		    <groupId>org.reflections</groupId>
 		    <artifactId>reflections</artifactId>
-		    <version>0.9.9-RC1</version>
-		</dependency>		
+		    <version>0.9.10</version>
+		</dependency>
+		<dependency>		
+		  <groupId>io.swagger</groupId>
+		  <artifactId>swagger-jaxrs</artifactId>
+		  <version>1.5.0</version>
+		  <exclusions>
+		    <exclusion>
+    		  <artifactId>reflections</artifactId>
+		      <groupId>org.reflections</groupId>
+		    </exclusion>
+		    <exclusion>
+    		      <artifactId>jsr311-api</artifactId>
+		      <groupId>javax.ws.rs</groupId>
+		    </exclusion>		    
+    		  </exclusions>
+		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
@@ -167,6 +182,7 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
@@ -181,8 +197,9 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>9.3-1102-jdbc41</version>
+			<version>${postgresql.version}</version>
 		</dependency>
+		
 		<dependency>
 		    <groupId>org.apache.tomcat</groupId>
 		    <artifactId>tomcat-jdbc</artifactId>
@@ -215,6 +232,31 @@
 	<build>
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
+
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/src/main/webapp/api-docs</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/src/main/webapp/api-docs</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>          
+     
+      		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -242,6 +284,7 @@
 					</configuration>
 				</configuration>
 			</plugin>
+			
 		</plugins>
 		<resources>
 		</resources>

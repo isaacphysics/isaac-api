@@ -15,6 +15,33 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_ID_LOG_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.GLOBAL_SITE_SEARCH;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.MAX_PODS_TO_RETURN;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_FRAGMENT_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_ID_LOG_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.POD_FRAGMENT_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_ID_LOG_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_USER_PROGRESS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,9 +96,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-
 /**
  * Isaac Controller
  * 
@@ -80,6 +104,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
  * 
  */
 @Path("/")
+@Api(value = "/")
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
@@ -148,6 +173,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Path("pages/concepts")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
+    @ApiOperation(value = "Gets the list of concept pages")
     public final Response getConceptList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,

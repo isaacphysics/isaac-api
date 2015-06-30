@@ -27,9 +27,12 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHEC
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import io.swagger.annotations.Api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,6 +105,7 @@ import com.google.inject.Inject;
  * 
  */
 @Path("/")
+@Api(value = "/")
 public class SegueApiFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueApiFacade.class);
 
@@ -204,6 +208,20 @@ public class SegueApiFacade extends AbstractSegueFacade {
         this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
         return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+    }
+    
+    /**
+     * Redirect to swagger ui.
+     * 
+     * @return a redirect to a page listing the available endpoints.
+     * @throws URISyntaxException - should never happen as hard coded.
+     */
+    @GET
+    @Path("/")
+    @Produces(MediaType.TEXT_HTML)
+    @Cache
+    public Response redirectToSwagger() throws URISyntaxException {
+        return Response.temporaryRedirect(new URI("./api-docs/")).build();
     }
 
     /**
