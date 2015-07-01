@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_ONE_DAY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_TEN_MINUTES;
@@ -25,9 +27,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_VERSION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import io.swagger.annotations.Api;
+import io.swagger.jaxrs.config.BeanConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -212,7 +216,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
     
     /**
      * Redirect to swagger ui.
-     * 
+     * @param request - context
      * @return a redirect to a page listing the available endpoints.
      * @throws URISyntaxException - should never happen as hard coded.
      */
@@ -220,8 +224,21 @@ public class SegueApiFacade extends AbstractSegueFacade {
     @Path("/")
     @Produces(MediaType.TEXT_HTML)
     @Cache
-    public Response redirectToSwagger() throws URISyntaxException {
-        return Response.temporaryRedirect(new URI("./api-docs/")).build();
+    public Response redirectToSwagger(@Context final HttpServletRequest request) throws URISyntaxException {
+        String hostname = getProperties().getProperty(HOST_NAME);
+        String proxyPath = getProperties().getProperty(PROXY_PATH);
+        StringBuilder uri = new StringBuilder();
+
+        if (proxyPath.equals("")) {
+            uri.append("https://");
+            uri.append(hostname);
+            uri.append("/api-docs/");
+        } else {
+            uri.append(hostname);
+            uri.append("/api-docs/");
+        }
+
+        return Response.temporaryRedirect(new URI(uri.toString())).build();
     }
 
     /**

@@ -96,7 +96,6 @@ public class IsaacApplicationRegister extends Application {
     @Override
     public final Set<Class<?>> getClasses() {
         Set<Class<?>> result = new HashSet<Class<?>>();
-        result.add(APIOverviewResource.class);
         
         result.add(RestEasyJacksonConfiguration.class);
         result.add(PerformanceMonitor.class);
@@ -117,10 +116,13 @@ public class IsaacApplicationRegister extends Application {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion(propertiesLoader.getProperty(SEGUE_APP_VERSION));
         
-        if (!proxyPath.equals("/")) {
+        if (!proxyPath.equals("")) {
             beanConfig.setBasePath(proxyPath + "/api");
+            beanConfig.setHost(propertiesLoader.getProperty(HOST_NAME).substring(0,
+                    propertiesLoader.getProperty(HOST_NAME).indexOf('/')));
         } else {
             beanConfig.setBasePath("/api");    
+            beanConfig.setHost(propertiesLoader.getProperty(HOST_NAME));
         }
         
         beanConfig.setResourcePackage("uk.ac.cam.cl.dtg");
