@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -49,7 +48,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class EmailCommunicatorTest {
     private EmailCommunicator emailCommunicator;
     private RegisteredUser user;
-    private static final Logger log = LoggerFactory.getLogger(APIOverviewResource.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailCommunicatorTest.class);
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
     private ContentVersionController mockContentVersionController;

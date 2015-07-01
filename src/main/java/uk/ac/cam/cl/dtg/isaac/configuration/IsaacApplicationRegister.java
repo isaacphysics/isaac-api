@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.ws.rs.core.Application;
 
-import uk.ac.cam.cl.dtg.isaac.api.APIOverviewResource;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
