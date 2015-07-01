@@ -17,21 +17,19 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_ONE_DAY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_TEN_MINUTES;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_THIRTY_DAY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTACT_US_FORM_USED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_VERSION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import io.swagger.annotations.Api;
-import io.swagger.jaxrs.config.BeanConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -138,11 +136,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
      * @param questionManager
      *            - A question manager object responsible for managing questions and augmenting questions with user
      *            information.
-<<<<<<< HEAD
      * @param emailManager
-=======
-     * @param communicator
->>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
      *            - An implementation of ICommunicator for sending communiques
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
