@@ -252,8 +252,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error ocurred while trying to retrieve all event booking information.";
+            log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+                    errorMsg).toResponse();
         }
     }
 
@@ -286,8 +288,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (ResourceNotFoundException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "The booking you requested does not exist.").toResponse();
         } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error ocurred while trying to retrieve all event booking information.";
+            log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+                    errorMsg).toResponse();
         }
     }
 
@@ -364,8 +368,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error ocurred while trying to book a user onto an event.";
+            log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+                    errorMsg).toResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the user requested").toResponse();
         } catch (ContentManagerException e) {
@@ -408,8 +414,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error ocurred while trying to delete an event booking.";
+            log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Database error ocurred while trying to retrieve all event booking information.").toResponse();
+                    errorMsg).toResponse();            
         }
     }
 }
