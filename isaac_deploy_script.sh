@@ -48,7 +48,7 @@ sudo chown -R tomcat8 $ISAAC_APP_DEPLOY_FOLDER
 sudo chgrp -R tomcat8 $ISAAC_APP_DEPLOY_FOLDER
 
 echo "Polling api to trigger reindex operation."
-wget --spider http://localhost:8080/isaac-api/api
+wget --spider http://localhost:8080/isaac-api/api-docs
 
 echo "Starting apache."
 sudo systemctl start apache2
