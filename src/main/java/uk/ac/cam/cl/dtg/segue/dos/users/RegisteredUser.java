@@ -222,7 +222,11 @@ public class RegisteredUser extends AbstractSegueUser {
      *            the email to set
      */
     public final void setEmail(final String email) {
-        this.email = email.trim();
+        if (email != null) {
+            this.email = email.trim();
+        } else {
+            this.email = email;    
+        }
     }
 
     /**

@@ -776,8 +776,11 @@ public class UserManager {
         Validate.isTrue(user.getDbId() == null || user.getDbId().isEmpty(),
                 "When creating a new user the user id must not be set.");
 
+        if (this.findUserByEmail(user.getEmail()) != null) {
+            throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
+        
         RegisteredUser userToSave = null;
-
         MapperFacade mapper = this.dtoMapper;
 
         // We want to map to DTO first to make sure that the user cannot
@@ -789,7 +792,6 @@ public class UserManager {
 
         // default role is unset
         userToSave.setRole(null);
-
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
 
@@ -868,6 +870,11 @@ public class UserManager {
         RegisteredUser existingUser = this.findUserById(user.getDbId());
         userToSave = existingUser;
 
+        // Check that the user isn't trying to take an existing users e-mail.
+        if (this.findUserByEmail(user.getEmail()) != null && !existingUser.getEmail().equals(user.getEmail())) {
+            throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
+        
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
 
         mergeMapper.map(userDTOContainingUpdates, userToSave);
@@ -879,7 +886,7 @@ public class UserManager {
         if (user.getRole() == null && existingUser.getRole() != null) {
             userToSave.setRole(null);
         }
-
+        
         this.checkForSeguePasswordChange(user, userToSave);
 
         // Before save we should validate the user for mandatory fields.

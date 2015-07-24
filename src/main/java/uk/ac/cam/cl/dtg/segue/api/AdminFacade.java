@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -641,8 +642,17 @@ public class AdminFacade extends AbstractSegueFacade {
             if (null != schoolOther) {
                 userPrototype.setSchoolOther(schoolOther);
             }
-
-            List<RegisteredUserDTO> findUsers = this.userManager.findUsers(userPrototype);
+            List<RegisteredUserDTO> findUsers;
+            
+            if (null != email && !email.isEmpty()) {
+                try {
+                    findUsers = Arrays.asList(this.userManager.getUserDTOByEmail(email));
+                } catch (NoUserException e) {
+                    findUsers = Lists.newArrayList();
+                }
+            } else {
+                findUsers = this.userManager.findUsers(userPrototype);
+            }
 
             // Calculate the ETag
             EntityTag etag = new EntityTag(findUsers.size() + findUsers.toString().hashCode()

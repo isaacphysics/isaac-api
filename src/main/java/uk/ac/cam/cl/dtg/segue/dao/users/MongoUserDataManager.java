@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.Validate;
 import org.bson.types.ObjectId;
@@ -50,6 +51,7 @@ import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
+import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 
 /**
@@ -198,9 +200,21 @@ public class MongoUserDataManager implements IUserDataManager {
             // Do database query using plain mongodb so we only have to read
             // from
             // the database once.
-            RegisteredUser user = jc.findOne(new BasicDBObject(Constants.LOCAL_AUTH_EMAIL_FIELDNAME, email.trim()));
-
-            return user;
+            DBObject emailLookupQuery = new BasicDBObject();
+            emailLookupQuery.put(Constants.LOCAL_AUTH_EMAIL_FIELDNAME,
+                    Pattern.compile(String.format(".*%s.*", email.trim()), Pattern.CASE_INSENSITIVE));
+            
+            DBCursor<RegisteredUser> users = jc.find(emailLookupQuery);
+            
+            if (users.size() > 1) {
+                log.error("Multiple users exist with the same e-mail address (ignoring case): " + email
+                        + ". Picking the first account arbitrarily.");
+            }
+            if (users.size() == 0) {
+                return null;
+            }
+            
+            return users.toArray().get(0);
         } catch (MongoException e) {
             String errorMessage = "MongoDB encountered an exception "
                     + "while attempting to find a user account by email address.";
