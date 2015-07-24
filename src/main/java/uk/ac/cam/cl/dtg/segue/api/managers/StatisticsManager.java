@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -389,7 +390,7 @@ public class StatisticsManager {
                 }
             }
 
-        } catch (SegueDatabaseException e) {
+        } catch (SegueDatabaseException | IOException e) {
             log.error("Segue database error during school frequency calculation", e);
         }
 
@@ -415,7 +416,13 @@ public class StatisticsManager {
 
         List<RegisteredUserDTO> users = Lists.newArrayList();
 
-        School s = schoolManager.findSchoolById(schoolId);
+        School s;
+        try {
+            s = schoolManager.findSchoolById(schoolId);
+        } catch (IOException e) {
+            log.error("Unable to locate school based on id.", e);
+            throw new ResourceNotFoundException("Unable to locate school based on id.");
+        }
 
         if (null == s) {
             throw new ResourceNotFoundException("The school with the id provided cannot be found.");

@@ -17,14 +17,21 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import io.swagger.annotations.Api;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.annotations.GZIP;
@@ -66,6 +73,10 @@ public class SchoolLookupServiceFacade {
     /**
      * Rest Endpoint that will return you a list of schools based on the query you provide.
      * 
+     * @param request
+     *            - for caching purposes.
+     * @param schoolURN
+     *            - find by urn.
      * @param searchQuery
      *            - query to search fields against.
      * @return A response containing a list of school objects or a SegueErrorResponse.
@@ -74,20 +85,43 @@ public class SchoolLookupServiceFacade {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response schoolSearch(@QueryParam("query") final String searchQuery) {
-        if (null == searchQuery || searchQuery.isEmpty()) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query").toResponse();
-        }
+    public Response schoolSearch(@Context final Request request, @QueryParam("query") final String searchQuery,
+            @QueryParam("urn") final String schoolURN) {
 
+        if ((null == searchQuery || searchQuery.isEmpty()) && (null == schoolURN || schoolURN.isEmpty())) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query or school URN")
+                    .toResponse();
+        }
+        
+        EntityTag etag = new EntityTag(schoolListReader.getDataLastModifiedDate().hashCode() + "");
+        ResponseBuilder rb = request.evaluatePreconditions(etag);
+
+        CacheControl cc = new CacheControl();
+        cc.setMaxAge(Constants.CACHE_FOR_ONE_WEEK);
+        
+        // If ETag matches the rb will be non-null;
+        if (rb != null) {
+            // Use the rb to return the response without any further processing
+            log.debug("This school info is unchanged. Serving empty request with etag.");
+
+            return rb.cacheControl(cc).tag(etag).build();
+        }
+        
         List<School> list;
         try {
-            list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);
-        } catch (UnableToIndexSchoolsException e) {
+            
+            if (schoolURN != null && !schoolURN.isEmpty()) {
+                list = Arrays.asList(schoolListReader.findSchoolById(schoolURN));
+            } else {
+                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);    
+            }
+            
+        } catch (UnableToIndexSchoolsException | IOException e) {
             String message = "Unable to create / access the index of schools for the schools service.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message, e).toResponse();
         }
 
-        return Response.ok(list).build();
+        return Response.ok(list).tag(etag).cacheControl(cc).build();
     }
 }

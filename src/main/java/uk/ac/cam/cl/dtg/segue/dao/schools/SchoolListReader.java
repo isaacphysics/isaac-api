@@ -15,16 +15,30 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.schools;
 
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,14 +47,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-import static com.google.common.collect.Maps.*;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -57,6 +63,8 @@ public class SchoolListReader {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    private final Date dataSourceModificationDate;
+    
     /**
      * SchoolListReader constructor.
      * 
@@ -70,6 +78,11 @@ public class SchoolListReader {
             final ISearchProvider searchProvider) {
         this.fileToLoad = filename;
         this.searchProvider = searchProvider;
+        
+        searchProvider.registerRawStringFields(Arrays.asList(SCHOOL_URN_FIELDNAME.toLowerCase()));
+        
+        File dataSource = new File(fileToLoad);
+        dataSourceModificationDate = new Date(dataSource.lastModified());
     }
 
     /**
@@ -108,26 +121,36 @@ public class SchoolListReader {
     /**
      * Find school by Id.
      * 
-     * @param schoolId
+     * @param schoolURN
      *            - to search for.
      * @return school.
      * @throws UnableToIndexSchoolsException
      *             - if we cannot complete the indexing process
+     * @throws IOException
+     *             - If we cannot read the school data
+     * @throws JsonMappingException
+     *             - if we cannot map to the school class.
+     * @throws JsonParseException
+     *             - if the school data is malformed
      */
-    public School findSchoolById(final String schoolId) throws UnableToIndexSchoolsException {
-        List<School> matchingSchoolList;
-        matchingSchoolList = this.findSchoolByNameOrPostCode(schoolId);
+    public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
+            JsonMappingException, IOException {
+        List<String> matchingSchoolList;
+        
+        matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
+                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, schoolURN, 0,
+                DEFAULT_RESULTS_LIMIT).getResults();
+
         if (matchingSchoolList.isEmpty()) {
             return null;
         }
-
-        for (School school : matchingSchoolList) {
-            if (school.getUrn().equals(schoolId)) {
-                return school;
-            }
+        
+        if (matchingSchoolList.size() > 1) {
+            log.error("Error occurred while trying to look a school up by id... Found more than one match for "
+                    + schoolURN + " results: " + matchingSchoolList);
         }
 
-        return null;
+        return mapper.readValue(matchingSchoolList.get(0), School.class);
     }
 
     /**
@@ -264,5 +287,14 @@ public class SchoolListReader {
         }
 
         return schools;
+    }
+    
+    /**
+     * Method to help determine freshness of data.
+     * @return date when the data source was last modified.
+     */
+    public Date getDataLastModifiedDate() {
+        
+        return this.dataSourceModificationDate;
     }
 }

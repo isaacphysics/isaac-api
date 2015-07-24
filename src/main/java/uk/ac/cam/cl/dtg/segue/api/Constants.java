@@ -356,6 +356,7 @@ public final class Constants {
     public static final int CACHE_FOR_FIVE_MINUTES = 18000;
     public static final int CACHE_FOR_TEN_MINUTES = 36000;
     public static final int CACHE_FOR_ONE_DAY = 86400;
+    public static final int CACHE_FOR_ONE_WEEK = 604800;
     public static final int CACHE_FOR_THIRTY_DAY = 2592000;
     public static final int ANONYMOUS_SESSION_DURATION_IN_MINUTES = 40;
     public static final int NEVER_CACHE_WITHOUT_ETAG_CHECK = 0;
