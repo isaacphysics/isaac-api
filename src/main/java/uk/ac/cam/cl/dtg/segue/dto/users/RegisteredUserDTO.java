@@ -105,7 +105,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param emailVerificationToken
      *            the emailVerificationToken to set
      */
-    public void setEmailVerificationToken(String emailVerificationToken) {
+    public void setEmailVerificationToken(final String emailVerificationToken) {
         this.emailVerificationToken = emailVerificationToken;
     }
 
@@ -120,7 +120,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param emailVerificationExpiryDate
      *            the emailVerificationExpiryDate to set
      */
-    public void setEmailVerificationExpiryDate(Date emailVerificationExpiryDate) {
+    public void setEmailVerificationExpiryDate(final Date emailVerificationExpiryDate) {
         this.emailVerificationExpiryDate = emailVerificationExpiryDate;
     }
 
@@ -135,7 +135,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param emailVerified
      *            the emailVerified to set
      */
-    public void setEmailVerified(Boolean emailVerified) {
+    public void setEmailVerified(final Boolean emailVerified) {
         this.emailVerified = emailVerified;
     }
 
