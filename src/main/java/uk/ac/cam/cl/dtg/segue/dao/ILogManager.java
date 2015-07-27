@@ -64,8 +64,10 @@ public interface ILogManager {
     void logInternalEvent(AbstractSegueUserDTO user, String eventType, Object eventDetails);
 
     /**
-     * This method will endeavour to find all log events for a given anonymous user and reassign ownership to a
+     * This method will endeavour to find all log events for a given user and reassign ownership to a
      * registered user.
+     * 
+     * It assumes that the new userId is a registered user of the system and not anonymous.
      * 
      * @param oldUserId
      *            - the id of the old anonymous user
