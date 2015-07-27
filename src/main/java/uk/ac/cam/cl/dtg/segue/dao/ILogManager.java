@@ -67,14 +67,12 @@ public interface ILogManager {
      * This method will endeavour to find all log events for a given anonymous user and reassign ownership to a
      * registered user.
      * 
-     * This will also result in an event being created.
-     * 
      * @param oldUserId
      *            - the id of the old anonymous user
      * @param newUserId
      *            - the user object of the newly registered user.
      */
-    void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId);
+    void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId);
 
     /**
      * To enable some simple analytics we provide a way to query logs by event type.

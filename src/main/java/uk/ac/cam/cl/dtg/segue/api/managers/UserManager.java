@@ -2085,7 +2085,7 @@ public class UserManager {
         Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = anonymousUser
                 .getTemporaryQuestionAttempts();
 
-        this.logManager.transferLogEventsToNewRegisteredUser(anonymousUser.getSessionId(), registeredUser.getDbId());
+        this.logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), registeredUser.getDbId());
 
         if (anonymouslyAnsweredQuestions.isEmpty()) {
             return;

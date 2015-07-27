@@ -132,7 +132,7 @@ public class MongoLogManager implements ILogManager {
     }
 
     @Override
-    public void transferLogEventsToNewRegisteredUser(final String oldUserId, final String newUserId) {
+    public void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId) {
         Validate.notBlank(oldUserId);
         Validate.notNull(newUserId);
 
@@ -153,13 +153,6 @@ public class MongoLogManager implements ILogManager {
 
         if (result.getError() != null) {
             log.error("Error while trying to reassign anonymous user log events to registered user.");
-        }
-
-        try {
-            this.persistLogEvent(newUserId, null, "USER_REGISTRATION", ImmutableMap.of("anonymousUserId", oldUserId),
-                    null);
-        } catch (JsonProcessingException e) {
-            log.error("Unable to serialize json for merge event.", e);
         }
     }
 
@@ -460,7 +453,7 @@ public class MongoLogManager implements ILogManager {
                 log.error("Error during log operation: " + result.getError());
             }
         } catch (MongoException e) {
-            log.error("MongoDb exception while trying to log a user event.");
+            log.error("MongoDb exception while trying to log a user event.", e);
         }
     }
 
