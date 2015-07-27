@@ -74,7 +74,8 @@ public class StatisticsManager {
     private SchoolListReader schoolManager;
     private ContentVersionController versionManager;
     private IContentManager contentManager;
-
+    private GroupManager groupManager;
+    
     private Cache<String, Object> statsCache;
     private LocationHistoryManager locationHistoryManager;
 
@@ -83,6 +84,7 @@ public class StatisticsManager {
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int STATS_EVICTION_INTERVAL_MINUTES = 10;
+    
 
     /**
      * StatisticsManager.
@@ -98,11 +100,15 @@ public class StatisticsManager {
      * @param contentManager
      *            - to query content
      * @param locationHistoryManager
+     *            - so that we can query our location database (ip addresses)
+     * @param groupManager
+     *            - so that we can see how many groups we have site wide.
      */
     @Inject
     public StatisticsManager(final UserManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final IContentManager contentManager, final LocationHistoryManager locationHistoryManager) {
+            final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
+            final GroupManager groupManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
@@ -111,6 +117,7 @@ public class StatisticsManager {
         this.contentManager = contentManager;
 
         this.locationHistoryManager = locationHistoryManager;
+        this.groupManager = groupManager;
 
         this.statsCache = CacheBuilder.newBuilder().expireAfterWrite(STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
                 .<String, Object> build();
@@ -280,6 +287,9 @@ public class StatisticsManager {
                 ""
                         + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenUserMapQuestions,
                                 thirtyDays).size());
+        
+        ib.put("groupCount", groupManager.getGroupCount());
+        
         Map<String, Object> result = ib.build();
 
         this.statsCache.put(GENERAL_STATS, result);

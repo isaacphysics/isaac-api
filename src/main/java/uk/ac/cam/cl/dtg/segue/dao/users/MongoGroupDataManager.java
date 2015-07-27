@@ -121,6 +121,11 @@ public class MongoGroupDataManager implements IUserGroupDataManager {
 
         return result.toArray();
     }
+    
+    @Override
+    public Long getGroupCount() {
+        return getGroupCollection().count();
+    }
 
     @Override
     public UserGroup findById(final String groupId) {

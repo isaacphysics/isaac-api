@@ -253,6 +253,13 @@ public class GroupManager {
         List<UserGroupDTO> groups = this.getGroupMembershipList(user);
         return groups.contains(group);
     }
+    
+    /**
+     * @return the total number of groups stored in the database.
+     */
+    public Long getGroupCount() {
+        return groupDatabase.getGroupCount();
+    }
 
     /**
      * @param group

@@ -121,4 +121,10 @@ public interface IUserGroupDataManager {
      */
     Collection<UserGroup> getGroupMembershipList(String userId) throws SegueDatabaseException;
 
+    /**
+     * Useful for getting the number of groups in the database.
+     * @return the total number of groups
+     */
+    Long getGroupCount();
+
 }
