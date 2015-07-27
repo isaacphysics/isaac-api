@@ -68,6 +68,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -827,6 +828,8 @@ public class UserManager {
         // save the user
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
 
+        logManager.logInternalEvent(this.convertUserDOToUserDTO(userToReturn), Constants.USER_REGISTRATION,
+                ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         this.createSession(request, response, userToReturn);
 
@@ -1718,6 +1721,12 @@ public class UserManager {
                 log.error("Failed to retreive user even though we " + "just put it in the database.");
                 throw new NoUserException();
             }
+
+            logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation),
+                    Constants.USER_REGISTRATION,
+                    ImmutableMap.builder().put("provider", federatedAuthenticator.getAuthenticationProvider().name())
+                            .build());
+
         } else {
             log.error("Returning user detected" + localUserInformation.getDbId()
                     + " unable to create a new segue user.");
