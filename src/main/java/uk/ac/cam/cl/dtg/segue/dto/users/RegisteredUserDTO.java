@@ -21,6 +21,7 @@ import java.util.List;
 import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
@@ -56,7 +57,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     private String emailVerificationToken;
     private Date emailVerificationExpiryDate;
-    private Boolean emailVerified;
+    private EmailVerificationStatus emailVerificationStatus;
 
     /**
      * Full constructor for the User object.
@@ -122,21 +123,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     public void setEmailVerificationExpiryDate(final Date emailVerificationExpiryDate) {
         this.emailVerificationExpiryDate = emailVerificationExpiryDate;
-    }
-
-    /**
-     * @return the emailVerified
-     */
-    public Boolean isEmailVerified() {
-        return emailVerified;
-    }
-
-    /**
-     * @param emailVerified
-     *            the emailVerified to set
-     */
-    public void setEmailVerified(final Boolean emailVerified) {
-        this.emailVerified = emailVerified;
     }
 
     /**
@@ -224,6 +210,24 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     public void setEmail(final String email) {
         this.email = email;
+    }
+    
+    /**
+     * Gets the verification status.
+     * 
+     * @return the verification status
+     */
+    public EmailVerificationStatus getEmailVerificationStatus(){
+        return emailVerificationStatus;
+    }
+    
+    /**
+     * Sets the verification status.
+     * 
+     * @param status
+     */
+    public void setEmailVerificationStatus(final EmailVerificationStatus status){
+        this.emailVerificationStatus = status;
     }
 
     /**
