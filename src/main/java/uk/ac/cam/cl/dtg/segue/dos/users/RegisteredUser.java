@@ -52,7 +52,7 @@ public class RegisteredUser extends AbstractSegueUser {
 
     private String emailVerificationToken;
     private Date emailVerificationTokenExpiry;
-    private Boolean emailVerified;
+    private EmailVerificationStatus emailVerificationStatus;
 
     private Date lastUpdated;
     private Date lastSeen;
@@ -120,22 +120,22 @@ public class RegisteredUser extends AbstractSegueUser {
         this.lastUpdated = lastUpdated;
         this.emailVerificationToken = emailVerificationToken;
         this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
-        this.emailVerified = emailVerified;
+        this.emailVerificationStatus = emailVerificationStatus;
     }
 
     /**
      * @return the emailVerified
      */
-    public Boolean getEmailVerified() {
-        return emailVerified;
+    public EmailVerificationStatus getEmailVerificationStatus() {
+        return emailVerificationStatus;
     }
 
     /**
-     * @param emailVerified
+     * @param status
      *            - sets whether email has been verified
      */
-    public void setEmailVerified(final Boolean emailVerified) {
-        this.emailVerified = emailVerified;
+    public void setEmailVerified(final EmailVerificationStatus status) {
+        this.emailVerificationStatus = status;
     }
 
     /**

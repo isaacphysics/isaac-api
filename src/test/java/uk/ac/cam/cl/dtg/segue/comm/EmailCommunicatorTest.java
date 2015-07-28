@@ -177,8 +177,12 @@ public class EmailCommunicatorTest {
             Assert.fail();
         }
 
-        final String expectedMessage = "Hi, tester.\nThanks for registering!\nYour Isaac email address is: "
+        final String expectedMessagePlainText = "Hi, tester.\nThanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:test@test.com'>test@test.com<a>.\n" + "address</a>\nIsaac Physics Project";
+        
+        final String expectedMessageHTML = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Isaac Physics project</title></head><body>"
+                + "Hi, tester.<br>Thanks for registering!<br>Your Isaac email address is: "
+                + "</a href='mailto:test@test.com'>test@test.com<a>.<br>" + "address</a><br>Isaac Physics Project</body></html>";
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -193,9 +197,9 @@ public class EmailCommunicatorTest {
         }
         email = capturedArgument.getValue();
         assertNotNull(email);
-        assertEquals(expectedMessage, email.getPlainTextMessage());
+        assertEquals(expectedMessagePlainText, email.getPlainTextMessage());
+        assertEquals(expectedMessageHTML, email.getHTMLMessage());
         System.out.println(email.getPlainTextMessage());
-
     }
 
     /**

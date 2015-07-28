@@ -431,11 +431,11 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
-    @POST
+    @GET
     @Path("users/verifyemail/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validatePasswordResetRequest(@PathParam("token") final String token) {
+    public Response validateEmailVerificationRequest(@PathParam("token") final String token) {
         return userManager.processEmailVerification(token);
     }
 

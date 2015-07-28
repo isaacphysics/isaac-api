@@ -70,7 +70,7 @@ public class PropertiesLoader {
         String value = loadedProperties.getProperty(key);
 
         if (null == value) {
-            log.warn("Failed to resolve requested property with key: " + key);
+            log.warn("Failed to resolve requested property with key: " + key + ", " + propertiesFile);
         }
 
         return value;

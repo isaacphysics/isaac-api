@@ -100,6 +100,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
@@ -426,8 +427,15 @@ public class UserManager {
 
         // get the current user based on their session id information.
         RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
-        if (null != currentUser) {
-            return Response.ok(currentUser).build();
+
+        if (null != currentUser){
+            if (currentUser.getEmailVerificationStatus().allowedToLogin()) {
+                return Response.ok(currentUser).build();
+            } else {
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,  "You must verify your email "
+                        + "address before logging in.");
+                return error.toResponse();
+            }
         }
 
         IAuthenticator authenticator;
@@ -818,9 +826,10 @@ public class UserManager {
             log.error("Creation of email verification token failed: " + e1.getMessage());
         }
 
-        // send an email confirmation
+        //Send an email confirmation and set up verification
         try {
             emailManager.sendRegistrationConfirmation(userToSave);
+            userToSave.setEmailVerified(EmailVerificationStatus.NOT_VERIFIED);
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         }
@@ -1012,7 +1021,7 @@ public class UserManager {
             return;
         }
 
-        // User is valid and authenticated locally, proceed with reset
+        // User is valid and authenticated locally, proceed with verification
         // Generate token
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
@@ -1114,20 +1123,33 @@ public class UserManager {
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
-            log.error(String.format("Recieved an invalid email token request"));
+            log.error(String.format("Invalid email token request"));
             return error.toResponse();
         }
 
-        if (user != null && user.getEmailVerified() != null && user.getEmailVerified()) {
+        if (user != null && user.getEmailVerificationStatus() != null 
+                                        && user.getEmailVerificationStatus().allowedToLogin()) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "This user has already been verified.");
+                    "Email already verified.");
             return error.toResponse();
         } else if (authenticator.isValidEmailVerificationToken(token, user)) {
-            user.setEmailVerified(true);
-            return Response.ok().build();
+            user.setEmailVerified(EmailVerificationStatus.VERIFIED);
+            
+            // Save user
+            try {
+                RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
+                log.info(String.format("Email verification for user (%s) has completed successfully.", 
+                        createOrUpdateUser.getDbId()));
+                return Response.ok().build();
+            } catch (SegueDatabaseException e) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                        "There was an error processing your request.");
+                log.error(String.format("Could not persist to database"));
+                return error.toResponse();
+            }
         } else {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The token is either invalid or has expired.");
+                    "Token invalid or expired.");
             log.debug(String.format("Recieved an invalid email token request"));
             return error.toResponse();
         }
@@ -1377,7 +1399,7 @@ public class UserManager {
             IAuthenticator federatedAuthenticator = mapToProvider(provider);
 
             // if we are an OAuthProvider redirect to the provider
-            // authorization url.
+            // authorisation URL.
             URI redirectLink = null;
             if (federatedAuthenticator instanceof IOAuth2Authenticator) {
                 IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
