@@ -18,33 +18,60 @@ package uk.ac.cam.cl.dtg.segue.dos;
 import java.util.Date;
 
 /**
- * @author sac92
- *
+ * This interface represents a record of a specific notification having been shown to a user.
+ * 
  */
 public interface UserNotification {
-    
-    public enum NotificationStatus {DISMISSED, POSTPONED, DISABLED}
-    
+
     /**
-     * @return
+     * Represents the status of a notification.
+     */
+    public enum NotificationStatus {
+        DISMISSED, POSTPONED, DISABLED
+    }
+
+    /**
+     * @return the user id.
      */
     String getUserId();
-    
+
     /**
-     * @return
+     * @return the notification id
      */
     String getContentNotificationId();
 
+    /**
+     * @param userId
+     *            the user id to set
+     */
     void setUserId(String userId);
 
+    /**
+     * @param status
+     *            the status to set
+     */
     void setStatus(NotificationStatus status);
 
+    /**
+     * @return the status of this notification
+     */
     NotificationStatus getStatus();
 
+    /**
+     * @param contentNotificationid
+     *            the notification id
+     */
     void setContentNotificationid(String contentNotificationid);
-    
+
+    /**
+     * @return the date the record of the notification response was created.
+     */
     Date getCreated();
 
+    /**
+     * @param created
+     *            the date this was created.
+     */
     void setCreated(Date created);
-    
+
 }

@@ -22,9 +22,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
@@ -34,16 +31,19 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.UserNotification.NotificationStatus;
 
 /**
- * @author sac92
+ * Represents a postgres specific implementation of the UserNotifications DAO interface.
  *
  */
 public class PgUserNotifications implements UserNotifications {
     private final PostgresSqlDb database;
 
-    private static final Logger log = LoggerFactory.getLogger(PgUserNotifications.class);
+    // private static final Logger log = LoggerFactory.getLogger(PgUserNotifications.class);
 
     /**
      * PgUserNotifications.
+     * 
+     * @param database
+     *            - the postgres client.
      */
     @Inject
     public PgUserNotifications(final PostgresSqlDb database) {
@@ -95,18 +95,18 @@ public class PgUserNotifications implements UserNotifications {
     public void saveUserNotification(final String userId, final String notificationId, final NotificationStatus status)
             throws SegueDatabaseException {
         UserNotification notification = new PgUserNotification(userId, notificationId, status, new Date());
-        
+
         if (this.getNotificationRecord(userId, notificationId) == null) {
-            insertNewNotificationRecord(notification);    
+            insertNewNotificationRecord(notification);
         } else {
-            updateNotificationRecord(notification);    
+            updateNotificationRecord(notification);
         }
     }
 
     /**
-     * @param result
-     * @return
-     * @throws SQLException
+     * @param result - the sql result set to be extracted.
+     * @return a UserNotification object.
+     * @throws SQLException - if bad things happen
      */
     private UserNotification buildPgUserNotifications(final ResultSet result) throws SQLException {
         return new PgUserNotification(result.getString("user_id"), result.getString("notification_id"),
@@ -114,15 +114,17 @@ public class PgUserNotifications implements UserNotifications {
     }
 
     /**
-     * @param notification
-     * @throws SegueDatabaseException
+     * @param notification - the notification to insert.
+     * @throws SegueDatabaseException - if it fails.
      */
     private void insertNewNotificationRecord(final UserNotification notification) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
 
             pst = conn
-                    .prepareStatement("INSERT INTO user_notifications (user_id, notification_id, status, created) VALUES (?, ?, ?, ?)");
+                    .prepareStatement("INSERT INTO user_notifications "
+                            + "(user_id, notification_id, status, created) "
+                            + "VALUES (?, ?, ?, ?)");
 
             pst.setString(1, notification.getUserId());
             pst.setString(2, notification.getContentNotificationId());
@@ -139,15 +141,17 @@ public class PgUserNotifications implements UserNotifications {
     }
 
     /**
-     * @param notification
-     * @throws SegueDatabaseException
+     * @param notification - the notification to update.
+     * @throws SegueDatabaseException - if it fails.
      */
     private void updateNotificationRecord(final UserNotification notification) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
 
             pst = conn
-                    .prepareStatement("UPDATE user_notifications SET status = ?, created=? WHERE user_id = ? AND notification_id = ?");
+                    .prepareStatement("UPDATE user_notifications "
+                            + "SET status = ?, created=? "
+                            + "WHERE user_id = ? AND notification_id = ?");
 
             pst.setString(1, notification.getStatus().name());
             pst.setTimestamp(2, new java.sql.Timestamp(notification.getCreated().getTime()));
@@ -164,10 +168,10 @@ public class PgUserNotifications implements UserNotifications {
     }
 
     /**
-     * @param userId
-     * @param contentId
-     * @return
-     * @throws SegueDatabaseException
+     * @param userId - user id
+     * @param contentId - the notification id
+     * @return the notification record or null.
+     * @throws SegueDatabaseException - if bad things happen
      */
     private UserNotification getNotificationRecord(final String userId, final String contentId)
             throws SegueDatabaseException {
@@ -176,7 +180,7 @@ public class PgUserNotifications implements UserNotifications {
             pst = conn.prepareStatement("Select * FROM user_notifications WHERE user_id = ? AND notification_id = ?");
             pst.setString(1, userId);
             pst.setString(2, contentId);
-            
+
             ResultSet results = pst.executeQuery();
             List<UserNotification> listOfResults = Lists.newArrayList();
             while (results.next()) {

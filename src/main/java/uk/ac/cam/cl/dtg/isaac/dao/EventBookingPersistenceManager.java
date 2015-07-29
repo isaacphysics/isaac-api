@@ -203,7 +203,7 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * @param toConvert
+     * @param toConvert - the list of event bookings to convert to DTOs.
      * @return list of converted dtos
      * @throws SegueDatabaseException
      *             - if an error occurs.

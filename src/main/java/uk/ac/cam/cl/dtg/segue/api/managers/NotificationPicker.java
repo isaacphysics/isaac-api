@@ -41,17 +41,18 @@ import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
- * @author sac92
+ * This class is responsible for selecting notifications from various sources so that users can be told about them.
  *
  */
 public class NotificationPicker {
     private PgUserNotifications notifications;
     private ContentVersionController contentVersionController;
-    
 
-    
     /**
-     * @param cvc
+     * @param contentVersionController
+     *            - so we can lookup notifications created in the segue content system.
+     * @param notifications
+     *            - the DAO allowing the recording of which notifications have been shown to whom.
      */
     @Inject
     public NotificationPicker(final ContentVersionController contentVersionController,
@@ -61,10 +62,15 @@ public class NotificationPicker {
     }
 
     /**
+     * getAvailableNotificationsForUser.
+     * 
      * @param user
-     * @return
+     *            to select notifications for.
+     * @return the list of content to show to the user.
      * @throws ContentManagerException
-     * @throws SegueDatabaseException 
+     *             - if something goes wrong looking up the content.
+     * @throws SegueDatabaseException
+     *             - if something goes wrong consulting the personalisation database.
      */
     public List<ContentDTO> getAvailableNotificationsForUser(final RegisteredUserDTO user)
             throws ContentManagerException, SegueDatabaseException {
@@ -76,16 +82,16 @@ public class NotificationPicker {
 
         fieldsToMatch.put(immutableEntry(BooleanOperator.AND, Constants.TYPE_FIELDNAME), newArrayList);
 
-        ResultsWrapper<ContentDTO> allContentNotifications = contentVersionController.getContentManager().findByFieldNames(
-                contentVersionController.getLiveVersion(), fieldsToMatch, 0, -1);
-        
-        Map<String, UserNotification> listOfRecordedNotifications = getListOfRecordedNotifications(user);
-        
+        ResultsWrapper<ContentDTO> allContentNotifications = contentVersionController.getContentManager()
+                .findByFieldNames(contentVersionController.getLiveVersion(), fieldsToMatch, 0, -1);
+
+        Map<String, UserNotification> listOfRecordedNotifications = getMapOfRecordedNotifications(user);
+
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
-        
+
         for (ContentDTO c : allContentNotifications.getResults()) {
             UserNotification record = listOfRecordedNotifications.get(c.getId());
-            
+
             if (null == record) {
                 resultsToReturn.add(c);
             } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
@@ -98,25 +104,29 @@ public class NotificationPicker {
                 }
             }
         }
-        
+
         return resultsToReturn;
     }
 
     /**
+     * getListOfRecordedNotifications.
+     * 
      * @param user
-     * @return
+     *            - to lookup the notification history for.
+     * @return a map of NotificationId --> UserNotificationRecord.
      * @throws SegueDatabaseException
+     *             - if something goes wrong with the DB io step.
      */
-    public Map<String, UserNotification> getListOfRecordedNotifications(final RegisteredUserDTO user)
+    public Map<String, UserNotification> getMapOfRecordedNotifications(final RegisteredUserDTO user)
             throws SegueDatabaseException {
         Map<String, UserNotification> result = Maps.newHashMap();
-        
+
         List<UserNotification> userNotifications = notifications.getUserNotifications(user.getDbId());
-        
+
         for (UserNotification recordedNotification : userNotifications) {
             result.put(recordedNotification.getContentNotificationId(), recordedNotification);
         }
-        
+
         return result;
     }
 
@@ -125,30 +135,37 @@ public class NotificationPicker {
      * 
      * @param user
      *            - that the notification pertains to.
-     * @param action
-     *            - the action the user has taken - e.g. dismissed, postponed, disabled
+     * @param notificationId
+     *            - the id of the notification
+     * @param status
+     *            - the status of the notification e.g. dismissed, postponed, disabled
      * @throws SegueDatabaseException
-     * @throws ContentManagerException 
+     *             - if something goes wrong with the DB io step.
+     * @throws ContentManagerException
+     *             - if something goes wrong looking up the content.
      */
-    public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId, final NotificationStatus status)
-            throws SegueDatabaseException, ContentManagerException {
+    public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId,
+            final NotificationStatus status) throws SegueDatabaseException, ContentManagerException {
         ContentDTO notification = contentVersionController.getContentManager().getContentById(
                 contentVersionController.getLiveVersion(), notificationId);
-        
+
         if (null == notification) {
             throw new ResourceNotFoundException(String.format(
                     "The resource with id: %s and type Notification could not be found.", notificationId));
         }
-        
+
         // update the users record with the action they have taken.
         notifications.saveUserNotification(user.getDbId(), notificationId, status);
     }
 
     /**
-     * @param notificationId
-     * @return
-     * @throws ContentManagerException
+     * getNotificationById.
+     * @param notificationId - the id of the notification.
+     * @return get the notification content dto.
      * @throws ResourceNotFoundException
+     *             - if we can't find the item of interest.
+     * @throws ContentManagerException
+     *             - if something goes wrong looking up the content.
      */
     public ContentDTO getNotificationById(final String notificationId) throws ContentManagerException,
             ResourceNotFoundException {

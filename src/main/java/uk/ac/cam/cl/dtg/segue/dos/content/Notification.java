@@ -15,54 +15,26 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import java.util.List;
-import java.util.Set;
-
-import uk.ac.cam.cl.dtg.segue.dto.content.MediaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
 
 /**
- * @author sac92
+ * Notification. This class represents a special content type which can be used to pop up a modal to users on the site.
+ * 
  */
 @JsonContentType("notification")
 @DTOMapping(NotificationDTO.class)
 public class Notification extends Content {
     private ExternalReference externalReference;
-    
-    /**
-     * @param _id
-     * @param id
-     * @param title
-     * @param subtitle
-     * @param type
-     * @param author
-     * @param encoding
-     * @param canonicalSourceFile
-     * @param layout
-     * @param children
-     * @param value
-     * @param attribution
-     * @param relatedContent
-     * @param published
-     * @param tags
-     * @param level
-     */
-    public Notification(final String _id, final String id, final String title, final String subtitle, final String type, final String author,
-            final String encoding, final String canonicalSourceFile, final String layout, final List<ContentBase> children, final String value,
-            final String attribution, final List<String> relatedContent, final Boolean published, final Set<String> tags, final Integer level) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, tags, level);
-    }
 
     /**
-     * @param value
+     * @param value - of the content
      */
     public Notification(final String value) {
         super(value);
     }
 
     /**
-     * 
+     * Default constructor.
      */
     public Notification() {
 
@@ -70,6 +42,7 @@ public class Notification extends Content {
 
     /**
      * Gets the externalReference.
+     * 
      * @return the externalReference
      */
     public ExternalReference getExternalReference() {
@@ -78,7 +51,9 @@ public class Notification extends Content {
 
     /**
      * Sets the externalReference.
-     * @param externalReference the externalReference to set
+     * 
+     * @param externalReference
+     *            the externalReference to set
      */
     public void setExternalReference(final ExternalReference externalReference) {
         this.externalReference = externalReference;

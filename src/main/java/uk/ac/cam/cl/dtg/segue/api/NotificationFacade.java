@@ -51,8 +51,9 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
- * @author sac92
- *
+ * This facade is to support the sending of notifications to lots of users. 
+ * 
+ * Currently we support sending something like a user study participation request to all users.
  */
 @Path("/notifications")
 @Api(value = "/notifications")
@@ -63,10 +64,16 @@ public class NotificationFacade extends AbstractSegueFacade {
     private UserManager userManager;
 
     /**
+     * NotificationFacade.
+     * 
      * @param properties
      *            - loader
      * @param logManager
      *            - log management
+     * @param userManager
+     *            - so we can look up user information.
+     * @param notificationPicker
+     *            - so we can identify which notifications are relevant.
      */
     @Inject
     public NotificationFacade(final PropertiesLoader properties, final ILogManager logManager,
@@ -77,13 +84,15 @@ public class NotificationFacade extends AbstractSegueFacade {
     }
 
     /**
+     * @param request
+     *            - for user lookup.
      * @return gets the list of all outstanding notifications.
      */
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets any notifications - e.g. user study requests / achievements etc.")
+    @ApiOperation(value = "Gets any notifications for the current user - e.g. user study requests / achievements etc.")
     public Response getMyNotifications(@Context final HttpServletRequest request) {
         try {
             List<ContentDTO> listOfNotifications;
@@ -105,15 +114,25 @@ public class NotificationFacade extends AbstractSegueFacade {
     }
 
     /**
+     * getNotificationById.
+     * 
+     * @param request
+     *            - for user lookup.
+     * @param notificationId
+     *            - the id of interest.
      * @return a notification by id
      */
     @GET
     @Path("/{notification_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Gets any notifications - e.g. user study requests / achievements etc.")
+    @ApiOperation(value = "Gets a notification by id - e.g. user study requests / achievements etc.")
     public Response getNotificationById(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId) {
+        if (!userManager.isRegisteredUserLoggedIn(request)) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
         try {
             ContentDTO notificationById = notificationPicker.getNotificationById(notificationId);
             return Response.ok(notificationById).build();
@@ -129,29 +148,41 @@ public class NotificationFacade extends AbstractSegueFacade {
     /**
      * updateNotificationStatus.
      * 
+     * @param request
+     *            - for user lookup.
+     * @param notificationId
+     *            - the id of interest.
+     * @param responseFromUser
+     *            - the response from the user.
      * @return success or error.
      */
     @POST
     @Path("/{notification_id}/{response_from_user}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    @ApiOperation(value = "Allow users to respond to a notification")
+    @ApiOperation(value = "Allow users to respond to a notification with either: DISMISSED, POSTPONED or DISABLED")
     public Response updateNotificationStatus(@Context final HttpServletRequest request,
             @PathParam("notification_id") final String notificationId,
-            @PathParam("response_from_user") final NotificationStatus responseFromUser) {
+            @PathParam("response_from_user") final String responseFromUser) {
         RegisteredUserDTO user;
-
+        
         try {
+            NotificationStatus responseToSave = NotificationStatus.valueOf(responseFromUser.toUpperCase());
             user = this.userManager.getCurrentRegisteredUser(request);
-            this.notificationPicker.recordNotificationAction(user, notificationId, responseFromUser);
+            this.notificationPicker.recordNotificationAction(user, notificationId, responseToSave);
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ResourceNotFoundException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("The requested notification doesn't exist.");
         } catch (SegueDatabaseException e) {
             log.error("Database Error", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Internal Database Error", e).toResponse();
         } catch (ContentManagerException e) {
             log.error("Content Error", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Content Manager Error", e).toResponse();
+        } catch (IllegalArgumentException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Illegal response: Must be either: DISMISSED, POSTPONED or DISABLED").toResponse();
         }
 
         return Response.noContent().build();

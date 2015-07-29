@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dos;
 import java.util.Date;
 
 /**
- * @author sac92
  *
  */
 public class PgUserNotification implements UserNotification {
@@ -34,10 +33,12 @@ public class PgUserNotification implements UserNotification {
 
     }
 
+
     /**
-     * @param userId
-     * @param contentNotificationid
-     * @param status
+     * @param userId - of the user who has responded
+     * @param contentNotificationid - notification id.
+     * @param status - status of the notification
+     * @param created - date the entry was made.
      */
     public PgUserNotification(final String userId, final String contentNotificationid, final NotificationStatus status,
             final Date created) {

@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
-import java.util.List;
-import java.util.Set;
-
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 
 /**
@@ -25,34 +22,9 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
  */
 public class NotificationDTO extends ContentDTO {
     private ExternalReference externalReference;
-    
-    /**
-     * @param _id
-     * @param id
-     * @param title
-     * @param subtitle
-     * @param type
-     * @param author
-     * @param encoding
-     * @param canonicalSourceFile
-     * @param layout
-     * @param children
-     * @param value
-     * @param attribution
-     * @param relatedContent
-     * @param published
-     * @param tags
-     * @param level
-     */
-    public NotificationDTO(final String _id, final String id, final String title, final String subtitle, final String type, final String author,
-            final String encoding, final String canonicalSourceFile, final String layout, final List<ContentBaseDTO> children, final String value,
-            final String attribution, final List<ContentSummaryDTO> relatedContent, final Boolean published, final Set<String> tags, final Integer level) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
-                attribution, relatedContent, published, tags, level);
-    }
 
     /**
-     * @param value
+     * @param value for the value field
      */
     public NotificationDTO(final String value) {
         super(value);
@@ -67,6 +39,7 @@ public class NotificationDTO extends ContentDTO {
 
     /**
      * Gets the externalReference.
+     * 
      * @return the externalReference
      */
     public ExternalReference getExternalReference() {
@@ -75,7 +48,9 @@ public class NotificationDTO extends ContentDTO {
 
     /**
      * Sets the externalReference.
-     * @param externalReference the externalReference to set
+     * 
+     * @param externalReference
+     *            the externalReference to set
      */
     public void setExternalReference(final ExternalReference externalReference) {
         this.externalReference = externalReference;
