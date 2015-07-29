@@ -102,6 +102,20 @@ ALTER SEQUENCE ip_location_history_id_seq OWNED BY ip_location_history.id;
 
 
 --
+-- Name: user_notifications; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE user_notifications (
+    user_id text NOT NULL,
+    notification_id text NOT NULL,
+    status text,
+    created timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE user_notifications OWNER TO rutherford;
+
+--
 -- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
@@ -113,6 +127,14 @@ ALTER TABLE ONLY event_bookings ALTER COLUMN id SET DEFAULT nextval('event_booki
 --
 
 ALTER TABLE ONLY ip_location_history ALTER COLUMN id SET DEFAULT nextval('ip_location_history_id_seq'::regclass);
+
+
+--
+-- Name: composite key; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_notifications
+    ADD CONSTRAINT "composite key" PRIMARY KEY (user_id, notification_id);
 
 
 --
