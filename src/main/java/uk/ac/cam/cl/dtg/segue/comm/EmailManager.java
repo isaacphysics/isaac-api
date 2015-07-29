@@ -181,7 +181,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return;
         }
 
-        String verificationURL = String.format("https://%s/verifyemail/%s", globalProperties.getProperty(HOST_NAME),
+        String verificationURL = String.format("https://%s/verifyemail/%s/%s/%s", 
+                globalProperties.getProperty(HOST_NAME), 
+                user.getDbId(),
+                user.getEmail(),
                 user.getEmailVerificationToken());
 
         Properties p = new Properties();
@@ -232,7 +235,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return;
         }
 
-        String verificationURL = String.format("https://%s/verifyemail/%s", globalProperties.getProperty(HOST_NAME),
+        String verificationURL = String.format("https://%s/verifyemail/%s/%s/%s", 
+                globalProperties.getProperty(HOST_NAME), 
+                user.getDbId(),
+                user.getEmail(),
                 user.getEmailVerificationToken());
 
         Properties p = new Properties();
@@ -253,6 +259,54 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
             htmlTemplateProperties.put("email", user.getEmail());
             
+            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        }
+
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
+                segueContent.getTitle(), plainTextMessage, htmlMessage);
+        this.addToQueue(e);
+    }
+    
+    /**
+     * Sends notification for email change using email_verification_change template. 
+     * 
+     * @param user
+     *            - user object used to complete template
+     * @param newUser
+     *            - new user object used to complete template          
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEmailVerificationChange(final RegisteredUser user, final RegisteredUser newUser) 
+            throws ContentManagerException, 
+                                                                                SegueDatabaseException {
+
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-verification-change");
+        
+        if (segueContent == null) {
+            log.debug("Email change message not sent as segue content was null!");
+            return;
+        }
+
+        Properties p = new Properties();
+        p.put("givenname", user.getGivenName());
+        p.put("requestedemail", newUser.getEmail());
+        p.put("sig", sig);
+        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+        
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        
+        String htmlMessage = null;
+        
+        if (null == htmlTemplate) {
+            log.debug("HTML email template could not be found!");
+        } else {
+            Properties htmlTemplateProperties = new Properties();
+            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+            htmlTemplateProperties.put("email", user.getEmail());
+
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
@@ -345,5 +399,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         return segueContentDTO;
     }
+
+
+
 
 }

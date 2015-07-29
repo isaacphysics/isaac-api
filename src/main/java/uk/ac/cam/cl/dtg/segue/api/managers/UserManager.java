@@ -428,14 +428,8 @@ public class UserManager {
         // get the current user based on their session id information.
         RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
 
-        if (null != currentUser){
-            if (currentUser.getEmailVerificationStatus().allowedToLogin()) {
-                return Response.ok(currentUser).build();
-            } else {
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,  "You must verify your email "
-                        + "address before logging in.");
-                return error.toResponse();
-            }
+        if (null != currentUser) {
+            return Response.ok(currentUser).build();
         }
 
         IAuthenticator authenticator;
@@ -454,10 +448,20 @@ public class UserManager {
             try {
                 RegisteredUser user = passwordAuthenticator.authenticate(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
                         credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
+                
+                // Send bad request if they have not verified their email
+                if (user.getEmailVerificationStatus().allowedToLogin()) {
+                    this.createSession(request, response, user);
 
-                this.createSession(request, response, user);
+                    return Response.ok(this.convertUserDOToUserDTO(user)).build();
+                } else {
+                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,  
+                            "Email verification required.");
+                    log.info(String.format("User (%s) could not login due to non-verified status", 
+                            user.getDbId()));
+                    return error.toResponse();
+                }
 
-                return Response.ok(this.convertUserDOToUserDTO(user)).build();
             } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
                 log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME), e);
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
@@ -885,6 +889,23 @@ public class UserManager {
         // Check that the user isn't trying to take an existing users e-mail.
         if (this.findUserByEmail(user.getEmail()) != null && !existingUser.getEmail().equals(user.getEmail())) {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
+        
+        // Send a new verification email if the user has changed their email
+        if (!user.getEmail().equals(userToSave.getEmail())){
+            
+            log.info(String.format("Sending email for email address change for user (%s)"
+                    + " from email (%s) to email (%s)", user.getDbId(), user.getEmail(), userToSave.getEmail()));
+            try {
+                this.emailManager.sendEmailVerificationChange(existingUser, user);
+            } catch (ContentManagerException e){
+                log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+            }
+            try {
+                this.emailManager.sendEmailVerification(user);
+            } catch (ContentManagerException e) {
+                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
+            }
         }
         
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
