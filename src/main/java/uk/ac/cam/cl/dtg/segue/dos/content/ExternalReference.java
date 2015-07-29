@@ -16,7 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
 /**
- *
+ * ExternalReference.
+ * For urls.
  */
 public class ExternalReference {
     private String title;

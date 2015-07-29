@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
 import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
+import uk.ac.cam.cl.dtg.segue.api.NotificationFacade;
 import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
@@ -87,6 +88,7 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(GameboardsFacade.class));
             this.singletons.add(injector.getInstance(IsaacController.class));
             this.singletons.add(injector.getInstance(EventsFacade.class));
+            this.singletons.add(injector.getInstance(NotificationFacade.class));
         }
 
         return this.singletons;

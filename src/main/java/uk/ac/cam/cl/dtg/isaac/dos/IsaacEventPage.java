@@ -45,7 +45,6 @@ public class IsaacEventPage extends Content {
 	private List<ExternalReference> postResources;
 
 	private Image eventThumbnail;
-
 	private Integer numberOfPlaces;
 
 	private EventStatus eventStatus;
