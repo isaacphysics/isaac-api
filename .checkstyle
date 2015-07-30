@@ -4,7 +4,7 @@
   <local-check-config name="Segue Check style configuration" location="src/main/resources/checkstyle-config.xml" type="project" description="">
     <additional-data name="protect-config-file" value="false"/>
   </local-check-config>
-  <fileset name="all" enabled="true" check-config-name="ProjectCheckstyleConfig" local="false">
+  <fileset name="all" enabled="true" check-config-name="Segue Check style configuration" local="true">
     <file-match-pattern match-pattern="." include-pattern="true"/>
   </fileset>
 </fileset-config>
