@@ -61,6 +61,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -199,7 +200,8 @@ public class UserManagerTest {
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, false);
+                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, 
+                EmailVerificationStatus.EXEMPT);
 
         dummyDatabase.updateUserLastSeen(validUserId);
         expectLastCall();
@@ -385,7 +387,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, false);
+                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, EmailVerificationStatus.EXEMPT);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
                 Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();

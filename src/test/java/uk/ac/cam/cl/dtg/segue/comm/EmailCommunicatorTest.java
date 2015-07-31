@@ -106,7 +106,7 @@ public class EmailCommunicatorTest {
         
         mockAuthenticator = EasyMock.createMock(SegueLocalAuthenticator.class);
         
-        EasyMock.expect(mockAuthenticator.createEmailVerificationTokenForUser(user)).andAnswer(
+        EasyMock.expect(mockAuthenticator.createEmailVerificationTokenForUser(user, user.getEmail())).andAnswer(
                 new IAnswer<RegisteredUser>() {
 
                     @Override

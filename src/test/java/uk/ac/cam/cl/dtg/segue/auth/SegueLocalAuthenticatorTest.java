@@ -15,8 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
@@ -29,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the SegueLocalAuthenticator class.
@@ -37,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 public class SegueLocalAuthenticatorTest {
 	
 	private IUserDataManager userDataManager;
+	private PropertiesLoader propertiesLoader;
 	
 	/**
 	 * Initial configuration of tests.
@@ -47,6 +52,7 @@ public class SegueLocalAuthenticatorTest {
 	@Before
 	public final void setUp() throws Exception {
 		this.userDataManager = createMock(IUserDataManager.class);
+		this.propertiesLoader = createMock(PropertiesLoader.class);
 	}
 
 	/**
@@ -60,7 +66,8 @@ public class SegueLocalAuthenticatorTest {
 		
 		replay(userDataManager);
 		
-		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
+		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, 
+		        this.propertiesLoader);
 		
 		try {
 			segueAuthenticator.setOrChangeUsersPassword(someUser, null);
@@ -91,7 +98,7 @@ public class SegueLocalAuthenticatorTest {
 		String somePassword = "test5eguePassw0rd";
 		replay(userDataManager);
 		
-		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
+		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.propertiesLoader);
 		
 		try {
 			segueAuthenticator.setOrChangeUsersPassword(someUser, somePassword);
@@ -138,7 +145,7 @@ public class SegueLocalAuthenticatorTest {
 		
 		replay(userDataManager);
 		
-		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
+		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.propertiesLoader);
 		try {
 			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(usersEmailAddress, someIncorrectPassword);
 			fail("This should fail as a bad password has been provided.");
@@ -178,7 +185,7 @@ public class SegueLocalAuthenticatorTest {
 		
 		replay(userDataManager);
 		
-		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
+		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.propertiesLoader);
 		try {
 			RegisteredUser authenticatedUser = segueAuthenticator.authenticate(someBadEmail, someIncorrectPassword);
 			fail("This should fail as a bad email and password has been provided.");
@@ -211,7 +218,7 @@ public class SegueLocalAuthenticatorTest {
 		
 		replay(userDataManager);
 		
-		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager);
+		SegueLocalAuthenticator segueAuthenticator = new SegueLocalAuthenticator(this.userDataManager, this.propertiesLoader);
 		try {
 			// first try and mutate the user object using the the set method.
 			// this should set the password and secure hash on the user object.
