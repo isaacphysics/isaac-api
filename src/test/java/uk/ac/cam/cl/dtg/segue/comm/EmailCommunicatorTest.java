@@ -72,6 +72,7 @@ public class EmailCommunicatorTest {
         user.setEmail("test@test.com");
         user.setGivenName("tester");
         user.setResetToken("resetToken");
+        user.setEmailVerificationToken("verificationToken");
 
         // Create dummy email communicator
         emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
@@ -153,10 +154,16 @@ public class EmailCommunicatorTest {
                 + "\nThanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
 
+        SeguePageDTO htmlTemplate = createDummyEmailTemplate("<!DOCTYPE html><html><head><meta charset='utf-8'><title>Isaac Physics project</title></head><body>"
+                + "{{content}}"
+                + "</body></html>");
         try {
             EasyMock.expect(
                     mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
                     .andReturn(template);
+            
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-html")).andReturn(htmlTemplate);
 
             EasyMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
@@ -213,12 +220,14 @@ public class EmailCommunicatorTest {
         SeguePageDTO template = createDummyEmailTemplate("Hello, {{givenname}}.\n\nYou requested a "
                 + "password reset. However you use {{providerString}} to log in to our site. You need"
                 + " to go to your authentication {{providerWord}} to reset your password.\n\nRegards,\n\n{{sig}}");
-
-
+        
+        SeguePageDTO htmlTemplate = createDummyEmailTemplate("{{content}}");
         try {
-            EasyMock.expect(
-mockContentManager.getContentById("liveversion", "email-template-federated-password-reset"))
-                    .andReturn(template);
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-federated-password-reset")).andReturn(template);
+            
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-html")).andReturn(htmlTemplate);
 
             EasyMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
@@ -375,22 +384,27 @@ mockContentManager.getContentById("liveversion", "email-template-federated-passw
         EasyMock.replay(mockPropertiesLoader);
 
         ContentVersionController mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
-        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion");
+        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion").anyTimes();
 
         // Create content manager
         IContentManager mockContentManager = EasyMock.createMock(IContentManager.class);
+        
+        SeguePageDTO htmlTemplate = createDummyEmailTemplate("{{content}}");
         try {
             EasyMock.expect(
                     mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
                     .andReturn(template);
+            
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-html")).andReturn(htmlTemplate);
 
             EasyMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         }
-
-        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager);
+        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
+        
         EasyMock.replay(mockContentVersionController);
 
 
