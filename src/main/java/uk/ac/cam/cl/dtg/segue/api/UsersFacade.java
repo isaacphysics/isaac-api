@@ -383,32 +383,28 @@ public class UsersFacade extends AbstractSegueFacade {
 
 
     /**
-     * End point that allows a local user to generate an email verification request.
+     * End point that allows a user to generate an email verification request.
      * 
-     * @param userObject
-     *            - A user object containing the email of the user requesting a reset
+     * @param email
+     *            - Email address requested for verification
      * @param request
      *            - For logging purposes.
      * @return a successful response regardless of whether the email exists or an error code if there is a technical
      *         fault
      */
-    @POST
-    @Path("users/verifyemail")
+    @GET
+    @Path("users/verifyemail/{email}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response generateEmailVerificationToken(final RegisteredUserDTO userObject,
-            @Context final HttpServletRequest request) {
-        if (null == userObject) {
-            log.debug("User is null");
-            return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
-        }
-
+    public Response generateEmailVerificationToken(@PathParam("email") final String email,
+                                                    @Context final HttpServletRequest request) {
         try {
-            userManager.emailVerificationRequest(userObject);
+            
+            userManager.emailVerificationRequest(request, email);
 
             this.getLogManager()
-                    .logEvent(userManager.getCurrentUser(request), request, PASSWORD_RESET_REQUEST_RECEIVED,
-                            ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
+                .logEvent(userManager.getCurrentUser(request), request, Constants.EMAIL_VERIFICATION_REQUEST_RECEIVED,
+                            ImmutableMap.of(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME, email));
 
             return Response.ok().build();
         } catch (CommunicationException e) {
@@ -425,18 +421,22 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
-     * End point that verifies whether or not an email validation token is valid.
+     * End point that verifies whether or not a validation token is valid. If the email address given is not the same
+     * as the one we have, change it. 
      * 
      * @param token
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
      */
     @GET
-    @Path("users/verifyemail/{token}")
+    @Path("users/verifyemail/{userid}/{newemail}/{token}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validateEmailVerificationRequest(@PathParam("token") final String token) {
-        return userManager.processEmailVerification(token);
+    public Response validateEmailVerificationRequest(@PathParam("userid") final String userid, 
+                                                     @PathParam("newemail") final String newemail, 
+                                                     @PathParam("token") final String token) {
+        return userManager.processEmailVerification(userid, newemail, token);
     }
 
 
@@ -526,7 +526,7 @@ public class UsersFacade extends AbstractSegueFacade {
                         + userObjectFromClient.getEmail() + "[" + userObjectFromClient.getDbId() + "]" + " to "
                         + userObjectFromClient.getRole());
             }
-
+            
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
 
             return Response.ok(updatedUser).build();

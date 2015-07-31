@@ -86,6 +86,9 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * 
      * @param userToAttachVerificationToken
      *            - the user who's email we're verifying
+     *            
+     * @param email
+     *            - the email we're verifying
      * 
      * @return UserDO which has the associated verification token.
      * @throws NoSuchAlgorithmException
@@ -93,8 +96,8 @@ public interface IPasswordAuthenticator extends IAuthenticator {
      * @throws InvalidKeySpecException
      *             - if the preconfigured key spec is invalid.
      */
-    RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken)
-            throws NoSuchAlgorithmException, InvalidKeySpecException;
+    RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken, 
+            final String email) throws NoSuchAlgorithmException, InvalidKeySpecException;
 
     /**
      * This method will test if the user's reset token is valid reset token.
@@ -107,12 +110,14 @@ public interface IPasswordAuthenticator extends IAuthenticator {
 
     /**
      * This method tests whether the verification token is valid.
-     * 
-     * @param token
-     *            - verification token send to the user
      * @param user
      *            - user
+     * @param email
+     *            - email the user wants to verify
+     * @param token
+     *            - verification token send to the user
+
      * @return - the validity of the token
      */
-    boolean isValidEmailVerificationToken(final String token, final RegisteredUser user);
+    boolean isValidEmailVerificationToken(final RegisteredUser user, final String email, final String token);
 }

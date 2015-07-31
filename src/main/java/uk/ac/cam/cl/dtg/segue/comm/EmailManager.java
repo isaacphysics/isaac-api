@@ -35,6 +35,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private final int MINIMUM_TAG_LENGTH = 4;
     private final String sig = "Isaac Physics Project";
+    private final int TRUNCATED_TOKEN_LENGTH = 5;
 
     /**
      * @param communicator
@@ -181,11 +182,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return;
         }
 
-        String verificationURL = String.format("https://%s/verifyemail/%s/%s/%s", 
+        String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME), 
                 user.getDbId(),
                 user.getEmail(),
-                user.getEmailVerificationToken());
+                user.getEmailVerificationToken().substring(0, TRUNCATED_TOKEN_LENGTH));
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
@@ -235,11 +236,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return;
         }
 
-        String verificationURL = String.format("https://%s/verifyemail/%s/%s/%s", 
+        String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME), 
                 user.getDbId(),
                 user.getEmail(),
-                user.getEmailVerificationToken());
+                user.getEmailVerificationToken().substring(0, 5)); //TODO replace this with length property
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());

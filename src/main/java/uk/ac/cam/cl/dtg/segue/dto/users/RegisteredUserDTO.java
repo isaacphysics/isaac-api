@@ -55,10 +55,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Date lastUpdated;
     private Date lastSeen;
 
-    private String emailVerificationToken;
-    private Date emailVerificationExpiryDate;
-    private EmailVerificationStatus emailVerificationStatus;
-
     /**
      * Full constructor for the User object.
      * 
@@ -95,35 +91,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.schoolId = schoolId;
     }
 
-    /**
-     * @return the emailVerificationToken
-     */
-    public String getEmailVerificationToken() {
-        return emailVerificationToken;
-    }
-
-    /**
-     * @param emailVerificationToken
-     *            the emailVerificationToken to set
-     */
-    public void setEmailVerificationToken(final String emailVerificationToken) {
-        this.emailVerificationToken = emailVerificationToken;
-    }
-
-    /**
-     * @return the emailVerificationExpiryDate
-     */
-    public Date getEmailVerificationExpiryDate() {
-        return emailVerificationExpiryDate;
-    }
-
-    /**
-     * @param emailVerificationExpiryDate
-     *            the emailVerificationExpiryDate to set
-     */
-    public void setEmailVerificationExpiryDate(final Date emailVerificationExpiryDate) {
-        this.emailVerificationExpiryDate = emailVerificationExpiryDate;
-    }
 
     /**
      * Default constructor required for Jackson.
@@ -212,24 +179,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.email = email;
     }
     
-    /**
-     * Gets the verification status.
-     * 
-     * @return the verification status
-     */
-    public EmailVerificationStatus getEmailVerificationStatus(){
-        return emailVerificationStatus;
-    }
-    
-    /**
-     * Sets the verification status.
-     * 
-     * @param status
-     */
-    public void setEmailVerificationStatus(final EmailVerificationStatus status){
-        this.emailVerificationStatus = status;
-    }
-
     /**
      * Gets the role.
      * 

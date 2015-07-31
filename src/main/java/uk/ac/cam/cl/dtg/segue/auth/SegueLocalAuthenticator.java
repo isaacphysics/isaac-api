@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.auth;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
+
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -31,6 +33,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
@@ -39,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
 
@@ -51,6 +55,8 @@ import com.google.inject.Inject;
 public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     private static final Logger log = LoggerFactory.getLogger(SegueLocalAuthenticator.class);
     private final IUserDataManager userDataManager;
+    
+    private final PropertiesLoader properties;
 
     private static final String CRYPTO_ALOGRITHM = "PBKDF2WithHmacSHA1";
     private static final String SALTING_ALGORITHM = "SHA1PRNG";
@@ -66,8 +72,9 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      *            - the user data manager which allows us to store and query user information.
      */
     @Inject
-    public SegueLocalAuthenticator(final IUserDataManager userDataManager) {
+    public SegueLocalAuthenticator(final IUserDataManager userDataManager, final PropertiesLoader properties) {
         this.userDataManager = userDataManager;
+        this.properties = properties;
     }
 
     @Override
@@ -134,21 +141,47 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     }
 
     @Override
-    public RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public RegisteredUser createEmailVerificationTokenForUser(final RegisteredUser userToAttachVerificationToken, 
+            final String email) throws NoSuchAlgorithmException, InvalidKeySpecException {
         Validate.notNull(userToAttachVerificationToken);
+        Validate.notNull(email, "Email used for verification cannot be null");
+        
+        //Get HMAC
+        String key = properties.getProperty(HMAC_SALT);
+        String token = UserManager.calculateHMAC(key, email);      
 
-        String token = new String(Base64.encodeBase64(computeHash(UUID.randomUUID().toString(),
-                userToAttachVerificationToken.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "").replace("/", "");
-
-        userToAttachVerificationToken.setEmailVerificationToken(token);
-
+        userToAttachVerificationToken.setEmailVerificationToken(token.replace("=", "")
+                                                                     .replace("/", "")
+                                                                     .replace("+", ""));
+        //Finally add an expiry date
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
         c.add(Calendar.DATE, 1);
         userToAttachVerificationToken.setEmailVerificationTokenExpiry(c.getTime());
 
         return userToAttachVerificationToken;
+    }
+    
+    @Override
+    public boolean isValidEmailVerificationToken(final RegisteredUser user, final String email, final String token) {
+        Validate.notNull(user);
+        
+        String userToken = user.getEmailVerificationToken();
+        if (userToken.startsWith(token)) {
+            // Check if the email corresponds to the token
+            String key = properties.getProperty(HMAC_SALT);
+            String hmacToken = UserManager.calculateHMAC(key, email).replace("=", "")
+                                                                    .replace("/", "")
+                                                                    .replace("+", ""); 
+            log.info("New HCMA token: " + hmacToken);
+            log.info("User token: " + userToken);
+            if (userToken.equals(hmacToken)) {
+                // The key is valid
+                Date now = new Date();
+                return user.getEmailVerificationTokenExpiry().after(now);
+            }
+        }
+        return false;
     }
 
     @Override
@@ -182,12 +215,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         return user != null && user.getResetExpiry().after(now);
     }
 
-    @Override
-    public boolean isValidEmailVerificationToken(final String token, final RegisteredUser user) {
-        Date now = new Date();
-        return user != null && user.getEmailVerificationToken().equals(token)
-                && user.getEmailVerificationTokenExpiry().after(now);
-    }
+
 
     /**
      * Hash the password using the preconfigured hashing function.

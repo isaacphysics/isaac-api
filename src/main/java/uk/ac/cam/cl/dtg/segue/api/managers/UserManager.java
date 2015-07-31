@@ -823,23 +823,27 @@ public class UserManager {
                 .get(AuthenticationProvider.SEGUE);
 
         try {
-            authenticator.createEmailVerificationTokenForUser(userToSave);
+            authenticator.createEmailVerificationTokenForUser(userToSave, userToSave.getEmail());
         } catch (NoSuchAlgorithmException e1) {
             log.error("Creation of email verification token failed: " + e1.getMessage());
         } catch (InvalidKeySpecException e1) {
             log.error("Creation of email verification token failed: " + e1.getMessage());
         }
 
-        //Send an email confirmation and set up verification
+
+        // save the user to get the userId
+        RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+        
+        // send an email confirmation and set up verification
         try {
-            emailManager.sendRegistrationConfirmation(userToSave);
-            userToSave.setEmailVerified(EmailVerificationStatus.NOT_VERIFIED);
+            emailManager.sendRegistrationConfirmation(userToReturn);
+            userToReturn.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         }
-
-        // save the user
-        RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+        
+        // save the user again with updated token
+        userToReturn = this.database.createOrUpdateUser(userToReturn);
 
         logManager.logInternalEvent(this.convertUserDOToUserDTO(userToReturn), Constants.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
@@ -869,9 +873,6 @@ public class UserManager {
     public RegisteredUserDTO updateUserObject(final RegisteredUser user) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
         Validate.notBlank(user.getDbId());
-
-        RegisteredUser userToSave = null;
-
         MapperFacade mapper = this.dtoMapper;
 
         // We want to map to DTO first to make sure that the user cannot
@@ -883,8 +884,8 @@ public class UserManager {
         }
 
         // This is an update operation.
-        RegisteredUser existingUser = this.findUserById(user.getDbId());
-        userToSave = existingUser;
+        final RegisteredUser existingUser = this.findUserById(user.getDbId());
+        //userToSave = existingUser;
 
         // Check that the user isn't trying to take an existing users e-mail.
         if (this.findUserByEmail(user.getEmail()) != null && !existingUser.getEmail().equals(user.getEmail())) {
@@ -892,24 +893,33 @@ public class UserManager {
         }
         
         // Send a new verification email if the user has changed their email
-        if (!user.getEmail().equals(userToSave.getEmail())){
+        if (!existingUser.getEmail().equals(user.getEmail())) {
+            
+            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                    .get(AuthenticationProvider.SEGUE);
+            
+            try {
+                authenticator.createEmailVerificationTokenForUser(existingUser, user.getEmail());
+            } catch (NoSuchAlgorithmException e1) {
+                log.error("Creation of email verification token failed: " + e1.getMessage());
+            } catch (InvalidKeySpecException e1) {
+                log.error("Creation of email verification token failed: " + e1.getMessage());
+            }
             
             log.info(String.format("Sending email for email address change for user (%s)"
-                    + " from email (%s) to email (%s)", user.getDbId(), user.getEmail(), userToSave.getEmail()));
+                    + " from email (%s) to email (%s)", user.getDbId(), existingUser.getEmail(), user.getEmail()));
             try {
                 this.emailManager.sendEmailVerificationChange(existingUser, user);
-            } catch (ContentManagerException e){
+            } catch (ContentManagerException e) {
                 log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
             }
-            try {
-                this.emailManager.sendEmailVerification(user);
-            } catch (ContentManagerException e) {
-                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
-            }
+           
         }
         
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
 
+        RegisteredUser userToSave = new RegisteredUser();
+        mergeMapper.map(existingUser, userToSave);
         mergeMapper.map(userDTOContainingUpdates, userToSave);
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
         userToSave.setLastUpdated(new Date());
@@ -930,6 +940,17 @@ public class UserManager {
             throw new MissingRequiredFieldException("This modification would mean that the user"
                     + " no longer has a way of authenticating. Failing change.");
         }
+        
+        // Make sure the email address is preserved (can't be changed until new email is verified)
+        if (!userToSave.getEmail().equals(existingUser.getEmail())) {
+            try {
+                this.emailManager.sendEmailVerification(userToSave);
+            } catch (ContentManagerException e) {
+                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
+            }
+            userToSave.setEmail(existingUser.getEmail());
+        }
+        
 
         // save the user
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
@@ -1014,9 +1035,12 @@ public class UserManager {
     /**
      * This method will use an email address to check a local user exists and if so, will send an email with a unique
      * token to allow a password reset. This method does not indicate whether or not the email actually existed.
+     * @param user 
      *
-     * @param userObject
-     *            - A user object containing the email address of the user to reset the password for.
+     * @param registeredUserDTO
+     *            - The registered user object.
+     * @param email
+     *            - The email the user wants to verify.
      * @throws NoSuchAlgorithmException
      *             - if the configured algorithm is not valid.
      * @throws InvalidKeySpecException
@@ -1026,9 +1050,20 @@ public class UserManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public final void emailVerificationRequest(final RegisteredUserDTO userObject) throws InvalidKeySpecException,
+    public final void emailVerificationRequest(final HttpServletRequest request, final String email) 
+                                                                            throws InvalidKeySpecException,
             NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
-        RegisteredUser user = this.findUserByEmail(userObject.getEmail());
+        
+        RegisteredUser user = this.findUserByEmail(email);
+        if (null == user) {
+            try {
+                RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
+                user = this.findUserById(userDTO.getDbId());
+            } catch (NoUserLoggedInException e) {
+                log.error(String.format("Verification requested for email:%s where email does not exist "
+                                                                        + "and user not logged in!", email));
+            }
+        }         
 
         if (user == null) {
             // Email address does not exist in the DB
@@ -1047,7 +1082,7 @@ public class UserManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        user = authenticator.createEmailVerificationTokenForUser(user);
+        user = authenticator.createEmailVerificationTokenForUser(user, email);
 
         // Save user object
         this.database.createOrUpdateUser(user);
@@ -1128,19 +1163,26 @@ public class UserManager {
     }
 
     /**
+     * @param userid
+     *            - the user id
+     *
+     * @param email
+     *            - the email address - may be new or the same
+     *            
      * @param token
      *            - token used to verify email address
+     *            
      * @return - whether the token is valid or not
      * @throws SegueDatabaseException
      *             - exception if token cannot be validated
      */
-    public Response processEmailVerification(final String token) {
+    public Response processEmailVerification(final String userid, final String email, final String token) {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
         RegisteredUser user;
         try {
-            user = this.findUserByVerificationToken(token);
+            user = this.findUserById(userid);
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
@@ -1148,13 +1190,23 @@ public class UserManager {
             return error.toResponse();
         }
 
-        if (user != null && user.getEmailVerificationStatus() != null 
-                                        && user.getEmailVerificationStatus().allowedToLogin()) {
+        if (user != null && user.getEmailVerificationStatus() != null && 
+                user.getEmailVerificationStatus() == EmailVerificationStatus.VERIFIED &&
+                user.getEmail().equals(email)) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "Email already verified.");
             return error.toResponse();
-        } else if (authenticator.isValidEmailVerificationToken(token, user)) {
-            user.setEmailVerified(EmailVerificationStatus.VERIFIED);
+        } else if (user != null && !userid.equals(user.getDbId())) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Incorrect user id.");
+            return error.toResponse();
+        } else if (user != null && authenticator.isValidEmailVerificationToken(user, email, token)) {
+            user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+            
+            // Update the email address if different
+            if (!user.getEmail().equals(email)) {
+                user.setEmail(email); 
+            }
             
             // Save user
             try {
@@ -1386,23 +1438,6 @@ public class UserManager {
     }
 
     /**
-     * Library method that allows the api to locate a user object from the database based on a given unique email
-     * verification token.
-     *
-     * @param token
-     *            - to search for.
-     * @return user or null if we cannot find it.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser findUserByVerificationToken(final String token) throws SegueDatabaseException {
-        if (null == token) {
-            return null;
-        }
-        return this.database.getByEmailVerificationToken(token);
-    }
-
-    /**
      * This method will trigger the authentication flow for a 3rd party authenticator.
      * 
      * This method can be used for regular logins, new registrations or for linking 3rd party authenticators to an
@@ -1540,7 +1575,7 @@ public class UserManager {
      *            - data to be signed
      * @return HMAC - Unique HMAC.
      */
-    private String calculateHMAC(final String key, final String dataToSign) {
+    public static String calculateHMAC(final String key, final String dataToSign) {
         Validate.notEmpty(key, "Signing key cannot be blank.");
         Validate.notEmpty(dataToSign, "Data to sign cannot be blank.");
 

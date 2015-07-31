@@ -90,7 +90,7 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - the most recent token generated to verify email addresses
      * @param emailVerificationTokenExpiry
      *            - the expiry date of the most recent token
-     * @param emailVerified
+     * @param emailVerificationStatus
      *            - whether the user has verified their email or not
      */
     @JsonCreator
@@ -104,7 +104,7 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
             @JsonProperty("emailVerificationTokenExpiry") final Date emailVerificationTokenExpiry, 
-            @JsonProperty("emailVerified") final Boolean emailVerified) {
+            @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
         this.databaseId = databaseId;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -134,7 +134,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * @param status
      *            - sets whether email has been verified
      */
-    public void setEmailVerified(final EmailVerificationStatus status) {
+    public void setEmailVerificationStatus(final EmailVerificationStatus status) {
         this.emailVerificationStatus = status;
     }
 
