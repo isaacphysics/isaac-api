@@ -54,6 +54,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private boolean firstLogin = false;
     private Date lastUpdated;
     private Date lastSeen;
+    private EmailVerificationStatus emailVerificationStatus;
 
     /**
      * Full constructor for the User object.
@@ -66,6 +67,8 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      *            - Equivalent to second name
      * @param email
      *            - primary e-mail address
+     * @param emailVerificationStatus
+     *            - verification status of email address
      * @param dateOfBirth
      *            - date of birth to help with monitoring
      * @param gender
@@ -78,7 +81,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     @JsonCreator
     public RegisteredUserDTO(@JsonProperty("_id") final String databaseId,
             @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
-            @JsonProperty("email") final String email, @JsonProperty("dateOfBirth") final Date dateOfBirth,
+            @JsonProperty("email") final String email, 
+            @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
+            @JsonProperty("dateOfBirth") final Date dateOfBirth,
             @JsonProperty("gender") final Gender gender, @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("schoolId") final String schoolId) {
         this.databaseId = databaseId;
@@ -89,6 +94,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         this.gender = gender;
         this.registrationDate = registrationDate;
         this.schoolId = schoolId;
+        this.emailVerificationStatus = emailVerificationStatus;
     }
 
 
@@ -215,6 +221,20 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     public void setDateOfBirth(final Date dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+    
+    
+    /**
+     * @return email verification status
+     */
+    public EmailVerificationStatus getEmailVerificationStatus() {
+        return this.emailVerificationStatus;
+    }
+    /**
+     * @param emailVerificationStatus the new verification status
+     */
+    public void setEmailVerificationStatus(final EmailVerificationStatus emailVerificationStatus) {
+        this.emailVerificationStatus = emailVerificationStatus;
     }
 
     /**
@@ -483,6 +503,13 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!email.equals(other.email)) {
             return false;
         }
+        if (emailVerificationStatus == null){
+            if (other.emailVerificationStatus != null) {
+                return false;
+            }
+        } else if (emailVerificationStatus.compareTo(other.emailVerificationStatus) != 0) {
+            return false;
+        }
         if (familyName == null) {
             if (other.familyName != null) {
                 return false;
@@ -552,8 +579,8 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         return "RegisteredUserDTO [databaseId=" + databaseId + ", givenName=" + givenName + ", familyName="
                 + familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth + ", gender="
                 + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId + ", schoolOther="
-                + schoolOther + ", defaultLevel=" + defaultLevel + ", linkedAccounts=" + linkedAccounts
-                + ", hasSegueAccount=" + hasSegueAccount + ", firstLogin=" + firstLogin + ", lastUpdated="
-                + lastUpdated + "]";
+                + schoolOther + ", defaultLevel=" + defaultLevel + ", emailVerificationStatus=" 
+                + emailVerificationStatus + ", linkedAccounts=" + linkedAccounts + ", hasSegueAccount=" 
+                + hasSegueAccount + ", firstLogin=" + firstLogin + ", lastUpdated=" + lastUpdated + "]";
     }
 }
