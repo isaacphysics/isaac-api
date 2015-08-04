@@ -1177,43 +1177,52 @@ public class UserManager {
             log.error(String.format("Invalid email token request"));
             return error.toResponse();
         }
-
-        if (user != null && user.getEmailVerificationStatus() != null && 
-                user.getEmailVerificationStatus() == EmailVerificationStatus.VERIFIED &&
-                user.getEmail().equals(email)) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Email already verified.");
-            return error.toResponse();
-        } else if (user != null && !userid.equals(user.getDbId())) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Incorrect user id.");
-            return error.toResponse();
-        } else if (user != null && authenticator.isValidEmailVerificationToken(user, email, token)) {
-            user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-            
-            // Update the email address if different
-            if (!user.getEmail().equals(email)) {
-                user.setEmail(email); 
-            }
-            
-            // Save user
-            try {
-                RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-                log.info(String.format("Email verification for user (%s) has completed successfully.", 
-                        createOrUpdateUser.getDbId()));
-                return Response.ok().build();
-            } catch (SegueDatabaseException e) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                        "There was an error processing your request.");
-                log.error(String.format("Could not persist to database"));
+        
+        
+        SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
+        
+        if (user != null) {
+            if (!userid.equals(user.getDbId())) {
+                log.debug(String.format("Recieved an invalid email token request for (%s)"
+                                                                + " - provided bad userid", email));
                 return error.toResponse();
             }
-        } else {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Token invalid or expired.");
-            log.debug(String.format("Recieved an invalid email token request"));
-            return error.toResponse();
+            
+            EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
+            if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED 
+                    && user.getEmail().equals(email)) {
+                log.debug(String.format("Recieved an invalid email token request for (%s) - already verified", email));
+                return error.toResponse();
+            }
+            
+            if (authenticator.isValidEmailVerificationToken(user, email, token)) {
+                user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+                user.setEmailVerificationToken(null);
+                user.setEmailVerificationTokenExpiry(null);
+                
+                // Update the email address if different
+                if (!user.getEmail().equals(email)) {
+                    user.setEmail(email); 
+                }
+                
+                // Save user
+                try {
+                    RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
+                    log.info(String.format("Email verification for user (%s) has completed successfully.", 
+                            createOrUpdateUser.getDbId()));
+                    return Response.ok().build();
+                } catch (SegueDatabaseException e) {
+                    error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                            "There was an error processing your request.");
+                    log.error(String.format("Could not persist to database"));
+                    return error.toResponse();
+                }
+            }  
         }
+        
+        log.info(String.format("Recieved an invalid email token request for (%s)", email));
+        return error.toResponse();
+        
     }
 
     /**

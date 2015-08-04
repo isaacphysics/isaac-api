@@ -22,15 +22,5 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
  *
  */
 public enum EmailVerificationStatus {
-    EXEMPT, VERIFIED, NOT_VERIFIED;
-    
-    /**
-     * Which statuses are acceptable for login.
-     * 
-     * @param status
-     * @return whether they should be able to login
-     */
-    public boolean allowedToLogin() {
-        return this == EXEMPT || this == VERIFIED;
-    }
+    VERIFIED, NOT_VERIFIED;
 }

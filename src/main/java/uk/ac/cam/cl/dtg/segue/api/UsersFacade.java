@@ -52,9 +52,14 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
@@ -93,6 +98,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final UserManager userManager;
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
+    private IMisuseMonitor misuseMonitor;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -107,14 +113,18 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can view stats on interesting events.
      * @param userAssociationManager
      *            - so we can check permissions..
+     * @param misuseMonitor
+     *            - so we can check for misuse
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
-            final StatisticsManager statsManager, final UserAssociationManager userAssociationManager) {
+            final StatisticsManager statsManager, final UserAssociationManager userAssociationManager, 
+            final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
@@ -400,6 +410,15 @@ public class UsersFacade extends AbstractSegueFacade {
                                                     @Context final HttpServletRequest request) {
         try {
             
+
+            if (misuseMonitor.hasMisused(email,
+                    EmailVerificationRequestMisusehandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+    
+            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisusehandler.class.toString());
+        
+            
             userManager.emailVerificationRequest(request, email);
 
             this.getLogManager()
@@ -417,13 +436,21 @@ public class UsersFacade extends AbstractSegueFacade {
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        } 
+        } catch (SegueResourceMisuseException e) {
+            log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)", email));
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You have exceeded the number of requests allowed for this endpoint").toResponse();
+        }
     }
 
     /**
      * End point that verifies whether or not a validation token is valid. If the email address given is not the same
      * as the one we have, change it. 
      * 
+     * @param userid 
+     *            - the user's id. 
+     * @param newemail
+     *            - the email they want to verify - could be new
      * @param token
      *            - A password reset token
      * @return Success if the token is valid, otherwise returns not found
@@ -436,6 +463,19 @@ public class UsersFacade extends AbstractSegueFacade {
     public Response validateEmailVerificationRequest(@PathParam("userid") final String userid, 
                                                      @PathParam("newemail") final String newemail, 
                                                      @PathParam("token") final String token) {
+        
+        try {
+            if (misuseMonitor.hasMisused(newemail,
+                    EmailVerificationMisusehandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+    
+            misuseMonitor.notifyEvent(newemail, TokenOwnerLookupMisuseHandler.class.toString());
+        } catch (SegueResourceMisuseException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You have exceeded the number of requests allowed for this endpoint").toResponse();
+        }
+        
         return userManager.processEmailVerification(userid, newemail, token);
     }
 

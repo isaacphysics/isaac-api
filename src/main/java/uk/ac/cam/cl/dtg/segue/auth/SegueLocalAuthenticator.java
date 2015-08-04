@@ -167,7 +167,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         Validate.notNull(user);
         
         String userToken = user.getEmailVerificationToken();
-        if (userToken.startsWith(token)) {
+        if (userToken != null && userToken.startsWith(token)) {
             // Check if the email corresponds to the token
             String key = properties.getProperty(HMAC_SALT);
             String hmacToken = UserManager.calculateHMAC(key, email).replace("=", "")
@@ -178,7 +178,9 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             if (userToken.equals(hmacToken)) {
                 // The key is valid
                 Date now = new Date();
-                return user.getEmailVerificationTokenExpiry().after(now);
+                Date expiryDate = user.getEmailVerificationTokenExpiry();
+                return expiryDate != null && expiryDate.after(now);
+  
             }
         }
         return false;

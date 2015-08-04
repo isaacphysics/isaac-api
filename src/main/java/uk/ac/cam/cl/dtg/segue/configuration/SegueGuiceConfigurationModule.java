@@ -39,6 +39,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
@@ -499,6 +501,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             // register handlers segue specific handlers
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
+            
+            misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(), 
+                    new EmailVerificationMisusehandler(emailManager, properties));
+            
+            misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(), 
+                    new EmailVerificationRequestMisusehandler(emailManager, properties));
         }
 
         return misuseMonitor;
