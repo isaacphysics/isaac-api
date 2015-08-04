@@ -448,20 +448,8 @@ public class UserManager {
             try {
                 RegisteredUser user = passwordAuthenticator.authenticate(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
                         credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
-                
-                // Send bad request if they have not verified their email
-                if (user.getEmailVerificationStatus().allowedToLogin()) {
-                    this.createSession(request, response, user);
-
-                    return Response.ok(this.convertUserDOToUserDTO(user)).build();
-                } else {
-                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,  
-                            "Email verification required.");
-                    log.info(String.format("User (%s) could not login due to non-verified status", 
-                            user.getDbId()));
-                    return error.toResponse();
-                }
-
+                this.createSession(request, response, user);
+                return Response.ok(this.convertUserDOToUserDTO(user)).build();
             } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
                 log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME), e);
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
