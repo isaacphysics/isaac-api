@@ -68,11 +68,11 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -118,6 +118,8 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserManager userManager;
     private final UserAssociationManager associationManager;
 
+    private URIManager uriManager;
+
     /**
      * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
      * 
@@ -137,12 +139,14 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can interrogate the user Manager.
      * @param associationManager
      *            - So we can check user permissions.
+     * @param uriManager
+     *            - URI manager so we can augment uris
      */
     @Inject
     public IsaacController(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
             final ContentVersionController versionManager, final UserManager userManager,
-            final UserAssociationManager associationManager) {
+            final UserAssociationManager associationManager, final URIManager uriManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -150,6 +154,7 @@ public class IsaacController extends AbstractIsaacFacade {
         this.versionManager = versionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
+        this.uriManager = uriManager;
     }
 
     /**
@@ -366,7 +371,7 @@ public class IsaacController extends AbstractIsaacFacade {
             }
 
             ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-                    this.extractContentSummaryFromList(c.getResults(), this.getProperties().getProperty(PROXY_PATH)),
+                    this.extractContentSummaryFromList(c.getResults()),
                     c.getTotalResults());
 
             return Response.ok(summarizedContent).tag(etag).cacheControl(getCacheControl()).build();
@@ -736,18 +741,16 @@ public class IsaacController extends AbstractIsaacFacade {
      * 
      * @param content
      *            - the content object to summarise
-     * @param proxyPath
-     *            - the path prefix used for augmentation of urls
      * @return ContentSummaryDTO.
      */
-    private ContentSummaryDTO extractContentSummary(final ContentDTO content, final String proxyPath) {
+    private ContentSummaryDTO extractContentSummary(final ContentDTO content) {
         if (null == content) {
             return null;
         }
 
         // try auto-mapping
         ContentSummaryDTO contentInfo = mapper.map(content, ContentSummaryDTO.class);
-        contentInfo.setUrl(URIManager.generateApiUrl(content));
+        contentInfo.setUrl(uriManager.generateApiUrl(content));
 
         return contentInfo;
     }
@@ -757,12 +760,9 @@ public class IsaacController extends AbstractIsaacFacade {
      * 
      * @param contentList
      *            - the list of content to summarise.
-     * @param proxyPath
-     *            - the path used for augmentation of urls.
      * @return list of shorter ContentSummaryDTO objects.
      */
-    private List<ContentSummaryDTO> extractContentSummaryFromList(final List<ContentDTO> contentList,
-            final String proxyPath) {
+    private List<ContentSummaryDTO> extractContentSummaryFromList(final List<ContentDTO> contentList) {
         if (null == contentList) {
             return null;
         }
@@ -770,7 +770,7 @@ public class IsaacController extends AbstractIsaacFacade {
         List<ContentSummaryDTO> listOfContentInfo = new ArrayList<ContentSummaryDTO>();
 
         for (ContentDTO content : contentList) {
-            ContentSummaryDTO contentInfo = extractContentSummary(content, proxyPath);
+            ContentSummaryDTO contentInfo = extractContentSummary(content);
             if (null != contentInfo) {
                 listOfContentInfo.add(contentInfo);
             }
@@ -797,7 +797,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 new ArrayList<ContentSummaryDTO>(), contentList.getTotalResults());
 
         for (ContentDTO content : contentList.getResults()) {
-            ContentSummaryDTO contentInfo = extractContentSummary(content, proxyPath);
+            ContentSummaryDTO contentInfo = extractContentSummary(content);
             if (null != contentInfo) {
                 contentSummaryResults.getResults().add(contentInfo);
             }
@@ -862,7 +862,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-                this.extractContentSummaryFromList(c.getResults(), this.getProperties().getProperty(PROXY_PATH)),
+                this.extractContentSummaryFromList(c.getResults()),
                 c.getTotalResults());
 
         return Response.ok(summarizedContent);

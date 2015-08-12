@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -710,17 +709,14 @@ public class GameManager {
 
         ResultsWrapper<ContentDTO> results = versionManager.getContentManager().findByFieldNamesRandomOrder(
                 versionManager.getLiveVersion(), fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
-        // ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(api.getLiveVersion(),
-        // fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
 
         List<ContentDTO> questionsForGameboard = results.getResults();
 
         List<GameboardItem> selectionOfGameboardQuestions = Lists.newArrayList();
 
-        // Map each Content object into an IsaacQuestionInfo object
+        // Map each Content object into an GameboardItem object
         for (ContentDTO c : questionsForGameboard) {
-            GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-            questionInfo.setUri(URIManager.generateApiUrl(c));
+            GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(c);
             selectionOfGameboardQuestions.add(questionInfo);
         }
 

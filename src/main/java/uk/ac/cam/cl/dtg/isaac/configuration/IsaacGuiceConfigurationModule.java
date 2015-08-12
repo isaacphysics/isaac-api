@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
@@ -154,17 +155,19 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      *            - api that the game manager can use for content resolution.
      * @param mapper
      *            - an instance of an auto mapper.
+     * @param uriManager
+     *            - so that the we can create content that is aware of its own location
      * @return Game persistence manager object.
      */
     @Inject
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final SegueApiFacade api,
-            final MapperFacade mapper) {
+            final MapperFacade mapper, final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
             gameboardPersistenceManager = new GameboardPersistenceManager(api.requestAppDataManager(
                     GAMEBOARD_COLLECTION_NAME, GameboardDO.class), api.requestAppDataManager(
-                    USERS_GAMEBOARD_COLLECTION_NAME, UserGameboardsDO.class), api, mapper);
+                    USERS_GAMEBOARD_COLLECTION_NAME, UserGameboardsDO.class), api, mapper, uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 
