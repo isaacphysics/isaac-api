@@ -11,10 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -29,9 +27,7 @@ import com.google.inject.Inject;
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
     private final PropertiesLoader globalProperties;
-    private final IUserDataManager userDataManager;
     private final ContentVersionController contentVersionController;
-    private final SegueLocalAuthenticator authenticator;
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private final int MINIMUM_TAG_LENGTH = 4;
     private final String sig = "Isaac Physics Project";
@@ -49,13 +45,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final PropertiesLoader globalProperties,
-            final IUserDataManager userDataManager, final ContentVersionController contentVersionController,
-            final SegueLocalAuthenticator authenticator) {
+            final ContentVersionController contentVersionController) {
         super(communicator);
         this.globalProperties = globalProperties;
-        this.userDataManager = userDataManager;
         this.contentVersionController = contentVersionController;
-        this.authenticator = authenticator;
     }
 
     

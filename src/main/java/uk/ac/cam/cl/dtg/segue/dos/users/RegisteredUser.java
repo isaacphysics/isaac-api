@@ -124,21 +124,6 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
-     * @return the emailVerified
-     */
-    public EmailVerificationStatus getEmailVerificationStatus() {
-        return emailVerificationStatus;
-    }
-
-    /**
-     * @param status
-     *            - sets whether email has been verified
-     */
-    public void setEmailVerificationStatus(final EmailVerificationStatus status) {
-        this.emailVerificationStatus = status;
-    }
-
-    /**
      * Default constructor required for Jackson.
      */
     public RegisteredUser() {
@@ -478,8 +463,21 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
-=======
->>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
+     * @return the emailVerified
+     */
+    public EmailVerificationStatus getEmailVerificationStatus() {
+        return emailVerificationStatus;
+    }
+
+    /**
+     * @param status
+     *            - sets whether email has been verified
+     */
+    public void setEmailVerificationStatus(final EmailVerificationStatus status) {
+        this.emailVerificationStatus = status;
+    }    
+    
+    /**
      * Gets the lastUpdated.
      * 
      * @return the lastUpdated

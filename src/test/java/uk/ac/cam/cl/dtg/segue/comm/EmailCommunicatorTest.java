@@ -172,8 +172,7 @@ public class EmailCommunicatorTest {
         }
 
 
-        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController, mockAuthenticator);
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -235,8 +234,7 @@ public class EmailCommunicatorTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController, mockAuthenticator);
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null);
         try {
             manager.sendFederatedPasswordReset(user, "testString", "testWord");
         } catch (ContentManagerException e) {
@@ -300,8 +298,7 @@ public class EmailCommunicatorTest {
             Assert.fail();
         }
 
-        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController, mockAuthenticator);
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null);
         try {
             manager.sendPasswordReset(user);
         } catch (ContentManagerException e) {
@@ -358,8 +355,7 @@ public class EmailCommunicatorTest {
         }
 
 
-        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController, mockAuthenticator);
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -409,8 +405,7 @@ public class EmailCommunicatorTest {
 
 
 
-        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController, mockAuthenticator);
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -457,8 +452,7 @@ public class EmailCommunicatorTest {
         }
 
 
-        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null,
-                mockContentVersionController, mockAuthenticator);
+        EmailManager manager = new EmailManager(emailCommunicator, mockPropertiesLoader, null);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {

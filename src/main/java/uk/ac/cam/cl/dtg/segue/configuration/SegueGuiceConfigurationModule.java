@@ -418,8 +418,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
             final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator) {
         if (null == emailCommunicationQueue) {
-            emailCommunicationQueue = new EmailManager(emailCommunicator, properties, database,
-                    contentVersionController, authenticator);
+            emailCommunicationQueue = new EmailManager(emailCommunicator, properties, contentVersionController);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
