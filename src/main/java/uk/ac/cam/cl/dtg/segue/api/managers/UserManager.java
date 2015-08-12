@@ -15,25 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_USER;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DATE_SIGNED;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_DATE_FORMAT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ESCAPED_ID_SEPARATOR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LAST_SEEN_UPDATE_FREQUENCY_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LINK_ACCOUNT_PARAM_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.MERGE_USER;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.OAUTH_TOKEN_PARAM_NAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.REDIRECT_URL;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_AUTH_COOKIE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_EXPIRY_SECONDS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_USER_ID;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.STATE_PARAM_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -150,7 +132,7 @@ public class UserManager {
      *            - A map of known authentication providers.
      * @param dtoMapper
      *            - the preconfigured DO to DTO object mapper for user objects.
-     * @param communicator
+     * @param emailQueue
      *            - the preconfigured communicator manager for sending e-mails.
      * @param logManager
      *            - so that we can log events for users..
@@ -175,7 +157,7 @@ public class UserManager {
      *            - A map of known authentication providers.
      * @param dtoMapper
      *            - the preconfigured DO to DTO object mapper for user objects.
-     * @param communicator
+     * @param emailQueue
      *            - the preconfigured communicator manager for sending e-mails.
      * @param temporaryUserCache
      *            - the preconfigured communicator manager for sending e-mails.
