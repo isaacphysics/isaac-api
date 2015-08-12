@@ -73,7 +73,7 @@ import static com.google.common.collect.Maps.*;
 public class GameManager {
     private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
-    private static final int MAX_QUESTIONS_TO_SEARCH = 30;
+    private static final int MAX_QUESTIONS_TO_SEARCH = 20;
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
