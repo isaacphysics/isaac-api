@@ -504,11 +504,11 @@ public class StatisticsManager {
                     // order
 
                     QuestionValidationResponse validationResponse = question.getValue().get(i);
-                    if (validationResponse.isCorrect() && i == 0) {
+                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect() && i == 0) {
                         questionsFirstTime++;
                     }
 
-                    if (validationResponse.isCorrect()) {
+                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
                         questionsAnsweredCorrectly++;
                         break;
                     }

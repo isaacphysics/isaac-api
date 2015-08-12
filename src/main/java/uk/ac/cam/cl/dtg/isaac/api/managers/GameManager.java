@@ -790,7 +790,7 @@ public class GameManager {
                 // for this question to determine if there is a
                 // correct answer somewhere.
                 for (int i = questionAttempts.size() - 1; i >= 0; i--) {
-                    if (questionAttempts.get(i).isCorrect()) {
+                    if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
                         foundCorrectForThisQuestion = true;
                         break;
                     }
