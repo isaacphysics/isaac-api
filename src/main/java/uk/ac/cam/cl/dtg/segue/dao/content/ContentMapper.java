@@ -69,6 +69,8 @@ public class ContentMapper {
 
     // this autoMapper is initialised lazily in the getAutoMapper method
     private MapperFacade autoMapper = null;
+    
+    private static ObjectMapper preconfiguredObjectMapper;
 
     /**
      * Creates a new content mapper without type information.
@@ -343,8 +345,13 @@ public class ContentMapper {
      * @return a jackson object mapper.
      */
     public ObjectMapper getContentObjectMapper() {
+        if (ContentMapper.preconfiguredObjectMapper != null) {
+            return preconfiguredObjectMapper;
+        }
+        
         ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
         contentDeserializer.registerTypeMap(jsonTypes);
+        
         ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer);
 
         QuestionValidationResponseDeserializer validationResponseDeserializer 
@@ -358,8 +365,10 @@ public class ContentMapper {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(contentDeserializerModule);
+        
+        preconfiguredObjectMapper = objectMapper;
 
-        return objectMapper;
+        return preconfiguredObjectMapper;
     }
 
     /**

@@ -32,18 +32,16 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 /**
  * Choice deserializer
  * 
-<<<<<<< HEAD
  * This class requires the primary content base deserializer as a constructor
  * arguement.
-=======
- * This class requires the primary content bas deserializer as a constructor arguement.
->>>>>>> e3d5bfdb07b499af637cb1f3ebf9d7bbf816349d
  * 
  * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class ChoiceDeserializer extends JsonDeserializer<Choice> {
     private ContentBaseDeserializer contentDeserializer;
-
+    
+    private static ObjectMapper choiceMapper;
+    
     /**
      * Creates a Choice deserializer that is used by jackson to handle polymorphic types.
      * 
@@ -58,13 +56,7 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
     public Choice deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
             throws IOException {
 
-        SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
-        contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(contentDeserializerModule);
-
-        ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
+        ObjectNode root = (ObjectNode) getSingletonChoiceMapper().readTree(jsonParser);
 
         if (null == root.get("type")) {
             throw new JsonMappingException(
@@ -74,9 +66,26 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
         String contentType = root.get("type").textValue();
 
         if (contentType.equals("quantity")) {
-            return mapper.readValue(root.toString(), Quantity.class);
+            return getSingletonChoiceMapper().readValue(root.toString(), Quantity.class);
         } else {
-            return mapper.readValue(root.toString(), Choice.class);
+            return getSingletonChoiceMapper().readValue(root.toString(), Choice.class);
         }
+    }
+    
+    /**
+     * This is to reduce overhead in creating object mappers.
+     * @return a preconfigured object mapper.
+     */
+    private ObjectMapper getSingletonChoiceMapper() {
+        if (null == choiceMapper) {
+            SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
+            contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+            
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(contentDeserializerModule);
+            choiceMapper = mapper;
+        }
+        
+        return choiceMapper;
     }
 }
