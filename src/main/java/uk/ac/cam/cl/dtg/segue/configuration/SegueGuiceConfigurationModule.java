@@ -359,8 +359,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * 
      * @param database
      *            - database reference
-     * @param objectMapper
-     *            - A configured object mapper so that we can serialize objects logged.
      * @param loggingEnabled
      *            - boolean to determine if we should persist log messages.
      * @param lhm
@@ -370,10 +368,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ILogManager getLogManager(final MongoDb database, final ObjectMapper objectMapper,
+    private static ILogManager getLogManager(final MongoDb database,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
         if (null == logManager) {
-            logManager = new MongoLogManager(database, objectMapper, loggingEnabled, lhm);
+            logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
                 log.info("Log manager configured to record logging.");

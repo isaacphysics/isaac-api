@@ -90,7 +90,7 @@ public class MongoLogManager implements ILogManager {
 
         this.objectMapper = objectMapper;
         this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        MongoJackModule.configure(objectMapper);
+        MongoJackModule.configure(this.objectMapper);
 
         this.loggingEnabled = loggingEnabled;
         this.locationManager = locationManager;
@@ -211,7 +211,9 @@ public class MongoLogManager implements ILogManager {
         }
 
         andQuery.put("$and", obj);
-
+        
+        log.debug("getLogs by type mongo query: " + andQuery);
+        
         List<LogEvent> results = jc.find(andQuery).toArray();
 
         return results;
