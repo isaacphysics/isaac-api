@@ -424,7 +424,7 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
-<<<<<<< HEAD
+
      * Sets the email verification token.
      * 
      * @param verificationToken
