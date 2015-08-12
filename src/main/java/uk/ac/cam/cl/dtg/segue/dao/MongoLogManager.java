@@ -16,7 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +30,7 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.Validate;
+import org.joda.time.LocalDate;
 import org.mongojack.DBQuery;
 import org.mongojack.DBQuery.Query;
 import org.mongojack.JacksonDBCollection;
@@ -177,6 +183,37 @@ public class MongoLogManager implements ILogManager {
     }
 
     @Override
+    public Map<String, Map<LocalDate, Integer>> getLogCountByDate(final Collection<String> eventTypes,
+            final Date fromDate, final Date toDate, final List<RegisteredUserDTO> usersOfInterest,
+            final boolean binDataByMonth) {
+
+        Validate.notNull(eventTypes);
+
+        Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
+
+        for (String typeOfInterest : eventTypes) {
+            Iterator<LogEvent> logsByType = this.getLogsIteratorByType(typeOfInterest, fromDate, toDate,
+                    usersOfInterest);
+
+            if (!result.containsKey(typeOfInterest)) {
+                result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
+            }
+
+            while (logsByType.hasNext()) {
+                LocalDate dateGroup = this.getDateGroup(logsByType.next(), binDataByMonth);
+
+                if (result.get(typeOfInterest).containsKey(dateGroup)) {
+                    result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
+                } else {
+                    result.get(typeOfInterest).put(dateGroup, 1);
+                }
+            }
+        }
+
+        return result;
+    }
+    
+    @Override
     public List<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate,
             final List<RegisteredUserDTO> usersOfInterest) {
         Date newToDate;
@@ -212,12 +249,12 @@ public class MongoLogManager implements ILogManager {
 
         andQuery.put("$and", obj);
         
-        log.debug("getLogs by type mongo query: " + andQuery);
+        log.info("getLogs by type mongo query: " + andQuery);
         
         List<LogEvent> results = jc.find(andQuery).toArray();
 
         return results;
-    }
+    }    
 
     @Override
     public Long getLogCountByType(final String type) {
@@ -386,6 +423,45 @@ public class MongoLogManager implements ILogManager {
         return results;
     }
 
+    @Override
+    public Iterator<LogEvent> getLogsIteratorByType(final String type, final Date fromDate, final Date toDate,
+            final List<RegisteredUserDTO> usersOfInterest) {
+        Date newToDate;
+        if (null == toDate) {
+            newToDate = new Date();
+        } else {
+            newToDate = toDate;
+        }
+
+        JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
+                database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
+                this.objectMapper);
+
+        BasicDBObject queryDateRange = new BasicDBObject("timestamp", //
+                new BasicDBObject("$gte", fromDate).append("$lt", newToDate));
+
+        BasicDBObject andQuery = new BasicDBObject();
+        List<BasicDBObject> obj = Lists.newArrayList();
+        obj.add(queryDateRange);
+        obj.add(new BasicDBObject("eventType", type));
+
+        if (null != usersOfInterest && usersOfInterest.size() > 0) {
+            BasicDBObject orQuery = new BasicDBObject();
+
+            List<BasicDBObject> ids = Lists.newArrayList();
+            for (RegisteredUserDTO user : usersOfInterest) {
+                ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getDbId()));
+            }
+
+            orQuery.put("$or", ids);
+            obj.add(orQuery);
+        }
+
+        andQuery.put("$and", obj);
+        
+        return jc.find(andQuery).iterator();
+    }
+    
     /**
      * log an event in the database.
      * 
@@ -457,7 +533,7 @@ public class MongoLogManager implements ILogManager {
             log.error("MongoDb exception while trying to log a user event.", e);
         }
     }
-
+    
     /**
      * Extract client ip address.
      * 
@@ -486,5 +562,28 @@ public class MongoLogManager implements ILogManager {
             ip = request.getRemoteAddr();
         }
         return ip;
+    }
+    
+    /**
+     * Get a date object that is configured correctly.
+     * 
+     * @param log
+     *            containing a valid timestamp
+     * @param binDataByMonth
+     *            whether we should bin the date by month or not.
+     * @return the local date either as per the log event or with the day of the month set to 1.
+     */
+    private LocalDate getDateGroup(final LogEvent log, final boolean binDataByMonth) {
+        LocalDate dateGroup;
+        if (binDataByMonth) {
+            Calendar logDate = new GregorianCalendar();
+            logDate.setTime(log.getTimestamp());
+            logDate.set(Calendar.DAY_OF_MONTH, 1);
+
+            dateGroup = new LocalDate(logDate.getTime());
+        } else {
+            dateGroup = new LocalDate(log.getTimestamp());
+        }
+        return dateGroup;
     }
 }
