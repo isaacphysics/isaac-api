@@ -637,7 +637,8 @@ public class UserManager {
      * @throws SegueDatabaseException
      *             - If there is another database error
      */
-    public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException, SegueDatabaseException {
+    public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException,
+            SegueDatabaseException {
         return this.convertUserDOToUserDTO(this.findUserByEmail(email));
     }
 

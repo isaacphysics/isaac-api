@@ -16,8 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.Validate;
@@ -236,8 +236,16 @@ public class MongoUserDataManager implements IUserDataManager {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         MongoJackModule.configure(mapper);
 
-        BasicDBObject query = new BasicDBObject(mapper.convertValue(prototype, HashMap.class));
-
+        BasicDBObject query = new BasicDBObject(mapper.convertValue(prototype, BasicDBObject.class));
+        
+        // specify case insensitive aspects
+        for (Entry<String, Object> entry : query.entrySet()) {
+            if (entry.getKey().equals("familyName") && entry.getValue() != null) {
+                query.replace("familyName",
+                        Pattern.compile(".*" + entry.getValue().toString() + ".*", Pattern.CASE_INSENSITIVE));
+            }
+        }
+        
         DBCursor<RegisteredUser> users = jc.find(query).sort(DBSort.asc("familyName"));
 
         return users.toArray();
