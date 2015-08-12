@@ -27,10 +27,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
+import twitter4j.User;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -41,7 +44,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class MisuseMonitorTest {
     private PropertiesLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;
-
+    private User dummyUser;
     /**
      * Initial configuration of tests.
      * 
@@ -52,6 +55,7 @@ public class MisuseMonitorTest {
     public final void setUp() throws Exception {
         this.dummyCommunicator = createMock(EmailManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        this.dummyUser = createMock(User.class);
 
         expect(dummyPropertiesLoader.getProperty(Constants.SERVER_ADMIN_ADDRESS)).andReturn("FROM ADDRESS").anyTimes();
         replay(this.dummyPropertiesLoader);
@@ -98,5 +102,64 @@ public class MisuseMonitorTest {
         }
 
         verify(this.dummyCommunicator, this.dummyPropertiesLoader);
+    }
+    
+    /**
+     * Verifies that the email verification misuse handler is working.
+     */
+    @Test
+    public final void emailVerificationRequest_checkForMisuse_emailShouldBeSentAndExceptionShouldOccur() {
+        
+        String event = EmailVerificationRequestMisusehandler.class.toString();
+        
+        IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
+
+        EmailVerificationRequestMisusehandler emailVerificationMisuseHandler = new EmailVerificationRequestMisusehandler(
+                dummyCommunicator, dummyPropertiesLoader);
+        
+        misuseMonitor.registerHandler(event, emailVerificationMisuseHandler);
+
+        dummyCommunicator.addToQueue(EasyMock.isA(EmailCommunicationMessage.class));
+        expectLastCall().times(2);
+        replay(this.dummyCommunicator);
+
+        
+        // Create a test user
+        RegisteredUser user = new RegisteredUser();
+        user.setEmail("test@test.com");
+        user.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
+        
+        // Soft threshold
+        try {
+            //Register the misuse monitor
+            if (misuseMonitor.hasMisused(user.getEmail(),
+                    EmailVerificationRequestMisusehandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+            
+            for (int i = 0; i < EmailVerificationRequestMisusehandler.SOFT_THRESHOLD; i++) {
+                misuseMonitor.notifyEvent(user.getEmail(), event);
+            }
+        } catch (SegueResourceMisuseException e) {
+            fail();
+        }   
+        
+        // Hard threshold
+        try {
+            //Register the misuse monitor
+            if (misuseMonitor.hasMisused(user.getEmail(),
+                    EmailVerificationRequestMisusehandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+            
+            for (int i = EmailVerificationRequestMisusehandler.SOFT_THRESHOLD;
+                                        i < EmailVerificationRequestMisusehandler.HARD_THRESHOLD; i++) {
+                misuseMonitor.notifyEvent(user.getEmail(), event);
+            }
+        } catch (SegueResourceMisuseException e) {
+            System.out.println("SegueResourceMisuseException");
+        }   
+        
+        EasyMock.verify(this.dummyCommunicator, this.dummyPropertiesLoader);
     }
 }

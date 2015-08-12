@@ -201,7 +201,7 @@ public class UserManagerTest {
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
                 new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, 
-                EmailVerificationStatus.EXEMPT);
+                EmailVerificationStatus.NOT_VERIFIED);
 
         dummyDatabase.updateUserLastSeen(validUserId);
         expectLastCall();
@@ -387,7 +387,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, EmailVerificationStatus.EXEMPT);
+                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, EmailVerificationStatus.NOT_VERIFIED);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
                 Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();
