@@ -51,7 +51,9 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
@@ -548,38 +550,73 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         if (null == problemMap) {
-            return Response.ok(new Content("No problems found.")).build();
+            return Response.ok(Maps.newHashMap()).build();
         }
 
         // build up a content object to return.
         int brokenFiles = 0;
         int errors = 0;
-
-        Content c = new Content();
-        c.setId("dynamic_problem_report");
+        int failures = 0;
+        Builder<String, Object> responseBuilder = ImmutableMap.builder();
+        List<Map<String, Object>> errorList = Lists.newArrayList();
+        
+        // go through each errored content and list of errors
         for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
-            Content child = new Content();
-            child.setTitle(pair.getKey().getTitle());
-            child.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
+            Map<String, Object> errorRecord = Maps.newHashMap();
+            
+            Content partialContentWithErrors = new Content();
+            partialContentWithErrors.setId(pair.getKey().getId());
+            partialContentWithErrors.setTitle(pair.getKey().getTitle());
+            partialContentWithErrors.setTags(pair.getKey().getTags());
+            partialContentWithErrors.setPublished(pair.getKey().getPublished());
+            partialContentWithErrors.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
             brokenFiles++;
-
+            
+            errorRecord.put("partialContent", partialContentWithErrors);
+            
+            errorRecord.put("successfulIngest", false);
+            failures++;
+            
+            if (partialContentWithErrors.getId() != null) {
+                try {
+                    
+                    boolean success = contentVersionController.getContentManager().getContentById(
+                            this.contentVersionController.getLiveVersion(),
+                            partialContentWithErrors.getId()) != null;
+                    
+                    errorRecord.put("successfulIngest", success);
+                    if (success) {
+                        failures--;
+                    }
+                    
+                } catch (ContentManagerException e) {
+                    e.printStackTrace();
+                }    
+            }
+            
+            List<String> listOfErrors = Lists.newArrayList();
             for (String s : pair.getValue()) {
-                Content erroredContentObject = new Content(s);
-
-                erroredContentObject.setId(pair.getKey().getId() + "_error_" + errors);
-
-                child.getChildren().add(erroredContentObject);
-
+                listOfErrors.add(s);
+                // special case when duplicate ids allow one in.
+                if (s.toLowerCase().contains("index failure") && errorRecord.get("successfulIngest").equals(true)) {
+                    errorRecord.put("successfulIngest", false);
+                    failures++;
+                }
                 errors++;
             }
-
-            c.getChildren().add(child);
-            child.setId(pair.getKey().getId() + "_problem_report_" + errors);
+            
+            errorRecord.put("listOfErrors", listOfErrors);
+           
+            errorList.add(errorRecord);
         }
+        
+        responseBuilder.put("brokenFiles", brokenFiles);
+        responseBuilder.put("totalErrors", errors);
+        responseBuilder.put("errorsList", errorList);
+        responseBuilder.put("failedFiles", failures);
+        responseBuilder.put("currentLiveVersion", this.contentVersionController.getLiveVersion());
 
-        c.setSubtitle("Total Broken files: " + brokenFiles + " Total errors : " + errors);
-
-        return Response.ok(c).build();
+        return Response.ok(responseBuilder.build()).build();
     }
 
     /**
