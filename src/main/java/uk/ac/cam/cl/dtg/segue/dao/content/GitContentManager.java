@@ -29,10 +29,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
@@ -792,6 +794,11 @@ public class GitContentManager implements IContentManager {
         if (content instanceof Media) {
             Media media = (Media) content;
             media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
+
+            // for tracking purposes we want to generate an id for all images.
+            if (media.getId() == null && media.getSrc() != null) {
+                media.setId(new String(Base64.encodeBase64(media.getSrc().getBytes())));
+            }
         }
 
         // Concatenate the parentId with our id to get a fully qualified

@@ -570,6 +570,8 @@ public class AdminFacade extends AbstractSegueFacade {
         Builder<String, Object> responseBuilder = ImmutableMap.builder();
         List<Map<String, Object>> errorList = Lists.newArrayList();
         
+        Map<String, Map<String, Object>> lookupMap = Maps.newHashMap();
+        
         // go through each errored content and list of errors
         for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
             Map<String, Object> errorRecord = Maps.newHashMap();
@@ -616,8 +618,16 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             errorRecord.put("listOfErrors", listOfErrors);
-           
-            errorList.add(errorRecord);
+            // we only want one error record per canonical path so batch them together if we have seen it before.
+            if (lookupMap.containsKey(partialContentWithErrors.getCanonicalSourceFile())) {
+                Map<String, Object> existingErrorRecord 
+                    = lookupMap.get(partialContentWithErrors.getCanonicalSourceFile());
+
+                ((List<String>) existingErrorRecord.get("listOfErrors")).addAll(listOfErrors);
+            } else {
+                errorList.add(errorRecord);
+                lookupMap.put(partialContentWithErrors.getCanonicalSourceFile(), errorRecord);
+            }
         }
         
         responseBuilder.put("brokenFiles", brokenFiles);
