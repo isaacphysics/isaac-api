@@ -546,7 +546,8 @@ public class GitContentManager implements IContentManager {
             try {
                 thingsToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
             } catch (JsonProcessingException e) {
-                log.error("Unable to serialize content object " + "for indexing with the search provider.", e);
+                log.error("Unable to serialize content object: " + content.getId()
+                        + " for indexing with the search provider.", e);
             }
         }
 
