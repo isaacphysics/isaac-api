@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -504,6 +505,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             
             misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(), 
                     new EmailVerificationRequestMisusehandler(emailManager, properties));
+            
+            misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(), 
+                    new PasswordResetRequestMisusehandler(emailManager, properties));
         }
 
         return misuseMonitor;

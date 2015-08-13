@@ -59,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
@@ -227,6 +228,15 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         try {
+            
+            if (misuseMonitor.hasMisused(userObject.getEmail(),
+                    PasswordResetRequestMisusehandler.class.toString())) {
+                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
+            }
+    
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisusehandler.class.toString());
+            
+            
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -244,7 +254,12 @@ public class UsersFacade extends AbstractSegueFacade {
                     "Error generating password reset token.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
-        } 
+        } catch (SegueResourceMisuseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You have exceeded the number of requests allowed for this endpoint");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
     }
 
     /**
