@@ -621,7 +621,12 @@ public class AdminFacade extends AbstractSegueFacade {
             if (lookupMap.containsKey(partialContentWithErrors.getCanonicalSourceFile())) {
                 Map<String, Object> existingErrorRecord 
                     = lookupMap.get(partialContentWithErrors.getCanonicalSourceFile());
-
+                
+                if (existingErrorRecord.get("successfulIngest").equals(false)
+                        || errorRecord.get("successfulIngest").equals(false)) {
+                    existingErrorRecord.put("successfulIngest", false);
+                }
+                
                 ((List<String>) existingErrorRecord.get("listOfErrors")).addAll(listOfErrors);
             } else {
                 errorList.add(errorRecord);
