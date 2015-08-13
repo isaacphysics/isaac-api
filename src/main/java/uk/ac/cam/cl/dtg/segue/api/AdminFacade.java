@@ -526,7 +526,8 @@ public class AdminFacade extends AbstractSegueFacade {
      * 
      * @param request
      *            - to identify if the user is authorised.
-     * 
+     * @param requestForCaching
+     *            - to determine if the content is still fresh..
      * @return a content object, such that the content object has children. The children represent each source file in
      *         error and the grand children represent each error.
      */
@@ -534,7 +535,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/content_problems")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response getContentProblems(@Context final HttpServletRequest request) {
+    public Response getContentProblems(@Context final HttpServletRequest request,
+            @Context final Request requestForCaching) {
         Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
                 contentVersionController.getLiveVersion());
 
@@ -549,6 +551,14 @@ public class AdminFacade extends AbstractSegueFacade {
             }
         }
 
+        // Calculate the ETag
+        EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(requestForCaching, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+        
         if (null == problemMap) {
             return Response.ok(Maps.newHashMap()).build();
         }
@@ -616,7 +626,8 @@ public class AdminFacade extends AbstractSegueFacade {
         responseBuilder.put("failedFiles", failures);
         responseBuilder.put("currentLiveVersion", this.contentVersionController.getLiveVersion());
 
-        return Response.ok(responseBuilder.build()).build();
+        return Response.ok(responseBuilder.build()).cacheControl(getCacheControl(CACHE_FOR_ONE_MINUTE)).tag(etag)
+                .build();
     }
 
     /**
