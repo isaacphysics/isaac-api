@@ -23,8 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -128,9 +126,10 @@ public class StatisticsManager {
      * serializable facade endpoint.
      * 
      * @return ImmutableMap<String, String> (stat name, stat value)
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if there is a database error.
      */
-    public synchronized Map<String, Object> outputGeneralStatistics() throws SegueDatabaseException {
+    public synchronized Map<String, Object> outputGeneralStatistics() 
+            throws SegueDatabaseException {
         @SuppressWarnings("unchecked")
         Map<String, Object> cachedOutput = (Map<String, Object>) this.statsCache.getIfPresent(GENERAL_STATS);
         if (cachedOutput != null) {
@@ -141,27 +140,21 @@ public class StatisticsManager {
         }
 
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
 
         List<RegisteredUserDTO> male = Lists.newArrayList();
         List<RegisteredUserDTO> female = Lists.newArrayList();
         List<RegisteredUserDTO> unknownGender = Lists.newArrayList();
-
         ib.put("totalUsers", "" + users.size());
 
         List<RegisteredUserDTO> studentOrUnknownRole = Lists.newArrayList();
         List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
         List<RegisteredUserDTO> adminStaffRole = Lists.newArrayList();
-
         List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
         Map<String, Date> lastSeenMap = Maps.newHashMap();
 
-        log.debug("Calculating general stats - 1. User details");
-
-        // build user stats
         for (RegisteredUserDTO user : users) {
             if (user.getGender() == null) {
                 unknownGender.add(user);
@@ -249,14 +242,10 @@ public class StatisticsManager {
         nonStaffUsers.addAll(teacherRole);
         nonStaffUsers.addAll(studentOrUnknownRole);
 
-        log.debug("Calculating general stats - 3. Last seen map - teachers");
-
         ib.put("activeTeachersLastWeek",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, sevenDays).size());
         ib.put("activeTeachersLastThirtyDays",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, thirtyDays).size());
-
-        log.debug("Calculating general stats - 4. Last seen map - students");
 
         ib.put("activeStudentsLastWeek",
                 "" + this.getNumberOfUsersActiveForLastNDays(studentOrUnknownRole, lastSeenMap, sevenDays).size());
@@ -268,16 +257,11 @@ public class StatisticsManager {
         ib.put("activeUsersLastThirtyDays",
                 "" + this.getNumberOfUsersActiveForLastNDays(nonStaffUsers, lastSeenMap, thirtyDays).size());
 
-        log.debug("Calculating general stats - 5. Last seen map - Questions - teachers");
-
         Map<String, Date> lastSeenUserMapQuestions = this.getLastSeenUserMap(ANSWER_QUESTION);
-
         ib.put("questionsAnsweredLastWeekTeachers",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, sevenDays).size());
         ib.put("questionsAnsweredLastThirtyDaysTeachers",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenUserMapQuestions, thirtyDays).size());
-
-        log.debug("Calculating general stats - 6. Last seen map - Questions - students");
 
         ib.put("questionsAnsweredLastWeekStudents",
                 ""
@@ -291,7 +275,6 @@ public class StatisticsManager {
         ib.put("groupCount", groupManager.getGroupCount());
         
         Map<String, Object> result = ib.build();
-
         this.statsCache.put(GENERAL_STATS, result);
 
         return result;
@@ -308,7 +291,8 @@ public class StatisticsManager {
      * @throws SegueDatabaseException
      *             - if there is a database exception.
      */
-    public List<Map<String, Object>> getSchoolStatistics() throws UnableToIndexSchoolsException, SegueDatabaseException {
+    public List<Map<String, Object>> getSchoolStatistics() 
+            throws UnableToIndexSchoolsException, SegueDatabaseException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.statsCache.getIfPresent(SCHOOL_STATS);
         if (cachedOutput != null) {
@@ -372,7 +356,7 @@ public class StatisticsManager {
      * Get the number of users per school.
      * 
      * @return A map of schools to integers (representing the number of registered users)
-     * @throws UnableToIndexSchoolsException
+     * @throws UnableToIndexSchoolsException as per the description
      */
     public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException {
         List<RegisteredUserDTO> users;
@@ -520,11 +504,11 @@ public class StatisticsManager {
                     // order
 
                     QuestionValidationResponse validationResponse = question.getValue().get(i);
-                    if (validationResponse.isCorrect() && i == 0) {
+                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect() && i == 0) {
                         questionsFirstTime++;
                     }
 
-                    if (validationResponse.isCorrect()) {
+                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
                         questionsAnsweredCorrectly++;
                         break;
                     }
@@ -538,7 +522,8 @@ public class StatisticsManager {
         Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
         Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
 
-        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
+        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question 
+                : questionAttemptsByUser.entrySet()) {
             // add the tags
             if (questionMap.get(question.getKey()) != null) {
                 for (String tag : questionMap.get(question.getKey()).getTags()) {
@@ -590,25 +575,7 @@ public class StatisticsManager {
      */
     public Map<String, Map<LocalDate, Integer>> getEventLogsByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final boolean binDataByMonth) {
-        Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
-
-        for (String typeOfInterest : eventTypes) {
-            List<LogEvent> logsByType = this.logManager.getLogsByType(typeOfInterest, fromDate, toDate);
-
-            if (!result.containsKey(typeOfInterest)) {
-                result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
-            }
-
-            for (LogEvent log : logsByType) {
-                LocalDate dateGroup = this.getDateGroup(log, binDataByMonth);
-                if (result.get(typeOfInterest).containsKey(dateGroup)) {
-                    result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
-                } else {
-                    result.get(typeOfInterest).put(dateGroup, 1);
-                }
-            }
-        }
-        return result;
+        return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
     }
 
     /**
@@ -627,29 +594,11 @@ public class StatisticsManager {
      * @return Map of eventType --> map of dates and frequency
      */
     public Map<String, Map<LocalDate, Integer>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
-            final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList, final boolean binDataByMonth) {
+            final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
+            final boolean binDataByMonth) {
         Validate.notNull(eventTypes);
 
-        Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
-
-        for (String typeOfInterest : eventTypes) {
-            List<LogEvent> logsByType = this.logManager.getLogsByType(typeOfInterest, fromDate, toDate, userList);
-
-            if (!result.containsKey(typeOfInterest)) {
-                result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
-            }
-
-            for (LogEvent log : logsByType) {
-                LocalDate dateGroup = this.getDateGroup(log, binDataByMonth);
-
-                if (result.get(typeOfInterest).containsKey(dateGroup)) {
-                    result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
-                } else {
-                    result.get(typeOfInterest).put(dateGroup, 1);
-                }
-            }
-        }
-        return result;
+        return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, userList, binDataByMonth);
     }
 
     /**
@@ -756,28 +705,5 @@ public class StatisticsManager {
             result.put(e.getKey(), e.getValue().getTimestamp());
         }
         return result;
-    }
-
-    /**
-     * Get a date object that is configured correctly.
-     * 
-     * @param log
-     *            containing a valid timestamp
-     * @param binDataByMonth
-     *            whether we should bin the date by month or not.
-     * @return the local date either as per the log event or with the day of the month set to 1.
-     */
-    private LocalDate getDateGroup(final LogEvent log, final boolean binDataByMonth) {
-        LocalDate dateGroup;
-        if (binDataByMonth) {
-            Calendar logDate = new GregorianCalendar();
-            logDate.setTime(log.getTimestamp());
-            logDate.set(Calendar.DAY_OF_MONTH, 1);
-
-            dateGroup = new LocalDate(logDate.getTime());
-        } else {
-            dateGroup = new LocalDate(log.getTimestamp());
-        }
-        return dateGroup;
     }
 }

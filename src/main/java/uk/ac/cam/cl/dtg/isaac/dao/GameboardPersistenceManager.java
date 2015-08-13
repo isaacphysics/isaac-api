@@ -37,6 +37,7 @@ import org.elasticsearch.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -44,7 +45,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -75,6 +75,8 @@ public class GameboardPersistenceManager {
 	private final SegueApiFacade api;
 
 	private final Map<String, GameboardDO> gameboardNonPersistentStorage;
+	
+    private final URIManager uriManager;
 
 	/**
 	 * Creates a new user data manager object.
@@ -90,15 +92,17 @@ public class GameboardPersistenceManager {
 	 * @param mapper
 	 *            - An instance of an automapper that can be used for mapping to
 	 *            and from GameboardDOs and DTOs.
+	 * @param uriManager - so we can generate appropriate content URIs.
 	 */
 	@Inject
 	public GameboardPersistenceManager(final IAppDatabaseManager<GameboardDO> database,
 			final IAppDatabaseManager<UserGameboardsDO> userToGameboardMappings, final SegueApiFacade api,
-			final MapperFacade mapper) {
+			final MapperFacade mapper, final URIManager uriManager) {
 		this.gameboardDataManager = database;
 		this.userToGameboardMappingsDatabase = userToGameboardMappings;
 		this.mapper = mapper;
 		this.api = api;
+        this.uriManager = uriManager;
 		this.gameboardNonPersistentStorage = Maps.newConcurrentMap();
 	}
 
@@ -375,7 +379,7 @@ public class GameboardPersistenceManager {
 
 		for (ContentDTO c : questionsForGameboard) {
 			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-			questionInfo.setUri(URIManager.generateApiUrl(c));
+			questionInfo.setUri(uriManager.generateApiUrl(c));
 			gameboardReadyQuestions.put(c.getId(), questionInfo);
 		}
 		
@@ -458,6 +462,19 @@ public class GameboardPersistenceManager {
 		
 		return results;
 	}
+	
+    /**
+     * Utility function to create a gameboard item from a content DTO (Should be a question page).
+     * 
+     * @param content
+     *            to convert
+     * @return the gameboard item with augmented URI.
+     */
+    public GameboardItem convertToGameboardItem(final ContentDTO content) {
+        GameboardItem questionInfo = mapper.map(content, GameboardItem.class);
+        questionInfo.setUri(uriManager.generateApiUrl(content));
+        return questionInfo;
+    }
 	
 	/**
 	 * Helper method to tidy temporary gameboard cache.
@@ -636,8 +653,7 @@ public class GameboardPersistenceManager {
 		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
 
 		for (ContentDTO c : questionsForGameboard) {
-			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-			questionInfo.setUri(URIManager.generateApiUrl(c));
+			GameboardItem questionInfo = this.convertToGameboardItem(c);
 			gameboardReadyQuestions.put(c.getId(), questionInfo);
 		}
 		

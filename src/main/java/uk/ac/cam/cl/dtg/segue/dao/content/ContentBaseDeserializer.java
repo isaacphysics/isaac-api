@@ -18,6 +18,9 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import java.io.IOException;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -39,9 +42,9 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
  * 
  */
 public class ContentBaseDeserializer extends JsonDeserializer<Content> {
-
     private Map<String, Class<? extends Content>> typeMap = null;
-
+    //private static final Logger log = LoggerFactory.getLogger(ContentBaseDeserializer.class);
+    
     /**
      * Register the map of json types that this deserializer should be interested in.
      * 
@@ -51,7 +54,7 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
     public final void registerTypeMap(final Map<String, Class<? extends Content>> jsonTypes) {
         this.typeMap = jsonTypes;
     }
-
+    
     @Override
     public final Content deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
             throws IOException {
@@ -70,9 +73,9 @@ public class ContentBaseDeserializer extends JsonDeserializer<Content> {
         }
 
         String contentType = root.get("type").textValue();
-
         if (typeMap.containsKey(contentType)) {
             contentClass = typeMap.get(contentType);
+
             return mapper.readValue(root.toString(), contentClass);
         }
 

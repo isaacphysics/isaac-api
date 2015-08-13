@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -74,7 +73,7 @@ import static com.google.common.collect.Maps.*;
 public class GameManager {
     private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
-    private static final int MAX_QUESTIONS_TO_SEARCH = 30;
+    private static final int MAX_QUESTIONS_TO_SEARCH = 20;
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
@@ -710,17 +709,14 @@ public class GameManager {
 
         ResultsWrapper<ContentDTO> results = versionManager.getContentManager().findByFieldNamesRandomOrder(
                 versionManager.getLiveVersion(), fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
-        // ResultsWrapper<ContentDTO> results = api.findMatchingContentRandomOrder(api.getLiveVersion(),
-        // fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
 
         List<ContentDTO> questionsForGameboard = results.getResults();
 
         List<GameboardItem> selectionOfGameboardQuestions = Lists.newArrayList();
 
-        // Map each Content object into an IsaacQuestionInfo object
+        // Map each Content object into an GameboardItem object
         for (ContentDTO c : questionsForGameboard) {
-            GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
-            questionInfo.setUri(URIManager.generateApiUrl(c));
+            GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(c);
             selectionOfGameboardQuestions.add(questionInfo);
         }
 
@@ -794,7 +790,7 @@ public class GameManager {
                 // for this question to determine if there is a
                 // correct answer somewhere.
                 for (int i = questionAttempts.size() - 1; i >= 0; i--) {
-                    if (questionAttempts.get(i).isCorrect()) {
+                    if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
                         foundCorrectForThisQuestion = true;
                         break;
                     }

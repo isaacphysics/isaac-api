@@ -205,7 +205,7 @@ public class QuestionManager {
                     bestAnswer = currentResponse;
                 }
 
-                if (questionAttempts.get(i).isCorrect()) {
+                if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
                     bestAnswer = currentResponse;
                     break;
                 }

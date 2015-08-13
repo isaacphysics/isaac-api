@@ -15,13 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
+
+import org.joda.time.LocalDate;
 
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -136,6 +140,27 @@ public interface ILogManager {
     List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest);
 
     /**
+     * Utility method that will generate a map of type -- > localDate -- > number of events.
+     * 
+     * This is done at the database level to allow efficient use of memory.
+     * 
+     * @param eventTypes
+     *            - string representing the type of event to find.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search.
+     * @param usersOfInterest
+     *            - users of interest.
+     * @param binDataByMonth
+     *            - if true then the data will be put into bins by the 1st of the month if false you will get one per
+     *            day that an event occurred.
+     * @return a map of type -- > localDate -- > number of events
+     */
+    Map<String, Map<LocalDate, Integer>> getLogCountByDate(Collection<String> eventTypes, Date fromDate, Date toDate,
+            List<RegisteredUserDTO> usersOfInterest, boolean binDataByMonth);
+
+    /**
      * @return get a set of all ip addresses ever seen in the log events.
      */
     Set<String> getAllIpAddresses();
@@ -194,4 +219,20 @@ public interface ILogManager {
      * @return Set of event types.
      */
     Set<String> getAllEventTypes();
+    
+    /**
+     * Utility method to allows filtering by date range using a lazy iterator.
+     * 
+     * @param type
+     *            - string representing the type of event to find.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search.
+     * @param usersOfInterest
+     *            - users of interest.
+     * @return all events of the type requested or null if none available. The map should be of type String, Object
+     */
+    Iterator<LogEvent> getLogsIteratorByType(String type, Date fromDate, Date toDate,
+            List<RegisteredUserDTO> usersOfInterest);
 }
