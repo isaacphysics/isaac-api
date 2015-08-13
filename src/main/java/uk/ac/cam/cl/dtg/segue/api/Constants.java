@@ -355,7 +355,8 @@ public final class Constants {
 
     // cache settings
     public static final String MAX_CONTENT_CACHE_TIME = "MAX_CONTENT_CACHE_TIME";
-
+    
+    public static final int CACHE_FOR_ONE_MINUTE = 3600;
     public static final int CACHE_FOR_FIVE_MINUTES = 18000;
     public static final int CACHE_FOR_TEN_MINUTES = 36000;
     public static final int CACHE_FOR_ONE_DAY = 86400;

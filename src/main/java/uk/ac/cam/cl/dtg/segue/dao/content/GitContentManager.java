@@ -667,7 +667,8 @@ public class GitContentManager implements IContentManager {
                                     + ") detected in cache. Skipping " + treeWalk.getPathString());
                             this.registerContentProblem(sha, flattenedContent,
                                     "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and "
-                                            + shaCache.get(flattenedContent.getId()).getCanonicalSourceFile());
+                                            + shaCache.get(flattenedContent.getId()).getCanonicalSourceFile()
+                                            + " only one will be available");
                         }
                     }
                 } catch (JsonMappingException e) {

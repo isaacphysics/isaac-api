@@ -241,7 +241,7 @@ public class MongoUserDataManager implements IUserDataManager {
         // specify case insensitive aspects
         for (Entry<String, Object> entry : query.entrySet()) {
             if (entry.getKey().equals("familyName") && entry.getValue() != null) {
-                query.replace("familyName",
+                query.put("familyName",
                         Pattern.compile(".*" + entry.getValue().toString() + ".*", Pattern.CASE_INSENSITIVE));
             }
         }
