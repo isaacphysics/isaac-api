@@ -564,7 +564,6 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         // build up a content object to return.
-        int brokenFiles = 0;
         int errors = 0;
         int failures = 0;
         Builder<String, Object> responseBuilder = ImmutableMap.builder();
@@ -582,7 +581,7 @@ public class AdminFacade extends AbstractSegueFacade {
             partialContentWithErrors.setTags(pair.getKey().getTags());
             partialContentWithErrors.setPublished(pair.getKey().getPublished());
             partialContentWithErrors.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
-            brokenFiles++;
+
             
             errorRecord.put("partialContent", partialContentWithErrors);
             
@@ -630,7 +629,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
         }
         
-        responseBuilder.put("brokenFiles", brokenFiles);
+        responseBuilder.put("brokenFiles", lookupMap.keySet().size());
         responseBuilder.put("totalErrors", errors);
         responseBuilder.put("errorsList", errorList);
         responseBuilder.put("failedFiles", failures);
