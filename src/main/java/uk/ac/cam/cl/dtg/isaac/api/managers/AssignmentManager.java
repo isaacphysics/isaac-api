@@ -23,9 +23,6 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.api.client.util.Lists;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -33,6 +30,9 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+
+import com.google.api.client.util.Lists;
+import com.google.inject.Inject;
 
 /**
  * AssignmentManager.
@@ -112,9 +112,9 @@ public class AssignmentManager {
 
         if (assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(newAssignment.getGameboardId(),
                 newAssignment.getGroupId()).size() != 0) {
-            throw new DuplicateAssignmentException(String.format(
-                    "You cannot assign the same work (%s) to a group (%s) more than once.",
+            log.error(String.format("Duplicated Assignment Exception - cannot assign the same work %s to a group %s", 
                     newAssignment.getGameboardId(), newAssignment.getGroupId()));
+            throw new DuplicateAssignmentException("You cannot assign the same work to a group more than once.");
         }
 
         newAssignment.setCreationDate(new Date());
