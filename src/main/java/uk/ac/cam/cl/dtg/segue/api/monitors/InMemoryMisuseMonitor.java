@@ -35,7 +35,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 
 /**
- *
+ * InMemoryMisuseMonitor.
  */
 public class InMemoryMisuseMonitor implements IMisuseMonitor {
     // Cache of the form agentIdentifier --> Event --> Date, number
@@ -80,7 +80,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
             Entry<Date, Integer> entry = existingHistory.get(eventLabel);
             if (null == entry) {
                 existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
-                log.info("New Event " + existingHistory.get(eventLabel));
+                log.debug("New Event " + existingHistory.get(eventLabel));
             } else {
 
                 // deal with expired events
