@@ -173,8 +173,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             String hmacToken = UserManager.calculateHMAC(key, email).replace("=", "")
                                                                     .replace("/", "")
                                                                     .replace("+", ""); 
-            log.info("New HCMA token: " + hmacToken);
-            log.info("User token: " + userToken);
+            log.debug("New HMAC token: " + hmacToken);
+            log.debug("User token: " + userToken);
             if (userToken.equals(hmacToken)) {
                 // The key is valid
                 Date now = new Date();
