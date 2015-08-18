@@ -281,8 +281,9 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to locate user to verify identity").toResponse();
         } catch (SegueResourceMisuseException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You have exceeded the number of requests allowed for this endpoint").toResponse();
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);  
         }
     }
 

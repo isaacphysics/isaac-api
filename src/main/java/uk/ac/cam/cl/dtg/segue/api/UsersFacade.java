@@ -255,10 +255,10 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You have exceeded the number of requests allowed for this endpoint");
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
+            log.error(message, e);
+            return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
 
@@ -433,7 +433,6 @@ public class UsersFacade extends AbstractSegueFacade {
     
             misuseMonitor.notifyEvent(email, EmailVerificationRequestMisusehandler.class.toString());
         
-            
             userManager.emailVerificationRequest(request, email);
 
             this.getLogManager()
@@ -452,9 +451,10 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
+            String message = "You have exceeded the number of requests allowed for this endpoint. "
+                    + "Please try again later.";
             log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)", email));
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You have exceeded the number of requests allowed for this endpoint").toResponse();
+            return SegueErrorResponse.getRateThrottledResponse(message);            
         }
     }
 
@@ -487,8 +487,8 @@ public class UsersFacade extends AbstractSegueFacade {
     
             misuseMonitor.notifyEvent(newemail, TokenOwnerLookupMisuseHandler.class.toString());
         } catch (SegueResourceMisuseException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You have exceeded the number of requests allowed for this endpoint").toResponse();
+            return SegueErrorResponse
+                    .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
         }
         
         return userManager.processEmailVerification(userid, newemail, token);

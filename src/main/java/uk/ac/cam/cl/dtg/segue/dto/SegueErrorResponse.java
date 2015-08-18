@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
@@ -35,10 +36,13 @@ public class SegueErrorResponse implements Serializable {
     private static final long serialVersionUID = 2310360688716715820L;
 
     @JsonIgnore
-    private Exception exception;
-
-    private Status responseCode;
-    private String errorMessage;
+    private final Exception exception;
+    
+    private final Integer responseCode;
+    
+    private final String responseCodeType;
+    
+    private final String errorMessage;
 
     /**
      * Constructor for creating a response with just an error code and string message.
@@ -49,8 +53,7 @@ public class SegueErrorResponse implements Serializable {
      *            - message to client.
      */
     public SegueErrorResponse(final Status errorCode, final String msg) {
-        this.responseCode = errorCode;
-        this.errorMessage = msg;
+        this(errorCode.getStatusCode(), errorCode.toString(), msg, null);
     }
 
     /**
@@ -64,18 +67,36 @@ public class SegueErrorResponse implements Serializable {
      *            - exception to wrap.
      */
     public SegueErrorResponse(final Status errorCode, final String msg, final Exception e) {
-        this(errorCode, msg);
-        this.responseCode = errorCode;
-        this.exception = e;
+        this(errorCode.getStatusCode(), errorCode.toString(), msg, e);
     }
 
+    /**
+     * Constructor for manually setting all values.
+     * 
+     * @param responseCode
+     *            - status code e.g. 404
+     * @param responseCodeType
+     *            - the string description of the error code. Eg for 404 Not Found
+     * @param errorMessage
+     *            - any additional information to show to the user.
+     * @param e
+     *            - if an exception has been triggered and should be shown in the response.
+     */
+    public SegueErrorResponse(final Integer responseCode, final String responseCodeType, final String errorMessage,
+            @Nullable final Exception e) {
+        this.responseCode = responseCode;
+        this.responseCodeType = responseCodeType;
+        this.exception = e;
+        this.errorMessage = errorMessage;
+    }
+    
     /**
      * Get the error code of this object.
      * 
      * @return the error code as an integer.
      */
     public final Integer getResponseCode() {
-        return responseCode.getStatusCode();
+        return responseCode;
     }
 
     /**
@@ -84,7 +105,7 @@ public class SegueErrorResponse implements Serializable {
      * @return response code as a string.
      */
     public final String getResponseCodeType() {
-        return responseCode.toString();
+        return responseCodeType;
     }
 
     /**
@@ -184,6 +205,15 @@ public class SegueErrorResponse implements Serializable {
     public static Response getNotImplementedResponse() {
         return new SegueErrorResponse(Status.NOT_IMPLEMENTED, "This endpoint has not yet been implemented")
                 .toResponse();
+    }
+    
+    /**
+     * @param message - inform the user how long they will be throttled for.
+     * @return error response.
+     */
+    public static Response getRateThrottledResponse(final String message) {
+        final Integer throttledStatusCode = 429;
+        return new SegueErrorResponse(throttledStatusCode, "Too Many Requests", message, null).toResponse();
     }
 
     /**
