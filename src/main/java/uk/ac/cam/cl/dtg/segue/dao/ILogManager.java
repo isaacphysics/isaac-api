@@ -204,14 +204,7 @@ public interface ILogManager {
      *            - the log event type to include in the data.
      * @return where string is the user id and the logevent is the most recent
      */
-    Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType);
-
-    /**
-     * A more efficient way of getting the last log for all users.
-     * 
-     * @return where string is the user id and the logevent is the most recent
-     */
-    Map<String, LogEvent> getLastLogForAllUsers();
+    Map<String, LogEvent> getLastLogForAllUsers(final String qualifyingLogEventType);
 
     /**
      * returns a set of event types known about from the db.

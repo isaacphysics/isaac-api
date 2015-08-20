@@ -394,22 +394,14 @@ public class MongoLogManager implements ILogManager {
     }
 
     @Override
-    public Map<String, LogEvent> getLastLogForAllUsers() {
-        return this.getLastLogForAllUsers(null);
-    }
-
-    @Override
     public Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType) {
-        List<LogEvent> allLogsByUserType;
-        if (qualifyingLogEventType != null) {
-            allLogsByUserType = this.getAllLogsByUserTypeAndEvent(RegisteredUserDTO.class, qualifyingLogEventType);
-        } else {
-            allLogsByUserType = this.getAllLogsByUserType(RegisteredUserDTO.class);
-        }
-
+        Iterator<LogEvent> allLogsByUserTypeIterator = this.getLogsIteratorByType(qualifyingLogEventType, null, null,
+                null);
+        
         Map<String, LogEvent> results = Maps.newHashMap();
         
-        for (LogEvent log : allLogsByUserType) {
+        while (allLogsByUserTypeIterator.hasNext()) {
+            LogEvent log = allLogsByUserTypeIterator.next();
             if (results.containsKey((String) log.getUserId())) {
 
                 if (results.get((String) log.getUserId()).getTimestamp().before(log.getTimestamp())) {
@@ -424,21 +416,29 @@ public class MongoLogManager implements ILogManager {
     }
 
     @Override
-    public Iterator<LogEvent> getLogsIteratorByType(final String type, final Date fromDate, final Date toDate,
-            final List<RegisteredUserDTO> usersOfInterest) {
+    public Iterator<LogEvent> getLogsIteratorByType(final String type, @Nullable final Date fromDate,
+            @Nullable final Date toDate, final List<RegisteredUserDTO> usersOfInterest) {
+        Validate.notNull(type);
         Date newToDate;
         if (null == toDate) {
             newToDate = new Date();
         } else {
             newToDate = toDate;
         }
-
+        
+        Date newFromDate;
+        if (null == fromDate) {
+            newFromDate = new Date(0L);
+        } else {
+            newFromDate = fromDate;
+        }
+        
         JacksonDBCollection<LogEvent, String> jc = JacksonDBCollection.wrap(
                 database.getDB().getCollection(Constants.LOG_TABLE_NAME), LogEvent.class, String.class,
                 this.objectMapper);
 
         BasicDBObject queryDateRange = new BasicDBObject("timestamp", //
-                new BasicDBObject("$gte", fromDate).append("$lt", newToDate));
+                new BasicDBObject("$gte", newFromDate).append("$lt", newToDate));
 
         BasicDBObject andQuery = new BasicDBObject();
         List<BasicDBObject> obj = Lists.newArrayList();
