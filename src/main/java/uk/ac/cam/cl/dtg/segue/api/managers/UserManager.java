@@ -621,7 +621,13 @@ public class UserManager {
      */
     public final RegisteredUserDTO getUserDTOByEmail(final String email) throws NoUserException,
             SegueDatabaseException {
-        return this.convertUserDOToUserDTO(this.findUserByEmail(email));
+        RegisteredUser findUserByEmail = this.findUserByEmail(email);
+        
+        if (null == findUserByEmail) {
+            throw new NoUserException();
+        }
+        
+        return this.convertUserDOToUserDTO(findUserByEmail);
     }
 
     /**
