@@ -122,13 +122,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - so that we can identify the current user.
+     * @param assignmentStatus
+     *            - so we know what assignments to return.
      * @return List of assignments (maybe empty)
      */
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response getAssignments(@Context final HttpServletRequest request) {
+    public Response getAssignments(@Context final HttpServletRequest request,
+            @QueryParam("assignmentStatus") final GameboardState assignmentStatus) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -141,6 +144,22 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
                         currentlyLoggedInUser, questionAttemptsByUser));
+            }
+
+            // if they have filtered the list we should only send out the things they wanted.
+            if (assignmentStatus != null) {
+                List<AssignmentDTO> newList = Lists.newArrayList();
+                // we want to populate gameboard details for the assignment DTO.
+                for (AssignmentDTO assignment : assignments) {
+                    if (assignmentStatus.equals(GameboardState.COMPLETED)
+                            && assignment.getGameboard().getPercentageCompleted() == 100) {
+                        newList.add(assignment);
+                    } else if (!assignmentStatus.equals(GameboardState.COMPLETED)
+                            && assignment.getGameboard().getPercentageCompleted() != 100) {
+                        newList.add(assignment);
+                    }
+                }
+                assignments = newList;
             }
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, Maps.newHashMap());
