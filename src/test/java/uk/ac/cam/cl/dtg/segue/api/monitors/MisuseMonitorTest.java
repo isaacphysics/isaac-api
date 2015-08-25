@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
-import twitter4j.User;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
@@ -44,7 +43,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class MisuseMonitorTest {
     private PropertiesLoader dummyPropertiesLoader;
     private EmailManager dummyCommunicator;
-    private User dummyUser;
+
     /**
      * Initial configuration of tests.
      * 
@@ -55,7 +54,7 @@ public class MisuseMonitorTest {
     public final void setUp() throws Exception {
         this.dummyCommunicator = createMock(EmailManager.class);
         this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
-        this.dummyUser = createMock(User.class);
+
 
         expect(dummyPropertiesLoader.getProperty(Constants.SERVER_ADMIN_ADDRESS)).andReturn("FROM ADDRESS").anyTimes();
         replay(this.dummyPropertiesLoader);
@@ -114,14 +113,10 @@ public class MisuseMonitorTest {
         
         IMisuseMonitor misuseMonitor = new InMemoryMisuseMonitor();
 
-        EmailVerificationRequestMisusehandler emailVerificationMisuseHandler = new EmailVerificationRequestMisusehandler(
-                dummyCommunicator, dummyPropertiesLoader);
+        EmailVerificationRequestMisusehandler emailVerificationMisuseHandler 
+            = new EmailVerificationRequestMisusehandler();
         
         misuseMonitor.registerHandler(event, emailVerificationMisuseHandler);
-
-        dummyCommunicator.addToQueue(EasyMock.isA(EmailCommunicationMessage.class));
-        expectLastCall().times(2);
-        replay(this.dummyCommunicator);
 
         
         // Create a test user
@@ -159,7 +154,5 @@ public class MisuseMonitorTest {
         } catch (SegueResourceMisuseException e) {
             System.out.println("SegueResourceMisuseException");
         }   
-        
-        EasyMock.verify(this.dummyCommunicator, this.dummyPropertiesLoader);
     }
 }

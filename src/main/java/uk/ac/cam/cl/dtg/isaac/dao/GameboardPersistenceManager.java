@@ -73,11 +73,9 @@ public class GameboardPersistenceManager {
 	private final MapperFacade mapper;
 	private final SegueApiFacade api;
 
-	//private final Map<String, GameboardDO> gameboardNonPersistentStorage;
-	
     private final URIManager uriManager;
 
-    private Cache<String, GameboardDO> gameboardNonPersistentStorage;
+    private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
 
 	/**
 	 * Creates a new user data manager object.

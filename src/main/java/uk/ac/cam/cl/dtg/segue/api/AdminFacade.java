@@ -704,6 +704,7 @@ public class AdminFacade extends AbstractSegueFacade {
             if (null != schoolOther) {
                 userPrototype.setSchoolOther(schoolOther);
             }
+            
             List<RegisteredUserDTO> findUsers;
             
             if (null != email && !email.isEmpty()) {

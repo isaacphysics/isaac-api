@@ -18,11 +18,6 @@ package uk.ac.cam.cl.dtg.segue.api.monitors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
 import com.google.inject.Inject;
 
 /**
@@ -41,20 +36,13 @@ public class PasswordResetRequestMisusehandler implements IMisuseHandler {
     public static final Integer SOFT_THRESHOLD = 2;
     public static final Integer HARD_THRESHOLD = 4;
     public static final Integer ACCOUNTING_INTERVAL = 360;
-
-    private PropertiesLoader properties;
-    private EmailManager emailManager;
     
     /**
-     * @param emailManager
-     *            - so we can send e-mails if the threshold limits have been reached.
-     * @param properties
-     *            - so that we can look up properties set.
+     * 
      */
     @Inject
-    public PasswordResetRequestMisusehandler(final EmailManager emailManager, final PropertiesLoader properties) {
-        this.properties = properties;
-        this.emailManager = emailManager;
+    public PasswordResetRequestMisusehandler() {
+
     }
     
 
@@ -80,24 +68,12 @@ public class PasswordResetRequestMisusehandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        final String subject = "Soft Threshold limit reached for password-reset-request endpoint";
-        EmailCommunicationMessage e = new EmailCommunicationMessage(
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, null);
-        emailManager.addToQueue(e);
         log.warn("Soft threshold limit reached" + message);
     }
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        final String subject = "HARD Threshold limit reached for password-reset-request endpoint";
-
-        EmailCommunicationMessage e = new EmailCommunicationMessage(
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, null);
-        emailManager.addToQueue(e);
-        log.warn("Hard threshold limit reached" + message);
-
+        log.error("Hard threshold limit reached" + message);
     }
 
 }

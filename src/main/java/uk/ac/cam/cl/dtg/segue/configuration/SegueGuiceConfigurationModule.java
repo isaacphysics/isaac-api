@@ -501,13 +501,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
             
             misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(), 
-                    new EmailVerificationMisusehandler(emailManager, properties));
+                    new EmailVerificationMisusehandler());
             
             misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(), 
-                    new EmailVerificationRequestMisusehandler(emailManager, properties));
+                    new EmailVerificationRequestMisusehandler());
             
             misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(), 
-                    new PasswordResetRequestMisusehandler(emailManager, properties));
+                    new PasswordResetRequestMisusehandler());
         }
 
         return misuseMonitor;
