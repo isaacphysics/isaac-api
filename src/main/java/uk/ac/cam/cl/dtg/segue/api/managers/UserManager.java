@@ -1048,12 +1048,6 @@ public class UserManager {
             return;
         }
 
-        if (this.database.hasALinkedAccount(user) && (user.getPassword() == null || user.getPassword().isEmpty())) {
-            // User is not authenticated locally
-            this.sendFederatedAuthenticatorVerificationMessage(user);
-            return;
-        }
-
         // User is valid and authenticated locally, proceed with verification
         // Generate token
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
