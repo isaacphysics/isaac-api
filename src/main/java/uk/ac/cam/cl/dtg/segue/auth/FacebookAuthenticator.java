@@ -23,8 +23,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
@@ -37,11 +35,11 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.JsonLoader;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookTokenInfo;
 import uk.ac.cam.cl.dtg.segue.dos.users.FacebookUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow.Builder;
 import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
@@ -53,7 +51,6 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -240,6 +237,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		}
 
 		FacebookUser userInfo = null;
+		
 
 		try {
 			GenericUrl url = new GenericUrl(USER_INFO_URL);
@@ -250,13 +248,14 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 			log.debug("Retrieved User info from Facebook");
 		} catch (IOException e) {
-			log.error("An IO error occurred while trying to retrieve user information: "
-					+ e);
+			log.error("An IO error occurred while trying to retrieve user information: " + e);
 		}
 
 		if (userInfo != null && userInfo.getId() != null) {
 			return new UserFromAuthProvider(userInfo.getId(), userInfo.getFirstName(),
-					userInfo.getLastName(), userInfo.getEmail(), null, null, null);
+					userInfo.getLastName(), userInfo.getEmail(),
+					userInfo.isVerified() ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED, 
+					        null, null, null);
 		} else {
 			throw new NoUserException();
 		}

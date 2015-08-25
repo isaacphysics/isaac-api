@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeResponseUrl;
@@ -239,7 +240,8 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
         }
         if (userInfo != null && userInfo.getId() != null) {
             return new UserFromAuthProvider(userInfo.getId(), userInfo.getGivenName(), userInfo.getFamilyName(),
-                    userInfo.getEmail(), null, null, null);
+                    userInfo.getEmail(), userInfo.isVerifiedEmail() ? EmailVerificationStatus.VERIFIED
+                            : EmailVerificationStatus.NOT_VERIFIED, null, null, null);
 
         } else {
             throw new NoUserException();

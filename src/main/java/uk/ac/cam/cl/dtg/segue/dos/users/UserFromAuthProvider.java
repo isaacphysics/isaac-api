@@ -28,6 +28,7 @@ public class UserFromAuthProvider {
     private String email;
     private Date dateOfBirth;
     private Gender gender;
+    private EmailVerificationStatus emailVerificationStatus;
 
     /**
      * Full constructor for the User object.
@@ -48,11 +49,13 @@ public class UserFromAuthProvider {
      *            - gender of the user
      */
     public UserFromAuthProvider(final String providerUserId, final String givenName, final String familyName,
-            final String email, final Role role, final Date dateOfBirth, final Gender gender) {
+            final String email, final EmailVerificationStatus emailVerificationStatus, final Role role, 
+            final Date dateOfBirth, final Gender gender) {
         this.providerUserId = providerUserId;
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
+        this.emailVerificationStatus = emailVerificationStatus;
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
     }
@@ -91,6 +94,15 @@ public class UserFromAuthProvider {
      */
     public String getEmail() {
         return email;
+    }
+    
+    /**
+     * Gets the email verification status.
+     * 
+     * @return the verification status
+     */
+    public EmailVerificationStatus getEmailVerificationStatus() {
+        return emailVerificationStatus;
     }
 
     /**

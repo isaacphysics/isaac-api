@@ -375,7 +375,7 @@ public class UserManagerTest {
 
         // User object back from provider
         UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
-                "TestLastName", "", Role.STUDENT, new Date(), Gender.MALE);
+                "TestLastName", "", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE);
 
         // Mock get User Information from provider call
         expect(((IFederatedAuthenticator) dummyAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(

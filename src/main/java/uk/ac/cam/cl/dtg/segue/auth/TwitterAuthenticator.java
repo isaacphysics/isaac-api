@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
@@ -132,7 +133,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 		GenericUrl urlParser = new GenericUrl(url);
 		try {
 			String oauthVerifier = getParameterFromUrl(urlParser,
-					"oauth_verifier");
+					    "oauth_verifier");
 			log.debug("User granted access to our app.");
 			return oauthVerifier;
 		} catch (IOException e) {
@@ -146,7 +147,7 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 		throws CodeExchangeException {
 		try {
 			AccessToken accessToken = twitter
-					.getOAuthAccessToken(authorizationCode);
+					    .getOAuthAccessToken(authorizationCode);
 
 			TokenResponse tokenResponse = new TokenResponse();
 			tokenResponse.setAccessToken(accessToken.getToken());
@@ -154,17 +155,17 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 			tokenResponse.setExpiresInSeconds(Long.MAX_VALUE);
 
 			Builder builder = new AuthorizationCodeFlow.Builder(
-					BearerToken.authorizationHeaderAccessMethod(),
-					httpTransport, jsonFactory, new GenericUrl(
-							TOKEN_EXCHANGE_URL),
-					new ClientParametersAuthentication(clientId, clientSecret),
-					clientId, AUTH_URL);
+					    BearerToken.authorizationHeaderAccessMethod(),
+					    httpTransport, jsonFactory, new GenericUrl(
+					        TOKEN_EXCHANGE_URL),
+							new ClientParametersAuthentication(clientId, clientSecret),
+					    clientId, AUTH_URL);
 
 			AuthorizationCodeFlow flow = builder.setDataStoreFactory(
-					MemoryDataStoreFactory.getDefaultInstance()).build();
+					    MemoryDataStoreFactory.getDefaultInstance()).build();
 
 			Credential credential = flow.createAndStoreCredential(
-					tokenResponse, authorizationCode);
+					    tokenResponse, authorizationCode);
 
 			String internalReferenceToken = UUID.randomUUID().toString();
 			credentialStore.put(internalReferenceToken, credential);
@@ -183,15 +184,34 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
 			AuthenticatorSecurityException {
 		Credential credentials = credentialStore.get(internalProviderReference);
 		twitter.setOAuthAccessToken(new AccessToken(credentials
-				.getAccessToken(), credentials.getRefreshToken()));
+				    .getAccessToken(), credentials.getRefreshToken()));
 
 		try {
 			twitter4j.User userInfo = twitter.verifyCredentials();
 
-			if (userInfo != null) {
-				return new UserFromAuthProvider(String.valueOf(userInfo.getId()),
-						userInfo.getName(), null, null, null, null, null);
 
+			if (userInfo != null) {
+                // Using twitter id for email field is a hack to avoid a duplicate
+                // exception due to null email field. Alistair and Steve dislike this...
+                String givenName = null;
+                String familyName = null;
+                if (userInfo.getName() != null) {
+                    String[] names = userInfo.getName().split(" ");
+                    if (names != null) {
+                        if (names.length > 0) {
+                            givenName = names[0];
+                        }
+                        if (names.length > 1) {
+                            familyName = names[1];
+                        }
+                    }
+                }
+
+                return new UserFromAuthProvider(
+                        String.valueOf(userInfo.getId()),
+ givenName, familyName,
+                        userInfo.getId() + "-twitter", EmailVerificationStatus.NOT_VERIFIED,
+                        null, null, null);
 			} else {
 				throw new NoUserException();
 			}
