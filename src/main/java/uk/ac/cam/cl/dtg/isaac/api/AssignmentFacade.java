@@ -52,6 +52,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -84,6 +85,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserManager userManager;
     private final GroupManager groupManager;
     private final GameManager gameManager;
+    private final EmailManager emailManager;
 
     private final UserAssociationManager associationManager;
 
@@ -108,13 +110,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final UserManager userManager,
             final GroupManager groupManager, final PropertiesLoader propertiesLoader, final GameManager gameManager,
-            final ILogManager logManager, final UserAssociationManager associationManager) {
+            final ILogManager logManager, final UserAssociationManager associationManager,
+            final EmailManager emailManager) {
         super(propertiesLoader, logManager);
         this.userManager = userManager;
         this.gameManager = gameManager;
         this.groupManager = groupManager;
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
+        this.emailManager = emailManager;
     }
 
     /**
@@ -370,6 +374,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             // modifies assignment passed in to include an id.
             this.assignmentManager.createAssignment(newAssignment);
+
+            UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
+            List<RegisteredUserDTO> users = groupManager.getUsersInGroup(userGroupDTO);
+            try {
+                emailManager.sendGroupAssignment(users);
+            } catch (ContentManagerException e) {
+                log.error("Could not send group assignment emails due to content issue", e);
+            }
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, Maps.newHashMap());
 

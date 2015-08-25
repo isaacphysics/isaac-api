@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.comm;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,10 +14,12 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
@@ -307,6 +310,52 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
                 segueContent.getTitle(), plainTextMessage, htmlMessage);
         this.addToQueue(e);
+    }
+
+    /**
+     * Sends notification for groups being given an assignment.
+     * 
+     * @param users
+     *            - the group the gameboard is being assigned to
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendGroupAssignment(final List<RegisteredUserDTO> users)
+            throws ContentManagerException, SegueDatabaseException {
+
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
+
+        if (segueContent == null) {
+            log.debug("Email change message not sent as segue content was null!");
+            return;
+        }
+
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+
+        for (RegisteredUserDTO user : users) {
+            Properties p = new Properties();
+            p.put("givenname", user.getGivenName());
+            p.put("requestedemail", user.getEmail());
+            p.put("sig", sig);
+            String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+            String htmlMessage = null;
+
+            if (null == htmlTemplate) {
+                log.debug("HTML email template could not be found!");
+            } else {
+                Properties htmlTemplateProperties = new Properties();
+                htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+                htmlTemplateProperties.put("email", user.getEmail());
+
+                htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+            }
+
+            EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
+                    segueContent.getTitle(), plainTextMessage, htmlMessage);
+            this.addToQueue(e);
+        }
     }
 
     /**
