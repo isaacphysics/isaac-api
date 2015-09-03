@@ -37,6 +37,8 @@ public class GameboardDTO {
     private GameFilter gameFilter;
     private String ownerUserId;
     private UserSummaryDTO ownerUserInformation;
+    
+    private Boolean isSavedToCurrentUser;
 
     private GameboardCreationMethod creationMethod;
 
@@ -259,6 +261,24 @@ public class GameboardDTO {
     public void setOwnerUserInformation(final UserSummaryDTO ownerUserInformation) {
         this.ownerUserInformation = ownerUserInformation;
     }
+
+    /**
+     * Gets the isSavedToCurrentUser.
+     * @return the isSavedToCurrentUser
+     */
+    public Boolean isSavedToCurrentUser() {
+        return isSavedToCurrentUser;
+    }
+    
+
+    /**
+     * Sets the isSavedToCurrentUser.
+     * @param isSavedToCurrentUser the isSavedToCurrentUser to set
+     */
+    public void setSavedToCurrentUser(final Boolean isSavedToCurrentUser) {
+        this.isSavedToCurrentUser = isSavedToCurrentUser;
+    }
+    
 
     /**
      * Gets the creationMethod.

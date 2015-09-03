@@ -143,6 +143,30 @@ public class GameboardPersistenceManager {
 	}
 
 	/**
+	 * Determines whether a given game board is already in a users my boards list. 
+	 * @param userId to check
+	 * @param gameboardId to look up
+	 * @return true if it is false if not
+	 * @throws SegueDatabaseException if there is a database error
+	 */
+	public boolean isBoardLinkedToUser(final String userId, final String gameboardId) throws SegueDatabaseException {
+        Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
+
+        Map.Entry<BooleanOperator, String> userIdFieldParam = immutableEntry(BooleanOperator.AND, "userId");
+        Map.Entry<BooleanOperator, String> gameboardIdFieldParam = immutableEntry(BooleanOperator.AND, "gameboardId");
+        fieldsToMatch.put(userIdFieldParam, Arrays.asList(userId));
+        fieldsToMatch.put(gameboardIdFieldParam, Arrays.asList(gameboardId));
+
+        List<UserGameboardsDO> userGameboardDOs = this.userToGameboardMappingsDatabase.find(fieldsToMatch);	    
+	    
+        if (userGameboardDOs.size() != 0) {
+            return true;
+        }
+        
+        return false;
+	}
+	
+	/**
 	 * Link a user to a gameboard or update an existing link.
 	 * 
 	 * @param userId
@@ -249,20 +273,7 @@ public class GameboardPersistenceManager {
 	 * @throws SegueDatabaseException  - if there is a problem accessing the database.
 	 */
 	public GameboardDTO getGameboardById(final String gameboardId) throws SegueDatabaseException {
-		// first try temporary storage
-		if (this.gameboardNonPersistentStorage.getIfPresent(gameboardId) != null) {
-			return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
-		}
-
-		GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
-
-		if (null == gameboardFromDb) {
-			return null;
-		}
-
-		GameboardDTO gameboardDTO = this.convertToGameboardDTO(gameboardFromDb);
-
-		return gameboardDTO;
+	    return getGameboard(gameboardId, true);
 	}
 	
 	/**
@@ -277,20 +288,7 @@ public class GameboardPersistenceManager {
 	 *             - if there are problems with the database.
 	 */
 	public GameboardDTO getLiteGameboardById(final String gameboardId) throws SegueDatabaseException {
-		// first try temporary storage
-		if (this.gameboardNonPersistentStorage.getIfPresent(gameboardId) != null) {
-			return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
-		}
-
-		GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
-
-		if (null == gameboardFromDb) {
-			return null;
-		}
-
-		GameboardDTO gameboardDTO = this.convertToGameboardDTO(gameboardFromDb, false);
-
-		return gameboardDTO;
+	    return getGameboard(gameboardId, false);
 	}
 
 	/**
@@ -635,6 +633,35 @@ public class GameboardPersistenceManager {
 		
 		return gameboardReadyQuestions;
 	}
+	
+    /**
+     * Utility method to allow us to retrieve lite gameboards.
+     * 
+     * @param gameboardId
+     *            - gameboard to find
+     * @param fullyPopulate
+     *            - true or false
+     * @return gameboard dto
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database
+     */
+    private GameboardDTO getGameboard(final String gameboardId, final boolean fullyPopulate)
+            throws SegueDatabaseException {
+        // first try temporary storage
+        if (this.gameboardNonPersistentStorage.getIfPresent(gameboardId) != null) {
+            return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
+        }
+
+        GameboardDO gameboardFromDb = gameboardDataManager.getById(gameboardId);
+
+        if (null == gameboardFromDb) {
+            return null;
+        }
+
+        GameboardDTO gameboardDTO = this.convertToGameboardDTO(gameboardFromDb, fullyPopulate);
+
+        return gameboardDTO;
+    }
 
     /**
      * Helper method to get a list of question ids from a dto.

@@ -182,13 +182,13 @@ public class GameManager {
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 
-            return augmentGameboardWithQuestionAttemptInformation(gameboardDTO, usersQuestionAttempts);
+            return augmentGameboardWithUserInformation(gameboardDTO, usersQuestionAttempts, boardOwner);
         } else {
             // TODO: this should be an exception.
             return null;
         }
     }
-
+    
     /**
      * linkUserToGameboard. Persist the gameboard in permanent storage and also link it to the users account.
      * 
@@ -285,8 +285,8 @@ public class GameManager {
             final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
-        GameboardDTO gameboardFound = augmentGameboardWithQuestionAttemptInformation(
-                this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts);
+        GameboardDTO gameboardFound = augmentGameboardWithUserInformation(
+                this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
 
         return gameboardFound;
     }
@@ -332,7 +332,7 @@ public class GameManager {
 
         // filter gameboards based on selection.
         for (GameboardDTO gameboard : usersGameboards) {
-            this.augmentGameboardWithQuestionAttemptInformation(gameboard, questionAttemptsFromUser);
+            this.augmentGameboardWithUserInformation(gameboard, questionAttemptsFromUser, user);
 
             if (null == showOnly) {
                 resultToReturn.add(gameboard);
@@ -415,13 +415,17 @@ public class GameManager {
      *            - the DTO of the gameboard
      * @param questionAttemptsFromUser
      *            - the users question data.
+     * @param user
+     *            - the users data.
      * @return Augmented Gameboard
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
+     * @throws SegueDatabaseException if we can't look up gameboard --> user information
      */
-    public final GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
-            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
-            throws ContentManagerException {
+    public final GameboardDTO augmentGameboardWithUserInformation(final GameboardDTO gameboardDTO,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser, 
+            final AbstractSegueUserDTO user)
+            throws ContentManagerException, SegueDatabaseException {
         if (null == gameboardDTO) {
             return null;
         }
@@ -446,7 +450,12 @@ public class GameManager {
 
         double percentageCompleted = totalCompleted * 100 / gameboardDTO.getQuestions().size();
         gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
-
+        
+        if (user instanceof RegisteredUserDTO) {
+            gameboardDTO
+                    .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
+        }
+        
         return gameboardDTO;
     }
 
@@ -600,6 +609,22 @@ public class GameManager {
         return result;
     }
 
+    /**
+     * Determines whether a given game board is already in a users my boards list.
+     * 
+     * @param user
+     *            to check
+     * @param gameboardId
+     *            to look up
+     * @return true if it is false if not
+     * @throws SegueDatabaseException
+     *             if there is a database error
+     */
+    private boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
+            throws SegueDatabaseException {
+        return this.gameboardPersistenceManager.isBoardLinkedToUser(user.getDbId(), gameboardId);
+    }    
+    
     /**
      * Store a gameboard in a public location.
      * 
