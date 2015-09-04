@@ -19,6 +19,8 @@ import java.util.Date;
 
 import org.mongojack.ObjectId;
 
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -32,6 +34,7 @@ public class AssignmentDTO {
     private GameboardDTO gameboard;
     private String groupId;
     private String ownerUserId;
+    private UserSummaryDTO assignerSummary;
     private Date creationDate;
 
     /**
@@ -161,6 +164,22 @@ public class AssignmentDTO {
      */
     public void setOwnerUserId(final String ownerUserId) {
         this.ownerUserId = ownerUserId;
+    }
+
+    /**
+     * Gets the assignerSummary.
+     * @return the assignerSummary
+     */
+    public UserSummaryDTO getAssignerSummary() {
+        return assignerSummary;
+    }
+
+    /**
+     * Sets the assignerSummary.
+     * @param assignerSummary the assignerSummary to set
+     */
+    public void setAssignerSummary(UserSummaryDTO assignerSummary) {
+        this.assignerSummary = assignerSummary;
     }
 
     /**

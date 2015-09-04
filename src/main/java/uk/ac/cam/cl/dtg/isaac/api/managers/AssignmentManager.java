@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -43,6 +45,8 @@ public class AssignmentManager {
     private final AssignmentPersistenceManager assignmentPersistenceManager;
     private final GroupManager groupManager;
 
+    private final UserManager userManager;
+
     /**
      * AssignmentManager.
      * 
@@ -53,9 +57,10 @@ public class AssignmentManager {
      */
     @Inject
     public AssignmentManager(final AssignmentPersistenceManager assignmentPersistenceManager,
-            final GroupManager groupManager) {
+            final GroupManager groupManager, final UserManager userManager) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
+        this.userManager = userManager;
     }
 
     /**
@@ -80,6 +85,10 @@ public class AssignmentManager {
             assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
         }
 
+        for (AssignmentDTO assignment : assignments) {
+            augmentAssignmentWithUserSummaryInfo(assignment);
+        }
+        
         return assignments;
     }
 
@@ -93,7 +102,9 @@ public class AssignmentManager {
      *             - if we cannot complete a required database operation.
      */
     public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
-        return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
+        AssignmentDTO assignmentById = this.assignmentPersistenceManager.getAssignmentById(assignmentId);
+        augmentAssignmentWithUserSummaryInfo(assignmentById);
+        return assignmentById;
     }
 
     /**
@@ -226,5 +237,24 @@ public class AssignmentManager {
         }
 
         return groups;
+    }
+    
+    /**
+     * Utility method to augmentAssignmentDTO with user summary object.
+     * 
+     * @param assignment
+     *            - that should be augmented - if the ownerUserId is null or the owner no longer exists this will not
+     *            mutate the object to null.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    private void augmentAssignmentWithUserSummaryInfo(final AssignmentDTO assignment) throws SegueDatabaseException {
+        RegisteredUserDTO userDTOById;
+        try {
+            userDTOById = userManager.getUserDTOById(assignment.getOwnerUserId());
+            assignment.setAssignerSummary(userManager.convertToUserSummaryObject(userDTOById));
+        } catch (NoUserException e) {
+            // leave it as null
+        }
     }
 }
