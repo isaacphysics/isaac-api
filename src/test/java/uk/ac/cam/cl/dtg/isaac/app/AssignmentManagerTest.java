@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -40,6 +41,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 public class AssignmentManagerTest {
 	private AssignmentPersistenceManager dummyAssignmentPersistenceManager;
 	private GroupManager dummyGroupManager;
+    private UserManager dummyUserManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -51,6 +53,7 @@ public class AssignmentManagerTest {
 	public final void setUp() throws Exception {
 		this.dummyGroupManager = createMock(GroupManager.class);
 		this.dummyAssignmentPersistenceManager = createMock(AssignmentPersistenceManager.class);
+		this.dummyUserManager = createMock(UserManager.class);
 	}
 
 	/**
@@ -64,7 +67,7 @@ public class AssignmentManagerTest {
 	@PowerMockIgnore({ "javax.ws.*" })
 	public final void getAssignments_checkNoGroups_emptyListReturned() throws SegueDatabaseException {
 		
-		AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager);
+		AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager, dummyUserManager);
 		RegisteredUserDTO dummyUser = createMock(RegisteredUserDTO.class);
 		
 		expect(dummyGroupManager.getGroupMembershipList(dummyUser)).andReturn(new ArrayList<UserGroupDTO>());
