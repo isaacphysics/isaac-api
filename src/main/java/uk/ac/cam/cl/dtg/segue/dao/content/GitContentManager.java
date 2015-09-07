@@ -876,7 +876,7 @@ public class GitContentManager implements IContentManager {
 
                 this.registerContentProblem(sha, c, firstLine + " in " + c.getCanonicalSourceFile()
                         + " found with both children and a value. "
-                        + "This content will always be automatically marked as incorrect");
+                        + "Content objects are only allowed to have one or the other.");
 
                 log.error("Invalid content item detected: The object with ID (" + id
                         + ") has both children and a value.");
