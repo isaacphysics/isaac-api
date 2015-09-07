@@ -433,7 +433,8 @@ public class UserManager {
                 this.createSession(request, response, user);
                 return Response.ok(this.convertUserDOToUserDTO(user)).build();
             } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
-                log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME), e);
+                log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                        + "Error reason: " + e.getClass() + " message: " + e.getMessage());
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueDatabaseException e) {
                 String errorMsg = "Internal Database error has occurred during authentication.";
