@@ -795,9 +795,10 @@ public class GitContentManager implements IContentManager {
             Media media = (Media) content;
             media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
 
-            // for tracking purposes we want to generate an id for all images.
+            // for tracking purposes we want to generate an id for all image content objects.
             if (media.getId() == null && media.getSrc() != null) {
-                media.setId(new String(Base64.encodeBase64(media.getSrc().getBytes())));
+                media.setId(new String(parentId + Constants.ID_SEPARATOR
+                        + Base64.encodeBase64(media.getSrc().getBytes())));
             }
         }
 
