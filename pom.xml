@@ -33,7 +33,7 @@
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.0.1</version>
 			<scope>provided</scope>
-		</dependency> 
+		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>jaxrs-api</artifactId>
@@ -74,7 +74,7 @@
 			<artifactId>guice-multibindings</artifactId>
 			<version>3.0</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
@@ -86,13 +86,13 @@
 			<artifactId>orika-core</artifactId>
 			<version>1.4.5</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>11.0.1</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.google.oauth-client</groupId>
 			<artifactId>google-oauth-client</artifactId>
@@ -109,7 +109,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.google.http-client</groupId>
 			<artifactId>google-http-client-jackson2</artifactId>
@@ -126,26 +126,26 @@
 			<artifactId>twitter4j-core</artifactId>
 			<version>4.0.2</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.reflections</groupId>
-		    <artifactId>reflections</artifactId>
-		    <version>0.9.10</version>
+			<groupId>org.reflections</groupId>
+			<artifactId>reflections</artifactId>
+			<version>0.9.10</version>
 		</dependency>
-		<dependency>		
-		  <groupId>io.swagger</groupId>
-		  <artifactId>swagger-jaxrs</artifactId>
-		  <version>1.5.0</version>
-		  <exclusions>
-		    <exclusion>
-    		  <artifactId>reflections</artifactId>
-		      <groupId>org.reflections</groupId>
-		    </exclusion>
-		    <exclusion>
-    		      <artifactId>jsr311-api</artifactId>
-		      <groupId>javax.ws.rs</groupId>
-		    </exclusion>		    
-    		  </exclusions>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-jaxrs</artifactId>
+			<version>1.5.0</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>reflections</artifactId>
+					<groupId>org.reflections</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>jsr311-api</artifactId>
+					<groupId>javax.ws.rs</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -182,7 +182,7 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
@@ -199,11 +199,11 @@
 			<artifactId>postgresql</artifactId>
 			<version>${postgresql.version}</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.apache.tomcat</groupId>
-		    <artifactId>tomcat-jdbc</artifactId>
-		    <version>8.0.22</version>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-jdbc</artifactId>
+			<version>8.0.22</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mongodb</groupId>
@@ -233,28 +233,32 @@
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
 
-         <plugin>
-           <artifactId>maven-antrun-plugin</artifactId>
-           <executions>
-             <execution>
-               <phase>package</phase>
-               <goals>
-                 <goal>run</goal>
-               </goals>
-               <configuration>
- 				<tasks>
-                   <delete file="${project.build.directory}/generated-config/segue-config.properties"/>
-                   <delete file="${project.build.directory}/generated-config/live_version.properties"/>
-                   <copy file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/segue-config.properties"
-                         tofile="${project.build.directory}/generated-config/segue-config.properties"/>
-                   <copy file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/live_version.properties"
-                         tofile="${project.build.directory}/generated-config/live_version.properties"/>                         
-                 </tasks>
-               </configuration>
-             </execution>
-           </executions>
-         </plugin>
-        
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+								<delete
+									file="${project.build.directory}/generated-config/segue-config.properties" />
+								<delete
+									file="${project.build.directory}/generated-config/live_version.properties" />
+								<copy
+									file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/segue-config.properties"
+									tofile="${project.build.directory}/generated-config/segue-config.properties" />
+								<copy
+									file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/live_version.properties"
+									tofile="${project.build.directory}/generated-config/live_version.properties" />
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -282,30 +286,30 @@
 					</configuration>
 				</configuration>
 			</plugin>
-			
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/src/main/webapp/api-docs</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.build.directory}/src/main/webapp/api-docs</directory>
-                  <filtering>true</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>          			
-			
+
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.6</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/src/main/webapp/api-docs</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/src/main/webapp/api-docs</directory>
+									<filtering>true</filtering>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 		<resources>
 		</resources>
@@ -333,7 +337,7 @@
 			<properties>
 				<build.profile.id>deploy</build.profile.id>
 			</properties>
-			<build>			
+			<build>
 				<filters>
 					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
 				</filters>
@@ -366,6 +370,6 @@
 					</resource>
 				</resources>
 			</build>
-		</profile>	
+		</profile>
 	</profiles>
 </project>
