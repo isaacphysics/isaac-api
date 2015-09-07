@@ -233,30 +233,28 @@
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
 
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/src/main/webapp/api-docs</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.build.directory}/src/main/webapp/api-docs</directory>
-                  <filtering>true</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>          
-     
-      		
+         <plugin>
+           <artifactId>maven-antrun-plugin</artifactId>
+           <executions>
+             <execution>
+               <phase>package</phase>
+               <goals>
+                 <goal>run</goal>
+               </goals>
+               <configuration>
+ 				<tasks>
+                   <delete file="${project.build.directory}/generated-config/segue-config.properties"/>
+                   <delete file="${project.build.directory}/generated-config/live_version.properties"/>
+                   <copy file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/segue-config.properties"
+                         tofile="${project.build.directory}/generated-config/segue-config.properties"/>
+                   <copy file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/live_version.properties"
+                         tofile="${project.build.directory}/generated-config/live_version.properties"/>                         
+                 </tasks>
+               </configuration>
+             </execution>
+           </executions>
+         </plugin>
+        
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -285,6 +283,29 @@
 				</configuration>
 			</plugin>
 			
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/src/main/webapp/api-docs</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/src/main/webapp/api-docs</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>          			
+			
 		</plugins>
 		<resources>
 		</resources>
@@ -308,11 +329,11 @@
 	<!-- Profiles configuration -->
 	<profiles>
 		<profile>
-			<id>dev</id>
+			<id>deploy</id>
 			<properties>
-				<build.profile.id>dev</build.profile.id>
+				<build.profile.id>deploy</build.profile.id>
 			</properties>
-			<build>
+			<build>			
 				<filters>
 					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
 				</filters>
@@ -345,57 +366,6 @@
 					</resource>
 				</resources>
 			</build>
-		</profile>
-		<profile>
-			<id>staging</id>
-			<properties>
-				<build.profile.id>staging</build.profile.id>
-			</properties>
-			<build>
-				<filters>
-					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
-				</filters>
-				<resources>
-					<resource>
-						<filtering>true</filtering>
-						<directory>src/main/resources</directory>
-					</resource>
-				</resources>
-			</build>
-		</profile>
-		<profile>
-			<id>live</id>
-			<properties>
-				<build.profile.id>live</build.profile.id>
-			</properties>
-			<build>
-				<filters>
-					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
-				</filters>
-				<resources>
-					<resource>
-						<filtering>true</filtering>
-						<directory>src/main/resources</directory>
-					</resource>
-				</resources>
-			</build>
-		</profile>
-		<profile>
-			<id>biology-staging</id>
-			<properties>
-				<build.profile.id>biology-staging</build.profile.id>
-			</properties>
-			<build>
-				<filters>
-					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
-				</filters>
-				<resources>
-					<resource>
-						<filtering>true</filtering>
-						<directory>src/main/resources</directory>
-					</resource>
-				</resources>
-			</build>
-		</profile>		
+		</profile>	
 	</profiles>
 </project>
