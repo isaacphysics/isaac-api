@@ -68,6 +68,6 @@ Installation Notes
 
 Isaac project specific environments
 ===================================
-* ([Internal only](http://dev.isaacphysics.org))
-* ([Internal only](http://staging.isaacphysics.org))
-* ([Public Access](https://isaacphysics.org)) 
+* [Dev](http://dev.isaacphysics.org) Internal only
+* [Staging](http://staging.isaacphysics.org) Internal only
+* [Live](https://isaacphysics.org) Public Access 
