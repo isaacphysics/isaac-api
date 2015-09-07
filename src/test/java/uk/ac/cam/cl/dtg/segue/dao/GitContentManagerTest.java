@@ -465,7 +465,7 @@ public class GitContentManagerTest {
 		
 		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(false)
 				.once();
-		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
+		expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
 				.once();
 		expect(objectMapper.writeValueAsString(content)).andReturn(
 				uniqueObjectHash).once();
@@ -828,7 +828,7 @@ public class GitContentManagerTest {
 		expect(repository.open(null)).andReturn(loader).once();
 		loader.copyTo(anyObject(ByteArrayOutputStream.class));
 		expectLastCall().once();
-		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
+		expect(contentMapper.getSharedContentObjectMapper()).andReturn(objectMapper)
 				.once();
 		expect(objectMapper.readValue(anyString(), eq(ContentBase.class)))
 				.andReturn(content).once();
@@ -896,7 +896,7 @@ public class GitContentManagerTest {
 		expect(repository.open(null)).andReturn(loader).times(2);
 		loader.copyTo(anyObject(ByteArrayOutputStream.class));
 		expectLastCall().times(2);
-		expect(contentMapper.getContentObjectMapper()).andReturn(objectMapper)
+		expect(contentMapper.getSharedContentObjectMapper()).andReturn(objectMapper)
 				.times(2);
 		expect(objectMapper.readValue(anyString(), eq(ContentBase.class)))
 				.andReturn(content).once().andReturn(content2).once();

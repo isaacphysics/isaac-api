@@ -165,7 +165,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
         // Since we are attaching our own auto mapper we have to do MongoJack
         // configure on it.
-        ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
         MongoJackModule.configure(objectMapper);
 
         JacksonDBCollection<RegisteredUser, String> jc = JacksonDBCollection.wrap(
@@ -327,7 +327,7 @@ public class MongoUserDataManager implements IUserDataManager {
             final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
         // Since we are attaching our own auto mapper we have to do MongoJack
         // configure on it.
-        ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
         MongoJackModule.configure(objectMapper);
 
         JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(database.getDB()
@@ -381,7 +381,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
         // Since we are attaching our own auto mapper we have to do MongoJack
         // configure on it.
-        ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
         MongoJackModule.configure(objectMapper);
 
         JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(database.getDB()
@@ -556,7 +556,7 @@ public class MongoUserDataManager implements IUserDataManager {
         Validate.notBlank(userId);
         // Since we are attaching our own auto mapper we have to do MongoJack
         // configure on it.
-        ObjectMapper objectMapper = contentMapper.getContentObjectMapper();
+        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
         MongoJackModule.configure(objectMapper);
 
         JacksonDBCollection<BasicDBObject, String> jc = JacksonDBCollection.wrap(

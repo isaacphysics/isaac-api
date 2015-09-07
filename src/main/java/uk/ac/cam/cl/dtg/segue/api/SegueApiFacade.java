@@ -1017,7 +1017,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
         List<ChoiceDTO> answersFromClient = Lists.newArrayList();
         try {
             // convert single object into a list.
-            Choice answerFromClient = mapper.getContentObjectMapper().readValue(jsonAnswer, Choice.class);
+            Choice answerFromClient = mapper.getSharedContentObjectMapper().readValue(jsonAnswer, Choice.class);
             // convert to a DTO so that it strips out any untrusted data.
             ChoiceDTO answerFromClientDTO = mapper.getAutoMapper().map(answerFromClient, ChoiceDTO.class);
 

@@ -342,31 +342,16 @@ public class ContentMapper {
      * Provides a pre-configured module that can be added to an object mapper so that contentBase objects can be
      * deseerialized using the custom deserializer.
      * 
+     * This object Mapper is shared and should be treated as immutable.
+     * 
      * @return a jackson object mapper.
      */
-    public ObjectMapper getContentObjectMapper() {
+    public ObjectMapper getSharedContentObjectMapper() {
         if (ContentMapper.preconfiguredObjectMapper != null) {
             return preconfiguredObjectMapper;
         }
         
-        ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
-        contentDeserializer.registerTypeMap(jsonTypes);
-        
-        ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer);
-
-        QuestionValidationResponseDeserializer validationResponseDeserializer 
-            = new QuestionValidationResponseDeserializer(
-                contentDeserializer, choiceDeserializer);
-
-        SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
-        contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
-        contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
-        contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(contentDeserializerModule);
-        
-        preconfiguredObjectMapper = objectMapper;
+        preconfiguredObjectMapper = generateNewPreconfiguredContentMapper();
 
         return preconfiguredObjectMapper;
     }
@@ -381,7 +366,7 @@ public class ContentMapper {
     public List<Content> mapFromStringListToContentList(final List<String> stringList) {
         // setup object mapper to use preconfigured deserializer module.
         // Required to deal with type polymorphism
-        ObjectMapper objectMapper = this.getContentObjectMapper();
+        ObjectMapper objectMapper = this.getSharedContentObjectMapper();
 
         List<Content> contentList = new ArrayList<Content>();
 
@@ -430,5 +415,32 @@ public class ContentMapper {
         }
 
         return this.autoMapper;
+    }
+    
+    /**
+     * Creates a brand new object mapper.
+     * This should be used sparingly as it is resource intensive to maintain these things.
+     * 
+     * @return ObjectMapper that has been configured to handle the segue recursive object model.
+     */
+    public ObjectMapper generateNewPreconfiguredContentMapper() {
+        ContentBaseDeserializer contentDeserializer = new ContentBaseDeserializer();
+        contentDeserializer.registerTypeMap(jsonTypes);
+        
+        ChoiceDeserializer choiceDeserializer = new ChoiceDeserializer(contentDeserializer);
+
+        QuestionValidationResponseDeserializer validationResponseDeserializer 
+            = new QuestionValidationResponseDeserializer(
+                contentDeserializer, choiceDeserializer);
+
+        SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
+        contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+        contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
+        contentDeserializerModule.addDeserializer(QuestionValidationResponse.class, validationResponseDeserializer);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(contentDeserializerModule);
+        
+        return objectMapper;
     }
 }

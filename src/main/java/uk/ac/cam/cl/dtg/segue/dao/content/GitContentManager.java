@@ -541,13 +541,15 @@ public class GitContentManager implements IContentManager {
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
         List<Map.Entry<String, String>> thingsToIndex = Lists.newArrayList();
-        ObjectMapper objectMapper = mapper.getContentObjectMapper();
+        ObjectMapper objectMapper = mapper.generateNewPreconfiguredContentMapper();
         for (Content content : gitCache.get(sha).values()) {
             try {
                 thingsToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
             } catch (JsonProcessingException e) {
                 log.error("Unable to serialize content object: " + content.getId()
                         + " for indexing with the search provider.", e);
+                this.registerContentProblem(sha, content, "Search Index Error: " + content.getId()
+                        + content.getCanonicalSourceFile() + " Exception: " + e.toString());
             }
         }
 
@@ -598,7 +600,7 @@ public class GitContentManager implements IContentManager {
 
                 // setup object mapper to use preconfigured deserializer
                 // module. Required to deal with type polymorphism
-                ObjectMapper objectMapper = mapper.getContentObjectMapper();
+                ObjectMapper objectMapper = mapper.getSharedContentObjectMapper();
 
                 Content content = null;
                 try {
