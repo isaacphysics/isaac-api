@@ -1068,55 +1068,6 @@ public class UserManager {
     }
 
     /**
-     * @param user
-     */
-    private void sendFederatedAuthenticatorVerificationMessage(RegisteredUser user) throws CommunicationException,
-            SegueDatabaseException {
-        // Get the user's federated authenticators
-        List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
-        List<String> providerNames = new ArrayList<>();
-        for (AuthenticationProvider provider : providers) {
-            IAuthenticator authenticator = this.registeredAuthProviders.get(provider);
-            if (!(authenticator instanceof IFederatedAuthenticator)) {
-                continue;
-            }
-
-            String providerName = provider.name().toLowerCase();
-            providerName = providerName.substring(0, 1).toUpperCase() + providerName.substring(1);
-            providerNames.add(providerName);
-        }
-
-        String providerString;
-        if (providerNames.size() == 1) {
-            providerString = providerNames.get(0);
-        } else {
-            StringBuilder providersBuilder = new StringBuilder();
-            for (int i = 0; i < providerNames.size(); i++) {
-                if (i == providerNames.size() - 1) {
-                    providersBuilder.append(" and ");
-                } else if (i > 1) {
-                    providersBuilder.append(", ");
-                }
-                providersBuilder.append(providerNames.get(i));
-            }
-            providerString = providersBuilder.toString();
-        }
-
-        String providerWord = "provider";
-        if (providerNames.size() > 1) {
-            providerWord += "s";
-        }
-
-        try {
-            this.emailManager.sendFederatedPasswordReset(user, providerString, providerWord);
-        } catch (ContentManagerException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-
-    }
-
-    /**
      * This method will test if the specified token is a valid password reset token.
      * 
      * 
