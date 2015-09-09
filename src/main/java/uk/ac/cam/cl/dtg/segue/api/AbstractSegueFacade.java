@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import java.util.Arrays;
 
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
@@ -118,7 +119,7 @@ public abstract class AbstractSegueFacade {
         if (rb != null) {
             // Use the rb to return the response without any further processing
             log.debug("This resource is unchanged. Serving empty request with etag.");
-            return rb.cacheControl(getCacheControl(maxAge)).tag(etag).build();
+            return rb.cacheControl(getCacheControl(maxAge, null)).tag(etag).build();
         }
         // the resource must have changed as the etags are different.
         return null;
@@ -130,7 +131,7 @@ public abstract class AbstractSegueFacade {
      * @return preconfigured cache control.
      */
     public CacheControl getCacheControl() {
-        return getCacheControl(null);
+        return getCacheControl(null, null);
     }
 
     /**
@@ -138,12 +139,14 @@ public abstract class AbstractSegueFacade {
      * 
      * @param maxAge
      *            in seconds for the returned object to remain fresh.
+     * @param isPublicData
+     *            Should the data being delivered be cacheable by intermediate proxy servers?
      * @return a CacheControl object configured with a MaxAge.
      */
-    public CacheControl getCacheControl(final Integer maxAge) {
+    public CacheControl getCacheControl(@Nullable final Integer maxAge, @Nullable final Boolean isPublicData) {
         // Create cache control header
         CacheControl cc = new CacheControl();
-
+        
         Integer maxCacheAge;
         if (null == maxAge) {
             // set max age to server default.
@@ -153,7 +156,12 @@ public abstract class AbstractSegueFacade {
         }
 
         cc.setMaxAge(maxCacheAge);
-
+        
+        // assume if null or false that the data is private
+        if (isPublicData != null && isPublicData) {
+            cc.getCacheExtension().put("public", "");
+        }
+        
         return cc;
     }
 

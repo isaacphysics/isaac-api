@@ -145,7 +145,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             return Response.ok(statsManager.outputGeneralStatistics())
-                    .cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
+                    .cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES, false)).build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -180,7 +180,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
             Collection<Location> locationInformation = statsManager.getLocationInformation(threshold.getTime());
 
-            return Response.ok(locationInformation).cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
+            return Response.ok(locationInformation).cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES, false))
+                    .build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -219,7 +220,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 return cachedResponse;
             }
 
-            return Response.ok(schoolStatistics).tag(etag).cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES))
+            return Response.ok(schoolStatistics).tag(etag).cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES, false))
                     .build();
         } catch (UnableToIndexSchoolsException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -640,7 +641,7 @@ public class AdminFacade extends AbstractSegueFacade {
         responseBuilder.put("failedFiles", failures);
         responseBuilder.put("currentLiveVersion", this.contentVersionController.getLiveVersion());
 
-        return Response.ok(responseBuilder.build()).cacheControl(getCacheControl(CACHE_FOR_ONE_MINUTE)).tag(etag)
+        return Response.ok(responseBuilder.build()).cacheControl(getCacheControl(CACHE_FOR_ONE_MINUTE, false)).tag(etag)
                 .build();
     }
 
@@ -729,7 +730,7 @@ public class AdminFacade extends AbstractSegueFacade {
             log.info(String.format("%s user (%s) did a search across all users based on user prototype {%s}",
                     currentUser.getRole(), currentUser.getEmail(), userPrototype));
 
-            return Response.ok(findUsers).tag(etag).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK))
+            return Response.ok(findUsers).tag(etag).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -918,7 +919,8 @@ public class AdminFacade extends AbstractSegueFacade {
                 return cachedResponse;
             }
 
-            return Response.ok(eventLogsByDate).tag(etag).cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES)).build();
+            return Response.ok(eventLogsByDate).tag(etag).cacheControl(getCacheControl(CACHE_FOR_FIVE_MINUTES, false))
+                    .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }

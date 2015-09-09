@@ -39,6 +39,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_ONE_HOUR;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -64,7 +65,6 @@ import javax.ws.rs.core.Response.Status;
 import ma.glasnost.orika.MapperFacade;
 
 import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +219,8 @@ public class IsaacController extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag).cacheControl(getCacheControl())
+        return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
+                .cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true))
                 .build();
     }
 
@@ -274,7 +275,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl()).tag(etag).build();
+                .cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true)).tag(etag).build();
 
         return cachableResult;
     }
@@ -374,7 +375,8 @@ public class IsaacController extends AbstractIsaacFacade {
                     this.extractContentSummaryFromList(c.getResults()),
                     c.getTotalResults());
 
-            return Response.ok(summarizedContent).tag(etag).cacheControl(getCacheControl()).build();
+            return Response.ok(summarizedContent).tag(etag).cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true))
+                    .build();
         } else {
             return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag).cacheControl(getCacheControl())
                     .build();
@@ -448,7 +450,10 @@ public class IsaacController extends AbstractIsaacFacade {
             getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
 
             // return augmented content.
-            return Response.ok(content).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).tag(etag).build();
+            return Response.ok(content)
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .tag(etag)
+                    .build();
 
         } else {
             String error = "Unable to locate a question with the id specified: " + questionId;
@@ -637,7 +642,8 @@ public class IsaacController extends AbstractIsaacFacade {
         ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
                 SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
-        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl()).tag(etag).build();
+        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true)).tag(etag)
+                .build();
 
         return cachableResult;
     }
@@ -654,7 +660,6 @@ public class IsaacController extends AbstractIsaacFacade {
     @GET
     @Produces("*/*")
     @Path("images/{path:.*}")
-    @Cache
     @GZIP
     public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
         // entity tags etc are already added by segue

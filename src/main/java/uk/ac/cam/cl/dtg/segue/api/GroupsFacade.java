@@ -122,7 +122,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(groups).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -157,7 +157,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
 
             List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
-            return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+            return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -315,7 +315,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             associationManager.enforceAuthorisationPrivacy(user, summarisedMemberInfo);
 
             return Response.ok(summarisedMemberInfo).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {

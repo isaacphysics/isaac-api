@@ -186,7 +186,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                         "We cannot find any questions based on your filter criteria.").toResponse();
             }
 
-            return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+            return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (IllegalArgumentException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.").toResponse();
         } catch (NoWildcardException e) {
@@ -247,7 +247,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
 
             // We decided not to log this on the backend as the front end uses this lots.
-            return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).tag(etag)
+            return Response.ok(gameboard).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).tag(etag)
                     .build();
         } catch (IllegalArgumentException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Your gameboard filter request is invalid.").toResponse();
@@ -608,7 +608,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                         .put("completedTotal", gameboards.getTotalCompleted())
                         .put("inProgressTotal", gameboards.getTotalInProgress()).build());
 
-        return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+        return Response.ok(gameboards).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
     }
 
     /**
@@ -736,7 +736,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return cachedResponse;
             }
 
-            return Response.ok(wildcards).cacheControl(getCacheControl(CACHE_FOR_TEN_MINUTES)).tag(etag).build();
+            return Response.ok(wildcards).cacheControl(getCacheControl(CACHE_FOR_TEN_MINUTES, true)).tag(etag).build();
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);

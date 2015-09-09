@@ -154,7 +154,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(currentUser).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -530,7 +530,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             return Response.ok(schoolOthers).tag(etag)
-                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             log.error("Unable to contact the database", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while looking up event information")

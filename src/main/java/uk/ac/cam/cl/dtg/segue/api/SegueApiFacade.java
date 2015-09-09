@@ -205,7 +205,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
 
-        return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+        return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
     }
     
     /**
@@ -729,7 +729,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
                 SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                         "Invalid file extension requested");
                 log.debug(error.getErrorMessage());
-                return error.toResponse(getCacheControl(CACHE_FOR_ONE_DAY), etag);
+                return error.toResponse(getCacheControl(CACHE_FOR_ONE_DAY, false), etag);
         }
 
         try {
@@ -749,10 +749,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
         if (null == fileContent) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
             log.warn(error.getErrorMessage());
-            return error.toResponse(getCacheControl(CACHE_FOR_TEN_MINUTES), etag);
+            return error.toResponse(getCacheControl(CACHE_FOR_TEN_MINUTES, false), etag);
         }
 
-        return Response.ok(fileContent.toByteArray()).type(mimeType).cacheControl(getCacheControl(CACHE_FOR_ONE_DAY))
+        return Response.ok(fileContent.toByteArray()).type(mimeType)
+                .cacheControl(getCacheControl(CACHE_FOR_ONE_DAY, true))
                 .tag(etag).build();
     }
 
@@ -845,7 +846,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
             return cachedResponse;
         }
 
-        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(CACHE_FOR_ONE_DAY)).build();
+        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(CACHE_FOR_ONE_DAY, false)).build();
     }
 
     /**
@@ -869,7 +870,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueEnvironment",
                 this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT)).build();
 
-        return Response.ok(result).cacheControl(this.getCacheControl(CACHE_FOR_THIRTY_DAY)).tag(etag).build();
+        return Response.ok(result).cacheControl(this.getCacheControl(CACHE_FOR_THIRTY_DAY, true)).tag(etag).build();
     }
 
     /**

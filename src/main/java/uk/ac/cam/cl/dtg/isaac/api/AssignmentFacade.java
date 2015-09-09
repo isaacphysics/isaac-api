@@ -164,7 +164,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, Maps.newHashMap());
 
-            return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+            return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -217,7 +218,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         Maps.newHashMap());
 
                 return Response.ok(allAssignmentsSetByUserToGroup)
-                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             }
 
         } catch (NoUserLoggedInException e) {
@@ -291,7 +292,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS, Maps.newHashMap());
 
             // get game manager completion information for this assignment.
-            return Response.ok(result).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+            return Response.ok(result).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -322,7 +323,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
             return Response.ok(assignmentManager.findGroupsByGameboard(currentlyLoggedInUser, gameboardId))
-                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK)).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
