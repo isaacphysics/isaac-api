@@ -81,7 +81,7 @@ public class StatisticsManager {
     private static final String GENERAL_STATS = "GENERAL_STATS";
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
-    private static final int STATS_EVICTION_INTERVAL_MINUTES = 10;
+    private static final int STATS_EVICTION_INTERVAL_MINUTES = 15;
     
 
     /**
@@ -237,11 +237,15 @@ public class StatisticsManager {
 
         final int sevenDays = 7;
         final int thirtyDays = 30;
+        final int sixMonthsInDays = 180;
 
         List<RegisteredUserDTO> nonStaffUsers = Lists.newArrayList();
         nonStaffUsers.addAll(teacherRole);
         nonStaffUsers.addAll(studentOrUnknownRole);
 
+        ib.put("activeInLastSixMonths", this.getNumberOfUsersActiveForLastNDays(users, lastSeenMap, sixMonthsInDays)
+                .size());
+        
         ib.put("activeTeachersLastWeek",
                 "" + this.getNumberOfUsersActiveForLastNDays(teacherRole, lastSeenMap, sevenDays).size());
         ib.put("activeTeachersLastThirtyDays",
