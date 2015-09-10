@@ -39,7 +39,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -220,7 +220,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-                .cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true))
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                 .build();
     }
 
@@ -275,7 +275,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true)).tag(etag).build();
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
 
         return cachableResult;
     }
@@ -375,11 +375,12 @@ public class IsaacController extends AbstractIsaacFacade {
                     this.extractContentSummaryFromList(c.getResults()),
                     c.getTotalResults());
 
-            return Response.ok(summarizedContent).tag(etag).cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true))
+            return Response.ok(summarizedContent).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
         } else {
-            return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag).cacheControl(getCacheControl())
-                    .build();
+            return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
         }
     }
 
@@ -522,7 +523,8 @@ public class IsaacController extends AbstractIsaacFacade {
 
         return Response
                 .ok(this.extractContentSummaryFromResultsWrapper(searchResults,
-                        this.getProperties().getProperty(PROXY_PATH))).tag(etag).cacheControl(getCacheControl())
+                        this.getProperties().getProperty(PROXY_PATH))).tag(etag)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                 .build();
     }
 
@@ -572,7 +574,7 @@ public class IsaacController extends AbstractIsaacFacade {
         }
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl()).tag(etag).build();
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
         return cachableResult;
     }
 
@@ -610,7 +612,7 @@ public class IsaacController extends AbstractIsaacFacade {
         Response result = this.findSingleResult(fieldsToMatch);
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
-                .cacheControl(getCacheControl()).tag(etag).build();
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
 
         return cachableResult;
     }
@@ -642,7 +644,8 @@ public class IsaacController extends AbstractIsaacFacade {
         ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
                 SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
-        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(CACHE_FOR_ONE_HOUR, true)).tag(etag)
+        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                .tag(etag)
                 .build();
 
         return cachableResult;

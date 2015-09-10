@@ -107,7 +107,8 @@ public class NotificationFacade extends AbstractSegueFacade {
                 log.error("Database Error", e);
                 return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Internal Database Error", e).toResponse();
             }
-            return Response.ok(listOfNotifications).build();
+            return Response.ok(listOfNotifications)
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
@@ -135,7 +136,8 @@ public class NotificationFacade extends AbstractSegueFacade {
 
         try {
             ContentDTO notificationById = notificationPicker.getNotificationById(notificationId);
-            return Response.ok(notificationById).build();
+            return Response.ok(notificationById)
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Problem locating the content", e)

@@ -731,12 +731,13 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             // Calculate the ETag
             EntityTag etag = new EntityTag(wildcards.toString().hashCode() + "");
 
-            Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_TEN_MINUTES);
+            Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_TEN_MINUTES);
             if (cachedResponse != null) {
                 return cachedResponse;
             }
 
-            return Response.ok(wildcards).cacheControl(getCacheControl(CACHE_FOR_TEN_MINUTES, true)).tag(etag).build();
+            return Response.ok(wildcards).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true)).tag(etag)
+                    .build();
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);

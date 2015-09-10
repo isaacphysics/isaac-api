@@ -18,9 +18,10 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_ONE_DAY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_TEN_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CACHE_FOR_THIRTY_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTACT_US_FORM_USED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
@@ -605,7 +606,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         Set<String> tags = contentPersistenceManager.getTagsList(version);
 
-        return Response.ok(tags).cacheControl(getCacheControl()).tag(etag).build();
+        return Response.ok(tags).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
     }
 
     /**
@@ -660,7 +661,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        return Response.ok(units).tag(etag).cacheControl(getCacheControl()).build();
+        return Response.ok(units).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true)).build();
     }
 
     /**
@@ -699,7 +700,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         // determine if we can use the cache if so return cached response.
         EntityTag etag = new EntityTag(version.hashCode() + path.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_ONE_DAY);
+        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
 
         if (cachedResponse != null) {
             return cachedResponse;
@@ -729,7 +730,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
                 SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                         "Invalid file extension requested");
                 log.debug(error.getErrorMessage());
-                return error.toResponse(getCacheControl(CACHE_FOR_ONE_DAY, false), etag);
+                return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false), etag);
         }
 
         try {
@@ -749,11 +750,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
         if (null == fileContent) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
             log.warn(error.getErrorMessage());
-            return error.toResponse(getCacheControl(CACHE_FOR_TEN_MINUTES, false), etag);
+            return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
         }
 
         return Response.ok(fileContent.toByteArray()).type(mimeType)
-                .cacheControl(getCacheControl(CACHE_FOR_ONE_DAY, true))
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
                 .tag(etag).build();
     }
 
@@ -808,7 +809,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
         ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
                 "version_list", limitedVersions).build();
 
-        return Response.ok().entity(result).build();
+        return Response.ok(result).build();
     }
 
     /**
@@ -841,12 +842,13 @@ public class SegueApiFacade extends AbstractSegueFacade {
                 "results", getLogManager().getAllEventTypes()).build();
 
         EntityTag etag = new EntityTag(result.toString().hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_ONE_DAY);
+        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
         if (cachedResponse != null) {
             return cachedResponse;
         }
 
-        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(CACHE_FOR_ONE_DAY, false)).build();
+        return Response.ok(result).tag(etag).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, false))
+                .build();
     }
 
     /**
@@ -862,7 +864,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
     @GZIP
     public final Response getSegueEnvironment(@Context final Request request) {
         EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag, CACHE_FOR_THIRTY_DAY);
+        Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_THIRTY_DAYS);
         if (cachedResponse != null) {
             return cachedResponse;
         }
@@ -870,7 +872,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("segueEnvironment",
                 this.getProperties().getProperty(SEGUE_APP_ENVIRONMENT)).build();
 
-        return Response.ok(result).cacheControl(this.getCacheControl(CACHE_FOR_THIRTY_DAY, true)).tag(etag).build();
+        return Response.ok(result).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_THIRTY_DAYS, true)).tag(etag)
+                .build();
     }
 
     /**

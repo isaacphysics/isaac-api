@@ -186,7 +186,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
             return Response
                     .ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsGrantingAccess)))
-                    .build();
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -219,7 +219,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
             AssociationToken token = associationManager.generateAssociationToken(user, groupId);
 
-            return Response.ok(token).build();
+            return Response.ok(token).cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
+                    .build();
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to get association token. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
@@ -266,7 +267,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
 
-            return Response.ok(userManager.convertToUserSummaryObject(userDTO)).build();
+            return Response.ok(userManager.convertToUserSummaryObject(userDTO))
+                    .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (InvalidUserAssociationTokenException e) {

@@ -126,14 +126,18 @@ public abstract class AbstractSegueFacade {
     }
 
     /**
-     * Set the max age to the server default.
+     * Same as integer varient.
      * 
-     * @return preconfigured cache control.
+     * @param maxAge
+     *            in seconds for the returned object to remain fresh. Longs will be converted into integers
+     * @param isPublicData
+     *            Should the data being delivered be cacheable by intermediate proxy servers?
+     * @return a CacheControl object configured with a MaxAge.
      */
-    public CacheControl getCacheControl() {
-        return getCacheControl(null, null);
+    public CacheControl getCacheControl(@Nullable final Integer maxAge, @Nullable final Boolean isPublicData) {
+        return getCacheControl(new Long(maxAge), isPublicData);
     }
-
+    
     /**
      * Helper to get cache control information for response objects that can be cached.
      * 
@@ -143,7 +147,7 @@ public abstract class AbstractSegueFacade {
      *            Should the data being delivered be cacheable by intermediate proxy servers?
      * @return a CacheControl object configured with a MaxAge.
      */
-    public CacheControl getCacheControl(@Nullable final Integer maxAge, @Nullable final Boolean isPublicData) {
+    public CacheControl getCacheControl(@Nullable final Long maxAge, @Nullable final Boolean isPublicData) {
         // Create cache control header
         CacheControl cc = new CacheControl();
         
@@ -152,7 +156,7 @@ public abstract class AbstractSegueFacade {
             // set max age to server default.
             maxCacheAge = Integer.parseInt(this.properties.getProperty(Constants.MAX_CONTENT_CACHE_TIME));
         } else {
-            maxCacheAge = maxAge;
+            maxCacheAge = maxAge.intValue();
         }
 
         cc.setMaxAge(maxCacheAge);

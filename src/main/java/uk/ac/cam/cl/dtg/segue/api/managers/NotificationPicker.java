@@ -97,7 +97,7 @@ public class NotificationPicker {
             } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
                 Calendar postPoneExpiry = Calendar.getInstance();
                 postPoneExpiry.setTime(record.getCreated());
-                postPoneExpiry.add(Calendar.SECOND, Constants.CACHE_FOR_ONE_DAY);
+                postPoneExpiry.add(Calendar.SECOND, Constants.NUMBER_SECONDS_IN_ONE_DAY);
 
                 if (new Date().after(postPoneExpiry.getTime())) {
                     resultsToReturn.add(c);

@@ -97,7 +97,8 @@ public class SchoolLookupServiceFacade {
         ResponseBuilder rb = request.evaluatePreconditions(etag);
 
         CacheControl cc = new CacheControl();
-        cc.setMaxAge(Constants.CACHE_FOR_ONE_WEEK);
+        cc.setMaxAge(Constants.NUMBER_SECONDS_IN_ONE_WEEK);
+        cc.getCacheExtension().put("public", "");
         
         // If ETag matches the rb will be non-null;
         if (rb != null) {
