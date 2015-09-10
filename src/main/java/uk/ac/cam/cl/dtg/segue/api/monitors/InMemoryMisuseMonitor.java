@@ -84,7 +84,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
             } else {
 
                 // deal with expired events
-                if (isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())) {
+                if (!isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())) {
                     existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
                     log.debug("Event expired starting count over");
                 } else {
@@ -134,6 +134,17 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         return false;
     }
 
+    @Override
+    public void resetMisuseCount(final String agentIdentifier, final String eventLabel) {
+        Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);
+        
+        if (null == existingHistory || existingHistory.get(eventLabel) == null) {
+            return;
+        }
+        
+        existingHistory.remove(eventLabel);
+    }
+    
     /**
      * Helper to work out whether we can reset the counter or not.
      * 
@@ -148,7 +159,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         entryExpiry.setTime(mapEntryDate);
         entryExpiry.add(Calendar.SECOND, secondsUntilExpiry);
 
-        if (entryExpiry.getTime().after(new Date())) {
+        if (new Date().after(entryExpiry.getTime())) {
             return false;
         }
 

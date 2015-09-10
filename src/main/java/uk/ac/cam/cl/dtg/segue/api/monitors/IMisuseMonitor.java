@@ -57,4 +57,14 @@ public interface IMisuseMonitor {
      *            - the handler that should be invoked when an event is seen.
      */
     void registerHandler(String eventToHandle, IMisuseHandler handler);
+
+    /**
+     * Allows us to reset the misuse log for a specific user and event.
+     * 
+     * @param agentIdentifier
+     *            - a unique identifier for the agent using the resource
+     * @param eventLabel
+     *            - event describing the use of the resource and any threshold criteria.
+     */
+    void resetMisuseCount(String agentIdentifier, String eventLabel);
 }

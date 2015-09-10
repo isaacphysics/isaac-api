@@ -394,59 +394,42 @@ public class UserManager {
      * @param credentials
      *            - Credentials email and password credentials should be specified in a map
      * @return A response containing the UserDTO object or a SegueErrorResponse.
+     * @throws AuthenticationProviderMappingException
+     *             - if we cannot find an authenticator
+     * @throws IncorrectCredentialsProvidedException
+     *             - if the password is incorrect
+     * @throws NoUserException
+     *             - if the user does not exist
+     * @throws NoCredentialsAvailableException
+     *             - If the account exists but does not have a local password
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
      */
-    public final Response authenticateWithCredentials(final HttpServletRequest request,
-            final HttpServletResponse response, final String provider, @Nullable final Map<String, String> credentials) {
-
-        // in this case we expect a username and password to have been
-        // sent in the json response.
-        if (null == credentials || credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
-                || credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME) == null) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify credentials email and password to use this authentication provider.");
-            return error.toResponse();
-        }
-
+    public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
+            final HttpServletResponse response, final String provider, @Nullable final Map<String, String> credentials)
+            throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
+            NoCredentialsAvailableException, SegueDatabaseException {
+        Validate.notBlank(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME));
+        Validate.notNull(credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
+        
         // get the current user based on their session id information.
         RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
-
         if (null != currentUser) {
-            return Response.ok(currentUser).build();
+            return currentUser;
         }
 
-        IAuthenticator authenticator;
-        try {
-            authenticator = mapToProvider(provider);
-
-        } catch (AuthenticationProviderMappingException e) {
-            String errorMsg = "Unable to locate the provider specified";
-            log.error(errorMsg, e);
-            return new SegueErrorResponse(Status.BAD_REQUEST, errorMsg).toResponse();
-        }
+        IAuthenticator authenticator = mapToProvider(provider);
 
         if (authenticator instanceof IPasswordAuthenticator) {
             IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
 
-            try {
-                RegisteredUser user = passwordAuthenticator.authenticate(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
-                        credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
-                this.createSession(request, response, user);
-                return Response.ok(this.convertUserDOToUserDTO(user)).build();
-            } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
-                log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
-                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());
-                return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
-            } catch (SegueDatabaseException e) {
-                String errorMsg = "Internal Database error has occurred during authentication.";
-                log.error(errorMsg, e);
-                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
-            }
+            RegisteredUser user = passwordAuthenticator.authenticate(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
+                    credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
+            this.createSession(request, response, user);
+            return this.convertUserDOToUserDTO(user);
         } else {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable to map to a known authenticator that accepts " + "raw credentials for the given provider: "
-                            + provider);
-            log.error(error.getErrorMessage());
-            return error.toResponse();
+            throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
+                    + "raw credentials for the given provider: " + provider);
         }
     }
 

@@ -60,6 +60,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
@@ -228,15 +229,7 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         try {
-            
-            if (misuseMonitor.hasMisused(userObject.getEmail(),
-                    PasswordResetRequestMisusehandler.class.toString())) {
-                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
-            }
-    
             misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisusehandler.class.toString());
-            
-            
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -315,7 +308,9 @@ public class UsersFacade extends AbstractSegueFacade {
 
             this.getLogManager().logEvent(userDTO, request, PASSWORD_RESET_REQUEST_SUCCESSFUL,
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
-
+            // we can reset the misuse monitor for incorrect logins now.
+            misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.toString());
+            
         } catch (InvalidTokenException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password reset token.");
             log.error("Invalid password reset token supplied: " + token);
@@ -425,12 +420,6 @@ public class UsersFacade extends AbstractSegueFacade {
                                                     @Context final HttpServletRequest request) {
         try {
             
-
-            if (misuseMonitor.hasMisused(email,
-                    EmailVerificationRequestMisusehandler.class.toString())) {
-                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
-            }
-    
             misuseMonitor.notifyEvent(email, EmailVerificationRequestMisusehandler.class.toString());
         
             userManager.emailVerificationRequest(request, email);
@@ -459,11 +448,11 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
-     * End point that verifies whether or not a validation token is valid. If the email address given is not the same
-     * as the one we have, change it. 
+     * End point that verifies whether or not a validation token is valid. If the email address given is not the same as
+     * the one we have, change it.
      * 
-     * @param userid 
-     *            - the user's id. 
+     * @param userid
+     *            - the user's id.
      * @param newemail
      *            - the email they want to verify - could be new
      * @param token
@@ -475,23 +464,16 @@ public class UsersFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validateEmailVerificationRequest(@PathParam("userid") final String userid, 
-                                                     @PathParam("newemail") final String newemail, 
-                                                     @PathParam("token") final String token) {
-        
+    public Response validateEmailVerificationRequest(@PathParam("userid") final String userid,
+            @PathParam("newemail") final String newemail, @PathParam("token") final String token) {
+
         try {
-            if (misuseMonitor.hasMisused(newemail,
-                    EmailVerificationMisusehandler.class.toString())) {
-                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
-            }
-    
-            misuseMonitor.notifyEvent(newemail, TokenOwnerLookupMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(newemail, EmailVerificationMisusehandler.class.toString());
+            return userManager.processEmailVerification(userid, newemail, token);
         } catch (SegueResourceMisuseException e) {
             return SegueErrorResponse
                     .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
         }
-        
-        return userManager.processEmailVerification(userid, newemail, token);
     }
 
 

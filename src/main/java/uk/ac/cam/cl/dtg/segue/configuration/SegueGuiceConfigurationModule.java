@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
@@ -496,6 +497,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor = new InMemoryMisuseMonitor();
             log.info("Creating singleton of MisuseMonitor");
 
+            // TODO: We should automatically register all handlers that implement this interface using reflection?
             // register handlers segue specific handlers
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
@@ -508,6 +510,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             
             misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(), 
                     new PasswordResetRequestMisusehandler());
+            
+            misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(), 
+                    new SegueLoginMisuseHandler(emailManager, properties));
         }
 
         return misuseMonitor;

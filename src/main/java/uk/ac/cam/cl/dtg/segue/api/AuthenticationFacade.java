@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
 import io.swagger.annotations.Api;
 
 import java.util.Map;
@@ -33,12 +35,21 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -54,8 +65,11 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 @Path("/auth")
 @Api(value = "/auth")
 public class AuthenticationFacade extends AbstractSegueFacade {
-
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationFacade.class);
+    
     private final UserManager userManager;
+
+    private final IMisuseMonitor misuseMonitor;
 
     /**
      * Create an instance of the authentication Facade.
@@ -66,12 +80,15 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *            - user manager for the application
      * @param logManager
      *            - so we can log interesting events.
+     * @param misuseMonitor
+     *            - so that we can prevent overuse of protected resources.
      */
     @Inject
     public AuthenticationFacade(final PropertiesLoader properties, final UserManager userManager,
-            final ILogManager logManager) {
+            final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
@@ -168,7 +185,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     }
 
     /**
-     * This is the initial step of the authentication process.
+     * This is the initial step of the authentication process for users who have a local account.
      * 
      * @param request
      *            - the http request of the user wishing to authenticate
@@ -188,8 +205,53 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final Map<String, String> credentials) {
+        
+        // in this case we expect a username and password to have been
+        // sent in the json response.
+        if (null == credentials || credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
+                || credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME) == null) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You must specify credentials email and password to use this authentication provider.");
+            return error.toResponse();
+        }
+        
+        final String rateThrottleMessage = "There has been too many attempts to login to this account. "
+                + "Please try again after 10 minutes.";
+
+        // Stop users logging in who have already locked their account.
+        if (misuseMonitor.hasMisused(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
+                SegueLoginMisuseHandler.class.toString())) {
+            log.error("Segue Login Blocked for: " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                    + " rate limited - too many logins.");
+            return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
+        }
+        
         // ok we need to hand over to user manager
-        return userManager.authenticateWithCredentials(request, response, signinProvider, credentials);
+        try {
+            return Response.ok(userManager.authenticateWithCredentials(request, response, signinProvider, credentials))
+                    .build();
+        } catch (AuthenticationProviderMappingException e) {
+            String errorMsg = "Unable to locate the provider specified";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.BAD_REQUEST, errorMsg).toResponse();
+        } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
+            try {
+                misuseMonitor.notifyEvent(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
+                        SegueLoginMisuseHandler.class.toString());
+                
+                log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());                
+                return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
+            } catch (SegueResourceMisuseException e1) {
+                log.error("Segue Login Blocked for: " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                        + " rate limited - too many logins.");
+                return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
+            }
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Internal Database error has occurred during authentication.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        }
     }
 
     /**

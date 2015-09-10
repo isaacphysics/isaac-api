@@ -257,11 +257,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             // ensure the user is logged in
             currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
 
-            if (misuseMonitor.hasMisused(currentRegisteredUser.getDbId(),
-                    TokenOwnerLookupMisuseHandler.class.toString())) {
-                throw new SegueResourceMisuseException("Number of requests exceeded. Triggering Error Response");
-            }
-
             misuseMonitor.notifyEvent(currentRegisteredUser.getDbId(), TokenOwnerLookupMisuseHandler.class.toString());
 
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
