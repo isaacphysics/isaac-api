@@ -24,7 +24,7 @@ SEGUE_VERSION=`grunt segue-version | grep ^segueVersion | sed s/.*://`
 if [ $VERSION_TO_DEPLOY = "master" ]; then
 	SEGUE_VERSION="master"
 else
-	SEGUE_VERSION = v$SEGUE_VERSION
+	SEGUE_VERSION=v$SEGUE_VERSION
 fi
 
 mv isaac-app.tar.gz ..
