@@ -47,35 +47,35 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
  * It is to allow subclasses of the choices object to be detected correctly.
  */
 public class QuestionValidationResponseDeserializer extends JsonDeserializer<QuestionValidationResponse> {
-    private ContentBaseDeserializer contentDeserializer;
-    private ChoiceDeserializer choiceDeserializer;
+    private static ObjectMapper mapper;
 
     /**
      * Create a QuestionValidationResponse deserializer.
      * 
      * @param contentDeserializer
-     *            -
+     *            - 
      * @param choiceDeserializer
      *            -
      */
     public QuestionValidationResponseDeserializer(final ContentBaseDeserializer contentDeserializer,
             final ChoiceDeserializer choiceDeserializer) {
-        this.contentDeserializer = contentDeserializer;
-        this.choiceDeserializer = choiceDeserializer;
+        
+        // only do this once as it is quite expensive.
+        if (null == mapper) {
+            SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
+            contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
+            contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
+            
+            mapper = new ObjectMapper();
+            mapper.registerModule(contentDeserializerModule);
+
+            MongoJackModule.configure(mapper);            
+        }
     }
 
     @Override
     public QuestionValidationResponse deserialize(final JsonParser jsonParser,
             final DeserializationContext deserializationContext) throws IOException {
-
-        SimpleModule contentDeserializerModule = new SimpleModule("ContentDeserializerModule");
-        contentDeserializerModule.addDeserializer(ContentBase.class, contentDeserializer);
-        contentDeserializerModule.addDeserializer(Choice.class, choiceDeserializer);
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(contentDeserializerModule);
-
-        MongoJackModule.configure(mapper);
 
         ObjectNode root = (ObjectNode) mapper.readTree(jsonParser);
 
