@@ -135,7 +135,13 @@ public abstract class AbstractSegueFacade {
      * @return a CacheControl object configured with a MaxAge.
      */
     public CacheControl getCacheControl(@Nullable final Integer maxAge, @Nullable final Boolean isPublicData) {
-        return getCacheControl(new Long(maxAge), isPublicData);
+        Long maxAgeToSend = null;
+        
+        if (maxAge != null) {
+            maxAgeToSend = new Long(maxAge);
+        }
+        
+        return getCacheControl(maxAgeToSend, isPublicData);
     }
     
     /**
