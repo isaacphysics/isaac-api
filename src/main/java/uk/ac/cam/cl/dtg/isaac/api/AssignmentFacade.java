@@ -20,11 +20,13 @@ import io.swagger.annotations.Api;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -48,6 +50,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateAssignmentException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
@@ -58,6 +61,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -285,6 +289,14 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     UserSummaryDTO user1 = (UserSummaryDTO) o1.get(userString);
                     UserSummaryDTO user2 = (UserSummaryDTO) o2.get(userString);
 
+                    if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                        return -1;
+                    } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                        return 1;
+                    } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                        return 0;
+                    }
+                    
                     return user1.getFamilyName().compareTo(user2.getFamilyName());
                 }
             });
@@ -304,6 +316,132 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         }
     }
 
+
+    /**
+     * Allows the user to view results of an assignment they have set.
+     * 
+     * @param assignmentId
+     *            - the id of the assignment to be looked up.
+     * @param request
+     *            - so that we can identify the current user.
+     * @return the assignment object.
+     */
+    @GET
+    @Path("/assign/{assignment_id}/progress/download")
+    @Produces("text/csv")
+    @GZIP
+    @Consumes(MediaType.WILDCARD)
+    public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
+            @PathParam("assignment_id") final String assignmentId) {
+        try {
+            RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
+            
+            AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
+            if (null == assignment) {
+                return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
+            }
+
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You can only view the results of assignments that you own.").toResponse();
+            }
+            
+            GameboardDTO gameboard = this.gameManager.getGameboard(assignment.getGameboardId());
+            UserGroupDTO group = this.groupManager.getGroupById(assignment.getGroupId());
+            List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
+            List<String> questionIds = Lists.newArrayList();
+            
+            // quick hack to sort list by user last name
+            Collections.sort(groupMembers, new Comparator<RegisteredUserDTO>() {
+                @Override
+                public int compare(final RegisteredUserDTO user1, final RegisteredUserDTO user2) {
+                    
+                    if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                        return -1;
+                    } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                        return 1;
+                    } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                        return 0;
+                    }
+
+                    return user1.getFamilyName().compareTo(user2.getFamilyName());
+                }
+            });
+            
+            StringBuilder headerBuilder = new StringBuilder();
+            StringBuilder resultBuilder = new StringBuilder();
+            headerBuilder.append("Results Downloaded on " + new Date() + "\n");
+            headerBuilder.append("Last Name,First Name,");
+            for (GameboardItem questionPage : gameboard.getQuestions()) {
+                int index = 1;
+                
+                for (QuestionDTO question : gameManager.getAllMarkableQuestionParts(questionPage.getId())) {
+                    headerBuilder.append(questionPage.getTitle() + " - Part " + index + ",");
+                    questionIds.add(question.getId());
+                    index++;
+                }
+            }
+            headerBuilder.append("% Correct,");
+            headerBuilder.append("\n");
+            Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap = this.gameManager
+                    .getDetailedGameProgressData(groupMembers, gameboard);
+            for (RegisteredUserDTO user : groupMembers) {
+
+                UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
+                        userManager.convertToUserSummaryObject(user));
+
+                // can the user access the data?
+                if (userSummary.isAuthorisedFullAccess()) {
+                    
+                    resultBuilder.append(userSummary.getFamilyName() + "," + userSummary.getGivenName() + ",");
+                    int totalCorrect = 0;
+                    
+                    for (String questionId : questionIds) {
+                        Integer resultForQuestion = userQuestionDataMap.get(user).get(questionId);
+                        
+                        if (null == resultForQuestion) {
+                            resultBuilder.append(",");
+                        } else {
+                            resultBuilder.append(resultForQuestion + ",");    
+                        }
+                        
+                        if (resultForQuestion != null && resultForQuestion == 1) {
+                            totalCorrect++;
+                        }
+                    }
+                    
+                    Double percentageCorrect = (new Double(totalCorrect) / questionIds.size()) * 100F;
+                    resultBuilder.append(percentageCorrect + ",");
+                    
+                } else {
+                    resultBuilder.append(userSummary.getFamilyName() + "," + userSummary.getGivenName() + ",");
+                    for (@SuppressWarnings("unused") String questionId : questionIds) {
+                        resultBuilder.append("ACCESS_REVOKED,");
+                    }
+                }
+                resultBuilder.append("\n");
+            }
+
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
+                    Maps.newHashMap());
+            
+            headerBuilder.append(resultBuilder);
+            
+            // get game manager completion information for this assignment.
+            return Response.ok(headerBuilder.toString())
+                    .header("Content-Disposition", "attachment; filename=export.csv")
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to view assignment progress", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown database error.").toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unknown content database error.").toResponse();
+        }
+    }
+    
     /**
      * Allows a user to get all groups that have been assigned to a given board.
      * 
