@@ -81,7 +81,7 @@ public class StatisticsManager {
     private static final String GENERAL_STATS = "GENERAL_STATS";
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
-    private static final int STATS_EVICTION_INTERVAL_MINUTES = 15;
+    private static final int STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
     
 
     /**
