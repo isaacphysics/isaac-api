@@ -74,8 +74,22 @@ public class IsaacNumericValidator implements IValidator {
                     isaacNumericQuestion.getSignificantFigures())) {
                 // make sure that the answer is to the right number of sig figs
                 // before we proceed.
+                
+                // if we have unit information available put it in our response.
+                Boolean validUnits = null;
+                if (isaacNumericQuestion.getRequireUnits()) {
+                    QuestionValidationResponseDTO valid = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
+                    
+                    if (valid instanceof QuantityValidationResponseDTO) {
+                        QuantityValidationResponseDTO quantity = (QuantityValidationResponseDTO) valid;
+                        validUnits = quantity.getCorrectUnits();
+                    }
+                    
+                } 
+
+                // This is a hack as we don't actually know if it should be a quantity response or not.
                 return new QuantityValidationResponseDTO(question.getId(), answerFromUser, false, new Content(
-                        "Please provide your answer to the correct number of significant figures."), false, null,
+                        "Please provide your answer to the correct number of significant figures."), false, validUnits,
                         new Date());
             }
         } catch (NumberFormatException e) {
