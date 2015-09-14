@@ -373,10 +373,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             headerBuilder.append("Results Downloaded on " + new Date() + "\n");
             headerBuilder.append("Last Name,First Name,");
             for (GameboardItem questionPage : gameboard.getQuestions()) {
-                int index = 1;
+                int index = 0;
                 
                 for (QuestionDTO question : gameManager.getAllMarkableQuestionParts(questionPage.getId())) {
-                    headerBuilder.append(questionPage.getTitle() + " - Part " + index + ",");
+                    int newCharIndex = 'A' + index;
+                    headerBuilder.append(questionPage.getTitle() + " - Part " + Character.toChars(newCharIndex)[0]
+                            + ",");
                     questionIds.add(question.getId());
                     index++;
                 }
