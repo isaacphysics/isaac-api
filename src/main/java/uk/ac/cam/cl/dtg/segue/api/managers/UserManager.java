@@ -2159,19 +2159,16 @@ public class UserManager {
      *             - if an error occurs with the update.
      */
     private void updateLastSeen(final RegisteredUser user) throws SegueDatabaseException {
-        long timeDiff;
-
         if (user.getLastSeen() == null) {
-            timeDiff = LAST_SEEN_UPDATE_FREQUENCY_MINUTES + 1;
-        } else {
-            timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
-        }
-
-        long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
-        if (user.getLastSeen() == null || minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
             this.database.updateUserLastSeen(user.getDbId());
+        } else {
+            // work out if we should update the user record again...
+            long timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
+            long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
+            if (minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
+                this.database.updateUserLastSeen(user.getDbId());
+            }
         }
-
     }
 
 }
