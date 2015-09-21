@@ -61,7 +61,6 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
@@ -469,10 +468,22 @@ public class UsersFacade extends AbstractSegueFacade {
 
         try {
             misuseMonitor.notifyEvent(newemail, EmailVerificationMisusehandler.class.toString());
-            return userManager.processEmailVerification(userid, newemail, token);
+            userManager.processEmailVerification(userid, newemail, token);
+
+            // assume that if there are no exceptions that it worked.
+            return Response.ok().build();
         } catch (SegueResourceMisuseException e) {
             return SegueErrorResponse
                     .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
+        } catch (InvalidTokenException | NoUserException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
+            log.error("Invalid token received", e);
+            return error.toResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error processing your request.");
+            log.error(String.format("Invalid email token request"));
+            return error.toResponse();
         }
     }
 

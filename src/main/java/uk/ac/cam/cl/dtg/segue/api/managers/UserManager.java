@@ -39,8 +39,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
@@ -86,7 +84,6 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -203,20 +200,13 @@ public class UserManager {
      *            - http request that we can attach the session to and save redirect url in.
      * @param provider
      *            - the provider the user wishes to authenticate with.
-     * @return A response containing either an object containing a redirect URI to the authentication provider if
-     *         authorization / login is required or an error response if the user is already logged in.
+     * @return a URI for redirection
+     * @throws IOException - 
+     * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    public Response authenticate(final HttpServletRequest request, final String provider) {
-        if (!this.isRegisteredUserLoggedIn(request)) {
-            // this is the expected case so we can
-            // start the authenticationFlow.
-            return this.initiateAuthenticationFlow(request, provider);
-        } else {
-            // if they are already logged in then we do not want to proceed with
-            // this authentication flow. We can just return an error response
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The user is already logged in. You cannot authenticate again.").toResponse();
-        }
+    public URI authenticate(final HttpServletRequest request, final String provider) 
+            throws IOException, AuthenticationProviderMappingException {
+        return this.initiateAuthenticationFlow(request, provider);
     }
 
     /**
@@ -230,16 +220,13 @@ public class UserManager {
      *            - http request that we can attach the session to.
      * @param provider
      *            - the provider the user wishes to authenticate with.
-     * @return A response redirecting the user to their redirect url or a redirect URI to the authentication provider if
-     *         authorization / login is required. Alternatively a SegueErrorResponse could be returned.
+     * @return A redirection URI - also this endpoint ensures that the request has a session attribute on so we know
+     *         that this is a link request not a new user.
+     * @throws IOException - 
+     * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    public Response initiateLinkAccountToUserFlow(final HttpServletRequest request, final String provider) {
-        // The user must be logged in to be able to link accounts.
-        if (!this.isRegisteredUserLoggedIn(request)) {
-            return new SegueErrorResponse(Status.UNAUTHORIZED, "You need to be logged in to link accounts.")
-                    .toResponse();
-        }
-
+    public URI initiateLinkAccountToUserFlow(final HttpServletRequest request, final String provider) 
+            throws IOException, AuthenticationProviderMappingException {
         // record our intention to link an account.
         request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
 
@@ -252,7 +239,6 @@ public class UserManager {
      * 
      * This method will either register a new user and attach the linkedAccount or locate the existing account of the
      * user and create a session for that.
-     * 
      * @param request
      *            - http request from the user - should contain url encoded token details.
      * @param response
@@ -1025,6 +1011,7 @@ public class UserManager {
     }
 
     /**
+     * processEmailVerification.
      * @param userid
      *            - the user id
      *
@@ -1037,64 +1024,52 @@ public class UserManager {
      * @return - whether the token is valid or not
      * @throws SegueDatabaseException
      *             - exception if token cannot be validated
+     * @throws InvalidTokenException - if something is wrong with the token provided
+     * @throws NoUserException - if the user does not exist.
      */
-    public Response processEmailVerification(final String userid, final String email, final String token) {
+    public RegisteredUserDTO processEmailVerification(final String userid, final String email, final String token) 
+            throws SegueDatabaseException, InvalidTokenException, NoUserException {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        RegisteredUser user;
-        try {
-            user = this.findUserById(userid);
-        } catch (SegueDatabaseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "There was an error processing your request.");
-            log.error(String.format("Invalid email token request"));
-            return error.toResponse();
+        RegisteredUser user = this.findUserById(userid);
+
+        if (null == user) {
+            log.warn(String.format("Recieved an invalid email token request for (%s)", email));
+            throw new NoUserException();    
         }
 
-        SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
-
-        if (user != null) {
-            if (!userid.equals(user.getDbId())) {
-                log.debug(String.format("Recieved an invalid email token request for (%s)" + " - provided bad userid",
-                        email));
-                return error.toResponse();
-            }
-
-            EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
-            if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED && user.getEmail().equals(email)) {
-                log.debug(String.format("Recieved an invalid email token request for (%s) - already verified", email));
-                return error.toResponse();
-            }
-
-            if (authenticator.isValidEmailVerificationToken(user, email, token)) {
-                user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
-                user.setEmailVerificationToken(null);
-                user.setEmailVerificationTokenExpiry(null);
-
-                // Update the email address if different
-                if (!user.getEmail().equals(email)) {
-                    user.setEmail(email);
-                }
-
-                // Save user
-                try {
-                    RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-                    log.info(String.format("Email verification for user (%s) has completed successfully.",
-                            createOrUpdateUser.getDbId()));
-                    return Response.ok().build();
-                } catch (SegueDatabaseException e) {
-                    error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                            "There was an error processing your request.");
-                    log.error(String.format("Could not persist to database"));
-                    return error.toResponse();
-                }
-            }
+        if (!userid.equals(user.getDbId())) {
+            log.warn(String.format("Recieved an invalid email token request for (%s)" + " - provided bad userid",
+                    email));
+            throw new InvalidTokenException();
         }
 
-        log.info(String.format("Recieved an invalid email token request for (%s)", email));
-        return error.toResponse();
+        EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
+        if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED && user.getEmail().equals(email)) {
+            log.warn(String.format("Recieved an invalid email token request for (%s) - already verified", email));
+            throw new InvalidTokenException();
+        }
 
+        if (authenticator.isValidEmailVerificationToken(user, email, token)) {
+            user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
+            user.setEmailVerificationToken(null);
+            user.setEmailVerificationTokenExpiry(null);
+
+            // Update the email address if different
+            if (!user.getEmail().equals(email)) {
+                user.setEmail(email);
+            }
+
+            // Save user
+            RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
+            log.info(String.format("Email verification for user (%s) has completed successfully.",
+                    createOrUpdateUser.getDbId()));
+            return this.convertUserDOToUserDTO(createOrUpdateUser);
+        } else {
+            log.warn(String.format("Recieved an invalid email verification token for (%s) - invalid token", email));
+            throw new InvalidTokenException();
+        }
     }
 
     /**
@@ -1318,53 +1293,38 @@ public class UserManager {
      *            - the provider the user wishes to authenticate with.
      * @return A json response containing a URI to the authentication provider if authorization / login is required.
      *         Alternatively a SegueErrorResponse could be returned.
+     * @throws IOException - 
+     * @throws AuthenticationProviderMappingException - as per exception description.
      */
-    private Response initiateAuthenticationFlow(final HttpServletRequest request, final String provider) {
-        try {
-            IAuthenticator federatedAuthenticator = mapToProvider(provider);
+    private URI initiateAuthenticationFlow(final HttpServletRequest request, final String provider) 
+            throws IOException, AuthenticationProviderMappingException {
+        IAuthenticator federatedAuthenticator = mapToProvider(provider);
 
-            // if we are an OAuthProvider redirect to the provider
-            // authorisation URL.
-            URI redirectLink = null;
-            if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-                IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
-                String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
+        // if we are an OAuthProvider redirect to the provider
+        // authorisation URL.
+        URI redirectLink = null;
+        if (federatedAuthenticator instanceof IOAuth2Authenticator) {
+            IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
+            String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
 
-                // Store antiForgeryToken in the users session.
-                request.getSession().setAttribute(STATE_PARAM_NAME, antiForgeryTokenFromProvider);
+            // Store antiForgeryToken in the users session.
+            request.getSession().setAttribute(STATE_PARAM_NAME, antiForgeryTokenFromProvider);
 
-                redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
-            } else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
-                IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
-                OAuth1Token token = oauth1Provider.getRequestToken();
+            redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
+        } else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
+            IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
+            OAuth1Token token = oauth1Provider.getRequestToken();
 
-                // Store token and secret in the users session.
-                request.getSession().setAttribute(OAUTH_TOKEN_PARAM_NAME, token.getToken());
+            // Store token and secret in the users session.
+            request.getSession().setAttribute(OAUTH_TOKEN_PARAM_NAME, token.getToken());
 
-                redirectLink = URI.create(oauth1Provider.getAuthorizationUrl(token));
-            } else {
-                SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                        "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
-                log.error(error.getErrorMessage());
-                return error.toResponse();
-            }
-
-            Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
-                    .put(REDIRECT_URL, redirectLink).build();
-
-            return Response.ok(redirectResponse).build();
-
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "IOException when trying to redirect to OAuth provider", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (AuthenticationProviderMappingException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Error mapping to a known authenticator. The provider: " + provider + " is unknown");
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
+            redirectLink = URI.create(oauth1Provider.getAuthorizationUrl(token));
+        } else {
+            throw new AuthenticationProviderMappingException("Unable to map to a known authenticator. "
+                    + "The provider: " + provider + " is unknown");
         }
+
+        return redirectLink;
     }
 
     /**

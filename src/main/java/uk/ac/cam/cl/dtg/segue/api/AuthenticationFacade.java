@@ -17,9 +17,11 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.REDIRECT_URL;
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -112,8 +115,31 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public final Response authenticate(@Context final HttpServletRequest request,
             @PathParam("provider") final String signinProvider) {
-
-        return userManager.authenticate(request, signinProvider);
+        
+        if (userManager.isRegisteredUserLoggedIn(request)) {
+            // if they are already logged in then we do not want to proceed with
+            // this authentication flow. We can just return an error response
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The user is already logged in. You cannot authenticate again.").toResponse();            
+        }
+        
+        try {
+            Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
+                    .put(REDIRECT_URL, userManager.authenticate(request, signinProvider)).build();
+            
+            return Response.ok(redirectResponse).build();
+        }  catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException when trying to redirect to OAuth provider", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Error mapping to a known authenticator. The provider: " + signinProvider + " is unknown");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+        
     }
 
     /**
@@ -134,8 +160,25 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         if (!this.userManager.isRegisteredUserLoggedIn(request)) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-
-        return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString);
+        
+        try {
+            Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
+                    .put(REDIRECT_URL, this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString))
+                    .build();
+            
+            return Response.ok(redirectResponse).build();   
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException when trying to redirect to OAuth provider", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Error mapping to a known authenticator. The provider: " + authProviderAsString + " is unknown");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+        
     }
 
     /**

@@ -54,6 +54,7 @@ import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -232,26 +233,24 @@ public class UserManagerTest {
      * @throws Exception
      */
     @Test
-    public final void authenticate_badProviderGiven_givesServerErrorResponse() throws Exception {
+    public final void authenticate_badProviderGiven_authenticationProviderException() throws Exception {
         UserManager userManager = buildTestUserManager();
 
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
-        Cookie[] cookieWithSessionInfo = {}; // empty as not logged in.
-
-        expect(request.getCookies()).andReturn(cookieWithSessionInfo).atLeastOnce();
-
         String someInvalidProvider = "BAD_PROVIDER!!";
-        Status expectedResponseCode = Status.BAD_REQUEST;
 
         replay(request);
         replay(dummyDatabase);
 
         // Act
-        Response r = userManager.authenticate(request, someInvalidProvider);
-
-        // Assert
-        assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
+        try {
+            userManager.authenticate(request, someInvalidProvider);
+            fail("Exception expected");
+        } catch (AuthenticationProviderMappingException e) {
+            // pass
+        }
+       
         verify(dummyDatabase, request);
     }
 
@@ -260,10 +259,11 @@ public class UserManagerTest {
      * 
      * @throws IOException
      *             - test exception
+     * @throws AuthenticationProviderMappingException 
      */
     @Test
     public final void authenticate_selectedValidOAuthProvider_providesRedirectResponseForAuthorization()
-            throws IOException {
+            throws IOException, AuthenticationProviderMappingException {
         // Arrange
         IOAuth2Authenticator dummyAuth = createMock(IOAuth2Authenticator.class);
         UserManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
@@ -276,15 +276,11 @@ public class UserManagerTest {
                 + "response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20"
                 + "https://www.googleapis.com/auth/userinfo.email&state=googleomrdd07hbe6vc1efim5rnsgvms";
         String someValidProviderString = "test";
-        Status expectedResponseCode = Status.OK;
 
         // for CSRF state information
         expect(request.getSession()).andReturn(dummySession).atLeastOnce();
         dummySession.setAttribute(EasyMock.<String> anyObject(), EasyMock.<String> anyObject());
         expectLastCall().atLeastOnce();
-
-        Cookie[] cookieWithSessionInfo = {}; // empty as not logged in.
-        expect(request.getCookies()).andReturn(cookieWithSessionInfo).atLeastOnce();
 
         replay(dummySession);
         replay(request);
@@ -296,16 +292,12 @@ public class UserManagerTest {
         replay(dummyAuth);
 
         // Act
-        Response r = userManager.authenticate(request, someValidProviderString);
+        URI redirectURI = userManager.authenticate(request, someValidProviderString);
 
         // Assert
         verify(dummyDatabase, request);
 
-        @SuppressWarnings("unchecked")
-        Map<String, URI> result = (Map<String, URI>) r.getEntity();
-
-        assertTrue(result.get(Constants.REDIRECT_URL).toString().equals(exampleRedirectUrl));
-        assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
+        assertTrue(redirectURI.toString().equals(exampleRedirectUrl));
     }
 
     /**
