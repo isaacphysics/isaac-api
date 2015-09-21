@@ -261,35 +261,31 @@ public class UserManager {
      * @param provider
      *            - the provider who has just authenticated the user.
      * @return Response containing the user object. Alternatively a SegueErrorResponse could be returned.
+     * @throws AuthenticationProviderMappingException 
+     * @throws SegueDatabaseException 
+     * @throws IOException 
+     * @throws NoUserException 
+     * @throws AuthenticatorSecurityException 
+     * @throws CrossSiteRequestForgeryException 
+     * @throws CodeExchangeException 
+     * @throws AuthenticationCodeException 
      */
-    public Response authenticateCallback(final HttpServletRequest request, final HttpServletResponse response,
-            final String provider) {
-        try {
+    public RegisteredUserDTO authenticateCallback(final HttpServletRequest request, final HttpServletResponse response,
+            final String provider) throws AuthenticationProviderMappingException, AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException, AuthenticationCodeException, CodeExchangeException, CrossSiteRequestForgeryException {
             IAuthenticator authenticator = mapToProvider(provider);
-
-            IFederatedAuthenticator federatedAuthenticator;
-            if (authenticator instanceof IFederatedAuthenticator) {
-                federatedAuthenticator = (IFederatedAuthenticator) authenticator;
-            } else {
-                return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "The authenticator requested does not have a callback function.").toResponse();
-            }
-
+            
+            IOAuthAuthenticator oauthProvider;
+            
             // this is a reference that the provider can use to look up user details.
             String providerSpecificUserLookupReference = null;
-
+            
             // if we are an OAuth2Provider complete next steps of oauth
-            if (federatedAuthenticator instanceof IOAuthAuthenticator) {
-                IOAuthAuthenticator oauthProvider = (IOAuthAuthenticator) federatedAuthenticator;
+            if (authenticator instanceof IOAuthAuthenticator) {
+                oauthProvider = (IOAuthAuthenticator) authenticator;
 
                 providerSpecificUserLookupReference = this.getOauthInternalRefCode(oauthProvider, request);
             } else {
-                // This should catch any invalid providers
-                SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                        "Unable to map to a known authenticator. The provider: " + provider + " is unknown");
-
-                log.error(error.getErrorMessage());
-                return error.toResponse();
+                throw new AuthenticationProviderMappingException("Unable to map to a known authenticator. The provider: " + provider + " is unknown");
             }
 
             // If the user is currently logged in this must be a
@@ -304,18 +300,14 @@ public class UserManager {
 
                 if (null != usersProviders && usersProviders.contains(authenticator.getAuthenticationProvider())) {
                     // they are already connected to this provider just return the user object
-                    return Response.ok(currentUser).build();
+                    return this.convertUserDOToUserDTO(currentUser);
                 } else {
                     // This extra check is to prevent callbacks to this method from merging accounts unexpectedly
                     Boolean intentionToLinkRegistered = (Boolean) request.getSession().getAttribute(
                             LINK_ACCOUNT_PARAM_NAME);
                     if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
-                        SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                                "User is already authenticated - "
-                                        + "expected request to link accounts but none was found.");
-
-                        log.error(error.getErrorMessage());
-                        return error.toResponse();
+                        throw new SegueDatabaseException("User is already authenticated - "
+                                + "expected request to link accounts but none was found.");
                     }
 
                     // clear link accounts intention until next time
@@ -324,19 +316,19 @@ public class UserManager {
                     // Decide if this is a link operation or an authenticate / register
                     // operation.
                     log.debug("Linking existing user to another provider account.");
-                    this.linkProviderToExistingAccount(currentUser, federatedAuthenticator,
+                    this.linkProviderToExistingAccount(currentUser, oauthProvider,
                             providerSpecificUserLookupReference);
-                    return Response.ok(this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request))).build();
+                    return this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
                 }
             }
 
-            RegisteredUser segueUserDO = this.getUserFromFederatedProvider(federatedAuthenticator,
+            RegisteredUser segueUserDO = this.getUserFromFederatedProvider(oauthProvider,
                     providerSpecificUserLookupReference);
             RegisteredUserDTO segueUserDTO = null;
             // decide if this is a registration or an existing user.
             if (null == segueUserDO) {
                 // new user
-                segueUserDO = this.registerUserWithFederatedProvider(federatedAuthenticator,
+                segueUserDO = this.registerUserWithFederatedProvider(oauthProvider,
                         providerSpecificUserLookupReference);
                 segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
                 segueUserDTO.setFirstLogin(true);
@@ -348,37 +340,7 @@ public class UserManager {
             // create a signed session for this user so that we don't need
             // to do this again for a while.
             this.createSession(request, response, segueUserDO);
-            return Response.ok(segueUserDTO).build();
-        } catch (IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Exception while trying to authenticate a user" + " - during callback step. IO problem.", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (NoUserException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Unable to locate user information.");
-            log.error("No userID exception received. Unable to locate user.", e);
-            return error.toResponse();
-        } catch (AuthenticationCodeException | CrossSiteRequestForgeryException | AuthenticatorSecurityException
-                | CodeExchangeException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
-            log.info("Error detected during authentication: " + e.getClass().toString(), e);
-            return error.toResponse();
-        } catch (DuplicateAccountException e) {
-            log.debug("Duplicate user already exists in the database.", e);
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "A user already exists with the e-mail address specified.").toResponse();
-        } catch (AccountAlreadyLinkedException e) {
-            log.error("Internal Database error during authentication", e);
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "The account you are trying to link is already attached to a user of this system.").toResponse();
-        } catch (SegueDatabaseException e) {
-            log.error("Internal Database error during authentication", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Internal database error during authentication.").toResponse();
-        } catch (AuthenticationProviderMappingException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: "
-                    + provider + " is unknown").toResponse();
-        }
+            return segueUserDTO;
     }
 
     /**

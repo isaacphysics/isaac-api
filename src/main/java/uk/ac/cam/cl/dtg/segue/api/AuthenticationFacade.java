@@ -19,6 +19,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
 import io.swagger.annotations.Api;
 
+import java.io.IOException;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,7 +46,13 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -181,7 +188,40 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/{provider}/callback")
     public final Response authenticationCallback(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
-        return userManager.authenticateCallback(request, response, signinProvider);
+        
+        try {
+            return Response.ok(userManager.authenticateCallback(request, response, signinProvider)).build();    
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Exception while trying to authenticate a user" + " - during callback step.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (NoUserException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Unable to locate user information.");
+            log.error("No userID exception received. Unable to locate user.", e);
+            return error.toResponse();
+        } catch (AuthenticationCodeException | CrossSiteRequestForgeryException | AuthenticatorSecurityException
+                | CodeExchangeException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
+            log.info("Error detected during authentication: " + e.getClass().toString(), e);
+            return error.toResponse();
+        } catch (DuplicateAccountException e) {
+            log.debug("Duplicate user already exists in the database.", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "A user already exists with the e-mail address specified.").toResponse();
+        } catch (AccountAlreadyLinkedException e) {
+            log.error("Internal Database error during authentication", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The account you are trying to link is already attached to a user of this system.").toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Internal Database error during authentication", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Internal database error during authentication.").toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: "
+                    + signinProvider + " is unknown").toResponse();
+        }
+        
     }
 
     /**

@@ -55,6 +55,7 @@ import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -419,11 +420,11 @@ public class UserManagerTest {
         replay(dummySession, request, dummyAuth, dummyDatabase, dummyMapper);
 
         // Act
-        Response r = userManager.authenticateCallback(request, response, validOAuthProvider);
+        RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider);
 
         // Assert
         verify(dummySession, request, dummyAuth, dummyDatabase);
-        assertTrue(r.getStatusInfo().equals(Status.OK));
+        assertTrue(u instanceof RegisteredUserDTO);
     }
 
     // TODO: Write a test to check what happens with anonymous users and merges.
@@ -439,7 +440,7 @@ public class UserManagerTest {
      *             - test exceptions
      */
     @Test
-    public final void authenticateCallback_checkInvalidCSRF_returnsUnauthorizedResponse() throws IOException,
+    public final void authenticateCallback_checkInvalidCSRF_throwsCSRFException() throws IOException,
             CodeExchangeException, NoUserException {
         UserManager userManager = buildTestUserManager();
 
@@ -449,7 +450,6 @@ public class UserManagerTest {
 
         String someInvalidCSRFValue = "FRAUDHASHAPPENED";
         String validOAuthProvider = "test";
-        Status expectedResponseCode = Status.UNAUTHORIZED;
 
         expect(request.getSession()).andReturn(dummySession).atLeastOnce();
         expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).anyTimes();
@@ -467,11 +467,17 @@ public class UserManagerTest {
         replay(dummySession, request, dummyDatabase);
 
         // Act
-        Response r = userManager.authenticateCallback(request, response, validOAuthProvider);
-
+        try {
+            userManager.authenticateCallback(request, response, validOAuthProvider);
+            fail("Exception should have been thrown");
+        } catch (CrossSiteRequestForgeryException e) {
+            // success
+        } catch (Exception e) {
+            // not interested in these cases.
+        }
+        
         // Assert
         verify(dummyDatabase, dummySession, request);
-        assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
     }
 
     /**
@@ -485,7 +491,7 @@ public class UserManagerTest {
      *             - test exceptions
      */
     @Test
-    public final void authenticateCallback_checkWhenNoCSRFProvided_respondWithUnauthorized() throws IOException,
+    public final void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() throws IOException,
             CodeExchangeException, NoUserException {
         UserManager userManager = buildTestUserManager();
 
@@ -495,7 +501,6 @@ public class UserManagerTest {
         HttpServletResponse response = createMock(HttpServletResponse.class);
 
         String validOAuthProvider = "test";
-        Status expectedResponseCode = Status.UNAUTHORIZED;
 
         expect(request.getSession()).andReturn(dummySession).atLeastOnce();
         expect(dummySession.getAttribute(Constants.SESSION_USER_ID)).andReturn(null).anyTimes();
@@ -512,11 +517,18 @@ public class UserManagerTest {
         replay(dummyDatabase);
 
         // Act
-        Response r = userManager.authenticateCallback(request, response, validOAuthProvider);
-
+        try {
+            userManager.authenticateCallback(request, response, validOAuthProvider);
+            fail("Exception should have been thrown");
+        } catch (CrossSiteRequestForgeryException e) {
+            // pass
+        } catch (Exception e){
+            // not interested in this case.
+        }
+        
         // Assert
         verify(dummyDatabase, dummySession, request);
-        assertTrue(r.getStatus() == expectedResponseCode.getStatusCode());
+        
     }
 
     /**
