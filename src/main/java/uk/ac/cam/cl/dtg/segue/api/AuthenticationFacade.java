@@ -73,7 +73,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 @Api(value = "/auth")
 public class AuthenticationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFacade.class);
-    
+
     private final UserManager userManager;
 
     private final IMisuseMonitor misuseMonitor;
@@ -188,16 +188,17 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/{provider}/callback")
     public final Response authenticationCallback(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
-        
+
         try {
-            return Response.ok(userManager.authenticateCallback(request, response, signinProvider)).build();    
+            return Response.ok(userManager.authenticateCallback(request, response, signinProvider)).build();
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Exception while trying to authenticate a user" + " - during callback step.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (NoUserException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, "Unable to locate user information.");
+            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED,
+                    "Unable to locate user information.");
             log.error("No userID exception received. Unable to locate user.", e);
             return error.toResponse();
         } catch (AuthenticationCodeException | CrossSiteRequestForgeryException | AuthenticatorSecurityException
@@ -221,7 +222,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: "
                     + signinProvider + " is unknown").toResponse();
         }
-        
+
     }
 
     /**
@@ -245,7 +246,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final Map<String, String> credentials) {
-        
+
         // in this case we expect a username and password to have been
         // sent in the json response.
         if (null == credentials || credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
@@ -254,7 +255,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                     "You must specify credentials email and password to use this authentication provider.");
             return error.toResponse();
         }
-        
+
         final String rateThrottleMessage = "There has been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
@@ -265,10 +266,11 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                     + " rate limited - too many logins.");
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
-        
+
         // ok we need to hand over to user manager
         try {
-            return Response.ok(userManager.authenticateWithCredentials(request, response, signinProvider, credentials))
+            return Response
+                    .ok(userManager.authenticateWithCredentials(request, response, signinProvider, credentials))
                     .build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
@@ -278,9 +280,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             try {
                 misuseMonitor.notifyEvent(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
                         SegueLoginMisuseHandler.class.toString());
-                
+
                 log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
-                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());                
+                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
                 log.error("Segue Login Blocked for: " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
