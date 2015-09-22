@@ -755,6 +755,12 @@ public class GitContentManager implements IContentManager {
             }
         }
 
+        if (content instanceof Choice) {
+            Choice choice = (Choice) content;
+            this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile,
+                    newParentId);
+        }
+        
         // TODO: hack to get hints to apply as children
         if (content instanceof Question) {
             Question question = (Question) content;
@@ -770,6 +776,16 @@ public class GitContentManager implements IContentManager {
                 Content answer = (Content) question.getAnswer();
                 if (answer.getChildren() != null) {
                     for (ContentBase cb : answer.getChildren()) {
+                        Content c = (Content) cb;
+                        this.augmentChildContent(c, canonicalSourceFile, newParentId);
+                    }
+                }
+            }
+            
+            if (content instanceof ChoiceQuestion) {
+                ChoiceQuestion choiceQuestion = (ChoiceQuestion) content;
+                if (choiceQuestion.getChoices() != null) {
+                    for (ContentBase cb : choiceQuestion.getChoices()) {
                         Content c = (Content) cb;
                         this.augmentChildContent(c, canonicalSourceFile, newParentId);
                     }
