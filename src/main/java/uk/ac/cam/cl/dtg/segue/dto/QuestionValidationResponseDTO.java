@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 /**
  * Question Validation Response DTO.
@@ -28,7 +28,7 @@ public class QuestionValidationResponseDTO {
     private String questionId;
     private ChoiceDTO answer;
     private Boolean correct;
-    private Content explanation;
+    private ContentDTO explanation;
     private Date dateAttempted;
 
     /**
@@ -53,7 +53,7 @@ public class QuestionValidationResponseDTO {
      *            -
      */
     public QuestionValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
-            final Content explanation, final Date dateAttempted) {
+            final ContentDTO explanation, final Date dateAttempted) {
         this.questionId = questionId;
         this.answer = answer;
         this.correct = correct;
@@ -123,7 +123,7 @@ public class QuestionValidationResponseDTO {
      * 
      * @return the explanation
      */
-    public final Content getExplanation() {
+    public final ContentDTO getExplanation() {
         return explanation;
     }
 
@@ -133,7 +133,7 @@ public class QuestionValidationResponseDTO {
      * @param explanation
      *            the explanation to set
      */
-    public final void setExplanation(final Content explanation) {
+    public final void setExplanation(final ContentDTO explanation) {
         this.explanation = explanation;
     }
 

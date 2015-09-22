@@ -15,9 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.quiz;
 
+
+
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 
 /**
  * Interface that allows the quiz engine to validate questions and answers.
@@ -29,7 +31,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
  *
  */
 public interface IValidator {
-
+    
     /**
      * validateQuestionResponse This method is specifically for single field questions.
      * 
@@ -41,5 +43,5 @@ public interface IValidator {
      *            - answer from the user.
      * @return a QuestionValidationResponseDTO
      */
-    QuestionValidationResponseDTO validateQuestionResponse(Question question, ChoiceDTO answer);
+    QuestionValidationResponse validateQuestionResponse(Question question, Choice answer);
 }

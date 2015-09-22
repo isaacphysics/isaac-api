@@ -52,7 +52,7 @@ public class ContentBaseOrikaConverter extends CustomConverter<ContentBase, Cont
         if (null == source) {
             return null;
         }
-
+             
         Class<? extends Content> contentClass = contentMapper.getClassByType(source.getType());
 
         if (contentClass == null) {

@@ -31,6 +31,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
@@ -99,8 +100,13 @@ public class QuestionManager {
                                 + ") and we were given a list.");
                 return error.toResponse();
             }
+            
+            Choice answerFromUser = mapper.getAutoMapper().map(answers.get(0), Choice.class);
+            QuestionValidationResponse validateQuestionResponse = validator.validateQuestionResponse(question,
+                    answerFromUser);
 
-            return Response.ok(validator.validateQuestionResponse(question, answers.get(0))).build();
+            return Response.ok(
+                    mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
         }
     }
 

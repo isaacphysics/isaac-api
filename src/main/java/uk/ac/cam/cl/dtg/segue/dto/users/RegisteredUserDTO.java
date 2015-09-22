@@ -503,7 +503,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
         } else if (!email.equals(other.email)) {
             return false;
         }
-        if (emailVerificationStatus == null){
+        if (emailVerificationStatus == null) {
             if (other.emailVerificationStatus != null) {
                 return false;
             }
