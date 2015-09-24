@@ -16,10 +16,13 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
 import org.mongojack.ObjectId;
+
+import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -169,4 +172,5 @@ public class UserGroup {
         }
         return true;
     }
+
 }

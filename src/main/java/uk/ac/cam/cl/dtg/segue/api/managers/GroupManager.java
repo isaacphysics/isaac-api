@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import ma.glasnost.orika.MapperFacade;
@@ -27,8 +28,10 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -45,6 +48,7 @@ public class GroupManager {
     private final IUserGroupDataManager groupDatabase;
     private final UserManager userManager;
     private final MapperFacade dtoMapper;
+    private List<IGroupObserver> groupsObservers;
 
     /**
      * GroupManager.
@@ -65,6 +69,8 @@ public class GroupManager {
         this.groupDatabase = groupDatabase;
         this.userManager = userManager;
         this.dtoMapper = dtoMapper;
+
+        groupsObservers = new LinkedList<IGroupObserver>();
     }
 
     /**
@@ -182,6 +188,12 @@ public class GroupManager {
         // don't do it if they are already in there
         if (!this.isUserInGroup(userToAdd, group)) {
             groupDatabase.addUserToGroup(userToAdd.getDbId(), group.getId());
+
+            // Notify observers of change
+            for (IGroupObserver interestedParty : this.groupsObservers) {
+                interestedParty.onMemberAddedToGroup(group, userToAdd);
+            }
+
         } else {
             // otherwise it is a noop.
             log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
@@ -204,6 +216,10 @@ public class GroupManager {
         Validate.notNull(group);
         Validate.notNull(userToRemove);
         groupDatabase.removeUserFromGroup(userToRemove.getDbId(), group.getId());
+
+        for (IGroupObserver interestedParty : this.groupsObservers) {
+            interestedParty.onGroupMembershipRemoved(group, userToRemove);
+        }
     }
 
     /**
@@ -262,6 +278,14 @@ public class GroupManager {
     }
 
     /**
+     * @param interestedParty
+     */
+    public void registerInterestInGroups(final IGroupObserver interestedParty) {
+        groupsObservers.add(interestedParty);
+    }
+
+
+    /**
      * @param group
      *            to convert
      * @return groupDTO
@@ -282,4 +306,5 @@ public class GroupManager {
         }
         return result;
     }
+
 }

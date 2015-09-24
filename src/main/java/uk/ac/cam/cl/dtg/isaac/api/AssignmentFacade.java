@@ -377,8 +377,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
             List<RegisteredUserDTO> users = groupManager.getUsersInGroup(userGroupDTO);
+
             try {
-                emailManager.sendGroupAssignment(users);
+                emailManager.sendGroupAssignment(users, gameboard);
             } catch (ContentManagerException e) {
                 log.error("Could not send group assignment emails due to content issue", e);
             }

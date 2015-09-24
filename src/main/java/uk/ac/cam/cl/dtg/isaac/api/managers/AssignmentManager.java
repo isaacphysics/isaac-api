@@ -26,10 +26,13 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
@@ -39,12 +42,12 @@ import com.google.inject.Inject;
 /**
  * AssignmentManager.
  */
-public class AssignmentManager {
+public class AssignmentManager implements IGroupObserver {
     private static final Logger log = LoggerFactory.getLogger(AssignmentManager.class);
 
     private final AssignmentPersistenceManager assignmentPersistenceManager;
     private final GroupManager groupManager;
-
+    private final EmailManager emailManager;
     private final UserManager userManager;
 
     /**
@@ -54,15 +57,20 @@ public class AssignmentManager {
      *            - to save assignments
      * @param groupManager
      *            - to allow communication with the group manager.
+     * @param emailManager
+     *            - email manager
      * @param userManager
-     *            - So we can access user data.
+     *            - the user manager object
      */
     @Inject
     public AssignmentManager(final AssignmentPersistenceManager assignmentPersistenceManager,
-            final GroupManager groupManager, final UserManager userManager) {
+            final GroupManager groupManager, final EmailManager emailManager, final UserManager userManager) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
+        this.emailManager = emailManager;
         this.userManager = userManager;
+
+        groupManager.registerInterestInGroups(this);
     }
 
     /**
@@ -87,10 +95,6 @@ public class AssignmentManager {
             assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
         }
 
-        for (AssignmentDTO assignment : assignments) {
-            augmentAssignmentWithUserSummaryInfo(assignment);
-        }
-        
         return assignments;
     }
 
@@ -104,9 +108,7 @@ public class AssignmentManager {
      *             - if we cannot complete a required database operation.
      */
     public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
-        AssignmentDTO assignmentById = this.assignmentPersistenceManager.getAssignmentById(assignmentId);
-        augmentAssignmentWithUserSummaryInfo(assignmentById);
-        return assignmentById;
+        return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
     }
 
     /**
@@ -240,23 +242,47 @@ public class AssignmentManager {
 
         return groups;
     }
-    
-    /**
-     * Utility method to augmentAssignmentDTO with user summary object.
+
+    /*
+     * (non-Javadoc)
      * 
-     * @param assignment
-     *            - that should be augmented - if the ownerUserId is null or the owner no longer exists this will not
-     *            mutate the object to null.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
+     * @see
+     * uk.ac.cam.cl.dtg.segue.api.managers.IGroupInterest#onGroupMembershipRemoved(uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO
+     * , uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO)
      */
-    private void augmentAssignmentWithUserSummaryInfo(final AssignmentDTO assignment) throws SegueDatabaseException {
-        RegisteredUserDTO userDTOById;
+    @Override
+    public void onGroupMembershipRemoved(final UserGroupDTO group, final RegisteredUserDTO user) {
+        // TODO Auto-generated method stub
+
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * uk.ac.cam.cl.dtg.segue.api.managers.IGroupInterest#onMemberAddedToGroup(uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO,
+     * uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO)
+     */
+    @Override
+    public void onMemberAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO user) {
+        // Try to email user to let them know
         try {
-            userDTOById = userManager.getUserDTOById(assignment.getOwnerUserId());
-            assignment.setAssignerSummary(userManager.convertToUserSummaryObject(userDTOById));
+            RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
+
+            List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
+
+            emailManager.sendGroupWelcome(user, group, groupOwner, existingAssignments);
+
+        } catch (ContentManagerException e) {
+            log.info(String.format("Could not send group welcome email "), e);
+            e.printStackTrace();
         } catch (NoUserException e) {
-            // leave it as null
+            log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
+            e.printStackTrace();
+        } catch (SegueDatabaseException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+
     }
 }

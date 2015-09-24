@@ -2,7 +2,10 @@ package uk.ac.cam.cl.dtg.segue.comm;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -11,11 +14,17 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
@@ -119,7 +128,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
         
-        if (segueContent == null) {
+        if (null == segueContent) {
             log.debug("Password reset message not sent as segue content was null!");
             return;
         }
@@ -173,7 +182,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation");
         
-        if (segueContent == null) {
+        if (null == segueContent) {
             log.debug("Email registration confirmation email not sent as segue content was null!");
             return;
         }
@@ -227,7 +236,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-email-verification");
         
-        if (segueContent == null) {
+        if (null == segueContent) {
             log.debug("Email verification message not sent as segue content was null!");
             return;
         }
@@ -282,7 +291,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-verification-change");
         
-        if (segueContent == null) {
+        if (null == segueContent) {
             log.debug("Email change message not sent as segue content was null!");
             return;
         }
@@ -317,17 +326,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 
      * @param users
      *            - the group the gameboard is being assigned to
+     * @param gameboard
+     *            - gameboard that is being assigned to the users
      * @throws ContentManagerException
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void sendGroupAssignment(final List<RegisteredUserDTO> users)
+    public void sendGroupAssignment(final List<RegisteredUserDTO> users, final GameboardDTO gameboard)
             throws ContentManagerException, SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
 
-        if (segueContent == null) {
+        if (null == segueContent) {
             log.debug("Email change message not sent as segue content was null!");
             return;
         }
@@ -335,9 +346,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
         for (RegisteredUserDTO user : users) {
+            String gameboardURL = String.format("https://%s/#%s", globalProperties.getProperty(HOST_NAME),
+                    gameboard.getId());
+            String myAssignmentsURL = String.format("https://%s/assignments",
+                    globalProperties.getProperty(HOST_NAME));
             Properties p = new Properties();
             p.put("givenname", user.getGivenName());
-            p.put("requestedemail", user.getEmail());
+            p.put("gameboardURL", gameboardURL);
+            p.put("myAssignmentsURL", myAssignmentsURL);
             p.put("sig", sig);
             String plainTextMessage = completeTemplateWithProperties(segueContent, p);
             String htmlMessage = null;
@@ -356,6 +372,88 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                     segueContent.getTitle(), plainTextMessage, htmlMessage);
             this.addToQueue(e);
         }
+    }
+
+    /**
+     * Sends notification for groups being given an assignment.
+     * 
+     * @param user
+     *            - the user who has joined the group
+     * @param userGroup
+     *            - the user group that the user is being assigned to
+     * 
+     * @param groupOwner
+     *            - the owner of the group
+     * @param existingAssignments
+     *            - the assignments that already exist in the group
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendGroupWelcome(final RegisteredUserDTO user, final UserGroupDTO userGroup,
+            final RegisteredUserDTO groupOwner, final List<AssignmentDTO> existingAssignments)
+            throws ContentManagerException, SegueDatabaseException {
+
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
+
+        if (null == segueContent) {
+            log.debug("Email change message not sent as segue content was null!");
+            return;
+        }
+
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-group-welcome");
+
+        String groupOwnerName = "Unknown";
+        if (groupOwner != null) {
+            groupOwnerName = groupOwner.getGivenName() + " " + groupOwner.getFamilyName();
+        }
+        
+        existingAssignments.sort(new Comparator<AssignmentDTO>() {
+
+            @Override
+            public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
+                return o1.getCreationDate().compareTo(o2.getCreationDate());
+            }
+            
+        });
+        
+        StringBuilder sb = new StringBuilder();
+        if (existingAssignments != null && existingAssignments.size() > 0) {
+            sb.append("Your teacher has assigned the following assignments:\n");
+            for (int i = 0; i < existingAssignments.size(); i++) {
+                DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
+                sb.append(String.format("%d. %s (set on %s)\n", 
+                        i, 
+                        existingAssignments.get(i).getGameboard().getTitle(),
+                        df.format(existingAssignments.get(i).getCreationDate())));
+            }
+        }
+
+        String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
+        Properties p = new Properties();
+        p.put("givenname", user.getGivenName());
+        p.put("teacherName", groupOwnerName);
+        p.put("assignmentsInfo", sb.toString());
+        p.put("accountURL", accountURL);
+        p.put("sig", sig);
+        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+        String htmlMessage = null;
+
+        if (null == htmlTemplate) {
+            log.debug("HTML email template could not be found!");
+        } else {
+            Properties htmlTemplateProperties = new Properties();
+            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+            htmlTemplateProperties.put("email", user.getEmail());
+
+            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        }
+
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
+                segueContent.getTitle(), plainTextMessage, htmlMessage);
+        this.addToQueue(e);
+
     }
 
     /**
@@ -379,7 +477,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
         
-        if (segueContent == null) {
+        if (null == segueContent) {
             log.warn("Federated password reset message not sent as segue content was null!");
             return;
         }

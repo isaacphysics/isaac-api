@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -41,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 public class AssignmentManagerTest {
 	private AssignmentPersistenceManager dummyAssignmentPersistenceManager;
 	private GroupManager dummyGroupManager;
+    private EmailManager dummyEmailManager;
     private UserManager dummyUserManager;
 
 	/**
@@ -53,7 +55,8 @@ public class AssignmentManagerTest {
 	public final void setUp() throws Exception {
 		this.dummyGroupManager = createMock(GroupManager.class);
 		this.dummyAssignmentPersistenceManager = createMock(AssignmentPersistenceManager.class);
-		this.dummyUserManager = createMock(UserManager.class);
+        this.dummyEmailManager = createMock(EmailManager.class);
+        this.dummyUserManager = createMock(UserManager.class);
 	}
 
 	/**
@@ -67,17 +70,17 @@ public class AssignmentManagerTest {
 	@PowerMockIgnore({ "javax.ws.*" })
 	public final void getAssignments_checkNoGroups_emptyListReturned() throws SegueDatabaseException {
 		
-		AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager, dummyUserManager);
+        AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
+                dummyEmailManager, dummyUserManager);
 		RegisteredUserDTO dummyUser = createMock(RegisteredUserDTO.class);
 		
-		expect(dummyGroupManager.getGroupMembershipList(dummyUser)).andReturn(new ArrayList<UserGroupDTO>());
-		
-		replay(dummyGroupManager);
+        expect(dummyGroupManager.getGroupMembershipList(dummyUser)).andReturn(new ArrayList<UserGroupDTO>());
+
+        replay(dummyGroupManager);
 		
 		Collection<AssignmentDTO> assignments = am.getAssignments(dummyUser);
 		
 		assertTrue(assignments != null);
 		assertTrue(assignments.size() == 0);
-		verify(dummyGroupManager);
 	}
 }
