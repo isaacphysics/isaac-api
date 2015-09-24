@@ -252,8 +252,7 @@ public class AssignmentManager implements IGroupObserver {
      */
     @Override
     public void onGroupMembershipRemoved(final UserGroupDTO group, final RegisteredUserDTO user) {
-        // TODO Auto-generated method stub
-
+		// do nothing
     }
 
     /*
@@ -265,12 +264,16 @@ public class AssignmentManager implements IGroupObserver {
      */
     @Override
     public void onMemberAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO user) {
+
+		Validate.notNull(group);
+		Validate.notNull(user);
+
         // Try to email user to let them know
         try {
             RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
 
             List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
-
+           
             emailManager.sendGroupWelcome(user, group, groupOwner, existingAssignments);
 
         } catch (ContentManagerException e) {

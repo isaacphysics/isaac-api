@@ -395,14 +395,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             final RegisteredUserDTO groupOwner, final List<AssignmentDTO> existingAssignments)
             throws ContentManagerException, SegueDatabaseException {
 
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
+		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
 
         if (null == segueContent) {
             log.debug("Email change message not sent as segue content was null!");
             return;
         }
 
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-group-welcome");
+		SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
         String groupOwnerName = "Unknown";
         if (groupOwner != null) {
@@ -425,7 +425,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
                 sb.append(String.format("%d. %s (set on %s)\n", 
                         i, 
-                        existingAssignments.get(i).getGameboard().getTitle(),
+						existingAssignments.get(i).getGameboardId(),
                         df.format(existingAssignments.get(i).getCreationDate())));
             }
         }
