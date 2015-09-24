@@ -125,6 +125,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     
     private static StatisticsManager statsManager = null;
 
+	private static GroupManager groupManager = null;
+
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
 
     /**
@@ -456,6 +458,33 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return userManager;
     }
+
+	/**
+	 * This provides a singleton of the GroupManager.
+	 * 
+	 * @param userGroupDataManager
+	 *            - user group data manager
+	 * @param userManager
+	 *            - user manager
+	 * @param dtoMapper
+	 *            - dtoMapper
+	 * @return group manager
+	 */
+	@Inject
+	@Provides
+	@Singleton
+	private GroupManager getGroupManager(
+			final IUserGroupDataManager userGroupDataManager,
+			final UserManager userManager, final MapperFacade dtoMapper) {
+
+		if (null == groupManager) {
+			groupManager = new GroupManager(userGroupDataManager, userManager,
+					dtoMapper);
+			log.info("Creating singleton of GroupManager");
+		}
+
+		return groupManager;
+	}
 
     /**
      * This provides a singleton of the UserAssociationManager for the Authorisation facade.
