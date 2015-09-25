@@ -15,9 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -57,7 +59,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final PropertiesLoader globalProperties,
-            final ContentVersionController contentVersionController) {
+		            final ContentVersionController contentVersionController) {
         super(communicator);
         this.globalProperties = globalProperties;
         this.contentVersionController = contentVersionController;
@@ -323,18 +325,25 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     /**
      * Sends notification for groups being given an assignment.
-     * 
+     * @param userManager
+     * 			  - the userManager
      * @param users
      *            - the group the gameboard is being assigned to
      * @param gameboard
      *            - gameboard that is being assigned to the users
+     * @param assignmentOwner
+     * 			  - the user that owns the assignment we're sending an email about      
+     * @param userAssociationManager
+     * 			  - the association manager that allows us to check whether the owner of 
+     * 				the assignment has an association with the user      
      * @throws ContentManagerException
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void sendGroupAssignment(final List<RegisteredUserDTO> users, final GameboardDTO gameboard)
-            throws ContentManagerException, SegueDatabaseException {
+    public void sendGroupAssignment(final List<RegisteredUserDTO> users, 
+		    		final GameboardDTO gameboard)
+		            throws ContentManagerException, SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
 
@@ -344,8 +353,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        
+		String gameboardName = gameboard.getId();
+		if (gameboard.getTitle() != null) {
+			gameboardName = gameboard.getTitle();
+		}
 
         for (RegisteredUserDTO user : users) {
+        	       	
             String gameboardURL = String.format("https://%s/#%s", globalProperties.getProperty(HOST_NAME),
                     gameboard.getId());
             String myAssignmentsURL = String.format("https://%s/assignments",
@@ -353,6 +368,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             Properties p = new Properties();
             p.put("givenname", user.getGivenName());
             p.put("gameboardURL", gameboardURL);
+            p.put("gameboardName", gameboardName);
             p.put("myAssignmentsURL", myAssignmentsURL);
             p.put("sig", sig);
             String plainTextMessage = completeTemplateWithProperties(segueContent, p);
@@ -381,6 +397,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            - the user who has joined the group
      * @param userGroup
      *            - the user group that the user is being assigned to
+     * @param gameManager
+     * 			  - the game manager we'll use to get the assignments
      * 
      * @param groupOwner
      *            - the owner of the group
@@ -392,8 +410,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      */
     public void sendGroupWelcome(final RegisteredUserDTO user, final UserGroupDTO userGroup,
-            final RegisteredUserDTO groupOwner, final List<AssignmentDTO> existingAssignments)
-            throws ContentManagerException, SegueDatabaseException {
+					    		final RegisteredUserDTO groupOwner,
+								final List<AssignmentDTO> existingAssignments,
+					            final GameManager gameManager)
+		            			throws ContentManagerException, SegueDatabaseException {
 
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
 
@@ -423,11 +443,27 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             sb.append("Your teacher has assigned the following assignments:\n");
             for (int i = 0; i < existingAssignments.size(); i++) {
                 DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
-                sb.append(String.format("%d. %s (set on %s)\n", 
-                        i, 
-						existingAssignments.get(i).getGameboardId(),
-                        df.format(existingAssignments.get(i).getCreationDate())));
+                GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
+
+                String gameboardName = existingAssignments.get(i).getGameboardId();
+                if (gameboard != null) {
+                	gameboardName = gameboard.getTitle();
+                }
+                
+				String gameboardUrl = String.format("https://%s/#%s",
+								globalProperties.getProperty(HOST_NAME),
+								existingAssignments.get(i).getGameboardId());
+
+				sb.append(String.format(
+								"%d. <a href='%s'>%s</a> (set on %s)\n",
+								i + 1,
+								gameboardUrl,
+		                        gameboardName,
+		                        df.format(existingAssignments.get(i).getCreationDate())));
             }
+        }
+        else if (existingAssignments != null && existingAssignments.size() == 0) {
+            sb.append("No assignments have been set yet.");
         }
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));

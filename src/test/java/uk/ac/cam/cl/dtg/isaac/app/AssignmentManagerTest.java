@@ -26,9 +26,11 @@ import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -44,6 +46,8 @@ public class AssignmentManagerTest {
 	private GroupManager dummyGroupManager;
     private EmailManager dummyEmailManager;
     private UserManager dummyUserManager;
+    private GameManager dummyGameManager;
+    private UserAssociationManager userAssociationManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -57,6 +61,8 @@ public class AssignmentManagerTest {
 		this.dummyAssignmentPersistenceManager = createMock(AssignmentPersistenceManager.class);
         this.dummyEmailManager = createMock(EmailManager.class);
         this.dummyUserManager = createMock(UserManager.class);
+        this.dummyGameManager = createMock(GameManager.class);
+        this.userAssociationManager = createMock(UserAssociationManager.class);
 	}
 
 	/**
@@ -71,7 +77,7 @@ public class AssignmentManagerTest {
 	public final void getAssignments_checkNoGroups_emptyListReturned() throws SegueDatabaseException {
 		
         AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
-                dummyEmailManager, dummyUserManager);
+                dummyEmailManager, dummyUserManager, dummyGameManager, null);
 		RegisteredUserDTO dummyUser = createMock(RegisteredUserDTO.class);
 		
         expect(dummyGroupManager.getGroupMembershipList(dummyUser)).andReturn(new ArrayList<UserGroupDTO>());

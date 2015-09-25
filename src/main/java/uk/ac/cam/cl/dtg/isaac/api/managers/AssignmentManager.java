@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang3.Validate;
@@ -25,8 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -35,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
@@ -49,6 +53,8 @@ public class AssignmentManager implements IGroupObserver {
     private final GroupManager groupManager;
     private final EmailManager emailManager;
     private final UserManager userManager;
+	private final GameManager gameManager;
+    private final UserAssociationManager userAssociationManager;
 
     /**
      * AssignmentManager.
@@ -64,11 +70,15 @@ public class AssignmentManager implements IGroupObserver {
      */
     @Inject
     public AssignmentManager(final AssignmentPersistenceManager assignmentPersistenceManager,
-            final GroupManager groupManager, final EmailManager emailManager, final UserManager userManager) {
+			final GroupManager groupManager, final EmailManager emailManager,
+			final UserManager userManager, final GameManager gameManager,
+            final UserAssociationManager userAssociationManager) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
         this.emailManager = emailManager;
-        this.userManager = userManager;
+        this.userManager = userManager; 
+		this.gameManager = gameManager;
+        this.userAssociationManager = userAssociationManager;
 
         groupManager.registerInterestInGroups(this);
     }
@@ -131,9 +141,40 @@ public class AssignmentManager implements IGroupObserver {
                     newAssignment.getGameboardId(), newAssignment.getGroupId()));
             throw new DuplicateAssignmentException("You cannot assign the same work to a group more than once.");
         }
-
+        
         newAssignment.setCreationDate(new Date());
         newAssignment.setId(this.assignmentPersistenceManager.saveAssignment(newAssignment));
+
+        UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
+        List<RegisteredUserDTO> users = groupManager.getUsersInGroup(userGroupDTO);
+        
+        GameboardDTO gameboard = gameManager.getGameboard(newAssignment.getGameboardId());
+        
+        //filter users so those that have revoked access to their data aren't emailed
+        try {
+			RegisteredUserDTO assignmentOwner = userManager.getUserDTOById(newAssignment.getOwnerUserId());
+			
+			for (Iterator<RegisteredUserDTO> iterator = users.iterator(); iterator.hasNext();) {
+				RegisteredUserDTO user = iterator.next();
+				UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
+				if (!userAssociationManager.hasPermission(assignmentOwner, userSummary)) {
+					iterator.remove();
+				}
+			}
+			
+			
+		} catch (NoUserException e1) {
+			log.error(String.format("Could not find assignment owner (%s) for assignment (%s)", 
+							newAssignment.getOwnerUserId(), newAssignment.getId()));
+		}
+        
+        try {
+            emailManager.sendGroupAssignment(users, gameboard);
+        } catch (ContentManagerException e) {
+            log.error("Could not send group assignment emails due to content issue", e);
+        }
+        
+
         return newAssignment;
     }
 
@@ -274,7 +315,8 @@ public class AssignmentManager implements IGroupObserver {
 
             List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
            
-            emailManager.sendGroupWelcome(user, group, groupOwner, existingAssignments);
+			emailManager.sendGroupWelcome(user, group, groupOwner,
+					existingAssignments, gameManager);
 
         } catch (ContentManagerException e) {
             log.info(String.format("Could not send group welcome email "), e);

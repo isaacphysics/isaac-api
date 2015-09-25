@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -55,6 +56,7 @@ public class EmailCommunicatorTest {
     private IContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
+    private UserAssociationManager userAssociationManager;
 
 
     /**
@@ -90,6 +92,9 @@ public class EmailCommunicatorTest {
 
         EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
         EasyMock.replay(mockContentVersionController);
+        
+        userAssociationManager = EasyMock.createMock(UserAssociationManager.class);
+
 
         capturedArgument = new Capture<EmailCommunicationMessage>();
 

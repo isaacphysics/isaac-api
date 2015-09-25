@@ -375,15 +375,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // modifies assignment passed in to include an id.
             this.assignmentManager.createAssignment(newAssignment);
 
-            UserGroupDTO userGroupDTO = groupManager.getGroupById(newAssignment.getGroupId());
-            List<RegisteredUserDTO> users = groupManager.getUsersInGroup(userGroupDTO);
-
-            try {
-                emailManager.sendGroupAssignment(users, gameboard);
-            } catch (ContentManagerException e) {
-                log.error("Could not send group assignment emails due to content issue", e);
-            }
-
             this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, Maps.newHashMap());
 
             return Response.ok(newAssignment).build();
