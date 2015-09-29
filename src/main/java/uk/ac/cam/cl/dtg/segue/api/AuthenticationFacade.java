@@ -299,7 +299,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        final String rateThrottleMessage = "There has been too many attempts to login to this account. "
+        final String rateThrottleMessage = "There have been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
         // Stop users logging in who have already locked their account.
