@@ -15,11 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import javax.annotation.Nullable;
+
 /**
  * Class to hold the contents of an email.
  *
  * @author Alistair Stead
- *
  */
 public class EmailCommunicationMessage implements ICommunicationMessage {
 
@@ -33,6 +34,52 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
     private final String htmlMessage;
 
+    private final String replyToAddress;
+    
+    /**
+     * 
+     * @param recipientAddress
+     *            address of user
+     * @param recipientName
+     *            user name
+     * @param subject
+     *            subject of email
+     * @param plainTextMessage
+     *            message in email
+     * @param htmlMessage
+     *            message in email
+     */
+    public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
+            final String plainTextMessage, final String htmlMessage) {
+        this(recipientAddress, recipientName, subject, plainTextMessage, htmlMessage, null);
+    }
+    
+    /**
+     * 
+     * @param recipientAddress
+     *            address of user
+     * @param recipientName
+     *            user name
+     * @param subject
+     *            subject of email
+     * @param plainTextMessage
+     *            message in email
+     * @param htmlMessage
+     *            message in email
+     * @param replyToAddress
+     *            (nullable) the preferred reply to address.
+     */
+    public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
+            final String plainTextMessage, final String htmlMessage, @Nullable final String replyToAddress) {
+        this.plainTextMessage = plainTextMessage;
+        this.recipientAddress = recipientAddress;
+        this.recipientName = recipientName;
+        this.subject = subject;
+        this.htmlMessage = htmlMessage;
+        this.replyToAddress = replyToAddress;
+    }
+    
+    
     /**
      * @return the plain text message
      */
@@ -67,27 +114,11 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     public String getSubject() {
         return subject;
     }
-
+    
     /**
-     * 
-     * @param recipientAddress
-     *            address of user
-     * @param recipientName
-     *            user name
-     * @param subject
-     *            subject of email
-     * @param plainTextMessage
-     *            message in email
-     * @param htmlMessage
-     *            message in email
+     * @return replyToAddress if set.
      */
-    public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
-            final String plainTextMessage, final String htmlMessage) {
-        this.plainTextMessage = plainTextMessage;
-        this.recipientAddress = recipientAddress;
-        this.recipientName = recipientName;
-        this.subject = subject;
-        this.htmlMessage = htmlMessage;
+    public String getReplyToAddress() {
+        return replyToAddress;
     }
-
 }

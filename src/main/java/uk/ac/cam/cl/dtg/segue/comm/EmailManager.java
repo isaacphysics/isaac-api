@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -42,18 +43,17 @@ import com.google.inject.Inject;
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
     private final PropertiesLoader globalProperties;
     private final ContentVersionController contentVersionController;
+    
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
-    private final int MINIMUM_TAG_LENGTH = 4;
-    private final String sig = "Isaac Physics Project";
-    private final int TRUNCATED_TOKEN_LENGTH = 5;
+    private static final String SIGNATURE = "Isaac Physics Project";
+    private static final int MINIMUM_TAG_LENGTH = 4;
+    private static final int TRUNCATED_TOKEN_LENGTH = 5;
 
     /**
      * @param communicator
      *            class we'll use to send the actual email.
      * @param globalProperties
      *            global properties used to get host name
-     * @param userDataManager
-     *            data manager used for authentication
      * @param contentVersionController
      *            content for email templates
      */
@@ -126,8 +126,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      */
     public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
-
-
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
         
         if (null == segueContent) {
@@ -135,7 +133,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return;
         }
         
-
         String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, user.getResetToken());
 
@@ -144,7 +141,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("resetURL", verificationURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
@@ -163,7 +160,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
 
         this.addToQueue(e);
     }
@@ -199,7 +197,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("verificationURL", verificationURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -247,13 +245,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 globalProperties.getProperty(HOST_NAME), 
                 user.getDbId(),
                 user.getEmail(),
-                user.getEmailVerificationToken().substring(0, 5)); //TODO replace this with length property
+                user.getEmailVerificationToken().substring(0, TRUNCATED_TOKEN_LENGTH));
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("verificationURL", verificationURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -271,7 +269,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
     
@@ -301,7 +300,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
         p.put("requestedemail", newUser.getEmail());
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -319,7 +318,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
 
@@ -522,7 +522,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("providerString", providerString);
         p.put("providerWord", providerWord);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         // TODO deal with the potential exception here
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
@@ -541,7 +541,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
     
@@ -576,8 +577,4 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         return segueContentDTO;
     }
-
-
-
-
 }

@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
@@ -80,7 +81,9 @@ public class EmailCommunicatorTest {
         emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
 
         mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
-        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org");
+        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com")
+                .anyTimes();
 
         EasyMock.replay(mockPropertiesLoader);
 
@@ -381,6 +384,9 @@ public class EmailCommunicatorTest {
 
         PropertiesLoader mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
         EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org");
+
+        EasyMock.expect(mockPropertiesLoader.getProperty(Constants.REPLY_TO_ADDRESS)).andReturn(
+                "test-reply-to@test.com").anyTimes();
 
         EasyMock.replay(mockPropertiesLoader);
 

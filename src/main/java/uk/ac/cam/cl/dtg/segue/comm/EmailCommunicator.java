@@ -56,7 +56,6 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 		this.mailer = new Mailer(smtpAddress, fromAddress);
 	}
 
-
     /**
      * @param email
      *            - message to be sent. Will be plain text if no HTML is provided
@@ -65,21 +64,18 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	@Override
 	public void sendMessage(final EmailCommunicationMessage email)
 			throws CommunicationException {
-		
-		try {
+        try {
             if (email.getHTMLMessage() == null) {
                 mailer.sendPlainTextMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-                        String.format("%s - %s", email.getSubject(), SIGNATURE), email.getPlainTextMessage());
+                        email.getReplyToAddress(), String.format("%s - %s", email.getSubject(), SIGNATURE),
+                        email.getPlainTextMessage());
             } else {
                 mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-                        String.format("%s - %s", email.getSubject(), SIGNATURE), email.getPlainTextMessage(),
-                        email.getHTMLMessage());
+                        email.getReplyToAddress(), String.format("%s - %s", email.getSubject(), SIGNATURE),
+                        email.getPlainTextMessage(), email.getHTMLMessage());
             }
-		} catch (MessagingException e) {
-			throw new CommunicationException(e);
-		}
+        } catch (MessagingException e) {
+            throw new CommunicationException(e);
+        }
 	}
-
-
-
 }

@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.util;
 
 import java.util.Properties;
 
+import javax.annotation.Nullable;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
@@ -29,6 +30,8 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import org.elasticsearch.common.lang3.Validate;
+
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or
  * notifications.
@@ -36,7 +39,6 @@ import javax.mail.internet.MimeMultipart;
  * @author Stephen Cummins
  */
 public class Mailer {
-
 	private String smtpAddress;
 	private String mailAddress;
 	private String smtpPort;
@@ -56,58 +58,32 @@ public class Mailer {
 		this.mailAddress = mailAddress;
 	}
 
-	/**
-	 * SendMail Utility Method Sends e-mail to a given recipient using the
-	 * hard-coded MAIL_ADDRESS and SMTP details.
-	 * 
-	 * @param recipient
-	 *            - string array of recipients that the message should be sent
-	 *            to
-	 * @param from
-	 *            - the e-mail address that should be used as the reply-to
-	 *            address (e.g. the true senders address)
-	 * @param subject
-	 *            - The message subject
-	 * @param contents
-	 *            - The message body
-	 * @throws MessagingException - if we cannot send the message for some reason.
-	 * @throws AddressException - if the address is not valid.
-	 */
-	public void sendPlainTextMail(final String[] recipient, final String from, final String subject,
-			final String contents) throws MessagingException, AddressException {
-
-		Properties p = new Properties();
-		p.put("mail.smtp.host", smtpAddress);
-
-		if (null != smtpPort) {
-			p.put("mail.smtp.port", smtpPort);
-		}
-
-		p.put("mail.smtp.starttls.enable", "true");
-
-		Session s = Session.getDefaultInstance(p);
-		Message msg = new MimeMessage(s);
-
-		InternetAddress sentBy = null;
-		InternetAddress[] sender = new InternetAddress[1];
-		InternetAddress[] recievers = new InternetAddress[recipient.length];
-
-		sentBy = new InternetAddress(mailAddress);
-		sender[0] = new InternetAddress(from);
-		for (int i = 0; i < recipient.length; i++) {
-			recievers[i] = new InternetAddress(recipient[i]);
-		}
-
-		if (sentBy != null && sender != null && recievers != null) {
-			msg.setFrom(sentBy);
-			msg.setReplyTo(sender);
-			msg.setRecipients(RecipientType.TO, recievers);
-			msg.setSubject(subject);
-			msg.setText(contents);
-
-			Transport.send(msg);
-		}
-	}
+    /**
+     * SendMail Utility Method Sends e-mail to a given recipient using the hard-coded MAIL_ADDRESS and SMTP details.
+     * 
+     * @param recipient
+     *            - string array of recipients that the message should be sent to
+     * @param from
+     *            - the e-mail address that should be used as the sending address
+     * @param replyTo
+     *            - (nullable) the e-mail address that should be used as the reply-to address 
+     * @param subject
+     *            - The message subject
+     * @param contents
+     *            - The message body
+     * @throws MessagingException
+     *             - if we cannot send the message for some reason.
+     * @throws AddressException
+     *             - if the address is not valid.
+     */
+    public void sendPlainTextMail(final String[] recipient, final String from, @Nullable final String replyTo,
+            final String subject, final String contents) throws MessagingException, AddressException {
+        Message msg = this.setupMessage(recipient, from, replyTo, subject);
+        
+        msg.setText(contents);
+        
+        Transport.send(msg);
+    }
 
     /**
      * Utility method to allow us to send multipart messages using HTML and plain text.
@@ -116,7 +92,9 @@ public class Mailer {
      * @param recipient
      *            - string array of recipients that the message should be sent to
      * @param from
-     *            - the e-mail address that should be used as the reply-to address (e.g. the true senders address)
+     *            - the e-mail address that should be used as the sending address
+     * @param replyTo
+     *            - (nullable) the e-mail address that should be used as the reply-to address
      * @param subject
      *            - The message subject
      * @param plainText
@@ -128,20 +106,11 @@ public class Mailer {
      * @throws AddressException
      *             - if the address is not valid.
      */
-    public void sendMultiPartMail(final String[] recipient, final String from, final String subject,
-            final String plainText, final String html) throws MessagingException, AddressException {
-        Properties p = new Properties();
-        p.put("mail.smtp.host", smtpAddress);
-
-        if (null != smtpPort) {
-            p.put("mail.smtp.port", smtpPort);
-        }
-
-        p.put("mail.smtp.starttls.enable", "true");
-
-        Session s = Session.getDefaultInstance(p);
-        Message msg = new MimeMessage(s);
-
+    public void sendMultiPartMail(final String[] recipient, final String from, @Nullable final String replyTo,
+            final String subject, final String plainText, final String html) throws MessagingException,
+            AddressException {
+        Message msg = this.setupMessage(recipient, from, replyTo, subject);
+        
         // Create the text part
         MimeBodyPart textPart = new MimeBodyPart();
         textPart.setText(plainText, "utf-8");
@@ -154,25 +123,8 @@ public class Mailer {
         multiPart.addBodyPart(htmlPart);
 
         msg.setContent(multiPart);
-
-        InternetAddress sentBy = null;
-        InternetAddress[] sender = new InternetAddress[1];
-        InternetAddress[] recievers = new InternetAddress[recipient.length];
-
-        sentBy = new InternetAddress(mailAddress);
-        sender[0] = new InternetAddress(from);
-        for (int i = 0; i < recipient.length; i++) {
-            recievers[i] = new InternetAddress(recipient[i]);
-        }
-
-        if (sentBy != null && sender != null && recievers != null) {
-            msg.setFrom(sentBy);
-            msg.setReplyTo(sender);
-            msg.setRecipients(RecipientType.TO, recievers);
-            msg.setSubject(subject);
-
-            Transport.send(msg);
-        }
+        
+        Transport.send(msg);
     }
 
 	/**
@@ -222,4 +174,58 @@ public class Mailer {
 	public void setSmtpPort(final String smtpPort) {
 		this.smtpPort = smtpPort;
 	}
+	
+    /**
+     * @param recipient
+     *            - string array of recipients that the message should be sent to
+     * @param from
+     *            - the e-mail address that should be used as the sending address
+     * @param replyTo
+     *            - the e-mail address that should be used as the reply-to address
+     * @param subject
+     *            - The message subject
+     * @return a newly created message with all of the headers populated.
+     * @throws MessagingException - if there is an error in setting up the message
+     */
+    private Message setupMessage(final String[] recipient, final String from, @Nullable final String replyTo,
+            final String subject) throws MessagingException {
+        Validate.notEmpty(recipient);
+        Validate.notBlank(recipient[0]);
+        Validate.notBlank(from);
+        
+        Properties p = new Properties();
+        p.put("mail.smtp.host", smtpAddress);
+
+        if (null != smtpPort) {
+            p.put("mail.smtp.port", smtpPort);
+        }
+
+        p.put("mail.smtp.starttls.enable", "true");
+
+        Session s = Session.getDefaultInstance(p);
+        Message msg = new MimeMessage(s);
+
+        InternetAddress sentBy = null;
+        InternetAddress[] sender = new InternetAddress[1];
+        InternetAddress[] recievers = new InternetAddress[recipient.length];
+
+        sentBy = new InternetAddress(mailAddress);
+        sender[0] = new InternetAddress(from);
+        for (int i = 0; i < recipient.length; i++) {
+            recievers[i] = new InternetAddress(recipient[i]);
+        }
+
+        if (sentBy != null && sender != null && recievers != null) {
+            msg.setFrom(sentBy);
+            msg.setRecipients(RecipientType.TO, recievers);
+            msg.setSubject(subject);
+
+            if (null == replyTo) {
+                msg.setReplyTo(sender);
+            } else {
+                msg.setReplyTo(new InternetAddress[] { new InternetAddress(replyTo) });
+            }
+        }
+        return msg;
+    }
 }
