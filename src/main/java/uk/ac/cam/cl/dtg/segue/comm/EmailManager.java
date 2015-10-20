@@ -29,9 +29,10 @@ import com.google.inject.Inject;
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
     private final PropertiesLoader globalProperties;
     private final ContentVersionController contentVersionController;
+    
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
+    private static final String SIGNATURE = "Isaac Physics Project";
     private static final int MINIMUM_TAG_LENGTH = 4;
-    private final String sig = "Isaac Physics Project";
     private static final int TRUNCATED_TOKEN_LENGTH = 5;
 
     /**
@@ -111,8 +112,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      */
     public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
-
-
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
         
         if (segueContent == null) {
@@ -120,7 +119,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return;
         }
         
-
         String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, user.getResetToken());
 
@@ -129,7 +127,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("resetURL", verificationURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
@@ -185,7 +183,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("verificationURL", verificationURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -239,7 +237,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("email", user.getEmail());
         p.put("verificationURL", verificationURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -288,7 +286,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
         p.put("requestedemail", newUser.getEmail());
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -341,7 +339,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName());
         p.put("providerString", providerString);
         p.put("providerWord", providerWord);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         // TODO deal with the potential exception here
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
@@ -396,8 +394,4 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         return segueContentDTO;
     }
-
-
-
-
 }
