@@ -256,7 +256,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())) {
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId()) 
+                    && !super.isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -341,7 +342,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())) {
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())
+                    && !super.isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
