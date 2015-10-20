@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -29,9 +30,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private final PropertiesLoader globalProperties;
     private final ContentVersionController contentVersionController;
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
-    private final int MINIMUM_TAG_LENGTH = 4;
+    private static final int MINIMUM_TAG_LENGTH = 4;
     private final String sig = "Isaac Physics Project";
-    private final int TRUNCATED_TOKEN_LENGTH = 5;
+    private static final int TRUNCATED_TOKEN_LENGTH = 5;
 
     /**
      * @param communicator
@@ -149,7 +150,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
 
         this.addToQueue(e);
     }
@@ -257,7 +259,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
     
@@ -305,7 +308,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
 
@@ -358,7 +362,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
     

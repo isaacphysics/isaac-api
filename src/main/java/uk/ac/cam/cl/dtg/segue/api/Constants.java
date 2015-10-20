@@ -49,6 +49,16 @@ public final class Constants {
     public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
     
     /**
+     * Constant representing reply to address for e-mails.
+     */
+    public static final String REPLY_TO_ADDRESS = "REPLY_TO_ADDRESS";
+    
+    /**
+     * Constant representing the mail receiver address for contact us e-mails sent by the endpoint.
+     */
+    public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
+    
+    /**
      * Constant representing the key for the SERVER_ADMIN_ADDRESS property - Email address to send admin related emails
      * to.
      */
