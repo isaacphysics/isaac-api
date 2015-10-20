@@ -39,8 +39,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            class we'll use to send the actual email.
      * @param globalProperties
      *            global properties used to get host name
-     * @param userDataManager
-     *            data manager used for authentication
      * @param contentVersionController
      *            content for email templates
      */
@@ -235,7 +233,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 globalProperties.getProperty(HOST_NAME), 
                 user.getDbId(),
                 user.getEmail(),
-                user.getEmailVerificationToken().substring(0, 5)); //TODO replace this with length property
+                user.getEmailVerificationToken().substring(0, TRUNCATED_TOKEN_LENGTH));
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
