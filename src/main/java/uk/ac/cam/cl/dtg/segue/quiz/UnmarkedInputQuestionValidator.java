@@ -21,11 +21,11 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 
 /**
  * Quiz validator for UnmarkedInputQuestionValidator.
@@ -39,7 +39,8 @@ public class UnmarkedInputQuestionValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(UnmarkedInputQuestionValidator.class);
 
     @Override
-    public final QuestionValidationResponseDTO validateQuestionResponse(final Question question, final ChoiceDTO answer) {
+    public final QuestionValidationResponse validateQuestionResponse(final Question question, 
+            final Choice answer) {
         Validate.notNull(question);
         Validate.notNull(answer);
 
@@ -47,8 +48,8 @@ public class UnmarkedInputQuestionValidator implements IValidator {
         ChoiceQuestion choiceQuestion = null;
         if (question instanceof ChoiceQuestion) {
             choiceQuestion = (ChoiceQuestion) question;
-
-            return new QuestionValidationResponseDTO(question.getId(), answer, null, (Content) question.getAnswer(),
+            
+            return new QuestionValidationResponse(question.getId(), answer, null, (Content) choiceQuestion.getAnswer(),
                     new Date());
         } else {
             log.error("Expected to be able to cast the question as a ChoiceQuestion " + "but this cast failed.");

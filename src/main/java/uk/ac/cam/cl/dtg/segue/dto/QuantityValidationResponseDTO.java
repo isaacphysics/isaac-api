@@ -17,8 +17,8 @@ package uk.ac.cam.cl.dtg.segue.dto;
 
 import java.util.Date;
 
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
 /**
  * The DTO which can be used to inform clients of the result of an answered question.
@@ -55,7 +55,7 @@ public class QuantityValidationResponseDTO extends QuestionValidationResponseDTO
      *            -
      */
     public QuantityValidationResponseDTO(final String questionId, final ChoiceDTO answer, final Boolean correct,
-            final Content explanation, final Boolean correctValue, 
+            final ContentDTO explanation, final Boolean correctValue, 
             final Boolean correctUnits, final Date dateAttempted) {
         super(questionId, answer, correct, explanation, dateAttempted);
         this.correctValue = correctValue;

@@ -153,7 +153,6 @@ public class SegueApiFacade extends AbstractSegueFacade {
         this.questionManager = questionManager;
         this.emailManager = emailManager;
 
-
         // We only want to do this if the mapper needs to be changed - I expect
         // the same instance to be injected from Guice each time.
         if (SegueApiFacade.mapper != mapper) {
@@ -1104,7 +1103,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
         builder.append(form.get("message"));
 
         EmailCommunicationMessage email = new EmailCommunicationMessage(this.getProperties().getProperty(
-                "MAIL_RECEIVERS"), "Administrator", "Contact Us Form", builder.toString(), null);
+                "MAIL_RECEIVERS"), "Administrator", "Contact Us Form", builder.toString(), null, this.getProperties()
+                .getProperty(Constants.REPLY_TO_ADDRESS));
 
         emailManager.addToQueue(email);
 

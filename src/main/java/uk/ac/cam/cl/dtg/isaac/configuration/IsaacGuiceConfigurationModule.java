@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.ASSIGNMENT_COLLECTION_NAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_COLLECTION_NAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.USERS_GAMEBOARD_COLLECTION_NAME;

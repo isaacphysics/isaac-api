@@ -54,6 +54,8 @@ public class AssignmentManager {
      *            - to save assignments
      * @param groupManager
      *            - to allow communication with the group manager.
+     * @param userManager
+     *            - So we can access user data.
      */
     @Inject
     public AssignmentManager(final AssignmentPersistenceManager assignmentPersistenceManager,

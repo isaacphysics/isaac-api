@@ -28,12 +28,11 @@ import org.powermock.reflect.Whitebox;
 import com.google.api.client.util.Lists;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dto.QuantityValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 
 /**
  * Test class for the user manager class.
@@ -67,11 +66,11 @@ public class IsaacNumericValidatorTest {
 		String explanationShouldContain = "valid number";
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.8[]3");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 		assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
@@ -91,11 +90,11 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.8e22");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertTrue(response.isCorrect());
 	}
@@ -114,11 +113,11 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("42");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertTrue(response.isCorrect());
 	}	
@@ -139,12 +138,12 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("42");
 		q.setUnits("m\\,s^{-1}");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuantityValidationResponseDTO response = (QuantityValidationResponseDTO) validator.validateQuestionResponse(someNumericQuestion, q);
+		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertTrue("check question is marked as correct", response.isCorrect());
 		assertTrue("check units is correct", response.getCorrectUnits());
@@ -165,12 +164,12 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("43");
 		q.setUnits("m\\,s^{-1}");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuantityValidationResponseDTO response = (QuantityValidationResponseDTO) validator.validateQuestionResponse(someNumericQuestion, q);
+		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse("check question is marked as incorrect", response.isCorrect());
 		
@@ -193,12 +192,12 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("42");
 		q.setUnits("m\\,h^{-1}");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuantityValidationResponseDTO response = (QuantityValidationResponseDTO) validator.validateQuestionResponse(someNumericQuestion, q);
+		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse("check question is marked as incorrect", response.isCorrect());
 		
@@ -221,11 +220,11 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("42");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuantityValidationResponseDTO response = (QuantityValidationResponseDTO) validator.validateQuestionResponse(someNumericQuestion, q);
+		QuantityValidationResponse response = (QuantityValidationResponse) validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse("check question is marked as incorrect", response.isCorrect());
 		assertFalse("check units are marked as incorrect", response.getCorrectUnits());
@@ -247,13 +246,13 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.81e22");
 		
 		String explanationShouldContain = "significant figures";
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse("Response should be incorrect", response.isCorrect());
 		
@@ -274,11 +273,11 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.8e22");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 	}
@@ -292,11 +291,11 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.8e22");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 	}
@@ -315,13 +314,13 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.81");
 		
 		String explanationShouldContain = "significant figures";
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 		
@@ -342,13 +341,13 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("4.881");
 		
 		String explanationShouldContain = "significant figures";
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 		
@@ -378,13 +377,13 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("1.2e-28");
 		
 		String explanationShouldContain = someExplanation.getValue();
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 		
@@ -414,11 +413,11 @@ public class IsaacNumericValidatorTest {
 		someNumericQuestion.setChoices(answerList);
 		
 		// setup users answer
-		QuantityDTO q = new QuantityDTO();
+		Quantity q = new Quantity();
 		q.setValue("5e-22");
 		
 		IsaacNumericValidator validator = new IsaacNumericValidator();
-		QuestionValidationResponseDTO response = validator.validateQuestionResponse(someNumericQuestion, q);
+		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
 		assertFalse(response.isCorrect());
 		

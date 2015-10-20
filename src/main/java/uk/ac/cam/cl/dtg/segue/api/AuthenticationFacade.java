@@ -17,8 +17,11 @@ package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.REDIRECT_URL;
 import io.swagger.annotations.Api;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,13 +42,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -66,7 +76,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 @Api(value = "/auth")
 public class AuthenticationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFacade.class);
-    
+
     private final UserManager userManager;
 
     private final IMisuseMonitor misuseMonitor;
@@ -105,8 +115,31 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public final Response authenticate(@Context final HttpServletRequest request,
             @PathParam("provider") final String signinProvider) {
-
-        return userManager.authenticate(request, signinProvider);
+        
+        if (userManager.isRegisteredUserLoggedIn(request)) {
+            // if they are already logged in then we do not want to proceed with
+            // this authentication flow. We can just return an error response
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The user is already logged in. You cannot authenticate again.").toResponse();            
+        }
+        
+        try {
+            Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
+                    .put(REDIRECT_URL, userManager.authenticate(request, signinProvider)).build();
+            
+            return Response.ok(redirectResponse).build();
+        }  catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException when trying to redirect to OAuth provider", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Error mapping to a known authenticator. The provider: " + signinProvider + " is unknown");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+        
     }
 
     /**
@@ -127,8 +160,25 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         if (!this.userManager.isRegisteredUserLoggedIn(request)) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-
-        return this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString);
+        
+        try {
+            Map<String, URI> redirectResponse = new ImmutableMap.Builder<String, URI>()
+                    .put(REDIRECT_URL, this.userManager.initiateLinkAccountToUserFlow(request, authProviderAsString))
+                    .build();
+            
+            return Response.ok(redirectResponse).build();   
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException when trying to redirect to OAuth provider", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "Error mapping to a known authenticator. The provider: " + authProviderAsString + " is unknown");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+        
     }
 
     /**
@@ -181,7 +231,41 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     @Path("/{provider}/callback")
     public final Response authenticationCallback(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider) {
-        return userManager.authenticateCallback(request, response, signinProvider);
+
+        try {
+            return Response.ok(userManager.authenticateCallback(request, response, signinProvider)).build();
+        } catch (IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Exception while trying to authenticate a user" + " - during callback step.", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (NoUserException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED,
+                    "Unable to locate user information.");
+            log.error("No userID exception received. Unable to locate user.", e);
+            return error.toResponse();
+        } catch (AuthenticationCodeException | CrossSiteRequestForgeryException | AuthenticatorSecurityException
+                | CodeExchangeException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
+            log.info("Error detected during authentication: " + e.getClass().toString(), e);
+            return error.toResponse();
+        } catch (DuplicateAccountException e) {
+            log.debug("Duplicate user already exists in the database.", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "A user already exists with the e-mail address specified.").toResponse();
+        } catch (AccountAlreadyLinkedException e) {
+            log.error("Internal Database error during authentication", e);
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The account you are trying to link is already attached to a user of this system.").toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Internal Database error during authentication", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Internal database error during authentication.").toResponse();
+        } catch (AuthenticationProviderMappingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to map to a known authenticator. The provider: "
+                    + signinProvider + " is unknown").toResponse();
+        }
+
     }
 
     /**
@@ -205,7 +289,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
     public final Response authenticateWithCredentials(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final Map<String, String> credentials) {
-        
+
         // in this case we expect a username and password to have been
         // sent in the json response.
         if (null == credentials || credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
@@ -214,8 +298,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                     "You must specify credentials email and password to use this authentication provider.");
             return error.toResponse();
         }
-        
-        final String rateThrottleMessage = "There has been too many attempts to login to this account. "
+
+        final String rateThrottleMessage = "There have been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
         // Stop users logging in who have already locked their account.
@@ -225,10 +309,11 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                     + " rate limited - too many logins.");
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
-        
+
         // ok we need to hand over to user manager
         try {
-            return Response.ok(userManager.authenticateWithCredentials(request, response, signinProvider, credentials))
+            return Response
+                    .ok(userManager.authenticateWithCredentials(request, response, signinProvider, credentials))
                     .build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";
@@ -238,9 +323,9 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             try {
                 misuseMonitor.notifyEvent(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
                         SegueLoginMisuseHandler.class.toString());
-                
+
                 log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
-                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());                
+                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
                 log.error("Segue Login Blocked for: " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)

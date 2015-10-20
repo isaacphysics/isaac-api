@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 
 /**
- * An exception to indicate that we cannot find a user matching the reset token provided.
+ * An exception to the token provided is invalid.
  * 
  * @author nr378
  * 

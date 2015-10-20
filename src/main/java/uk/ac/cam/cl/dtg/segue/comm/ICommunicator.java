@@ -27,9 +27,9 @@ public interface ICommunicator<T extends ICommunicationMessage> {
     /**
      * Send a message.
      * 
-     * @param message
-     * @throws communicationException
+     * @param message - to send
+     * @throws CommunicationException - if there is a failure in sending the message
      */
-    public void sendMessage(final T message) throws CommunicationException;
+    void sendMessage(final T message) throws CommunicationException;
 
 }
