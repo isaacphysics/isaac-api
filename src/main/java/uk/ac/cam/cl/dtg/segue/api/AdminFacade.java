@@ -808,7 +808,10 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             this.userManager.deleteUserAccount(userId);
-
+            
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, DELETE_USER_ACCOUNT,
+                    ImmutableMap.of("userIdDeleted", userId));
+            
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
                     + userId);
 
