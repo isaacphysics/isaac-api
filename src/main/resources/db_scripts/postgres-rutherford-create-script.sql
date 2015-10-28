@@ -136,7 +136,19 @@ ALTER TABLE ONLY ip_location_history ALTER COLUMN id SET DEFAULT nextval('ip_loc
 ALTER TABLE ONLY user_notifications
     ADD CONSTRAINT "composite key" PRIMARY KEY (user_id, notification_id);
 
+    
+--
+-- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
 
+CREATE TABLE user_email_preferences (
+    user_id text NOT NULL,
+    email_preference integer,
+    email_preference_status bool
+);
+
+ALTER TABLE ONLY user_email_preferences
+    ADD CONSTRAINT "composite key" PRIMARY KEY (user_id, email_preference);
 --
 -- Name: event userid; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
