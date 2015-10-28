@@ -20,7 +20,7 @@ import java.util.Date;
 /**
  *
  */
-public class PgUserNotification implements UserNotification {
+public class PgUserNotification implements IUserNotification {
     private String userId;
     private String contentNotificationId;
     private NotificationStatus status;

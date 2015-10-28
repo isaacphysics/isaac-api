@@ -18,20 +18,20 @@ package uk.ac.cam.cl.dtg.segue.dos;
 import java.util.List;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.UserNotification.NotificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
 
 /**
  * This interface represents the DAO for recording user interactions with notifications and should be backed by some
  * database.
  */
-public interface UserNotifications {
+public interface IUserNotifications {
 
     /**
      * @param userId - the user id to look up
      * @return the list of notification records for this user.
      * @throws SegueDatabaseException - if a database error has occurred.
      */
-    List<UserNotification> getUserNotifications(String userId) throws SegueDatabaseException;
+    List<IUserNotification> getUserNotifications(String userId) throws SegueDatabaseException;
 
     /**
      * @param userId - the user id to save a record for.

@@ -28,13 +28,13 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.UserNotification.NotificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
 
 /**
  * Represents a postgres specific implementation of the UserNotifications DAO interface.
  *
  */
-public class PgUserNotifications implements UserNotifications {
+public class PgUserNotifications implements IUserNotifications {
     private final PostgresSqlDb database;
 
     // private static final Logger log = LoggerFactory.getLogger(PgUserNotifications.class);
@@ -51,14 +51,14 @@ public class PgUserNotifications implements UserNotifications {
     }
 
     @Override
-    public List<UserNotification> getUserNotifications(final String userId) throws SegueDatabaseException {
+    public List<IUserNotification> getUserNotifications(final String userId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement("Select * FROM user_notifications WHERE user_id = ? ORDER BY created ASC");
             pst.setString(1, userId);
 
             ResultSet results = pst.executeQuery();
-            List<UserNotification> returnResult = Lists.newArrayList();
+            List<IUserNotification> returnResult = Lists.newArrayList();
             while (results.next()) {
                 returnResult.add(buildPgUserNotifications(results));
             }
@@ -77,8 +77,8 @@ public class PgUserNotifications implements UserNotifications {
      * @throws SegueDatabaseException
      *             - if there is a problem looking up the user notification record requested.
      */
-    public UserNotification getNotification(final String userId, final String contentId) throws SegueDatabaseException {
-        UserNotification notification = this.getNotificationRecord(userId, contentId);
+    public IUserNotification getNotification(final String userId, final String contentId) throws SegueDatabaseException {
+        IUserNotification notification = this.getNotificationRecord(userId, contentId);
 
         if (null == notification) {
             throw new ResourceNotFoundException("Unable to locate the notification record requested");
@@ -94,7 +94,7 @@ public class PgUserNotifications implements UserNotifications {
     @Override
     public void saveUserNotification(final String userId, final String notificationId, final NotificationStatus status)
             throws SegueDatabaseException {
-        UserNotification notification = new PgUserNotification(userId, notificationId, status, new Date());
+        IUserNotification notification = new PgUserNotification(userId, notificationId, status, new Date());
 
         if (this.getNotificationRecord(userId, notificationId) == null) {
             insertNewNotificationRecord(notification);
@@ -108,7 +108,7 @@ public class PgUserNotifications implements UserNotifications {
      * @return a UserNotification object.
      * @throws SQLException - if bad things happen
      */
-    private UserNotification buildPgUserNotifications(final ResultSet result) throws SQLException {
+    private IUserNotification buildPgUserNotifications(final ResultSet result) throws SQLException {
         return new PgUserNotification(result.getString("user_id"), result.getString("notification_id"),
                 NotificationStatus.valueOf(result.getString("status")), result.getTimestamp("created"));
     }
@@ -117,7 +117,7 @@ public class PgUserNotifications implements UserNotifications {
      * @param notification - the notification to insert.
      * @throws SegueDatabaseException - if it fails.
      */
-    private void insertNewNotificationRecord(final UserNotification notification) throws SegueDatabaseException {
+    private void insertNewNotificationRecord(final IUserNotification notification) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
 
@@ -144,7 +144,7 @@ public class PgUserNotifications implements UserNotifications {
      * @param notification - the notification to update.
      * @throws SegueDatabaseException - if it fails.
      */
-    private void updateNotificationRecord(final UserNotification notification) throws SegueDatabaseException {
+    private void updateNotificationRecord(final IUserNotification notification) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
 
@@ -173,7 +173,7 @@ public class PgUserNotifications implements UserNotifications {
      * @return the notification record or null.
      * @throws SegueDatabaseException - if bad things happen
      */
-    private UserNotification getNotificationRecord(final String userId, final String contentId)
+    private IUserNotification getNotificationRecord(final String userId, final String contentId)
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
@@ -182,7 +182,7 @@ public class PgUserNotifications implements UserNotifications {
             pst.setString(2, contentId);
 
             ResultSet results = pst.executeQuery();
-            List<UserNotification> listOfResults = Lists.newArrayList();
+            List<IUserNotification> listOfResults = Lists.newArrayList();
             while (results.next()) {
                 listOfResults.add(buildPgUserNotifications(results));
             }

@@ -21,7 +21,7 @@ import java.util.Date;
  * This interface represents a record of a specific notification having been shown to a user.
  * 
  */
-public interface UserNotification {
+public interface IUserNotification {
 
     /**
      * Represents the status of a notification.
