@@ -33,8 +33,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
-import uk.ac.cam.cl.dtg.segue.dos.UserNotification;
-import uk.ac.cam.cl.dtg.segue.dos.UserNotification.NotificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.IUserNotification;
+import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
@@ -85,12 +85,12 @@ public class NotificationPicker {
         ResultsWrapper<ContentDTO> allContentNotifications = contentVersionController.getContentManager()
                 .findByFieldNames(contentVersionController.getLiveVersion(), fieldsToMatch, 0, -1);
 
-        Map<String, UserNotification> listOfRecordedNotifications = getMapOfRecordedNotifications(user);
+        Map<String, IUserNotification> listOfRecordedNotifications = getMapOfRecordedNotifications(user);
 
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
-            UserNotification record = listOfRecordedNotifications.get(c.getId());
+            IUserNotification record = listOfRecordedNotifications.get(c.getId());
 
             if (null == record) {
                 resultsToReturn.add(c);
@@ -117,13 +117,13 @@ public class NotificationPicker {
      * @throws SegueDatabaseException
      *             - if something goes wrong with the DB io step.
      */
-    public Map<String, UserNotification> getMapOfRecordedNotifications(final RegisteredUserDTO user)
+    public Map<String, IUserNotification> getMapOfRecordedNotifications(final RegisteredUserDTO user)
             throws SegueDatabaseException {
-        Map<String, UserNotification> result = Maps.newHashMap();
+        Map<String, IUserNotification> result = Maps.newHashMap();
 
-        List<UserNotification> userNotifications = notifications.getUserNotifications(user.getDbId());
+        List<IUserNotification> userNotifications = notifications.getUserNotifications(user.getDbId());
 
-        for (UserNotification recordedNotification : userNotifications) {
+        for (IUserNotification recordedNotification : userNotifications) {
             result.put(recordedNotification.getContentNotificationId(), recordedNotification);
         }
 
