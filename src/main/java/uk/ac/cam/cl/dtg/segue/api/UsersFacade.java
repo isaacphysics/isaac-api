@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
 import io.swagger.annotations.Api;
@@ -30,11 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -75,7 +72,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -104,7 +100,6 @@ public class UsersFacade extends AbstractSegueFacade {
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
     private IMisuseMonitor misuseMonitor;
-    private PgUsers users;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -125,46 +120,12 @@ public class UsersFacade extends AbstractSegueFacade {
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
             final StatisticsManager statsManager, final UserAssociationManager userAssociationManager, 
-            final IMisuseMonitor misuseMonitor, final PgUsers u) {
+            final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
         this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
-        this.users = u;
-    }
-
-    @POST
-    @Path("users/test")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response test(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, final String userObjectString) {
-
-        RegisteredUser userObjectFromClient;
-        try {
-            ObjectMapper tempObjectMapper = new ObjectMapper();
-            tempObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            userObjectFromClient = tempObjectMapper.readValue(userObjectString, RegisteredUser.class);
-
-            if (null == userObjectFromClient) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
-            }
-        } catch (IOException e1) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to parse the user object you provided.", e1)
-                    .toResponse();
-        }
-
-        // determine if this is intended to be an update or create operation.
-        try {
-            return Response.ok(this.users.createOrUpdateUser(userObjectFromClient)).build();
-        } catch (SegueDatabaseException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
-        }
     }
     
     /**
@@ -598,7 +559,9 @@ public class UsersFacade extends AbstractSegueFacade {
 
             // check that any changes to protected fields being made are
             // allowed.
-            RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient.getLegacyDbId());
+            RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
+                    .getLegacyDbId());
+            
             // check that the user is allowed to change the role of another user
             // if that is what they are doing.
             if (currentlyLoggedInUser.getRole() != Role.ADMIN && userObjectFromClient.getRole() != null

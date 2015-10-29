@@ -533,6 +533,7 @@ public class AdminFacade extends AbstractSegueFacade {
      * @return a content object, such that the content object has children. The children represent each source file in
      *         error and the grand children represent each error.
      */
+    @SuppressWarnings("unchecked")
     @GET
     @Path("/content_problems")
     @Produces(MediaType.APPLICATION_JSON)
@@ -584,7 +585,6 @@ public class AdminFacade extends AbstractSegueFacade {
             partialContentWithErrors.setPublished(pair.getKey().getPublished());
             partialContentWithErrors.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
 
-            
             errorRecord.put("partialContent", partialContentWithErrors);
             
             errorRecord.put("successfulIngest", false);
