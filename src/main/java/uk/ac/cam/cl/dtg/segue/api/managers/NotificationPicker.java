@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dos.UserNotification;
 import uk.ac.cam.cl.dtg.segue.dos.UserNotification.NotificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.UserNotifications;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
@@ -45,7 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  *
  */
 public class NotificationPicker {
-    private PgUserNotifications notifications;
+    private UserNotifications notifications;
     private ContentVersionController contentVersionController;
 
     /**
