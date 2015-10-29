@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class RegisteredUser extends AbstractSegueUser {
+    private Long id;
     @JsonProperty("_id")
     @ObjectId
     private String databaseId;
@@ -131,13 +132,31 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
-     * Gets the database id for the user object.
+     * Gets the id (integer form).
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+    
+
+    /**
+     * Sets the id.
+     * @param id the id to set
+     */
+    public void setId(final Long id) {
+        this.id = id;
+    }
+    
+
+    /**
+     * Gets the database id (sha form) for the user object.
      * 
      * @return database id as a string.
      */
     @JsonProperty("_id")
     @ObjectId
-    public String getDbId() {
+    public String getLegacyDbId() {
         return databaseId;
     }
 
@@ -149,7 +168,7 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setDbId(final String id) {
+    public void setLegacyDbId(final String id) {
         this.databaseId = id;
     }
 

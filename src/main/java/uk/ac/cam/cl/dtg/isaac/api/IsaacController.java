@@ -442,7 +442,7 @@ public class IsaacController extends AbstractIsaacFacade {
             if (user instanceof AnonymousUserDTO) {
                 userId = ((AnonymousUserDTO) user).getSessionId();
             } else {
-                userId = ((RegisteredUserDTO) user).getDbId();
+                userId = ((RegisteredUserDTO) user).getLegacyDbId();
             }
 
             content = api.getQuestionManager().augmentQuestionObjects(content, userId, userQuestionAttempts);
@@ -688,7 +688,7 @@ public class IsaacController extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        return getUserProgressInformation(request, user.getDbId());
+        return getUserProgressInformation(request, user.getLegacyDbId());
     }
 
     /**
@@ -721,7 +721,7 @@ public class IsaacController extends AbstractIsaacFacade {
                         .getUserQuestionInformation(userOfInterestFull);
 
                 this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
-                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getDbId()));
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getLegacyDbId()));
 
                 return Response.ok(userQuestionInformation).build();
             } else {

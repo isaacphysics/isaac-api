@@ -55,11 +55,11 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 
 /**
- * This class is responsible for managing and persisting user data.
+ * This class is responsible for managing and persisting user data and question data (at the moment).
  * 
  * @author Stephen Cummins
  */
-public class MongoUserDataManager implements IUserDataManager {
+public class MongoUserDataManager implements IUserDataManager, IUserQuestionManager {
 
     private static final Logger log = LoggerFactory.getLogger(MongoUserDataManager.class);
 
@@ -84,7 +84,7 @@ public class MongoUserDataManager implements IUserDataManager {
     public MongoUserDataManager(final MongoDb database, final ContentMapper contentMapper) {
         this.database = database;
         this.contentMapper = contentMapper;
-
+        
         if (!initialised) {
             initialiseDataManager();
         }
@@ -149,7 +149,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
         // create the users local account.
         RegisteredUser localUser = this.createOrUpdateUser(user);
-        String localUserId = localUser.getDbId().toString();
+        String localUserId = localUser.getLegacyDbId().toString();
 
         // link the provider account to the newly created account.
         this.linkAuthProviderToAccount(localUser, provider, providerUserId);
@@ -447,7 +447,7 @@ public class MongoUserDataManager implements IUserDataManager {
         JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(
                 database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME), LinkedAccount.class, String.class);
 
-        BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
+        BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getLegacyDbId());
         try {
             DBCursor<LinkedAccount> linkAccounts = jc.find(query);
 
@@ -468,12 +468,13 @@ public class MongoUserDataManager implements IUserDataManager {
     public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
             throws SegueDatabaseException {
         Validate.notNull(user);
-        Validate.notEmpty(user.getDbId());
+        Validate.notEmpty(user.getLegacyDbId());
 
         JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(
                 database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME), LinkedAccount.class, String.class);
         try {
-            BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
+            BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME,
+                    user.getLegacyDbId());
             DBCursor<LinkedAccount> linkAccounts = jc.find(query);
 
             List<AuthenticationProvider> providersToReturn = Lists.newArrayList();
@@ -494,7 +495,7 @@ public class MongoUserDataManager implements IUserDataManager {
     public void unlinkAuthProviderFromUser(final RegisteredUser user, final AuthenticationProvider provider)
             throws SegueDatabaseException {
         Validate.notNull(user);
-        Validate.notNull(user.getDbId());
+        Validate.notNull(user.getLegacyDbId());
         Validate.notNull(provider);
 
         JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(
@@ -502,7 +503,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
         DBQuery.Query linkAccountToDeleteQuery = DBQuery.and(
                 DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider),
-                DBQuery.is(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId()));
+                DBQuery.is(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getLegacyDbId()));
 
         LinkedAccount linkAccountToDelete = jc.findOne(linkAccountToDeleteQuery);
 
@@ -529,7 +530,7 @@ public class MongoUserDataManager implements IUserDataManager {
                 this.cleanupOrphanedLinkedAccounts(account.getLocalUserId());
             }
 
-            WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null, user.getDbId(), provider,
+            WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null, user.getLegacyDbId(), provider,
                     providerUserId));
 
             return null == r.getError();

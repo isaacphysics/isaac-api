@@ -257,7 +257,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             // ensure the user is logged in
             currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
 
-            misuseMonitor.notifyEvent(currentRegisteredUser.getDbId(), TokenOwnerLookupMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(currentRegisteredUser.getLegacyDbId(), TokenOwnerLookupMisuseHandler.class.toString());
 
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());

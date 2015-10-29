@@ -36,9 +36,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import ma.glasnost.orika.MapperFacade;
 
 import org.easymock.EasyMock;
@@ -62,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserQuestionManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -84,6 +82,7 @@ import com.google.common.collect.ImmutableMap;
  */
 @PowerMockIgnore({ "javax.ws.*" })
 public class UserManagerTest {
+    private IUserQuestionManager dummyQuestionDatabase;
     private IUserDataManager dummyDatabase;
     private String dummyHMACSalt;
     private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
@@ -98,6 +97,7 @@ public class UserManagerTest {
     private Cache<String, AnonymousUser> dummyUserCache;
     private ILogManager dummyLogManager;
 
+
     /**
      * Initial configuration of tests.
      * 
@@ -106,6 +106,7 @@ public class UserManagerTest {
      */
     @Before
     public final void setUp() throws Exception {
+        this.dummyQuestionDatabase = createMock(IUserQuestionManager.class);
         this.dummyDatabase = createMock(IUserDataManager.class);
         this.dummyHMACSalt = "BOB";
         this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
@@ -133,21 +134,21 @@ public class UserManagerTest {
     @Test
     public final void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown() {
         try {
-            new UserManager(null, this.dummyPropertiesLoader, this.dummyProvidersMap, this.dummyMapper,
+            new UserManager(null, this.dummyQuestionDatabase, this.dummyPropertiesLoader, this.dummyProvidersMap, this.dummyMapper,
                     this.dummyQueue, this.dummyLogManager);
             fail("Expected a null pointer exception immediately");
         } catch (NullPointerException e) {
             // fine
         }
         try {
-            new UserManager(this.dummyDatabase, null, this.dummyProvidersMap, this.dummyMapper, this.dummyQueue,
+            new UserManager(dummyDatabase, this.dummyQuestionDatabase, null, this.dummyProvidersMap, this.dummyMapper, this.dummyQueue,
                     this.dummyLogManager);
             fail("Expected a null pointer exception immediately");
         } catch (NullPointerException e) {
             // fine
         }
         try {
-            new UserManager(this.dummyDatabase, this.dummyPropertiesLoader, null, this.dummyMapper, this.dummyQueue,
+            new UserManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader, null, this.dummyMapper, this.dummyQueue,
                     this.dummyLogManager);
             fail("Expected a null pointer exception immediately");
         } catch (NullPointerException e) {
@@ -170,7 +171,7 @@ public class UserManagerTest {
 
         replay(dummySession);
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         // Act
         try {
@@ -182,7 +183,7 @@ public class UserManagerTest {
             // fine
         }
 
-        verify(dummyDatabase, dummySession, request);
+        verify(dummyQuestionDatabase, dummySession, request);
     }
 
     /**
@@ -214,17 +215,17 @@ public class UserManagerTest {
         expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(returnUser);
         expect(dummyDatabase.getAuthenticationProvidersByUser(returnUser)).andReturn(
                 Arrays.asList(AuthenticationProvider.GOOGLE));
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         expect(dummyMapper.map(returnUser, RegisteredUserDTO.class)).andReturn(new RegisteredUserDTO()).atLeastOnce();
-        replay(dummyMapper);
+        replay(dummyMapper, dummyDatabase);
         // Act
         RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
         // Assert
         assertTrue(user != null);
 
-        verify(dummyDatabase, request, dummyMapper);
+        verify(dummyQuestionDatabase, request, dummyMapper);
     }
 
     /**
@@ -241,7 +242,7 @@ public class UserManagerTest {
         String someInvalidProvider = "BAD_PROVIDER!!";
 
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         // Act
         try {
@@ -251,7 +252,7 @@ public class UserManagerTest {
             // pass
         }
        
-        verify(dummyDatabase, request);
+        verify(dummyQuestionDatabase, request);
     }
 
     /**
@@ -284,7 +285,7 @@ public class UserManagerTest {
 
         replay(dummySession);
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         String someAntiForgeryToken = "someAntiForgeryToken";
         expect(dummyAuth.getAntiForgeryStateToken()).andReturn(someAntiForgeryToken).once();
@@ -295,7 +296,7 @@ public class UserManagerTest {
         URI redirectURI = userManager.authenticate(request, someValidProviderString);
 
         // Assert
-        verify(dummyDatabase, request);
+        verify(dummyQuestionDatabase, request);
 
         assertTrue(redirectURI.toString().equals(exampleRedirectUrl));
     }
@@ -396,7 +397,7 @@ public class UserManagerTest {
                 dummyDatabase.registerNewUserWithProvider(mappedUser, AuthenticationProvider.TEST,
                         someProviderUniqueUserId)).andReturn(someSegueUserId).atLeastOnce();
 
-        mappedUser.setDbId(someSegueUserId);
+        mappedUser.setLegacyDbId(someSegueUserId);
 
         expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
@@ -409,13 +410,13 @@ public class UserManagerTest {
         expectLastCall().once();
         expect(request.getCookies()).andReturn(cookieWithSessionInfo).anyTimes();
 
-        replay(dummySession, request, dummyAuth, dummyDatabase, dummyMapper);
+        replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase);
 
         // Act
         RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider);
 
         // Assert
-        verify(dummySession, request, dummyAuth, dummyDatabase);
+        verify(dummySession, request, dummyAuth, dummyQuestionDatabase);
         assertTrue(u instanceof RegisteredUserDTO);
     }
 
@@ -456,7 +457,7 @@ public class UserManagerTest {
 
         expect(request.getParameter(Constants.STATE_PARAM_NAME)).andReturn(someInvalidCSRFValue).atLeastOnce();
 
-        replay(dummySession, request, dummyDatabase);
+        replay(dummySession, request, dummyQuestionDatabase);
 
         // Act
         try {
@@ -469,7 +470,7 @@ public class UserManagerTest {
         }
         
         // Assert
-        verify(dummyDatabase, dummySession, request);
+        verify(dummyQuestionDatabase, dummySession, request);
     }
 
     /**
@@ -506,7 +507,7 @@ public class UserManagerTest {
 
         replay(dummySession);
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         // Act
         try {
@@ -519,7 +520,7 @@ public class UserManagerTest {
         }
         
         // Assert
-        verify(dummyDatabase, dummySession, request);
+        verify(dummyQuestionDatabase, dummySession, request);
         
     }
 
@@ -545,13 +546,13 @@ public class UserManagerTest {
 
         replay(dummySession);
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         // Act
         boolean valid = Whitebox.<Boolean> invokeMethod(userManager, "isValidUsersSession", sessionInformation);
 
         // Assert
-        verify(dummyDatabase, dummySession, request);
+        verify(dummyQuestionDatabase, dummySession, request);
         assertTrue(valid);
     }
 
@@ -580,13 +581,13 @@ public class UserManagerTest {
 
         replay(dummySession);
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         // Act
         boolean valid = Whitebox.<Boolean> invokeMethod(userManager, "isValidUsersSession", tamperedSessionInformation);
 
         // Assert
-        verify(dummyDatabase, dummySession, request);
+        verify(dummyQuestionDatabase, dummySession, request);
         assertTrue(!valid);
     }
 
@@ -611,13 +612,13 @@ public class UserManagerTest {
 
         replay(dummySession);
         replay(request);
-        replay(dummyDatabase);
+        replay(dummyQuestionDatabase);
 
         // Act
         boolean valid = Whitebox.<Boolean> invokeMethod(userManager, "isValidUsersSession", validSessionInformation);
 
         // Assert
-        verify(dummyDatabase, dummySession, request);
+        verify(dummyQuestionDatabase, dummySession, request);
         assertTrue(!valid);
     }
 
@@ -643,7 +644,7 @@ public class UserManagerTest {
             final IFederatedAuthenticator authenticator) {
         HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
         providerMap.put(provider, authenticator);
-        return new UserManager(this.dummyDatabase, this.dummyPropertiesLoader, providerMap, this.dummyMapper,
+        return new UserManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader, providerMap, this.dummyMapper,
                 this.dummyQueue, this.dummyUserCache, this.dummyLogManager);
     }
 

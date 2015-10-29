@@ -112,7 +112,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public String getDbId() {
+    public String getLegacyDbId() {
         return databaseId;
     }
 
@@ -124,7 +124,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setDbId(final String id) {
+    public void setLegacyDbId(final String id) {
         this.databaseId = id;
     }
 

@@ -83,7 +83,7 @@ public class GroupManager {
         Validate.notBlank(groupName);
         Validate.notNull(groupOwner);
 
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getDbId(), new Date());
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getLegacyDbId(), new Date());
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
@@ -145,7 +145,7 @@ public class GroupManager {
      */
     public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) {
         Validate.notNull(ownerUser);
-        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getDbId()));
+        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getLegacyDbId()));
     }
 
     /**
@@ -161,7 +161,7 @@ public class GroupManager {
             throws SegueDatabaseException {
         Validate.notNull(userToLookup);
 
-        return convertGroupToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getDbId()));
+        return convertGroupToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getLegacyDbId()));
     }
 
     /**
@@ -181,11 +181,11 @@ public class GroupManager {
 
         // don't do it if they are already in there
         if (!this.isUserInGroup(userToAdd, group)) {
-            groupDatabase.addUserToGroup(userToAdd.getDbId(), group.getId());
+            groupDatabase.addUserToGroup(userToAdd.getLegacyDbId(), group.getId());
         } else {
             // otherwise it is a noop.
             log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
-                    userToAdd.getDbId(), group.getId()));
+                    userToAdd.getLegacyDbId(), group.getId()));
         }
     }
 
@@ -203,7 +203,7 @@ public class GroupManager {
             throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(userToRemove);
-        groupDatabase.removeUserFromGroup(userToRemove.getDbId(), group.getId());
+        groupDatabase.removeUserFromGroup(userToRemove.getLegacyDbId(), group.getId());
     }
 
     /**

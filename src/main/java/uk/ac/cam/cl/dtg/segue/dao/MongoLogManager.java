@@ -109,7 +109,7 @@ public class MongoLogManager implements ILogManager {
 
         try {
             if (user instanceof RegisteredUserDTO) {
-                this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails,
+                this.persistLogEvent(((RegisteredUserDTO) user).getLegacyDbId(), null, eventType, eventDetails,
                         getClientIpAddr(httpRequest));
             } else {
                 this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
@@ -126,7 +126,7 @@ public class MongoLogManager implements ILogManager {
         Validate.notNull(user);
         try {
             if (user instanceof RegisteredUserDTO) {
-                this.persistLogEvent(((RegisteredUserDTO) user).getDbId(), null, eventType, eventDetails, null);
+                this.persistLogEvent(((RegisteredUserDTO) user).getLegacyDbId(), null, eventType, eventDetails, null);
             } else {
                 this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails, null);
             }
@@ -240,7 +240,7 @@ public class MongoLogManager implements ILogManager {
 
             List<BasicDBObject> ids = Lists.newArrayList();
             for (RegisteredUserDTO user : usersOfInterest) {
-                ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getDbId()));
+                ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getLegacyDbId()));
             }
 
             orQuery.put("$or", ids);
@@ -349,9 +349,9 @@ public class MongoLogManager implements ILogManager {
         Query q;
         if (prototype instanceof RegisteredUserDTO) {
             RegisteredUserDTO user = (RegisteredUserDTO) prototype;
-            Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
+            Validate.notBlank(user.getLegacyDbId(), "You must provide an id in the user object to perform this search.");
 
-            q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("_id", user.getDbId()));
+            q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("_id", user.getLegacyDbId()));
         } else if (prototype instanceof AnonymousUserDTO) {
             AnonymousUserDTO user = (AnonymousUserDTO) prototype;
             q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("_id", user.getSessionId()));
@@ -374,9 +374,9 @@ public class MongoLogManager implements ILogManager {
         Query q;
         if (prototype instanceof RegisteredUserDTO) {
             RegisteredUserDTO user = (RegisteredUserDTO) prototype;
-            Validate.notBlank(user.getDbId(), "You must provide an id in the user object to perform this search.");
+            Validate.notBlank(user.getLegacyDbId(), "You must provide an id in the user object to perform this search.");
 
-            q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("userId", user.getDbId()));
+            q = DBQuery.and(DBQuery.is("anonymousUser", false), DBQuery.is("userId", user.getLegacyDbId()));
         } else if (prototype instanceof AnonymousUserDTO) {
             AnonymousUserDTO user = (AnonymousUserDTO) prototype;
             q = DBQuery.and(DBQuery.is("anonymousUser", true), DBQuery.is("userId", user.getSessionId()));
@@ -450,7 +450,7 @@ public class MongoLogManager implements ILogManager {
 
             List<BasicDBObject> ids = Lists.newArrayList();
             for (RegisteredUserDTO user : usersOfInterest) {
-                ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getDbId()));
+                ids.add(new BasicDBObject(USER_ID_FKEY_FIELDNAME, user.getLegacyDbId()));
             }
 
             orQuery.put("$or", ids);

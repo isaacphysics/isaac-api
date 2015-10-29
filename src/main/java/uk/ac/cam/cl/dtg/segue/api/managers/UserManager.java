@@ -77,6 +77,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserQuestionManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
@@ -108,6 +109,9 @@ public class UserManager {
     private final PropertiesLoader properties;
 
     private final IUserDataManager database;
+    
+    private final IUserQuestionManager questionAttemptDb;
+    
     private final Cache<String, AnonymousUser> temporaryUserCache;
 
     private final ILogManager logManager;
@@ -123,6 +127,8 @@ public class UserManager {
      * 
      * @param database
      *            - an IUserDataManager that will support persistence.
+     * @param questionDb
+     *            - supports persistence of question attempt info.
      * @param properties
      *            - A property loader
      * @param providersToRegister
@@ -135,10 +141,10 @@ public class UserManager {
      *            - so that we can log events for users..
      */
     @Inject
-    public UserManager(final IUserDataManager database, final PropertiesLoader properties,
-            final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
-            final EmailManager emailQueue, final ILogManager logManager) {
-        this(database, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
+    public UserManager(final IUserDataManager database, final IUserQuestionManager questionDb,
+            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+            final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager) {
+        this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
                 .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
                 .<String, AnonymousUser> build(), logManager);
     }
@@ -148,6 +154,8 @@ public class UserManager {
      * 
      * @param database
      *            - an IUserDataManager that will support persistence.
+     * @param questionDb
+     *            - supports persistence of question attempt info.
      * @param properties
      *            - A property loader
      * @param providersToRegister
@@ -161,10 +169,10 @@ public class UserManager {
      * @param logManager
      *            - so that we can log events for users..
      */
-    public UserManager(final IUserDataManager database, final PropertiesLoader properties,
-            final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final MapperFacade dtoMapper,
-            final EmailManager emailQueue, final Cache<String, AnonymousUser> temporaryUserCache,
-            final ILogManager logManager) {
+    public UserManager(final IUserDataManager database, final IUserQuestionManager questionDb,
+            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+            final MapperFacade dtoMapper, final EmailManager emailQueue,
+            final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager) {
         Validate.notNull(database);
         Validate.notNull(properties);
         Validate.notNull(providersToRegister);
@@ -177,6 +185,7 @@ public class UserManager {
         Validate.notNull(properties.getProperty(HOST_NAME));
 
         this.database = database;
+        this.questionAttemptDb = questionDb;
         this.temporaryUserCache = temporaryUserCache;
         this.logManager = logManager;
         this.properties = properties;
@@ -398,7 +407,7 @@ public class UserManager {
      */
     public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
             throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
-        RegisteredUser userDO = this.findUserById(user.getDbId());
+        RegisteredUser userDO = this.findUserById(user.getLegacyDbId());
         // check if the provider is there to delete in the first place. If not just return.
         if (!this.database.getAuthenticationProvidersByUser(userDO).contains(
                 this.mapToProvider(providerString).getAuthenticationProvider())) {
@@ -482,7 +491,7 @@ public class UserManager {
         try {
             updateLastSeen(user);
         } catch (SegueDatabaseException e) {
-            log.error(String.format("Unable to update user (%s) last seen date.", user.getDbId()));
+            log.error(String.format("Unable to update user (%s) last seen date.", user.getLegacyDbId()));
         }
 
         return this.convertUserDOToUserDTO(user);
@@ -628,9 +637,9 @@ public class UserManager {
         if (user instanceof RegisteredUserDTO) {
             RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
             try {
-                this.database.registerQuestionAttempt(registeredUser.getDbId(), questionPageId[0],
+                this.questionAttemptDb.registerQuestionAttempt(registeredUser.getLegacyDbId(), questionPageId[0],
                         questionResponse.getQuestionId(), questionResponseDO);
-                log.debug("Question information recorded for user: " + registeredUser.getDbId());
+                log.debug("Question information recorded for user: " + registeredUser.getLegacyDbId());
             } catch (SegueDatabaseException e) {
                 log.error("Unable to to record question attempt.", e);
             }
@@ -660,9 +669,9 @@ public class UserManager {
         Validate.notNull(user);
 
         if (user instanceof RegisteredUserDTO) {
-            RegisteredUser registeredUser = this.findUserById(((RegisteredUserDTO) user).getDbId());
+            RegisteredUser registeredUser = this.findUserById(((RegisteredUserDTO) user).getLegacyDbId());
 
-            return this.database.getQuestionAttempts(registeredUser.getDbId()).getQuestionAttempts();
+            return this.questionAttemptDb.getQuestionAttempts(registeredUser.getLegacyDbId()).getQuestionAttempts();
         } else {
             AnonymousUser anonymousUser = this.temporaryUserCache.getIfPresent(((AnonymousUserDTO) user)
                     .getSessionId());
@@ -694,7 +703,7 @@ public class UserManager {
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
             final HttpServletResponse response, final RegisteredUser user) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
-        Validate.isTrue(user.getDbId() == null || user.getDbId().isEmpty(),
+        Validate.isTrue(user.getLegacyDbId() == null || user.getLegacyDbId().isEmpty(),
                 "When creating a new user the user id must not be set.");
 
         if (this.findUserByEmail(user.getEmail()) != null) {
@@ -779,19 +788,19 @@ public class UserManager {
      */
     public RegisteredUserDTO updateUserObject(final RegisteredUser user) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
-        Validate.notBlank(user.getDbId());
+        Validate.notBlank(user.getLegacyDbId());
         MapperFacade mapper = this.dtoMapper;
 
         // We want to map to DTO first to make sure that the user cannot
         // change fields that aren't exposed to them
         RegisteredUserDTO userDTOContainingUpdates = mapper.map(user, RegisteredUserDTO.class);
-        if (user.getDbId() == null && user.getDbId().isEmpty()) {
+        if (user.getLegacyDbId() == null && user.getLegacyDbId().isEmpty()) {
             throw new IllegalArgumentException(
                     "The user object specified has an id. Users cannot created with a specific id already set.");
         }
 
         // This is an update operation.
-        final RegisteredUser existingUser = this.findUserById(user.getDbId());
+        final RegisteredUser existingUser = this.findUserById(user.getLegacyDbId());
         // userToSave = existingUser;
 
         // Check that the user isn't trying to take an existing users e-mail.
@@ -814,7 +823,7 @@ public class UserManager {
             }
 
             log.info(String.format("Sending email for email address change for user (%s)"
-                    + " from email (%s) to email (%s)", user.getDbId(), existingUser.getEmail(), user.getEmail()));
+                    + " from email (%s) to email (%s)", user.getLegacyDbId(), existingUser.getEmail(), user.getEmail()));
             try {
                 this.emailManager.sendEmailVerificationChange(existingUser, user);
             } catch (ContentManagerException e) {
@@ -961,7 +970,7 @@ public class UserManager {
         if (null == user) {
             try {
                 RegisteredUserDTO userDTO = getCurrentRegisteredUser(request);
-                user = this.findUserById(userDTO.getDbId());
+                user = this.findUserById(userDTO.getLegacyDbId());
             } catch (NoUserLoggedInException e) {
                 log.error(String.format("Verification requested for email:%s where email does not exist "
                         + "and user not logged in!", email));
@@ -1039,7 +1048,7 @@ public class UserManager {
             throw new NoUserException();    
         }
 
-        if (!userid.equals(user.getDbId())) {
+        if (!userid.equals(user.getLegacyDbId())) {
             log.warn(String.format("Recieved an invalid email token request for (%s)" + " - provided bad userid",
                     email));
             throw new InvalidTokenException();
@@ -1064,7 +1073,7 @@ public class UserManager {
             // Save user
             RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
             log.info(String.format("Email verification for user (%s) has completed successfully.",
-                    createOrUpdateUser.getDbId()));
+                    createOrUpdateUser.getLegacyDbId()));
             return this.convertUserDOToUserDTO(createOrUpdateUser);
         } else {
             log.warn(String.format("Recieved an invalid email verification token for (%s) - invalid token", email));
@@ -1116,7 +1125,7 @@ public class UserManager {
         // Save user
         RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
         log.info(String.format("Password Reset for user (%s) has completed successfully.",
-                createOrUpdateUser.getDbId()));
+                createOrUpdateUser.getLegacyDbId()));
         return this.convertUserDOToUserDTO(createOrUpdateUser);
     }
 
@@ -1161,11 +1170,11 @@ public class UserManager {
             final RegisteredUser user) {
         Validate.notNull(response);
         Validate.notNull(user);
-        Validate.notBlank(user.getDbId());
+        Validate.notBlank(user.getLegacyDbId());
         SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
 
-        String userId = user.getDbId();
+        String userId = user.getLegacyDbId();
         String hmacKey = properties.getProperty(HMAC_SALT);
 
         try {
@@ -1636,7 +1645,7 @@ public class UserManager {
                             .build());
 
         } else {
-            log.error("Returning user detected" + localUserInformation.getDbId()
+            log.error("Returning user detected" + localUserInformation.getLegacyDbId()
                     + " unable to create a new segue user.");
         }
 
@@ -2003,14 +2012,14 @@ public class UserManager {
         Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = anonymousUser
                 .getTemporaryQuestionAttempts();
 
-        this.logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), registeredUser.getDbId());
+        this.logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), registeredUser.getLegacyDbId());
 
         if (anonymouslyAnsweredQuestions.isEmpty()) {
             return;
         }
 
         log.info(String.format("Merging anonymously answered questions with known user account (%s)",
-                registeredUser.getDbId()));
+                registeredUser.getLegacyDbId()));
 
         for (String questionPageId : anonymouslyAnsweredQuestions.keySet()) {
             for (String questionId : anonymouslyAnsweredQuestions.get(questionPageId).keySet()) {
@@ -2076,13 +2085,13 @@ public class UserManager {
      */
     private void updateLastSeen(final RegisteredUser user) throws SegueDatabaseException {
         if (user.getLastSeen() == null) {
-            this.database.updateUserLastSeen(user.getDbId());
+            this.database.updateUserLastSeen(user.getLegacyDbId());
         } else {
             // work out if we should update the user record again...
             long timeDiff = Math.abs(new Date().getTime() - user.getLastSeen().getTime());
             long minutesElapsed = TimeUnit.MILLISECONDS.toMinutes(timeDiff);
             if (minutesElapsed > LAST_SEEN_UPDATE_FREQUENCY_MINUTES) {
-                this.database.updateUserLastSeen(user.getDbId());
+                this.database.updateUserLastSeen(user.getLegacyDbId());
             }
         }
     }

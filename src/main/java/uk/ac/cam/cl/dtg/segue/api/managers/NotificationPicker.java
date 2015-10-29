@@ -121,7 +121,7 @@ public class NotificationPicker {
             throws SegueDatabaseException {
         Map<String, UserNotification> result = Maps.newHashMap();
 
-        List<UserNotification> userNotifications = notifications.getUserNotifications(user.getDbId());
+        List<UserNotification> userNotifications = notifications.getUserNotifications(user.getLegacyDbId());
 
         for (UserNotification recordedNotification : userNotifications) {
             result.put(recordedNotification.getContentNotificationId(), recordedNotification);
@@ -155,7 +155,7 @@ public class NotificationPicker {
         }
 
         // update the users record with the action they have taken.
-        notifications.saveUserNotification(user.getDbId(), notificationId, status);
+        notifications.saveUserNotification(user.getLegacyDbId(), notificationId, status);
     }
 
     /**

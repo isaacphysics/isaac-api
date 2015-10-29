@@ -62,7 +62,7 @@ public class SegueLocalAuthenticatorTest {
 	public final void segueLocalAuthenticator_setOrChangeUsersPasswordEmptyPassword_exceptionsShouldBeThrown() {
 		RegisteredUser someUser = new RegisteredUser();
 		someUser.setEmail("test@test.com");
-		someUser.setDbId("533ee66842f639e95ce35e29");
+		someUser.setLegacyDbId("533ee66842f639e95ce35e29");
 		
 		replay(userDataManager);
 		
@@ -94,7 +94,7 @@ public class SegueLocalAuthenticatorTest {
 	public final void segueLocalAuthenticator_setOrChangeUsersPasswordValidPassword_passwordAndHashShouldBePopulatedAsBase64() {
 		RegisteredUser someUser = new RegisteredUser();
 		someUser.setEmail("test@test.com");
-		someUser.setDbId("533ee66842f639e95ce35e29");
+		someUser.setLegacyDbId("533ee66842f639e95ce35e29");
 		String somePassword = "test5eguePassw0rd";
 		replay(userDataManager);
 		
@@ -131,14 +131,14 @@ public class SegueLocalAuthenticatorTest {
 		String usersEmailAddress = "test@test.com";
 		
 		RegisteredUser userFromDatabase = new RegisteredUser();
-		userFromDatabase.setDbId("533ee66842f639e95ce35e29");
+		userFromDatabase.setLegacyDbId("533ee66842f639e95ce35e29");
 		userFromDatabase.setEmail(usersEmailAddress);
 		userFromDatabase.setPassword(someCorrectPasswordHashFromDB);
 		userFromDatabase.setSecureSalt(someCorrectSecureSaltFromDB);
 		
 		RegisteredUser someUser = new RegisteredUser();
 		someUser.setEmail("test@test.com");
-		someUser.setDbId("533ee66842f639e95ce35e29");
+		someUser.setLegacyDbId("533ee66842f639e95ce35e29");
 		String someIncorrectPassword = "password";
 		
 		expect(userDataManager.getByEmail(usersEmailAddress)).andReturn(userFromDatabase).once();
@@ -173,7 +173,7 @@ public class SegueLocalAuthenticatorTest {
 		String usersEmailAddress = "test@test.com";
 		
 		RegisteredUser userFromDatabase = new RegisteredUser();
-		userFromDatabase.setDbId("533ee66842f639e95ce35e29");
+		userFromDatabase.setLegacyDbId("533ee66842f639e95ce35e29");
 		userFromDatabase.setEmail(usersEmailAddress);
 		userFromDatabase.setPassword(someCorrectPasswordHashFromDB);
 		userFromDatabase.setSecureSalt(someCorrectSecureSaltFromDB);
@@ -211,7 +211,7 @@ public class SegueLocalAuthenticatorTest {
 		String usersEmailAddress = "test@test.com";
 		
 		RegisteredUser userFromDatabase = new RegisteredUser();
-		userFromDatabase.setDbId("533ee66842f639e95ce35e29");
+		userFromDatabase.setLegacyDbId("533ee66842f639e95ce35e29");
 		userFromDatabase.setEmail(usersEmailAddress);
 				
 		expect(userDataManager.getByEmail(usersEmailAddress)).andReturn(userFromDatabase).once();

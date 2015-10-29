@@ -114,7 +114,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user);
 
             // Calculate the ETag based user id and groups they own
-            EntityTag etag = new EntityTag(user.getDbId().hashCode() + groups.toString().hashCode() + "");
+            EntityTag etag = new EntityTag(user.getLegacyDbId().hashCode() + groups.toString().hashCode() + "");
             Response cachedResponse = generateCachedResponse(cacheRequest, etag,
                     Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
@@ -248,7 +248,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Group specified does not exist.").toResponse();
             }
 
-            if (!existingGroup.getOwnerId().equals(user.getDbId())) {
+            if (!existingGroup.getOwnerId().equals(user.getLegacyDbId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "The group you have attempted to edit does not belong to you.").toResponse();
             }
@@ -289,7 +289,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO group = groupManager.getGroupById(groupId);
 
-            if (!group.getOwnerId().equals(user.getDbId()) && !isUserAnAdmin(userManager, request)) {
+            if (!group.getOwnerId().equals(user.getLegacyDbId()) && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
             }
 
@@ -394,7 +394,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!currentRegisteredUser.getDbId().equals(groupBasedOnId.getOwnerId())) {
+            if (!currentRegisteredUser.getLegacyDbId().equals(groupBasedOnId.getOwnerId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
             }
 
@@ -438,7 +438,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!currentUser.getDbId().equals(groupBasedOnId.getOwnerId())) {
+            if (!currentUser.getLegacyDbId().equals(groupBasedOnId.getOwnerId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of this group, and therefore do not have permission to delete it.")
                         .toResponse();

@@ -364,7 +364,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.").toResponse();
             }
 
-            return Response.ok(bookingManager.createBooking(eventId, bookedUser.getDbId())).build();
+            return Response.ok(bookingManager.createBooking(eventId, bookedUser.getLegacyDbId())).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {

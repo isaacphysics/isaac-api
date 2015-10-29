@@ -78,7 +78,7 @@ public class AssignmentManager {
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
         if (groups.size() == 0) {
-            log.debug(String.format("User (%s) does not have any groups", user.getDbId()));
+            log.debug(String.format("User (%s) does not have any groups", user.getLegacyDbId()));
             return Lists.newArrayList();
         }
 
@@ -146,7 +146,7 @@ public class AssignmentManager {
      */
     public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
         Validate.notNull(user);
-        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getDbId());
+        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getLegacyDbId());
     }
 
     /**
@@ -164,7 +164,7 @@ public class AssignmentManager {
             throws SegueDatabaseException {
         Validate.notNull(user);
         Validate.notNull(group);
-        return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getDbId(), group.getId());
+        return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
     }
 
     /**

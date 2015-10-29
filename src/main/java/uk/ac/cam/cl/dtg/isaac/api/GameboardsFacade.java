@@ -473,7 +473,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 .getTitle().equals(newGameboardObject.getTitle()))) {
 
             // do they have permission?
-            if (!existingGameboard.getOwnerUserId().equals(user.getDbId())) {
+            if (!existingGameboard.getOwnerUserId().equals(user.getLegacyDbId())) {
                 // user not logged in return not authorized
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not allowed to change another user's gameboard.").toResponse();

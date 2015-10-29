@@ -689,7 +689,7 @@ public class AdminFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO userPrototype = new RegisteredUserDTO();
             if (null != userId && !userId.isEmpty()) {
-                userPrototype.setDbId(userId);
+                userPrototype.setLegacyDbId(userId);
             }
 
             if (null != email && !email.isEmpty()) {
@@ -802,7 +802,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (currentlyLoggedInUser.getDbId().equals(userId)) {
+            if (currentlyLoggedInUser.getLegacyDbId().equals(userId)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to delete yourself.")
                         .toResponse();
             }
@@ -819,6 +819,7 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
+            log.error("Unable to delete account", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Database error while looking up user information.").toResponse();
         } catch (NoUserException e) {
