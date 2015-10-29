@@ -90,6 +90,17 @@ public class NotificationPicker {
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
+            if (!(c instanceof NotificationDTO)) {
+                // skip if not a notification somehow.
+                continue;
+            }
+            
+            NotificationDTO notification = (NotificationDTO) c;
+            if (notification.getExpiry() != null && new Date().after(notification.getExpiry())) {
+                // skip expired notifications
+                continue;
+            }
+            
             UserNotification record = listOfRecordedNotifications.get(c.getId());
 
             if (null == record) {

@@ -99,7 +99,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final UserManager userManager;
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
-    private IMisuseMonitor misuseMonitor;
+    private final IMisuseMonitor misuseMonitor;
 
     /**
      * Construct an instance of the UsersFacade.
