@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dos.UserNotification;
 import uk.ac.cam.cl.dtg.segue.dos.UserNotification.NotificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.UserNotifications;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
@@ -45,7 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  *
  */
 public class NotificationPicker {
-    private PgUserNotifications notifications;
+    private UserNotifications notifications;
     private ContentVersionController contentVersionController;
 
     /**
@@ -90,6 +91,17 @@ public class NotificationPicker {
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
+            if (!(c instanceof NotificationDTO)) {
+                // skip if not a notification somehow.
+                continue;
+            }
+            
+            NotificationDTO notification = (NotificationDTO) c;
+            if (notification.getExpiry() != null && new Date().after(notification.getExpiry())) {
+                // skip expired notifications
+                continue;
+            }
+            
             UserNotification record = listOfRecordedNotifications.get(c.getId());
 
             if (null == record) {

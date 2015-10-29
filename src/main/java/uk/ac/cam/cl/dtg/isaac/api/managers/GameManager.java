@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -435,10 +436,22 @@ public class GameManager {
         }
 
         int totalCompleted = 0;
-
+        int totalUnavailable = 0;
+        
         for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
-            GameboardItemState state = this.calculateQuestionState(gameItem.getId(), questionAttemptsFromUser);
+            GameboardItemState state;
+            try {
+                state = this.calculateQuestionState(gameItem.getId(), questionAttemptsFromUser);    
+            } catch (ResourceNotFoundException e) {
+                log.info(String.format(
+                        "A question is unavailable (%s) - treating it as if it never existed for marking.",
+                        gameItem.getId()));
+                totalUnavailable++;
+                continue;
+            }
+            
             gameItem.setState(state);
+            
             if (state.equals(GameboardItemState.PASSED) || state.equals(GameboardItemState.PERFECT)) {
                 totalCompleted++;
             }
@@ -447,8 +460,10 @@ public class GameManager {
                 gameboardDTO.setStartedQuestion(true);
             }
         }
-
-        double percentageCompleted = totalCompleted * 100 / gameboardDTO.getQuestions().size();
+        
+        int totalQuestionInBoard = gameboardDTO.getQuestions().size() - totalUnavailable;
+        
+        double percentageCompleted = totalCompleted * 100 / totalQuestionInBoard;
         gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
         
         if (user instanceof RegisteredUserDTO) {
@@ -667,8 +682,16 @@ public class GameManager {
         // choose the gameboard questions to include.
         while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
             for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
-                GameboardItemState questionState = this.calculateQuestionState(gameboardItem.getId(),
-                        usersQuestionAttempts);
+                GameboardItemState questionState;
+                try {
+                    questionState = this.calculateQuestionState(gameboardItem.getId(),
+                            usersQuestionAttempts);
+                } catch (ResourceNotFoundException e) {
+                    throw new ContentManagerException(
+                            "Resource not found exception, this shouldn't happen as the selectionOfGameboardQuestions "
+                            + "should only show available content.");
+                }
+                
                 if (questionState.equals(GameboardItemState.PASSED) 
                         || questionState.equals(GameboardItemState.PERFECT)) {
                     completedQuestions.add(gameboardItem);
@@ -760,10 +783,12 @@ public class GameManager {
      * @return The state of the gameboard item.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
+     * @throws ResourceNotFoundException
+     *             - if we cannot find the question specified.
      */
     private GameboardItemState calculateQuestionState(final String questionPageId,
             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
-            throws ContentManagerException {
+            throws ContentManagerException, ResourceNotFoundException {
         Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
         Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
 
@@ -772,12 +797,15 @@ public class GameManager {
             // having an id that starts with the question page id.
 
             // Get the pass mark for the question page
-
             IsaacQuestionPage questionPage = (IsaacQuestionPage) versionManager.getContentManager().getContentDOById(
                     versionManager.getLiveVersion(), questionPageId);
-
+            
+            if (null == questionPage) {
+                throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
+                        questionPageId));
+            }
+            
             Float passMark = questionPage.getPassMark();
-
             if (passMark == null) {
                 passMark = 100f;
             }

@@ -36,6 +36,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -235,20 +236,27 @@ public class EventsFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - for authentication
+     * @param countOnly
+     *            - If we only want to return a count
      * @return a list of booking objects
      */
     @GET
     @Path("/bookings")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getAllEventBookings(@Context final HttpServletRequest request) {
+    public final Response getAllEventBookings(@Context final HttpServletRequest request,
+            @QueryParam("count_only") final Boolean countOnly) {
         try {
             if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
 
-            return Response.ok(bookingManager.getAllBookings()).build();
+            if (countOnly != null && countOnly) {
+                return Response.ok(ImmutableMap.of("count", bookingManager.getAllBookings().size())).build();
+            }
+            
+            return Response.ok(ImmutableMap.of("results", bookingManager.getAllBookings())).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {

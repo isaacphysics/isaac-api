@@ -99,7 +99,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final UserManager userManager;
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
-    private IMisuseMonitor misuseMonitor;
+    private final IMisuseMonitor misuseMonitor;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -552,19 +552,29 @@ public class UsersFacade extends AbstractSegueFacade {
             // details.
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
             if (!currentlyLoggedInUser.getLegacyDbId().equals(userObjectFromClient.getLegacyDbId())
-                    && currentlyLoggedInUser.getRole() != Role.ADMIN) {
+                    && currentlyLoggedInUser.getRole() != Role.ADMIN 
+                    && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' user settings.")
                         .toResponse();
             }
-
+            
             // check that any changes to protected fields being made are
             // allowed.
             RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
                     .getLegacyDbId());
             
+            
+            if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
+                if (Role.ADMIN.equals(existingUserFromDb.getRole())
+                        || Role.ADMIN.equals(userObjectFromClient.getRole())) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You cannot modify admin roles.").toResponse();
+                }
+            }
+            
             // check that the user is allowed to change the role of another user
             // if that is what they are doing.
-            if (currentlyLoggedInUser.getRole() != Role.ADMIN && userObjectFromClient.getRole() != null
+            if ((currentlyLoggedInUser.getRole() != Role.ADMIN && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER)
+                    && userObjectFromClient.getRole() != null
                     && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to change a users role.")
                         .toResponse();

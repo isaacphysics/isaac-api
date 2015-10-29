@@ -33,7 +33,6 @@ public class PgUserNotification implements UserNotification {
 
     }
 
-
     /**
      * @param userId - of the user who has responded
      * @param contentNotificationid - notification id.
