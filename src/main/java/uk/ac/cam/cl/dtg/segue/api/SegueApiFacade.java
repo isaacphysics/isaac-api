@@ -837,8 +837,14 @@ public class SegueApiFacade extends AbstractSegueFacade {
     @Path("info/log_event_types")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response getLogEventTypes(@Context final Request request) {
-        ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "results", getLogManager().getAllEventTypes()).build();
+        ImmutableMap<String, Collection<String>> result;
+        try {
+            result = new ImmutableMap.Builder<String, Collection<String>>().put(
+                    "results", getLogManager().getAllEventTypes()).build();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error has occurred", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
+        }
 
         EntityTag etag = new EntityTag(result.toString().hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);

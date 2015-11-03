@@ -60,6 +60,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
+import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -375,10 +376,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ILogManager getLogManager(final MongoDb database,
+    private static ILogManager getLogManager(final PostgresSqlDb database,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
         if (null == logManager) {
-            logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            
+            logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
                 log.info("Log manager configured to record logging.");

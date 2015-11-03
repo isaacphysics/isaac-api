@@ -33,6 +33,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class RegisteredUserDTO extends AbstractSegueUserDTO {
+    
+    private Long id;
     @JsonProperty("_id")
     private String databaseId;
     private String givenName;
@@ -104,6 +106,25 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     public RegisteredUserDTO() {
 
     }
+
+    /**
+     * Gets the id.
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+
+    /**
+     * Sets the id.
+     * @param id the id to set
+     */
+    public void setId(final Long id) {
+        this.id = id;
+    }
+    
+
 
     /**
      * Gets the database id for the user object.

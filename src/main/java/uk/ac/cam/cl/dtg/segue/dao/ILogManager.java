@@ -50,6 +50,7 @@ public interface ILogManager {
      * @param eventDetails
      *            - Additional information associated with the event - this is expected to be a json deserializable
      *            object
+     * @throws SegueDatabaseException 
      */
     void logEvent(AbstractSegueUserDTO user, HttpServletRequest httpRequest, String eventType, Object eventDetails);
 
@@ -63,6 +64,7 @@ public interface ILogManager {
      * @param eventDetails
      *            - Additional information associated with the event - this is expected to be a json deserializable
      *            object
+     * @throws SegueDatabaseException 
      */
     void logInternalEvent(AbstractSegueUserDTO user, String eventType, Object eventDetails);
 
@@ -85,8 +87,9 @@ public interface ILogManager {
      * @param type
      *            - string representing the type of event to find.
      * @return all events of the type requested or null if none available. The map should be of type String, Object
+     * @throws SegueDatabaseException 
      */
-    List<LogEvent> getLogsByType(String type);
+    Collection<LogEvent> getLogsByType(String type) throws SegueDatabaseException;
 
     /**
      * Allows filtering by date range.
@@ -98,8 +101,9 @@ public interface ILogManager {
      * @param fromDate
      *            - date to start search
      * @return all events of the type requested or null if none available. The map should be of type String, Object
+     * @throws SegueDatabaseException 
      */
-    List<LogEvent> getLogsByType(String type, Date fromDate);
+    Collection<LogEvent> getLogsByType(String type, Date fromDate) throws SegueDatabaseException;
 
     /**
      * Allows filtering by date range.
@@ -111,8 +115,9 @@ public interface ILogManager {
      * @param toDate
      *            - date to end search.
      * @return all events of the type requested or null if none available. The map should be of type String, Object
+     * @throws SegueDatabaseException 
      */
-    List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate);
+    Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate) throws SegueDatabaseException;
 
     /**
      * Convenience method to find out how many of a particular type of event have been logged.
@@ -120,8 +125,9 @@ public interface ILogManager {
      * @param type
      *            - event type of interest.
      * @return the number of that type recorded.
+     * @throws SegueDatabaseException 
      */
-    Long getLogCountByType(String type);
+    Long getLogCountByType(String type) throws SegueDatabaseException;
 
     /**
      * Allows filtering by date range.
@@ -135,8 +141,9 @@ public interface ILogManager {
      * @param usersOfInterest
      *            - users of interest.
      * @return all events of the type requested or null if none available. The map should be of type String, Object
+     * @throws SegueDatabaseException 
      */
-    List<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest);
+    Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest) throws SegueDatabaseException;
 
     /**
      * Utility method that will generate a map of type -- > localDate -- > number of events.
@@ -155,9 +162,10 @@ public interface ILogManager {
      *            - if true then the data will be put into bins by the 1st of the month if false you will get one per
      *            day that an event occurred.
      * @return a map of type -- > localDate -- > number of events
+     * @throws SegueDatabaseException 
      */
     Map<String, Map<LocalDate, Integer>> getLogCountByDate(Collection<String> eventTypes, Date fromDate, Date toDate,
-            List<RegisteredUserDTO> usersOfInterest, boolean binDataByMonth);
+            List<RegisteredUserDTO> usersOfInterest, boolean binDataByMonth) throws SegueDatabaseException;
 
     /**
      * @return get a set of all ip addresses ever seen in the log events.
@@ -165,66 +173,36 @@ public interface ILogManager {
     Set<String> getAllIpAddresses();
 
     /**
-     * @param userType
-     *            to filter by.
-     * @return All logs belonging to a particular class of user.
-     */
-    List<LogEvent> getAllLogsByUserType(Class<? extends AbstractSegueUserDTO> userType);
-
-    /**
-     * @param userType
-     *            to filter by.
-     * @param eventType
-     *            - event of interest
-     * @return All logs belonging to a particular class of user and eventId
-     */
-    List<LogEvent> getAllLogsByUserTypeAndEvent(Class<? extends AbstractSegueUserDTO> userType, String eventType);
-
-    /**
-     * @param prototype
-     *            containing the user identifier.
-     * @return all logs for the user with the identifier provided.
-     */
-    List<LogEvent> getAllLogsByUser(AbstractSegueUserDTO prototype);
-
-    /**
-     * Get the last log event for a given user.
-     * 
-     * @param prototype
-     *            - containing the user's unique identifier.
-     * @return the last log event.
-     */
-    LogEvent getLastLogForUser(AbstractSegueUserDTO prototype);
-
-    /**
      * A more efficient way of getting the last log for all users.
      * 
      * @param qualifyingLogEventType
      *            - the log event type to include in the data.
      * @return where string is the user id and the logevent is the most recent
+     * @throws SegueDatabaseException 
      */
-    Map<String, LogEvent> getLastLogForAllUsers(final String qualifyingLogEventType);
+    Map<String, LogEvent> getLastLogForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException;
 
     /**
      * returns a set of event types known about from the db.
      * 
      * @return Set of event types.
+     * @throws SegueDatabaseException 
      */
-    Set<String> getAllEventTypes();
+    Set<String> getAllEventTypes() throws SegueDatabaseException;
     
-    /**
-     * Utility method to allows filtering by date range using a lazy iterator.
-     * 
-     * @param type
-     *            - string representing the type of event to find.
-     * @param fromDate
-     *            - date to start search
-     * @param toDate
-     *            - date to end search.
-     * @param usersOfInterest
-     *            - users of interest.
-     * @return all events of the type requested or null if none available. The map should be of type String, Object
-     */
-    Iterator<LogEvent> getLogsIteratorByType(String type, Date fromDate, Date toDate,
-            List<RegisteredUserDTO> usersOfInterest);
+//    /**
+//     * Utility method to allows filtering by date range using a lazy iterator.
+//     * 
+//     * @param type
+//     *            - string representing the type of event to find.
+//     * @param fromDate
+//     *            - date to start search
+//     * @param toDate
+//     *            - date to end search.
+//     * @param usersOfInterest
+//     *            - users of interest.
+//     * @return all events of the type requested or null if none available. The map should be of type String, Object
+//     */
+//    Iterator<LogEvent> getLogsIteratorByType(String type, Date fromDate, Date toDate,
+//            List<RegisteredUserDTO> usersOfInterest);
 }

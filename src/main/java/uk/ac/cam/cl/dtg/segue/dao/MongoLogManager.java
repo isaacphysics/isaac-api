@@ -185,7 +185,7 @@ public class MongoLogManager implements ILogManager {
     @Override
     public Map<String, Map<LocalDate, Integer>> getLogCountByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> usersOfInterest,
-            final boolean binDataByMonth) {
+            final boolean binDataByMonth) throws SegueDatabaseException {
 
         Validate.notNull(eventTypes);
 
@@ -296,7 +296,7 @@ public class MongoLogManager implements ILogManager {
 
         return results;
     }
-
+/*
     @Override
     public List<LogEvent> getAllLogsByUserType(final Class<? extends AbstractSegueUserDTO> userType) {
         // sanity check
@@ -392,7 +392,7 @@ public class MongoLogManager implements ILogManager {
             return null;
         }
     }
-
+*/
     @Override
     public Map<String, LogEvent> getLastLogForAllUsers(@Nullable final String qualifyingLogEventType) {
         Iterator<LogEvent> allLogsByUserTypeIterator = this.getLogsIteratorByType(qualifyingLogEventType, null, null,
@@ -415,7 +415,7 @@ public class MongoLogManager implements ILogManager {
         return results;
     }
 
-    @Override
+
     public Iterator<LogEvent> getLogsIteratorByType(final String type, @Nullable final Date fromDate,
             @Nullable final Date toDate, final List<RegisteredUserDTO> usersOfInterest) {
         Validate.notNull(type);
