@@ -305,6 +305,7 @@ public final class Constants {
     public static final String MERGE_USER = "MERGE_USER";
     public static final String USER_REGISTRATION = "USER_REGISTRATION";
     public static final String LOG_OUT = "LOG_OUT";
+    public static final String DELETE_USER_ACCOUNT = "DELETE_USER_ACCOUNT";
     public static final String CREATE_USER_ASSOCIATION = "CREATE_USER_ASSOCIATION";
     public static final String REVOKE_USER_ASSOCIATION = "REVOKE_USER_ASSOCIATION";
     public static final String EMAIL_VERIFICATION_REQUEST_RECEIVED = "EMAIL_VERIFICATION_REQUEST_RECEIVED";

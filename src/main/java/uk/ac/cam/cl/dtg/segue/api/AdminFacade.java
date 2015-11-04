@@ -476,7 +476,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/content_index_queue")
     public synchronized Response getCurrentIndexQueue(@Context final HttpServletRequest request) {
         try {
-            if (isUserAnAdmin(request)) {
+            if (isUserStaff(request)) {
                 ImmutableMap<String, Object> response = new ImmutableMap.Builder<String, Object>().put("queue",
                         contentVersionController.getToIndexQueue()).build();
 
@@ -678,9 +678,16 @@ public class AdminFacade extends AbstractSegueFacade {
         RegisteredUserDTO currentUser;
         try {
             currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserAnAdmin(httpServletRequest)) {
+            if (!isUserAnAdminOrEventManager(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as an admin to access this function.").toResponse();
+            }
+            
+            if (currentUser.getRole().equals(Role.EVENT_MANAGER)
+                    && (familyName.isEmpty() && null == schoolOther  && email.isEmpty())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
+                        .toResponse();
+
             }
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -759,7 +766,7 @@ public class AdminFacade extends AbstractSegueFacade {
         RegisteredUserDTO currentUser;
         try {
             currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserAnAdmin(httpServletRequest)) {
+            if (!isUserAnAdminOrEventManager(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as an admin to access this function.").toResponse();
             }
@@ -808,7 +815,10 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             this.userManager.deleteUserAccount(userId);
-
+            
+            getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, DELETE_USER_ACCOUNT,
+                    ImmutableMap.of("userIdDeleted", userId));
+            
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
                     + userId);
 
@@ -1064,6 +1074,20 @@ public class AdminFacade extends AbstractSegueFacade {
         return isUserAnAdmin(userManager, request);
     }
 
+    /**
+     * Is the current user an admin.
+     * 
+     * @param request
+     *            - with session information
+     * @return true if user is logged in as an admin, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    private boolean isUserAnAdminOrEventManager(final HttpServletRequest request) throws NoUserLoggedInException {
+        return isUserAnAdminOrEventManager(userManager, request);
+    }
+
+    
     /**
      * Is the current user in a staff role.
      * 

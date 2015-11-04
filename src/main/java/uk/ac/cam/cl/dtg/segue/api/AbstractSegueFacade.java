@@ -219,6 +219,22 @@ public abstract class AbstractSegueFacade {
             throws NoUserLoggedInException {
         return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN));
     }
+    
+    /**
+     * Is the current user in an admin or event manager role.
+     * 
+     * @param userManager
+     *            - Instance of User Manager
+     * @param request
+     *            - with session information
+     * @return true if user is logged in as an admin, false otherwise.
+     * @throws NoUserLoggedInException
+     *             - if we are unable to tell because they are not logged in.
+     */
+    public static boolean isUserAnAdminOrEventManager(final UserManager userManager, final HttpServletRequest request)
+            throws NoUserLoggedInException {
+        return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER));
+    }
 
     /**
      * Is the current user in a staff role.
@@ -233,6 +249,7 @@ public abstract class AbstractSegueFacade {
      */
     public static boolean isUserStaff(final UserManager userManager, final HttpServletRequest request)
             throws NoUserLoggedInException {
-        return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR));
+        return userManager.checkUserRole(request,
+                Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR, Role.EVENT_MANAGER));
     }
 }

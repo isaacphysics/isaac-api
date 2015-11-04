@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import java.util.Date;
+
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
 
 /**
@@ -25,7 +27,8 @@ import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
 @DTOMapping(NotificationDTO.class)
 public class Notification extends Content {
     private ExternalReference externalReference;
-
+    private Date expiry;
+    
     /**
      * @param value - of the content
      */
@@ -57,5 +60,21 @@ public class Notification extends Content {
      */
     public void setExternalReference(final ExternalReference externalReference) {
         this.externalReference = externalReference;
+    }
+
+    /**
+     * Gets the expiry.
+     * @return the expiry
+     */
+    public Date getExpiry() {
+        return expiry;
+    }
+
+    /**
+     * Sets the expiry.
+     * @param expiry the expiry to set
+     */
+    public void setExpiry(final Date expiry) {
+        this.expiry = expiry;
     }
 }
