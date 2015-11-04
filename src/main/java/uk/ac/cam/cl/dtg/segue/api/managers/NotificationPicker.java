@@ -35,7 +35,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.UserNotifications;
+import uk.ac.cam.cl.dtg.segue.dos.IUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.NotificationDTO;
@@ -46,7 +46,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  *
  */
 public class NotificationPicker {
-    private UserNotifications notifications;
+    private IUserNotifications notifications;
     private ContentVersionController contentVersionController;
 
     /**
@@ -91,6 +91,7 @@ public class NotificationPicker {
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
+        	IUserNotification record = listOfRecordedNotifications.get(c.get_id());
             if (!(c instanceof NotificationDTO)) {
                 // skip if not a notification somehow.
                 continue;

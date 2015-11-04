@@ -370,7 +370,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("gameboardURL", gameboardURL);
             p.put("gameboardName", gameboardName);
             p.put("myAssignmentsURL", myAssignmentsURL);
-            p.put("sig", sig);
+            p.put("sig", SIGNATURE);
             String plainTextMessage = completeTemplateWithProperties(segueContent, p);
             String htmlMessage = null;
 
@@ -385,7 +385,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             }
 
             EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                    segueContent.getTitle(), plainTextMessage, htmlMessage);
+                    segueContent.getTitle(), plainTextMessage, EmailType.ASSIGNMENTS, htmlMessage);
             this.addToQueue(e);
         }
     }
@@ -472,7 +472,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("teacherName", groupOwnerName);
         p.put("assignmentsInfo", sb.toString());
         p.put("accountURL", accountURL);
-        p.put("sig", sig);
+        p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         String htmlMessage = null;
 
@@ -487,7 +487,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, EmailType.SYSTEM, htmlMessage);
         this.addToQueue(e);
 
     }
