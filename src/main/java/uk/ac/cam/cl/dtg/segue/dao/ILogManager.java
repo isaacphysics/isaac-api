@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -141,9 +140,11 @@ public interface ILogManager {
      * @param usersOfInterest
      *            - users of interest.
      * @return all events of the type requested or null if none available. The map should be of type String, Object
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException
+     *             - if there is a problem contacting the underlying database
      */
-    Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest) throws SegueDatabaseException;
+    Collection<LogEvent> getLogsByType(String type, Date fromDate, Date toDate, List<RegisteredUserDTO> usersOfInterest)
+            throws SegueDatabaseException;
 
     /**
      * Utility method that will generate a map of type -- > localDate -- > number of events.
@@ -162,7 +163,7 @@ public interface ILogManager {
      *            - if true then the data will be put into bins by the 1st of the month if false you will get one per
      *            day that an event occurred.
      * @return a map of type -- > localDate -- > number of events
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Map<String, Map<LocalDate, Integer>> getLogCountByDate(Collection<String> eventTypes, Date fromDate, Date toDate,
             List<RegisteredUserDTO> usersOfInterest, boolean binDataByMonth) throws SegueDatabaseException;
@@ -178,7 +179,7 @@ public interface ILogManager {
      * @param qualifyingLogEventType
      *            - the log event type to include in the data.
      * @return where string is the user id and the logevent is the most recent
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Map<String, LogEvent> getLastLogForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException;
 
@@ -186,7 +187,7 @@ public interface ILogManager {
      * returns a set of event types known about from the db.
      * 
      * @return Set of event types.
-     * @throws SegueDatabaseException 
+     * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Set<String> getAllEventTypes() throws SegueDatabaseException;
     
