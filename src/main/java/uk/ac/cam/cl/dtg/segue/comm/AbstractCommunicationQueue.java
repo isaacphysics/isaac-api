@@ -15,10 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Comparator;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Queues;
 
 /**
  * Abstract message queue class.
@@ -29,14 +35,34 @@ import org.slf4j.LoggerFactory;
  *            type of message to send
  */
 public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage> {
+	
+	/**
+	 * Comparator that tells the priority queue which email should be sent first.
+	 */
+	private Comparator<ICommunicationMessage> emailPriorityComparator = new Comparator<ICommunicationMessage>() {
 
-    private LinkedBlockingQueue<T> messageQueue = new LinkedBlockingQueue<T>();
+		@Override
+		public int compare(final ICommunicationMessage first, final ICommunicationMessage second) {
+			if (first.getPriority() == second.getPriority()) {
+				return 0;
+			} else if (first.getPriority() <= second.getPriority()) {
+				return -1;
+			} else {
+				return 1;
+			}
+		}
+    	
+    };
+
+    private PriorityBlockingQueue<T> messageSenderRunnableQueue = 
+    				new PriorityBlockingQueue<T>(100, emailPriorityComparator);
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCommunicationQueue.class);
 
     private ICommunicator<T> communicator;
 
-    private Thread processingThread;
+    private final ExecutorService executorService;
+    
 
     /**
      * FIFO queue manager that sends messages.
@@ -46,7 +72,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      */
     public AbstractCommunicationQueue(final ICommunicator<T> communicator) {
         this.communicator = communicator;
-        processingThread = new Thread(new MessageSender());
+        this.executorService = Executors.newFixedThreadPool(4); 
     }
 
     /**
@@ -54,22 +80,11 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      *            object of type S that can be added to the queue
      */
     public void addToQueue(final T queueObject) {
-        messageQueue.add(queueObject);
-
-        if (!processingThread.isAlive()) {
-            // TODO re-awaken it
-            processingThread = new Thread(new MessageSender());
-            processingThread.start();
-        }
+    	messageSenderRunnableQueue.add(queueObject);
+    	executorService.submit(new MessageSenderRunnable());
+    	log.warn("added to the queue " + messageSenderRunnableQueue.size());
     }
 
-    /**
-     * @return true if there are messages left on the queue
-     */
-    public boolean messagesLeftOnQueue() {
-        log.info("Message queue size:" + messageQueue.size());
-        return messageQueue.size() > 0;
-    }
 
     /**
      * @return an object from the head of the queue
@@ -77,7 +92,11 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      *             if object cannot be retrieved
      */
     private T getLatestQueueItem() throws InterruptedException {
-        return messageQueue.take();
+        return messageSenderRunnableQueue.poll();
+    }
+    
+    public int getQueueLength(){
+    	return messageSenderRunnableQueue.size();
     }
 
     /**
@@ -86,20 +105,27 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * @author Alistair Stead
      *
      */
-    class MessageSender implements Runnable {
+    class MessageSenderRunnable implements Runnable {
+    	    	
         @Override
         public void run() {
-            while (messagesLeftOnQueue()) {
-                // Send the actual message
-                try {
-                    T item = getLatestQueueItem();
-                    communicator.sendMessage(item);
-                } catch (InterruptedException e) {
-                    log.error("Interrupted Exception:" + e.getMessage());
-                } catch (CommunicationException e) {
-                    log.error("Communication Exception:" + e.getMessage());
-                }
-            }
+            // Send the actual message
+            try {
+            	T queueItem = getLatestQueueItem();
+            	log.warn("About to send message ");
+                communicator.sendMessage(queueItem);
+            } catch (CommunicationException e) {
+                log.warn("Communication Exception:" + e.getMessage());
+            } catch (InterruptedException e) {
+                log.warn("Interrupted Exception:" + e.getMessage());
+			} catch (Exception e) {
+                log.warn("Generic Exception:" + e.getMessage());
+                e.printStackTrace();
+			}
         }
     }
+    
+    
 }
+
+

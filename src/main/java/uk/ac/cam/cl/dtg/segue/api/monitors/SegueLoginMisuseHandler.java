@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
@@ -84,7 +85,7 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, null);
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, EmailType.ADMIN, null);
         emailManager.addToQueue(e);
         log.warn("Hard threshold limit reached for LoginMisuseHandler: " + message);
     }

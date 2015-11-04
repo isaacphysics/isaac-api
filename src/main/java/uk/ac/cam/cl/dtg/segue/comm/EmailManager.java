@@ -160,7 +160,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                segueContent.getTitle(), plainTextMessage, htmlMessage,  EmailType.SYSTEM,
                 globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
 
         this.addToQueue(e);
@@ -215,7 +215,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage);
+                segueContent.getTitle(), plainTextMessage, EmailType.SYSTEM, htmlMessage);
         
         this.addToQueue(e);
     }
@@ -242,7 +242,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
-                globalProperties.getProperty(HOST_NAME), 
+                globalProperties.getProperty(HOST_NAME),
                 user.getDbId(),
                 user.getEmail(),
                 user.getEmailVerificationToken().substring(0, TRUNCATED_TOKEN_LENGTH));
@@ -269,7 +269,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                segueContent.getTitle(), plainTextMessage, htmlMessage, EmailType.SYSTEM,
                 globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
@@ -318,7 +318,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                segueContent.getTitle(), plainTextMessage, htmlMessage, EmailType.SYSTEM,
                 globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }
@@ -541,7 +541,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage,
+                segueContent.getTitle(), plainTextMessage, htmlMessage, EmailType.SYSTEM,
                 globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.addToQueue(e);
     }

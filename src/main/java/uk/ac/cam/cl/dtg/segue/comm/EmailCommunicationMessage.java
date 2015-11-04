@@ -36,6 +36,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
     private final String replyToAddress;
     
+    private final EmailType type;
+    
     /**
      * 
      * @param recipientAddress
@@ -46,12 +48,14 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      *            subject of email
      * @param plainTextMessage
      *            message in email
+     * @param type
+     * 			  email type
      * @param htmlMessage
      *            message in email
      */
     public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
-            final String plainTextMessage, final String htmlMessage) {
-        this(recipientAddress, recipientName, subject, plainTextMessage, htmlMessage, null);
+            final String plainTextMessage, final EmailType type, final String htmlMessage) {
+        this(recipientAddress, recipientName, subject, plainTextMessage, htmlMessage, type,  null);
     }
     
     /**
@@ -68,15 +72,19 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      *            message in email
      * @param replyToAddress
      *            (nullable) the preferred reply to address.
+     * @param type
+     * 			  the type of the message
      */
     public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
-            final String plainTextMessage, final String htmlMessage, @Nullable final String replyToAddress) {
+		            final String plainTextMessage, final String htmlMessage, final EmailType type,
+		            @Nullable final String replyToAddress) {
         this.plainTextMessage = plainTextMessage;
         this.recipientAddress = recipientAddress;
         this.recipientName = recipientName;
         this.subject = subject;
         this.htmlMessage = htmlMessage;
         this.replyToAddress = replyToAddress;
+        this.type = type;
     }
     
     
@@ -121,4 +129,10 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     public String getReplyToAddress() {
         return replyToAddress;
     }
+
+	@Override
+	public int getPriority() {
+		return type.getPriority();
+	}
+
 }

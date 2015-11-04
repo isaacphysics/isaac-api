@@ -16,6 +16,17 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 
+/**
+ * Message interface.
+ *
+ * @author Alistair Stead
+ *
+ */
 public interface ICommunicationMessage {
+	
+	/**
+	 * @return the priority of the message
+	 */
+	int getPriority();
 	
 }
