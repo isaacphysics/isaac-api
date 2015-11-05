@@ -1879,7 +1879,7 @@ public class UserManager {
             log.error("Internal Database error. Failed to resolve current user.", e);
             return null;
         } catch (NumberFormatException e) {
-            log.error("Invalid user id detected in session.", e);
+            log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
             return null;            
         }
     }
