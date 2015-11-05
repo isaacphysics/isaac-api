@@ -31,7 +31,7 @@ public interface IUserNotifications {
      * @return the list of notification records for this user.
      * @throws SegueDatabaseException - if a database error has occurred.
      */
-    List<IUserNotification> getUserNotifications(String userId) throws SegueDatabaseException;
+    List<IUserNotification> getUserNotifications(Long userId) throws SegueDatabaseException;
 
     /**
      * @param userId - the user id to save a record for.
@@ -39,6 +39,6 @@ public interface IUserNotifications {
      * @param status to save
      * @throws SegueDatabaseException - if a database error has occurred.
      */
-    void saveUserNotification(String userId, String notificationId, NotificationStatus status)
+    void saveUserNotification(Long userId, String notificationId, NotificationStatus status)
             throws SegueDatabaseException;
 }

@@ -157,7 +157,7 @@ public class GameManager {
 
         String boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
-            boardOwnerId = ((RegisteredUserDTO) boardOwner).getDbId();
+            boardOwnerId = ((RegisteredUserDTO) boardOwner).getLegacyDbId();
         } else {
             // anonymous users do not get to own a board so just mark it as unowned.
             boardOwnerId = null;
@@ -204,7 +204,7 @@ public class GameManager {
             throws SegueDatabaseException {
         // if the gameboard has no owner we should add the user who is first linking to it as the owner.
         if (gameboardToLink.getOwnerUserId() == null) {
-            gameboardToLink.setOwnerUserId(userToLinkTo.getDbId());
+            gameboardToLink.setOwnerUserId(userToLinkTo.getLegacyDbId());
         }
 
         // determine if we need to permanently store the gameboard
@@ -212,7 +212,7 @@ public class GameManager {
             this.permanentlyStoreGameboard(gameboardToLink);
         }
 
-        this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getDbId(),
+        this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getLegacyDbId(),
                 gameboardToLink.getId());
     }
 
@@ -228,7 +228,7 @@ public class GameManager {
      */
     public void unlinkUserToGameboard(final GameboardDTO gameboardToUnlink, final RegisteredUserDTO user)
             throws SegueDatabaseException {
-        this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getDbId(), gameboardToUnlink.getId());
+        this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getLegacyDbId(), gameboardToUnlink.getId());
     }
 
     /**
@@ -512,7 +512,7 @@ public class GameManager {
 
         // set creation date to now.
         gameboardDTO.setCreationDate(new Date());
-        gameboardDTO.setOwnerUserId(owner.getDbId());
+        gameboardDTO.setOwnerUserId(owner.getLegacyDbId());
 
         // this will throw an exception if it doesn't validate.
         validateGameboard(gameboardDTO);
@@ -637,7 +637,7 @@ public class GameManager {
      */
     private boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
             throws SegueDatabaseException {
-        return this.gameboardPersistenceManager.isBoardLinkedToUser(user.getDbId(), gameboardId);
+        return this.gameboardPersistenceManager.isBoardLinkedToUser(user.getLegacyDbId(), gameboardId);
     }    
     
     /**

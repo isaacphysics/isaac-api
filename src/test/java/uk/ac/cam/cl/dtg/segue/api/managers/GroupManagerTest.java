@@ -89,7 +89,7 @@ public class GroupManagerTest {
 	public final void groupManager_createValidGroup_aGroupShouldBeCreated() {
 		String someGroupName = "Group Name";
 		RegisteredUserDTO someGroupOwner = new RegisteredUserDTO();
-		someGroupOwner.setDbId("533ee66842f639e95ce35e29");
+		someGroupOwner.setLegacyDbId("533ee66842f639e95ce35e29");
 		someGroupOwner.setEmail("test@test.com");
 		
 		Capture<UserGroup> capturedGroup = new Capture<UserGroup>();
@@ -106,7 +106,7 @@ public class GroupManagerTest {
 			UserGroupDTO createUserGroup = gm.createUserGroup(someGroupName, someGroupOwner);
 
 			// check that what goes into the database is what we passed it.
-			assertTrue(capturedGroup.getValue().getOwnerId().equals(someGroupOwner.getDbId()));
+			assertTrue(capturedGroup.getValue().getOwnerId().equals(someGroupOwner.getLegacyDbId()));
 			assertTrue(capturedGroup.getValue().getGroupName().equals(someGroupName));
 			assertTrue(capturedGroup.getValue().getCreated() instanceof Date);
 			

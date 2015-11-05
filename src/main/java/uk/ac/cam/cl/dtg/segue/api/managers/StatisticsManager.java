@@ -211,9 +211,9 @@ public class StatisticsManager {
             }
 
             if (user.getLastSeen() != null) {
-                lastSeenMap.put(user.getDbId(), user.getLastSeen());
+                lastSeenMap.put(user.getId().toString(), user.getLastSeen());
             } else if (user.getRegistrationDate() != null) {
-                lastSeenMap.put(user.getDbId(), user.getRegistrationDate());
+                lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
             }
 
         }
@@ -408,9 +408,9 @@ public class StatisticsManager {
      * @throws UnableToIndexSchoolsException
      *             - if the school list has not been indexed.
      */
-    public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
+    public List<RegisteredUserDTO> getUsersBySchoolId(final Long schoolId) throws ResourceNotFoundException,
             SegueDatabaseException, UnableToIndexSchoolsException {
-        Validate.notBlank(schoolId);
+        Validate.notNull(schoolId);
 
         List<RegisteredUserDTO> users = Lists.newArrayList();
 
@@ -445,9 +445,9 @@ public class StatisticsManager {
             
             for (RegisteredUserDTO user : users) {
                 if (user.getLastSeen() != null) {
-                    lastSeenMap.put(user.getDbId(), user.getLastSeen());
+                    lastSeenMap.put(user.getId().toString(), user.getLastSeen());
                 } else if (user.getRegistrationDate() != null) {
-                    lastSeenMap.put(user.getDbId(), user.getRegistrationDate());
+                    lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
                 }
             }
             
@@ -462,8 +462,9 @@ public class StatisticsManager {
      * @param qualifyingLogEvent
      *            the string event type that will be looked for.
      * @return a list of userId's to last event timestamp
+     * @throws SegueDatabaseException 
      */
-    public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) {
+    public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
         return this.convertFromLogEventToDateMap(this.logManager.getLastLogForAllUsers(qualifyingLogEvent));
     }
 
@@ -576,9 +577,10 @@ public class StatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
+     * @throws SegueDatabaseException 
      */
     public Map<String, Map<LocalDate, Integer>> getEventLogsByDate(final Collection<String> eventTypes,
-            final Date fromDate, final Date toDate, final boolean binDataByMonth) {
+            final Date fromDate, final Date toDate, final boolean binDataByMonth) throws SegueDatabaseException {
         return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
     }
 
@@ -596,10 +598,11 @@ public class StatisticsManager {
      * @param binDataByMonth
      *            - shall we group data by the first of every month?
      * @return Map of eventType --> map of dates and frequency
+     * @throws SegueDatabaseException 
      */
     public Map<String, Map<LocalDate, Integer>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
-            final boolean binDataByMonth) {
+            final boolean binDataByMonth) throws SegueDatabaseException {
         Validate.notNull(eventTypes);
 
         return this.logManager.getLogCountByDate(eventTypes, fromDate, toDate, userList, binDataByMonth);
@@ -623,7 +626,7 @@ public class StatisticsManager {
         Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
 
         for (RegisteredUserDTO user : users) {
-            Date eventDate = lastSeenUserMap.get(user.getDbId());
+            Date eventDate = lastSeenUserMap.get(user.getId());
             Calendar validInclusionTime = Calendar.getInstance();
             validInclusionTime.setTime(new Date());
             validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));

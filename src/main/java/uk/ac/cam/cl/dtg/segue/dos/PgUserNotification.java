@@ -21,7 +21,7 @@ import java.util.Date;
  *
  */
 public class PgUserNotification implements IUserNotification {
-    private String userId;
+    private Long userId;
     private String contentNotificationId;
     private NotificationStatus status;
     private Date created;
@@ -39,7 +39,7 @@ public class PgUserNotification implements IUserNotification {
      * @param status - status of the notification
      * @param created - date the entry was made.
      */
-    public PgUserNotification(final String userId, final String contentNotificationid, final NotificationStatus status,
+    public PgUserNotification(final Long userId, final String contentNotificationid, final NotificationStatus status,
             final Date created) {
         this.userId = userId;
         this.contentNotificationId = contentNotificationid;
@@ -53,7 +53,7 @@ public class PgUserNotification implements IUserNotification {
      * @see uk.ac.cam.cl.dtg.segue.dos.UserNotification#getUserId()
      */
     @Override
-    public String getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
@@ -106,7 +106,7 @@ public class PgUserNotification implements IUserNotification {
      *            the userId to set
      */
     @Override
-    public void setUserId(final String userId) {
+    public void setUserId(final Long userId) {
         this.userId = userId;
     }
 

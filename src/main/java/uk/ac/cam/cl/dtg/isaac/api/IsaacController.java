@@ -40,6 +40,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -442,7 +444,7 @@ public class IsaacController extends AbstractIsaacFacade {
             if (user instanceof AnonymousUserDTO) {
                 userId = ((AnonymousUserDTO) user).getSessionId();
             } else {
-                userId = ((RegisteredUserDTO) user).getDbId();
+                userId = ((RegisteredUserDTO) user).getLegacyDbId();
             }
 
             content = api.getQuestionManager().augmentQuestionObjects(content, userId, userQuestionAttempts);
@@ -644,7 +646,7 @@ public class IsaacController extends AbstractIsaacFacade {
         ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
                 SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
-        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                 .tag(etag)
                 .build();
 
@@ -688,7 +690,7 @@ public class IsaacController extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        return getUserProgressInformation(request, user.getDbId());
+        return getUserProgressInformation(request, user.getLegacyDbId());
     }
 
     /**
@@ -713,7 +715,7 @@ public class IsaacController extends AbstractIsaacFacade {
         RegisteredUserDTO userOfInterestFull;
         try {
             user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            userOfInterestFull = userManager.getUserDTOByLegacyId(userIdOfInterest);
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {
@@ -721,7 +723,7 @@ public class IsaacController extends AbstractIsaacFacade {
                         .getUserQuestionInformation(userOfInterestFull);
 
                 this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
-                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getDbId()));
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getLegacyDbId()));
 
                 return Response.ok(userQuestionInformation).build();
             } else {

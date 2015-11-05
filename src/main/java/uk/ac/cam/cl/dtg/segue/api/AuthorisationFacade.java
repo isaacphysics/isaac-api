@@ -147,7 +147,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
+            RegisteredUserDTO userToRevoke = userManager.getUserDTOByLegacyId(userIdToRevoke);
             associationManager.revokeAssociation(user, userToRevoke);
 
             this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
@@ -257,9 +257,10 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             // ensure the user is logged in
             currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
 
-            misuseMonitor.notifyEvent(currentRegisteredUser.getDbId(), TokenOwnerLookupMisuseHandler.class.toString());
+            misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
+                    TokenOwnerLookupMisuseHandler.class.toString());
 
-            RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
+            RegisteredUserDTO userDTO = userManager.getUserDTOByLegacyId(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
 
             return Response.ok(userManager.convertToUserSummaryObject(userDTO))

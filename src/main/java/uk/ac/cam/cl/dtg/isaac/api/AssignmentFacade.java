@@ -166,7 +166,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 assignments = newList;
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, Maps.newHashMap());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, null);
 
             return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
@@ -256,7 +256,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())) {
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -369,7 +369,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             AssignmentDTO newAssignment = new AssignmentDTO();
             newAssignment.setGameboardId(gameboard.getId());
-            newAssignment.setOwnerUserId(currentlyLoggedInUser.getDbId());
+            newAssignment.setOwnerUserId(currentlyLoggedInUser.getLegacyDbId());
             newAssignment.setGroupId(groupId);
 
             // modifies assignment passed in to include an id.
@@ -426,7 +426,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             if (null == assignmentToDelete) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "The assignment does not exist.").toResponse();
             }
-            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getDbId())) {
+            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of this assignment. Unable to delete it.").toResponse();
             }

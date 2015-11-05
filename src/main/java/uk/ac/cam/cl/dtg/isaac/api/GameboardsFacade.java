@@ -291,7 +291,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 if (e.getValue() > 1) {
                     GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
 
-                    RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
+                    RegisteredUserDTO ownerUser = userManager.getUserDTOByLegacyId(liteGameboard.getOwnerUserId());
                     if (ownerUser != null) {
                         liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
                                 currentUser, userManager.convertToUserSummaryObject(ownerUser)));
@@ -473,7 +473,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 .getTitle().equals(newGameboardObject.getTitle()))) {
 
             // do they have permission?
-            if (!existingGameboard.getOwnerUserId().equals(user.getDbId())) {
+            if (!existingGameboard.getOwnerUserId().equals(user.getLegacyDbId())) {
                 // user not logged in return not authorized
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not allowed to change another user's gameboard.").toResponse();

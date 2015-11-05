@@ -96,7 +96,7 @@ public class AssignmentManager implements IGroupObserver {
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
         if (groups.size() == 0) {
-            log.debug(String.format("User (%s) does not have any groups", user.getDbId()));
+            log.debug(String.format("User (%s) does not have any groups", user.getLegacyDbId()));
             return Lists.newArrayList();
         }
 
@@ -152,7 +152,7 @@ public class AssignmentManager implements IGroupObserver {
         
         //filter users so those that have revoked access to their data aren't emailed
         try {
-			RegisteredUserDTO assignmentOwner = userManager.getUserDTOById(newAssignment.getOwnerUserId());
+			RegisteredUserDTO assignmentOwner = userManager.getUserDTOByLegacyId(newAssignment.getOwnerUserId());
 			
 			for (Iterator<RegisteredUserDTO> iterator = users.iterator(); iterator.hasNext();) {
 				RegisteredUserDTO user = iterator.next();
@@ -189,7 +189,7 @@ public class AssignmentManager implements IGroupObserver {
      */
     public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
         Validate.notNull(user);
-        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getDbId());
+        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getLegacyDbId());
     }
 
     /**
@@ -207,7 +207,7 @@ public class AssignmentManager implements IGroupObserver {
             throws SegueDatabaseException {
         Validate.notNull(user);
         Validate.notNull(group);
-        return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getDbId(), group.getId());
+        return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
     }
 
     /**
@@ -311,12 +311,11 @@ public class AssignmentManager implements IGroupObserver {
 
         // Try to email user to let them know
         try {
-            RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
+        	RegisteredUserDTO groupOwner = this.userManager.getUserDTOByLegacyId(group.getOwnerId());
 
             List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
            
-			emailManager.sendGroupWelcome(user, group, groupOwner,
-					existingAssignments, gameManager);
+			emailManager.sendGroupWelcome(user, group, groupOwner, existingAssignments, gameManager);
 
         } catch (ContentManagerException e) {
             log.info(String.format("Could not send group welcome email "), e);

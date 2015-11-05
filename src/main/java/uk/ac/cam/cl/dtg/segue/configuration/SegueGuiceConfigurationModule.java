@@ -60,6 +60,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
+import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -68,8 +69,10 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserQuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -274,9 +277,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IContentManager.class).to(GitContentManager.class);
 
         bind(LocationHistory.class).to(PgLocationHistory.class);
-
-        bind(IUserDataManager.class).to(MongoUserDataManager.class);
-
+        
+        bind(IUserQuestionManager.class).to(MongoUserDataManager.class);
+        bind(IUserDataManager.class).to(PgUsers.class);
+        
         bind(ICommunicator.class).to(EmailCommunicator.class);
     }
 
@@ -374,10 +378,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ILogManager getLogManager(final MongoDb database,
+    private static ILogManager getLogManager(final PostgresSqlDb database,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
         if (null == logManager) {
-            logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            
+            logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
                 log.info("Log manager configured to record logging.");
@@ -429,7 +436,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      * 
-     * @param database
+     * @param questionDatabase
      *            - IUserManager
      * @param properties
      *            - properties loader
@@ -446,13 +453,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserManager getUserManager(final IUserDataManager database, final PropertiesLoader properties,
-            final Map<AuthenticationProvider, IAuthenticator> providersToRegister, final EmailManager emailQueue,
-            final ILogManager logManager, final MapperFacade mapperFacade) {
+    private UserManager getUserManager(final IUserDataManager database, final IUserQuestionManager questionDatabase,
+            final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
+            final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade) {
 
         if (null == userManager) {
-            userManager = new UserManager(database, properties, providersToRegister, mapperFacade, emailQueue,
-                    logManager);
+            userManager = new UserManager(database, questionDatabase, properties, providersToRegister, mapperFacade,
+                    emailQueue, logManager);
             log.info("Creating singleton of UserManager");
         }
 

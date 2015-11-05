@@ -97,7 +97,7 @@ public class UserAssociationManager {
         String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=", "")
                 .substring(0, tokenLength).toUpperCase().replace("0", "ZR").replace("O", "QR");
 
-        AssociationToken associationToken = new AssociationToken(token, registeredUser.getDbId(), associatedGroupId);
+        AssociationToken associationToken = new AssociationToken(token, registeredUser.getLegacyDbId(), associatedGroupId);
 
         return associationDatabase.saveAssociationToken(associationToken);
     }
@@ -155,7 +155,7 @@ public class UserAssociationManager {
      * @return List of all of their associations.
      */
     public List<UserAssociation> getAssociations(final RegisteredUserDTO user) {
-        return associationDatabase.getUserAssociations(user.getDbId());
+        return associationDatabase.getUserAssociations(user.getLegacyDbId());
     }
 
     /**
@@ -164,7 +164,7 @@ public class UserAssociationManager {
      * @return List of all associations
      */
     public List<UserAssociation> getAssociationsForOthers(final RegisteredUserDTO user) {
-        return associationDatabase.getUsersThatICanSee(user.getDbId());
+        return associationDatabase.getUsersThatICanSee(user.getLegacyDbId());
     }
 
     /**
@@ -193,8 +193,8 @@ public class UserAssociationManager {
         }
 
         if (!associationDatabase
-                .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getDbId())) {
-            associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getDbId());
+                .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getLegacyDbId())) {
+            associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getLegacyDbId());
             // don't create a new association just do the group assignment as they have already granted permission.
         }
 
@@ -202,7 +202,7 @@ public class UserAssociationManager {
 
         if (lookedupToken.getGroupId() != null) {
             userGroupManager.addUserToGroup(group, userGrantingPermission);
-            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getDbId(),
+            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getLegacyDbId(),
                     lookedupToken.getGroupId()));
 
         }
@@ -223,7 +223,7 @@ public class UserAssociationManager {
         Validate.notNull(ownerUser);
         Validate.notNull(userToRevoke);
 
-        associationDatabase.deleteAssociation(ownerUser.getDbId(), userToRevoke.getDbId());
+        associationDatabase.deleteAssociation(ownerUser.getLegacyDbId(), userToRevoke.getLegacyDbId());
     }
 
     /**
@@ -280,8 +280,8 @@ public class UserAssociationManager {
      * @return true if yes false if no.
      */
     public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
-        return currentUser.getDbId().equals(userRequested.getDbId())
-                || this.associationDatabase.hasValidAssociation(currentUser.getDbId(), userRequested.getDbId())
+        return currentUser.getLegacyDbId().equals(userRequested.getDbId())
+                || this.associationDatabase.hasValidAssociation(currentUser.getLegacyDbId(), userRequested.getDbId())
                 || Role.ADMIN.equals(currentUser.getRole());
     }
 }

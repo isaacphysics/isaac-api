@@ -55,11 +55,11 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 
 /**
- * This class is responsible for managing and persisting user data.
+ * This class is responsible for managing and persisting user data and question data (at the moment).
  * 
  * @author Stephen Cummins
  */
-public class MongoUserDataManager implements IUserDataManager {
+public class MongoUserDataManager implements IUserDataManager, IUserQuestionManager {
 
     private static final Logger log = LoggerFactory.getLogger(MongoUserDataManager.class);
 
@@ -84,7 +84,7 @@ public class MongoUserDataManager implements IUserDataManager {
     public MongoUserDataManager(final MongoDb database, final ContentMapper contentMapper) {
         this.database = database;
         this.contentMapper = contentMapper;
-
+        
         if (!initialised) {
             initialiseDataManager();
         }
@@ -115,9 +115,10 @@ public class MongoUserDataManager implements IUserDataManager {
     }
 
     @Override
-    public void deleteUserAccount(final String id) throws SegueDatabaseException {
-        Validate.notBlank(id, "The id field must not be blank.");
-
+    public void deleteUserAccount(final RegisteredUser user) throws SegueDatabaseException {
+        Validate.notBlank(user.getLegacyDbId(), "The id field must not be blank.");
+        String id = user.getLegacyDbId();
+        
         JacksonDBCollection<RegisteredUser, String> userCollection = JacksonDBCollection.wrap(database.getDB()
                 .getCollection(USER_COLLECTION_NAME), RegisteredUser.class, String.class);
 
@@ -141,24 +142,23 @@ public class MongoUserDataManager implements IUserDataManager {
     }
 
     @Override
-    public final String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
-            final String providerUserId) throws SegueDatabaseException {
+    public final RegisteredUser registerNewUserWithProvider(final RegisteredUser user,
+            final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException {
         Validate.notNull(user);
         Validate.notNull(provider);
         Validate.notNull(providerUserId);
 
         // create the users local account.
         RegisteredUser localUser = this.createOrUpdateUser(user);
-        String localUserId = localUser.getDbId().toString();
 
         // link the provider account to the newly created account.
         this.linkAuthProviderToAccount(localUser, provider, providerUserId);
 
-        return localUserId;
+        return localUser;
     }
 
     @Override
-    public RegisteredUser getById(final String id) throws SegueDatabaseException {
+    public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
         if (null == id) {
             return null;
         }
@@ -426,7 +426,7 @@ public class MongoUserDataManager implements IUserDataManager {
             return null;
         }
 
-        RegisteredUser registeredUser = this.getById(linkAccount.getLocalUserId());
+        RegisteredUser registeredUser = this.getByLegacyId(linkAccount.getLocalUserId());
 
         if (null == registeredUser) {
             log.info("Deleting linked accounts and trying to search again.");
@@ -447,7 +447,7 @@ public class MongoUserDataManager implements IUserDataManager {
         JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(
                 database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME), LinkedAccount.class, String.class);
 
-        BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
+        BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getLegacyDbId());
         try {
             DBCursor<LinkedAccount> linkAccounts = jc.find(query);
 
@@ -468,12 +468,13 @@ public class MongoUserDataManager implements IUserDataManager {
     public List<AuthenticationProvider> getAuthenticationProvidersByUser(final RegisteredUser user)
             throws SegueDatabaseException {
         Validate.notNull(user);
-        Validate.notEmpty(user.getDbId());
+        Validate.notEmpty(user.getLegacyDbId());
 
         JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(
                 database.getDB().getCollection(LINKED_ACCOUNT_COLLECTION_NAME), LinkedAccount.class, String.class);
         try {
-            BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId());
+            BasicDBObject query = new BasicDBObject(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME,
+                    user.getLegacyDbId());
             DBCursor<LinkedAccount> linkAccounts = jc.find(query);
 
             List<AuthenticationProvider> providersToReturn = Lists.newArrayList();
@@ -494,7 +495,7 @@ public class MongoUserDataManager implements IUserDataManager {
     public void unlinkAuthProviderFromUser(final RegisteredUser user, final AuthenticationProvider provider)
             throws SegueDatabaseException {
         Validate.notNull(user);
-        Validate.notNull(user.getDbId());
+        Validate.notNull(user.getLegacyDbId());
         Validate.notNull(provider);
 
         JacksonDBCollection<LinkedAccount, String> jc = JacksonDBCollection.wrap(
@@ -502,7 +503,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
         DBQuery.Query linkAccountToDeleteQuery = DBQuery.and(
                 DBQuery.is(Constants.LINKED_ACCOUNT_PROVIDER_FIELDNAME, provider),
-                DBQuery.is(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getDbId()));
+                DBQuery.is(Constants.LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME, user.getLegacyDbId()));
 
         LinkedAccount linkAccountToDelete = jc.findOne(linkAccountToDeleteQuery);
 
@@ -525,11 +526,11 @@ public class MongoUserDataManager implements IUserDataManager {
 
             LinkedAccount account = jc.findOne(existingLinkAccount);
 
-            if (account != null && this.getById(account.getLocalUserId()) == null) {
+            if (account != null && this.getByLegacyId(account.getLocalUserId()) == null) {
                 this.cleanupOrphanedLinkedAccounts(account.getLocalUserId());
             }
 
-            WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null, user.getDbId(), provider,
+            WriteResult<LinkedAccount, String> r = jc.save(new LinkedAccount(null, user.getLegacyDbId(), provider,
                     providerUserId));
 
             return null == r.getError();
@@ -547,13 +548,15 @@ public class MongoUserDataManager implements IUserDataManager {
     }
 
     @Override
-    public void updateUserLastSeen(final String userId) throws SegueDatabaseException {
-        this.updateUserLastSeen(userId, new Date());
+    public void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException {
+        this.updateUserLastSeen(user, new Date());
     }
 
     @Override
-    public void updateUserLastSeen(final String userId, final Date date) throws SegueDatabaseException {
-        Validate.notBlank(userId);
+    public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
+        Validate.notNull(user);
+        
+        String userId = user.getLegacyDbId();
         // Since we are attaching our own auto mapper we have to do MongoJack
         // configure on it.
         ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
@@ -609,7 +612,7 @@ public class MongoUserDataManager implements IUserDataManager {
 
         // verify that the user does not exist
         try {
-            if (this.getById(userId) != null) {
+            if (this.getByLegacyId(userId) != null) {
                 log.error("Unable to clean up accounts as the user is still here.");
                 return;
             }
@@ -625,4 +628,8 @@ public class MongoUserDataManager implements IUserDataManager {
         jc.remove(linkAccountToDeleteQuery);
     }
 
+    @Override
+    public RegisteredUser getById(final Long id) throws SegueDatabaseException {
+        throw new UnsupportedOperationException("Method not implemented yet.");
+    }
 }

@@ -189,7 +189,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME), 
-                user.getDbId(),
+                user.getLegacyDbId(),
                 user.getEmail(),
                 user.getEmailVerificationToken().substring(0, TRUNCATED_TOKEN_LENGTH));
 
@@ -243,7 +243,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME),
-                user.getDbId(),
+                user.getLegacyDbId(),
                 user.getEmail(),
                 user.getEmailVerificationToken().substring(0, TRUNCATED_TOKEN_LENGTH));
 

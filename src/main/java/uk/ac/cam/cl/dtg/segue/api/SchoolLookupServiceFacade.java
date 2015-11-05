@@ -110,9 +110,10 @@ public class SchoolLookupServiceFacade {
         
         List<School> list;
         try {
-            
+
             if (schoolURN != null && !schoolURN.isEmpty()) {
-                list = Arrays.asList(schoolListReader.findSchoolById(schoolURN));
+                Long schoolURNLong = Long.parseLong(schoolURN);
+                list = Arrays.asList(schoolListReader.findSchoolById(schoolURNLong));
             } else {
                 list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);    
             }
@@ -121,6 +122,8 @@ public class SchoolLookupServiceFacade {
             String message = "Unable to create / access the index of schools for the schools service.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message, e).toResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The school urn provided is invalid.").toResponse();
         }
 
         return Response.ok(list).tag(etag).cacheControl(cc).build();

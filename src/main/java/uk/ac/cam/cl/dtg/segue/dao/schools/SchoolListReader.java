@@ -133,13 +133,13 @@ public class SchoolListReader {
      * @throws JsonParseException
      *             - if the school data is malformed
      */
-    public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
+    public School findSchoolById(final Long schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
             JsonMappingException, IOException {
         List<String> matchingSchoolList;
         
         matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, schoolURN, 0,
-                DEFAULT_RESULTS_LIMIT).getResults();
+                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                schoolURN.toString(), 0, DEFAULT_RESULTS_LIMIT).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;
@@ -207,7 +207,7 @@ public class SchoolListReader {
 
             for (School school : schoolList) {
                 try {
-                    indexList.add(immutableEntry(school.getUrn(), mapper.writeValueAsString(school)));
+                    indexList.add(immutableEntry(school.getUrn().toString(), mapper.writeValueAsString(school)));
                 } catch (JsonProcessingException e) {
                     log.error("Unable to serialize the school object into json.", e);
                 }
@@ -258,7 +258,8 @@ public class SchoolListReader {
                 line = line.replace("\"", "");
                 String[] schoolArray = line.split(",");
                 try {
-                    School schoolToSave = new School(schoolArray[fieldNameMapping.get(Constants.SCHOOL_URN_FIELDNAME)],
+                    School schoolToSave = new School(Long.parseLong(schoolArray[fieldNameMapping
+                            .get(Constants.SCHOOL_URN_FIELDNAME)]),
                             schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME)],
                             schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)], null,
                             School.SchoolDataSource.GOVERNMENT);

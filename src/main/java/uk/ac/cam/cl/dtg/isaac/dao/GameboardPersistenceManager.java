@@ -305,7 +305,7 @@ public class GameboardPersistenceManager {
 	 */
 	public final List<GameboardDTO> getGameboardsByUserId(final RegisteredUserDTO user) throws SegueDatabaseException {
 		// find all gameboards related to this user.
-        Map<String, UserGameboardsDO> gameboardLinksToUser = this.findLinkedGameboardIdsForUser(user.getDbId());
+        Map<String, UserGameboardsDO> gameboardLinksToUser = this.findLinkedGameboardIdsForUser(user.getLegacyDbId());
 
 		List<String> gameboardIdsLinkedToUser = Lists.newArrayList();
 		gameboardIdsLinkedToUser.addAll(gameboardLinksToUser.keySet());
