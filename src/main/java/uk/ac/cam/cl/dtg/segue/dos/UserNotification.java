@@ -33,7 +33,7 @@ public interface UserNotification {
     /**
      * @return the user id.
      */
-    String getUserId();
+    Long getUserId();
 
     /**
      * @return the notification id
@@ -44,7 +44,7 @@ public interface UserNotification {
      * @param userId
      *            the user id to set
      */
-    void setUserId(String userId);
+    void setUserId(Long userId);
 
     /**
      * @param status
