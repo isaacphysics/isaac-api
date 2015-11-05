@@ -129,11 +129,50 @@ COMMENT ON COLUMN linked_accounts.provider_user_id IS 'user id from the remote s
 
 
 --
+-- Name: logged_events; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE logged_events (
+    id integer NOT NULL,
+    user_id character varying(100) NOT NULL,
+    anonymous_user boolean NOT NULL,
+    event_type character varying(255),
+    event_details_type text,
+    event_details jsonb,
+    ip_address inet,
+    "timestamp" timestamp without time zone
+);
+
+
+ALTER TABLE logged_events OWNER TO rutherford;
+
+--
+-- Name: logged_events_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE logged_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE logged_events_id_seq OWNER TO rutherford;
+
+--
+-- Name: logged_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE logged_events_id_seq OWNED BY logged_events.id;
+
+
+--
 -- Name: user_notifications; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 CREATE TABLE user_notifications (
-    user_id text NOT NULL,
+    user_id integer NOT NULL,
     notification_id text NOT NULL,
     status text,
     created timestamp without time zone NOT NULL
@@ -212,6 +251,13 @@ ALTER TABLE ONLY ip_location_history ALTER COLUMN id SET DEFAULT nextval('ip_loc
 -- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
+ALTER TABLE ONLY logged_events ALTER COLUMN id SET DEFAULT nextval('logged_events_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
 
 
@@ -221,14 +267,6 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 
 ALTER TABLE ONLY users
     ADD CONSTRAINT "User Id" PRIMARY KEY (id);
-
-
---
--- Name: composite key; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
---
-
-ALTER TABLE ONLY user_notifications
-    ADD CONSTRAINT "composite key" PRIMARY KEY (user_id, notification_id);
 
 
 --
@@ -256,11 +294,27 @@ ALTER TABLE ONLY event_bookings
 
 
 --
+-- Name: id pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY logged_events
+    ADD CONSTRAINT "id pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: id pky; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 ALTER TABLE ONLY ip_location_history
     ADD CONSTRAINT "id pky" PRIMARY KEY (id);
+
+
+--
+-- Name: notification_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_notifications
+    ADD CONSTRAINT notification_pkey PRIMARY KEY (user_id, notification_id);
 
 
 --
@@ -288,11 +342,26 @@ ALTER TABLE ONLY users
 
 
 --
+-- Name: fki_user_id fkey; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
+
+
+--
 -- Name: local_user_id fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY linked_accounts
     ADD CONSTRAINT "local_user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id);
+
+
+--
+-- Name: user_id fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_notifications
+    ADD CONSTRAINT "user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --
