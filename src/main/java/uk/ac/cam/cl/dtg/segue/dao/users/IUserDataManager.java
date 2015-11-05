@@ -42,7 +42,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
+    RegisteredUser registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
             final String providerUserId) throws SegueDatabaseException;
 
     /**
@@ -124,9 +124,18 @@ public interface IUserDataManager {
      * @return A user object or null if we can't find one.
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
+     * @deprecated Should use getById
      */
-    RegisteredUser getById(final String id) throws SegueDatabaseException;
+    @Deprecated
+    RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException;
 
+    /**
+     * @param id user id
+     * @return the user the matches
+     * @throws SegueDatabaseException - if there is a database problem.
+     */
+    RegisteredUser getById(Long id) throws SegueDatabaseException;
+    
     /**
      * Get a user by email.
      *
@@ -197,32 +206,33 @@ public interface IUserDataManager {
     /**
      * Delete a user account by id.
      * 
-     * @param id
+     * @param userToDelete
      *            - the user account id to remove.
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void deleteUserAccount(final String id) throws SegueDatabaseException;
+    void deleteUserAccount(final RegisteredUser userToDelete) throws SegueDatabaseException;
 
     /**
      * A method that will allow us to measure how active a user's account is.
      * 
-     * @param userId
+     * @param user
      *            to update.
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void updateUserLastSeen(final String userId) throws SegueDatabaseException;
+    void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException;
 
     /**
      * A method that will allow us to measure how active a user's account is.
      * 
-     * @param userId
+     * @param user
      *            to update.
      * @param date
      *            to use.
      * @throws SegueDatabaseException
      *             if an error occurs
      */
-    void updateUserLastSeen(final String userId, final Date date) throws SegueDatabaseException;
+    void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException;
+
 }

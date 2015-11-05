@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  */
 public class School {
-    private String urn;
+    private Long urn;
     @JsonIgnore
     private String establishmentNumber;
     private String name;
@@ -63,7 +63,7 @@ public class School {
      * @param dataSource
      *            -dataSource of this information
      */
-    public School(final String urn, final String establishmentNumber, final String name, final String postcode,
+    public School(final Long urn, final String establishmentNumber, final String name, final String postcode,
             final SchoolDataSource dataSource) {
         this.urn = urn;
         this.establishmentNumber = establishmentNumber;
@@ -77,7 +77,7 @@ public class School {
      * 
      * @return the urn
      */
-    public String getUrn() {
+    public Long getUrn() {
         return urn;
     }
 
@@ -87,7 +87,7 @@ public class School {
      * @param urn
      *            the urn to set
      */
-    public void setUrn(final String urn) {
+    public void setUrn(final Long urn) {
         this.urn = urn;
     }
 

@@ -196,23 +196,25 @@ public class UserManagerTest {
         UserManager userManager = buildTestUserManager();
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
-        String validUserId = "533ee66842f639e95ce35e29";
+        String validLegacyUserId = "533ee66842f639e95ce35e29";
+        Long validUserId = 533L;
         String validDateString = sdf.format(new Date());
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, validUserId, validDateString);
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, validUserId.toString(), validDateString);
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
-        RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
+        RegisteredUser returnUser = new RegisteredUser(validLegacyUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
                 new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, 
                 EmailVerificationStatus.NOT_VERIFIED);
-
-        dummyDatabase.updateUserLastSeen(validUserId);
+        returnUser.setId(validUserId);
+       
+        dummyDatabase.updateUserLastSeen(returnUser);
         expectLastCall();
 
         expect(request.getCookies()).andReturn(cookieWithSessionInfo).anyTimes();
         replay(request);
 
-        expect(dummyDatabase.getById("533ee66842f639e95ce35e29")).andReturn(returnUser);
+        expect(dummyDatabase.getById(validUserId)).andReturn(returnUser);
         expect(dummyDatabase.getAuthenticationProvidersByUser(returnUser)).andReturn(
                 Arrays.asList(AuthenticationProvider.GOOGLE));
         replay(dummyQuestionDatabase);
@@ -329,7 +331,7 @@ public class UserManagerTest {
         String someProviderGeneratedLookupValue = "MYPROVIDERREF";
         String someProviderUniqueUserId = "USER-1";
 
-        String someSegueUserId = "533ee66842f639e95ce35e29";
+        Long someSegueUserId = 533L;
         String someSegueAnonymousUserId = "9284723987anonymous83924923";
 
         AnonymousUser au = new AnonymousUser();
@@ -395,13 +397,13 @@ public class UserManagerTest {
         // A main part of the test is to check the below call happens
         expect(
                 dummyDatabase.registerNewUserWithProvider(mappedUser, AuthenticationProvider.TEST,
-                        someProviderUniqueUserId)).andReturn(someSegueUserId).atLeastOnce();
+                        someProviderUniqueUserId)).andReturn(mappedUser).atLeastOnce();
 
-        mappedUser.setLegacyDbId(someSegueUserId);
+        mappedUser.setId(someSegueUserId);
 
         expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, someSegueUserId,
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, someSegueUserId.toString(),
                 validDateString);
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 

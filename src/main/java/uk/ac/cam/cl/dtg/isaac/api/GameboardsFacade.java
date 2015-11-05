@@ -291,7 +291,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 if (e.getValue() > 1) {
                     GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
 
-                    RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
+                    RegisteredUserDTO ownerUser = userManager.getUserDTOByLegacyId(liteGameboard.getOwnerUserId());
                     if (ownerUser != null) {
                         liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
                                 currentUser, userManager.convertToUserSummaryObject(ownerUser)));

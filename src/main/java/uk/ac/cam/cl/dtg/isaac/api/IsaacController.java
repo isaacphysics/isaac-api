@@ -715,7 +715,7 @@ public class IsaacController extends AbstractIsaacFacade {
         RegisteredUserDTO userOfInterestFull;
         try {
             user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            userOfInterestFull = userManager.getUserDTOByLegacyId(userIdOfInterest);
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {

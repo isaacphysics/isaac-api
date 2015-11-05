@@ -253,7 +253,7 @@ public class AssignmentManager {
     private void augmentAssignmentWithUserSummaryInfo(final AssignmentDTO assignment) throws SegueDatabaseException {
         RegisteredUserDTO userDTOById;
         try {
-            userDTOById = userManager.getUserDTOById(assignment.getOwnerUserId());
+            userDTOById = userManager.getUserDTOByLegacyId(assignment.getOwnerUserId());
             assignment.setAssignerSummary(userManager.convertToUserSummaryObject(userDTOById));
         } catch (NoUserException e) {
             // leave it as null

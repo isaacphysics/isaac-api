@@ -197,7 +197,7 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         // determine if this is intended to be an update or create operation.
-        if (userObjectFromClient.getLegacyDbId() != null) {
+        if (userObjectFromClient.getId() != null) {
             return this.updateUserObject(request, userObjectFromClient);
         } else {
             return this.createUserObjectAndLogIn(request, response, userObjectFromClient);
@@ -374,7 +374,7 @@ public class UsersFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
-            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+            RegisteredUserDTO userOfInterest = userManager.getUserDTOByLegacyId(userIdOfInterest);
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
@@ -509,7 +509,7 @@ public class UsersFacade extends AbstractSegueFacade {
             for (RegisteredUserDTO user : users) {
                 if (user.getSchoolOther() != null) {
                     School pseudoSchool = new School();
-                    pseudoSchool.setUrn("PS_" + user.getSchoolOther().hashCode());
+                    pseudoSchool.setUrn(user.getSchoolOther().hashCode() * -1L);
                     pseudoSchool.setName(user.getSchoolOther());
                     pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
                     schoolOthers.add(pseudoSchool);
@@ -543,7 +543,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * @return the updated user object.
      */
     private Response updateUserObject(final HttpServletRequest request, final RegisteredUser userObjectFromClient) {
-        Validate.notBlank(userObjectFromClient.getLegacyDbId());
+        Validate.notNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
         // security checks
@@ -551,7 +551,7 @@ public class UsersFacade extends AbstractSegueFacade {
             // check that the current user has permissions to change this users
             // details.
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
-            if (!currentlyLoggedInUser.getLegacyDbId().equals(userObjectFromClient.getLegacyDbId())
+            if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                     && currentlyLoggedInUser.getRole() != Role.ADMIN 
                     && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' user settings.")
@@ -561,7 +561,7 @@ public class UsersFacade extends AbstractSegueFacade {
             // check that any changes to protected fields being made are
             // allowed.
             RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
-                    .getLegacyDbId());
+                    .getId());
             
             
             if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
@@ -583,7 +583,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     || existingUserFromDb.getRole() != null
                     && !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
                 log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
-                        + userObjectFromClient.getEmail() + "[" + userObjectFromClient.getLegacyDbId() + "]" + " to "
+                        + userObjectFromClient.getEmail() + "[" + userObjectFromClient.getId() + "]" + " to "
                         + userObjectFromClient.getRole());
             }
             

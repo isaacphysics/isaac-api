@@ -163,7 +163,7 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
-            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOById(eb.getUserId()));
+            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOByLegacyId(eb.getUserId()));
 
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());

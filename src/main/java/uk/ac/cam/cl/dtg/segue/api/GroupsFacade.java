@@ -154,7 +154,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
+            RegisteredUserDTO userOfInterest = userManager.getUserDTOByLegacyId(userId);
 
             List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
             return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -350,7 +350,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            RegisteredUserDTO userToAdd = userManager.getUserDTOById(userId);
+            RegisteredUserDTO userToAdd = userManager.getUserDTOByLegacyId(userId);
 
             groupManager.addUserToGroup(groupBasedOnId, userToAdd);
 
@@ -398,7 +398,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not the owner of this group").toResponse();
             }
 
-            RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
+            RegisteredUserDTO userToRemove = userManager.getUserDTOByLegacyId(userId);
 
             groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
 

@@ -128,7 +128,7 @@ public class PgLogManager implements ILogManager {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn.prepareStatement("UPDATE logged_events SET user_id = ?, anonymous_user = TRUE"
-                    + "WHERE user_id = ?;");
+                    + " WHERE user_id = ?;");
 
             pst.setString(1, newUserId);
             pst.setString(2, oldUserId);

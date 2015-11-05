@@ -408,9 +408,9 @@ public class StatisticsManager {
      * @throws UnableToIndexSchoolsException
      *             - if the school list has not been indexed.
      */
-    public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
+    public List<RegisteredUserDTO> getUsersBySchoolId(final Long schoolId) throws ResourceNotFoundException,
             SegueDatabaseException, UnableToIndexSchoolsException {
-        Validate.notBlank(schoolId);
+        Validate.notNull(schoolId);
 
         List<RegisteredUserDTO> users = Lists.newArrayList();
 

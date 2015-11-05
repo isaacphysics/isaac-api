@@ -357,7 +357,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
+            RegisteredUserDTO bookedUser = userManager.getUserDTOByLegacyId(userId);
 
             ContentDTO event = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
                     eventId);

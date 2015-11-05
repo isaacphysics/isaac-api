@@ -59,15 +59,15 @@ public class PgUsers implements IUserDataManager {
     }
 
     @Override
-    public String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
+    public RegisteredUser registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
             final String providerUserId) throws SegueDatabaseException {
         // create the users local account.
         RegisteredUser localUser = this.createOrUpdateUser(user);
-        String localUserId = localUser.getLegacyDbId().toString();
 
         // link the provider account to the newly created account.
         this.linkAuthProviderToAccount(localUser, provider, providerUserId);
-        return localUserId;
+
+        return localUser;
     }
 
     @Override
@@ -128,7 +128,7 @@ public class PgUsers implements IUserDataManager {
                 results.next();                
             }
             
-            return getByNewId(results.getLong("user_id"));
+            return getById(results.getLong("user_id"));
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }    
@@ -184,7 +184,7 @@ public class PgUsers implements IUserDataManager {
     }
 
     @Override
-    public RegisteredUser getById(final String id) throws SegueDatabaseException {
+    public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
         // if the id is null then we won't find anyone so just return null.
         if (null == id) {
             return null;
@@ -209,13 +209,16 @@ public class PgUsers implements IUserDataManager {
     }
     
     /**
-     * @param id
-     * @return
+     * @param id the id of the user to find
+     * @return a user object or null if none found.
      * @throws SegueDatabaseException
      */
-    private RegisteredUser getByNewId(final Long id) throws SegueDatabaseException {
-        Validate.notNull(id);
-        // TODO This should eventually replace the old get_id
+    @Override
+    public RegisteredUser getById(final Long id) throws SegueDatabaseException {
+        if (null == id) {
+            return null;
+        }
+        
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement("Select * FROM users WHERE id = ?");
@@ -318,7 +321,7 @@ public class PgUsers implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<String> usersToLocate) throws SegueDatabaseException {
-        // Currently this uses the old mongo id for look ups.
+        //TODO: this uses the legacy id still
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             
@@ -379,7 +382,7 @@ public class PgUsers implements IUserDataManager {
     public RegisteredUser createOrUpdateUser(final RegisteredUser user) throws SegueDatabaseException {
 
         // determine if it is a create or update
-        RegisteredUser u = this.getById(user.getLegacyDbId());
+        RegisteredUser u = this.getById(user.getId());
         
         if (null == u) {
             // create a new one
@@ -393,9 +396,10 @@ public class PgUsers implements IUserDataManager {
     }
 
     @Override
-    public void deleteUserAccount(final String id) throws SegueDatabaseException {
-        RegisteredUser user = this.getById(id);
-        if (null == user) {
+    public void deleteUserAccount(final RegisteredUser userToDelete) throws SegueDatabaseException {
+
+        
+        if (null == userToDelete) {
             throw new SegueDatabaseException("Unable to locate the user requested to delete.");
         }
 
@@ -404,12 +408,12 @@ public class PgUsers implements IUserDataManager {
                 conn.setAutoCommit(false);
                 PreparedStatement deleteLinkedAccounts;
                 deleteLinkedAccounts = conn.prepareStatement("DELETE FROM linked_accounts WHERE user_id = ?");
-                deleteLinkedAccounts.setLong(1, user.getId());
+                deleteLinkedAccounts.setLong(1, userToDelete.getId());
                 deleteLinkedAccounts.execute();
                 
                 PreparedStatement deleteUserAccount;
-                deleteUserAccount = conn.prepareStatement("DELETE FROM users WHERE " + MASTER_ID + " = ?");
-                deleteUserAccount.setString(1, id);
+                deleteUserAccount = conn.prepareStatement("DELETE FROM users WHERE id = ?");
+                deleteUserAccount.setLong(1, userToDelete.getId());
                 deleteUserAccount.execute();
                 
                 conn.commit();
@@ -426,19 +430,19 @@ public class PgUsers implements IUserDataManager {
     }
 
     @Override
-    public void updateUserLastSeen(final String userId) throws SegueDatabaseException {
-        this.updateUserLastSeen(userId, new Date());
+    public void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException {
+        this.updateUserLastSeen(user, new Date());
     }
 
     @Override
-    public void updateUserLastSeen(final String userId, final Date date) throws SegueDatabaseException {
-        Validate.notBlank(userId);
+    public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
+        Validate.notNull(user);
         
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("UPDATE users SET last_seen = ? WHERE " + MASTER_ID + " = ?");
+            pst = conn.prepareStatement("UPDATE users SET last_seen = ? WHERE id = ?");
             pst.setTimestamp(1, new java.sql.Timestamp(date.getTime()));
-            pst.setString(2, userId);
+            pst.setLong(2, user.getId());
             pst.execute();
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -477,8 +481,7 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 6, userToCreate.getDateOfBirth());
             setValueHelper(pst, 7, userToCreate.getGender());
             setValueHelper(pst, 8, userToCreate.getRegistrationDate());
-            setValueHelper(pst, 9, userToCreate.getSchoolId() != null ? Integer.parseInt(userToCreate.getSchoolId())
-                    : null);
+            setValueHelper(pst, 9, userToCreate.getSchoolId());
             setValueHelper(pst, 10, userToCreate.getSchoolOther());
             setValueHelper(pst, 11, userToCreate.getLastUpdated());
             setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
@@ -516,7 +519,7 @@ public class PgUsers implements IUserDataManager {
      * @throws SegueDatabaseException
      */
     private RegisteredUser updateUser(final RegisteredUser userToCreate) throws SegueDatabaseException {
-        RegisteredUser existingUserRecord = this.getById(userToCreate.getLegacyDbId());
+        RegisteredUser existingUserRecord = this.getById(userToCreate.getId());
         if (null == existingUserRecord) {
             throw new SegueDatabaseException("The user you have tried to update does not exist.");
         }
@@ -541,8 +544,7 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 6, userToCreate.getDateOfBirth());
             setValueHelper(pst, 7, userToCreate.getGender());
             setValueHelper(pst, 8, userToCreate.getRegistrationDate());
-            setValueHelper(pst, 9, userToCreate.getSchoolId() != null ? Integer.parseInt(userToCreate.getSchoolId())
-                    : null);
+            setValueHelper(pst, 9, userToCreate.getSchoolId());
             setValueHelper(pst, 10, userToCreate.getSchoolOther());
             setValueHelper(pst, 11, userToCreate.getLastUpdated());
             setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
@@ -560,7 +562,7 @@ public class PgUsers implements IUserDataManager {
                 throw new SegueDatabaseException("Unable to save user.");
             }
 
-            return this.getById(existingUserRecord.getLegacyDbId());
+            return this.getById(existingUserRecord.getId());
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
@@ -594,7 +596,12 @@ public class PgUsers implements IUserDataManager {
         u.setDateOfBirth(results.getDate("date_of_birth"));
         u.setGender(results.getString("gender") != null ? Gender.valueOf(results.getString("gender")) : null);
         u.setRegistrationDate(results.getTimestamp("registration_date"));
-        u.setSchoolId(String.valueOf(results.getInt("school_id")));
+        
+        u.setSchoolId(results.getLong("school_id"));
+        if (results.wasNull()) {
+            u.setSchoolId(null);
+        }
+        
         u.setSchoolOther(results.getString("school_other"));
         u.setLastUpdated(results.getTimestamp("last_updated"));
         u.setLastSeen(results.getTimestamp("last_seen"));
@@ -685,6 +692,10 @@ public class PgUsers implements IUserDataManager {
         
         if (value instanceof Integer) {
             pst.setInt(index, (Integer) value);
+        }
+        
+        if (value instanceof Long) {
+            pst.setLong(index, (Long) value);
         }
         
         if (value instanceof Date) {

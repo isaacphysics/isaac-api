@@ -38,7 +38,7 @@ public class RegisteredUser extends AbstractSegueUser {
     private Date dateOfBirth;
     private Gender gender;
     private Date registrationDate;
-    private String schoolId;
+    private Long schoolId;
     private String schoolOther;
 
     private Integer defaultLevel;
@@ -100,7 +100,7 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("email") final String email, @JsonProperty("role") final Role role,
             @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
             @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("schoolId") final String schoolId, @JsonProperty("password") final String password,
+            @JsonProperty("schoolId") final Long schoolId, @JsonProperty("password") final String password,
             @JsonProperty("resetToken") final String resetToken, @JsonProperty("resetExpiry") final Date resetExpiry,
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
@@ -153,9 +153,11 @@ public class RegisteredUser extends AbstractSegueUser {
      * Gets the database id (sha form) for the user object.
      * 
      * @return database id as a string.
+     * @deprecated use getId
      */
     @JsonProperty("_id")
     @ObjectId
+    @Deprecated
     public String getLegacyDbId() {
         return databaseId;
     }
@@ -165,9 +167,11 @@ public class RegisteredUser extends AbstractSegueUser {
      * 
      * @param id
      *            the db id for the user.
+     * @deprecated use getId
      */
     @JsonProperty("_id")
     @ObjectId
+    @Deprecated
     public void setLegacyDbId(final String id) {
         this.databaseId = id;
     }
@@ -314,7 +318,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * 
      * @return the schoolId
      */
-    public final String getSchoolId() {
+    public final Long getSchoolId() {
         return schoolId;
     }
 
@@ -324,7 +328,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * @param schoolId
      *            the schoolId to set
      */
-    public final void setSchoolId(final String schoolId) {
+    public final void setSchoolId(final Long schoolId) {
         this.schoolId = schoolId;
     }
 

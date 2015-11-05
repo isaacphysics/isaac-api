@@ -115,9 +115,10 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
     }
 
     @Override
-    public void deleteUserAccount(final String id) throws SegueDatabaseException {
-        Validate.notBlank(id, "The id field must not be blank.");
-
+    public void deleteUserAccount(final RegisteredUser user) throws SegueDatabaseException {
+        Validate.notBlank(user.getLegacyDbId(), "The id field must not be blank.");
+        String id = user.getLegacyDbId();
+        
         JacksonDBCollection<RegisteredUser, String> userCollection = JacksonDBCollection.wrap(database.getDB()
                 .getCollection(USER_COLLECTION_NAME), RegisteredUser.class, String.class);
 
@@ -141,24 +142,23 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
     }
 
     @Override
-    public final String registerNewUserWithProvider(final RegisteredUser user, final AuthenticationProvider provider,
-            final String providerUserId) throws SegueDatabaseException {
+    public final RegisteredUser registerNewUserWithProvider(final RegisteredUser user,
+            final AuthenticationProvider provider, final String providerUserId) throws SegueDatabaseException {
         Validate.notNull(user);
         Validate.notNull(provider);
         Validate.notNull(providerUserId);
 
         // create the users local account.
         RegisteredUser localUser = this.createOrUpdateUser(user);
-        String localUserId = localUser.getLegacyDbId().toString();
 
         // link the provider account to the newly created account.
         this.linkAuthProviderToAccount(localUser, provider, providerUserId);
 
-        return localUserId;
+        return localUser;
     }
 
     @Override
-    public RegisteredUser getById(final String id) throws SegueDatabaseException {
+    public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
         if (null == id) {
             return null;
         }
@@ -426,7 +426,7 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
             return null;
         }
 
-        RegisteredUser registeredUser = this.getById(linkAccount.getLocalUserId());
+        RegisteredUser registeredUser = this.getByLegacyId(linkAccount.getLocalUserId());
 
         if (null == registeredUser) {
             log.info("Deleting linked accounts and trying to search again.");
@@ -526,7 +526,7 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
 
             LinkedAccount account = jc.findOne(existingLinkAccount);
 
-            if (account != null && this.getById(account.getLocalUserId()) == null) {
+            if (account != null && this.getByLegacyId(account.getLocalUserId()) == null) {
                 this.cleanupOrphanedLinkedAccounts(account.getLocalUserId());
             }
 
@@ -548,13 +548,15 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
     }
 
     @Override
-    public void updateUserLastSeen(final String userId) throws SegueDatabaseException {
-        this.updateUserLastSeen(userId, new Date());
+    public void updateUserLastSeen(final RegisteredUser user) throws SegueDatabaseException {
+        this.updateUserLastSeen(user, new Date());
     }
 
     @Override
-    public void updateUserLastSeen(final String userId, final Date date) throws SegueDatabaseException {
-        Validate.notBlank(userId);
+    public void updateUserLastSeen(final RegisteredUser user, final Date date) throws SegueDatabaseException {
+        Validate.notNull(user);
+        
+        String userId = user.getLegacyDbId();
         // Since we are attaching our own auto mapper we have to do MongoJack
         // configure on it.
         ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
@@ -610,7 +612,7 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
 
         // verify that the user does not exist
         try {
-            if (this.getById(userId) != null) {
+            if (this.getByLegacyId(userId) != null) {
                 log.error("Unable to clean up accounts as the user is still here.");
                 return;
             }
@@ -626,4 +628,8 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
         jc.remove(linkAccountToDeleteQuery);
     }
 
+    @Override
+    public RegisteredUser getById(final Long id) throws SegueDatabaseException {
+        throw new UnsupportedOperationException("Method not implemented yet.");
+    }
 }

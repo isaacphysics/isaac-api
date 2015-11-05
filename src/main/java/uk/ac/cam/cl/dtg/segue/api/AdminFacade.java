@@ -761,7 +761,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response findUsers(@Context final HttpServletRequest httpServletRequest,
-            @PathParam("user_id") final String userId) {
+            @PathParam("user_id") final Long userId) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -801,7 +801,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Path("/users/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteUserAccount(@Context final HttpServletRequest httpServletRequest,
-            @PathParam("user_id") final String userId) {
+            @PathParam("user_id") final Long userId) {
         try {
             if (!isUserAnAdmin(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
@@ -809,15 +809,17 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (currentlyLoggedInUser.getLegacyDbId().equals(userId)) {
+            if (currentlyLoggedInUser.getId().equals(userId)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are not allowed to delete yourself.")
                         .toResponse();
             }
 
-            this.userManager.deleteUserAccount(userId);
+            RegisteredUserDTO userToDelete = this.userManager.getUserDTOById(userId);
+            
+            this.userManager.deleteUserAccount(userToDelete);
             
             getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, DELETE_USER_ACCOUNT,
-                    ImmutableMap.of("userIdDeleted", userId));
+                    ImmutableMap.of("userIdDeleted", userToDelete.getId()));
             
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
                     + userId);
@@ -855,8 +857,8 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
-
-            return Response.ok(statsManager.getUsersBySchoolId(schoolId)).build();
+            Long schoolURN = Long.parseLong(schoolId);
+            return Response.ok(statsManager.getUsersBySchoolId(schoolURN)).build();
         } catch (UnableToIndexSchoolsException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable To Index Schools Exception in admin facade", e).toResponse();
@@ -867,6 +869,8 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             log.error("Error while trying to list users belonging to a school.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The school id provided is invalid.").toResponse();
         }
     }
 

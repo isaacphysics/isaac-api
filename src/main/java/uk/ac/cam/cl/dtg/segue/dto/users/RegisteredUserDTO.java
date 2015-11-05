@@ -45,7 +45,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Gender gender;
     private Date registrationDate;
 
-    private String schoolId;
+    private Long schoolId;
     private String schoolOther;
 
     private Integer defaultLevel;
@@ -87,7 +87,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
             @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
             @JsonProperty("dateOfBirth") final Date dateOfBirth,
             @JsonProperty("gender") final Gender gender, @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("schoolId") final String schoolId) {
+            @JsonProperty("schoolId") final Long schoolId) {
         this.databaseId = databaseId;
         this.familyName = familyName;
         this.givenName = givenName;
@@ -123,16 +123,16 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     public void setId(final Long id) {
         this.id = id;
     }
-    
-
 
     /**
      * Gets the database id for the user object.
      * 
      * @return database id as a string.
+     * @deprecated use getId
      */
     @JsonProperty("_id")
     @ObjectId
+    @Deprecated
     public String getLegacyDbId() {
         return databaseId;
     }
@@ -142,9 +142,11 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * 
      * @param id
      *            the db id for the user.
+     * @deprecated use getId
      */
     @JsonProperty("_id")
     @ObjectId
+    @Deprecated
     public void setLegacyDbId(final String id) {
         this.databaseId = id;
     }
@@ -301,7 +303,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * 
      * @return the schoolId
      */
-    public String getSchoolId() {
+    public Long getSchoolId() {
         return schoolId;
     }
 
@@ -311,7 +313,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param schoolId
      *            the schoolId to set
      */
-    public void setSchoolId(final String schoolId) {
+    public void setSchoolId(final Long schoolId) {
         this.schoolId = schoolId;
     }
 
