@@ -1,6 +1,6 @@
 -- Table: users
 
--- DROP TABLE users;
+DROP TABLE users CASCADE;
 
 CREATE TABLE users
 (
@@ -37,7 +37,7 @@ ALTER TABLE users
 
 -- Table: linked_accounts
 
--- DROP TABLE linked_accounts;
+DROP TABLE linked_accounts;
 
 CREATE TABLE linked_accounts
 (
@@ -58,3 +58,55 @@ ALTER TABLE linked_accounts
 COMMENT ON COLUMN linked_accounts.user_id IS 'This is the postgres foreign key for the users table.';
 COMMENT ON COLUMN linked_accounts.provider_user_id IS 'user id from the remote service';
 
+-- Table: logged_events
+
+DROP TABLE logged_events;
+
+CREATE TABLE logged_events
+(
+  id serial NOT NULL,
+  user_id character varying(100) NOT NULL,
+  anonymous_user boolean NOT NULL,
+  event_type character varying(255),
+  event_details_type text,
+  event_details jsonb,
+  ip_address inet,
+  "timestamp" timestamp without time zone,
+  CONSTRAINT "id pkey" PRIMARY KEY (id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE logged_events
+  OWNER TO rutherford;
+  
+-- Table: user_notifications
+
+DROP TABLE user_notifications;
+
+CREATE TABLE user_notifications
+(
+  user_id integer NOT NULL,
+  notification_id text NOT NULL,
+  status text,
+  created timestamp without time zone NOT NULL,
+  CONSTRAINT notification_pkey PRIMARY KEY (user_id, notification_id),
+  CONSTRAINT "user_id fkey" FOREIGN KEY (user_id)
+      REFERENCES users (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE user_notifications
+  OWNER TO rutherford;
+
+-- Index: "fki_user_id fkey"
+
+-- DROP INDEX "fki_user_id fkey";
+
+CREATE INDEX "fki_user_id fkey"
+  ON user_notifications
+  USING btree
+  (user_id);
+ 
