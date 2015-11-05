@@ -211,9 +211,9 @@ public class StatisticsManager {
             }
 
             if (user.getLastSeen() != null) {
-                lastSeenMap.put(user.getLegacyDbId(), user.getLastSeen());
+                lastSeenMap.put(user.getId().toString(), user.getLastSeen());
             } else if (user.getRegistrationDate() != null) {
-                lastSeenMap.put(user.getLegacyDbId(), user.getRegistrationDate());
+                lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
             }
 
         }
@@ -445,9 +445,9 @@ public class StatisticsManager {
             
             for (RegisteredUserDTO user : users) {
                 if (user.getLastSeen() != null) {
-                    lastSeenMap.put(user.getLegacyDbId(), user.getLastSeen());
+                    lastSeenMap.put(user.getId().toString(), user.getLastSeen());
                 } else if (user.getRegistrationDate() != null) {
-                    lastSeenMap.put(user.getLegacyDbId(), user.getRegistrationDate());
+                    lastSeenMap.put(user.getId().toString(), user.getRegistrationDate());
                 }
             }
             
@@ -626,7 +626,7 @@ public class StatisticsManager {
         Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
 
         for (RegisteredUserDTO user : users) {
-            Date eventDate = lastSeenUserMap.get(user.getLegacyDbId());
+            Date eventDate = lastSeenUserMap.get(user.getId());
             Calendar validInclusionTime = Calendar.getInstance();
             validInclusionTime.setTime(new Date());
             validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));
