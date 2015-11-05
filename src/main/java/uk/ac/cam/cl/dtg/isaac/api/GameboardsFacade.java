@@ -278,7 +278,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
 
-            if (!userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR))) {
+            if (!userManager.checkUserRole(request,
+                    Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR, Role.EVENT_MANAGER))) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 

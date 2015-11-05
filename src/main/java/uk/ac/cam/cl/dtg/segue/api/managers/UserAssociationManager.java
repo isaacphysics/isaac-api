@@ -280,8 +280,9 @@ public class UserAssociationManager {
      * @return true if yes false if no.
      */
     public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
-        return currentUser.getLegacyDbId().equals(userRequested.getDbId())
-                || this.associationDatabase.hasValidAssociation(currentUser.getLegacyDbId(), userRequested.getDbId())
+        return currentUser.getLegacyDbId().equals(userRequested.getLegacyDbId())
+                || this.associationDatabase.hasValidAssociation(currentUser.getLegacyDbId(),
+                        userRequested.getLegacyDbId())
                 || Role.ADMIN.equals(currentUser.getRole());
     }
 }

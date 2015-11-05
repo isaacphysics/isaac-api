@@ -64,7 +64,7 @@ import com.google.inject.Inject;
 
 /**
  * StatisticsManager.
- *
+ * TODO this file is a mess... it needs refactoring.
  */
 public class StatisticsManager {
     private UserManager userManager;

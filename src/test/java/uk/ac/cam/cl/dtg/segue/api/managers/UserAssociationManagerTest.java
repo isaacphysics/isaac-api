@@ -283,7 +283,7 @@ public class UserAssociationManagerTest {
 		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
 
 		expect(someRegisteredUserGrantingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
-		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
 		
 		replay(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
 		
@@ -312,7 +312,7 @@ public class UserAssociationManagerTest {
 		
 		expect(someUserRequestingAccess.getRole()).andReturn(Role.ADMIN).anyTimes();
 		
-		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
 		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
 		
@@ -341,7 +341,7 @@ public class UserAssociationManagerTest {
 		
 		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
 		
-		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
 		expect(
 				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
@@ -373,7 +373,7 @@ public class UserAssociationManagerTest {
 		
 		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
 		
-		expect(someRegisteredUserGrantingAccessSummary.getDbId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
 		
 		expect(
 				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
