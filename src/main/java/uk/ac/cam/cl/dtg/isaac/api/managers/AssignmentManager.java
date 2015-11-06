@@ -90,7 +90,7 @@ public class AssignmentManager {
         for (AssignmentDTO assignment : assignments) {
             augmentAssignmentWithUserSummaryInfo(assignment);
         }
-        
+
         return assignments;
     }
 
@@ -125,7 +125,7 @@ public class AssignmentManager {
 
         if (assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(newAssignment.getGameboardId(),
                 newAssignment.getGroupId()).size() != 0) {
-            log.error(String.format("Duplicated Assignment Exception - cannot assign the same work %s to a group %s", 
+            log.error(String.format("Duplicated Assignment Exception - cannot assign the same work %s to a group %s",
                     newAssignment.getGameboardId(), newAssignment.getGroupId()));
             throw new DuplicateAssignmentException("You cannot assign the same work to a group more than once.");
         }
@@ -164,7 +164,8 @@ public class AssignmentManager {
             throws SegueDatabaseException {
         Validate.notNull(user);
         Validate.notNull(group);
-        return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
+        return this.assignmentPersistenceManager
+                .getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
     }
 
     /**
@@ -232,7 +233,8 @@ public class AssignmentManager {
                     groups.add(groupManager.getGroupById(assignment.getGroupId()));
                 } catch (ResourceNotFoundException e) {
                     // skip group as it no longer exists.
-                    log.warn(String.format("Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
+                    log.warn(String.format(
+                            "Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
                             assignment.getGroupId(), assignment.getId()));
                 }
             }
@@ -240,7 +242,7 @@ public class AssignmentManager {
 
         return groups;
     }
-    
+
     /**
      * Utility method to augmentAssignmentDTO with user summary object.
      * 
