@@ -335,6 +335,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
             @PathParam("assignment_id") final String assignmentId) {
         try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "This service is only available for staff users at the moment.").toResponse();
+            }
+        } catch (NoUserLoggedInException e1) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+        
+        try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             
             AssignmentDTO assignment = this.assignmentManager.getAssignmentById(assignmentId);
@@ -343,7 +352,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId())
-                    && !super.isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
