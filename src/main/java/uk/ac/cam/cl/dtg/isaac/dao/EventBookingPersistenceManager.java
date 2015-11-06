@@ -182,7 +182,7 @@ public class EventBookingPersistenceManager {
     /**
      * @param eb
      *            - raw booking do
-     * @return event booking
+     * @return event booking or null if it no longer exists.
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
@@ -190,6 +190,13 @@ public class EventBookingPersistenceManager {
         try {
             ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
                     eb.getEventId());
+            
+            if (null == c) {
+                // The event this booking relates to has disappeared so treat it as though it never existed.
+                log.info(String.format("The event with id %s can no longer be found skipping...", eb.getEventId()));
+                return null;
+            }
+            
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(eb, (IsaacEventPageDTO) c);
             } else {
@@ -212,7 +219,11 @@ public class EventBookingPersistenceManager {
         List<EventBookingDTO> result = Lists.newArrayList();
 
         for (EventBooking e : toConvert) {
-            result.add(convertToDTO(e));
+            EventBookingDTO augmentedBooking = convertToDTO(e);
+            
+            if (augmentedBooking != null) {
+                result.add(augmentedBooking);
+            }
         }
 
         return result;
