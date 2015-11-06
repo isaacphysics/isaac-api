@@ -133,12 +133,9 @@ public class PgLogManager implements ILogManager {
             pst.setString(1, newUserId);
             pst.setString(2, oldUserId);
 
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException(String.format("Unable to transfer log events from (%s) to (%s)",
-                        oldUserId, newUserId));
-            }
+            pst.executeUpdate();
 
-        } catch (SQLException | SegueDatabaseException e) {
+        } catch (SQLException e) {
             log.error("Unable to transfer log events", e);
         }
     }
@@ -386,7 +383,7 @@ public class PgLogManager implements ILogManager {
      *            -
      * @throws JsonProcessingException
      *             - if we are unable to serialize the eventDetails as a string.
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException - if we cannot persist the event in the database.
      */
     private void persistLogEvent(final String userId, final String anonymousUserId, final String eventType,
             final Object eventDetails, final String ipAddress) throws JsonProcessingException, SegueDatabaseException {

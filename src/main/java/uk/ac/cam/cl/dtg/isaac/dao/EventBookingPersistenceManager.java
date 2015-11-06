@@ -193,7 +193,7 @@ public class EventBookingPersistenceManager {
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(eb, (IsaacEventPageDTO) c);
             } else {
-                log.error("Content object is not an event page.");
+                log.error(String.format("Content object (%s) is not an event page.", c));
                 throw new SegueDatabaseException("Content object is not an event page.");
             }
         } catch (ContentManagerException e) {

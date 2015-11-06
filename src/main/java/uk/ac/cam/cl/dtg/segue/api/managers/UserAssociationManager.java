@@ -97,7 +97,8 @@ public class UserAssociationManager {
         String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=", "")
                 .substring(0, tokenLength).toUpperCase().replace("0", "ZR").replace("O", "QR");
 
-        AssociationToken associationToken = new AssociationToken(token, registeredUser.getLegacyDbId(), associatedGroupId);
+        AssociationToken associationToken = new AssociationToken(token, registeredUser.getLegacyDbId(),
+                associatedGroupId);
 
         return associationDatabase.saveAssociationToken(associationToken);
     }

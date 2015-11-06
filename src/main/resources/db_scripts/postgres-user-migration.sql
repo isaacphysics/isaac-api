@@ -1,6 +1,6 @@
 -- Table: users
 
-DROP TABLE users CASCADE;
+-- DROP TABLE users CASCADE;
 
 CREATE TABLE users
 (
@@ -37,7 +37,7 @@ ALTER TABLE users
 
 -- Table: linked_accounts
 
-DROP TABLE linked_accounts;
+-- DROP TABLE linked_accounts;
 
 CREATE TABLE linked_accounts
 (
@@ -60,7 +60,7 @@ COMMENT ON COLUMN linked_accounts.provider_user_id IS 'user id from the remote s
 
 -- Table: logged_events
 
-DROP TABLE logged_events;
+-- DROP TABLE logged_events;
 
 CREATE TABLE logged_events
 (
