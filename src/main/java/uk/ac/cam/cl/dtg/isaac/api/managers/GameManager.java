@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -590,7 +591,60 @@ public class GameManager {
 
         return result;
     }
+    
+    /**
+     * @param users the users we are interested in
+     * @param gameboard the gameboard / assignment we are interested in.
+     * @return Map {userId: [{questionPageId : [questionId1Result, questionId2Result]}]
+     * @throws SegueDatabaseException 
+     * @throws ContentManagerException 
+     */
+    public Map<RegisteredUserDTO, Map<String, Integer>> getDetailedGameProgressData(
+            final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
+            ContentManagerException {      
+        Validate.notNull(users);
+        Validate.notNull(gameboard);
 
+        Map<RegisteredUserDTO, Map<String, Integer>> results = Maps.newHashMap();
+        
+        for (RegisteredUserDTO user : users) {
+            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = userManager
+                    .getQuestionAttemptsByUser(user);
+            
+            // questionPageId --> list of ints, in order of the questions on the page 1 is success, 0 is fail 
+            // null is unanswered.
+            Map<String, Integer> questionResultMap = Maps.newHashMap(); 
+            for (GameboardItem questionPage : gameboard.getQuestions()) {                
+
+                for (QuestionDTO question : this.getAllMarkableQuestionParts(questionPage.getId())) {
+                    Map<String, List<QuestionValidationResponse>> questionPageAttempts = questionAttemptsBySession.get(
+                            questionPage.getId());
+                    if (null == questionPageAttempts) {
+                        questionResultMap.put(question.getId(), null);
+                        continue;
+                    }
+                    
+                    List<QuestionValidationResponse> listOfAttempts = questionPageAttempts.get(question.getId());
+                 
+                    if (hasCorrectAnsweredCorrectly(listOfAttempts) == null) {
+                        questionResultMap.put(question.getId(), null);
+                    } else if (hasCorrectAnsweredCorrectly(listOfAttempts)) {
+                        questionResultMap.put(question.getId(), 1);
+                    } else {
+                        questionResultMap.put(question.getId(), 0);
+                    }
+                    
+                }
+            }
+            
+            results.put(user, questionResultMap);
+        }
+        
+        return results;
+    }
+    
+    
+    
     /**
      * Find all wildcards.
      * 
@@ -623,6 +677,37 @@ public class GameManager {
 
         return result;
     }
+    
+    /**
+     * Get all questions in the question page: depends on each question.
+     * 
+     * @param questionPageId - results depend on each question having an id prefixed with the question page id.
+     * @return collection of markable question parts (questions).
+     * @throws ContentManagerException if there is a problem with the content requested.
+     */
+    public Collection<QuestionDTO> getAllMarkableQuestionParts(final String questionPageId)
+            throws ContentManagerException {
+        Validate.notBlank(questionPageId);
+
+        // go through each question in the question page
+        ResultsWrapper<ContentDTO> listOfQuestions = versionManager.getContentManager().getByIdPrefix(
+                versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
+        
+        List<QuestionDTO> results = Lists.newArrayList();
+        for (ContentDTO possibleQuestion : listOfQuestions.getResults()) {
+            
+            if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
+                // we are not interested if this is not a question or if it is a quick question.
+                continue;
+            }
+            QuestionDTO question = (QuestionDTO) possibleQuestion;
+            results.add(question);
+        }
+        
+        return results;
+    }
+    
+    
 
     /**
      * Determines whether a given game board is already in a users my boards list.
@@ -733,6 +818,7 @@ public class GameManager {
         return gameboardReadyQuestions;
     }
 
+
     /**
      * Gets you the next set of questions that match the given filter.
      * 
@@ -811,19 +897,13 @@ public class GameManager {
             }
 
             // go through each question in the question page
-            ResultsWrapper<ContentDTO> listOfQuestions = versionManager.getContentManager().getByIdPrefix(
-                    versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
+            Collection<QuestionDTO> listOfQuestions = getAllMarkableQuestionParts(questionPageId);
 
             // go through all of the questions that make up this gameboard item.
             int questionPartsCorrect = 0;
             int questionPartsIncorrect = 0;
             int questionPartsNotAttempted = 0;
-            for (ContentDTO contentDTO : listOfQuestions.getResults()) {
-                if (!(contentDTO instanceof QuestionDTO) || contentDTO instanceof IsaacQuickQuestionDTO) {
-                    // we are not interested if this is not a question or if it is a quick question.
-                    continue;
-                }
-
+            for (ContentDTO contentDTO : listOfQuestions) {
                 // get the attempts for this particular question.
                 List<QuestionValidationResponse> questionAttempts = questionAttemptsFromUser.get(questionPageId).get(
                         contentDTO.getId());
@@ -875,7 +955,29 @@ public class GameManager {
             return GameboardItemState.NOT_ATTEMPTED;
         }
     }
+    
+    /**
+     * @param questionId
+     * @param questionAnsweredMap
+     * @return
+     */
+    private Boolean hasCorrectAnsweredCorrectly(final List<QuestionValidationResponse> questionAttempts) {
+        if (null == questionAttempts || questionAttempts.size() == 0) {
+            return null;
+        }
 
+        // Go through the attempts in reverse chronological order
+        // for this question to determine if there is a
+        // correct answer somewhere.
+        for (int i = questionAttempts.size() - 1; i >= 0; i--) {
+            if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     /**
      * Generate a random integer value to represent the position of the wildcard tile in the gameboard.
      * 
