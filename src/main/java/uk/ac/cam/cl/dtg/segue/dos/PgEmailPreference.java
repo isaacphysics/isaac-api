@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
+
 
 /**
  * An email preference implemented with postgres.
@@ -24,31 +26,24 @@ package uk.ac.cam.cl.dtg.segue.dos;
  */
 public class PgEmailPreference implements IEmailPreference {
 
-	private final String userId;
-	private final EmailPreference emailPreference;
+	private final long userId;
+	private final EmailType emailType;
 	private boolean emailPreferenceStatus;
 	
 	
 	/**
 	 * An email preference implemented with postgres.
 	 * @param userId - the id of the user in the database
-	 * @param emailPreference - the preference type
+	 * @param emailType - the preference type
 	 * @param emailPreferenceStatus - the status of the preference
 	 */
-	public PgEmailPreference(final String userId, 
-					final EmailPreference emailPreference, final boolean emailPreferenceStatus) {
+	public PgEmailPreference(final long userId, 
+					final EmailType emailType, final boolean emailPreferenceStatus) {
 		this.userId = userId;
-		this.emailPreference = emailPreference;
+		this.emailType = emailType;
 		this.emailPreferenceStatus = emailPreferenceStatus;
 	}
 	
-	/**
-	 * @return the emailPreferenceStatus
-	 */
-	public boolean isEmailPreferenceStatus() {
-		return emailPreferenceStatus;
-	}
-
 
 	/**
 	 * @param emailPreferenceStatus the emailPreferenceStatus to set
@@ -62,7 +57,7 @@ public class PgEmailPreference implements IEmailPreference {
 	 * @return the userId
 	 */
 	@Override
-	public String getUserId() {
+	public long getUserId() {
 		return userId;
 	}
 
@@ -71,8 +66,8 @@ public class PgEmailPreference implements IEmailPreference {
 	 * @return the emailPreference
 	 */
 	@Override
-	public EmailPreference getEmailPreference() {
-		return emailPreference;
+	public EmailType getEmailType() {
+		return emailType;
 	}
 
 	@Override

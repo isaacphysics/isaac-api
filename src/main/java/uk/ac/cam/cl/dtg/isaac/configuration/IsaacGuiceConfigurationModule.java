@@ -41,6 +41,9 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.AbstractModule;
@@ -61,6 +64,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
     private static AssignmentPersistenceManager assignmentPersistenceManager = null;
+    
+    private static AbstractEmailPreferenceManager abstractEmailPreferenceManager = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -118,6 +123,20 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         }
 
         return segueApi;
+    }
+    
+    /**
+     * @param database - the database needed to support the manager
+     * @return singelton AbstractEmailPreferenceManager object.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static AbstractEmailPreferenceManager getAbstractEmailPreferenceManager(final PostgresSqlDb database) {
+    	if (null == abstractEmailPreferenceManager) {
+    		abstractEmailPreferenceManager = new PgEmailPreferenceManager(database);
+    	}
+    	return abstractEmailPreferenceManager;
     }
 
     /**

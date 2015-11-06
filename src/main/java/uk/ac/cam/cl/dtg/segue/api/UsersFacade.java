@@ -72,9 +72,12 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
@@ -100,6 +103,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
+    private final AbstractEmailPreferenceManager emailPreferenceManager;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -116,16 +120,19 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can check permissions..
      * @param misuseMonitor
      *            - so we can check for misuse
+     * @param emailPreferenceManager
+     * 			  - so we can provide email preferences
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
             final StatisticsManager statsManager, final UserAssociationManager userAssociationManager, 
-            final IMisuseMonitor misuseMonitor) {
+            final IMisuseMonitor misuseMonitor, final AbstractEmailPreferenceManager emailPreferenceManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
+        this.emailPreferenceManager = emailPreferenceManager;
     }
     
     /**
@@ -180,28 +187,34 @@ public class UsersFacade extends AbstractSegueFacade {
     @GZIP
     public Response createOrUpdateUserSettings(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, final String userObjectString) {
+    	
+    	UserSettings userSettingsObjectFromClient;
+    	try {
+    		ObjectMapper tmpObjectMapper = new ObjectMapper();
+    		tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    		userSettingsObjectFromClient = tmpObjectMapper.readValue(userObjectString, UserSettings.class);
+    		
+    		if (null == userSettingsObjectFromClient) {
+    			return new SegueErrorResponse(Status.BAD_REQUEST,  "No user settings provided.").toResponse();
+    		}
+    	} catch (IOException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to parse the user object you provided.", e)
+            .toResponse();
+    	}
+    	
+    	RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
+    	
+    	// Update email preferences within the same request
+    	Map<String, Boolean> emailPreferences = userSettingsObjectFromClient.getEmailPreferences();  
+    	List<IEmailPreference> userEmailPreferences = 
+				emailPreferenceManager.mapToEmailPreferenceList(registeredUser.getId(), emailPreferences);
+    	
+    	if (null != registeredUser) {
+    		return this.updateUserObject(request, registeredUser, userEmailPreferences);
+    	} else {
+    		return this.createUserObjectAndLogIn(request, response, registeredUser, userEmailPreferences);
+		}
 
-        RegisteredUser userObjectFromClient;
-        try {
-            ObjectMapper tempObjectMapper = new ObjectMapper();
-            tempObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            userObjectFromClient = tempObjectMapper.readValue(userObjectString, RegisteredUser.class);
-
-            if (null == userObjectFromClient) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "No user settings provided.").toResponse();
-            }
-        } catch (IOException e1) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to parse the user object you provided.", e1)
-                    .toResponse();
-        }
-
-        // determine if this is intended to be an update or create operation.
-        if (userObjectFromClient.getId() != null) {
-            return this.updateUserObject(request, userObjectFromClient);
-        } else {
-            return this.createUserObjectAndLogIn(request, response, userObjectFromClient);
-        }
     }
 
     /**
@@ -530,6 +543,40 @@ public class UsersFacade extends AbstractSegueFacade {
                     .toResponse();
         }
     }
+    
+    /**
+     * Get a Set of all schools reported by users in the school other field.
+     * 
+     * @param request
+     *            for caching purposes.
+     * @param httpServletRequest
+     * 			  to get the user object
+     * @return list of strings.
+     */
+    @GET
+    @Path("users/email_preferences")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUserEmailPreferences(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest) {
+
+    	try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+			List<IEmailPreference> userEmailPreferences = 
+									emailPreferenceManager.getEmailPreferences(currentUser.getId());
+			
+			Map<String, Boolean> emailPreferences = 
+									emailPreferenceManager.mapToEmailPreferencePair(userEmailPreferences);
+			
+			return Response.ok(emailPreferences).build();
+		} catch (SegueDatabaseException e) {
+			log.warn("Segue Database Exception");
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
+            					"Error while getting email preferences").toResponse();
+		} catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+		}
+    }
 
     /**
      * Update a user object.
@@ -540,9 +587,12 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so that we can identify the user
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
+     * @param emailPreferences
+     * 			  - the email preferences for this user
      * @return the updated user object.
      */
-    private Response updateUserObject(final HttpServletRequest request, final RegisteredUser userObjectFromClient) {
+    private Response updateUserObject(final HttpServletRequest request, final RegisteredUser 
+    					userObjectFromClient, final List<IEmailPreference> emailPreferences) {
         Validate.notNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
@@ -588,6 +638,9 @@ public class UsersFacade extends AbstractSegueFacade {
             }
             
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
+            
+            //Now update the email preferences
+			emailPreferenceManager.saveEmailPreferences(userObjectFromClient.getId(), emailPreferences);
 
             return Response.ok(updatedUser).build();
         } catch (NoUserLoggedInException e) {
@@ -622,13 +675,19 @@ public class UsersFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
+     * @param emailPreferences
+     * 			  - the new email preferences for this user
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser userObjectFromClient) {
+            final RegisteredUser userObjectFromClient, final List<IEmailPreference> emailPreferences) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient);
+            
+            //Now update the email preferences
+			emailPreferenceManager.saveEmailPreferences(savedUser.getId(), emailPreferences);
+            
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")

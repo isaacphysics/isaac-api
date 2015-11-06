@@ -23,8 +23,8 @@ CREATE TYPE user_email_preference AS ENUM ('NEWS_AND_UPDATES', 'EVENTS', 'ASSIGN
 --
 
 CREATE TABLE user_email_preferences (
-    user_id text NOT NULL,
-    email_preference integer
+    user_id serial NOT NULL,
+    email_preference integer,
     email_preference_status bool
 );
 

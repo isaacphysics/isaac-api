@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos;
 
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
+
 
 /**
  * Interface class for a user email preference.
@@ -24,56 +26,14 @@ package uk.ac.cam.cl.dtg.segue.dos;
 public interface IEmailPreference {
 	
 	/**
-	 * Enumerator for email preferences.
-	 */
-	public enum EmailPreference {
-		NEWS_AND_UPDATES,
-		EVENTS,
-		ASSIGNMENTS;
-
-		/**
-		 * @param emailPreference - the representation of the email preference type
-		 * @return EmailPreference - the  corresponding preference
-		 */
-		public static EmailPreference mapIntToPreference(final int emailPreference) {
-			switch (emailPreference) {
-				case 0:
-					return NEWS_AND_UPDATES;
-				case 1:
-					return EVENTS;
-				case 2:
-					return ASSIGNMENTS;
-				default:
-					return null;
-			}
-		}
-
-		/**
-		 * @return the corresponding int representation of the email preference
-		 */
-		public int mapPreferenceToInt() {
-			switch (this) {
-				case NEWS_AND_UPDATES:
-					return 0;
-				case EVENTS:
-					return 1;
-				case ASSIGNMENTS:
-					return 2;
-				default:
-					return -1;
-			}
-		}
-	}
-	
-	/**
 	 * @return the user's id
 	 */
-	String getUserId();
+	long getUserId();
 	
 	/**
 	 * @return the type of email preference
 	 */
-	EmailPreference getEmailPreference();
+	EmailType getEmailType();
 	
 	/**
 	 * @return the status of the email preference

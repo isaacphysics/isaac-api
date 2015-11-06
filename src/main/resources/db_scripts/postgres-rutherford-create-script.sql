@@ -282,7 +282,7 @@ ALTER TABLE ONLY linked_accounts
 --
 
 CREATE TABLE user_email_preferences (
-    user_id text NOT NULL,
+    user_id serial NOT NULL,
     email_preference integer,
     email_preference_status bool
 );

@@ -19,43 +19,55 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference.EmailPreference;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 /**
- * Represents a postgres specific implementation of the UserEmailPreferences DAO interface.
+ * Represents a postgres specific implementation of the AbstractEmailManager DAO interface.
  *
  * @author Alistair Stead
  *
  */
-public class PgEmailPreferences implements IEmailPreferences {
+public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
     private final PostgresSqlDb database;
+    private static final Logger log = LoggerFactory.getLogger(PgEmailPreferenceManager.class);
     
     /**
      * Postgres email preferences.
      * @param database - the postgres database
      */
     @Inject
-    public PgEmailPreferences(final PostgresSqlDb database) {
+    public PgEmailPreferenceManager(final PostgresSqlDb database) {
     	this.database = database;
     }
     
 	@Override
-	public void saveEmailPreference(final String userId, final EmailPreference emailPreference, 
-						final boolean emailPreferenceStatus) throws SegueDatabaseException {
-		PgEmailPreference preference = new PgEmailPreference(userId, emailPreference, emailPreferenceStatus);
-		if (null == getEmailPreference(userId, emailPreference)) {
-			updateEmailPreferenceRecord(preference);
-		} else {
-			insertNewEmailPreferenceRecord(preference);
+	public void saveEmailPreferences(final long userId, final List<IEmailPreference> 
+					emailPreferences) throws SegueDatabaseException {
+		
+		for (IEmailPreference preference : emailPreferences) {
+			Validate.isTrue(preference.getEmailType().isValidEmailPreference());
+			
+			if (null != getEmailPreference(userId, preference.getEmailType())) {
+				updateEmailPreferenceRecord(preference);
+			} else {
+				insertNewEmailPreferenceRecord(preference);
+			}
 		}
 	}
 	
@@ -66,18 +78,18 @@ public class PgEmailPreferences implements IEmailPreferences {
      * @throws SegueDatabaseException
      */
     @Override
-    public List<IEmailPreference> getEmailPreferences(final String userId) throws SegueDatabaseException {
+    public List<IEmailPreference> getEmailPreferences(final long userId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM user_email_preferences WHERE user_id = ? ORDER BY created ASC");
-            pst.setString(1, userId);
+            pst = conn.prepareStatement("Select * FROM user_email_preferences WHERE user_id = ?");
+            pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
             List<IEmailPreference> returnResult = Lists.newArrayList();
             while (results.next()) {
             	int emailPreference = results.getInt("email_preference");
             	boolean emailPreferenceStatus = results.getBoolean("email_preference_status");
-                returnResult.add(new PgEmailPreference(userId, EmailPreference.mapIntToPreference(emailPreference),
+                returnResult.add(new PgEmailPreference(userId, EmailType.mapIntToPreference(emailPreference),
 																								emailPreferenceStatus));
             }
             return returnResult;
@@ -90,7 +102,7 @@ public class PgEmailPreferences implements IEmailPreferences {
 
 	@Override
 	public Map<String, List<IEmailPreference>> getEmailPreferences(
-					final List<String> userIds) throws SegueDatabaseException {
+					final List<Long> userIds) throws SegueDatabaseException {
 		
 		HashMap<String, List<IEmailPreference>> returnMap = new HashMap<String, List<IEmailPreference>>();
         try (Connection conn = database.getDatabaseConnection()) {
@@ -102,7 +114,7 @@ public class PgEmailPreferences implements IEmailPreferences {
             ResultSet results = pst.executeQuery();
 
             while (results.next()) {
-            	String userId = results.getString("user_id");
+            	long userId = results.getLong("user_id");
             	int emailPreference = results.getInt("email_preference");
             	boolean emailPreferenceStatus = results.getBoolean("email_preference_status");
         		List<IEmailPreference> values = null;
@@ -111,8 +123,9 @@ public class PgEmailPreferences implements IEmailPreferences {
         		} else {
         			values = Lists.newArrayList();
         		}
+
         		values.add(new PgEmailPreference(userId, 
-        						EmailPreference.mapIntToPreference(emailPreference), emailPreferenceStatus));
+        						EmailType.mapIntToPreference(emailPreference), emailPreferenceStatus));
             }
             
             return returnMap;
@@ -135,8 +148,8 @@ public class PgEmailPreferences implements IEmailPreferences {
                             + "(user_id, email_preference, email_preference_status) "
                             + "VALUES (?, ?, ?)");
 
-            pst.setString(1, emailPreference.getUserId());
-            pst.setInt(2, emailPreference.getEmailPreference().mapPreferenceToInt());
+            pst.setLong(1, emailPreference.getUserId());
+            pst.setInt(2, emailPreference.getEmailType().mapEmailTypeToInt());
             pst.setBoolean(3, emailPreference.getEmailPreferenceStatus());
 
             if (pst.executeUpdate() == 0) {
@@ -156,11 +169,11 @@ public class PgEmailPreferences implements IEmailPreferences {
     	PreparedStatement pst;
     	try (Connection conn = database.getDatabaseConnection()) {
     		pst = conn.prepareStatement("UPDATE user_email_preferences " 
-    						+ "SET email_preference_status='?'"
-    						+ "WHERE user_id='?' AND email_preference='?'");
+    						+ "SET email_preference_status=?"
+    						+ "WHERE user_id=? AND email_preference=?");
     		pst.setBoolean(1,  emailPreference.getEmailPreferenceStatus());
-    		pst.setString(2, emailPreference.getUserId());
-    		pst.setInt(3,  emailPreference.getEmailPreference().mapPreferenceToInt());
+    		pst.setLong(2, emailPreference.getUserId());
+    		pst.setInt(3,  emailPreference.getEmailType().mapEmailTypeToInt());
     		
     		if (pst.executeUpdate() != 1) {
     			throw new SegueDatabaseException("Unable to save user email preference.");
@@ -179,9 +192,9 @@ public class PgEmailPreferences implements IEmailPreferences {
     	PreparedStatement pst;
     	try (Connection conn = database.getDatabaseConnection()) {
     		pst = conn.prepareStatement("DELETE user_email_preferences " 
-    						+ "WHERE user_id='?' AND email_preference='?'");
-    		pst.setString(2, emailPreference.getUserId());
-    		pst.setInt(3,  emailPreference.getEmailPreference().mapPreferenceToInt());
+    						+ "WHERE user_id=? AND email_preference=?");
+    		pst.setLong(2, emailPreference.getUserId());
+    		pst.setInt(3,  emailPreference.getEmailType().mapEmailTypeToInt());
     		
     		if (pst.executeUpdate() != 1) {
     			throw new SegueDatabaseException("Unable to save user email preference.");
@@ -194,25 +207,55 @@ public class PgEmailPreferences implements IEmailPreferences {
     
 
     @Override
-	public IEmailPreference getEmailPreference(final String userId,
-			final EmailPreference emailPreference) throws SegueDatabaseException {
+	public IEmailPreference getEmailPreference(final long userId,
+									final EmailType emailType) throws SegueDatabaseException {
     	PreparedStatement pst;
     	try (Connection conn = database.getDatabaseConnection()) {
-    		pst = conn.prepareStatement("SELECT email_preference_status FROM user_email_preferences " 
-    						+ "WHERE user_id='?' AND email_preference='?'");
-    		pst.setString(2, userId);
-    		pst.setInt(3,  emailPreference.mapPreferenceToInt());
-    		
+    		pst = conn.prepareStatement("SELECT * FROM user_email_preferences WHERE user_id=? AND email_preference=?");
+    		pst.setLong(1, userId);
+    		pst.setInt(2, emailType.mapEmailTypeToInt());
+    		pst.setMaxRows(1);
     		ResultSet results = pst.executeQuery();
-    		if (results.first()) {
+    		if (results.next()) {
     			boolean emailPreferenceStatus = results.getBoolean("email_preference_status");
-        		return new PgEmailPreference(userId, emailPreference, emailPreferenceStatus);
+        		return new PgEmailPreference(userId, emailType, emailPreferenceStatus);
     		} else {
         		return null;
     		}
     	} catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
     	}
+	}
+
+	@Override
+	public List<IEmailPreference> mapToEmailPreferenceList(final long userId,
+					final Map<String, Boolean> preferencePairs) {
+		List<IEmailPreference> returnObject = null;
+		try {
+			returnObject = new ArrayList<IEmailPreference>();
+			Set<String> keys = preferencePairs.keySet();
+			for (String key : keys) {
+				Boolean preference = preferencePairs.get(key);
+				EmailType emailType = EmailType.valueOf(key);
+				returnObject.add(new PgEmailPreference(userId, emailType, preference));
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("IllegalArgumentException - email preference could not be mapped to an email type");
+		}
+		return returnObject;
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager#mapToEmailPreferencePair(java.util.List)
+	 */
+	@Override
+	public Map<String, Boolean> mapToEmailPreferencePair(final List<IEmailPreference> emailPreferenceList) {
+		Map<String, Boolean> returnObject = null;
+		returnObject = new HashMap<String, Boolean>();
+		for (IEmailPreference preference : emailPreferenceList) {
+			returnObject.put(preference.getEmailType().toString(), preference.getEmailPreferenceStatus());
+		}
+		return returnObject;
 	}
 
 	

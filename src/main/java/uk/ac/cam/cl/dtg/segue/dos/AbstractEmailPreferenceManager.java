@@ -17,11 +17,9 @@ package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference.EmailPreference;
 
 /**
  * Interface class for email preferences.
@@ -29,14 +27,14 @@ import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference.EmailPreference;
  * @author Alistair Stead
  *
  */
-public interface IEmailPreferences {
+public abstract class AbstractEmailPreferenceManager {
 	
 	/**
      * @param userId - the user id to look up
      * @return the list of email preferences for this user.
      * @throws SegueDatabaseException - if a database error has occurred.
 	 */
-	List<IEmailPreference> getEmailPreferences(final String userId) throws SegueDatabaseException;
+	public abstract List<IEmailPreference> getEmailPreferences(final long userId) throws SegueDatabaseException;
 	
 	/**
      * @param userId - the user id to look up
@@ -44,23 +42,36 @@ public interface IEmailPreferences {
      * @return the list of email preferences for this user.
      * @throws SegueDatabaseException - if a database error has occurred.
 	 */
-	IEmailPreference getEmailPreference(final String userId, 
-									final EmailPreference emailPreference) throws SegueDatabaseException;
+	public abstract IEmailPreference getEmailPreference(final long userId, 
+									final EmailType emailPreference) throws SegueDatabaseException;
 	
 	/**
      * @param userIds - a list of user ids to look up
      * @return a map of user ids and email preferences.
      * @throws SegueDatabaseException - if a database error has occurred.
 	 */
-	Map<String, List<IEmailPreference>> getEmailPreferences(final List<String> userIds) throws SegueDatabaseException;
+	public abstract Map<String, List<IEmailPreference>> getEmailPreferences(final List<Long> userIds) 
+									throws SegueDatabaseException;
 	
     /**
      * @param userId - the user id to save a record for.
-     * @param emailPreference - a user email preference
-     * @param emailPreferenceStatus - the status of the preference 
+     * @param emailPreferences - the email preferences of the user
      * @throws SegueDatabaseException - if a database error has occurred.
      */
-    void saveEmailPreference(String userId, EmailPreference emailPreference, boolean emailPreferenceStatus)
-            throws SegueDatabaseException;
+	public abstract void saveEmailPreferences(final long userId, final List<IEmailPreference> 
+									emailPreferences) throws SegueDatabaseException;
+
+	/**
+	 * @param userId - the id of the user
+	 * @param preferencePairs - pairs of preferences from the user facade
+	 * @return a list of email preferences
+	 */
+	public abstract List<IEmailPreference> mapToEmailPreferenceList(long userId, Map<String, Boolean> preferencePairs);
+
+	/**
+	 * @param emailPreferenceList - list of email preferences
+	 * @return map of email preference pairs
+	 */
+	public abstract Map<String, Boolean> mapToEmailPreferencePair(List<IEmailPreference> emailPreferenceList);
 
 }

@@ -72,7 +72,7 @@ public enum EmailType {
 	/**
 	 * @return integer representation of priority
 	 */
-	public int getPriority(){
+	public int getPriority() {
 		switch (this) {
 			case ADMIN:
 				return 0;
@@ -86,6 +86,26 @@ public enum EmailType {
 				return 4;
 			default:
 				return Integer.MAX_VALUE;
+		}
+	}
+	
+	/**
+	 * @return boolean giving the validity of email type as email preference
+	 */
+	public boolean isValidEmailPreference() {
+		switch (this) {
+			case ADMIN:
+				return false;
+			case SYSTEM:
+				return false;
+			case ASSIGNMENTS:
+				return true;
+			case NEWS_AND_UPDATES:
+				return true;
+			case EVENTS:
+				return true;
+			default:
+				return false;
 		}
 	}
 	
