@@ -51,6 +51,8 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -68,9 +70,11 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -95,9 +99,11 @@ public class AdminFacade extends AbstractSegueFacade {
     private final UserManager userManager;
     private final ContentVersionController contentVersionController;
 
-    private StatisticsManager statsManager;
+    private final StatisticsManager statsManager;
 
-    private LocationHistoryManager locationManager;
+    private final LocationHistoryManager locationManager;
+
+    private final SchoolListReader schoolReader;
 
     /**
      * Create an instance of the administrators facade.
@@ -118,12 +124,14 @@ public class AdminFacade extends AbstractSegueFacade {
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
             final ContentVersionController contentVersionController, final ILogManager logManager,
-            final StatisticsManager statsManager, final LocationHistoryManager locationManager) {
+            final StatisticsManager statsManager, final LocationHistoryManager locationManager,
+            final SchoolListReader schoolReader) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentVersionController = contentVersionController;
         this.statsManager = statsManager;
         this.locationManager = locationManager;
+        this.schoolReader = schoolReader;
     }
 
     /**
@@ -857,8 +865,14 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
+            
             Long schoolURN = Long.parseLong(schoolId);
-            return Response.ok(statsManager.getUsersBySchoolId(schoolURN)).build();
+            School school = schoolReader.findSchoolById(schoolURN);
+            
+            Map<String, Object> result = ImmutableMap.of("school", school, "users",
+                    statsManager.getUsersBySchoolId(schoolURN));
+            
+            return Response.ok(result).build();
         } catch (UnableToIndexSchoolsException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable To Index Schools Exception in admin facade", e).toResponse();
@@ -871,6 +885,13 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
         } catch (NumberFormatException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "The school id provided is invalid.").toResponse();
+        } catch (JsonParseException | JsonMappingException e) {
+            log.error("Problem parsing school", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school").toResponse();
+        } catch (IOException e) {
+            log.error("Problem parsing school", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException while trying to communicate with the school service.").toResponse();
         }
     }
 

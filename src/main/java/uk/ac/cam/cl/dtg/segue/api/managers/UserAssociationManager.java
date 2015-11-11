@@ -97,7 +97,8 @@ public class UserAssociationManager {
         String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=", "")
                 .substring(0, tokenLength).toUpperCase().replace("0", "ZR").replace("O", "QR");
 
-        AssociationToken associationToken = new AssociationToken(token, registeredUser.getLegacyDbId(), associatedGroupId);
+        AssociationToken associationToken = new AssociationToken(token, registeredUser.getLegacyDbId(),
+                associatedGroupId);
 
         return associationDatabase.saveAssociationToken(associationToken);
     }
@@ -280,8 +281,9 @@ public class UserAssociationManager {
      * @return true if yes false if no.
      */
     public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
-        return currentUser.getLegacyDbId().equals(userRequested.getDbId())
-                || this.associationDatabase.hasValidAssociation(currentUser.getLegacyDbId(), userRequested.getDbId())
+        return currentUser.getLegacyDbId().equals(userRequested.getLegacyDbId())
+                || this.associationDatabase.hasValidAssociation(currentUser.getLegacyDbId(),
+                        userRequested.getLegacyDbId())
                 || Role.ADMIN.equals(currentUser.getRole());
     }
 }

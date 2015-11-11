@@ -91,6 +91,7 @@ public final class Constants {
     public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
     public static final String VIEW_GROUPS_ASSIGNMENTS = "VIEW_GROUPS_ASSIGNMENTS";
     public static final String VIEW_ASSIGNMENT_PROGRESS = "VIEW_ASSIGNMENT_PROGRESS";
+    public static final String DOWNLOAD_ASSIGNMENT_PROGRESS_CSV = "DOWNLOAD_ASSIGNMENT_PROGRESS_CSV";
     public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
     public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
 

@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.apache.commons.lang3.Validate;
-
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
@@ -46,7 +45,8 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
  */
 public class PgUsers implements IUserDataManager {
     private static final String MASTER_ID = "_id"; // MONGO DB ID
-    
+    //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
+            
     private final PostgresSqlDb database;
     
     /**
@@ -290,7 +290,13 @@ public class PgUsers implements IUserDataManager {
             int index = 0;
             List<Object> orderToAdd = Lists.newArrayList();
             for (Entry<String, Object> e : fieldsOfInterest.entrySet()) {
-                sb.append(e.getKey() + " ILIKE ?");
+                
+                if (e.getValue() instanceof String) {
+                    sb.append(e.getKey() + " ILIKE ?");
+                } else {
+                    sb.append(e.getKey() + " = ?");
+                }
+
                 orderToAdd.add(e.getValue());
                 if (index + 1 < fieldsOfInterest.entrySet().size()) {
                     sb.append(" AND ");
@@ -307,11 +313,14 @@ public class PgUsers implements IUserDataManager {
                 if (value instanceof Integer) {
                     pst.setInt(index, (Integer) value);
                 }
+                if (value instanceof Long) {
+                    pst.setLong(index, (Long) value);
+                }
                 index++;
             }
-
-            ResultSet results = pst.executeQuery();
             
+            ResultSet results = pst.executeQuery();
+
             return this.findAllUsers(results);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
@@ -533,7 +542,7 @@ public class PgUsers implements IUserDataManager {
                             + "school_other = ?, last_updated = ?, email_verification_status = ?, "
                             + "last_seen = ?, default_level = ?, password = ?, secure_salt = ?, reset_token = ?, "
                             + "reset_expiry = ?, email_verification_token = ?, email_verification_token_expiry = ? "
-                            + "WHERE " + MASTER_ID + " = ?;");
+                            + "WHERE id = ?;");
             
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getLegacyDbId());
@@ -556,7 +565,7 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 18, userToCreate.getResetExpiry());
             setValueHelper(pst, 19, userToCreate.getEmailVerificationToken());
             setValueHelper(pst, 20, userToCreate.getEmailVerificationTokenExpiry());
-            setValueHelper(pst, 21, userToCreate.getLegacyDbId());
+            setValueHelper(pst, 21, userToCreate.getId());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");

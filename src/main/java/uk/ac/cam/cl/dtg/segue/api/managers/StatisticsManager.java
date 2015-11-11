@@ -64,7 +64,7 @@ import com.google.inject.Inject;
 
 /**
  * StatisticsManager.
- *
+ * TODO this file is a mess... it needs refactoring.
  */
 public class StatisticsManager {
     private UserManager userManager;
@@ -626,7 +626,7 @@ public class StatisticsManager {
         Set<RegisteredUserDTO> qualifyingUsers = Sets.newHashSet();
 
         for (RegisteredUserDTO user : users) {
-            Date eventDate = lastSeenUserMap.get(user.getId());
+            Date eventDate = lastSeenUserMap.get(user.getId().toString());
             Calendar validInclusionTime = Calendar.getInstance();
             validInclusionTime.setTime(new Date());
             validInclusionTime.add(Calendar.DATE, -1 * Math.abs(daysFromToday));

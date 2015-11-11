@@ -79,7 +79,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         // Setup different persistence bindings
         // Currently all properties are being provided by the segue properties
         // file.
-        // bind(PropertiesLoader.class).toInstance(globalProperties);
 
         bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
     }

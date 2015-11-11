@@ -1854,7 +1854,7 @@ public class UserManager {
                 || !userToValidate.getEmail().contains("@")) {
             isValid = false;
         }
-
+        
         return isValid;
     }
 

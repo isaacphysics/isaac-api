@@ -105,6 +105,7 @@ public class AssignmentManager implements IGroupObserver {
             assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
         }
 
+
         return assignments;
     }
 
@@ -118,7 +119,9 @@ public class AssignmentManager implements IGroupObserver {
      *             - if we cannot complete a required database operation.
      */
     public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
-        return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
+        AssignmentDTO assignmentById = this.assignmentPersistenceManager.getAssignmentById(assignmentId);
+        augmentAssignmentWithUserSummaryInfo(assignmentById);
+        return assignmentById;
     }
 
     /**
@@ -137,7 +140,7 @@ public class AssignmentManager implements IGroupObserver {
 
         if (assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(newAssignment.getGameboardId(),
                 newAssignment.getGroupId()).size() != 0) {
-            log.error(String.format("Duplicated Assignment Exception - cannot assign the same work %s to a group %s", 
+            log.error(String.format("Duplicated Assignment Exception - cannot assign the same work %s to a group %s",
                     newAssignment.getGameboardId(), newAssignment.getGroupId()));
             throw new DuplicateAssignmentException("You cannot assign the same work to a group more than once.");
         }
@@ -207,7 +210,8 @@ public class AssignmentManager implements IGroupObserver {
             throws SegueDatabaseException {
         Validate.notNull(user);
         Validate.notNull(group);
-        return this.assignmentPersistenceManager.getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
+        return this.assignmentPersistenceManager
+                .getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
     }
 
     /**
@@ -275,7 +279,8 @@ public class AssignmentManager implements IGroupObserver {
                     groups.add(groupManager.getGroupById(assignment.getGroupId()));
                 } catch (ResourceNotFoundException e) {
                     // skip group as it no longer exists.
-                    log.warn(String.format("Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
+                    log.warn(String.format(
+                            "Group (%s) that no longer exists referenced by assignment (%s). Skipping.",
                             assignment.getGroupId(), assignment.getId()));
                 }
             }

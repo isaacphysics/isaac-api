@@ -62,8 +62,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public List<EventBookingDTO> getEventsByUserId(final String userId) 
-            throws SegueDatabaseException {
+    public List<EventBookingDTO> getEventsByUserId(final String userId) throws SegueDatabaseException {
         return convertToDTO(Lists.newArrayList(dao.findAllByUserId(userId)));
     }
 
@@ -140,8 +139,10 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * @param eventId - event id
-     * @param userId - user id
+     * @param eventId
+     *            - event id
+     * @param userId
+     *            - user id
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
@@ -163,7 +164,8 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
-            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOByLegacyId(eb.getUserId()));
+            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOByLegacyId(eb
+                    .getUserId()));
 
             result.setBookingId(eb.getId());
             result.setEventDate(eventInformation.getDate());
@@ -182,7 +184,7 @@ public class EventBookingPersistenceManager {
     /**
      * @param eb
      *            - raw booking do
-     * @return event booking
+     * @return event booking or null if it no longer exists.
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
@@ -190,10 +192,17 @@ public class EventBookingPersistenceManager {
         try {
             ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
                     eb.getEventId());
+
+            if (null == c) {
+                // The event this booking relates to has disappeared so treat it as though it never existed.
+                log.info(String.format("The event with id %s can no longer be found skipping...", eb.getEventId()));
+                return null;
+            }
+
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(eb, (IsaacEventPageDTO) c);
             } else {
-                log.error("Content object is not an event page.");
+                log.error(String.format("Content object (%s) is not an event page.", c));
                 throw new SegueDatabaseException("Content object is not an event page.");
             }
         } catch (ContentManagerException e) {
@@ -203,7 +212,8 @@ public class EventBookingPersistenceManager {
     }
 
     /**
-     * @param toConvert - the list of event bookings to convert to DTOs.
+     * @param toConvert
+     *            - the list of event bookings to convert to DTOs.
      * @return list of converted dtos
      * @throws SegueDatabaseException
      *             - if an error occurs.
@@ -212,7 +222,11 @@ public class EventBookingPersistenceManager {
         List<EventBookingDTO> result = Lists.newArrayList();
 
         for (EventBooking e : toConvert) {
-            result.add(convertToDTO(e));
+            EventBookingDTO augmentedBooking = convertToDTO(e);
+
+            if (augmentedBooking != null) {
+                result.add(augmentedBooking);
+            }
         }
 
         return result;
@@ -221,8 +235,10 @@ public class EventBookingPersistenceManager {
     /**
      * This expects the same event to be used for all.
      * 
-     * @param toConvert - the list of event bookings to convert
-     * @param eventDetails - event details.
+     * @param toConvert
+     *            - the list of event bookings to convert
+     * @param eventDetails
+     *            - event details.
      * @return list of converted dtos.
      * @throws SegueDatabaseException
      *             - if an error occurs.

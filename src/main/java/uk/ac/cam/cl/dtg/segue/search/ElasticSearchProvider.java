@@ -308,7 +308,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             log.info("Sending delete request to ElasticSearch for search index: " + index);
             client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
         } catch (ElasticsearchException e) {
-            log.error("ElasticSearch exception while trying to delete index " + index);
+            log.error("ElasticSearch exception while trying to delete index " + index, e);
             return false;
         }
 

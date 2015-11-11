@@ -421,6 +421,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
      * Currently this method will return a single Json Object containing all of the fields available to the object
      * retrieved from the database.
      * 
+     * @param request
+     *            - so that we can allow only staff users to use this generic endpoint.
      * @param version
      *            - the version of the datastore to query
      * @param id
@@ -431,7 +433,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
     @Path("content/{version}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getContentById(@PathParam("version") final String version, @PathParam("id") final String id) {
+    public final Response getContentById(@Context HttpServletRequest request,
+            @PathParam("version") final String version, @PathParam("id") final String id) {
         IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
         String newVersion = contentVersionController.getLiveVersion();
@@ -444,6 +447,12 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         // Deserialize object into POJO of specified type, providing one exists.
         try {
+            
+            if (!super.isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Only staff users can use this endpoint.")
+                        .toResponse();
+            }
+            
             c = contentPersistenceManager.getContentDOById(newVersion, id);
 
             if (null == c) {
@@ -462,6 +471,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
 
         return Response.ok(c).build();

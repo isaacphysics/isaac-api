@@ -40,7 +40,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
      * @return the databaseId
      */
     @JsonProperty("_id")
-    public String getDbId() {
+    public String getLegacyDbId() {
         return databaseId;
     }
 
@@ -51,7 +51,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
      *            the databaseId to set
      */
     @JsonProperty("_id")
-    public void setDbId(final String databaseId) {
+    public void setLegacyDbId(final String databaseId) {
         this.databaseId = databaseId;
     }
 
