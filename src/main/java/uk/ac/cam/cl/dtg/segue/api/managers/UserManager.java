@@ -374,19 +374,51 @@ public class UserManager {
             return currentUser;
         }
 
-        IAuthenticator authenticator = mapToProvider(provider);
+        RegisteredUser user = this.authenticateWithCredentials(provider, 
+	            		credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
+	                    credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
+        this.createSession(request, response, user);
+        return this.convertUserDOToUserDTO(user);
 
-        if (authenticator instanceof IPasswordAuthenticator) {
-            IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
-
-            RegisteredUser user = passwordAuthenticator.authenticate(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
-                    credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
-            this.createSession(request, response, user);
-            return this.convertUserDOToUserDTO(user);
-        } else {
-            throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
-                    + "raw credentials for the given provider: " + provider);
-        }
+    }
+    
+    /**
+     * @param provider
+     *            - the provider the user wishes to authenticate with.
+     * @param email
+     * 			  - the email the user wishes to use
+     * @param plainTextPassword
+     * 			  - the plain text password the user has provided
+     * @return
+     * 			  - a registered user object
+     * @throws AuthenticationProviderMappingException
+     *             - if we cannot find an authenticator
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
+     * @throws IncorrectCredentialsProvidedException
+     *             - if the password is incorrect
+     * @throws NoUserException
+     *             - if the user does not exist
+     * @throws NoCredentialsAvailableException
+     *             - If the account exists but does not have a local password
+     */
+    public final RegisteredUser authenticateWithCredentials(final String provider, final String email, 
+    					final String plainTextPassword) throws AuthenticationProviderMappingException, 
+    					SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException, 
+    					NoCredentialsAvailableException {
+        Validate.notBlank(email);
+        Validate.notNull(plainTextPassword);
+		IAuthenticator authenticator = mapToProvider(provider);
+		
+		if (authenticator instanceof IPasswordAuthenticator) {
+		    IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
+		    
+		    RegisteredUser user = passwordAuthenticator.authenticate(email, plainTextPassword);
+		    return user;
+		} else {
+		    throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
+		         + "raw credentials for the given provider: " + provider);
+		}
     }
 
     /**
@@ -1147,6 +1179,43 @@ public class UserManager {
 
         // Save user
         RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
+        log.info(String.format("Password Reset for user (%s) has completed successfully.",
+                createOrUpdateUser.getId()));
+        return this.convertUserDOToUserDTO(createOrUpdateUser);
+    }
+    
+    
+    /**
+     * This method will change the users' current password.
+     *
+     * @param userObject
+     *            - the supplied user DO
+     * @return the user which has had the password reset.
+     * @throws InvalidTokenException
+     *             - If the token provided is invalid.
+     * @throws InvalidPasswordException
+     *             - If the password provided is invalid.
+     * @throws SegueDatabaseException
+     *             - If there is an internal database error.
+     */
+    public final RegisteredUserDTO changePassword(final RegisteredUser userObject)
+            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
+        // Ensure new password is valid
+        if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
+            throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
+        }
+
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
+        // Set user's password
+        authenticator.setOrChangeUsersPassword(userObject, userObject.getPasswordCurrent());
+
+        // clear plainTextPassword
+        userObject.setPasswordCurrent(null);
+
+        // Save user
+        RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(userObject);
         log.info(String.format("Password Reset for user (%s) has completed successfully.",
                 createOrUpdateUser.getId()));
         return this.convertUserDOToUserDTO(createOrUpdateUser);

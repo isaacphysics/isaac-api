@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_PASSWORD_FIELDNAME;
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
@@ -25,6 +27,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,12 +64,16 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
+import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
@@ -88,6 +95,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 
 /**
  * User facade.
@@ -204,15 +212,25 @@ public class UsersFacade extends AbstractSegueFacade {
     	
     	RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
     	
-    	// Update email preferences within the same request
     	Map<String, Boolean> emailPreferences = userSettingsObjectFromClient.getEmailPreferences();  
-    	List<IEmailPreference> userEmailPreferences = 
-				emailPreferenceManager.mapToEmailPreferenceList(registeredUser.getId(), emailPreferences);
     	
-    	if (null != registeredUser) {
-    		return this.updateUserObject(request, registeredUser, userEmailPreferences);
+    	if (null != registeredUser.getId()) {
+    		
+    		// Update email preferences within the same request
+        	List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
+    									registeredUser.getId(), emailPreferences);
+        	
+    		try {
+				return this.updateUserObject(request, response, registeredUser, userEmailPreferences);
+			} catch (IncorrectCredentialsProvidedException e) {
+	            return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
+	            .toResponse();
+			} catch (NoCredentialsAvailableException e) {
+	            return new SegueErrorResponse(Status.BAD_REQUEST, "No credentials available.", e)
+	            .toResponse();
+			}
     	} else {
-    		return this.createUserObjectAndLogIn(request, response, registeredUser, userEmailPreferences);
+    		return this.createUserObjectAndLogIn(request, response, registeredUser, emailPreferences);
 		}
 
     }
@@ -585,14 +603,19 @@ public class UsersFacade extends AbstractSegueFacade {
      * 
      * @param request
      *            - so that we can identify the user
+     * @param response
+     *            - so we can modify the session
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
      * @param emailPreferences
      * 			  - the email preferences for this user
      * @return the updated user object.
+     * @throws NoCredentialsAvailableException 
+     * @throws IncorrectCredentialsProvidedException 
      */
-    private Response updateUserObject(final HttpServletRequest request, final RegisteredUser 
-    					userObjectFromClient, final List<IEmailPreference> emailPreferences) {
+    private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response, 
+    				final RegisteredUser userObjectFromClient, final List<IEmailPreference> emailPreferences) 
+    						throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
         Validate.notNull(userObjectFromClient.getId());
 
         // this is an update as the user has an id
@@ -606,6 +629,22 @@ public class UsersFacade extends AbstractSegueFacade {
                     && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' user settings.")
                         .toResponse();
+            }
+            
+            // only admins can change passwords without verifying the current password
+            if (userObjectFromClient.getPasswordCurrent() != null 
+            				&& !userObjectFromClient.getPasswordCurrent().equals("")) {
+            	if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
+            					&& currentlyLoggedInUser.getRole() != Role.ADMIN) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' password.")
+                    .toResponse();
+            	}
+            	
+            	// authenticate the user
+            	RegisteredUser authenticatedUserDTO = this.userManager.authenticateWithCredentials(
+            					AuthenticationProvider.SEGUE.name(), userObjectFromClient.getEmail(), 
+            					userObjectFromClient.getPasswordCurrent());
+                
             }
             
             // check that any changes to protected fields being made are
@@ -680,13 +719,17 @@ public class UsersFacade extends AbstractSegueFacade {
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser userObjectFromClient, final List<IEmailPreference> emailPreferences) {
+            final RegisteredUser userObjectFromClient, Map<String, Boolean> emailPreferences) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient);
             
+            
+        	List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
+        			savedUser.getId(), emailPreferences);
+            
             //Now update the email preferences
-			emailPreferenceManager.saveEmailPreferences(savedUser.getId(), emailPreferences);
+			emailPreferenceManager.saveEmailPreferences(savedUser.getId(), userEmailPreferences);
             
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {

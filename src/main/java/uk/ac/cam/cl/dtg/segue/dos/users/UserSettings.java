@@ -36,7 +36,7 @@ public class UserSettings {
 	 * @param registeredUser the registeredUser to set
 	 */
 	@JsonProperty("registeredUser")
-	public void setRegisteredUser(RegisteredUser registeredUser) {
+	public void setRegisteredUser(final RegisteredUser registeredUser) {
 		this.registeredUser = registeredUser;
 	}
 
@@ -44,7 +44,7 @@ public class UserSettings {
 	 * @param emailPreferences the emailPreferences to set
 	 */
 	@JsonProperty("emailPreferences")
-	public void setEmailPreferences(Map<String, Boolean> emailPreferences) {
+	public void setEmailPreferences(final Map<String, Boolean> emailPreferences) {
 		this.emailPreferences = emailPreferences;
 	}
 

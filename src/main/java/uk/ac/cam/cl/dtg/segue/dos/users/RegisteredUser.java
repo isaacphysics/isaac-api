@@ -44,8 +44,12 @@ public class RegisteredUser extends AbstractSegueUser {
     private Integer defaultLevel;
 
     // local password - only used for segue local authentication.
+    // current password - only used to validate password change
     private String password;
-    private String secureSalt;
+    private String passwordCurrent;
+
+
+	private String secureSalt;
 
     // password reset fields - only used for segue local authentication password resets
     private String resetToken;
@@ -81,6 +85,8 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - the list of linked authentication provider accounts.
      * @param password
      *            - password for local segue authentication.
+     * @param password
+	   			  - password for local segue authentication.
      * @param resetToken
      *            - resetToken for local segue authentication.
      * @param resetExpiry
@@ -101,6 +107,7 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
             @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("schoolId") final Long schoolId, @JsonProperty("password") final String password,
+            @JsonProperty("passwordCurrent") final String passwordCurrent,
             @JsonProperty("resetToken") final String resetToken, @JsonProperty("resetExpiry") final Date resetExpiry,
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
@@ -116,6 +123,7 @@ public class RegisteredUser extends AbstractSegueUser {
         this.registrationDate = registrationDate;
         this.schoolId = schoolId;
         this.password = password;
+        this.passwordCurrent = passwordCurrent;
         this.resetToken = resetToken;
         this.resetExpiry = resetExpiry;
         this.lastUpdated = lastUpdated;
@@ -388,6 +396,22 @@ public class RegisteredUser extends AbstractSegueUser {
     public final void setPassword(final String password) {
         this.password = password;
     }
+    
+    /**
+	 * @return the current password
+	 */
+	public String getPasswordCurrent() {
+		return passwordCurrent;
+	}
+
+	/**
+	 * Sets the current password (to allow password change).
+	 * 
+	 * @param passwordCurrent the current password to set
+	 */
+	public void setPasswordCurrent(final String passwordCurrent) {
+		this.passwordCurrent = passwordCurrent;
+	}
 
     /**
      * Gets the secureSalt.
