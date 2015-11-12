@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,12 +87,27 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 
             ResultSet results = pst.executeQuery();
             List<IEmailPreference> returnResult = Lists.newArrayList();
+            Set<Integer> existingPreferences = new HashSet<Integer>();
             while (results.next()) {
             	int emailPreference = results.getInt("email_preference");
             	boolean emailPreferenceStatus = results.getBoolean("email_preference_status");
                 returnResult.add(new PgEmailPreference(userId, EmailType.mapIntToPreference(emailPreference),
 																								emailPreferenceStatus));
+                existingPreferences.add(emailPreference);
             }
+            
+            //Add default email settings if they are not initialised
+            EmailType [] emailPreferenceTypes = EmailType.values();
+            
+            for (int i = 0; i < emailPreferenceTypes.length; i++) {
+            	if (!existingPreferences.contains(emailPreferenceTypes[i].mapEmailTypeToInt())
+            					&& emailPreferenceTypes[i].isValidEmailPreference()) {
+            		PgEmailPreference newPreference = new PgEmailPreference(userId, emailPreferenceTypes[i], true);
+            		returnResult.add(newPreference);
+            		insertNewEmailPreferenceRecord(newPreference);
+            	}
+            }
+            
             return returnResult;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

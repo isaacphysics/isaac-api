@@ -119,10 +119,9 @@ public class AssignmentManager implements IGroupObserver {
      *             - if we cannot complete a required database operation.
      */
     public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
-        AssignmentDTO assignmentById = this.assignmentPersistenceManager.getAssignmentById(assignmentId);
-        augmentAssignmentWithUserSummaryInfo(assignmentById);
-        return assignmentById;
+        return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
     }
+    
 
     /**
      * create Assignment.
