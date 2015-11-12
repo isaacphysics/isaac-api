@@ -101,7 +101,7 @@ public class PgLogManager implements ILogManager {
         } catch (JsonProcessingException e) {
             log.error("Unable to serialize eventDetails as json string", e);
         } catch (SegueDatabaseException e) {
-            log.error("Unable to save log event to the databasse", e);
+            log.error("Unable to save log event to the database", e);
         }
     }
 
@@ -266,11 +266,11 @@ public class PgLogManager implements ILogManager {
     public Set<String> getAllEventTypes() throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT DISTINCT ON (event_type) event_type" + " FROM logged_events");
+            pst = conn.prepareStatement("SELECT event_type" + " FROM logged_events GROUP BY event_type");
 
             ResultSet results = pst.executeQuery();
             Set<String> eventTypesRecorded = Sets.newHashSet();
-
+ 
             while (results.next()) {
                 eventTypesRecorded.add(results.getString("event_type"));
             }
