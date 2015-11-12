@@ -231,10 +231,10 @@ public class IsaacNumericValidator implements IValidator {
         double trustedDouble, untrustedDouble;
 
         // Replace "x10^" with "e";
-        String untrustedParsedValue = untrustedValue.replace("x10^", "e");
+        String untrustedParsedValue = untrustedValue.replace("x10^", "e").replace("*10^", "e");
 
         try {
-            trustedDouble = Double.parseDouble(trustedValue.replace("x10^", "e"));
+            trustedDouble = Double.parseDouble(trustedValue.replace("x10^", "e").replace("*10^", "e"));
             untrustedDouble = Double.parseDouble(untrustedParsedValue);
         } catch (NumberFormatException e) {
             // One of the values was not a valid float.
