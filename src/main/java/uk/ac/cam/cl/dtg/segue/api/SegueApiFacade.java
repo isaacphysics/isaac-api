@@ -1119,17 +1119,22 @@ public class SegueApiFacade extends AbstractSegueFacade {
         builder.append("Message:\n");
         builder.append(form.get("message"));
 
-        EmailCommunicationMessage email = new EmailCommunicationMessage(this.getProperties().getProperty(
+        EmailCommunicationMessage email = new EmailCommunicationMessage(null, this.getProperties().getProperty(
                 "MAIL_RECEIVERS"), "Administrator", "Contact Isaac: " + form.get("subject"), builder.toString(), null,
                 form.get("emailAddress"));
 
-        emailManager.addToQueue(email);
+        try {
+			emailManager.filterByPreferencesAndAddToQueue(email);
+			getLogManager().logEvent(userManager.getCurrentUser(request), request, 
+							CONTACT_US_FORM_USED, builder.toString());
 
-        getLogManager()
-                .logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED, builder.toString());
+			return Response.ok().build();
+		} catch (SegueDatabaseException e) {
+            log.error("Database error has occurred", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
+		}
 
-
-        return Response.ok().build();
+        
     }
 
     /**

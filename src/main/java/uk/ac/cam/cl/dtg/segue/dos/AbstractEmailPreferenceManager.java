@@ -50,7 +50,7 @@ public abstract class AbstractEmailPreferenceManager {
      * @return a map of user ids and email preferences.
      * @throws SegueDatabaseException - if a database error has occurred.
 	 */
-	public abstract Map<String, List<IEmailPreference>> getEmailPreferences(final List<Long> userIds) 
+	public abstract Map<Long, Map<EmailType, Boolean>> getEmailPreferences(final List<Long> userIds) 
 									throws SegueDatabaseException;
 	
     /**

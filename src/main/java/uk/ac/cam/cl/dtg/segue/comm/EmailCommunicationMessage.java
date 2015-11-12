@@ -23,8 +23,10 @@ import javax.annotation.Nullable;
  * @author Alistair Stead
  */
 public class EmailCommunicationMessage implements ICommunicationMessage {
+	
+	private final Long userId;
 
-    private final String plainTextMessage;
+	private final String plainTextMessage;
 
     private final String recipientAddress;
 
@@ -37,9 +39,12 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     private final String replyToAddress;
     
     private final EmailType type;
-    
-    /**
+
+
+	/**
      * 
+     * @param userId
+     *            id of the user
      * @param recipientAddress
      *            address of user
      * @param recipientName
@@ -53,9 +58,10 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param htmlMessage
      *            message in email
      */
-    public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
-            final String plainTextMessage, final EmailType type, final String htmlMessage) {
-        this(recipientAddress, recipientName, subject, plainTextMessage, htmlMessage, type,  null);
+    public EmailCommunicationMessage(final Long userId, final String recipientAddress, final String recipientName, 
+    				final String subject, final String plainTextMessage, final EmailType type, 
+    				final String htmlMessage) {
+        this(userId, recipientAddress, recipientName, subject, plainTextMessage, htmlMessage, type,  null);
     }
     
     /**
@@ -75,10 +81,11 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param type
      * 			  the type of the message
      */
-    public EmailCommunicationMessage(final String recipientAddress, final String recipientName, final String subject,
+    public EmailCommunicationMessage(final long userId, final String recipientAddress, final String recipientName, final String subject,
 		            final String plainTextMessage, final String htmlMessage, final EmailType type,
 		            @Nullable final String replyToAddress) {
-        this.plainTextMessage = plainTextMessage;
+        this.userId = userId;
+    	this.plainTextMessage = plainTextMessage;
         this.recipientAddress = recipientAddress;
         this.recipientName = recipientName;
         this.subject = subject;
@@ -86,7 +93,13 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         this.replyToAddress = replyToAddress;
         this.type = type;
     }
-    
+
+    /**
+	 * @return the userId
+	 */
+	public Long getUserId() {
+		return userId;
+	}
     
     /**
      * @return the plain text message
@@ -133,6 +146,14 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 	@Override
 	public int getPriority() {
 		return type.getPriority();
+	}
+	
+    
+    /**
+	 * @return the type
+	 */
+	public EmailType getType() {
+		return type;
 	}
 
 }

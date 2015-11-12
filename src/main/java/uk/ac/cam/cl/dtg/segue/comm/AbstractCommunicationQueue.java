@@ -79,7 +79,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * @param queueObject
      *            object of type S that can be added to the queue
      */
-    public void addToQueue(final T queueObject) {
+    protected void addToQueue(final T queueObject) {
     	messageSenderRunnableQueue.add(queueObject);
     	executorService.submit(new MessageSenderRunnable());
     	log.warn("added to the queue " + messageSenderRunnableQueue.size());

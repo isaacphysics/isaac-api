@@ -76,6 +76,7 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
@@ -416,18 +417,27 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * 
+     * @param database
+     * @param properties
      * @param emailCommunicator
      *            the class the queue will send messages with
+     * @param abstractEmailPreferenceManager
+     * 			- the class providing email preferences
+     * @param contentVersionController
+     * 			- the content so we can access email templates
+     * @param authenticator
+     * 			- the authenticator
      * @return an instance of the queue
      */
     @Inject
     @Provides
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
-            final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
+            final PropertiesLoader properties, final EmailCommunicator emailCommunicator, 
+            final AbstractEmailPreferenceManager abstractEmailPreferenceManager,
             final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator) {
         if (null == emailCommunicationQueue) {
-            emailCommunicationQueue = new EmailManager(emailCommunicator, properties, contentVersionController);
+            emailCommunicationQueue = new EmailManager(emailCommunicator,abstractEmailPreferenceManager, properties, contentVersionController);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;

@@ -11,6 +11,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
@@ -36,6 +39,7 @@ import com.google.inject.Inject;
  *
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
+	private final AbstractEmailPreferenceManager emailPreferenceManager;
     private final PropertiesLoader globalProperties;
     private final ContentVersionController contentVersionController;
     
@@ -47,15 +51,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     /**
      * @param communicator
      *            class we'll use to send the actual email.
+     * @param emailPreferenceManager
+     *            email preference manager used to check if users want email.
      * @param globalProperties
      *            global properties used to get host name
      * @param contentVersionController
      *            content for email templates
      */
     @Inject
-    public EmailManager(final EmailCommunicator communicator, final PropertiesLoader globalProperties,
-		            final ContentVersionController contentVersionController) {
+    public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
+		    		emailPreferenceManager, final PropertiesLoader globalProperties, 
+		    		final ContentVersionController contentVersionController) {
         super(communicator);
+        this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentVersionController = contentVersionController;
     }
@@ -154,11 +162,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage,  EmailType.SYSTEM,
-                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+		        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
+		        		EmailType.SYSTEM, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
 
-        this.addToQueue(e);
+        this.filterByPreferencesAndAddToQueue(e);
     }
 
     /**
@@ -209,10 +217,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, EmailType.SYSTEM, htmlMessage);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+	        			user.getGivenName(), segueContent.getTitle(), plainTextMessage, 
+	        			EmailType.SYSTEM, htmlMessage);
         
-        this.addToQueue(e);
+        this.filterByPreferencesAndAddToQueue(e);
     }
 
     /**
@@ -263,10 +272,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage, EmailType.SYSTEM,
-                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
-        this.addToQueue(e);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+		        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
+		        		EmailType.SYSTEM, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+        this.filterByPreferencesAndAddToQueue(e);
     }
     
     /**
@@ -312,10 +321,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage, EmailType.SYSTEM,
-                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
-        this.addToQueue(e);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+	        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
+	        		EmailType.SYSTEM, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+        this.filterByPreferencesAndAddToQueue(e);
     }
 
     /**
@@ -379,9 +388,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
             }
 
-            EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                    segueContent.getTitle(), plainTextMessage, EmailType.ASSIGNMENTS, htmlMessage);
-            this.addToQueue(e);
+            EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+		            		user.getGivenName(), segueContent.getTitle(), plainTextMessage, 
+		            		EmailType.ASSIGNMENTS, htmlMessage);
+            this.filterByPreferencesAndAddToQueue(e);
         }
     }
 
@@ -481,9 +491,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, EmailType.SYSTEM, htmlMessage);
-        this.addToQueue(e);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+        				user.getGivenName(), segueContent.getTitle(), plainTextMessage, 
+        				EmailType.SYSTEM, htmlMessage);
+        this.filterByPreferencesAndAddToQueue(e);
 
     }
 
@@ -535,10 +546,35 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         }
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getEmail(), user.getGivenName(),
-                segueContent.getTitle(), plainTextMessage, htmlMessage, EmailType.SYSTEM,
-                globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
-        this.addToQueue(e);
+        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+		        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
+		        		EmailType.SYSTEM, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+        this.filterByPreferencesAndAddToQueue(e);
+    }
+    
+    /**
+     * @param email
+     * 		- the email we want to send
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void filterByPreferencesAndAddToQueue(final EmailCommunicationMessage email) throws SegueDatabaseException {
+    	Validate.notNull(email);
+    	
+    	if (null == email.getUserId() || !email.getType().isValidEmailPreference()) {
+    		addToQueue(email);
+    	}
+    	
+    	try {
+			IEmailPreference preference = this.emailPreferenceManager.getEmailPreference(email.getUserId(), 
+							email.getType());
+			if (preference != null && preference.getEmailPreferenceStatus()) {
+				addToQueue(email);
+			}
+		} catch (SegueDatabaseException e1) {
+			throw new SegueDatabaseException(String.format("Email of type %s not be sent - error accessing preferences "
+							+ "in database", email.getType().toString()));
+		}
     }
     
     /**

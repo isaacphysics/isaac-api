@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 /**
@@ -67,7 +69,7 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 			if (null != getEmailPreference(userId, preference.getEmailType())) {
 				updateEmailPreferenceRecord(preference);
 			} else {
-				insertNewEmailPreferenceRecord(preference);
+				insertNewEmailPreferences(preference);
 			}
 		}
 	}
@@ -104,9 +106,9 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
             					&& emailPreferenceTypes[i].isValidEmailPreference()) {
             		PgEmailPreference newPreference = new PgEmailPreference(userId, emailPreferenceTypes[i], true);
             		returnResult.add(newPreference);
-            		insertNewEmailPreferenceRecord(newPreference);
             	}
             }
+            
             
             return returnResult;
         } catch (SQLException e) {
@@ -117,31 +119,58 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 
 
 	@Override
-	public Map<String, List<IEmailPreference>> getEmailPreferences(
+	public Map<Long, Map<EmailType, Boolean>> getEmailPreferences(
 					final List<Long> userIds) throws SegueDatabaseException {
 		
-		HashMap<String, List<IEmailPreference>> returnMap = new HashMap<String, List<IEmailPreference>>();
+		Map<Long, Map<EmailType, Boolean>> returnMap = Maps.newHashMap(); 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM user_email_preferences "
-            						   + "WHERE user_id in (?) ORDER BY user_id ASC");
-            pst.setString(1, userIds.toString());
+            StringBuilder sb = new StringBuilder();
+            sb.append("Select * FROM user_email_preferences WHERE user_id in (");
+            
+            for (int i = 0; i < userIds.size(); i++) {
+            	sb.append("?" + (i < userIds.size() - 1 ? ", " : ""));
+            }
+            
+            sb.append(") ORDER BY user_id ASC, email_preference ASC");
+            
+            pst = conn.prepareStatement(sb.toString());
+
+            for (int i = 1; i <= userIds.size(); i++) {
+            	pst.setLong(i, userIds.get(i - 1));
+            }
 
             ResultSet results = pst.executeQuery();
-
+            
+            // get preferences for all users
             while (results.next()) {
             	long userId = results.getLong("user_id");
             	int emailPreference = results.getInt("email_preference");
             	boolean emailPreferenceStatus = results.getBoolean("email_preference_status");
-        		List<IEmailPreference> values = null;
+            	Map<EmailType, Boolean> values = null;
         		if (returnMap.containsKey(userId) && returnMap.get(userId) != null) {
         			values = returnMap.get(userId); 
         		} else {
-        			values = Lists.newArrayList();
+        			values = new HashMap<EmailType, Boolean>();
+        			returnMap.put(userId, values);
         		}
-
-        		values.add(new PgEmailPreference(userId, 
-        						EmailType.mapIntToPreference(emailPreference), emailPreferenceStatus));
+        		EmailType emailType = EmailType.mapIntToPreference(emailPreference);
+        		values.put(emailType, emailPreferenceStatus);
+            }
+            
+            // set defaults for those email preferences that have not been found
+            for (int i = 0; i < userIds.size(); i++) {
+            	long key = userIds.get(i);
+            	if (returnMap.containsKey(key)) {
+            		Map<EmailType, Boolean> existingPreferences = returnMap.get(key);
+            		
+            		for (EmailType emailType : EmailType.values()) {
+            			if (emailType.isValidEmailPreference() 
+            							&& !existingPreferences.containsKey(emailType.toString())) {
+            				existingPreferences.put(emailType, true);
+            			}
+            		}
+            	}
             }
             
             return returnMap;
@@ -150,23 +179,24 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
         }
 	}
 	
+    
     /**
-     * @param emailPreference - the user email preference to insert.
+     * @param emailPreference - email preference to insert.
      * @throws SegueDatabaseException - if it fails.
      */
-    private void insertNewEmailPreferenceRecord(final IEmailPreference emailPreference) 
+    private void insertNewEmailPreferences(final IEmailPreference emailPreference) 
     				throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
 
-            pst = conn
-                    .prepareStatement("INSERT INTO user_email_preferences "
+            pst = conn.prepareStatement("INSERT INTO user_email_preferences "
                             + "(user_id, email_preference, email_preference_status) "
                             + "VALUES (?, ?, ?)");
 
             pst.setLong(1, emailPreference.getUserId());
             pst.setInt(2, emailPreference.getEmailType().mapEmailTypeToInt());
             pst.setBoolean(3, emailPreference.getEmailPreferenceStatus());
+
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user email preference.");
@@ -178,7 +208,10 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
     }
     
     /**
-     * @param emailPreference - the user email preference to update
+     * @param emailPreference 
+     * 					- the user email preference to update
+     * @throws SegueDatabaseException
+     * 					- when there is a database error
      */
     private void updateEmailPreferenceRecord(final IEmailPreference emailPreference) 
     					throws SegueDatabaseException {
@@ -201,7 +234,10 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
     }
     
     /**
-     * @param emailPreference - the user email preference to delete
+     * @param emailPreference
+     * 					 - the user email preference to delete
+     * @throws SegueDatabaseException
+     * 					- when there is a database error
      */
     private void deleteEmailPreferenceRecord(final IEmailPreference emailPreference) 
     					throws SegueDatabaseException {
@@ -261,9 +297,6 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 		return returnObject;
 	}
 
-	/* (non-Javadoc)
-	 * @see uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager#mapToEmailPreferencePair(java.util.List)
-	 */
 	@Override
 	public Map<String, Boolean> mapToEmailPreferencePair(final List<IEmailPreference> emailPreferenceList) {
 		Map<String, Boolean> returnObject = null;
