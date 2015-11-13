@@ -205,7 +205,7 @@ public class UserManagerTest {
 
         RegisteredUser returnUser = new RegisteredUser(validLegacyUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
                 new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, 
-                null, EmailVerificationStatus.NOT_VERIFIED);
+                null);
         returnUser.setId(validUserId);
        
         dummyDatabase.updateUserLastSeen(returnUser);
@@ -383,7 +383,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, null, EmailVerificationStatus.NOT_VERIFIED);
+                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, null);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
                 Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();

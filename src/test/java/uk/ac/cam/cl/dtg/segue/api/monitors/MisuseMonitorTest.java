@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -74,7 +75,11 @@ public class MisuseMonitorTest {
 
         misuseMonitor.registerHandler(event, tokenOwnerLookupMisuseHandler);
 
-        dummyCommunicator.addToQueue(EasyMock.isA(EmailCommunicationMessage.class));
+        try {
+			dummyCommunicator.filterByPreferencesAndAddToQueue(EasyMock.isA(EmailCommunicationMessage.class));
+		} catch (SegueDatabaseException e1) {
+            fail("Exception should not be thrown during database email preference filtering");
+		}
         expectLastCall();
         replay(this.dummyCommunicator);
 
