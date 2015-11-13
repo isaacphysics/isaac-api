@@ -150,6 +150,9 @@ public class StatisticsManager {
         List<RegisteredUserDTO> studentOrUnknownRole = Lists.newArrayList();
         List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
         List<RegisteredUserDTO> adminStaffRole = Lists.newArrayList();
+        List<RegisteredUserDTO> contentEditorStaffRole = Lists.newArrayList();
+        List<RegisteredUserDTO> testerStaffRole = Lists.newArrayList();
+        List<RegisteredUserDTO> eventManagerStaffRole = Lists.newArrayList();
         List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasOtherSchool = Lists.newArrayList();
@@ -187,13 +190,16 @@ public class StatisticsManager {
                         adminStaffRole.add(user);
                         break;
                     case CONTENT_EDITOR:
-                        adminStaffRole.add(user);
+                    	contentEditorStaffRole.add(user);
+                        break;
+                    case EVENT_MANAGER:
+                    	eventManagerStaffRole.add(user);
                         break;
                     case TEACHER:
                         teacherRole.add(user);
                         break;
                     case TESTER:
-                        adminStaffRole.add(user);
+                    	testerStaffRole.add(user);
                         break;
                     default:
                         studentOrUnknownRole.add(user);
@@ -222,9 +228,12 @@ public class StatisticsManager {
         ib.put("femaleUsers", "" + female.size());
         ib.put("unknownGenderUsers", "" + unknownGender.size());
 
-        ib.put("studentUsers", "" + studentOrUnknownRole.size());
+        ib.put("adminUsers", "" + adminStaffRole.size());
+        ib.put("contentEditorUsers", "" + contentEditorStaffRole.size());
+        ib.put("eventManagerUsers", "" + eventManagerStaffRole.size());
         ib.put("teacherUsers", "" + teacherRole.size());
-        ib.put("staffUsers", "" + adminStaffRole.size());
+        ib.put("testerUsers", "" + testerStaffRole.size());
+        ib.put("studentUsers", "" + studentOrUnknownRole.size());
 
         ib.put("viewQuestionEvents", "" + logManager.getLogCountByType(VIEW_QUESTION));
         ib.put("answeredQuestionEvents", "" + logManager.getLogCountByType(ANSWER_QUESTION));
@@ -351,7 +360,7 @@ public class StatisticsManager {
             }
         });
 
-        this.statsCache.put(SCHOOL_STATS, (List<Map<String, Object>>) result);
+        this.statsCache.put(SCHOOL_STATS, result);
 
         return result;
     }

@@ -20,6 +20,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
@@ -575,6 +576,52 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 			throw new SegueDatabaseException(String.format("Email of type %s not be sent - error accessing preferences "
 							+ "in database", email.getType().toString()));
 		}
+    }
+    
+    /**
+     * This method allows the front end to preview simple email in the browser.
+     * 
+     * @param segueContent
+     * 			- the email template 
+     * @param user
+     * 			- the user requesting a preview
+     * @return serialised HTML
+     * @throws SegueDatabaseException
+     * 			- on a database error
+     * @throws ContentManagerException
+     * 			- on a content error
+     * @throws ResourceNotFoundException
+     * 			- when the HTML template cannot be found
+     * @throws IllegalArgumentException
+     * 			- when the HTML template cannot be completed
+     */
+    public String getHTMLTemplatePreview(final SeguePageDTO segueContent, final RegisteredUserDTO user) 
+    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, IllegalArgumentException {    	
+        Validate.notNull(segueContent);
+
+        Properties p = new Properties();
+        p.put("givenname", user.getGivenName());
+        p.put("familyname", user.getFamilyName());
+        p.put("email", user.getFamilyName());
+        p.put("sig", SIGNATURE);
+        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+        
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        
+        String htmlMessage = null;
+        
+        if (null == htmlTemplate) {
+            throw new ResourceNotFoundException("email-template-html content object not found!");
+        } else {
+            Properties htmlTemplateProperties = new Properties();
+            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+            htmlTemplateProperties.put("email", user.getEmail());
+            
+            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        }
+
+        return htmlMessage;
+        
     }
     
     /**
