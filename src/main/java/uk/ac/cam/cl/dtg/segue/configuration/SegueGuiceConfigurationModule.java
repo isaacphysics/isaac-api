@@ -78,6 +78,7 @@ import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
@@ -130,6 +131,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static StatisticsManager statsManager = null;
 
 	private static GroupManager groupManager = null;
+	
+    private static AbstractEmailPreferenceManager abstractEmailPreferenceManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
 
@@ -314,6 +317,20 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
+     * @param database - the database needed to support the manager
+     * @return singelton AbstractEmailPreferenceManager object.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private static AbstractEmailPreferenceManager getAbstractEmailPreferenceManager(final PostgresSqlDb database) {
+    	if (null == abstractEmailPreferenceManager) {
+    		abstractEmailPreferenceManager = new PgEmailPreferenceManager(database);
+    	}
+    	return abstractEmailPreferenceManager;
+    }
+    
+    /**
      * This provides a singleton of the contentVersionController for the segue facade.
      * 
      * @param generalProperties
@@ -434,7 +451,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator, 
-            final AbstractEmailPreferenceManager abstractEmailPreferenceManager,
             final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator) {
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator,abstractEmailPreferenceManager, properties, contentVersionController);

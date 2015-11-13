@@ -64,8 +64,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
     private static AssignmentPersistenceManager assignmentPersistenceManager = null;
-    
-    private static AbstractEmailPreferenceManager abstractEmailPreferenceManager = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -124,19 +122,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         return segueApi;
     }
     
-    /**
-     * @param database - the database needed to support the manager
-     * @return singelton AbstractEmailPreferenceManager object.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static AbstractEmailPreferenceManager getAbstractEmailPreferenceManager(final PostgresSqlDb database) {
-    	if (null == abstractEmailPreferenceManager) {
-    		abstractEmailPreferenceManager = new PgEmailPreferenceManager(database);
-    	}
-    	return abstractEmailPreferenceManager;
-    }
+
 
     /**
      * Gets a Game manager.
