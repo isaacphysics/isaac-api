@@ -94,7 +94,7 @@ public class IsaacNumericValidator implements IValidator {
                         new Content(
                                 "<strong>Significant figures</strong> are incorrect, "
                                 + "read our "
-                                + "<strong><a href='/solving_problems#acc_solving_problems_sig_figs'>"
+                                + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
                                 + "sig fig guide</a></strong>."),
                         false, validUnits, new Date());
             }
