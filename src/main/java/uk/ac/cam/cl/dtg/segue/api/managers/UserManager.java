@@ -1198,7 +1198,7 @@ public class UserManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public final RegisteredUserDTO changePassword(final RegisteredUser userObject)
+    public final RegisteredUserDTO changePassword(final RegisteredUser userObject, final String passwordCurrent)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
         // Ensure new password is valid
         if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
@@ -1209,10 +1209,7 @@ public class UserManager {
                 .get(AuthenticationProvider.SEGUE);
 
         // Set user's password
-        authenticator.setOrChangeUsersPassword(userObject, userObject.getPasswordCurrent());
-
-        // clear plainTextPassword
-        userObject.setPasswordCurrent(null);
+        authenticator.setOrChangeUsersPassword(userObject, passwordCurrent);
 
         // Save user
         RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(userObject);

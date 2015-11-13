@@ -30,6 +30,22 @@ public class UserSettings {
 	
 	private RegisteredUser registeredUser;
 	
+	private String passwordCurrent;
+	
+	/**
+	 * @return the passwordCurrent
+	 */
+	public String getPasswordCurrent() {
+		return passwordCurrent;
+	}
+
+	/**
+	 * @param passwordCurrent the passwordCurrent to set
+	 */
+	public void setPasswordCurrent(String passwordCurrent) {
+		this.passwordCurrent = passwordCurrent;
+	}
+
 	private Map<String, Boolean> emailPreferences;
 	
     /**

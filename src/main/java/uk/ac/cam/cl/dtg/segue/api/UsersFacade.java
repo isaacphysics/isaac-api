@@ -212,7 +212,7 @@ public class UsersFacade extends AbstractSegueFacade {
     	
     	RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
     	
-    	Map<String, Boolean> emailPreferences = userSettingsObjectFromClient.getEmailPreferences();  
+    	Map<String, Boolean> emailPreferences = userSettingsObjectFromClient.getEmailPreferences();
     	
     	if (null != registeredUser.getId()) {
     		
@@ -221,7 +221,8 @@ public class UsersFacade extends AbstractSegueFacade {
     									registeredUser.getId(), emailPreferences);
         	
     		try {
-				return this.updateUserObject(request, response, registeredUser, userEmailPreferences);
+				return this.updateUserObject(request, response, registeredUser, 
+								userSettingsObjectFromClient.getPasswordCurrent(), userEmailPreferences);
 			} catch (IncorrectCredentialsProvidedException e) {
 	            return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
 	            .toResponse();
@@ -614,7 +615,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * @throws IncorrectCredentialsProvidedException 
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response, 
-    				final RegisteredUser userObjectFromClient, final List<IEmailPreference> emailPreferences) 
+    				final RegisteredUser userObjectFromClient, final String passwordCurrent, final List<IEmailPreference> emailPreferences) 
     						throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
         Validate.notNull(userObjectFromClient.getId());
 
@@ -632,18 +633,18 @@ public class UsersFacade extends AbstractSegueFacade {
             }
             
             // only admins can change passwords without verifying the current password
-            if (userObjectFromClient.getPasswordCurrent() != null 
-            				&& !userObjectFromClient.getPasswordCurrent().equals("")) {
+            if (passwordCurrent != null 
+            				&& !passwordCurrent.equals("")) {
             	if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
             					&& currentlyLoggedInUser.getRole() != Role.ADMIN) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' password.")
                     .toResponse();
             	}
             	
-            	// authenticate the user
+            	// authenticate the user to check they are allowed to change the password
             	RegisteredUser authenticatedUserDTO = this.userManager.authenticateWithCredentials(
             					AuthenticationProvider.SEGUE.name(), userObjectFromClient.getEmail(), 
-            					userObjectFromClient.getPasswordCurrent());
+            					passwordCurrent);
                 
             }
             
