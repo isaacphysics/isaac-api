@@ -256,7 +256,7 @@ public class IsaacNumericValidatorTest {
 		
 		assertFalse("Response should be incorrect", response.isCorrect());
 		
-		assertTrue("Explanation should warn about sig figs", response.getExplanation().getValue().contains(explanationShouldContain));
+		assertTrue("Explanation should warn about sig figs", response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
 	}
 	
 	@Test
@@ -324,7 +324,7 @@ public class IsaacNumericValidatorTest {
 		
 		assertFalse(response.isCorrect());
 		
-		assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
+		assertTrue(response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
 	}
 	
 	@Test
@@ -351,7 +351,7 @@ public class IsaacNumericValidatorTest {
 		
 		assertFalse(response.isCorrect());
 		
-		assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
+		assertTrue(response.getExplanation().getValue().toLowerCase().contains(explanationShouldContain.toLowerCase()));
 	}
 	
 	@Test
