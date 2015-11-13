@@ -87,9 +87,16 @@ public class IsaacNumericValidator implements IValidator {
                 } 
 
                 // This is a hack as we don't actually know if it should be a quantity response or not.
-                return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
-                        "Please provide your answer to the correct number of significant figures."), false, validUnits,
-                        new Date());
+                return new QuantityValidationResponse(
+                        question.getId(),
+                        answerFromUser,
+                        false,
+                        new Content(
+                                "<strong>Significant figures</strong> are incorrect, "
+                                + "read our "
+                                + "<strong><a href='/solving_problems#acc_solving_problems_sig_figs'>"
+                                + "sig fig guide</a></strong>."),
+                        false, validUnits, new Date());
             }
         } catch (NumberFormatException e) {
             return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
