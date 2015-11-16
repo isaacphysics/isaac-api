@@ -232,8 +232,40 @@ public class IsaacNumericValidatorTest {
 		assertTrue("Appropriate message provided", response.getExplanation().getValue().contains("units"));
 	}
 	
+    @Test
+    public final void isaacNumericValidator_CheckKnownIncorrectAnswerWithIncorrectSigFigs_KnownIncorrectResponseShouldHappen() {
+        String someExplanation = "some explanation";
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
+                
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someIncorrectAnswer = new Quantity();
+        someIncorrectAnswer.setValue("0");
+        someIncorrectAnswer.setCorrect(false);
+        someIncorrectAnswer.setExplanation(new Content(someExplanation));
+        answerList.add(someIncorrectAnswer);
+        
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("0.13");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        
+        someNumericQuestion.setChoices(answerList);
+        
+        // setup users answer
+        Quantity q = new Quantity();
+        q.setValue("0");
+        
+        IsaacNumericValidator validator = new IsaacNumericValidator();
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        
+        assertFalse("Response should be incorrect", response.isCorrect());
+        
+        assertTrue("provide specific explanation", response.getExplanation().getValue().toLowerCase().contains(someExplanation.toLowerCase()));
+    }
+	
 	@Test
-	public final void isaacNumericValidator_CheckCorrectAnswerWithExponentIncorrectSigFigs_CorrectResponseShouldHappen() {
+	public final void isaacNumericValidator_CheckCorrectAnswerWithExponentIncorrectSigFigs_IncorrectResponseShouldHappen() {
 		IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
 		someNumericQuestion.setRequireUnits(false);
 				

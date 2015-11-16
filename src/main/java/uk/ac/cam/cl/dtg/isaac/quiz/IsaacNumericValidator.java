@@ -36,6 +36,9 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 public class IsaacNumericValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacNumericValidator.class);
     
+    private static final String defaultValidationResponse = "Check your working.";
+    private static final String defaultWrongUnitValidationResponse = "Check your units.";
+    
     @Override
     public final QuestionValidationResponse validateQuestionResponse(
             final Question question, final Choice answer) {
@@ -69,7 +72,24 @@ public class IsaacNumericValidator implements IValidator {
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                         "You did not provide any units."), null, false, new Date());
 
-            } else if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
+            } 
+            
+            QuestionValidationResponse bestResponse;
+            if (isaacNumericQuestion.getRequireUnits()) {
+                bestResponse = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
+            } else {
+                bestResponse = this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
+            }
+
+            // if we have not used the default validation response then go ahead and return it.
+            if (bestResponse.getExplanation() != null && !(defaultValidationResponse.equals(bestResponse.getExplanation().getValue()) 
+                    || 
+                    defaultWrongUnitValidationResponse
+                        .equals(bestResponse.getExplanation().getValue()))) {
+                return bestResponse;
+            }
+            
+            if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
                     isaacNumericQuestion.getSignificantFigures())) {
                 // make sure that the answer is to the right number of sig figs
                 // before we proceed.
@@ -98,16 +118,15 @@ public class IsaacNumericValidator implements IValidator {
                                 + "sig fig guide</a></strong>."),
                         false, validUnits, new Date());
             }
+            
+            // ok return the generic response
+            return bestResponse;
         } catch (NumberFormatException e) {
             return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                     "The answer you provided is not a valid number."), false, false, new Date());
         }
 
-        if (isaacNumericQuestion.getRequireUnits()) {
-            return this.validateWithUnits(isaacNumericQuestion, answerFromUser);
-        } else {
-            return this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
-        }
+
     }
 
     /**
@@ -149,14 +168,14 @@ public class IsaacNumericValidator implements IValidator {
                         && quantityFromQuestion.isCorrect()) {
                     // matches value but not units of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content("Check your units."), true, false, new Date());
+                            false, new Content(defaultWrongUnitValidationResponse), true, false, new Date());
                 } else if (!numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
                         isaacNumericQuestion.getSignificantFigures())
                         && answerFromUser.getUnits().equals(quantityFromQuestion.getUnits())
                         && quantityFromQuestion.isCorrect()) {
                     // matches units but not value of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content("Check your working."), false, true, new Date());
+                            false, new Content(defaultValidationResponse), false, true, new Date());
                 }
             } else {
                 log.error("Isaac Numeric Validator for questionId: " + isaacNumericQuestion.getId()
@@ -168,7 +187,7 @@ public class IsaacNumericValidator implements IValidator {
             // tell them they got it wrong but we cannot find an
             // feedback for them.
             return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, new Content(
-                    "Check your working."), false, false, new Date());
+                    defaultValidationResponse), false, false, new Date());
 
         } else {
             return bestResponse;
@@ -203,7 +222,7 @@ public class IsaacNumericValidator implements IValidator {
                 } else {
                     // value doesn't match this choice
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content("Check your working."), false, null, new Date());
+                            false, new Content(defaultValidationResponse), false, null, new Date());
                 }
             } else {
                 log.error("Isaac Numeric Validator expected there to be a Quantity in ("
@@ -234,20 +253,15 @@ public class IsaacNumericValidator implements IValidator {
      * @return true when the numbers match
      */
     private boolean numericValuesMatch(final String trustedValue, final String untrustedValue,
-            final int significantFiguresRequired) {
+            final int significantFiguresRequired) throws NumberFormatException {
         double trustedDouble, untrustedDouble;
 
         // Replace "x10^" with "e";
         String untrustedParsedValue = untrustedValue.replace("x10^", "e").replace("*10^", "e");
 
-        try {
-            trustedDouble = Double.parseDouble(trustedValue.replace("x10^", "e").replace("*10^", "e"));
-            untrustedDouble = Double.parseDouble(untrustedParsedValue);
-        } catch (NumberFormatException e) {
-            // One of the values was not a valid float.
-            return false;
-        }
-
+        trustedDouble = Double.parseDouble(trustedValue.replace("x10^", "e").replace("*10^", "e"));
+        untrustedDouble = Double.parseDouble(untrustedParsedValue);
+        
         // Round to N s.f. for trusted value
         trustedDouble = roundToSigFigs(trustedDouble, significantFiguresRequired);
         untrustedDouble = roundToSigFigs(untrustedDouble, significantFiguresRequired);
