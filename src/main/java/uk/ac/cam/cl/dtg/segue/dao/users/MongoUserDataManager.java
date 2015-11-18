@@ -40,7 +40,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionAttemptUserRecord;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.LinkedAccount;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
@@ -59,7 +58,7 @@ import com.mongodb.MongoException;
  * 
  * @author Stephen Cummins
  */
-public class MongoUserDataManager implements IUserDataManager, IUserQuestionManager {
+public class MongoUserDataManager implements IUserDataManager {
 
     private static final Logger log = LoggerFactory.getLogger(MongoUserDataManager.class);
 
@@ -321,92 +320,92 @@ public class MongoUserDataManager implements IUserDataManager, IUserQuestionMana
             throw new SegueDatabaseException(errorMessage, e);
         }
     }
+    
+//    @Deprecated
+//    public void registerQuestionAttempt(final String userId, final String questionPageId, final String fullQuestionId,
+//            final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
+//        // Since we are attaching our own auto mapper we have to do MongoJack
+//        // configure on it.
+//        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
+//        MongoJackModule.configure(objectMapper);
+//
+//        JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(database.getDB()
+//                .getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class, String.class,
+//                objectMapper);
+//
+//        try {
+//            BasicDBObject query = new BasicDBObject(Constants.USER_ID_FKEY_FIELDNAME, userId);
+//
+//            DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
+//            String questionRecordId = null;
+//            if (questionAttemptRecord.size() > 1) {
+//                // multiple records returned so this is ambiguous.
+//                throw new SegueDatabaseException("Expected to only find one QuestionAttempt for the user, found "
+//                        + questionAttemptRecord.size());
+//            } else if (questionAttemptRecord.size() == 0) {
+//                // create a new QuestionAttemptUserRecord
+//                WriteResult<QuestionAttemptUserRecord, String> save = jc.save(new QuestionAttemptUserRecord(null,
+//                        userId));
+//
+//                questionRecordId = save.getSavedId();
+//
+//                if (save.getError() != null) {
+//                    log.error("Error during database update " + save.getError());
+//                    throw new SegueDatabaseException(
+//                            "Error occurred whilst trying to create new QuestionAttemptUserRecord: " + save.getError());
+//                }
+//            } else {
+//                // set the question Record Id so that we can modify it for the
+//                // update.
+//                questionRecordId = questionAttemptRecord.toArray().get(0).getId();
+//            }
+//
+//            WriteResult<QuestionAttemptUserRecord, String> r = jc.updateById(questionRecordId, DBUpdate.push(
+//                    Constants.QUESTION_ATTEMPTS_FIELDNAME + "." + questionPageId + "." + fullQuestionId,
+//                    questionAttempt));
+//
+//            if (r.getError() != null) {
+//                log.error("Error during database update " + r.getError());
+//                throw new SegueDatabaseException(
+//                        "Error occurred whilst trying to update the users QuestionAttemptUserRecord: " + r.getError());
+//            }
+//
+//        } catch (MongoException e) {
+//            log.error("MongoDB Database Exception. ", e);
+//        }
+//    }
 
-    @Override
-    public void registerQuestionAttempt(final String userId, final String questionPageId, final String fullQuestionId,
-            final QuestionValidationResponse questionAttempt) throws SegueDatabaseException {
-        // Since we are attaching our own auto mapper we have to do MongoJack
-        // configure on it.
-        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
-        MongoJackModule.configure(objectMapper);
-
-        JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(database.getDB()
-                .getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class, String.class,
-                objectMapper);
-
-        try {
-            BasicDBObject query = new BasicDBObject(Constants.USER_ID_FKEY_FIELDNAME, userId);
-
-            DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
-            String questionRecordId = null;
-            if (questionAttemptRecord.size() > 1) {
-                // multiple records returned so this is ambiguous.
-                throw new SegueDatabaseException("Expected to only find one QuestionAttempt for the user, found "
-                        + questionAttemptRecord.size());
-            } else if (questionAttemptRecord.size() == 0) {
-                // create a new QuestionAttemptUserRecord
-                WriteResult<QuestionAttemptUserRecord, String> save = jc.save(new QuestionAttemptUserRecord(null,
-                        userId));
-
-                questionRecordId = save.getSavedId();
-
-                if (save.getError() != null) {
-                    log.error("Error during database update " + save.getError());
-                    throw new SegueDatabaseException(
-                            "Error occurred whilst trying to create new QuestionAttemptUserRecord: " + save.getError());
-                }
-            } else {
-                // set the question Record Id so that we can modify it for the
-                // update.
-                questionRecordId = questionAttemptRecord.toArray().get(0).getId();
-            }
-
-            WriteResult<QuestionAttemptUserRecord, String> r = jc.updateById(questionRecordId, DBUpdate.push(
-                    Constants.QUESTION_ATTEMPTS_FIELDNAME + "." + questionPageId + "." + fullQuestionId,
-                    questionAttempt));
-
-            if (r.getError() != null) {
-                log.error("Error during database update " + r.getError());
-                throw new SegueDatabaseException(
-                        "Error occurred whilst trying to update the users QuestionAttemptUserRecord: " + r.getError());
-            }
-
-        } catch (MongoException e) {
-            log.error("MongoDB Database Exception. ", e);
-        }
-    }
-
-    @Override
-    public QuestionAttemptUserRecord getQuestionAttempts(final String userId) throws SegueDatabaseException {
-
-        // Since we are attaching our own auto mapper we have to do MongoJack
-        // configure on it.
-        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
-        MongoJackModule.configure(objectMapper);
-
-        JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(database.getDB()
-                .getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class, String.class,
-                objectMapper);
-
-        try {
-            BasicDBObject query = new BasicDBObject(Constants.USER_ID_FKEY_FIELDNAME, userId);
-
-            DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
-
-            if (questionAttemptRecord.size() > 1) {
-                throw new SegueDatabaseException(String.format(
-                        "Expected to only find one QuestionAttempt for the user (%s), found %s", userId,
-                        questionAttemptRecord.size()));
-            } else if (questionAttemptRecord.size() == 0) {
-                return new QuestionAttemptUserRecord();
-            }
-
-            return questionAttemptRecord.toArray().get(0);
-        } catch (MongoException e) {
-            log.error("MongoDB Database Exception. ", e);
-            throw new SegueDatabaseException("Database error.", e);
-        }
-    }
+//    @Deprecated
+//    public QuestionAttemptUserRecord getQuestionAttempts(final String userId) throws SegueDatabaseException {
+//
+//        // Since we are attaching our own auto mapper we have to do MongoJack
+//        // configure on it.
+//        ObjectMapper objectMapper = contentMapper.getSharedContentObjectMapper();
+//        MongoJackModule.configure(objectMapper);
+//
+//        JacksonDBCollection<QuestionAttemptUserRecord, String> jc = JacksonDBCollection.wrap(database.getDB()
+//                .getCollection(QUESTION_ATTEMPTS_COLLECTION_NAME), QuestionAttemptUserRecord.class, String.class,
+//                objectMapper);
+//
+//        try {
+//            BasicDBObject query = new BasicDBObject(Constants.USER_ID_FKEY_FIELDNAME, userId);
+//
+//            DBCursor<QuestionAttemptUserRecord> questionAttemptRecord = jc.find(query);
+//
+//            if (questionAttemptRecord.size() > 1) {
+//                throw new SegueDatabaseException(String.format(
+//                        "Expected to only find one QuestionAttempt for the user (%s), found %s", userId,
+//                        questionAttemptRecord.size()));
+//            } else if (questionAttemptRecord.size() == 0) {
+//                return new QuestionAttemptUserRecord();
+//            }
+//
+//            return questionAttemptRecord.toArray().get(0);
+//        } catch (MongoException e) {
+//            log.error("MongoDB Database Exception. ", e);
+//            throw new SegueDatabaseException("Database error.", e);
+//        }
+//    }
 
     @Override
     public final RegisteredUser getByLinkedAccount(final AuthenticationProvider provider, final String providerUserId)
