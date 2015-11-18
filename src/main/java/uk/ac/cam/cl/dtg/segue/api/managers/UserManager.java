@@ -77,14 +77,11 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserQuestionManager;
-import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.UserFromAuthProvider;
-import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -107,21 +104,16 @@ public class UserManager {
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
     private final PropertiesLoader properties;
-
     private final IUserDataManager database;
-    
-    private final IUserQuestionManager questionAttemptDb;
-    
-    private final Cache<String, AnonymousUser> temporaryUserCache;
-
+    private final QuestionManager questionAttemptDb;
     private final ILogManager logManager;
-
-    private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final MapperFacade dtoMapper;
-
     private final EmailManager emailManager;
     private final ObjectMapper serializationMapper;
-
+    
+    private final Cache<String, AnonymousUser> temporaryUserCache;
+    private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
+    
     /**
      * Create an instance of the user manager class.
      * 
@@ -141,7 +133,7 @@ public class UserManager {
      *            - so that we can log events for users..
      */
     @Inject
-    public UserManager(final IUserDataManager database, final IUserQuestionManager questionDb,
+    public UserManager(final IUserDataManager database, final QuestionManager questionDb,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
             final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager) {
         this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
@@ -169,17 +161,10 @@ public class UserManager {
      * @param logManager
      *            - so that we can log events for users..
      */
-    public UserManager(final IUserDataManager database, final IUserQuestionManager questionDb,
+    public UserManager(final IUserDataManager database, final QuestionManager questionDb,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
             final MapperFacade dtoMapper, final EmailManager emailQueue,
             final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager) {
-        Validate.notNull(database);
-        Validate.notNull(properties);
-        Validate.notNull(providersToRegister);
-        Validate.notNull(dtoMapper);
-        Validate.notNull(emailQueue);
-        Validate.notNull(temporaryUserCache);
-        Validate.notNull(logManager);
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
         Validate.notNull(properties.getProperty(HOST_NAME));
@@ -627,74 +612,6 @@ public class UserManager {
             response.addCookie(logoutCookie);
         } catch (IllegalStateException e) {
             log.info("The session has already been invalidated. " + "Unable to logout again...", e);
-        }
-    }
-
-    /**
-     * Record that someone has answered a question.
-     * 
-     * If the user is anonymous the question record will be added as a temporary session variable. This will enable
-     * merging later if the user registers.
-     * 
-     * @param user
-     *            - AbstractSegueUserDTO either registered or anonymous. - containing either a registered or anonymous
-     *            user.
-     * @param questionResponse
-     *            - question results.
-     */
-    public void recordQuestionAttempt(final AbstractSegueUserDTO user,
-            final QuestionValidationResponseDTO questionResponse) {
-        QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
-                QuestionValidationResponse.class);
-
-        // We are operating against the convention that the first component of
-        // an id is the question page
-        // and that the id separator is |
-        String[] questionPageId = questionResponse.getQuestionId().split(ESCAPED_ID_SEPARATOR);
-
-        if (user instanceof RegisteredUserDTO) {
-            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
-            try {
-                this.questionAttemptDb.registerQuestionAttempt(registeredUser.getLegacyDbId(), questionPageId[0],
-                        questionResponse.getQuestionId(), questionResponseDO);
-                log.debug("Question information recorded for user: " + registeredUser.getLegacyDbId());
-            } catch (SegueDatabaseException e) {
-                log.error("Unable to to record question attempt.", e);
-            }
-
-        } else if (user instanceof AnonymousUserDTO) {
-            AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
-
-            this.recordAnonymousUserQuestionInformation(
-                    this.findAnonymousUserDOBySessionId(anonymousUserDTO.getSessionId()), questionPageId[0],
-                    questionResponse.getQuestionId(), questionResponse);
-        } else {
-            log.error("Unexpected user type. Unable to record question response");
-        }
-    }
-
-    /**
-     * getQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
-     * 
-     * @param user
-     *            - with the session information included.
-     * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
-     * @throws SegueDatabaseException
-     *             - if there is a database error.
-     */
-    public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
-            final AbstractSegueUserDTO user) throws SegueDatabaseException {
-        Validate.notNull(user);
-
-        if (user instanceof RegisteredUserDTO) {
-            RegisteredUser registeredUser = this.findUserByLegacyId(((RegisteredUserDTO) user).getLegacyDbId());
-
-            return this.questionAttemptDb.getQuestionAttempts(registeredUser.getLegacyDbId()).getQuestionAttempts();
-        } else {
-            AnonymousUser anonymousUser = this.temporaryUserCache.getIfPresent(((AnonymousUserDTO) user)
-                    .getSessionId());
-            // since no user is logged in assume that we want to use any anonymous attempts
-            return anonymousUser.getTemporaryQuestionAttempts();
         }
     }
 
@@ -1215,21 +1132,45 @@ public class UserManager {
 
             response.addCookie(authCookie);
 
-            AnonymousUser anonymousUser = this.findAnonymousUserDOBySessionId(this.getAnonymousUser(request)
+            AnonymousUser anonymousUser = this.temporaryUserCache.getIfPresent(this.getAnonymousUser(request)
                     .getSessionId());
-            if (anonymousUser != null) {
-                // merge any anonymous information collected with this user.
-                try {
-                    this.mergeAnonymousQuestionInformationWithUserRecord(anonymousUser, user);
-                } catch (NoUserLoggedInException | SegueDatabaseException e) {
-                    log.error("Unable to merge anonymously collected data with stored user object.", e);
-                }
-            }
+
+            // now we want to clean up any data generated by the user while they weren't logged in.
+            mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
+            
         } catch (JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
         }
     }
 
+    /**
+     * Method to migrate anonymously generated data to a persisted account.
+     * @param anonymousUser to look up.
+     * @param user to migrate to.
+     */
+    private void mergeAnonymousUserWithRegisteredUser(final AnonymousUser anonymousUser, final RegisteredUser user) {
+        if (anonymousUser != null) {
+            // merge any anonymous information collected with this user.
+            try {
+                RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
+
+                this.questionAttemptDb.mergeAnonymousQuestionAttemptsIntoRegisteredUser(
+                        this.dtoMapper.map(anonymousUser, AnonymousUserDTO.class), userDTO);
+
+                this.logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
+                        .toString());
+
+                this.logManager.logInternalEvent(userDTO, MERGE_USER,
+                        ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
+
+                // delete the session attribute as merge has completed.
+                this.temporaryUserCache.invalidate(anonymousUser.getSessionId());
+            } catch (SegueDatabaseException e) {
+                log.error("Unable to merge anonymously collected data with stored user object.", e);
+            }
+        }
+    }
+    
     /**
      * Helper method to handle the setting of segue passwords when user objects are updated.
      * 
@@ -1271,6 +1212,7 @@ public class UserManager {
      * @return user or null if we cannot find it.
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
+     * @deprecated use findUserById
      */
     @Deprecated
     private RegisteredUser findUserByLegacyId(final String userId) throws SegueDatabaseException {
@@ -1939,44 +1881,6 @@ public class UserManager {
     }
 
     /**
-     * Temporarily Record Anonymous User Question Information in the anonymous user object provided.
-     * 
-     * @param anonymousUser
-     *            - anonymous user object stored in a session.
-     * @param questionPageId
-     *            - page id to record
-     * @param questionId
-     *            - question id to record
-     * @param questionResponse
-     *            - response to temporarily record.
-     */
-    private void recordAnonymousUserQuestionInformation(final AnonymousUser anonymousUser,
-            final String questionPageId, final String questionId, 
-            final QuestionValidationResponseDTO questionResponse) {
-
-        QuestionValidationResponse questionResponseDO = this.dtoMapper.map(questionResponse,
-                QuestionValidationResponse.class);
-
-        Map<String, Map<String, List<QuestionValidationResponse>>> anonymousResponses = anonymousUser
-                .getTemporaryQuestionAttempts();
-
-        if (!anonymousResponses.containsKey(questionPageId)) {
-            anonymousResponses.put(questionPageId, new HashMap<String, List<QuestionValidationResponse>>());
-        }
-
-        if (!anonymousResponses.get(questionPageId).containsKey(questionId)) {
-            anonymousResponses.get(questionPageId).put(questionId, new ArrayList<QuestionValidationResponse>());
-        }
-
-        // we could really create a specialised orika deserializer for this.
-
-        // add the response to the session object
-        anonymousResponses.get(questionPageId).get(questionId).add(questionResponseDO);
-
-        log.debug("Recording anonymous question attempt in session as user is not logged in.");
-    }
-
-    /**
      * Retrieves anonymous user information if it is available.
      * 
      * @param request
@@ -2023,66 +1927,6 @@ public class UserManager {
             }
         }
         return user;
-    }
-
-    /**
-     * Returns the anonymousUser if present in our cache.
-     * 
-     * @param id
-     *            - users id
-     * @return AnonymousUser or null.
-     */
-    private AnonymousUser findAnonymousUserDOBySessionId(final String id) {
-        return this.temporaryUserCache.getIfPresent(id);
-    }
-
-    /**
-     * Merges any question data stored in the session (this will only happen for anonymous users).
-     * 
-     * @param anonymousUser
-     *            - containing the question attempts.
-     * @param registeredUser
-     *            - the account to merge with.
-     * @throws NoUserLoggedInException
-     *             - Unable to merge as the user is still anonymous.
-     * @throws SegueDatabaseException
-     *             - if we are unable to locate the questions attempted by this user already.
-     */
-    private void mergeAnonymousQuestionInformationWithUserRecord(final AnonymousUser anonymousUser,
-            final RegisteredUser registeredUser) throws NoUserLoggedInException, SegueDatabaseException {
-        Validate.notNull(anonymousUser, "Anonymous user must not be null when merging anonymousQuestion info");
-        Validate.notNull(registeredUser, "Registered user must not be null when merging anonymousQuestion info");
-
-        Map<String, Map<String, List<QuestionValidationResponse>>> anonymouslyAnsweredQuestions = anonymousUser
-                .getTemporaryQuestionAttempts();
-
-        this.logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), registeredUser.getId()
-                .toString());
-
-        if (anonymouslyAnsweredQuestions.isEmpty()) {
-            return;
-        }
-
-        log.info(String.format("Merging anonymously answered questions with known user account (%s)",
-                registeredUser.getId()));
-
-        for (String questionPageId : anonymouslyAnsweredQuestions.keySet()) {
-            for (String questionId : anonymouslyAnsweredQuestions.get(questionPageId).keySet()) {
-                for (QuestionValidationResponse questionResponse : anonymouslyAnsweredQuestions.get(questionPageId)
-                        .get(questionId)) {
-                    QuestionValidationResponseDTO questionRespnseDTO = this.dtoMapper.map(questionResponse,
-                            QuestionValidationResponseDTO.class);
-                    this.recordQuestionAttempt(this.dtoMapper.map(registeredUser, RegisteredUserDTO.class),
-                            questionRespnseDTO);
-                }
-            }
-        }
-
-        this.logManager.logInternalEvent(this.convertUserDOToUserDTO(registeredUser), MERGE_USER,
-                ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
-
-        // delete the session attribute as merge has completed.
-        this.temporaryUserCache.invalidate(anonymousUser.getSessionId());
     }
 
     /**

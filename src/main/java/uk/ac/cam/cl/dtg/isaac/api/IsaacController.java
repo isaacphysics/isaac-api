@@ -41,7 +41,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFF
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -74,6 +73,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
@@ -120,7 +120,9 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserManager userManager;
     private final UserAssociationManager associationManager;
 
-    private URIManager uriManager;
+    private final URIManager uriManager;
+
+    private final QuestionManager questionManager;
 
     /**
      * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
@@ -148,7 +150,8 @@ public class IsaacController extends AbstractIsaacFacade {
     public IsaacController(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
             final ContentVersionController versionManager, final UserManager userManager,
-            final UserAssociationManager associationManager, final URIManager uriManager) {
+            final UserAssociationManager associationManager, final URIManager uriManager,
+            final QuestionManager questionManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -157,6 +160,7 @@ public class IsaacController extends AbstractIsaacFacade {
         this.userManager = userManager;
         this.associationManager = associationManager;
         this.uriManager = uriManager;
+        this.questionManager = questionManager;
     }
 
     /**
@@ -417,7 +421,7 @@ public class IsaacController extends AbstractIsaacFacade {
         Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts;
 
         try {
-            userQuestionAttempts = userManager.getQuestionAttemptsByUser(user);
+            userQuestionAttempts = questionManager.getQuestionAttemptsByUser(user);
         } catch (SegueDatabaseException e) {
             String message = "SegueDatabaseException whilst trying to retrieve user question data";
             log.error(message, e);

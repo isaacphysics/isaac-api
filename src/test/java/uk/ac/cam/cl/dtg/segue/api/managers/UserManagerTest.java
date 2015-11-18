@@ -59,7 +59,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserQuestionManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -82,7 +82,7 @@ import com.google.common.collect.ImmutableMap;
  */
 @PowerMockIgnore({ "javax.ws.*" })
 public class UserManagerTest {
-    private IUserQuestionManager dummyQuestionDatabase;
+    private QuestionManager dummyQuestionDatabase;
     private IUserDataManager dummyDatabase;
     private String dummyHMACSalt;
     private Map<AuthenticationProvider, IAuthenticator> dummyProvidersMap;
@@ -106,7 +106,7 @@ public class UserManagerTest {
      */
     @Before
     public final void setUp() throws Exception {
-        this.dummyQuestionDatabase = createMock(IUserQuestionManager.class);
+        this.dummyQuestionDatabase = createMock(QuestionManager.class);
         this.dummyDatabase = createMock(IUserDataManager.class);
         this.dummyHMACSalt = "BOB";
         this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
@@ -126,34 +126,6 @@ public class UserManagerTest {
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS)).andReturn("60").anyTimes();
         replay(this.dummyPropertiesLoader);
-    }
-
-    /**
-     * Verify that the constructor responds correctly to bad input.
-     */
-    @Test
-    public final void userManager_checkConstructorForBadInput_exceptionsShouldBeThrown() {
-        try {
-            new UserManager(null, this.dummyQuestionDatabase, this.dummyPropertiesLoader, this.dummyProvidersMap, this.dummyMapper,
-                    this.dummyQueue, this.dummyLogManager);
-            fail("Expected a null pointer exception immediately");
-        } catch (NullPointerException e) {
-            // fine
-        }
-        try {
-            new UserManager(dummyDatabase, this.dummyQuestionDatabase, null, this.dummyProvidersMap, this.dummyMapper, this.dummyQueue,
-                    this.dummyLogManager);
-            fail("Expected a null pointer exception immediately");
-        } catch (NullPointerException e) {
-            // fine
-        }
-        try {
-            new UserManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader, null, this.dummyMapper, this.dummyQueue,
-                    this.dummyLogManager);
-            fail("Expected a null pointer exception immediately");
-        } catch (NullPointerException e) {
-            // fine
-        }
     }
 
     /**
@@ -392,7 +364,7 @@ public class UserManagerTest {
 
         expect(dummyMapper.map(providerUser, RegisteredUser.class)).andReturn(mappedUser).atLeastOnce();
         expect(dummyMapper.map(mappedUser, RegisteredUserDTO.class)).andReturn(mappedUserDTO).atLeastOnce();
-        expect(dummyMapper.map(au, AnonymousUserDTO.class)).andReturn(someAnonymousUserDTO).once();
+        expect(dummyMapper.map(au, AnonymousUserDTO.class)).andReturn(someAnonymousUserDTO).anyTimes();
 
         // A main part of the test is to check the below call happens
         expect(
@@ -412,6 +384,9 @@ public class UserManagerTest {
         expectLastCall().once();
         expect(request.getCookies()).andReturn(cookieWithSessionInfo).anyTimes();
 
+        dummyQuestionDatabase.mergeAnonymousQuestionAttemptsIntoRegisteredUser(someAnonymousUserDTO, mappedUserDTO);
+        expectLastCall().once();
+        
         replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase);
 
         // Act

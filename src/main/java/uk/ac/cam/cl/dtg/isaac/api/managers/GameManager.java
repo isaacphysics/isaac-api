@@ -53,7 +53,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -81,9 +81,9 @@ public class GameManager {
     private final Random randomGenerator;
     private final MapperFacade mapper;
 
-    private final UserManager userManager;
-
     private final ContentVersionController versionManager;
+    
+    private final QuestionManager questionManager;
 
     /**
      * Creates a game manager that operates using the provided api.
@@ -98,11 +98,12 @@ public class GameManager {
      *            - allows mapping between DO and DTO object types.
      */
     @Inject
-    public GameManager(final UserManager userManager, final ContentVersionController versionManager,
-            final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper) {
+    public GameManager(final ContentVersionController versionManager,
+            final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
+            final QuestionManager questionManager) {
         this.versionManager = versionManager;
-        this.userManager = userManager;
         this.gameboardPersistenceManager = gameboardPersistenceManager;
+        this.questionManager = questionManager;
 
         this.randomGenerator = new Random();
 
@@ -164,7 +165,7 @@ public class GameManager {
             boardOwnerId = null;
         }
 
-        Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = userManager
+        Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts = questionManager
                 .getQuestionAttemptsByUser(boardOwner);
 
         GameFilter gameFilter = new GameFilter(subjectsList, fieldsList, topicsList, levelsList, conceptsList);
@@ -319,7 +320,7 @@ public class GameManager {
         Validate.notNull(user);
 
         List<GameboardDTO> usersGameboards = this.gameboardPersistenceManager.getGameboardsByUserId(user);
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = userManager
+        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser = questionManager
                 .getQuestionAttemptsByUser(user);
 
         if (null == usersGameboards || usersGameboards.isEmpty()) {
@@ -576,7 +577,7 @@ public class GameManager {
         Map<RegisteredUserDTO, List<GameboardItemState>> result = Maps.newHashMap();
 
         for (RegisteredUserDTO user : users) {
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = userManager
+            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = questionManager
                     .getQuestionAttemptsByUser(user);
 
             List<GameboardItemState> listOfQuestionStates = Lists.newArrayList();
@@ -608,7 +609,7 @@ public class GameManager {
         Map<RegisteredUserDTO, Map<String, Integer>> results = Maps.newHashMap();
         
         for (RegisteredUserDTO user : users) {
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = userManager
+            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = questionManager
                     .getQuestionAttemptsByUser(user);
             
             // questionPageId --> list of ints, in order of the questions on the page 1 is success, 0 is fail 
@@ -974,7 +975,7 @@ public class GameManager {
                 return true;
             }
         }
-        
+
         return false;
     }
     

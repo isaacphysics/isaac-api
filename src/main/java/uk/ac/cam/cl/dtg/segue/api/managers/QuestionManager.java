@@ -24,12 +24,16 @@ import java.util.Random;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
@@ -42,6 +46,9 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
@@ -50,21 +57,25 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
  * Questions.
  * 
+ * It is also responsible for orchestrating question attempt persistence.
+ * 
  */
 public class QuestionManager {
     private static final Logger log = LoggerFactory.getLogger(QuestionManager.class);
 
-    private ContentMapper mapper;
-
+    private final ContentMapper mapper;
+    private final IQuestionAttemptManager questionAttemptPersistenceManager;
     /**
      * Create a default Question manager object.
      * 
      * @param mapper
      *            - an auto mapper to allow us to convert to and from QuestionValidationResponseDOs and DTOs.
+     * @param questionPersistenceManager - for question attempt persistence.
      */
     @Inject
-    public QuestionManager(final ContentMapper mapper) {
+    public QuestionManager(final ContentMapper mapper, final IQuestionAttemptManager questionPersistenceManager) {
         this.mapper = mapper;
+        this.questionAttemptPersistenceManager = questionPersistenceManager;
     }
 
     /**
@@ -244,7 +255,82 @@ public class QuestionManager {
                     + " to a QuestionValidationResponse.");
         }
     }
+    
+    /**
+     * Record a question attempt for a given user.
+     * @param user - user that made the attempt.
+     * @param questionResponse - the outcome of the attempt to be persisted.
+     */
+    public void recordQuestionAttempt(final AbstractSegueUserDTO user,
+            final QuestionValidationResponseDTO questionResponse) {
+        QuestionValidationResponse questionResponseDO = this.mapper.getAutoMapper().map(questionResponse,
+                QuestionValidationResponse.class);
 
+        // We are operating with the convention that the first component of
+        // an id is the question page
+        // and that the id separator is |
+        String[] questionPageId = questionResponse.getQuestionId().split(Constants.ESCAPED_ID_SEPARATOR);
+        try {
+            if (user instanceof RegisteredUserDTO) {
+                RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+
+                this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
+                        questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+                log.debug("Question information recorded for user: " + registeredUser.getId());
+
+            } else if (user instanceof AnonymousUserDTO) {
+                AnonymousUserDTO anonymousUserDTO = (AnonymousUserDTO) user;
+
+                this.questionAttemptPersistenceManager.registerAnonymousQuestionAttempt(anonymousUserDTO.getSessionId(),
+                        questionPageId[0], questionResponse.getQuestionId(), questionResponseDO);
+            } else {
+                log.error("Unexpected user type. Unable to record question response");
+            }
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to to record question attempt.", e);
+        }
+    }
+    
+    /**
+     * getQuestionAttemptsByUser. This method will return all of the question attempts for a given user as a map.
+     * 
+     * @param user
+     *            - with the session information included.
+     * @return map of question attempts (QuestionPageId -> QuestionID -> [QuestionValidationResponse] or an empty map.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
+     */
+    public Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsByUser(
+            final AbstractSegueUserDTO user) throws SegueDatabaseException {
+        Validate.notNull(user);
+
+        if (user instanceof RegisteredUserDTO) {
+            RegisteredUserDTO registeredUser = (RegisteredUserDTO) user;
+
+            return this.questionAttemptPersistenceManager.getQuestionAttempts(registeredUser.getId());
+        } else {
+            AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
+            // since no user is logged in assume that we want to use any anonymous attempts
+            return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
+        }
+    }
+    
+    /**
+     * mergeAnonymousQuestionAttemptsIntoRegisteredUser.
+     * 
+     * @param anonymousUser
+     *            to look up question attempts
+     * @param registeredUser
+     *            to merge into.
+     * @throws SegueDatabaseException
+     *             - if something goes wrong.
+     */
+    public void mergeAnonymousQuestionAttemptsIntoRegisteredUser(final AnonymousUserDTO anonymousUser,
+            final RegisteredUserDTO registeredUser) throws SegueDatabaseException {
+        this.questionAttemptPersistenceManager.mergeAnonymousQuestionInformationWithRegisteredUserRecord(
+                anonymousUser.getSessionId(), registeredUser.getId());
+    }
+    
     /**
      * Extract all of the questionObjectsRecursively.
      * 

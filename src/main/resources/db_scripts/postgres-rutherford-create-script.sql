@@ -168,6 +168,43 @@ ALTER SEQUENCE logged_events_id_seq OWNED BY logged_events.id;
 
 
 --
+-- Name: question_attempts; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE question_attempts (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    question_id text NOT NULL,
+    question_attempt jsonb,
+    correct boolean,
+    "timestamp" timestamp without time zone
+);
+
+
+ALTER TABLE question_attempts OWNER TO rutherford;
+
+--
+-- Name: question_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE question_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE question_attempts_id_seq OWNER TO rutherford;
+
+--
+-- Name: question_attempts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE question_attempts_id_seq OWNED BY question_attempts.id;
+
+
+--
 -- Name: user_notifications; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -258,6 +295,13 @@ ALTER TABLE ONLY logged_events ALTER COLUMN id SET DEFAULT nextval('logged_event
 -- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
+ALTER TABLE ONLY question_attempts ALTER COLUMN id SET DEFAULT nextval('question_attempts_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
 
 
@@ -326,6 +370,14 @@ ALTER TABLE ONLY linked_accounts
 
 
 --
+-- Name: question_attempts_id; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY question_attempts
+    ADD CONSTRAINT question_attempts_id PRIMARY KEY (id);
+
+
+--
 -- Name: unique email; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -362,6 +414,14 @@ ALTER TABLE ONLY linked_accounts
 
 ALTER TABLE ONLY user_notifications
     ADD CONSTRAINT "user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id);
+
+
+--
+-- Name: user_id_question_attempts_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY question_attempts
+    ADD CONSTRAINT user_id_question_attempts_fkey FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --

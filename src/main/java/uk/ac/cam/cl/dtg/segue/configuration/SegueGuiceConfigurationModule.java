@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
@@ -59,7 +60,6 @@ import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.MongoLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
@@ -69,9 +69,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserQuestionManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.MongoGroupDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.MongoUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.MongoDb;
@@ -114,7 +114,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static Client elasticSearchClient = null;
 
     private static UserManager userManager = null;
-
+    
+    private static PgQuestionAttempts questionPersistenceManager = null;
+    
     private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
 
@@ -276,7 +278,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         bind(LocationHistory.class).to(PgLocationHistory.class);
         
-        bind(IUserQuestionManager.class).to(MongoUserDataManager.class);
+        bind(IQuestionAttemptManager.class).to(PgQuestionAttempts.class);
         bind(IUserDataManager.class).to(PgUsers.class);
         
         bind(ICommunicator.class).to(EmailCommunicator.class);
@@ -434,7 +436,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      * 
-     * @param questionDatabase
+     * @param questionManager
      *            - IUserManager
      * @param properties
      *            - properties loader
@@ -451,17 +453,35 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserManager getUserManager(final IUserDataManager database, final IUserQuestionManager questionDatabase,
+    private UserManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
             final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade) {
 
         if (null == userManager) {
-            userManager = new UserManager(database, questionDatabase, properties, providersToRegister, mapperFacade,
+            userManager = new UserManager(database, questionManager, properties, providersToRegister, mapperFacade,
                     emailQueue, logManager);
             log.info("Creating singleton of UserManager");
         }
 
         return userManager;
+    }
+    
+    /**
+     * @param ds - postgres data source
+     * @param objectMapper - mapper
+     * @return a singleton for question persistence.
+     */
+    @Inject
+    @Provides
+    @Singleton
+    private PgQuestionAttempts getQuestionManager(final PostgresSqlDb ds, final ContentMapper objectMapper) {
+        // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
+        if (null == questionPersistenceManager) {
+            questionPersistenceManager = new PgQuestionAttempts(ds, objectMapper);
+            log.info("Creating singleton of QuestionPersistenceManager");
+        }
+
+        return questionPersistenceManager;
     }
 
     /**
@@ -637,6 +657,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param groupManager
      *            - dependency
+     * @param questionManager
+     *            - dependency
      * @return stats manager
      */
     @Provides
@@ -645,12 +667,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static StatisticsManager getStatsManager(final UserManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
             final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
-            final GroupManager groupManager) {
+            final GroupManager groupManager, final QuestionManager questionManager) {
 
         if (null == statsManager) {
 
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
-                    contentManager, locationHistoryManager, groupManager);
+                    contentManager, locationHistoryManager, groupManager, questionManager);
             log.info("Created Singleton of Statistics Manager");
 
         }

@@ -61,6 +61,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -86,6 +87,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private UserAssociationManager associationManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
+    private final QuestionManager questionManager;
 
     /**
      * GamesFacade. For management of gameboards etc.
@@ -103,11 +105,12 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      */
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final GameManager gameManager, final UserManager userManager,
+            final GameManager gameManager, final QuestionManager questionManager, final UserManager userManager,
             final UserAssociationManager associationManager) {
         super(properties, logManager);
 
         this.gameManager = gameManager;
+        this.questionManager = questionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
     }
@@ -225,7 +228,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             GameboardDTO gameboard;
 
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.userManager
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = this.questionManager
                     .getQuestionAttemptsByUser(randomUser);
 
             GameboardDTO unAugmentedGameboard = gameManager.getGameboard(gameboardId);
@@ -681,7 +684,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = userManager
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = questionManager
                     .getQuestionAttemptsByUser(user);
 
             GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user, userQuestionAttempts);

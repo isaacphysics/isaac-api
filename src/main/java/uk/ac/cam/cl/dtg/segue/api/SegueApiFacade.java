@@ -945,7 +945,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
     public final Map<String, Map<String, List<QuestionValidationResponse>>> getQuestionAttemptsBySession(
             final AbstractSegueUserDTO user) throws SegueDatabaseException {
 
-        return this.userManager.getQuestionAttemptsByUser(user);
+        return this.questionManager.getQuestionAttemptsByUser(user);
     }
 
     /**
@@ -1062,7 +1062,8 @@ public class SegueApiFacade extends AbstractSegueFacade {
             AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-                userManager.recordQuestionAttempt(currentUser, (QuestionValidationResponseDTO) response.getEntity());
+                questionManager.recordQuestionAttempt(currentUser,
+                        (QuestionValidationResponseDTO) response.getEntity());
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());

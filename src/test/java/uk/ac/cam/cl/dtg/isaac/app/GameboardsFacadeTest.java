@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response.Status;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
+
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -54,6 +56,7 @@ public class GameboardsFacadeTest {
 	private ILogManager dummyLogManager = null;
 	private UserManager userManager;
 	private UserAssociationManager userAssociationManager;
+    private QuestionManager questionManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -68,6 +71,7 @@ public class GameboardsFacadeTest {
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
 		this.userManager = createMock(UserManager.class);
+	    this.questionManager = createMock(QuestionManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
 	}
 
@@ -83,7 +87,7 @@ public class GameboardsFacadeTest {
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
 		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyPropertiesLoader, dummyLogManager,
-				dummyGameManager, userManager, userAssociationManager);
+				dummyGameManager, questionManager, userManager, userAssociationManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";

@@ -122,8 +122,8 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     /**
      * Gets a Game manager.
      * 
-     * @param userManager
-     *            - so we can resolve game progress / user information.
+     * @param questionManager
+     *            - so we can resolve game progress information.
      * @param versionManager
      *            - so we can augment game objects with actual detailed content
      * @param gameboardPersistenceManager
@@ -135,11 +135,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private static GameManager getGameManager(final UserManager userManager,
+    private static GameManager getGameManager(final QuestionManager questionManager,
             final ContentVersionController versionManager,
             final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper) {
         if (null == gameManager) {
-            gameManager = new GameManager(userManager, versionManager, gameboardPersistenceManager, mapper);
+            gameManager = new GameManager(versionManager, gameboardPersistenceManager, mapper, questionManager);
             log.info("Creating Singleton of Game Manager");
         }
 
