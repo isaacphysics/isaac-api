@@ -585,7 +585,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	 * @param emailType
 	 * 				- the type of email to send (affects who receives it)
 	 * @throws SegueDatabaseException
-	 * 				- a database exception
+	 * 				- a segue database exception
 	 * @throws ContentManagerException
 	 * 				- a content management exception
 	 */
@@ -617,5 +617,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 			        		emailType, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
 	        this.filterByPreferencesAndAddToQueue(e);
 		}
+		
+		log.info(String.format("Added %s emails to the queue to be filtered and sent", allSelectedUsers.size()));
 	}
+	
 }

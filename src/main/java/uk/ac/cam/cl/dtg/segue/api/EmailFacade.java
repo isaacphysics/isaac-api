@@ -15,10 +15,19 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.swagger.annotations.Api;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -27,18 +36,27 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import ma.glasnost.orika.MapperFacade;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
@@ -59,9 +77,11 @@ import org.slf4j.LoggerFactory;
 public class EmailFacade extends AbstractSegueFacade {
 	
     private EmailManager emailManager;
+    private UserManager userManager;
     private ContentVersionController versionManager;
     private final SegueApiFacade api;
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
+    private final MapperFacade mapper;
 
 	/**
 	 * TODO Comment Here
@@ -70,11 +90,14 @@ public class EmailFacade extends AbstractSegueFacade {
 	 */
     @Inject
 	public EmailFacade(final SegueApiFacade api, final PropertiesLoader properties, final ILogManager logManager, 
-					final EmailManager emailManager, final ContentVersionController contentVersionController) {
+					final EmailManager emailManager, final UserManager userManager, 
+				    final MapperFacade mapper, final ContentVersionController contentVersionController) {
 		super(properties, logManager);
 		this.api = api;
 		this.versionManager = contentVersionController;
 		this.emailManager = emailManager;
+		this.userManager = userManager;
+		this.mapper = mapper;
 	}
     
     
@@ -145,7 +168,10 @@ public class EmailFacade extends AbstractSegueFacade {
         
 		try {
 			String htmlTemplatePreview = this.emailManager.getHTMLTemplatePreview(segueContentDTO, currentUser);
-			return Response.ok(htmlTemplatePreview).build();
+			
+			HashMap<String, String> htmlPreviewMap = Maps.newHashMap();
+			htmlPreviewMap.put("html", htmlTemplatePreview);
+			return Response.ok(htmlPreviewMap).build();
 		} catch (ResourceNotFoundException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
             						"Content could not be found: " + id);
@@ -169,6 +195,120 @@ public class EmailFacade extends AbstractSegueFacade {
 		}
 
     }
+    
+    /**
+     * GetEmailTypes returns the valid email preferences.
+     * 
+     * This method will returnserialised html that displays an email object
+     * 
+     * @param request
+     *            - so that we can allow only logged in users to view their own data. 
+     * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+     */
+    @GET
+    @Path("preferences")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEmailTypes(@Context final HttpServletRequest request) {
+    	EmailType [] types = EmailType.values();
+    	List<Map<String, Object>> resultList = Lists.newArrayList();
+    	for (EmailType type : types) {
+    		if (type.isValidEmailPreference()) {
+    			HashMap<String, Object> map = new HashMap<String, Object>();
+    			map.put("id", type.mapEmailTypeToInt());
+    			map.put("name", type.toString());
+    			resultList.add(map);
+    		}
+    	}    	
+    	
+		return Response.ok(resultList).build();
+    }
+    
+    
+    /**
+     * GetEmailTypes returns the valid email preferences.
+     * 
+     * This method will returnserialised html that displays an email object
+     * 
+     * @param request
+     *            - so that we can allow only logged in users to view their own data. 
+     * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+     */
+    @POST
+    @Path("sendemail/{contentid}/{emailtype}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response sendEmails(@Context final HttpServletRequest request,
+		    		@PathParam("contentid") final String contentId, 
+		    		@PathParam("emailtype") final Integer emailTypeInt, 
+		    		final Map<String, Boolean> users) {
+
+		EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
+
+		List<RegisteredUserDTO> allSelectedUsers =  Lists.newArrayList();
+		
+		try {
+    		for (String key : users.keySet()) {
+				RegisteredUserDTO prototype = new RegisteredUserDTO();
+				List<RegisteredUserDTO> selectedUsers = Lists.newArrayList();
+    			switch (key) {
+	    			case "adminUsers":
+	    				if (users.get("adminUsers")) {
+	    		    		prototype.setRole(Role.ADMIN);
+	    				}
+	    				break;
+	    			case "eventManagerUsers":
+	    				if (users.get("eventManagerUsers")) {
+	    		    		prototype.setRole(Role.EVENT_MANAGER);
+	    				}
+	    				break;
+	    			case "studentUsers":
+	    				if (users.get("studentUsers")) {
+	    		    		prototype.setRole(Role.STUDENT);
+	    				}
+	    				break;
+	    			case "contentEditorUsers":
+	    				if (users.get("contentEditorUsers")) {
+	    		    		prototype.setRole(Role.CONTENT_EDITOR);
+	    				}
+	    				break;
+	    			case "teacherUsers":
+	    				if (users.get("teacherUsers")) {
+	    		    		prototype.setRole(Role.TEACHER);
+	    				}
+	    				break;
+	    			case "testerUsers":
+	    				if (users.get("testerUsers")) {
+	    		    		prototype.setRole(Role.TESTER);
+	    				}
+	    				break;
+					default:
+						break;
+    			}
+    			if (prototype.getRole() != null) {
+		    		selectedUsers = this.userManager.findUsers(prototype);
+		    		allSelectedUsers.addAll(selectedUsers);
+    			}
+    		}
+    		
+			emailManager.sendCustomEmail(contentId, allSelectedUsers, emailType);
+		
+		} catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error processing your request.");
+			log.debug(error.getErrorMessage());
+			return error.toResponse();
+		} catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error retrieving content.");
+			log.debug(error.getErrorMessage());
+		}
+		
+    	
+		return Response.ok().build();
+    }
+
 
 
 }
