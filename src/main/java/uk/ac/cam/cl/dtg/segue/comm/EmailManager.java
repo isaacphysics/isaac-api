@@ -130,12 +130,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      */
     public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
         
-        if (null == segueContent) {
-            log.debug("Password reset message not sent as segue content was null!");
-            return;
-        }
+    	SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
+    	SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
         String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, user.getResetToken());
@@ -149,19 +146,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
-        String htmlMessage = null;
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
         
-        if (null == htmlTemplate) {
-            log.debug("HTML email template could not be found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
-            
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
 		        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
@@ -185,12 +176,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation");
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
-        if (null == segueContent) {
-            log.debug("Email registration confirmation email not sent as segue content was null!");
-            return;
-        }
-
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME), 
                 user.getLegacyDbId(),
@@ -204,19 +191,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
         
-        String htmlMessage = null;
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         
-        if (null == htmlTemplate) {
-            log.debug("HTML email template could not be found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
-            
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
 	        			user.getGivenName(), segueContent.getTitle(), plainTextMessage, 
@@ -240,11 +220,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                                                                         SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-email-verification");
-        
-        if (null == segueContent) {
-            log.debug("Email verification message not sent as segue content was null!");
-            return;
-        }
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+
 
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME),
@@ -258,20 +235,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("verificationURL", verificationURL);
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         
-        String htmlMessage = null;
-        
-        if (null == htmlTemplate) {
-            log.debug("HTML email template could not be found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
-            
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
 		        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
@@ -296,35 +266,24 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                                                                                 SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-verification-change");
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
-        if (null == segueContent) {
-            log.debug("Email change message not sent as segue content was null!");
-            return;
-        }
-
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
         p.put("requestedemail", newUser.getEmail());
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
-        
-        String htmlMessage = null;
-        
-        if (null == htmlTemplate) {
-            log.debug("HTML email template could not be found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
 
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
-	        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
-	        		EmailType.SYSTEM, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+			        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
+			        		EmailType.SYSTEM, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
         this.filterByPreferencesAndAddToQueue(e);
     }
 
@@ -351,14 +310,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		            throws ContentManagerException, SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
-
-        if (null == segueContent) {
-            log.debug("Email change message not sent as segue content was null!");
-            return;
-        }
-
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
-        
+   
 		String gameboardName = gameboard.getId();
 		if (gameboard.getTitle() != null) {
 			gameboardName = gameboard.getTitle();
@@ -377,17 +330,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("myAssignmentsURL", myAssignmentsURL);
             p.put("sig", SIGNATURE);
             String plainTextMessage = completeTemplateWithProperties(segueContent, p);
-            String htmlMessage = null;
 
-            if (null == htmlTemplate) {
-                log.debug("HTML email template could not be found!");
-            } else {
-                Properties htmlTemplateProperties = new Properties();
-                htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-                htmlTemplateProperties.put("email", user.getEmail());
+            Properties htmlTemplateProperties = new Properties();
+            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+            htmlTemplateProperties.put("email", user.getEmail());
 
-                htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-            }
+            String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+
 
             EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
 		            		user.getGivenName(), segueContent.getTitle(), plainTextMessage, 
@@ -422,12 +371,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		            			throws ContentManagerException, SegueDatabaseException {
 
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
-
-        if (null == segueContent) {
-            log.debug("Email change message not sent as segue content was null!");
-            return;
-        }
-
 		SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
         String groupOwnerName = "Unknown";
@@ -467,8 +410,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		                        gameboardName,
 		                        df.format(existingAssignments.get(i).getCreationDate())));
             }
-        }
-        else if (existingAssignments != null && existingAssignments.size() == 0) {
+        } else if (existingAssignments != null && existingAssignments.size() == 0) {
             sb.append("No assignments have been set yet.");
         }
 
@@ -480,17 +422,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
-        String htmlMessage = null;
 
-        if (null == htmlTemplate) {
-            log.debug("HTML email template could not be found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
 
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
         				user.getGivenName(), segueContent.getTitle(), plainTextMessage, 
@@ -519,11 +457,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             SegueDatabaseException {
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
-        
-        if (null == segueContent) {
-            log.warn("Federated password reset message not sent as segue content was null!");
-            return;
-        }
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
@@ -531,21 +465,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("providerWord", providerWord);
         p.put("sig", SIGNATURE);
         // TODO deal with the potential exception here
-        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+        String plainTextMessage = completeTemplateWithProperties(segueContent, p);      
+
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         
-        String htmlMessage = null;
-        
-        if (null == htmlTemplate) {
-            log.debug("HTML email template could not be found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
-            
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
 		        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
@@ -596,8 +523,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 			- when the HTML template cannot be completed
      */
     public String getHTMLTemplatePreview(final SeguePageDTO segueContent, final RegisteredUserDTO user) 
-    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, IllegalArgumentException {    	
+		    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, 
+		    		IllegalArgumentException {    	
         Validate.notNull(segueContent);
+        
+        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName());
@@ -606,21 +536,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
-        
-        String htmlMessage = null;
-        
-        if (null == htmlTemplate) {
-            throw new ResourceNotFoundException("email-template-html content object not found!");
-        } else {
-            Properties htmlTemplateProperties = new Properties();
-            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
-            htmlTemplateProperties.put("email", user.getEmail());
-            
-            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
-        }
+        Properties htmlTemplateProperties = new Properties();
+        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("email", user.getEmail());
 
-        return htmlMessage;
+        return completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
         
     }
     
@@ -630,19 +550,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param id  
      *          - the content id of the email template required
      * @return  - the SegueDTO content object
-     * @throws SegueDatabaseException 
-     *          - error if database cannot be accessed
      * @throws ContentManagerException 
      *          - error if there is a problem accessing content
+     * @throws ResourceNotFoundException 
+     *          - error if the content is not of the right type
      */
     private SeguePageDTO getSegueDTOEmailTemplate(final String id) 
-            throws SegueDatabaseException, ContentManagerException {
+            throws ContentManagerException, ResourceNotFoundException {
+    	
         ContentDTO c = contentVersionController.getContentManager().getContentById(
                 contentVersionController.getLiveVersion(), id);
 
         if (null == c) {
-            log.warn(String.format("E-mail template %s does not exist!", id));
-            return null;
+            throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
         }
         
         SeguePageDTO segueContentDTO = null;
@@ -650,9 +570,52 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         if (c instanceof SeguePageDTO) {
             segueContentDTO = (SeguePageDTO) c;
         } else {
-            throw new SegueDatabaseException("Content is of incorrect type:" + c.getType());
+            throw new ContentManagerException("Content is of incorrect type:" + c.getType());
         }
         
         return segueContentDTO;
     }
+
+
+	/**
+	 * @param contentObjectId
+	 * 				- the id of the email template being used
+	 * @param allSelectedUsers
+	 * 				- the users to send email to
+	 * @param emailType
+	 * 				- the type of email to send (affects who receives it)
+	 * @throws SegueDatabaseException
+	 * 				- a database exception
+	 * @throws ContentManagerException
+	 * 				- a content management exception
+	 */
+	public void sendCustomEmail(final String contentObjectId, final List<RegisteredUserDTO> allSelectedUsers, 
+					final EmailType emailType) throws SegueDatabaseException, ContentManagerException {
+		
+		SeguePageDTO segueContent = getSegueDTOEmailTemplate(contentObjectId);
+		SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+		
+		
+		for (RegisteredUserDTO user : allSelectedUsers) {
+	        Properties p = new Properties();
+	        p.put("givenname", user.getGivenName());
+	        p.put("familyname", user.getFamilyName());
+	        p.put("email", user.getFamilyName());
+	        p.put("sig", SIGNATURE);
+	        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+	        
+	        String htmlMessage = null;
+	        
+            Properties htmlTemplateProperties = new Properties();
+            htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+            htmlTemplateProperties.put("email", user.getEmail());
+            
+            htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+
+	        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
+			        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
+			        		emailType, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+	        this.filterByPreferencesAndAddToQueue(e);
+		}
+	}
 }
