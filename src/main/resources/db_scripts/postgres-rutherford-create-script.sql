@@ -205,6 +205,19 @@ ALTER SEQUENCE question_attempts_id_seq OWNED BY question_attempts.id;
 
 
 --
+-- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE user_email_preferences (
+    user_id integer NOT NULL,
+    email_preference integer NOT NULL,
+    email_preference_status boolean
+);
+
+
+ALTER TABLE user_email_preferences OWNER TO rutherford;
+
+--
 -- Name: user_notifications; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -228,7 +241,7 @@ CREATE TABLE users (
     family_name text,
     given_name text,
     email text NOT NULL,
-    role character varying(255) NOT NULL DEFAULT 'STUDENT',
+    role character varying(255) DEFAULT 'STUDENT'::character varying NOT NULL,
     date_of_birth date,
     gender character varying(255),
     registration_date timestamp without time zone,
@@ -320,19 +333,7 @@ ALTER TABLE ONLY users
 ALTER TABLE ONLY linked_accounts
     ADD CONSTRAINT "compound key" PRIMARY KEY (user_id, provider);
 
-    
---
--- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
---
 
-CREATE TABLE user_email_preferences (
-    user_id serial NOT NULL,
-    email_preference integer,
-    email_preference_status bool
-);
-
-ALTER TABLE ONLY user_email_preferences
-    ADD CONSTRAINT "composite key" PRIMARY KEY (user_id, email_preference);
 --
 -- Name: event userid; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
@@ -406,6 +407,14 @@ ALTER TABLE ONLY users
 
 
 --
+-- Name: user_id_email_preference_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_email_preferences
+    ADD CONSTRAINT user_id_email_preference_pk PRIMARY KEY (user_id, email_preference);
+
+
+--
 -- Name: fki_user_id fkey; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -426,6 +435,14 @@ ALTER TABLE ONLY linked_accounts
 
 ALTER TABLE ONLY user_notifications
     ADD CONSTRAINT "user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id);
+
+
+--
+-- Name: user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_email_preferences
+    ADD CONSTRAINT user_id_fk FOREIGN KEY (user_id) REFERENCES users(id);
 
 
 --
