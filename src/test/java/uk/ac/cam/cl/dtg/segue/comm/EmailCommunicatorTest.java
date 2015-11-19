@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.stream.DoubleStream;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -514,42 +513,4 @@ public class EmailCommunicatorTest {
         // We expect there to be nothing captured because the content was not returned
         assertFalse(capturedArgument.hasCaptured());
     }
-    
-    /**
-     * Test that floods the email communication queue with emails. 
-     */
-    @Test
-    public void addToQueue_checkAbstractCommunicationQueueCanCope_noErrorsShouldOccur(){
-    	final int TIMES = 100;
-    	emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
-    	
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, mockContentVersionController);
-        
-        EmailCommunicationMessage dummyMessage = null;
-
-        int[] randomEmailType = new Random().ints(TIMES, 0, 5).toArray();
-    	
-        for (int i = 0; i < TIMES; i++) {
-        	int emailType = randomEmailType[i];
-        	dummyMessage = new EmailCommunicationMessage(0l, null, null, null, null, EmailType.mapIntToPreference(emailType), null);
-        	manager.addToQueue(dummyMessage);
-        }
-        
-        try {
-			emailCommunicator.sendMessage(null);
-	    	EasyMock.expectLastCall().times(TIMES);
-		} catch (CommunicationException e) {
-			e.printStackTrace();
-		}
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            Assert.fail();
-        }
-        assertEquals(manager.getQueueLength(), 0);
-    }
-    
-    
- 
 }
