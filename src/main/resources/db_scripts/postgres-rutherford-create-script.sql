@@ -191,7 +191,7 @@ CREATE TABLE users (
     family_name text,
     given_name text,
     email text NOT NULL,
-    role character varying(255),
+    role character varying(255) NOT NULL DEFAULT 'STUDENT',
     date_of_birth date,
     gender character varying(255),
     registration_date timestamp without time zone,
