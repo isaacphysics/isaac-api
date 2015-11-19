@@ -5,6 +5,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
@@ -382,7 +383,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             groupOwnerName = groupOwner.getGivenName() + " " + groupOwner.getFamilyName();
         }
         
-        existingAssignments.sort(new Comparator<AssignmentDTO>() {
+        Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
 
             @Override
             public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
