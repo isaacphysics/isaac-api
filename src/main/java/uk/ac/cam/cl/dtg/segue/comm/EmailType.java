@@ -108,29 +108,6 @@ public enum EmailType {
 				return false;
 		}
 	}
-	
-	/**
-	 * Function to return human readable version of email type. 
-	 * @param emailType
-	 * 			- the type of email
-	 * @return human readable version of email type
-	 */
-	@Override
-	public String toString() {
-		switch (this) {
-			case ADMIN:
-				return "Admin";
-			case SYSTEM:
-				return "System";
-			case ASSIGNMENTS:
-				return "Assignments";
-			case NEWS_AND_UPDATES:
-				return "News and Updates";
-			case EVENTS:
-				return "Events";
-			default:
-				return null;
-		}
-	}
+
 	
 }

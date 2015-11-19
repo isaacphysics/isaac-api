@@ -470,6 +470,11 @@ public class PgUsers implements IUserDataManager {
             userToCreate.setLegacyDbId(UUID.randomUUID().toString());
         }
         
+        // make sure student is default role if none set
+        if (null == userToCreate.getRole()) {
+        	userToCreate.setRole(Role.STUDENT);
+        }
+        
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn

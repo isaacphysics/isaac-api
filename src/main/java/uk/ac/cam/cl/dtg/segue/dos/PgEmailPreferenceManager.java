@@ -65,13 +65,9 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 		
 		for (IEmailPreference preference : emailPreferences) {
 			Validate.isTrue(preference.getEmailType().isValidEmailPreference());
-			
-			if (null != getEmailPreference(userId, preference.getEmailType())) {
-				updateEmailPreferenceRecord(preference);
-			} else {
-				insertNewEmailPreferences(preference);
-			}
 		}
+		
+		upsertEmailPreferenceRecords(emailPreferences);
 	}
 	
 
@@ -179,84 +175,39 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
         }
 	}
 	
-    
+       
     /**
-     * @param emailPreference - email preference to insert.
-     * @throws SegueDatabaseException - if it fails.
-     */
-    private void insertNewEmailPreferences(final IEmailPreference emailPreference) 
-    				throws SegueDatabaseException {
-        PreparedStatement pst;
-        try (Connection conn = database.getDatabaseConnection()) {
-
-            pst = conn.prepareStatement("INSERT INTO user_email_preferences "
-                            + "(user_id, email_preference, email_preference_status) "
-                            + "VALUES (?, ?, ?)");
-
-            pst.setLong(1, emailPreference.getUserId());
-            pst.setInt(2, emailPreference.getEmailType().mapEmailTypeToInt());
-            pst.setBoolean(3, emailPreference.getEmailPreferenceStatus());
-
-
-            if (pst.executeUpdate() == 0) {
-                throw new SegueDatabaseException("Unable to save user email preference.");
-            }
-
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-        }
-    }
-    
-    /**
-     * @param emailPreference 
+     * @param emailPreferences 
      * 					- the user email preference to update
      * @throws SegueDatabaseException
      * 					- when there is a database error
      */
-    private void updateEmailPreferenceRecord(final IEmailPreference emailPreference) 
+    private void upsertEmailPreferenceRecords(final List<IEmailPreference> emailPreferences) 
     					throws SegueDatabaseException {
     	PreparedStatement pst;
     	try (Connection conn = database.getDatabaseConnection()) {
-    		pst = conn.prepareStatement("UPDATE user_email_preferences " 
-    						+ "SET email_preference_status=?"
-    						+ "WHERE user_id=? AND email_preference=?");
-    		pst.setBoolean(1,  emailPreference.getEmailPreferenceStatus());
-    		pst.setLong(2, emailPreference.getUserId());
-    		pst.setInt(3,  emailPreference.getEmailType().mapEmailTypeToInt());
-    		
-    		if (pst.executeUpdate() != 1) {
-    			throw new SegueDatabaseException("Unable to save user email preference.");
+    		conn.setAutoCommit(false);
+    		for(IEmailPreference preference : emailPreferences) {
+	    		pst = conn.prepareStatement("WITH upsert AS (UPDATE user_email_preferences "
+	    				+ "SET email_preference_status=? WHERE user_id=? AND email_preference=? RETURNING *) "
+	    				+ "INSERT INTO user_email_preferences (user_id, email_preference, email_preference_status) "
+	    				+ "SELECT ?, ?, ? WHERE NOT EXISTS (SELECT * FROM upsert);");
+	    		pst.setBoolean(1,  preference.getEmailPreferenceStatus());
+	    		pst.setLong(2, preference.getUserId());
+	    		pst.setInt(3,  preference.getEmailType().mapEmailTypeToInt());
+	    		pst.setLong(4, preference.getUserId());
+	    		pst.setInt(5,  preference.getEmailType().mapEmailTypeToInt());
+	    		pst.setBoolean(6,  preference.getEmailPreferenceStatus());
+	    		
+	
+	            pst.executeUpdate();
     		}
-    		
+            conn.commit();
+            conn.setAutoCommit(true);
     	} catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
+            throw new SegueDatabaseException("Postgres exception on upsert ", e);
     	}
-    }
-    
-    /**
-     * @param emailPreference
-     * 					 - the user email preference to delete
-     * @throws SegueDatabaseException
-     * 					- when there is a database error
-     */
-    private void deleteEmailPreferenceRecord(final IEmailPreference emailPreference) 
-    					throws SegueDatabaseException {
-    	PreparedStatement pst;
-    	try (Connection conn = database.getDatabaseConnection()) {
-    		pst = conn.prepareStatement("DELETE user_email_preferences " 
-    						+ "WHERE user_id=? AND email_preference=?");
-    		pst.setLong(2, emailPreference.getUserId());
-    		pst.setInt(3,  emailPreference.getEmailType().mapEmailTypeToInt());
-    		
-    		if (pst.executeUpdate() != 1) {
-    			throw new SegueDatabaseException("Unable to save user email preference.");
-    		}
-    		
-    	} catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
-    	}
-    }
-    
+    }    
 
     @Override
 	public IEmailPreference getEmailPreference(final long userId,
@@ -272,7 +223,8 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
     			boolean emailPreferenceStatus = results.getBoolean("email_preference_status");
         		return new PgEmailPreference(userId, emailType, emailPreferenceStatus);
     		} else {
-        		return null;
+    			//set defaults for those email preferences that have not been found
+        		return new PgEmailPreference(userId, emailType, true);
     		}
     	} catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

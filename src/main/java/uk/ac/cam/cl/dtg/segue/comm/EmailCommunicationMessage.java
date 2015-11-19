@@ -81,7 +81,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param type
      * 			  the type of the message
      */
-    public EmailCommunicationMessage(final long userId, final String recipientAddress, final String recipientName, final String subject,
+    public EmailCommunicationMessage(final Long userId, final String recipientAddress, final String recipientName, final String subject,
 		            final String plainTextMessage, final String htmlMessage, final EmailType type,
 		            @Nullable final String replyToAddress) {
         this.userId = userId;

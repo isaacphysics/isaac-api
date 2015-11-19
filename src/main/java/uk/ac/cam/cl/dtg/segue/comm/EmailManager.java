@@ -130,7 +130,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      */
     public void sendPasswordReset(final RegisteredUser user) throws ContentManagerException, SegueDatabaseException {
-        
+    	Validate.notNull(user);
     	SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
     	SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
@@ -174,7 +174,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendRegistrationConfirmation(final RegisteredUser user) throws ContentManagerException,
             SegueDatabaseException {
-
+    	Validate.notNull(user);
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation");
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
@@ -218,7 +218,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendEmailVerification(final RegisteredUser user) throws ContentManagerException, 
                                                                         SegueDatabaseException {
-
+    	Validate.notNull(user);
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-email-verification");
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
@@ -264,7 +264,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendEmailVerificationChange(final RegisteredUser user, final RegisteredUser newUser) 
             throws ContentManagerException, 
                                                                                 SegueDatabaseException {
-
+    	Validate.notNull(user);
+    	Validate.notNull(newUser);
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-verification-change");
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
         
@@ -308,6 +309,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendGroupAssignment(final List<RegisteredUserDTO> users, 
 		    		final GameboardDTO gameboard)
 		            throws ContentManagerException, SegueDatabaseException {
+    	Validate.notNull(users);
+    	Validate.notEmpty(users);
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -369,6 +372,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 								final List<AssignmentDTO> existingAssignments,
 					            final GameManager gameManager)
 		            			throws ContentManagerException, SegueDatabaseException {
+    	Validate.notNull(user);
 
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
 		SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -455,6 +459,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendFederatedPasswordReset(final RegisteredUser user, final String providerString,
             final String providerWord) throws ContentManagerException,
             SegueDatabaseException {
+    	Validate.notNull(user);
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
@@ -491,11 +496,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	
     	if (null == email.getUserId() || !email.getType().isValidEmailPreference()) {
     		addToQueue(email);
+    		return;
     	}
     	
     	try {
-			IEmailPreference preference = this.emailPreferenceManager.getEmailPreference(email.getUserId(), 
-							email.getType());
+			IEmailPreference preference = this.emailPreferenceManager.getEmailPreference(email.getUserId(), email.getType());
 			if (preference != null && preference.getEmailPreferenceStatus()) {
 				addToQueue(email);
 			}
@@ -526,6 +531,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, 
 		    		IllegalArgumentException {    	
         Validate.notNull(segueContent);
+    	Validate.notNull(user);
         
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
@@ -591,6 +597,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	 */
 	public void sendCustomEmail(final String contentObjectId, final List<RegisteredUserDTO> allSelectedUsers, 
 					final EmailType emailType) throws SegueDatabaseException, ContentManagerException {
+    	Validate.notNull(allSelectedUsers);
+    	Validate.notNull(contentObjectId);
 		
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate(contentObjectId);
 		SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
