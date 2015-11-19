@@ -19,7 +19,7 @@ ALTER TABLE user_email_preferences
   OWNER TO rutherford;
 
     
-UPDATE users SET role = 'STUDENT' WHERE role = '';
+UPDATE users SET role = 'STUDENT' WHERE role IS NULL;
 
 ALTER TABLE ONLY users ALTER COLUMN role SET NOT NULL;  
 ALTER TABLE ONLY users ALTER COLUMN role SET DEFAULT 'STUDENT';
