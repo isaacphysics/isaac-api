@@ -52,6 +52,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -93,6 +94,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
     private final UserAssociationManager associationManager;
 
+    private final QuestionManager questionManager;
+
     /**
      * Creates an instance of the AssignmentFacade controller which provides the REST endpoints for the isaac api.
      * 
@@ -112,11 +115,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - So that we can determine what information is allowed to be seen by other users.
      */
     @Inject
-    public AssignmentFacade(final AssignmentManager assignmentManager, final UserManager userManager,
+    public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager, final UserManager userManager,
             final GroupManager groupManager, final PropertiesLoader propertiesLoader, final GameManager gameManager,
             final ILogManager logManager, final UserAssociationManager associationManager,
             final EmailManager emailManager) {
         super(propertiesLoader, logManager);
+        this.questionManager = questionManager;
         this.userManager = userManager;
         this.gameManager = gameManager;
         this.groupManager = groupManager;
@@ -145,7 +149,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             Collection<AssignmentDTO> assignments = this.assignmentManager.getAssignments(currentlyLoggedInUser);
 
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.userManager
+            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = this.questionManager
                     .getQuestionAttemptsByUser(currentlyLoggedInUser);
 
             // we want to populate gameboard details for the assignment DTO.

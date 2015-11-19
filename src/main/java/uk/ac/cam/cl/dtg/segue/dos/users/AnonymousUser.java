@@ -31,15 +31,13 @@ import com.google.api.client.util.Maps;
 public class AnonymousUser extends AbstractSegueUser {
     private String sessionId;
 
-    private Map<String, Map<String, List<QuestionValidationResponse>>> temporaryQuestionAttempts;
-
     private Date dateCreated;
 
     /**
      * Default constructor required for Jackson.
      */
     public AnonymousUser() {
-        temporaryQuestionAttempts = Maps.newHashMap();
+        
     }
 
     /**
@@ -49,7 +47,7 @@ public class AnonymousUser extends AbstractSegueUser {
      *            - Our session Unique ID
      */
     public AnonymousUser(@JsonProperty("_id") final String sessionId) {
-        temporaryQuestionAttempts = Maps.newHashMap();
+        
         this.sessionId = sessionId;
     }
 
@@ -63,7 +61,6 @@ public class AnonymousUser extends AbstractSegueUser {
      */
     public AnonymousUser(final String sessionId,
             final Map<String, Map<String, List<QuestionValidationResponse>>> temporaryQuestionAttempts) {
-        this.temporaryQuestionAttempts = temporaryQuestionAttempts;
         this.sessionId = sessionId;
     }
 
@@ -84,26 +81,6 @@ public class AnonymousUser extends AbstractSegueUser {
      */
     public void setSessionId(final String sessionId) {
         this.sessionId = sessionId;
-    }
-
-    /**
-     * Gets the temporaryQuestionAttempts.
-     * 
-     * @return the temporaryQuestionAttempts
-     */
-    public Map<String, Map<String, List<QuestionValidationResponse>>> getTemporaryQuestionAttempts() {
-        return temporaryQuestionAttempts;
-    }
-
-    /**
-     * Sets the temporaryQuestionAttempts.
-     * 
-     * @param temporaryQuestionAttempts
-     *            the temporaryQuestionAttempts to set
-     */
-    public void setTemporaryQuestionAttempts(
-            final Map<String, Map<String, List<QuestionValidationResponse>>> temporaryQuestionAttempts) {
-        this.temporaryQuestionAttempts = temporaryQuestionAttempts;
     }
 
     /**

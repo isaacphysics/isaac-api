@@ -82,6 +82,7 @@ public class StatisticsManager {
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
+    private QuestionManager questionManager;
     
 
     /**
@@ -106,7 +107,7 @@ public class StatisticsManager {
     public StatisticsManager(final UserManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
             final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
-            final GroupManager groupManager) {
+            final GroupManager groupManager, final QuestionManager questionManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
@@ -116,6 +117,7 @@ public class StatisticsManager {
 
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
+        this.questionManager = questionManager;
 
         this.statsCache = CacheBuilder.newBuilder().expireAfterWrite(STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
                 .<String, Object> build();
@@ -503,7 +505,7 @@ public class StatisticsManager {
         // get total questions answered first time correctly
         int questionsFirstTime = 0;
 
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = userManager
+        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager
                 .getQuestionAttemptsByUser(userOfInterest);
 
         // all relevant question page info
