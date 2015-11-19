@@ -151,7 +151,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
-            pst = conn.prepareStatement("Select * FROM question_attempts WHERE user_id = ?");
+            pst = conn.prepareStatement("Select * FROM question_attempts WHERE user_id = ? ORDER BY \"timestamp\" ASC");
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
@@ -183,6 +183,95 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             }
             
             return mapOfQuestionAttemptsByPage;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (IOException e) {
+            throw new SegueDatabaseException("Exception while parsing json", e);
+        }
+    }
+    
+    @Override
+    public Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> 
+        getQuestionAttemptsByUsersAndQuestionPrefix(
+            final List<Long> userIds, final List<String> questionPageIds) throws SegueDatabaseException {
+        Validate.notEmpty(userIds);
+        Validate.notEmpty(questionPageIds);
+        
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            StringBuilder query = new StringBuilder();
+            query.append("Select * FROM question_attempts WHERE");
+            
+            // add all of the user ids we are interested in.
+            if (userIds != null && !userIds.isEmpty()) {
+                StringBuilder inParams = new StringBuilder();
+                inParams.append("?");
+                for (int i = 1; i < userIds.size(); i++) {
+                    inParams.append(",?");
+                }
+    
+                query.append(String.format(" user_id IN (%s)", inParams.toString()));
+            }
+
+            // add all of the question page ids we are interested in
+            StringBuilder questionIdsSB = new StringBuilder();
+            if (questionPageIds != null && !questionPageIds.isEmpty()) {
+                questionIdsSB.append("^(");
+                questionIdsSB.append(questionPageIds.get(0));
+                for (int i = 1; i < questionPageIds.size(); i++) {
+                    questionIdsSB.append("|" + questionPageIds.get(i));
+                }
+                
+                questionIdsSB.append(")");
+                
+                query.append(" AND question_id ~ ?");
+            }   
+            
+            query.append(" ORDER BY \"timestamp\" ASC");
+            
+            pst = conn.prepareStatement(query.toString());
+            
+            Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> mapToReturn 
+                = Maps.newHashMap();
+           
+            int index = 1;
+            for (int i = 0; i < userIds.size(); i++) {
+                pst.setLong(index++, userIds.get(i));
+                mapToReturn.put(userIds.get(i),
+                        new HashMap<String, Map<String, List<QuestionValidationResponse>>>());
+            }
+
+            pst.setString(index++, questionIdsSB.toString());
+            
+            ResultSet results = pst.executeQuery();
+            while (results.next()) {
+                QuestionValidationResponse questionAttempt = objectMapper.readValue(
+                        results.getString("question_attempt"), QuestionValidationResponse.class);
+                String questionPageId = questionAttempt.getQuestionId().split("\\|")[0];
+                String questionId = questionAttempt.getQuestionId();
+                
+                Map<String, Map<String, List<QuestionValidationResponse>>> mapOfQuestionAttemptsByPage 
+                    = mapToReturn
+                        .get(results.getLong("user_id"));
+
+                Map<String, List<QuestionValidationResponse>> attemptsForThisQuestionPage = mapOfQuestionAttemptsByPage
+                        .get(questionPageId);
+                
+                if (null == attemptsForThisQuestionPage) {
+                    attemptsForThisQuestionPage = Maps.newHashMap();
+                    mapOfQuestionAttemptsByPage.put(questionPageId, attemptsForThisQuestionPage);
+                }
+                
+                List<QuestionValidationResponse> listOfResponses = attemptsForThisQuestionPage.get(questionId);
+                if (null == listOfResponses) {
+                    listOfResponses = Lists.newArrayList();
+                    attemptsForThisQuestionPage.put(questionId, listOfResponses);
+                }
+
+                listOfResponses.add(questionAttempt);
+            }
+            
+            return mapToReturn;
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         } catch (IOException e) {

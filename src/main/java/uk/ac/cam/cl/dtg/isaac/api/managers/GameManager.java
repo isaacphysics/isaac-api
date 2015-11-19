@@ -569,23 +569,36 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we can't look up the question page details.
      */
-    public Map<RegisteredUserDTO, List<GameboardItemState>> gatherGameProgressData(final List<RegisteredUserDTO> users,
-            final GameboardDTO gameboard) throws SegueDatabaseException, ContentManagerException {
+    public Map<RegisteredUserDTO, List<GameboardItemState>> gatherGameProgressData(
+            final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
+            ContentManagerException {
         Validate.notNull(users);
         Validate.notNull(gameboard);
 
         Map<RegisteredUserDTO, List<GameboardItemState>> result = Maps.newHashMap();
 
+        List<String> questionPageIds = Lists.newArrayList();
+
+        for (GameboardItem questionPage : gameboard.getQuestions()) {
+            questionPageIds.add(questionPage.getId());
+        }
+
+        Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> questionAttemptsForAllUsersOfInterest 
+            = questionManager
+                .getMatchingQuestionAttempts(users, questionPageIds);
+
         for (RegisteredUserDTO user : users) {
-            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = questionManager
-                    .getQuestionAttemptsByUser(user);
+//            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = 
+//                    questionAttemptsForAllUsersOfInterest
+//                        .get(user.getId());
 
             List<GameboardItemState> listOfQuestionStates = Lists.newArrayList();
 
             for (GameboardItem question : gameboard.getQuestions()) {
                 // TODO: this will be horribly inefficient as it looks up
                 // questions in the question page lots of times.
-                listOfQuestionStates.add(this.calculateQuestionState(question.getId(), questionAttemptsBySession));
+                listOfQuestionStates.add(this.calculateQuestionState(question.getId(),
+                        questionAttemptsForAllUsersOfInterest.get(user.getId())));
             }
             result.put(user, listOfQuestionStates);
         }

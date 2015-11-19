@@ -28,6 +28,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -313,6 +314,23 @@ public class QuestionManager {
             // since no user is logged in assume that we want to use any anonymous attempts
             return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
         }
+    }
+    
+    /**
+     * @param users
+     * @param questionPageIds
+     * @return
+     * @throws SegueDatabaseException
+     */
+    public Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> getMatchingQuestionAttempts(
+            final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException {
+        List<Long> userIds = Lists.newArrayList();
+        for (RegisteredUserDTO user : users) {
+            userIds.add(user.getId());
+        }
+
+        return this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
+                questionPageIds);
     }
     
     /**
