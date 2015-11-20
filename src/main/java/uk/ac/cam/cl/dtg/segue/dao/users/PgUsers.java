@@ -238,7 +238,7 @@ public class PgUsers implements IUserDataManager {
         // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM users WHERE email = ?");
+            pst = conn.prepareStatement("Select * FROM users WHERE email ILIKE ?");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();
