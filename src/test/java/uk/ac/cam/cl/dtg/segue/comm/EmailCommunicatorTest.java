@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNotNull;
 import java.util.ArrayList;
 import java.util.Random;
 
+import javax.swing.event.DocumentEvent.EventType;
+
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -35,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -44,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -62,6 +66,7 @@ public class EmailCommunicatorTest {
     private SegueLocalAuthenticator mockAuthenticator;
     private UserAssociationManager userAssociationManager;
     private AbstractEmailPreferenceManager emailPreferenceManager;
+    private ILogManager logManager;
 
 
     /**
@@ -104,6 +109,11 @@ public class EmailCommunicatorTest {
         EasyMock.replay(mockContentVersionController);
         
         userAssociationManager = EasyMock.createMock(UserAssociationManager.class);
+        
+        // Create log manager
+        logManager = EasyMock.createMock(ILogManager.class);
+        logManager.logInternalEvent(null, null, null);
+        EasyMock.expectLastCall().anyTimes();
 
 
         capturedArgument = new Capture<EmailCommunicationMessage>();
@@ -190,7 +200,7 @@ public class EmailCommunicatorTest {
 
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
-        				mockContentVersionController);
+        				mockContentVersionController, logManager);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -255,7 +265,7 @@ public class EmailCommunicatorTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
-        				mockContentVersionController);
+        				mockContentVersionController, logManager);
         try {
             manager.sendFederatedPasswordReset(user, "testString", "testWord");
         } catch (ContentManagerException e) {
@@ -320,7 +330,7 @@ public class EmailCommunicatorTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager ,mockPropertiesLoader, 
-        				mockContentVersionController);
+        				mockContentVersionController, logManager);
         try {
             manager.sendPasswordReset(user);
         } catch (ContentManagerException e) {
@@ -383,7 +393,7 @@ public class EmailCommunicatorTest {
 
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-        				mockContentVersionController);
+        				mockContentVersionController, logManager);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -436,7 +446,7 @@ public class EmailCommunicatorTest {
 
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
-        				mockContentVersionController);
+        				mockContentVersionController, logManager);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {
@@ -487,7 +497,7 @@ public class EmailCommunicatorTest {
 
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
-        			mockContentVersionController);
+        			mockContentVersionController, logManager);
         try {
             manager.sendRegistrationConfirmation(user);
         } catch (ContentManagerException e) {

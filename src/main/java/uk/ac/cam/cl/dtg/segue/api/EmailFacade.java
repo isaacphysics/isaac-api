@@ -243,6 +243,14 @@ public class EmailFacade extends AbstractSegueFacade {
 		    		@PathParam("contentid") final String contentId, 
 		    		@PathParam("emailtype") final Integer emailTypeInt, 
 		    		final Map<String, Boolean> users) {
+    	
+    	//TODO user needs to be logged in. should be admin to view others' info
+    	RegisteredUserDTO sender;
+		try {
+			sender = this.api.getCurrentUser(request);
+		} catch (NoUserLoggedInException e2) {
+    		return SegueErrorResponse.getNotLoggedInResponse();
+		}
 
 		EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
 
@@ -292,7 +300,7 @@ public class EmailFacade extends AbstractSegueFacade {
     			}
     		}
     		
-			emailManager.sendCustomEmail(contentId, allSelectedUsers, emailType);
+			emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
 		
 		} catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,

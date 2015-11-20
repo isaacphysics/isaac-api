@@ -437,7 +437,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * 
      * @param database
+     * 			- the database to access preferences
      * @param properties
+     * 			- the properties so we can generate emails
      * @param emailCommunicator
      *            the class the queue will send messages with
      * @param emailPreferenceManager
@@ -446,6 +448,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * 			- the content so we can access email templates
      * @param authenticator
      * 			- the authenticator
+     * @param logManager
+     * 			- the logManager to log emails sent
      * @return an instance of the queue
      */
     @Inject
@@ -454,9 +458,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator, 
             final AbstractEmailPreferenceManager emailPreferenceManager,
-            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator) {
+            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator, 
+            final ILogManager logManager) {
         if (null == emailCommunicationQueue) {
-            emailCommunicationQueue = new EmailManager(emailCommunicator,emailPreferenceManager, properties, contentVersionController);
+            emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties, 
+            				contentVersionController, logManager);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;

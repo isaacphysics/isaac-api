@@ -7,7 +7,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,6 +23,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -34,6 +37,8 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 /**
@@ -44,6 +49,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	private final AbstractEmailPreferenceManager emailPreferenceManager;
     private final PropertiesLoader globalProperties;
     private final ContentVersionController contentVersionController;
+    private final ILogManager logManager;
     
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private static final String SIGNATURE = "Isaac Physics Project";
@@ -63,11 +69,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
 		    		emailPreferenceManager, final PropertiesLoader globalProperties, 
-		    		final ContentVersionController contentVersionController) {
+		    		final ContentVersionController contentVersionController, final ILogManager logManager) {
         super(communicator);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentVersionController = contentVersionController;
+        this.logManager = logManager;
     }
 
     
@@ -585,6 +592,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
 
 	/**
+	 * @param sendingUser
+	 * 				- the user object for the user sending the email
 	 * @param contentObjectId
 	 * 				- the id of the email template being used
 	 * @param allSelectedUsers
@@ -596,16 +605,32 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	 * @throws ContentManagerException
 	 * 				- a content management exception
 	 */
-	public void sendCustomEmail(final String contentObjectId, final List<RegisteredUserDTO> allSelectedUsers, 
-					final EmailType emailType) throws SegueDatabaseException, ContentManagerException {
+	public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId, 
+					final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) 
+					throws SegueDatabaseException, ContentManagerException {
     	Validate.notNull(allSelectedUsers);
     	Validate.notNull(contentObjectId);
 		
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate(contentObjectId);
 		SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 		
+		Map<Long, Map<EmailType, Boolean>> allUserPreferences = 
+						this.emailPreferenceManager.getEmailPreferences(allSelectedUsers);
 		
-		for (RegisteredUserDTO user : allSelectedUsers) {
+		int numberOfUnfilteredUsers = allSelectedUsers.size();
+		Iterator<RegisteredUserDTO> userIterator = allSelectedUsers.iterator();
+		while (userIterator.hasNext()) {
+			RegisteredUserDTO user = userIterator.next();
+			
+			// don't continue if user has preference against this type of email
+			if (allUserPreferences.containsKey(user.getId())) {
+				Map<EmailType, Boolean> userPreferences = allUserPreferences.get(user.getId());
+				if (userPreferences.containsKey(emailType) && !userPreferences.get(emailType)) {
+					userIterator.remove();
+					break;
+				}
+			}
+			
 	        Properties p = new Properties();
 	        p.put("givenname", user.getGivenName());
 	        p.put("familyname", user.getFamilyName());
@@ -624,10 +649,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	        EmailCommunicationMessage e = new EmailCommunicationMessage(user.getId(), user.getEmail(), 
 			        		user.getGivenName(), segueContent.getTitle(), plainTextMessage, htmlMessage, 
 			        		emailType, globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
-	        this.filterByPreferencesAndAddToQueue(e);
+	        
+	        // add to the queue without using filterByPreferencesAndAddToQueue as we've already filtered for preferences
+	        super.addToQueue(e);
 		}
 		
-		log.info(String.format("Added %s emails to the queue to be filtered and sent", allSelectedUsers.size()));
+		ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
+		           .put("userIds", allSelectedUsers)
+		           .put("contentObjectId", contentObjectId)
+		           .put("contentVersionId", this.contentVersionController.getLiveVersion())
+		           .build();
+		this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
+		log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(), 
+						numberOfUnfilteredUsers - allSelectedUsers.size()));
 	}
 	
 }

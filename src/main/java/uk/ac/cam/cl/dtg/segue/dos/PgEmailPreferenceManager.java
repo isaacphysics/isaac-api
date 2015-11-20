@@ -35,6 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
@@ -116,7 +117,7 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 
 	@Override
 	public Map<Long, Map<EmailType, Boolean>> getEmailPreferences(
-					final List<Long> userIds) throws SegueDatabaseException {
+			final List<RegisteredUserDTO> users) throws SegueDatabaseException {
 		
 		Map<Long, Map<EmailType, Boolean>> returnMap = Maps.newHashMap(); 
         try (Connection conn = database.getDatabaseConnection()) {
@@ -124,16 +125,16 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
             StringBuilder sb = new StringBuilder();
             sb.append("Select * FROM user_email_preferences WHERE user_id in (");
             
-            for (int i = 0; i < userIds.size(); i++) {
-            	sb.append("?" + (i < userIds.size() - 1 ? ", " : ""));
+            for (int i = 0; i < users.size(); i++) {
+            	sb.append("?" + (i < users.size() - 1 ? ", " : ""));
             }
             
             sb.append(") ORDER BY user_id ASC, email_preference ASC");
             
             pst = conn.prepareStatement(sb.toString());
 
-            for (int i = 1; i <= userIds.size(); i++) {
-            	pst.setLong(i, userIds.get(i - 1));
+            for (int i = 1; i <= users.size(); i++) {
+            	pst.setLong(i, users.get(i - 1).getId());
             }
 
             ResultSet results = pst.executeQuery();
@@ -155,14 +156,14 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
             }
             
             // set defaults for those email preferences that have not been found
-            for (int i = 0; i < userIds.size(); i++) {
-            	long key = userIds.get(i);
+            for (int i = 0; i < users.size(); i++) {
+            	long key = users.get(i).getId();
             	if (returnMap.containsKey(key)) {
             		Map<EmailType, Boolean> existingPreferences = returnMap.get(key);
             		
             		for (EmailType emailType : EmailType.values()) {
             			if (emailType.isValidEmailPreference() 
-            							&& !existingPreferences.containsKey(emailType.toString())) {
+            							&& !existingPreferences.containsKey(emailType)) {
             				existingPreferences.put(emailType, true);
             			}
             		}

@@ -20,6 +20,7 @@ import java.util.Map;
 
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 /**
  * Interface class for email preferences.
@@ -50,7 +51,7 @@ public abstract class AbstractEmailPreferenceManager {
      * @return a map of user ids and email preferences.
      * @throws SegueDatabaseException - if a database error has occurred.
 	 */
-	public abstract Map<Long, Map<EmailType, Boolean>> getEmailPreferences(final List<Long> userIds) 
+	public abstract Map<Long, Map<EmailType, Boolean>> getEmailPreferences(final List<RegisteredUserDTO> users) 
 									throws SegueDatabaseException;
 	
     /**
