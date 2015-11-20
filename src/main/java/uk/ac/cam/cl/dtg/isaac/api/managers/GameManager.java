@@ -88,7 +88,7 @@ public class GameManager {
     /**
      * Creates a game manager that operates using the provided api.
      * 
-     * @param userManager
+     * @param questionManager
      *            - so we can resolve game progress / user information.
      * @param versionManager
      *            - so we can augment game objects with actual detailed content

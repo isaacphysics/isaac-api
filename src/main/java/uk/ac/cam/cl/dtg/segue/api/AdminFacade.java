@@ -120,6 +120,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - So we can report high level stats.
      * @param locationManager
      *            - for geocoding if we need it.
+     * @param schoolReader
+     *            - for looking up school information
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserManager userManager,

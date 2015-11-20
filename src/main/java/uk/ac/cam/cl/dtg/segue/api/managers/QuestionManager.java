@@ -165,7 +165,7 @@ public class QuestionManager {
      *            - to augment - this object may be mutated as a result of this method. i.e BestAttempt field set on
      *            question DTOs.
      * @param userId
-     *            - to allow us to provide a per user experience of question configuration.
+     *            - to allow us to provide a per user experience of question configuration (random seed).
      * @param usersQuestionAttempts
      *            - as a map of QuestionPageId to Map of QuestionId to QuestionValidationResponseDO
      * @return augmented page - the return result is by convenience as the page provided as a parameter will be mutated.
@@ -317,10 +317,10 @@ public class QuestionManager {
     }
     
     /**
-     * @param users
-     * @param questionPageIds
-     * @return
-     * @throws SegueDatabaseException
+     * @param users who we are interested in.
+     * @param questionPageIds we want to look up.
+     * @return a map of user id to question page id to question_id to list of attempts.
+     * @throws SegueDatabaseException if there is a database error.
      */
     public Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> getMatchingQuestionAttempts(
             final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException {

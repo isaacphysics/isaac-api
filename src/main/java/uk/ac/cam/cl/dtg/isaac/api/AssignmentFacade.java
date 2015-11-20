@@ -56,7 +56,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -90,7 +89,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private final UserManager userManager;
     private final GroupManager groupManager;
     private final GameManager gameManager;
-    private final EmailManager emailManager;
 
     private final UserAssociationManager associationManager;
 
@@ -117,8 +115,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager, final UserManager userManager,
             final GroupManager groupManager, final PropertiesLoader propertiesLoader, final GameManager gameManager,
-            final ILogManager logManager, final UserAssociationManager associationManager,
-            final EmailManager emailManager) {
+            final ILogManager logManager, final UserAssociationManager associationManager) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -126,7 +123,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
         this.groupManager = groupManager;
         this.assignmentManager = assignmentManager;
         this.associationManager = associationManager;
-        this.emailManager = emailManager;
     }
 
     /**

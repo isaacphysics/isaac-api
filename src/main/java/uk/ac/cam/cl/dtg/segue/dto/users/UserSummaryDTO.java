@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class UserSummaryDTO extends AbstractSegueUserDTO {
     private String databaseId;
+    private Long id;
     private String givenName;
     private String familyName;
     private String email;
@@ -33,6 +34,24 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     public UserSummaryDTO() {
 
     }
+
+    /**
+     * Gets the id.
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+    
+
+    /**
+     * Sets the id.
+     * @param id the id to set
+     */
+    public void setId(final Long id) {
+        this.id = id;
+    }
+    
 
     /**
      * Gets the databaseId.

@@ -145,6 +145,8 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - So we can check user permissions.
      * @param uriManager
      *            - URI manager so we can augment uris
+     * @param questionManager
+     *            - So we can look up attempt information.
      */
     @Inject
     public IsaacController(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
@@ -444,14 +446,15 @@ public class IsaacController extends AbstractIsaacFacade {
             Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
                     "contentVersion", versionManager.getLiveVersion());
 
-            String userId;
+            String userIdForRandomisation;
             if (user instanceof AnonymousUserDTO) {
-                userId = ((AnonymousUserDTO) user).getSessionId();
+                userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
             } else {
-                userId = ((RegisteredUserDTO) user).getLegacyDbId();
+                userIdForRandomisation = ((RegisteredUserDTO) user).getId().toString();
             }
 
-            content = api.getQuestionManager().augmentQuestionObjects(content, userId, userQuestionAttempts);
+            content = api.getQuestionManager().augmentQuestionObjects(content, userIdForRandomisation,
+                    userQuestionAttempts);
 
             // the request log
             getLogManager().logEvent(user, httpServletRequest, Constants.VIEW_QUESTION, logEntry);
@@ -461,7 +464,6 @@ public class IsaacController extends AbstractIsaacFacade {
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .tag(etag)
                     .build();
-
         } else {
             String error = "Unable to locate a question with the id specified: " + questionId;
             log.warn(error);
@@ -694,7 +696,7 @@ public class IsaacController extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        return getUserProgressInformation(request, user.getLegacyDbId());
+        return getUserProgressInformation(request, user.getId());
     }
 
     /**
@@ -713,13 +715,13 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response getUserProgressInformation(@Context final HttpServletRequest request,
-            @PathParam("user_id") final String userIdOfInterest) {
+            @PathParam("user_id") final Long userIdOfInterest) {
         RegisteredUserDTO user;
         UserSummaryDTO userOfInterestSummary;
         RegisteredUserDTO userOfInterestFull;
         try {
             user = userManager.getCurrentRegisteredUser(request);
-            userOfInterestFull = userManager.getUserDTOByLegacyId(userIdOfInterest);
+            userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {
@@ -727,7 +729,7 @@ public class IsaacController extends AbstractIsaacFacade {
                         .getUserQuestionInformation(userOfInterestFull);
 
                 this.getLogManager().logEvent(user, request, VIEW_USER_PROGRESS,
-                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getLegacyDbId()));
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userOfInterestFull.getId()));
 
                 return Response.ok(userQuestionInformation).build();
             } else {
