@@ -342,15 +342,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.WILDCARD)
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
             @PathParam("assignment_id") final String assignmentId) {
-        try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "This service is only available for staff users at the moment.").toResponse();
-            }
-        } catch (NoUserLoggedInException e1) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-        
+       
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             
@@ -453,7 +445,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
-                    Maps.newHashMap());
+                    ImmutableMap.of("assignmentId", assignmentId));
             
             // ignore name columns
 
