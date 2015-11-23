@@ -318,7 +318,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		    		final GameboardDTO gameboard)
 		            throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(users);
-    	Validate.notEmpty(users);
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
