@@ -194,8 +194,11 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
     public Map<Long, Map<String, Map<String, List<QuestionValidationResponse>>>> 
         getQuestionAttemptsByUsersAndQuestionPrefix(
             final List<Long> userIds, final List<String> questionPageIds) throws SegueDatabaseException {
-        Validate.notEmpty(userIds);
         Validate.notEmpty(questionPageIds);
+        
+        if (userIds.isEmpty()) {
+            return Maps.newHashMap();
+        }
         
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
