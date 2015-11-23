@@ -73,18 +73,20 @@ public class StatisticsManager {
     private ContentVersionController versionManager;
     private IContentManager contentManager;
     private GroupManager groupManager;
+    private QuestionManager questionManager;
     
-    private Cache<String, Object> statsCache;
+    private Cache<String, Object> longStatsCache;
+    private Cache<String, Object> shortStatsCache;
     private LocationHistoryManager locationHistoryManager;
 
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
     private static final String GENERAL_STATS = "GENERAL_STATS";
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
-    private static final int STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
-    private QuestionManager questionManager;
-    
+    private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
+    private static final int SHORT_STATS_EVICTION_INTERVAL_MINUTES = 1; // 12 hours
 
+    
     /**
      * StatisticsManager.
      * 
@@ -102,6 +104,8 @@ public class StatisticsManager {
      *            - so that we can query our location database (ip addresses)
      * @param groupManager
      *            - so that we can see how many groups we have site wide.
+     * @param questionManager
+     *            - so that we can see how many questions were answered.
      */
     @Inject
     public StatisticsManager(final UserManager userManager, final ILogManager logManager,
@@ -119,8 +123,11 @@ public class StatisticsManager {
         this.groupManager = groupManager;
         this.questionManager = questionManager;
 
-        this.statsCache = CacheBuilder.newBuilder().expireAfterWrite(STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
-                .<String, Object> build();
+        this.longStatsCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
+
+        this.shortStatsCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(SHORT_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
     }
 
     /**
@@ -133,7 +140,7 @@ public class StatisticsManager {
     public synchronized Map<String, Object> outputGeneralStatistics() 
             throws SegueDatabaseException {
         @SuppressWarnings("unchecked")
-        Map<String, Object> cachedOutput = (Map<String, Object>) this.statsCache.getIfPresent(GENERAL_STATS);
+        Map<String, Object> cachedOutput = (Map<String, Object>) this.longStatsCache.getIfPresent(GENERAL_STATS);
         if (cachedOutput != null) {
             log.debug("Using cached statistics.");
             return cachedOutput;
@@ -290,11 +297,24 @@ public class StatisticsManager {
         ib.put("groupCount", groupManager.getGroupCount());
         
         Map<String, Object> result = ib.build();
-        this.statsCache.put(GENERAL_STATS, result);
+        this.longStatsCache.put(GENERAL_STATS, result);
 
         return result;
     }
 
+    /**
+     * LogCount.
+     * 
+     * @param logTypeOfInterest
+     *            - the log event that we care about.
+     * @return the number of logs of that type (or an estimate).
+     * @throws SegueDatabaseException
+     *             if there is a problem with the database.
+     */
+    public Long getLogCount(final String logTypeOfInterest) throws SegueDatabaseException {
+        return this.logManager.getLogCountByType(ANSWER_QUESTION);
+    }
+    
     /**
      * Get an overview of all school performance. This is for analytics / admin users.
      * 
@@ -309,7 +329,7 @@ public class StatisticsManager {
     public List<Map<String, Object>> getSchoolStatistics() 
             throws UnableToIndexSchoolsException, SegueDatabaseException {
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.statsCache.getIfPresent(SCHOOL_STATS);
+        List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache.getIfPresent(SCHOOL_STATS);
         if (cachedOutput != null) {
             log.debug("Using cached statistics.");
             return cachedOutput;
@@ -362,7 +382,7 @@ public class StatisticsManager {
             }
         });
 
-        this.statsCache.put(SCHOOL_STATS, result);
+        this.longStatsCache.put(SCHOOL_STATS, result);
 
         return result;
     }
@@ -661,8 +681,8 @@ public class StatisticsManager {
      */
     @SuppressWarnings("unchecked")
     public Collection<Location> getLocationInformation(final Date threshold) throws SegueDatabaseException {
-        if (this.statsCache.getIfPresent(LOCATION_STATS) != null) {
-            return (Set<Location>) this.statsCache.getIfPresent(LOCATION_STATS);
+        if (this.longStatsCache.getIfPresent(LOCATION_STATS) != null) {
+            return (Set<Location>) this.longStatsCache.getIfPresent(LOCATION_STATS);
         }
 
         Set<Location> result = Sets.newHashSet();
@@ -672,7 +692,7 @@ public class StatisticsManager {
 
         result.addAll(locationsFromHistory.values());
 
-        this.statsCache.put(LOCATION_STATS, result);
+        this.longStatsCache.put(LOCATION_STATS, result);
 
         return result;
     }

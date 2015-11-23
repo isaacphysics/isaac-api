@@ -28,6 +28,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_ID_LOG_FIELDNAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_USER_PROGRESS;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
@@ -35,6 +36,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
@@ -751,6 +753,26 @@ public class IsaacController extends AbstractIsaacFacade {
         }
     }
 
+    /**
+     * Statistics endpoint.
+     * 
+     * @param request
+     *            - to determine access.
+     * @return stats
+     */
+    @GET
+    @Path("stats/questions_answered/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getQuestionCount(@Context final HttpServletRequest request) {
+        try {
+            return Response.ok(ImmutableMap.of("answeredQuestionCount", statsManager.getLogCount(ANSWER_QUESTION)))
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        }
+    }
+    
     /**
      * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
      * the client instead.
