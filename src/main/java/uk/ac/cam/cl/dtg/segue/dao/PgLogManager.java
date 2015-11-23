@@ -21,13 +21,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Calendar;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -141,16 +142,6 @@ public class PgLogManager implements ILogManager {
     }
 
     @Override
-    public Collection<LogEvent> getLogsByType(final String type) throws SegueDatabaseException {
-        return this.getLogsByUserAndType(type, null, null, null);
-    }
-
-    @Override
-    public Collection<LogEvent> getLogsByType(final String type, final Date fromDate) throws SegueDatabaseException {
-        return this.getLogsByUserAndType(type, fromDate, null, null);
-    }
-
-    @Override
     public Collection<LogEvent> getLogsByType(final String type, final Date fromDate, final Date toDate)
             throws SegueDatabaseException {
         return this.getLogsByUserAndType(type, fromDate, toDate, null);
@@ -184,7 +175,7 @@ public class PgLogManager implements ILogManager {
     }
 
     @Override
-    public Map<String, Map<LocalDate, Integer>> getLogCountByDate(final Collection<String> eventTypes,
+    public Map<String, Map<LocalDate, Long>> getLogCountByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> usersOfInterest,
             final boolean binDataByMonth) throws SegueDatabaseException {
         Validate.notNull(eventTypes);
@@ -196,22 +187,23 @@ public class PgLogManager implements ILogManager {
             }
         }
 
-        Map<String, Map<LocalDate, Integer>> result = Maps.newHashMap();
+        Map<String, Map<LocalDate, Long>> result = Maps.newHashMap();
 
         for (String typeOfInterest : eventTypes) {
-            Collection<LogEvent> rs = this.getLogsByUserAndType(typeOfInterest, fromDate, toDate, usersIdsList);
+            Map<Date, Long> rs = this.getLogsCountByMonthFilteredByUserAndType(typeOfInterest, fromDate, toDate,
+                    usersIdsList);
 
             if (!result.containsKey(typeOfInterest)) {
-                result.put(typeOfInterest, new HashMap<LocalDate, Integer>());
+                result.put(typeOfInterest, new HashMap<LocalDate, Long>());
             }
 
-            for (LogEvent le : rs) {
-                LocalDate dateGroup = this.getDateGroup(le, binDataByMonth);
+            for (Entry<Date, Long> le : rs.entrySet()) {
 
-                if (result.get(typeOfInterest).containsKey(dateGroup)) {
-                    result.get(typeOfInterest).put(dateGroup, result.get(typeOfInterest).get(dateGroup) + 1);
+                if (result.get(typeOfInterest).containsKey(le.getKey())) {
+                    result.get(typeOfInterest).put(new LocalDate(le.getKey()),
+                            result.get(typeOfInterest).get(le.getKey()) + le.getValue());
                 } else {
-                    result.get(typeOfInterest).put(dateGroup, 1);
+                    result.get(typeOfInterest).put(new LocalDate(le.getKey()), le.getValue());
                 }
             }
         }
@@ -297,7 +289,82 @@ public class PgLogManager implements ILogManager {
     }
 
     /**
+     * getLogsCountByMonthFilteredByUserAndType.
+     * 
+     * An optimised method for getting log counts data by month.
+     * This relies on the database doing the binning for us.
+     * 
+     * @param type
+     *            - type of log event to search for.
+     * @param fromDate
+     *            - the earliest date the log event can have occurred
+     * @param toDate
+     *            - the latest date the log event can have occurred
+     * @param userIds
+     *            - the list of users ids we are interested in.
+     * @return a collection of log events that match the above criteria or an empty collection.
+     * @throws SegueDatabaseException
+     *             - if we cannot retrieve the data from the database.
+     */
+    private Map<Date, Long> getLogsCountByMonthFilteredByUserAndType(final String type, final Date fromDate,
+            final Date toDate, final Collection<String> userIds) throws SegueDatabaseException {
+        Validate.notNull(fromDate);
+        Validate.notNull(toDate);
+
+        StringBuilder queryToBuild = new StringBuilder();
+        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(1)"
+                + " FROM generate_series(?, ?, INTERVAL '1' MONTH) m(gen_month)" + " LEFT OUTER JOIN logged_events"
+                + " ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )"
+                + " WHERE event_type=?");
+
+        if (userIds != null && !userIds.isEmpty()) {
+            StringBuilder inParams = new StringBuilder();
+            inParams.append("?");
+            for (int i = 1; i < userIds.size(); i++) {
+                inParams.append(",?");
+            }
+
+            queryToBuild.append(String.format(" AND user_id IN (%s)", inParams.toString()));
+
+        }
+        queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement(queryToBuild.toString());
+            pst.setTimestamp(1, new java.sql.Timestamp(fromDate.getTime()));
+            pst.setTimestamp(2, new java.sql.Timestamp(toDate.getTime()));
+
+            pst.setString(3, type);
+
+            int index = 4;
+            if (userIds != null) {
+                for (String userId : userIds) {
+                    pst.setString(index++, userId);
+                }
+            }
+
+            ResultSet results = pst.executeQuery();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+            Map<Date, Long> mapToReturn = Maps.newHashMap();
+            while (results.next()) {
+                mapToReturn.put(formatter.parse(results.getString("to_char")), results.getLong("count"));
+            }
+
+            return mapToReturn;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        } catch (ParseException e) {
+            throw new SegueDatabaseException("Unable to parse date exception", e);
+        }
+    }
+    
+    /**
      * getLogsByUserAndType.
+     * 
+     * WARNING: This should be used with care. Do not request too much
+     * TODO: add pagination
      * 
      * @param type
      *            - type of log event to search for.
@@ -513,28 +580,5 @@ public class PgLogManager implements ILogManager {
         logEvent.setTimestamp(new Date());
 
         return logEvent;
-    }
-
-    /**
-     * Get a date object that is configured correctly.
-     * 
-     * @param log
-     *            containing a valid timestamp
-     * @param binDataByMonth
-     *            whether we should bin the date by month or not.
-     * @return the local date either as per the log event or with the day of the month set to 1.
-     */
-    private LocalDate getDateGroup(final LogEvent log, final boolean binDataByMonth) {
-        LocalDate dateGroup;
-        if (binDataByMonth) {
-            Calendar logDate = new GregorianCalendar();
-            logDate.setTime(log.getTimestamp());
-            logDate.set(Calendar.DAY_OF_MONTH, 1);
-
-            dateGroup = new LocalDate(logDate.getTime());
-        } else {
-            dateGroup = new LocalDate(log.getTimestamp());
-        }
-        return dateGroup;
     }
 }

@@ -610,7 +610,7 @@ public class StatisticsManager {
      * @return Map of eventType --> map of dates and frequency
      * @throws SegueDatabaseException 
      */
-    public Map<String, Map<LocalDate, Integer>> getEventLogsByDate(final Collection<String> eventTypes,
+    public Map<String, Map<LocalDate, Long>> getEventLogsByDate(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final boolean binDataByMonth) throws SegueDatabaseException {
         return this.getEventLogsByDateAndUserList(eventTypes, fromDate, toDate, null, binDataByMonth);
     }
@@ -631,7 +631,7 @@ public class StatisticsManager {
      * @return Map of eventType --> map of dates and frequency
      * @throws SegueDatabaseException 
      */
-    public Map<String, Map<LocalDate, Integer>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
+    public Map<String, Map<LocalDate, Long>> getEventLogsByDateAndUserList(final Collection<String> eventTypes,
             final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
             final boolean binDataByMonth) throws SegueDatabaseException {
         Validate.notNull(eventTypes);

@@ -411,7 +411,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
+            Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
                     Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate),
                     Arrays.asList(userOfInterest), binData);
 

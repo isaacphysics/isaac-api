@@ -948,7 +948,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         "You must be logged in as an admin to access this function.").toResponse();
             }
 
-            Map<String, Map<LocalDate, Integer>> eventLogsByDate = this.statsManager.getEventLogsByDate(
+            Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDate(
                     Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
 
             // Calculate the ETag

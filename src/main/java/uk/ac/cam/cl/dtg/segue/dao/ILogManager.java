@@ -81,30 +81,6 @@ public interface ILogManager {
     void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId);
 
     /**
-     * To enable some simple analytics we provide a way to query logs by event type.
-     * 
-     * @param type
-     *            - string representing the type of event to find.
-     * @return all events of the type requested or null if none available. The map should be of type String, Object
-     * @throws SegueDatabaseException 
-     */
-    Collection<LogEvent> getLogsByType(String type) throws SegueDatabaseException;
-
-    /**
-     * Allows filtering by date range.
-     * 
-     * Will use now as the toDate.
-     * 
-     * @param type
-     *            - string representing the type of event to find.
-     * @param fromDate
-     *            - date to start search
-     * @return all events of the type requested or null if none available. The map should be of type String, Object
-     * @throws SegueDatabaseException 
-     */
-    Collection<LogEvent> getLogsByType(String type, Date fromDate) throws SegueDatabaseException;
-
-    /**
      * Allows filtering by date range.
      * 
      * @param type
@@ -165,7 +141,7 @@ public interface ILogManager {
      * @return a map of type -- > localDate -- > number of events
      * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
-    Map<String, Map<LocalDate, Integer>> getLogCountByDate(Collection<String> eventTypes, Date fromDate, Date toDate,
+    Map<String, Map<LocalDate, Long>> getLogCountByDate(Collection<String> eventTypes, Date fromDate, Date toDate,
             List<RegisteredUserDTO> usersOfInterest, boolean binDataByMonth) throws SegueDatabaseException;
 
     /**
