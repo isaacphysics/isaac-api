@@ -35,6 +35,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlets</artifactId>
+			<version>9.3.6.v20151106</version>
+		</dependency>
+		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>jaxrs-api</artifactId>
 			<version>${resteasy.version}</version>
@@ -281,9 +286,6 @@
 					<forkMode>pertest</forkMode>
 					<forkCount>3</forkCount>
 					<reuseForks>false</reuseForks>
-					<configuration>
-						<useSystemClassLoader>true</useSystemClassLoader>
-					</configuration>
 				</configuration>
 			</plugin>
 
