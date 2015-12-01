@@ -633,7 +633,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	        Properties p = new Properties();
 	        p.put("givenname", user.getGivenName());
 	        p.put("familyname", user.getFamilyName());
-	        p.put("email", user.getFamilyName());
+	        p.put("email", user.getEmail());
 	        p.put("sig", SIGNATURE);
 	        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
 	        
