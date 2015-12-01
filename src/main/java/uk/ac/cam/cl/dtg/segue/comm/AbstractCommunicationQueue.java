@@ -123,9 +123,5 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
                 e.printStackTrace();
 			}
         }
-    }
-    
-    
+    }    
 }
-
-

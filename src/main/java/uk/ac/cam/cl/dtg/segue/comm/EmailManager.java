@@ -626,7 +626,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 				Map<EmailType, Boolean> userPreferences = allUserPreferences.get(user.getId());
 				if (userPreferences.containsKey(emailType) && !userPreferences.get(emailType)) {
 					userIterator.remove();
-					break;
+					continue;
 				}
 			}
 			
