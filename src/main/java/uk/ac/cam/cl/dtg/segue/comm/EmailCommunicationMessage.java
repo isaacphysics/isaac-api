@@ -65,7 +65,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     }
     
     /**
-     * 
+     * @param userId
+     *            id of the user
      * @param recipientAddress
      *            address of user
      * @param recipientName
@@ -81,9 +82,9 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param type
      * 			  the type of the message
      */
-    public EmailCommunicationMessage(final Long userId, final String recipientAddress, final String recipientName, final String subject,
-		            final String plainTextMessage, final String htmlMessage, final EmailType type,
-		            @Nullable final String replyToAddress) {
+    public EmailCommunicationMessage(final Long userId, final String recipientAddress, final String recipientName,
+            final String subject, final String plainTextMessage, final String htmlMessage, final EmailType type,
+            @Nullable final String replyToAddress) {
         this.userId = userId;
     	this.plainTextMessage = plainTextMessage;
         this.recipientAddress = recipientAddress;
@@ -148,7 +149,6 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 		return type.getPriority();
 	}
 	
-    
     /**
 	 * @return the type
 	 */

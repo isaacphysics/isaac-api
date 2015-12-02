@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +33,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import ma.glasnost.orika.MapperFacade;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 
 import com.google.api.client.util.Lists;
@@ -81,23 +74,26 @@ public class EmailFacade extends AbstractSegueFacade {
     private ContentVersionController versionManager;
     private final SegueApiFacade api;
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
-    private final MapperFacade mapper;
 
 	/**
-	 * TODO Comment Here
-	 * @param properties
-	 * @param logManager
-	 */
+	 * EmailFacade.
+	 * This class is responsible for orchestrating e-mail operations
+     * @param api - a reference to the segue api facade.
+     * @param properties - global properties loader 
+     * @param logManager - log manager
+     * @param emailManager - class responsible for sending e-mail
+     * @param userManager - so we can look up users and verify permissions..
+     * @param contentVersionController - so we can look up email to send.
+     */
     @Inject
-	public EmailFacade(final SegueApiFacade api, final PropertiesLoader properties, final ILogManager logManager, 
-					final EmailManager emailManager, final UserManager userManager, 
-				    final MapperFacade mapper, final ContentVersionController contentVersionController) {
+    public EmailFacade(final SegueApiFacade api, final PropertiesLoader properties, final ILogManager logManager,
+            final EmailManager emailManager, final UserManager userManager,
+            final ContentVersionController contentVersionController) {
 		super(properties, logManager);
 		this.api = api;
 		this.versionManager = contentVersionController;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
-		this.mapper = mapper;
 	}
     
     
@@ -119,10 +115,9 @@ public class EmailFacade extends AbstractSegueFacade {
     public final Response getEmailInBrowserById(@Context final HttpServletRequest request,
             @PathParam("id") final String id) {
     	
-    	//TODO user needs to be logged in. should be admin to view others' info
     	RegisteredUserDTO currentUser;
 		try {
-			currentUser = this.api.getCurrentUser(request);
+			currentUser = this.api.getCurrentUser(request);			
 		} catch (NoUserLoggedInException e2) {
     		return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -228,10 +223,13 @@ public class EmailFacade extends AbstractSegueFacade {
     /**
      * GetEmailTypes returns the valid email preferences.
      * 
-     * This method will returnserialised html that displays an email object
+     * This method will return serialised html that displays an email object
      * 
      * @param request
      *            - so that we can allow only logged in users to view their own data. 
+     * @param contentId - of the e-mail to send
+     * @param emailTypeInt - the type of e-mail that is being sent. 
+     * @param users - string of user type to boolean (i.e. whether or not to send to this type) 
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
@@ -243,11 +241,15 @@ public class EmailFacade extends AbstractSegueFacade {
 		    		@PathParam("contentid") final String contentId, 
 		    		@PathParam("emailtype") final Integer emailTypeInt, 
 		    		final Map<String, Boolean> users) {
-    	
-    	//TODO user needs to be logged in. should be admin to view others' info
     	RegisteredUserDTO sender;
+    	
 		try {
 			sender = this.api.getCurrentUser(request);
+			
+			if (!isUserAnAdmin(userManager, request)) {
+			    return SegueErrorResponse.getIncorrectRoleResponse();
+			}
+			
 		} catch (NoUserLoggedInException e2) {
     		return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -260,7 +262,10 @@ public class EmailFacade extends AbstractSegueFacade {
     		for (String key : users.keySet()) {
 				RegisteredUserDTO prototype = new RegisteredUserDTO();
 				List<RegisteredUserDTO> selectedUsers = Lists.newArrayList();
-    			switch (key) {
+    			
+				// TODO: This should really match against enum values 
+				// otherwise this list has to be maintained separately.
+				switch (key) {
 	    			case "adminUsers":
 	    				if (users.get("adminUsers")) {
 	    		    		prototype.setRole(Role.ADMIN);
@@ -312,11 +317,7 @@ public class EmailFacade extends AbstractSegueFacade {
                     "There was an error retrieving content.");
 			log.debug(error.getErrorMessage());
 		}
-		
     	
 		return Response.ok().build();
     }
-
-
-
 }

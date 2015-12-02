@@ -37,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -65,6 +64,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            global properties used to get host name
      * @param contentVersionController
      *            content for email templates
+     * @param logManager
+     *            so we can log e-mail events.
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
@@ -298,17 +299,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     /**
      * Sends notification for groups being given an assignment.
-     * @param userManager
-     * 			  - the userManager
      * @param users
      *            - the group the gameboard is being assigned to
      * @param gameboard
-     *            - gameboard that is being assigned to the users
-     * @param assignmentOwner
-     * 			  - the user that owns the assignment we're sending an email about      
-     * @param userAssociationManager
-     * 			  - the association manager that allows us to check whether the owner of 
-     * 				the assignment has an association with the user      
+     *            - gameboard that is being assigned to the users  
      * @throws ContentManagerException
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
@@ -507,7 +501,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	}
     	
     	try {
-			IEmailPreference preference = this.emailPreferenceManager.getEmailPreference(email.getUserId(), email.getType());
+			IEmailPreference preference 
+			    = this.emailPreferenceManager.getEmailPreference(email.getUserId(), email.getType());
 			if (preference != null && preference.getEmailPreferenceStatus()) {
 				addToQueue(email);
 			}
@@ -658,9 +653,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		           .put("contentObjectId", contentObjectId)
 		           .put("contentVersionId", this.contentVersionController.getLiveVersion())
 		           .build();
+		
 		this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
-		log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(), 
-						numberOfUnfilteredUsers - allSelectedUsers.size()));
+		
+        log.info(String.format("Admin user: %s Added %d emails to the queue. %d were filtered.",
+                sendingUser.getEmail(), allSelectedUsers.size(), numberOfUnfilteredUsers - allSelectedUsers.size()));
 	}
 	
 }
