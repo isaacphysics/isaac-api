@@ -426,7 +426,7 @@ CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
 --
 
 ALTER TABLE ONLY linked_accounts
-    ADD CONSTRAINT "local_user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT "local_user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
@@ -450,7 +450,7 @@ ALTER TABLE ONLY user_email_preferences
 --
 
 ALTER TABLE ONLY question_attempts
-    ADD CONSTRAINT user_id_question_attempts_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT user_id_question_attempts_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
