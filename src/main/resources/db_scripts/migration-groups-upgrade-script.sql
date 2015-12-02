@@ -1,9 +1,29 @@
 -- Step 1: Create new tables for data to be migrated into 
+-- Table: groups
+
+-- DROP TABLE groups;
+
+CREATE TABLE groups
+(
+  id serial NOT NULL,
+  group_name text,
+  owner_id integer,
+  created timestamp without time zone,
+  CONSTRAINT group_pkey PRIMARY KEY (id),
+  CONSTRAINT "owner_user_id fkey" FOREIGN KEY (owner_id)
+      REFERENCES users (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE CASCADE
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE groups
+  OWNER TO rutherford;
 
 -- Table: assignments
 
 -- DROP TABLE assignments;
-
+  
 CREATE TABLE assignments
 (
   id serial NOT NULL,
@@ -43,28 +63,6 @@ WITH (
   OIDS=FALSE
 );
 ALTER TABLE group_memberships
-  OWNER TO rutherford;
-
-  
--- Table: groups
-
--- DROP TABLE groups;
-
-CREATE TABLE groups
-(
-  id integer NOT NULL DEFAULT nextval('user_groups_id_seq'::regclass),
-  group_name text,
-  owner_id integer,
-  created timestamp without time zone,
-  CONSTRAINT group_pkey PRIMARY KEY (id),
-  CONSTRAINT "owner_user_id fkey" FOREIGN KEY (owner_id)
-      REFERENCES users (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE CASCADE
-)
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE groups
   OWNER TO rutherford;
 
   
@@ -125,7 +123,7 @@ ALTER TABLE event_bookings ADD COLUMN user_id integer;
 UPDATE event_bookings
    SET user_id = users.id FROM users WHERE users._id = event_bookings.legacy_user_id;
 
-ALTER TABLE event_bookings DROP COLUMN legacy_user_id
+ALTER TABLE event_bookings DROP COLUMN legacy_user_id;
 
 ALTER TABLE event_bookings
   ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id)
