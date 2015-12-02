@@ -27,10 +27,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class AssignmentDO {
 	@ObjectId
 	@JsonProperty("_id")
-	private String id;
+	private Long id;
 	private String gameboardId;
-	private String groupId;
-	private String ownerUserId;
+	private Long groupId;
+	private Long ownerUserId;
 	private Date creationDate;
 	
 	/**
@@ -47,8 +47,8 @@ public class AssignmentDO {
 	 * @param creationDate
 	 *            - the date the assignment was created.
 	 */
-	public AssignmentDO(final String id, final String gameboardId, final String ownerUserId,
-			final String groupId, final Date creationDate) {
+    public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
+            final Date creationDate) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
@@ -69,7 +69,7 @@ public class AssignmentDO {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public String getId() {
+	public Long getId() {
 		return id;
 	}
 
@@ -79,7 +79,7 @@ public class AssignmentDO {
 	 */
 	@JsonProperty("_id")
 	@ObjectId
-	public void setId(final String id) {
+	public void setId(final Long id) {
 		this.id = id;
 	}
 
@@ -103,7 +103,7 @@ public class AssignmentDO {
 	 * Gets the groupId.
 	 * @return the groupId
 	 */
-	public String getGroupId() {
+	public Long getGroupId() {
 		return groupId;
 	}
 
@@ -111,7 +111,7 @@ public class AssignmentDO {
 	 * Sets the groupId.
 	 * @param groupId the groupId to set
 	 */
-	public void setGroupId(final String groupId) {
+	public void setGroupId(final Long groupId) {
 		this.groupId = groupId;
 	}
 
@@ -119,7 +119,7 @@ public class AssignmentDO {
 	 * Gets the ownerUserId.
 	 * @return the ownerUserId
 	 */
-	public String getOwnerUserId() {
+	public Long getOwnerUserId() {
 		return ownerUserId;
 	}
 
@@ -127,7 +127,7 @@ public class AssignmentDO {
 	 * Sets the ownerUserId.
 	 * @param ownerUserId the ownerUserId to set
 	 */
-	public void setOwnerUserId(final String ownerUserId) {
+	public void setOwnerUserId(final Long ownerUserId) {
 		this.ownerUserId = ownerUserId;
 	}
 

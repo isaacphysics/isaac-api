@@ -492,11 +492,11 @@ public class StatisticsManager {
     /**
      * @param qualifyingLogEvent
      *            the string event type that will be looked for.
-     * @return a list of userId's to last event timestamp
+     * @return a map of userId's to last event timestamp
      * @throws SegueDatabaseException 
      */
     public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
-        return this.convertFromLogEventToDateMap(this.logManager.getLastLogForAllUsers(qualifyingLogEvent));
+        return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
     }
 
     /**
@@ -729,19 +729,5 @@ public class StatisticsManager {
         }
 
         return questionIdToQuestionMap;
-    }
-
-    /**
-     * @param input
-     *            - containing more information than necessary.
-     * @return converted map
-     */
-    private Map<String, Date> convertFromLogEventToDateMap(final Map<String, LogEvent> input) {
-        Map<String, Date> result = Maps.newHashMap();
-
-        for (Entry<String, LogEvent> e : input.entrySet()) {
-            result.put(e.getKey(), e.getValue().getTimestamp());
-        }
-        return result;
     }
 }

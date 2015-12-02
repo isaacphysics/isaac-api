@@ -79,7 +79,7 @@ public class UserAssociationManager {
      *             - if the group specified does not exist.
      */
     public AssociationToken generateAssociationToken(final RegisteredUserDTO registeredUser,
-            final String associatedGroupId) throws SegueDatabaseException, UserGroupNotFoundException {
+            final Long associatedGroupId) throws SegueDatabaseException, UserGroupNotFoundException {
         Validate.notNull(registeredUser);
 
         if (associatedGroupId != null) {
@@ -97,7 +97,7 @@ public class UserAssociationManager {
         String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=", "")
                 .substring(0, tokenLength).toUpperCase().replace("0", "ZR").replace("O", "QR");
 
-        AssociationToken associationToken = new AssociationToken(token, registeredUser.getLegacyDbId(),
+        AssociationToken associationToken = new AssociationToken(token, registeredUser.getId(),
                 associatedGroupId);
 
         return associationDatabase.saveAssociationToken(associationToken);
@@ -113,7 +113,7 @@ public class UserAssociationManager {
      * @throws SegueDatabaseException
      *             - if a database error occurs.
      */
-    public void deleteAssociationTokenByGroupId(final String groupId) throws InvalidUserAssociationTokenException,
+    public void deleteAssociationTokenByGroupId(final Long groupId) throws InvalidUserAssociationTokenException,
             SegueDatabaseException {
         AssociationToken associationTokenByGroupId = associationDatabase.getAssociationTokenByGroupId(groupId);
         if (null == associationTokenByGroupId) {
@@ -132,9 +132,10 @@ public class UserAssociationManager {
      *            - the token to look up.
      * @return AssociationToken - So that you can identify the owner user.
      * @throws InvalidUserAssociationTokenException - if thhe association is invalid.
+     * @throws SegueDatabaseException - if there is a database error 
      */
     public AssociationToken lookupTokenDetails(final RegisteredUserDTO userMakingRequest, final String token)
-            throws InvalidUserAssociationTokenException {
+            throws InvalidUserAssociationTokenException, SegueDatabaseException {
         Validate.notNull(userMakingRequest);
         Validate.notBlank(token);
         AssociationToken lookedupToken = associationDatabase.lookupAssociationToken(token);
@@ -154,18 +155,20 @@ public class UserAssociationManager {
      * @param user
      *            to find associations for.
      * @return List of all of their associations.
+     * @throws SegueDatabaseException - if there is a database error
      */
-    public List<UserAssociation> getAssociations(final RegisteredUserDTO user) {
-        return associationDatabase.getUserAssociations(user.getLegacyDbId());
+    public List<UserAssociation> getAssociations(final RegisteredUserDTO user) throws SegueDatabaseException {
+        return associationDatabase.getUserAssociations(user.getId());
     }
 
     /**
      * @param user
      *            - who may have access granted.
      * @return List of all associations
+     * @throws SegueDatabaseException - if there is a database error 
      */
-    public List<UserAssociation> getAssociationsForOthers(final RegisteredUserDTO user) {
-        return associationDatabase.getUsersThatICanSee(user.getLegacyDbId());
+    public List<UserAssociation> getAssociationsForOthers(final RegisteredUserDTO user) throws SegueDatabaseException {
+        return associationDatabase.getUsersThatICanSee(user.getId());
     }
 
     /**
@@ -194,8 +197,8 @@ public class UserAssociationManager {
         }
 
         if (!associationDatabase
-                .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getLegacyDbId())) {
-            associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getLegacyDbId());
+                .hasValidAssociation(lookedupToken.getOwnerUserId(), userGrantingPermission.getId())) {
+            associationDatabase.createAssociation(lookedupToken, userGrantingPermission.getId());
             // don't create a new association just do the group assignment as they have already granted permission.
         }
 
@@ -203,7 +206,7 @@ public class UserAssociationManager {
 
         if (lookedupToken.getGroupId() != null) {
             userGroupManager.addUserToGroup(group, userGrantingPermission);
-            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getLegacyDbId(),
+            log.debug(String.format("Adding User: %s to Group: %s", userGrantingPermission.getId(),
                     lookedupToken.getGroupId()));
 
         }
@@ -224,7 +227,7 @@ public class UserAssociationManager {
         Validate.notNull(ownerUser);
         Validate.notNull(userToRevoke);
 
-        associationDatabase.deleteAssociation(ownerUser.getLegacyDbId(), userToRevoke.getLegacyDbId());
+        associationDatabase.deleteAssociation(ownerUser.getId(), userToRevoke.getId());
     }
 
     /**
@@ -281,9 +284,14 @@ public class UserAssociationManager {
      * @return true if yes false if no.
      */
     public boolean hasPermission(final RegisteredUserDTO currentUser, final UserSummaryDTO userRequested) {
-        return currentUser.getLegacyDbId().equals(userRequested.getLegacyDbId())
-                || this.associationDatabase.hasValidAssociation(currentUser.getLegacyDbId(),
-                        userRequested.getLegacyDbId())
-                || Role.ADMIN.equals(currentUser.getRole());
+        try {
+            return currentUser.getId().equals(userRequested.getId())
+                    || this.associationDatabase.hasValidAssociation(currentUser.getId(), userRequested.getId())
+                    || Role.ADMIN.equals(currentUser.getRole());
+        } catch (SegueDatabaseException e) {
+            log.error("Database Error: Unable to determine whether a user has permission to view another users data.",
+                    e);
+            return false;
+        }
     }
 }

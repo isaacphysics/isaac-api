@@ -15,20 +15,15 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos;
 
-import org.mongojack.ObjectId;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * AssociationToken. This allows one user to request permission to view other users details.
  * 
  * This token will be used to make new associations between users.
  */
 public class AssociationToken {
-    private String id;
     private String token;
-    private String ownerUserId;
-    private String groupId;
+    private Long ownerUserId;
+    private Long groupId;
 
     /**
 	 * 
@@ -47,33 +42,10 @@ public class AssociationToken {
      * @param groupId
      *            - group / label that users who use this token should be put in / labelled.
      */
-    public AssociationToken(final String token, final String ownerUserId, final String groupId) {
+    public AssociationToken(final String token, final Long ownerUserId, final Long groupId) {
         this.token = token;
         this.ownerUserId = ownerUserId;
         this.groupId = groupId;
-    }
-
-    /**
-     * Gets the id.
-     * 
-     * @return the id
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * Sets the id.
-     * 
-     * @param id
-     *            the id to set
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public void setId(final String id) {
-        this.id = id;
     }
 
     /**
@@ -100,7 +72,7 @@ public class AssociationToken {
      * 
      * @return the ownerUserId
      */
-    public String getOwnerUserId() {
+    public Long getOwnerUserId() {
         return ownerUserId;
     }
 
@@ -110,7 +82,7 @@ public class AssociationToken {
      * @param ownerUserId
      *            the ownerUserId to set
      */
-    public void setOwnerUserId(final String ownerUserId) {
+    public void setOwnerUserId(final Long ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
 
@@ -119,7 +91,7 @@ public class AssociationToken {
      * 
      * @return the groupId
      */
-    public String getGroupId() {
+    public Long getGroupId() {
         return groupId;
     }
 
@@ -129,7 +101,7 @@ public class AssociationToken {
      * @param groupId
      *            the groupId to set
      */
-    public void setGroupId(final String groupId) {
+    public void setGroupId(final Long groupId) {
         this.groupId = groupId;
     }
 }

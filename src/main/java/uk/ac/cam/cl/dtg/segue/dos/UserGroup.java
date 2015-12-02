@@ -16,13 +16,9 @@
 package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Date;
-import java.util.List;
-
 import javax.annotation.Nullable;
 
 import org.mongojack.ObjectId;
-
-import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -32,9 +28,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class UserGroup {
-    private String id;
+    private Long id;
     private String groupName;
-    private String ownerId;
+    private Long ownerId;
     private Date created;
 
     /**
@@ -56,7 +52,7 @@ public class UserGroup {
      * @param created
      *            - date created.
      */
-    public UserGroup(@Nullable final String id, final String groupName, final String ownerId, final Date created) {
+    public UserGroup(@Nullable final Long id, final String groupName, final Long ownerId, final Date created) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
@@ -70,7 +66,7 @@ public class UserGroup {
      */
     @JsonProperty("_id")
     @ObjectId
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
@@ -82,7 +78,7 @@ public class UserGroup {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setId(final String id) {
+    public void setId(final Long id) {
         this.id = id;
     }
 
@@ -110,7 +106,7 @@ public class UserGroup {
      * 
      * @return the ownerId
      */
-    public String getOwnerId() {
+    public Long getOwnerId() {
         return ownerId;
     }
 
@@ -120,7 +116,7 @@ public class UserGroup {
      * @param ownerId
      *            the ownerId to set
      */
-    public void setOwnerId(final String ownerId) {
+    public void setOwnerId(final Long ownerId) {
         this.ownerId = ownerId;
     }
 

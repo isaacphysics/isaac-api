@@ -233,19 +233,19 @@ public class PgLogManager implements ILogManager {
     }
 
     @Override
-    public Map<String, LogEvent> getLastLogForAllUsers(final String qualifyingLogEventType)
+    public Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType)
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT DISTINCT ON (user_id) *" + "FROM logged_events WHERE event_type = ? "
-                    + "ORDER BY user_id, id DESC;");
+            pst = conn.prepareStatement("SELECT DISTINCT ON (user_id) user_id, \"timestamp\" "
+                    + "FROM logged_events WHERE event_type = ? " + "ORDER BY user_id, id DESC;");
             pst.setString(1, qualifyingLogEventType);
 
             ResultSet results = pst.executeQuery();
-            Map<String, LogEvent> resultToReturn = Maps.newHashMap();
+            Map<String, Date> resultToReturn = Maps.newHashMap();
 
             while (results.next()) {
-                resultToReturn.put(results.getString("user_id"), this.buildPgLogEventFromPgResult(results));
+                resultToReturn.put(results.getString("user_id"), results.getDate("timestamp"));
             }
 
             return resultToReturn;

@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
-import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
@@ -63,7 +63,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
-    private static AssignmentPersistenceManager assignmentPersistenceManager = null;
+    //private static PgAssignmentPersistenceManager assignmentPersistenceManager = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -177,26 +177,27 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         return gameboardPersistenceManager;
     }
 
-    /**
-     * Gets a Assignment Persistence manager.
-     * 
-     * @param api
-     *            - api that we can use to create a AppDataManager instance
-     * @param mapper
-     *            - an instance of an auto mapper.
-     * @return Game persistence manager object.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static AssignmentPersistenceManager getAssignmentPersistenceManager(final SegueApiFacade api,
-            final MapperFacade mapper) {
-        if (null == assignmentPersistenceManager) {
-            assignmentPersistenceManager = new AssignmentPersistenceManager(api.requestAppDataManager(
-                    ASSIGNMENT_COLLECTION_NAME, AssignmentDO.class), mapper);
-            log.info("Creating Singleton of AssignmentPersistenceManager");
-        }
-
-        return assignmentPersistenceManager;
-    }
+//    /**
+//     * Gets a Assignment Persistence manager.
+//     * 
+//     * @param api
+//     *            - api that we can use to create a AppDataManager instance
+//     * @param mapper
+//     *            - an instance of an auto mapper.
+//     * @return Game persistence manager object.
+//     */
+//    @Inject
+//    @Provides
+//    @Singleton
+//    private static PgAssignmentPersistenceManager getAssignmentPersistenceManager(final PostgresSqlDb database, final SegueApiFacade api,
+//            final MapperFacade mapper) {
+//        if (null == assignmentPersistenceManager) {
+//            api.requestAppDataManager(
+//                    ASSIGNMENT_COLLECTION_NAME, AssignmentDO.class);
+//            assignmentPersistenceManager = new PgAssignmentPersistenceManager(database, mapper);
+//            log.info("Creating Singleton of AssignmentPersistenceManager");
+//        }
+//
+//        return assignmentPersistenceManager;
+//    }
 }

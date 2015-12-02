@@ -62,7 +62,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.associations.MongoAssociationDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
@@ -70,7 +70,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.MongoGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -227,9 +227,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                         .getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties
                         .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
 
-        bind(IUserGroupDataManager.class).to(MongoGroupDataManager.class);
+        // force mongo load eagerly until we can remove it completely. This fixes guice config errors.
+        getMongoDB(globalProperties.getProperty(Constants.MONGO_DB_HOSTNAME),
+                globalProperties.getProperty(Constants.MONGO_DB_PORT),
+                globalProperties.getProperty(Constants.SEGUE_DB_NAME),
+                globalProperties.getProperty(Constants.MONGO_CONNECTIONS_PER_HOST),
+                globalProperties.getProperty(Constants.MONGO_CONNECTION_TIMEOUT),
+                globalProperties.getProperty(Constants.MONGO_SOCKET_TIMEOUT));
 
-        bind(IAssociationDataManager.class).to(MongoAssociationDataManager.class);
+        bind(IUserGroupDataManager.class).to(PgGroupDataManager.class);
+
+        bind(IAssociationDataManager.class).to(PgAssociationDataManager.class);
     }
 
     /**

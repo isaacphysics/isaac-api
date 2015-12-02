@@ -63,9 +63,11 @@ public class IsaacApplicationRegister extends Application {
      */
     public IsaacApplicationRegister() {
         singletons = new HashSet<Object>();
-
+        SegueGuiceConfigurationModule segueGuiceConfigurationModule = new SegueGuiceConfigurationModule();
+        IsaacGuiceConfigurationModule isaacGuiceConfigurationModule = new IsaacGuiceConfigurationModule();
+        
         injector = Guice.createInjector(new SchoolLookupConfigurationModule(),
-                new IsaacGuiceConfigurationModule(), new SegueGuiceConfigurationModule());
+                isaacGuiceConfigurationModule, segueGuiceConfigurationModule);
         
         setupSwaggerApiAdvertiser();
     }

@@ -29,9 +29,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class UserAssociation {
-    private String id;
-    private String userIdGrantingPermission;
-    private String userIdReceivingPermission;
+    private Long userIdGrantingPermission;
+    private Long userIdReceivingPermission;
     private Date created;
 
     /**
@@ -53,36 +52,11 @@ public class UserAssociation {
      * @param created
      *            - date
      */
-    public UserAssociation(@Nullable final String id, final String userIdGrantingPermission,
-            final String userIdReceivingPermission, final Date created) {
-        super();
-        this.id = id;
+    public UserAssociation(final Long userIdGrantingPermission,
+            final Long userIdReceivingPermission, final Date created) {
         this.userIdGrantingPermission = userIdGrantingPermission;
         this.userIdReceivingPermission = userIdReceivingPermission;
         this.created = created;
-    }
-
-    /**
-     * Gets the id.
-     * 
-     * @return the id
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * Sets the id.
-     * 
-     * @param id
-     *            the id to set
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public void setId(final String id) {
-        this.id = id;
     }
 
     /**
@@ -90,7 +64,7 @@ public class UserAssociation {
      * 
      * @return the userIdGrantingPermission
      */
-    public String getUserIdGrantingPermission() {
+    public Long getUserIdGrantingPermission() {
         return userIdGrantingPermission;
     }
 
@@ -100,7 +74,7 @@ public class UserAssociation {
      * @param userIdGrantingPermission
      *            the userIdGrantingPermission to set
      */
-    public void setUserIdGrantingPermission(final String userIdGrantingPermission) {
+    public void setUserIdGrantingPermission(final Long userIdGrantingPermission) {
         this.userIdGrantingPermission = userIdGrantingPermission;
     }
 
@@ -109,7 +83,7 @@ public class UserAssociation {
      * 
      * @return the userIdReceivingPermission
      */
-    public String getUserIdReceivingPermission() {
+    public Long getUserIdReceivingPermission() {
         return userIdReceivingPermission;
     }
 
@@ -119,7 +93,7 @@ public class UserAssociation {
      * @param userIdReceivingPermission
      *            the userIdReceivingPermission to set
      */
-    public void setUserIdReceivingPermission(final String userIdReceivingPermission) {
+    public void setUserIdReceivingPermission(final Long userIdReceivingPermission) {
         this.userIdReceivingPermission = userIdReceivingPermission;
     }
 

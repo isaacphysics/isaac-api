@@ -112,7 +112,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            List<String> userIdsWithAccess = Lists.newArrayList();
+            List<Long> userIdsWithAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociations(user)) {
                 userIdsWithAccess.add(a.getUserIdReceivingPermission());
             }
@@ -140,14 +140,14 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response revokeAssociation(@Context final HttpServletRequest request,
-            @PathParam("userId") final String userIdToRevoke) {
-        if (null == userIdToRevoke || userIdToRevoke.isEmpty()) {
+            @PathParam("userId") final Long userIdToRevoke) {
+        if (null == userIdToRevoke) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "revokeUserId value must be specified.").toResponse();
         }
 
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-            RegisteredUserDTO userToRevoke = userManager.getUserDTOByLegacyId(userIdToRevoke);
+            RegisteredUserDTO userToRevoke = userManager.getUserDTOById(userIdToRevoke);
             associationManager.revokeAssociation(user, userToRevoke);
 
             this.getLogManager().logEvent(user, request, REVOKE_USER_ASSOCIATION,
@@ -179,7 +179,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            List<String> userIdsGrantingAccess = Lists.newArrayList();
+            List<Long> userIdsGrantingAccess = Lists.newArrayList();
             for (UserAssociation a : associationManager.getAssociationsForOthers(user)) {
                 userIdsGrantingAccess.add(a.getUserIdGrantingPermission());
             }
@@ -210,8 +210,8 @@ public class AuthorisationFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssociationToken(@Context final HttpServletRequest request,
-            @PathParam("groupId") final String groupId) {
-        if (null == groupId || groupId.isEmpty()) {
+            @PathParam("groupId") final Long groupId) {
+        if (null == groupId) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Group id must be specified.").toResponse();
         }
 
@@ -260,7 +260,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             misuseMonitor.notifyEvent(currentRegisteredUser.getId().toString(),
                     TokenOwnerLookupMisuseHandler.class.toString());
 
-            RegisteredUserDTO userDTO = userManager.getUserDTOByLegacyId(associationManager.lookupTokenDetails(
+            RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
 
             return Response.ok(userManager.convertToUserSummaryObject(userDTO))
