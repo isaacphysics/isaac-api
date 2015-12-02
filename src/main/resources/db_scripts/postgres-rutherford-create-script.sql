@@ -30,14 +30,50 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE assignments (
+    id integer NOT NULL,
+    gameboard_id character varying(255) NOT NULL,
+    group_id integer NOT NULL,
+    owner_user_id integer,
+    creation_date timestamp without time zone
+);
+
+
+ALTER TABLE assignments OWNER TO rutherford;
+
+--
+-- Name: assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE assignments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE assignments_id_seq OWNER TO rutherford;
+
+--
+-- Name: assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE assignments_id_seq OWNED BY assignments.id;
+
+
+--
 -- Name: event_bookings; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 CREATE TABLE event_bookings (
     id integer NOT NULL,
-    user_id text NOT NULL,
     event_id text NOT NULL,
-    created timestamp without time zone NOT NULL
+    created timestamp without time zone NOT NULL,
+    user_id integer
 );
 
 
@@ -63,6 +99,33 @@ ALTER TABLE event_bookings_id_seq OWNER TO rutherford;
 
 ALTER SEQUENCE event_bookings_id_seq OWNED BY event_bookings.id;
 
+
+--
+-- Name: group_memberships; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE group_memberships (
+    group_id integer NOT NULL,
+    user_id integer NOT NULL,
+    created timestamp without time zone
+);
+
+
+ALTER TABLE group_memberships OWNER TO rutherford;
+
+--
+-- Name: groups; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE groups (
+    id integer NOT NULL,
+    group_name text,
+    owner_id integer,
+    created timestamp without time zone
+);
+
+
+ALTER TABLE groups OWNER TO rutherford;
 
 --
 -- Name: ip_location_history; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
@@ -205,6 +268,32 @@ ALTER SEQUENCE question_attempts_id_seq OWNED BY question_attempts.id;
 
 
 --
+-- Name: user_associations; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE user_associations (
+    user_id_granting_permission integer NOT NULL,
+    user_id_receiving_permission integer NOT NULL,
+    created timestamp without time zone
+);
+
+
+ALTER TABLE user_associations OWNER TO rutherford;
+
+--
+-- Name: user_associations_tokens; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE user_associations_tokens (
+    token character varying(100) NOT NULL,
+    owner_user_id integer,
+    group_id integer
+);
+
+
+ALTER TABLE user_associations_tokens OWNER TO rutherford;
+
+--
 -- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -216,6 +305,27 @@ CREATE TABLE user_email_preferences (
 
 
 ALTER TABLE user_email_preferences OWNER TO rutherford;
+
+--
+-- Name: user_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE user_groups_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE user_groups_id_seq OWNER TO rutherford;
+
+--
+-- Name: user_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE user_groups_id_seq OWNED BY groups.id;
+
 
 --
 -- Name: user_notifications; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
@@ -287,7 +397,21 @@ ALTER SEQUENCE users_id_seq OWNED BY users.id;
 -- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
+ALTER TABLE ONLY assignments ALTER COLUMN id SET DEFAULT nextval('assignments_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
 ALTER TABLE ONLY event_bookings ALTER COLUMN id SET DEFAULT nextval('event_bookings_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY groups ALTER COLUMN id SET DEFAULT nextval('user_groups_id_seq'::regclass);
 
 
 --
@@ -327,6 +451,14 @@ ALTER TABLE ONLY users
 
 
 --
+-- Name: composite pkey assignments; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY assignments
+    ADD CONSTRAINT "composite pkey assignments" PRIMARY KEY (gameboard_id, group_id);
+
+
+--
 -- Name: compound key; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -335,19 +467,27 @@ ALTER TABLE ONLY linked_accounts
 
 
 --
--- Name: event userid; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
---
-
-ALTER TABLE ONLY event_bookings
-    ADD CONSTRAINT "event userid" UNIQUE (event_id, user_id);
-
-
---
 -- Name: eventbooking id pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 ALTER TABLE ONLY event_bookings
     ADD CONSTRAINT "eventbooking id pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: group_membership_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY group_memberships
+    ADD CONSTRAINT group_membership_pkey PRIMARY KEY (group_id, user_id);
+
+
+--
+-- Name: group_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY groups
+    ADD CONSTRAINT group_pkey PRIMARY KEY (id);
 
 
 --
@@ -375,6 +515,14 @@ ALTER TABLE ONLY user_notifications
 
 
 --
+-- Name: only_one_token_per_user_per_group; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_associations_tokens
+    ADD CONSTRAINT only_one_token_per_user_per_group UNIQUE (owner_user_id, group_id);
+
+
+--
 -- Name: provider and user id; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -388,6 +536,14 @@ ALTER TABLE ONLY linked_accounts
 
 ALTER TABLE ONLY question_attempts
     ADD CONSTRAINT question_attempts_id PRIMARY KEY (id);
+
+
+--
+-- Name: token_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_associations_tokens
+    ADD CONSTRAINT token_pkey PRIMARY KEY (token);
 
 
 --
@@ -407,6 +563,14 @@ ALTER TABLE ONLY users
 
 
 --
+-- Name: user_associations_composite_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_associations
+    ADD CONSTRAINT user_associations_composite_pkey PRIMARY KEY (user_id_granting_permission, user_id_receiving_permission);
+
+
+--
 -- Name: user_id_email_preference_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -415,10 +579,57 @@ ALTER TABLE ONLY user_email_preferences
 
 
 --
+-- Name: fki_notification_user_id_fkey; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE INDEX fki_notification_user_id_fkey ON event_bookings USING btree (user_id);
+
+
+--
 -- Name: fki_user_id fkey; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
+
+
+--
+-- Name: assignment_owner_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY assignments
+    ADD CONSTRAINT assignment_owner_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: event_bookings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY event_bookings
+    ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_id_token_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_associations_tokens
+    ADD CONSTRAINT group_id_token_fkey FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_membership_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_memberships
+    ADD CONSTRAINT group_membership_group_id_fkey FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: group_membership_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY group_memberships
+    ADD CONSTRAINT group_membership_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
@@ -430,11 +641,35 @@ ALTER TABLE ONLY linked_accounts
 
 
 --
+-- Name: owner_user_id fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY groups
+    ADD CONSTRAINT "owner_user_id fkey" FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: token_owner_user_id; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_associations_tokens
+    ADD CONSTRAINT token_owner_user_id FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_granting_permission_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_associations
+    ADD CONSTRAINT user_granting_permission_fkey FOREIGN KEY (user_id_granting_permission) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_id fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
 ALTER TABLE ONLY user_notifications
-    ADD CONSTRAINT "user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id);
+    ADD CONSTRAINT "user_id fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
@@ -451,6 +686,14 @@ ALTER TABLE ONLY user_email_preferences
 
 ALTER TABLE ONLY question_attempts
     ADD CONSTRAINT user_id_question_attempts_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_receiving_permissions_key; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_associations
+    ADD CONSTRAINT user_receiving_permissions_key FOREIGN KEY (user_id_receiving_permission) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
