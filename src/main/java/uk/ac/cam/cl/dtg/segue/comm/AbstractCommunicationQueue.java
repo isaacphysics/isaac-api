@@ -16,15 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 import java.util.Comparator;
-import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Queues;
 
 /**
  * Abstract message queue class.
@@ -40,7 +37,6 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
 	 * Comparator that tells the priority queue which email should be sent first.
 	 */
 	private Comparator<ICommunicationMessage> emailPriorityComparator = new Comparator<ICommunicationMessage>() {
-
 		@Override
 		public int compare(final ICommunicationMessage first, final ICommunicationMessage second) {
 			if (first.getPriority() == second.getPriority()) {
