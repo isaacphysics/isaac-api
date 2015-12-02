@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.ASSIGNMENT_COLLECTION_NAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_COLLECTION_NAME;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.USERS_GAMEBOARD_COLLECTION_NAME;
 
@@ -29,8 +28,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AssignmentDO;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
@@ -41,9 +38,6 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.AbstractModule;
@@ -62,8 +56,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static GameManager gameManager = null;
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
-
-    //private static PgAssignmentPersistenceManager assignmentPersistenceManager = null;
 
     /**
      * Creates a new isaac guice configuration module.
@@ -176,28 +168,4 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
         return gameboardPersistenceManager;
     }
-
-//    /**
-//     * Gets a Assignment Persistence manager.
-//     * 
-//     * @param api
-//     *            - api that we can use to create a AppDataManager instance
-//     * @param mapper
-//     *            - an instance of an auto mapper.
-//     * @return Game persistence manager object.
-//     */
-//    @Inject
-//    @Provides
-//    @Singleton
-//    private static PgAssignmentPersistenceManager getAssignmentPersistenceManager(final PostgresSqlDb database, final SegueApiFacade api,
-//            final MapperFacade mapper) {
-//        if (null == assignmentPersistenceManager) {
-//            api.requestAppDataManager(
-//                    ASSIGNMENT_COLLECTION_NAME, AssignmentDO.class);
-//            assignmentPersistenceManager = new PgAssignmentPersistenceManager(database, mapper);
-//            log.info("Creating Singleton of AssignmentPersistenceManager");
-//        }
-//
-//        return assignmentPersistenceManager;
-//    }
 }
