@@ -110,7 +110,7 @@ public class GroupManager {
     }
 
     /**
-     * Delete Group.
+     * Delete Group and all related data.
      * 
      * @param group
      *            - to delete
