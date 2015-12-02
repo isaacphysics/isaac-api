@@ -231,7 +231,11 @@ public class PgAssociationDataManager implements IAssociationDataManager {
             while (results.next()) {
                 listOfResults.add(this.convertFromSQLToToken(results));
             }
-
+            
+            if (listOfResults.size() == 0) {
+                return null;
+            }
+            
             if (listOfResults.size() > 1) {
                 throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
                         + listOfResults);
