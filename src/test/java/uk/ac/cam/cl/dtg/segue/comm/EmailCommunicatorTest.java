@@ -20,9 +20,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
-import java.util.Random;
-
-import javax.swing.event.DocumentEvent.EventType;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -36,7 +33,9 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -57,6 +56,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class EmailCommunicatorTest {
     private EmailCommunicator emailCommunicator;
     private RegisteredUser user;
+    private RegisteredUserDTO userDTO;
     private static final Logger log = LoggerFactory.getLogger(EmailCommunicatorTest.class);
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
@@ -64,9 +64,9 @@ public class EmailCommunicatorTest {
     private IContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
-    private UserAssociationManager userAssociationManager;
     private AbstractEmailPreferenceManager emailPreferenceManager;
     private ILogManager logManager;
+    private UserManager userManager;
 
 
     /**
@@ -81,10 +81,18 @@ public class EmailCommunicatorTest {
 
         // Create dummy user
         user = new RegisteredUser();
+        user.setId(1L);
         user.setEmail("test@test.com");
         user.setGivenName("tester");
+        user.setFamilyName("McTest");
         user.setResetToken("resetToken");
         user.setEmailVerificationToken("verificationToken");
+        
+        // Create dummy userDTO
+        userDTO = new RegisteredUserDTO();
+        userDTO.setEmail("test@test.com");
+        userDTO.setGivenName("tester");
+        userDTO.setFamilyName("McTest");
 
         // Create dummy email communicator
         emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
@@ -108,13 +116,13 @@ public class EmailCommunicatorTest {
         EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
         EasyMock.replay(mockContentVersionController);
         
-        userAssociationManager = EasyMock.createMock(UserAssociationManager.class);
-        
         // Create log manager
         logManager = EasyMock.createMock(ILogManager.class);
         logManager.logInternalEvent(null, null, null);
         EasyMock.expectLastCall().anyTimes();
-
+        
+        // Create user manager
+        userManager = EasyMock.createMock(UserManager.class);
 
         capturedArgument = new Capture<EmailCommunicationMessage>();
 
@@ -176,6 +184,9 @@ public class EmailCommunicatorTest {
     @Test
     public final void sendRegistrationConfirmation_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
         
+
+        EasyMock.replay(userManager);
+    	
         SeguePageDTO template = createDummyEmailTemplate("Hi, {{givenname}}."
                 + "\nThanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:{{email}}'>{{email}}<a>.\naddress</a>\n{{sig}}");
@@ -184,6 +195,8 @@ public class EmailCommunicatorTest {
 		        		+ "<title>Isaac Physics project</title></head><body>"
 		                + "{{content}}"
 		                + "</body></html>");
+        
+        SeguePageDTO asciiTemplate = createDummyEmailTemplate("{{content}}");
         try {
             EasyMock.expect(
                     mockContentManager.getContentById("liveversion", "email-template-registration-confirmation"))
@@ -191,6 +204,8 @@ public class EmailCommunicatorTest {
 
             EasyMock.expect(mockContentManager.getContentById("liveversion", 
                     "email-template-html")).andReturn(htmlTemplate);
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-ascii")).andReturn(asciiTemplate);
             EasyMock.replay(mockContentManager);
 
         } catch (ContentManagerException e) {
@@ -199,17 +214,20 @@ public class EmailCommunicatorTest {
         }
 
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
-        				mockContentVersionController, logManager);
+        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, 
+        				mockPropertiesLoader, mockContentVersionController, logManager);
         try {
-            manager.sendRegistrationConfirmation(user);
+            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
             Assert.fail();
-        }
+        } catch (NoUserException e) {
+            e.printStackTrace();
+            Assert.fail();
+		}
 
         final String expectedMessagePlainText = "Hi, tester.\nThanks for registering!\nYour Isaac email address is: "
                 + "</a href='mailto:test@test.com'>test@test.com<a>.\n" + "address</a>\nIsaac Physics Project";
@@ -257,6 +275,9 @@ public class EmailCommunicatorTest {
             
             EasyMock.expect(mockContentManager.getContentById("liveversion", 
                     "email-template-html")).andReturn(htmlTemplate);
+            
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-ascii")).andReturn(htmlTemplate);
 
             EasyMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
@@ -267,7 +288,7 @@ public class EmailCommunicatorTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
         				mockContentVersionController, logManager);
         try {
-            manager.sendFederatedPasswordReset(user, "testString", "testWord");
+            manager.sendFederatedPasswordReset(userDTO, "testString", "testWord");
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
@@ -276,7 +297,11 @@ public class EmailCommunicatorTest {
             e.printStackTrace();
             log.debug(e.getMessage());
             Assert.fail();
-        }
+        } catch (NoUserException e) {
+            e.printStackTrace();
+            log.debug(e.getMessage());
+            Assert.fail();
+		}
 
         final String expectedMessage = "Hello, tester.\n\nYou requested a password reset. "
                 + "However you use testString to log in to our site. You need to go to your "
@@ -321,6 +346,9 @@ public class EmailCommunicatorTest {
             
             EasyMock.expect(mockContentManager.getContentById("liveversion", 
                     "email-template-html")).andReturn(htmlTemplate).once();
+            
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-ascii")).andReturn(htmlTemplate);
 
             EasyMock.replay(mockContentManager);
             
@@ -332,14 +360,17 @@ public class EmailCommunicatorTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager ,mockPropertiesLoader, 
         				mockContentVersionController, logManager);
         try {
-            manager.sendPasswordReset(user);
+            manager.sendPasswordReset(userDTO, user.getResetToken());
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
             Assert.fail();
-        }
+        } catch (NoUserException e) {
+            e.printStackTrace();
+            Assert.fail();
+		}
 
         final String expectedMessage = "Hello, tester.\n\nA request has been "
                 + "made to reset the password for the account: </a href='mailto:test@test.com'>test@test.com<a>"
@@ -395,14 +426,17 @@ public class EmailCommunicatorTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
         				mockContentVersionController, logManager);
         try {
-            manager.sendRegistrationConfirmation(user);
+            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
             Assert.fail();
-        }
+        } catch (NoUserException e) {
+            e.printStackTrace();
+            Assert.fail();
+		}
     }
 
     /**
@@ -433,6 +467,9 @@ public class EmailCommunicatorTest {
                     .andReturn(template);
             
             EasyMock.expect(mockContentManager.getContentById("liveversion", 
+                    "email-template-ascii")).andReturn(htmlTemplate);
+            
+            EasyMock.expect(mockContentManager.getContentById("liveversion", 
                     "email-template-html")).andReturn(htmlTemplate);
 
             EasyMock.replay(mockContentManager);
@@ -448,14 +485,17 @@ public class EmailCommunicatorTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
         				mockContentVersionController, logManager);
         try {
-            manager.sendRegistrationConfirmation(user);
+            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
             Assert.fail();
-        }
+        } catch (NoUserException e) {
+            e.printStackTrace();
+            Assert.fail();
+		}
 
         // Wait for the emailQueue to spin up and send our message
         int i = 0;
@@ -496,17 +536,20 @@ public class EmailCommunicatorTest {
         }
 
 
-        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader, 
-        			mockContentVersionController, logManager);
+        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, 
+        				mockPropertiesLoader, mockContentVersionController, logManager);
         try {
-            manager.sendRegistrationConfirmation(user);
+            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
             e.printStackTrace();
             log.info(e.getMessage());
-        }
+        } catch (NoUserException e) {
+            e.printStackTrace();
+            log.info(e.getMessage());
+		}
 
 
         // Wait for the emailQueue to spin up and send our message (if it exists)

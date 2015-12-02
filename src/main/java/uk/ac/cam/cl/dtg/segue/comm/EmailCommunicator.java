@@ -67,11 +67,11 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
         try {
             if (email.getHTMLMessage() == null) {
                 mailer.sendPlainTextMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-                        email.getReplyToAddress(), String.format("%s - %s", email.getSubject(), SIGNATURE),
+                        email.getReplyToAddress(), email.getSubject(),
                         email.getPlainTextMessage());
             } else {
                 mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-                        email.getReplyToAddress(), String.format("%s - %s", email.getSubject(), SIGNATURE),
+                        email.getReplyToAddress(), email.getSubject(),
                         email.getPlainTextMessage(), email.getHTMLMessage());
             }
         } catch (MessagingException e) {

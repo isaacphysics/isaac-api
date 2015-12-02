@@ -603,6 +603,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can modify the session
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
+     * @param passwordCurrent
+     * 			  - the current password, used if the password has changed
      * @param emailPreferences
      * 			  - the email preferences for this user
      * @return the updated user object.

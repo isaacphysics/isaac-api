@@ -447,7 +447,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param database
      * 			- the database to access preferences
      * @param properties
-     * 			- the properties so we can generate emails
+     * 			- the properties so we can generate email
      * @param emailCommunicator
      *            the class the queue will send messages with
      * @param emailPreferenceManager
@@ -457,7 +457,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param authenticator
      * 			- the authenticator
      * @param logManager
-     * 			- the logManager to log emails sent
+     * 			- the logManager to log email sent
      * @return an instance of the queue
      */
     @Inject

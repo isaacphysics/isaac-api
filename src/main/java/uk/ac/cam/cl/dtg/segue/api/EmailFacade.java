@@ -100,7 +100,7 @@ public class EmailFacade extends AbstractSegueFacade {
     /**
      * GetEmailInBrowserById from the database.
      * 
-     * This method will returnserialised html that displays an email object
+     * This method will return serialised html that displays an email object
      * 
      * @param request
      *            - so that we can allow only logged in users to view their own data.
@@ -163,10 +163,15 @@ public class EmailFacade extends AbstractSegueFacade {
         
 		try {
 			String htmlTemplatePreview = this.emailManager.getHTMLTemplatePreview(segueContentDTO, currentUser);
+			String plainTextTemplatePreview = 
+							this.emailManager.getPlainTextTemplatePreview(segueContentDTO, currentUser);
 			
-			HashMap<String, String> htmlPreviewMap = Maps.newHashMap();
-			htmlPreviewMap.put("html", htmlTemplatePreview);
-			return Response.ok(htmlPreviewMap).build();
+			
+			HashMap<String, String> previewMap = Maps.newHashMap();
+			previewMap.put("subject", segueContentDTO.getTitle());
+			previewMap.put("html", htmlTemplatePreview);
+			previewMap.put("plainText", plainTextTemplatePreview);
+			return Response.ok(previewMap).build();
 		} catch (ResourceNotFoundException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
             						"Content could not be found: " + id);

@@ -311,6 +311,11 @@ public class UserManager {
             segueUserDO = this.registerUserWithFederatedProvider(oauthProvider, providerSpecificUserLookupReference);
             segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
             segueUserDTO.setFirstLogin(true);
+            try {
+				emailManager.sendFederatedRegistrationConfirmation(segueUserDTO);
+			} catch (ContentManagerException e) {
+	            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+			}
         } else {
             // existing user
             segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
@@ -719,11 +724,14 @@ public class UserManager {
 
         // send an email confirmation and set up verification
         try {
-            emailManager.sendRegistrationConfirmation(userToReturn);
+        	RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
+            emailManager.sendRegistrationConfirmation(userToReturnDTO, userToReturn.getEmailVerificationToken());
             userToReturn.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
-        }
+        } catch (NoUserException e) {
+            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+		}
 
         // save the user again with updated token
         userToReturn = this.database.createOrUpdateUser(userToReturn);
@@ -793,10 +801,13 @@ public class UserManager {
                     + " from email (%s) to email (%s)", user.getId(), 
                     existingUser.getEmail(), user.getEmail()));
             try {
-                this.emailManager.sendEmailVerificationChange(existingUser, user);
+            	RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
+                this.emailManager.sendEmailVerificationChange(existingUserDTO, user);
             } catch (ContentManagerException e) {
                 log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-            }
+            } catch (NoUserException e) {
+                log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+			}
 
         }
 
@@ -832,10 +843,13 @@ public class UserManager {
         // Make sure the email address is preserved (can't be changed until new email is verified)
         if (!userToSave.getEmail().equals(existingUser.getEmail())) {
             try {
-                this.emailManager.sendEmailVerification(userToSave);
+            	RegisteredUserDTO userToSaveDTO = this.getUserDTOById(userToSave.getId());
+                this.emailManager.sendEmailVerification(userToSaveDTO, userToSave.getEmailVerificationToken());
             } catch (ContentManagerException e) {
                 log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
-            }
+            } catch (NoUserException e) {
+                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
+			}
             userToSave.setEmail(existingUser.getEmail());
         }
 
@@ -912,10 +926,13 @@ public class UserManager {
 
         log.info(String.format("Sending password reset message to %s", user.getEmail()));
         try {
-            this.emailManager.sendPasswordReset(user);
+        	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
+            this.emailManager.sendPasswordReset(userDTO, user.getResetToken());
         } catch (ContentManagerException e) {
             log.debug("ContentManagerException " + e.getMessage());
-        }
+        } catch (NoUserException e) {
+            log.debug("ContentManagerException " + e.getMessage());
+		}
     }
 
     /**
@@ -967,10 +984,13 @@ public class UserManager {
 
         log.info(String.format("Sending password reset message to %s", user.getEmail()));
         try {
-            this.emailManager.sendEmailVerification(user);
+        	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
+            this.emailManager.sendEmailVerification(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
             log.debug("ContentManagerException " + e.getMessage());
-        }
+        } catch (NoUserException e) {
+            log.debug("ContentManagerException " + e.getMessage());
+		}
     }
 
     /**
@@ -1904,6 +1924,8 @@ public class UserManager {
      */
     private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user) throws CommunicationException,
             SegueDatabaseException {
+    	Validate.notNull(user);
+    	
         // Get the user's federated authenticators
         List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
         List<String> providerNames = new ArrayList<>();
@@ -1940,10 +1962,15 @@ public class UserManager {
         }
 
         try {
-            emailManager.sendFederatedPasswordReset(user, providersString, providerWord);
-        } catch (ContentManagerException e1) {
-            log.error(String.format("Error sending federated email verification message"));
-        }
+        	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
+            emailManager.sendFederatedPasswordReset(userDTO, providersString, providerWord);
+        } catch (ContentManagerException contentException) {
+            log.error(String.format("Error sending federated email verification message - %s", 
+            				contentException.getMessage()));
+        } catch (NoUserException noUserException) {
+            log.error(String.format("Error sending federated email verification message - %s", 
+            				noUserException.getMessage()));
+		}
     }
 
     /**
