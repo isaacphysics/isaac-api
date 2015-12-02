@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -76,7 +75,6 @@ public class StatisticsManager {
     private QuestionManager questionManager;
     
     private Cache<String, Object> longStatsCache;
-    private Cache<String, Object> shortStatsCache;
     private LocationHistoryManager locationHistoryManager;
 
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
@@ -84,7 +82,6 @@ public class StatisticsManager {
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
-    private static final int SHORT_STATS_EVICTION_INTERVAL_MINUTES = 1; // 12 hours
 
     
     /**
@@ -125,9 +122,6 @@ public class StatisticsManager {
 
         this.longStatsCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
-
-        this.shortStatsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(SHORT_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
     }
 
     /**

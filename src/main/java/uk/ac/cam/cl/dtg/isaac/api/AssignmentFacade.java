@@ -99,6 +99,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * 
      * @param assignmentManager
      *            - Instance of assignment Manager
+     * @param questionManager
+     *            - Instance of questions manager
      * @param userManager
      *            - Instance of User Manager
      * @param groupManager
@@ -113,9 +115,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - So that we can determine what information is allowed to be seen by other users.
      */
     @Inject
-    public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager, final UserManager userManager,
-            final GroupManager groupManager, final PropertiesLoader propertiesLoader, final GameManager gameManager,
-            final ILogManager logManager, final UserAssociationManager associationManager) {
+    public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
+            final UserManager userManager, final GroupManager groupManager, final PropertiesLoader propertiesLoader,
+            final GameManager gameManager, final ILogManager logManager,
+            final UserAssociationManager associationManager) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -347,7 +350,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId())
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();

@@ -50,7 +50,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -114,7 +113,7 @@ public class GroupsFacade extends AbstractSegueFacade {
             List<UserGroupDTO> groups = groupManager.getGroupsByOwner(user);
 
             // Calculate the ETag based user id and groups they own
-            EntityTag etag = new EntityTag(user.getLegacyDbId().hashCode() + groups.toString().hashCode() + "");
+            EntityTag etag = new EntityTag(user.getId().hashCode() + groups.toString().hashCode() + "");
             Response cachedResponse = generateCachedResponse(cacheRequest, etag,
                     Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
@@ -146,9 +145,9 @@ public class GroupsFacade extends AbstractSegueFacade {
     @Path("/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getGroupsForGivenUser(@Context final HttpServletRequest request,
-            @PathParam("user_id") final String userId) {
+            @PathParam("user_id") final Long userId) {
         try {
-            if (null == userId || userId.isEmpty()) {
+            if (null == userId) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
                         "You must provide a valid user id to access this endpoint.").toResponse();
             }
@@ -157,7 +156,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                 SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            RegisteredUserDTO userOfInterest = userManager.getUserDTOByLegacyId(userId);
+            RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userId);
 
             List<UserGroupDTO> groups = groupManager.getGroupsByOwner(userOfInterest);
             return Response.ok(groups).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
