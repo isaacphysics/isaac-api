@@ -83,9 +83,9 @@ public class PgAssignmentPersistenceManager {
             pst.setLong(3, assignmentToSave.getOwnerUserId());
 
             if (assignment.getCreationDate() != null) {
-                pst.setTimestamp(3, new java.sql.Timestamp(assignmentToSave.getCreationDate().getTime()));
+                pst.setTimestamp(4, new java.sql.Timestamp(assignmentToSave.getCreationDate().getTime()));
             } else {
-                pst.setTimestamp(3, new java.sql.Timestamp(new Date().getTime()));
+                pst.setTimestamp(4, new java.sql.Timestamp(new Date().getTime()));
             }
 
             if (pst.executeUpdate() == 0) {
@@ -195,7 +195,7 @@ public class PgAssignmentPersistenceManager {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_id = ? AND group_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ?");
 
             pst.setLong(1, assignmentOwnerId);
             pst.setLong(2, groupId);
@@ -264,7 +264,7 @@ public class PgAssignmentPersistenceManager {
     public List<AssignmentDTO> getAssignmentsByOwner(final Long ownerId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ?");
 
             pst.setLong(1, ownerId);
             
@@ -326,6 +326,6 @@ public class PgAssignmentPersistenceManager {
      */
     private AssignmentDO convertFromSQLToAssignmentDO(final ResultSet sqlResults) throws SQLException {
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
-                sqlResults.getLong("owner_id"), sqlResults.getLong("group_id"), sqlResults.getDate("creation_date"));
+                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), sqlResults.getDate("creation_date"));
     }
 }
