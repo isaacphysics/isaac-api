@@ -28,10 +28,8 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -89,7 +87,7 @@ public class GroupManager {
         Validate.notBlank(groupName);
         Validate.notNull(groupOwner);
 
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getLegacyDbId(), new Date());
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), new Date());
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
@@ -110,7 +108,7 @@ public class GroupManager {
     }
 
     /**
-     * Delete Group.
+     * Delete Group and all related data.
      * 
      * @param group
      *            - to delete
@@ -133,7 +131,7 @@ public class GroupManager {
      */
     public List<RegisteredUserDTO> getUsersInGroup(final UserGroupDTO group) throws SegueDatabaseException {
         Validate.notNull(group);
-        List<String> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
+        List<Long> groupMemberIds = groupDatabase.getGroupMemberIds(group.getId());
 
         if (groupMemberIds.isEmpty()) {
             return Lists.newArrayList();
@@ -148,10 +146,11 @@ public class GroupManager {
      * @param ownerUser
      *            - the owner of the groups to search for.
      * @return List of groups or empty list.
+     * @throws SegueDatabaseException 
      */
-    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) {
+    public List<UserGroupDTO> getGroupsByOwner(final RegisteredUserDTO ownerUser) throws SegueDatabaseException {
         Validate.notNull(ownerUser);
-        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getLegacyDbId()));
+        return convertGroupToDTOs(groupDatabase.getGroupsByOwner(ownerUser.getId()));
     }
 
     /**
@@ -167,7 +166,7 @@ public class GroupManager {
             throws SegueDatabaseException {
         Validate.notNull(userToLookup);
 
-        return convertGroupToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getLegacyDbId()));
+        return convertGroupToDTOs(this.groupDatabase.getGroupMembershipList(userToLookup.getId()));
     }
 
     /**
@@ -187,7 +186,7 @@ public class GroupManager {
 
         // don't do it if they are already in there
         if (!this.isUserInGroup(userToAdd, group)) {
-            groupDatabase.addUserToGroup(userToAdd.getLegacyDbId(), group.getId());
+            groupDatabase.addUserToGroup(userToAdd.getId(), group.getId());
 
             // Notify observers of change
             for (IGroupObserver interestedParty : this.groupsObservers) {
@@ -197,7 +196,7 @@ public class GroupManager {
         } else {
             // otherwise it is a noop.
             log.info(String.format("User (%s) is already a member of the group with id %s. Skipping.",
-                    userToAdd.getLegacyDbId(), group.getId()));
+                    userToAdd.getId(), group.getId()));
         }
     }
 
@@ -215,7 +214,7 @@ public class GroupManager {
             throws SegueDatabaseException {
         Validate.notNull(group);
         Validate.notNull(userToRemove);
-        groupDatabase.removeUserFromGroup(userToRemove.getLegacyDbId(), group.getId());
+        groupDatabase.removeUserFromGroup(userToRemove.getId(), group.getId());
 
         for (IGroupObserver interestedParty : this.groupsObservers) {
             interestedParty.onGroupMembershipRemoved(group, userToRemove);
@@ -233,7 +232,7 @@ public class GroupManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    public UserGroupDTO getGroupById(final String groupId) throws ResourceNotFoundException, SegueDatabaseException {
+    public UserGroupDTO getGroupById(final Long groupId) throws ResourceNotFoundException, SegueDatabaseException {
         UserGroup group = groupDatabase.findById(groupId);
 
         if (null == group) {
@@ -250,8 +249,13 @@ public class GroupManager {
      *            - group id
      * @return true if it does false if not.
      */
-    public boolean isValidGroup(final String groupId) {
-        return this.groupDatabase.findById(groupId) != null;
+    public boolean isValidGroup(final Long groupId) {
+        try {
+            return this.groupDatabase.findById(groupId) != null;
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while validating group: failing validation silently");
+            return false;
+        }
     }
 
     /**
@@ -272,8 +276,9 @@ public class GroupManager {
     
     /**
      * @return the total number of groups stored in the database.
+     * @throws SegueDatabaseException 
      */
-    public Long getGroupCount() {
+    public Long getGroupCount() throws SegueDatabaseException {
         return groupDatabase.getGroupCount();
     }
 

@@ -29,11 +29,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class AssignmentDTO {
     @ObjectId
     @JsonProperty("_id")
-    private String id;
+    private Long id;
     private String gameboardId;
     private GameboardDTO gameboard;
-    private String groupId;
-    private String ownerUserId;
+    private Long groupId;
+    private Long ownerUserId;
     private UserSummaryDTO assignerSummary;
     private Date creationDate;
 
@@ -51,7 +51,7 @@ public class AssignmentDTO {
      * @param creationDate
      *            - the date the assignment was created.
      */
-    public AssignmentDTO(final String id, final String gameboardId, final String ownerUserId, final String groupId,
+    public AssignmentDTO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
             final Date creationDate) {
         this.id = id;
         this.gameboardId = gameboardId;
@@ -74,7 +74,7 @@ public class AssignmentDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
@@ -86,7 +86,7 @@ public class AssignmentDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setId(final String id) {
+    public void setId(final Long id) {
         this.id = id;
     }
 
@@ -133,7 +133,7 @@ public class AssignmentDTO {
      * 
      * @return the groupId
      */
-    public String getGroupId() {
+    public Long getGroupId() {
         return groupId;
     }
 
@@ -143,7 +143,7 @@ public class AssignmentDTO {
      * @param groupId
      *            the groupId to set
      */
-    public void setGroupId(final String groupId) {
+    public void setGroupId(final Long groupId) {
         this.groupId = groupId;
     }
 
@@ -152,7 +152,7 @@ public class AssignmentDTO {
      * 
      * @return the ownerUserId
      */
-    public String getOwnerUserId() {
+    public Long getOwnerUserId() {
         return ownerUserId;
     }
 
@@ -162,7 +162,7 @@ public class AssignmentDTO {
      * @param ownerUserId
      *            the ownerUserId to set
      */
-    public void setOwnerUserId(final String ownerUserId) {
+    public void setOwnerUserId(final Long ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
 

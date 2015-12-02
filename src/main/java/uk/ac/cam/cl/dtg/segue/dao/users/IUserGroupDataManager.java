@@ -34,7 +34,7 @@ public interface IUserGroupDataManager {
      *            the owner Id to find all groups for.
      * @return List of groups belonging to owner user.
      */
-    List<UserGroup> getGroupsByOwner(String ownerUserId);
+    List<UserGroup> getGroupsByOwner(Long ownerUserId) throws SegueDatabaseException;
 
     /**
      * Find User group by Id.
@@ -43,14 +43,14 @@ public interface IUserGroupDataManager {
      *            - the id of the group to find.
      * @return group
      */
-    UserGroup findById(String groupId);
+    UserGroup findById(Long groupId) throws SegueDatabaseException;
 
     /**
      * @param groupId
      *            group to lookup
      * @return member user ids.
      */
-    List<String> getGroupMemberIds(String groupId);
+    List<Long> getGroupMemberIds(Long groupId) throws SegueDatabaseException;
 
     /**
      * Create a group that users can be assigned to.
@@ -75,7 +75,7 @@ public interface IUserGroupDataManager {
      * @throws SegueDatabaseException
      *             - if there is a problem adding the group membership
      */
-    void addUserToGroup(String userId, String groupId) throws SegueDatabaseException;
+    void addUserToGroup(Long userId, Long groupId) throws SegueDatabaseException;
 
     /**
      * Remove a user from a group.
@@ -87,7 +87,7 @@ public interface IUserGroupDataManager {
      * @throws SegueDatabaseException
      *             - if there is a problem removing the group membership
      */
-    void removeUserFromGroup(String userId, String groupId) throws SegueDatabaseException;
+    void removeUserFromGroup(Long userId, Long groupId) throws SegueDatabaseException;
 
     /**
      * Delete group and all membership information.
@@ -97,7 +97,7 @@ public interface IUserGroupDataManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    void deleteGroup(String groupId) throws SegueDatabaseException;
+    void deleteGroup(Long groupId) throws SegueDatabaseException;
 
     /**
      * Edit the group information for an existing group.
@@ -119,12 +119,12 @@ public interface IUserGroupDataManager {
      * @throws SegueDatabaseException
      *             - if a database error occurs.
      */
-    Collection<UserGroup> getGroupMembershipList(String userId) throws SegueDatabaseException;
+    Collection<UserGroup> getGroupMembershipList(Long userId) throws SegueDatabaseException;
 
     /**
      * Useful for getting the number of groups in the database.
      * @return the total number of groups
      */
-    Long getGroupCount();
+    Long getGroupCount() throws SegueDatabaseException;
 
 }

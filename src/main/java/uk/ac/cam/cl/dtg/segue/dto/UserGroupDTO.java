@@ -29,9 +29,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This allows users to be organised by class / project and for teachers (or those granted permission) to view progress.
  */
 public class UserGroupDTO {
-    private String id;
+    private Long id;
     private String groupName;
-    private String ownerId;
+    private Long ownerId;
     private Date created;
     private String token;
 
@@ -54,7 +54,7 @@ public class UserGroupDTO {
      * @param created
      *            - date created.
      */
-    public UserGroupDTO(@Nullable final String id, final String groupName, final String ownerId, final Date created) {
+    public UserGroupDTO(@Nullable final Long id, final String groupName, final Long ownerId, final Date created) {
         this.id = id;
         this.groupName = groupName;
         this.ownerId = ownerId;
@@ -68,7 +68,7 @@ public class UserGroupDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
@@ -80,7 +80,7 @@ public class UserGroupDTO {
      */
     @JsonProperty("_id")
     @ObjectId
-    public void setId(final String id) {
+    public void setId(final Long id) {
         this.id = id;
     }
 
@@ -108,7 +108,7 @@ public class UserGroupDTO {
      * 
      * @return the ownerId
      */
-    public String getOwnerId() {
+    public Long getOwnerId() {
         return ownerId;
     }
 
@@ -118,7 +118,7 @@ public class UserGroupDTO {
      * @param ownerId
      *            the ownerId to set
      */
-    public void setOwnerId(final String ownerId) {
+    public void setOwnerId(final Long ownerId) {
         this.ownerId = ownerId;
     }
 

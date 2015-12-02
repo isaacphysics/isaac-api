@@ -66,12 +66,12 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserId = "89745531132231213";
+		Long someUserId = 89745531132231213L;
 
 		RegisteredUserDTO someRegisteredUser = createMock(RegisteredUserDTO.class);
-		String someAssociatedGroupId = "5654811fd6g51gd8r";
+		Long someAssociatedGroupId = 565481L;
 
-		expect(someRegisteredUser.getLegacyDbId()).andReturn(someUserId).anyTimes();
+		expect(someRegisteredUser.getId()).andReturn(someUserId).anyTimes();
 		replay(someRegisteredUser);
 
 		AssociationToken someToken = new AssociationToken("someToken", someUserId, someAssociatedGroupId);
@@ -81,7 +81,7 @@ public class UserAssociationManagerTest {
 		expect(dummyAssociationDataManager.saveAssociationToken((AssociationToken) anyObject())).andReturn(
 				someToken).once();
 		
-		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(anyString())).andReturn(null);
+		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(anyLong())).andReturn(null);
 		
 		replay(dummyAssociationDataManager, dummyGroupDataManager);
 
@@ -99,16 +99,16 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
 		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		String someAssociatedGroupId = "5654811fd6g51gd8r";
+		Long someAssociatedGroupId = 56548L;
 
-		expect(someRegisteredUserGrantingAccess.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
-		expect(someRegisteredUserReceivingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		replay(someRegisteredUserGrantingAccess);
 
 		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
@@ -149,16 +149,16 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
 		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		String someAssociatedGroupId = "5654811fd6g51gd8r";
+		Long someAssociatedGroupId = 5654811L;
 
-		expect(someRegisteredUserGrantingAccess.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
-		expect(someRegisteredUserReceivingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		replay(someRegisteredUserGrantingAccess);
 
 		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
@@ -196,16 +196,16 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
 		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
-		String someAssociatedGroupId = null; // no group
+		Long someAssociatedGroupId = null; // no group
 
-		expect(someRegisteredUserGrantingAccess.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
-		expect(someRegisteredUserReceivingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		replay(someRegisteredUserGrantingAccess);
 
 		AssociationToken someToken = new AssociationToken("someToken", someGroupOwnerUserId, someAssociatedGroupId);
@@ -240,15 +240,15 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
 		RegisteredUserDTO someRegisteredUserReceivingAccess = createMock(RegisteredUserDTO.class);
 
-		expect(someRegisteredUserGrantingAccess.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
-		expect(someRegisteredUserReceivingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserReceivingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		replay(someRegisteredUserGrantingAccess);
 		
 		String someBadToken = "bad token";
@@ -265,7 +265,6 @@ public class UserAssociationManagerTest {
 			fail("UserAssociationException is unexpected");
 		} catch (InvalidUserAssociationTokenException e) {
 			// this is a success as the exception was expected.
-
 		}
 
 		verify(someRegisteredUserGrantingAccess, dummyAssociationDataManager);
@@ -277,13 +276,13 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someGroupOwnerUserId = "17659214141";
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someRegisteredUserGrantingAccess = createMock(RegisteredUserDTO.class);
 		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
 
-		expect(someRegisteredUserGrantingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
-		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserGrantingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		
 		replay(someRegisteredUserGrantingAccess, someRegisteredUserGrantingAccessSummary);
 		
@@ -300,19 +299,17 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
 		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
 
-
-		
-		expect(someUserRequestingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		
 		expect(someUserRequestingAccess.getRole()).andReturn(Role.ADMIN).anyTimes();
 		
-		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
 		replay(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary);
 		
@@ -329,19 +326,17 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
 		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
 
-
-		
-		expect(someUserRequestingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		
 		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
 		
-		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someUserIdGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdGrantingAccess).anyTimes();
 		
 		expect(
 				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,
@@ -362,18 +357,18 @@ public class UserAssociationManagerTest {
 		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
 				dummyGroupDataManager);
 
-		String someUserIdNotGrantingAccess = "89745531132231213";
-		String someGroupOwnerUserId = "17659214141";
+		Long someUserIdNotGrantingAccess = 89745531132231213L;
+		Long someGroupOwnerUserId = 17659214141L;
 
 		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
 		UserSummaryDTO someRegisteredUserGrantingAccessSummary = createMock(UserSummaryDTO.class);
 
 		
-		expect(someUserRequestingAccess.getLegacyDbId()).andReturn(someGroupOwnerUserId).anyTimes();
+		expect(someUserRequestingAccess.getId()).andReturn(someGroupOwnerUserId).anyTimes();
 		
 		expect(someUserRequestingAccess.getRole()).andReturn(Role.TEACHER).anyTimes();
 		
-		expect(someRegisteredUserGrantingAccessSummary.getLegacyDbId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
+		expect(someRegisteredUserGrantingAccessSummary.getId()).andReturn(someUserIdNotGrantingAccess).anyTimes();
 		
 		expect(
 				dummyAssociationDataManager.hasValidAssociation(someGroupOwnerUserId,

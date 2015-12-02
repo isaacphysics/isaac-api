@@ -27,7 +27,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  * 
  */
 public class AssignmentManagerTest {
-	private AssignmentPersistenceManager dummyAssignmentPersistenceManager;
+	private PgAssignmentPersistenceManager dummyAssignmentPersistenceManager;
 	private GroupManager dummyGroupManager;
     private EmailManager dummyEmailManager;
     private UserManager dummyUserManager;
@@ -58,7 +58,7 @@ public class AssignmentManagerTest {
 	@Before
 	public final void setUp() throws Exception {
 		this.dummyGroupManager = createMock(GroupManager.class);
-		this.dummyAssignmentPersistenceManager = createMock(AssignmentPersistenceManager.class);
+		this.dummyAssignmentPersistenceManager = createMock(PgAssignmentPersistenceManager.class);
         this.dummyEmailManager = createMock(EmailManager.class);
         this.dummyUserManager = createMock(UserManager.class);
         this.dummyGameManager = createMock(GameManager.class);

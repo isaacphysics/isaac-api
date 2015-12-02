@@ -157,7 +157,7 @@ public interface ILogManager {
      * @return where string is the user id and the logevent is the most recent
      * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
-    Map<String, LogEvent> getLastLogForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException;
+    Map<String, Date> getLastLogDateForAllUsers(final String qualifyingLogEventType) throws SegueDatabaseException;
 
     /**
      * returns a set of event types known about from the db.

@@ -348,14 +348,14 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response createBooking(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
+            @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
             if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
 
-            RegisteredUserDTO bookedUser = userManager.getUserDTOByLegacyId(userId);
+            RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
 
             ContentDTO event = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
                     eventId);
@@ -371,7 +371,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            return Response.ok(bookingManager.createBooking(eventId, bookedUser.getLegacyDbId())).build();
+            return Response.ok(bookingManager.createBooking(eventId, bookedUser.getId())).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -403,7 +403,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response deleteBooking(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId, @PathParam("user_id") final String userId) {
+            @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
             if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")

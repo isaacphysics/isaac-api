@@ -406,7 +406,7 @@ public class UsersFacade extends AbstractSegueFacade {
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
             // decide if the user is allowed to view this data.
-            if (!currentUser.getLegacyDbId().equals(userIdOfInterest)
+            if (!currentUser.getId().equals(userIdOfInterest)
                     && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }

@@ -78,7 +78,7 @@ public class PgUsers implements IUserDataManager {
         
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select COUNT(*) AS TOTAL FROM linked_accounts WHERE user_id = ?");
+            pst = conn.prepareStatement("SELECT COUNT(*) AS TOTAL FROM linked_accounts WHERE user_id = ?");
             pst.setLong(1, user.getId());
 
             ResultSet results = pst.executeQuery();
@@ -95,7 +95,7 @@ public class PgUsers implements IUserDataManager {
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM linked_accounts WHERE user_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM linked_accounts WHERE user_id = ?");
             pst.setLong(1, user.getId());
 
             ResultSet results = pst.executeQuery();
@@ -193,7 +193,7 @@ public class PgUsers implements IUserDataManager {
         // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM users WHERE " + MASTER_ID + " = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE " + MASTER_ID + " = ?");
             pst.setString(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -221,7 +221,7 @@ public class PgUsers implements IUserDataManager {
         
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM users WHERE id = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
             pst.setLong(1, id);
 
             ResultSet results = pst.executeQuery();
@@ -238,7 +238,7 @@ public class PgUsers implements IUserDataManager {
         // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM users WHERE email ILIKE ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE email ILIKE ?");
             pst.setString(1, email);
 
             ResultSet results = pst.executeQuery();
@@ -304,7 +304,7 @@ public class PgUsers implements IUserDataManager {
                 index++;
             }
             
-            pst = conn.prepareStatement("Select * FROM users" + sb.toString());
+            pst = conn.prepareStatement("SELECT * FROM users" + sb.toString());
             index = 1;
             for (Object value : orderToAdd) {
                 if (value instanceof String) {
@@ -329,7 +329,7 @@ public class PgUsers implements IUserDataManager {
     }
 
     @Override
-    public List<RegisteredUser> findUsers(final List<String> usersToLocate) throws SegueDatabaseException {
+    public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
         //TODO: this uses the legacy id still
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
@@ -340,12 +340,12 @@ public class PgUsers implements IUserDataManager {
                 inParams.append(",?");
             }
             
-            pst = conn.prepareStatement(String.format("Select * FROM users WHERE " + MASTER_ID + " IN (%s)",
+            pst = conn.prepareStatement(String.format("SELECT * FROM users WHERE id IN (%s)",
                     inParams.toString()));
 
             int index = 1;
-            for (String userId : usersToLocate) {
-                pst.setString(index, userId);
+            for (Long userId : usersToLocate) {
+                pst.setLong(index, userId);
                 index++;
             }
 
@@ -361,7 +361,7 @@ public class PgUsers implements IUserDataManager {
     public RegisteredUser getByResetToken(final String token) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM users WHERE reset_token = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE reset_token = ?");
             pst.setString(1, token);
 
             ResultSet results = pst.executeQuery();
@@ -376,7 +376,7 @@ public class PgUsers implements IUserDataManager {
     public RegisteredUser getByEmailVerificationToken(final String token) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select * FROM users WHERE email_verification_token = ?");
+            pst = conn.prepareStatement("SELECT * FROM users WHERE email_verification_token = ?");
             pst.setString(1, token);
 
             ResultSet results = pst.executeQuery();
@@ -406,8 +406,6 @@ public class PgUsers implements IUserDataManager {
 
     @Override
     public void deleteUserAccount(final RegisteredUser userToDelete) throws SegueDatabaseException {
-
-        
         if (null == userToDelete) {
             throw new SegueDatabaseException("Unable to locate the user requested to delete.");
         }
@@ -435,7 +433,6 @@ public class PgUsers implements IUserDataManager {
         } catch (SQLException e1) {
             throw new SegueDatabaseException("Postgres exception", e1);
         } 
-                
     }
 
     @Override

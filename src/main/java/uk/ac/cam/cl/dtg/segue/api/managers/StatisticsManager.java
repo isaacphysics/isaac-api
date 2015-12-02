@@ -42,7 +42,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -76,7 +75,6 @@ public class StatisticsManager {
     private QuestionManager questionManager;
     
     private Cache<String, Object> longStatsCache;
-    private Cache<String, Object> shortStatsCache;
     private LocationHistoryManager locationHistoryManager;
 
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
@@ -84,7 +82,6 @@ public class StatisticsManager {
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
-    private static final int SHORT_STATS_EVICTION_INTERVAL_MINUTES = 1; // 12 hours
 
     
     /**
@@ -125,9 +122,6 @@ public class StatisticsManager {
 
         this.longStatsCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
-
-        this.shortStatsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(SHORT_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
     }
 
     /**
@@ -492,11 +486,11 @@ public class StatisticsManager {
     /**
      * @param qualifyingLogEvent
      *            the string event type that will be looked for.
-     * @return a list of userId's to last event timestamp
+     * @return a map of userId's to last event timestamp
      * @throws SegueDatabaseException 
      */
     public Map<String, Date> getLastSeenUserMap(final String qualifyingLogEvent) throws SegueDatabaseException {
-        return this.convertFromLogEventToDateMap(this.logManager.getLastLogForAllUsers(qualifyingLogEvent));
+        return this.logManager.getLastLogDateForAllUsers(qualifyingLogEvent);
     }
 
     /**
@@ -729,19 +723,5 @@ public class StatisticsManager {
         }
 
         return questionIdToQuestionMap;
-    }
-
-    /**
-     * @param input
-     *            - containing more information than necessary.
-     * @return converted map
-     */
-    private Map<String, Date> convertFromLogEventToDateMap(final Map<String, LogEvent> input) {
-        Map<String, Date> result = Maps.newHashMap();
-
-        for (Entry<String, LogEvent> e : input.entrySet()) {
-            result.put(e.getKey(), e.getValue().getTimestamp());
-        }
-        return result;
     }
 }

@@ -62,7 +62,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public List<EventBookingDTO> getEventsByUserId(final String userId) throws SegueDatabaseException {
+    public List<EventBookingDTO> getEventsByUserId(final Long userId) throws SegueDatabaseException {
         return convertToDTO(Lists.newArrayList(dao.findAllByUserId(userId)));
     }
 
@@ -117,7 +117,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final String userId) throws SegueDatabaseException {
+    public EventBookingDTO createBooking(final String eventId, final Long userId) throws SegueDatabaseException {
         return this.convertToDTO(dao.add(eventId, userId));
     }
 
@@ -130,7 +130,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public boolean isUserBooked(final String eventId, final String userId) throws SegueDatabaseException {
+    public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
         try {
             return dao.findBookingByEventAndUser(eventId, userId) != null;
         } catch (ResourceNotFoundException e) {
@@ -146,7 +146,7 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public void deleteBooking(final String eventId, final String userId) throws SegueDatabaseException {
+    public void deleteBooking(final String eventId, final Long userId) throws SegueDatabaseException {
         dao.delete(eventId, userId);
     }
 
@@ -164,7 +164,7 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
-            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOByLegacyId(eb
+            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOById(eb
                     .getUserId()));
 
             result.setBookingId(eb.getId());

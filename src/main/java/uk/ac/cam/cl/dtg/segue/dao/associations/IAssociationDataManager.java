@@ -45,7 +45,7 @@ public interface IAssociationDataManager {
      *            the token code
      * @return an AssociationToken containing owner information and group id if set.
      */
-    AssociationToken lookupAssociationToken(final String tokenCode);
+    AssociationToken lookupAssociationToken(final String tokenCode) throws SegueDatabaseException;
 
     /**
      * getAssociationTokenByGroupId.
@@ -54,7 +54,7 @@ public interface IAssociationDataManager {
      *            - id of the group to check.
      * @return token if the group has a token already otherwise null.
      */
-    AssociationToken getAssociationTokenByGroupId(String groupId);
+    AssociationToken getAssociationTokenByGroupId(Long groupId) throws SegueDatabaseException;
 
     /**
      * Deletes the token record but leaves associations intact.
@@ -77,7 +77,7 @@ public interface IAssociationDataManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    void createAssociation(AssociationToken token, String userIdGrantingAccess) throws SegueDatabaseException;
+    void createAssociation(AssociationToken token, Long userIdGrantingAccess) throws SegueDatabaseException;
 
     /**
      * Revoke permission to access personal data.
@@ -89,7 +89,7 @@ public interface IAssociationDataManager {
      * @throws SegueDatabaseException
      *             - if there is a database error.
      */
-    void deleteAssociation(final String ownerUserId, final String userIdWithAccess) throws SegueDatabaseException;
+    void deleteAssociation(final Long ownerUserId, final Long userIdWithAccess) throws SegueDatabaseException;
 
     /**
      * Determines whether the user has a valid association already.
@@ -99,8 +99,10 @@ public interface IAssociationDataManager {
      * @param ownerUserId
      *            - the owner of the data being accessed.
      * @return true if the userIdRequestingAccess has permission, false if not.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
      */
-    boolean hasValidAssociation(String userIdRequestingAccess, String ownerUserId);
+    boolean hasValidAssociation(Long userIdRequestingAccess, Long ownerUserId) throws SegueDatabaseException;
 
     /**
      * Get a list of user associations for a given user.
@@ -111,7 +113,7 @@ public interface IAssociationDataManager {
      *            - User to find the associations for.
      * @return the list of user associations.
      */
-    List<UserAssociation> getUserAssociations(String userId);
+    List<UserAssociation> getUserAssociations(Long userId) throws SegueDatabaseException;
 
     /**
      * Get a list of user associations that provide grant access for a given user.
@@ -122,5 +124,5 @@ public interface IAssociationDataManager {
      *            - User to find the associations for.
      * @return the list of user associations.
      */
-    List<UserAssociation> getUsersThatICanSee(String userId);
+    List<UserAssociation> getUsersThatICanSee(Long userId) throws SegueDatabaseException;
 }

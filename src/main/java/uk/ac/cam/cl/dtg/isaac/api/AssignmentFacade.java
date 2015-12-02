@@ -99,6 +99,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * 
      * @param assignmentManager
      *            - Instance of assignment Manager
+     * @param questionManager
+     *            - Instance of questions manager
      * @param userManager
      *            - Instance of User Manager
      * @param groupManager
@@ -113,9 +115,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      *            - So that we can determine what information is allowed to be seen by other users.
      */
     @Inject
-    public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager, final UserManager userManager,
-            final GroupManager groupManager, final PropertiesLoader propertiesLoader, final GameManager gameManager,
-            final ILogManager logManager, final UserAssociationManager associationManager) {
+    public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
+            final UserManager userManager, final GroupManager groupManager, final PropertiesLoader propertiesLoader,
+            final GameManager gameManager, final ILogManager logManager,
+            final UserAssociationManager associationManager) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;
         this.userManager = userManager;
@@ -200,7 +203,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssigned(@Context final HttpServletRequest request,
-            @QueryParam("group") final String groupIdOfInterest) {
+            @QueryParam("group") final Long groupIdOfInterest) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -251,7 +254,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getAssignmentProgress(@Context final HttpServletRequest request,
-            @PathParam("assignment_id") final String assignmentId) {
+            @PathParam("assignment_id") final Long assignmentId) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
@@ -260,7 +263,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId()) 
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId()) 
                     && !super.isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
@@ -337,7 +340,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @GZIP
     @Consumes(MediaType.WILDCARD)
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
-            @PathParam("assignment_id") final String assignmentId) {
+            @PathParam("assignment_id") final Long assignmentId) {
        
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -347,7 +350,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getResourceNotFoundResponse("The assignment requested cannot be found");
             }
 
-            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId())
+            if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId())
                     && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
@@ -514,7 +517,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response assignGameBoard(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final String groupId) {
+            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
             UserGroupDTO assigneeGroup = groupManager.getGroupById(groupId);
@@ -531,7 +534,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             AssignmentDTO newAssignment = new AssignmentDTO();
             newAssignment.setGameboardId(gameboard.getId());
-            newAssignment.setOwnerUserId(currentlyLoggedInUser.getLegacyDbId());
+            newAssignment.setOwnerUserId(currentlyLoggedInUser.getId());
             newAssignment.setGroupId(groupId);
 
             // modifies assignment passed in to include an id.
@@ -566,7 +569,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response deleteAssignment(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final String groupId) {
+            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -588,7 +591,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             if (null == assignmentToDelete) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "The assignment does not exist.").toResponse();
             }
-            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getLegacyDbId())) {
+            if (!assignmentToDelete.getOwnerUserId().equals(currentlyLoggedInUser.getId())) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not the owner of this assignment. Unable to delete it.").toResponse();
             }

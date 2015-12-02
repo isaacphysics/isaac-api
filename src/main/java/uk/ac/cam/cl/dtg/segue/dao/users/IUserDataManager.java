@@ -167,7 +167,7 @@ public interface IUserDataManager {
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
      */
-    List<RegisteredUser> findUsers(List<String> usersToLocate) throws SegueDatabaseException;
+    List<RegisteredUser> findUsers(List<Long> usersToLocate) throws SegueDatabaseException;
 
     /**
      * Get a user by password reset token.

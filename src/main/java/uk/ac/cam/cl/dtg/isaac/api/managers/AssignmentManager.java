@@ -24,7 +24,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.dao.AssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -49,7 +49,7 @@ import com.google.inject.Inject;
 public class AssignmentManager implements IGroupObserver {
     private static final Logger log = LoggerFactory.getLogger(AssignmentManager.class);
 
-    private final AssignmentPersistenceManager assignmentPersistenceManager;
+    private final PgAssignmentPersistenceManager assignmentPersistenceManager;
     private final GroupManager groupManager;
     private final EmailManager emailManager;
     private final UserManager userManager;
@@ -69,10 +69,9 @@ public class AssignmentManager implements IGroupObserver {
      *            - the user manager object
      */
     @Inject
-    public AssignmentManager(final AssignmentPersistenceManager assignmentPersistenceManager,
-			final GroupManager groupManager, final EmailManager emailManager,
-			final UserManager userManager, final GameManager gameManager,
-            final UserAssociationManager userAssociationManager) {
+    public AssignmentManager(final PgAssignmentPersistenceManager assignmentPersistenceManager,
+            final GroupManager groupManager, final EmailManager emailManager, final UserManager userManager,
+            final GameManager gameManager, final UserAssociationManager userAssociationManager) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
         this.emailManager = emailManager;
@@ -96,7 +95,7 @@ public class AssignmentManager implements IGroupObserver {
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user);
 
         if (groups.size() == 0) {
-            log.debug(String.format("User (%s) does not have any groups", user.getLegacyDbId()));
+            log.debug(String.format("User (%s) does not have any groups", user.getId()));
             return Lists.newArrayList();
         }
 
@@ -118,7 +117,7 @@ public class AssignmentManager implements IGroupObserver {
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
-    public AssignmentDTO getAssignmentById(final String assignmentId) throws SegueDatabaseException {
+    public AssignmentDTO getAssignmentById(final Long assignmentId) throws SegueDatabaseException {
         return this.assignmentPersistenceManager.getAssignmentById(assignmentId);
     }
     
@@ -154,7 +153,7 @@ public class AssignmentManager implements IGroupObserver {
         
         //filter users so those that have revoked access to their data aren't emailed
         try {
-			RegisteredUserDTO assignmentOwner = userManager.getUserDTOByLegacyId(newAssignment.getOwnerUserId());
+			RegisteredUserDTO assignmentOwner = userManager.getUserDTOById(newAssignment.getOwnerUserId());
 			
 			for (Iterator<RegisteredUserDTO> iterator = users.iterator(); iterator.hasNext();) {
 				RegisteredUserDTO user = iterator.next();
@@ -191,7 +190,7 @@ public class AssignmentManager implements IGroupObserver {
      */
     public List<AssignmentDTO> getAllAssignmentsSetByUser(final RegisteredUserDTO user) throws SegueDatabaseException {
         Validate.notNull(user);
-        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getLegacyDbId());
+        return this.assignmentPersistenceManager.getAssignmentsByOwner(user.getId());
     }
 
     /**
@@ -210,7 +209,7 @@ public class AssignmentManager implements IGroupObserver {
         Validate.notNull(user);
         Validate.notNull(group);
         return this.assignmentPersistenceManager
-                .getAssignmentsByOwnerIdAndGroupId(user.getLegacyDbId(), group.getId());
+                .getAssignmentsByOwnerIdAndGroupId(user.getId(), group.getId());
     }
 
     /**
@@ -223,7 +222,7 @@ public class AssignmentManager implements IGroupObserver {
      */
     public void deleteAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
         Validate.notNull(assignment);
-        Validate.notBlank(assignment.getId());
+        Validate.notNull(assignment.getId());
         this.assignmentPersistenceManager.deleteAssignment(assignment.getId());
     }
 
@@ -238,7 +237,7 @@ public class AssignmentManager implements IGroupObserver {
      * @throws SegueDatabaseException
      *             - if we cannot complete a required database operation.
      */
-    public AssignmentDTO findAssignmentByGameboardAndGroup(final String gameboardId, final String groupId)
+    public AssignmentDTO findAssignmentByGameboardAndGroup(final String gameboardId, final Long groupId)
             throws SegueDatabaseException {
         List<AssignmentDTO> assignments = this.assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(
                 gameboardId, groupId);
@@ -309,13 +308,12 @@ public class AssignmentManager implements IGroupObserver {
      */
     @Override
     public void onMemberAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO user) {
-
 		Validate.notNull(group);
 		Validate.notNull(user);
 
         // Try to email user to let them know
         try {
-        	RegisteredUserDTO groupOwner = this.userManager.getUserDTOByLegacyId(group.getOwnerId());
+        	RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
 
             List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
            
