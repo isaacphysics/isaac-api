@@ -37,7 +37,7 @@ public interface EventBooking {
      * 
      * @return User Id
      */
-    String getUserId();
+    Long getUserId();
 
     /**
      * Getter for event id.

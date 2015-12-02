@@ -59,14 +59,14 @@ public class PgEventBookings implements EventBookings {
      * cl.dtg.isaac.dos.eventbookings.EventBooking)
      */
     @Override
-    public EventBooking add(final String eventId, final String userId) throws SegueDatabaseException {
+    public EventBooking add(final String eventId, final Long userId) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = ds.getDatabaseConnection()) {
             Date creationDate = new Date();
             pst = conn.prepareStatement(
                     "INSERT INTO event_bookings (id, user_id, event_id, created) VALUES (DEFAULT, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS);
-            pst.setString(1, userId);
+            pst.setLong(1, userId);
             pst.setString(2, eventId);
             pst.setTimestamp(3, new java.sql.Timestamp(creationDate.getTime()));
 
@@ -89,12 +89,12 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public void delete(final String eventId, final String userId) throws SegueDatabaseException {
+    public void delete(final String eventId, final Long userId) throws SegueDatabaseException {
         PreparedStatement pst;
         try (Connection conn = ds.getDatabaseConnection()) {
             pst = conn.prepareStatement("DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?");
             pst.setString(1, eventId);
-            pst.setString(2, userId);
+            pst.setLong(2, userId);
             int executeUpdate = pst.executeUpdate();
 
             if (executeUpdate == 0) {
@@ -112,7 +112,7 @@ public class PgEventBookings implements EventBookings {
      * @see uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings#iterate()
      */
     @Override
-    public EventBooking findBookingByEventAndUser(final String eventId, final String userId)
+    public EventBooking findBookingByEventAndUser(final String eventId, final Long userId)
             throws SegueDatabaseException {
         Validate.notBlank(eventId);
 
@@ -120,7 +120,7 @@ public class PgEventBookings implements EventBookings {
             PreparedStatement pst;
             pst = conn.prepareStatement("Select * FROM event_bookings WHERE event_id = ? AND user_id = ?");
             pst.setString(1, eventId);
-            pst.setString(2, userId);
+            pst.setLong(2, userId);
             ResultSet results = pst.executeQuery();
 
             EventBooking result = null;
@@ -196,13 +196,13 @@ public class PgEventBookings implements EventBookings {
     }
 
     @Override
-    public Iterable<EventBooking> findAllByUserId(final String userId) throws SegueDatabaseException {
-        Validate.notBlank(userId);
+    public Iterable<EventBooking> findAllByUserId(final Long userId) throws SegueDatabaseException {
+        Validate.notNull(userId);
 
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement("Select * FROM event_bookings WHERE user_id = ?");
-            pst.setString(1, userId);
+            pst.setLong(1, userId);
             ResultSet results = pst.executeQuery();
 
             List<EventBooking> returnResult = Lists.newArrayList();
@@ -228,7 +228,7 @@ public class PgEventBookings implements EventBookings {
      *             - if an error occurs.
      */
     private PgEventBooking buildPgEventBooking(final ResultSet results) throws SQLException {
-        return new PgEventBooking(ds, results.getLong("id"), results.getString("user_id"),
+        return new PgEventBooking(ds, results.getLong("id"), results.getLong("user_id"),
                 results.getString("event_id"), results.getTimestamp("created"));
 
     }

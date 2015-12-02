@@ -32,7 +32,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 public class PgEventBooking implements EventBooking {
     private PostgresSqlDb ds;
     private Long bookingId;
-    private String userId;
+    private Long userId;
     private String eventId;
     private Date created;
 
@@ -66,7 +66,7 @@ public class PgEventBooking implements EventBooking {
      * @param created
      *            - the date the booking was made.
      */
-    public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final String userId, final String eventId,
+    public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final Long userId, final String eventId,
             final Date created) {
         this.ds = ds;
         this.bookingId = bookingId;
@@ -82,7 +82,7 @@ public class PgEventBooking implements EventBooking {
     }
 
     @Override
-    public String getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
@@ -115,7 +115,7 @@ public class PgEventBooking implements EventBooking {
                 pst.setLong(1, bookingId);
             } else if (userId != null && eventId != null) {
                 pst = conn.prepareStatement("Select * FROM event_bookings WHERE user_id = ? AND event_id = ?");
-                pst.setString(1, userId);
+                pst.setLong(1, userId);
                 pst.setString(2, eventId);
             } else {
                 throw new IllegalArgumentException(
@@ -132,7 +132,7 @@ public class PgEventBooking implements EventBooking {
 
                 this.bookingId = results.getLong("id");
                 this.eventId = results.getString("event_id");
-                this.userId = results.getString("user_id");
+                this.userId = results.getLong("user_id");
                 this.created = results.getDate("created");
             }
 

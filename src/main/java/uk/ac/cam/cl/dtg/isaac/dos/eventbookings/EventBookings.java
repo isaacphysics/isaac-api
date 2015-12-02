@@ -36,7 +36,7 @@ public interface EventBookings {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final String userId) throws SegueDatabaseException;
+    EventBooking add(final String eventId, final Long userId) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.
@@ -48,7 +48,7 @@ public interface EventBookings {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    void delete(final String eventId, final String userId) throws SegueDatabaseException;
+    void delete(final String eventId, final Long userId) throws SegueDatabaseException;
 
     /**
      * get all events.
@@ -79,7 +79,7 @@ public interface EventBookings {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    Iterable<EventBooking> findAllByUserId(final String userId) throws SegueDatabaseException;
+    Iterable<EventBooking> findAllByUserId(final Long userId) throws SegueDatabaseException;
 
     /**
      * Find an event booking by event and user id.
@@ -92,5 +92,5 @@ public interface EventBookings {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking findBookingByEventAndUser(String eventId, String userId) throws SegueDatabaseException;
+    EventBooking findBookingByEventAndUser(String eventId, Long userId) throws SegueDatabaseException;
 }
