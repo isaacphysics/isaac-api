@@ -75,7 +75,8 @@ public class PgAssignmentPersistenceManager {
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement(
-                            "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date) VALUES (?, ?, ?, ?);",
+                            "INSERT INTO assignments(gameboard_id, group_id, owner_user_id, creation_date)"
+                            + " VALUES (?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
 
             pst.setString(1, assignmentToSave.getGameboardId());
