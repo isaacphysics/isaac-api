@@ -135,7 +135,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No content found with id: " + id);
-                log.debug(error.getErrorMessage());
+                log.info(error.getErrorMessage());
                 return error.toResponse();
             }
 
@@ -170,12 +170,12 @@ public class EmailFacade extends AbstractSegueFacade {
 		} catch (ResourceNotFoundException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
             						"Content could not be found: " + id);
-            log.debug(error.getErrorMessage());
+            log.warn(error.getErrorMessage());
             return error.toResponse();
 		} catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, 
             						"SegueDatabaseException during creation of email preview: " + id);
-            log.debug(error.getErrorMessage());
+            log.error(error.getErrorMessage());
             return error.toResponse();
 		} catch (ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
@@ -185,7 +185,7 @@ public class EmailFacade extends AbstractSegueFacade {
 		} catch (IllegalArgumentException e) {
 	        SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, 
 	        						"Cannot generate email with non-authorised fields: " + id);
-	        log.debug(error.getErrorMessage());
+	        log.info(error.getErrorMessage());
 	        return error.toResponse();
 		}
 
@@ -310,7 +310,7 @@ public class EmailFacade extends AbstractSegueFacade {
 		} catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
-			log.debug(error.getErrorMessage());
+			log.error(error.getErrorMessage());
 			return error.toResponse();
 		} catch (ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
