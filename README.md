@@ -21,7 +21,7 @@ Prerequisites
 * Git
 * MongoDb (optional depending on configuration)
 * Postgres (optional depending on configuration) - database build files are located: /src/main/resources/db_scripts
-* Tomcat 8
+* Tomcat 8 (for deployment. Not required for local development, which uses Jetty)
 * Check out of a git content repository containing json files for any content that should be served.
 
 Deployment build
@@ -51,6 +51,8 @@ Customise this file for local build settings: /profiles/local/local-config.prope
 Local configuration will need to be customised for each machine but you can build a war this using command.
 
 The local build is set as the default profile so eclipse is happy.
+
+To run the local development Jetty server, do `mvn jetty:run`
 
 Installation Notes
 =================
