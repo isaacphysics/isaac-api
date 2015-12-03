@@ -98,6 +98,41 @@ public class EmailFacade extends AbstractSegueFacade {
     
     
     /**
+     * Get the number of emails left on the queue.
+     * 
+     * This method will return the current number of emails left on the email queue
+     *     
+     * @return the current length of the queue
+     */
+    /**
+     * @param request
+     * 			- the request 
+     * @return the size of the queue
+     */
+    @GET
+    @Path("queuesize")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEmailQueueSize(@Context final HttpServletRequest request) {
+    	
+    	RegisteredUserDTO currentUser;
+		try {
+			currentUser = this.api.getCurrentUser(request);			
+		} catch (NoUserLoggedInException e2) {
+    		return SegueErrorResponse.getNotLoggedInResponse();
+		}
+    	if (currentUser.getRole() == Role.ADMIN) {
+    		int queueLength = this.emailManager.getQueueLength();
+    		log.info("Email queue size queried " + queueLength);
+    		return Response.ok(queueLength).build();
+    	}
+        SegueErrorResponse error = new SegueErrorResponse(Status.FORBIDDEN, 
+												"User does not have appropriate privilages: ");
+		log.error(error.getErrorMessage());
+		return error.toResponse();
+    }
+    
+    /**
      * GetEmailInBrowserById from the database.
      * 
      * This method will return serialised html that displays an email object

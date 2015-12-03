@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DELETE_ASSIGNMENT;
-
 import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,13 +22,8 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 
-import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
 
 /**
  * Abstract message queue class.
@@ -76,12 +69,14 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * 
      * @param communicator
      *            A class to send messages
+     * @param logManager
+     *            the log manager
      */
     public AbstractCommunicationQueue(final ICommunicator<T> communicator, 
     	    final ILogManager logManager) {
         this.communicator = communicator;
         this.logManager = logManager;
-        this.executorService = Executors.newFixedThreadPool(4); 
+        this.executorService = Executors.newFixedThreadPool(2); 
     }
 
     /**
@@ -104,7 +99,10 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
         return messageSenderRunnableQueue.poll();
     }
     
-    public int getQueueLength(){
+    /**
+     * @return current queue length
+     */
+    public int getQueueLength() {
     	return messageSenderRunnableQueue.size();
     }
 
