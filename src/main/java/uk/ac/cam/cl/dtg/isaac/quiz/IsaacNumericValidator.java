@@ -36,8 +36,8 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 public class IsaacNumericValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacNumericValidator.class);
     
-    private static final String defaultValidationResponse = "Check your working.";
-    private static final String defaultWrongUnitValidationResponse = "Check your units.";
+    private static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
+    private static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(
@@ -75,20 +75,34 @@ public class IsaacNumericValidator implements IValidator {
             } 
             
             QuestionValidationResponse bestResponse;
+            
+            // Step 1 - exact (string based) matching first - handles case where editors enter two mathematically
+            // equivalent known answers - won't check for sig figs.
+            bestResponse = this.exactStringMatch(isaacNumericQuestion, answerFromUser);
+            
+            // Only return this if the answer is incorrect - as we don't know if the correct answers have always been
+            // specified in the correct # of sig figs.
+            if (bestResponse != null && !bestResponse.isCorrect()) {
+                return bestResponse;
+            }
+            
+            // Step 2 - then do correct answer numeric equivalence checking.
             if (isaacNumericQuestion.getRequireUnits()) {
                 bestResponse = this.validateWithUnits(isaacNumericQuestion, answerFromUser);
             } else {
                 bestResponse = this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
             }
-
-            // if we have not used the default validation response then go ahead and return it.
-            if (bestResponse.getExplanation() != null && !(defaultValidationResponse.equals(bestResponse.getExplanation().getValue()) 
-                    || 
-                    defaultWrongUnitValidationResponse
-                        .equals(bestResponse.getExplanation().getValue()))) {
+            
+            // If incorrect and we have not used the default validation response then go ahead and return it 
+            // - this provides more helpful feedback than sig figs errors.
+            if (!bestResponse.isCorrect() && bestResponse.getExplanation() != null
+                    && !(DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue())
+                            || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE
+                            .equals(bestResponse.getExplanation().getValue()))) {
                 return bestResponse;
             }
-            
+
+            // Step 3 - then do sig fig checking iff we think they have a correct answer.           
             if (!this.verifyCorrectNumberofSignificantFigures(answerFromUser.getValue(),
                     isaacNumericQuestion.getSignificantFigures())) {
                 // make sure that the answer is to the right number of sig figs
@@ -106,8 +120,7 @@ public class IsaacNumericValidator implements IValidator {
                     
                 } 
 
-                // This is a hack as we don't actually know if it should be a quantity response or not.
-                return new QuantityValidationResponse(
+                bestResponse = new QuantityValidationResponse(
                         question.getId(),
                         answerFromUser,
                         false,
@@ -119,18 +132,16 @@ public class IsaacNumericValidator implements IValidator {
                         false, validUnits, new Date());
             }
             
-            // ok return the generic response
+            // ok return the best response
             return bestResponse;
         } catch (NumberFormatException e) {
             return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(
                     "The answer you provided is not a valid number."), false, false, new Date());
         }
-
-
     }
 
     /**
-     * Validate the students answer ensuring that the correct unit value is specified.
+     * Numerically validate the students answer ensuring that the correct unit value is specified.
      * 
      * @param isaacNumericQuestion
      *            - question to validate.
@@ -168,14 +179,14 @@ public class IsaacNumericValidator implements IValidator {
                         && quantityFromQuestion.isCorrect()) {
                     // matches value but not units of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content(defaultWrongUnitValidationResponse), true, false, new Date());
+                            false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, new Date());
                 } else if (!numericValuesMatch(quantityFromQuestion.getValue(), answerFromUser.getValue(),
                         isaacNumericQuestion.getSignificantFigures())
                         && answerFromUser.getUnits().equals(quantityFromQuestion.getUnits())
                         && quantityFromQuestion.isCorrect()) {
                     // matches units but not value of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content(defaultValidationResponse), false, true, new Date());
+                            false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
                 }
             } else {
                 log.error("Isaac Numeric Validator for questionId: " + isaacNumericQuestion.getId()
@@ -187,7 +198,7 @@ public class IsaacNumericValidator implements IValidator {
             // tell them they got it wrong but we cannot find an
             // feedback for them.
             return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser, false, new Content(
-                    defaultValidationResponse), false, false, new Date());
+                    DEFAULT_VALIDATION_RESPONSE), false, false, new Date());
 
         } else {
             return bestResponse;
@@ -195,7 +206,7 @@ public class IsaacNumericValidator implements IValidator {
     }
 
     /**
-     * Question validation response without units being considered.
+     * Numerically validate the response without units being considered.
      * 
      * @param isaacNumericQuestion
      *            - question to validate.
@@ -222,7 +233,7 @@ public class IsaacNumericValidator implements IValidator {
                 } else {
                     // value doesn't match this choice
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
-                            false, new Content(defaultValidationResponse), false, null, new Date());
+                            false, new Content(DEFAULT_VALIDATION_RESPONSE), false, null, new Date());
                 }
             } else {
                 log.error("Isaac Numeric Validator expected there to be a Quantity in ("
@@ -326,5 +337,47 @@ public class IsaacNumericValidator implements IValidator {
 
             return bd.precision() - trailingZeroes <= significantFigures && bd.precision() >= significantFigures;
         }
+    }
+    
+    /**
+     * Sometimes we want to do an exact string wise match before we do sig fig checks etc. This method is intended to
+     * work for this case.
+     * 
+     * @param isaacNumericQuestion
+     *            - question content object
+     * @param answerFromUser
+     *            - response form the user
+     * @return either a QuestionValidationResponse if there is an exact String match or null if no string match.
+     */
+    private QuestionValidationResponse exactStringMatch(final IsaacNumericQuestion isaacNumericQuestion,
+            final Quantity answerFromUser) {
+
+        for (Choice c : isaacNumericQuestion.getChoices()) {
+            if (c instanceof Quantity) {
+                Quantity quantityFromQuestion = (Quantity) c;
+
+                StringBuilder userStringForComparison = new StringBuilder();
+                userStringForComparison.append(answerFromUser.getValue().trim());
+                userStringForComparison.append(answerFromUser.getUnits());
+
+                StringBuilder questionAnswerStringForComparison = new StringBuilder();
+                questionAnswerStringForComparison.append(quantityFromQuestion.getValue().trim());
+                questionAnswerStringForComparison.append(quantityFromQuestion.getUnits());
+
+                if (questionAnswerStringForComparison.toString().trim()
+                        .equals(userStringForComparison.toString().trim())) {
+                    Boolean unitFeedback = null;
+                    if (isaacNumericQuestion.getRequireUnits()) {
+                        unitFeedback = quantityFromQuestion.getUnits().equals(answerFromUser.getUnits());
+                    }
+
+                    return new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
+                            quantityFromQuestion.isCorrect(), (Content) quantityFromQuestion.getExplanation(),
+                            quantityFromQuestion.isCorrect(), unitFeedback, new Date());
+
+                }
+            }
+        }
+        return null;
     }
 }

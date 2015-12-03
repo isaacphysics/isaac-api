@@ -243,7 +243,7 @@ public abstract class AbstractSegueFacade {
      *            - Instance of User Manager
      * @param request
      *            - with session information
-     * @return true if user is logged in as an admin, false otherwise.
+     * @return true if user is logged in as an staff, false otherwise.
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */
