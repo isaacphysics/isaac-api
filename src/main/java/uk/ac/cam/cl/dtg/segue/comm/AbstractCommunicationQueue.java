@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.DELETE_ASSIGNMENT;
+
 import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,6 +24,13 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+
+import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Abstract message queue class.
@@ -32,6 +41,8 @@ import org.slf4j.LoggerFactory;
  *            type of message to send
  */
 public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage> {
+	
+    private final ILogManager logManager;
 	
 	/**
 	 * Comparator that tells the priority queue which email should be sent first.
@@ -66,8 +77,10 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * @param communicator
      *            A class to send messages
      */
-    public AbstractCommunicationQueue(final ICommunicator<T> communicator) {
+    public AbstractCommunicationQueue(final ICommunicator<T> communicator, 
+    	    final ILogManager logManager) {
         this.communicator = communicator;
+        this.logManager = logManager;
         this.executorService = Executors.newFixedThreadPool(4); 
     }
 
@@ -78,7 +91,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
     protected void addToQueue(final T queueObject) {
     	messageSenderRunnableQueue.add(queueObject);
     	executorService.submit(new MessageSenderRunnable());
-    	log.info("added to the queue " + messageSenderRunnableQueue.size());
+    	log.info("Added to the email queue. Current size: " + messageSenderRunnableQueue.size());
     }
 
 

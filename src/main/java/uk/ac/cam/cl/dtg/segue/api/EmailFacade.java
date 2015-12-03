@@ -270,6 +270,7 @@ public class EmailFacade extends AbstractSegueFacade {
     			
 				// TODO: This should really match against enum values 
 				// otherwise this list has to be maintained separately.
+				// This is the same in the stats page, which needs to be changed too.
 				switch (key) {
 	    			case "adminUsers":
 	    				if (users.get("adminUsers")) {

@@ -88,7 +88,7 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, EmailType.ADMIN, null);
         try {
-			emailManager.filterByPreferencesAndAddToQueue(e);
+			emailManager.addSystemEmailToQueue(e);
 		} catch (SegueDatabaseException e1) {
 			log.error("Database access error when attempting to send hard threshold limit warnings: " 
 								+ e1.getMessage());

@@ -18,11 +18,13 @@ import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import twitter4j.User;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -38,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
@@ -72,7 +75,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
 		    		emailPreferenceManager, final PropertiesLoader globalProperties, 
 		    		final ContentVersionController contentVersionController, final ILogManager logManager) {
-        super(communicator);
+        super(communicator, logManager);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentVersionController = contentVersionController;
@@ -112,7 +115,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
 
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
 
     /**
@@ -151,7 +154,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
         
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
     
 	/**
@@ -180,7 +183,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
         
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
 	}
 
     /**
@@ -219,7 +222,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
     
     /**
@@ -250,7 +253,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
 
     /**
@@ -276,14 +279,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 			gameboardName = gameboard.getTitle();
 		}
 
-        for (RegisteredUserDTO user : users) {
+        for (RegisteredUserDTO userDTO : users) {
         	       	
             String gameboardURL = String.format("https://%s/#%s", globalProperties.getProperty(HOST_NAME),
                     gameboard.getId());
             String myAssignmentsURL = String.format("https://%s/assignments",
                     globalProperties.getProperty(HOST_NAME));
             Properties p = new Properties();
-            p.put("givenname", user.getGivenName());
+            p.put("givenname", userDTO.getGivenName());
             p.put("gameboardURL", gameboardURL);
             p.put("gameboardName", gameboardName);
             p.put("myAssignmentsURL", myAssignmentsURL);
@@ -292,16 +295,16 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
 
 
-            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), 
+            EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
             				content, segueContent.getTitle());
-            this.filterByPreferencesAndAddToQueue(e);
+            this.filterByPreferencesAndAddToQueue(userDTO, e);
         }
     }
 
     /**
      * Sends notification for groups being given an assignment.
      * 
-     * @param user
+     * @param userDTO
      *            - the user who has joined the group
      * @param userGroup
      *            - the user group that the user is being assigned to
@@ -317,12 +320,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void sendGroupWelcome(final RegisteredUserDTO user, final UserGroupDTO userGroup,
+    public void sendGroupWelcome(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup,
 					    		final RegisteredUserDTO groupOwner,
 								final List<AssignmentDTO> existingAssignments,
 					            final GameManager gameManager)
 		            			throws ContentManagerException, SegueDatabaseException {
-    	Validate.notNull(user);
+    	Validate.notNull(userDTO);
 
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
 
@@ -369,7 +372,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
-        p.put("givenname", user.getGivenName());
+        p.put("givenname", userDTO.getGivenName());
         p.put("teacherName", groupOwnerName);
         p.put("assignmentsInfo", sb.toString());
         p.put("accountURL", accountURL);
@@ -378,9 +381,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         
 
-        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), 
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
 
     }
 
@@ -388,7 +391,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * Sends email verification using email verification template. Assumes that a verification code has been
      * successfully generated.
      * 
-     * @param user
+     * @param userDTO
      *            - user object used to complete template
      * @param providerString
      *            - the provider
@@ -417,7 +420,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
         				content, segueContent.getTitle());
-        this.filterByPreferencesAndAddToQueue(e);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
         
     }
     
@@ -438,7 +441,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 					final String emailAddress) throws ContentManagerException, SegueDatabaseException {
 		
 		EmailCommunicationMessage e = constructMultiPartEmail(null, emailAddress, contactFormMessage, subject);
-		this.filterByPreferencesAndAddToQueue(e);
+		this.addSystemEmailToQueue(e);
 	}
     
     /**
@@ -486,17 +489,29 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	        p.put("email", user.getEmail());
 	        p.put("sig", SIGNATURE);
 	        String content = completeTemplateWithProperties(segueContent, p);
-	        
 
 	        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), 
 	        					content, segueContent.getTitle());
+	        
+			ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
+			           .put("userIds", user.getId())
+			           .put("email", e.getRecipientAddress())
+			           .put("type", e.getType())
+			           .build();
+	        logManager.logInternalEvent(user, Constants.SEND_EMAIL, eventDetails);
 	        
 	        // add to the queue without using filterByPreferencesAndAddToQueue as we've already filtered for preferences
 	        super.addToQueue(e);
 		}
 		
+		//Create a list of Ids
+		ArrayList<Long> ids = Lists.newArrayList();
+		for(RegisteredUserDTO userDTO : allSelectedUsers){
+			ids.add(userDTO.getId());
+		}
+		
 		ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
-		           .put("userIds", allSelectedUsers)
+		           .put("userIds", ids)
 		           .put("contentObjectId", contentObjectId)
 		           .put("contentVersionId", this.contentVersionController.getLiveVersion())
 		           .build();
@@ -506,34 +521,60 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	}
     
     
-    
     /**
      * This method checks the database for the user's email preferences and either adds them to 
      * the queue, or filters them out.
      * 
+     * @param userDTO
+     * 		- the userDTO used for logging. Must not be null. 
      * @param email
-     * 		- the email we want to send
+     * 		- the email we want to send. Must be non-null and have an associated non-null user id
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void filterByPreferencesAndAddToQueue(final EmailCommunicationMessage email) throws SegueDatabaseException {
+    public void filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO, 
+    				final EmailCommunicationMessage email) throws SegueDatabaseException {
     	Validate.notNull(email);
+    	Validate.notNull(userDTO);
     	
-    	if (null == email.getUserId() || !email.getType().isValidEmailPreference()) {
+    	ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
+		           .put("userId", userDTO.getId())
+		           .put("email", email.getRecipientAddress())
+		           .put("type", email.getType())
+		           .build();
+    	
+    	// if this is an email type that cannot have a preference, send it and log as appropriate
+    	if (!email.getType().isValidEmailPreference()) {
+	        logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
     		addToQueue(email);
     		return;
     	}
-    	
+
     	try {
 			IEmailPreference preference = 
-							this.emailPreferenceManager.getEmailPreference(email.getUserId(), email.getType());
+							this.emailPreferenceManager.getEmailPreference(userDTO.getId(), email.getType());
 			if (preference != null && preference.getEmailPreferenceStatus()) {
+		        logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
 				addToQueue(email);
 			}
 		} catch (SegueDatabaseException e1) {
 			throw new SegueDatabaseException(String.format("Email of type %s cannot be sent - "
 					+ "error accessing preferences in database", email.getType().toString()));
 		}
+    }
+    
+    /**
+     * This method allows us to send system email without checking for preferences.
+     * 
+     * @param email
+     * 		- the email we want to send
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void addSystemEmailToQueue(final EmailCommunicationMessage email) 
+    		throws SegueDatabaseException {
+		addToQueue(email);
+		log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
     }
     
     /**
@@ -615,10 +656,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         return completeTemplateWithProperties(plainTextTemplate, plainTextTemplateProperties);
         
     }
+   
     
-
-	
-
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
      * 

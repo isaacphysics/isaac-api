@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -50,14 +49,14 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
- * Test class for the user manager class.
+ * Test class for the EmailManager class.
  * 
  */
-public class EmailCommunicatorTest {
+public class EmailManagerTest {
     private EmailCommunicator emailCommunicator;
     private RegisteredUser user;
     private RegisteredUserDTO userDTO;
-    private static final Logger log = LoggerFactory.getLogger(EmailCommunicatorTest.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailManagerTest.class);
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
     private ContentVersionController mockContentVersionController;
@@ -90,6 +89,7 @@ public class EmailCommunicatorTest {
         
         // Create dummy userDTO
         userDTO = new RegisteredUserDTO();
+        userDTO.setId(1L);
         userDTO.setEmail("test@test.com");
         userDTO.setGivenName("tester");
         userDTO.setFamilyName("McTest");

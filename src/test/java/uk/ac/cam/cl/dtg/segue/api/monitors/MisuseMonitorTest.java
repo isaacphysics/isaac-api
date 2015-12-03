@@ -76,7 +76,7 @@ public class MisuseMonitorTest {
         misuseMonitor.registerHandler(event, tokenOwnerLookupMisuseHandler);
 
         try {
-			dummyCommunicator.filterByPreferencesAndAddToQueue(EasyMock.isA(EmailCommunicationMessage.class));
+			dummyCommunicator.addSystemEmailToQueue(EasyMock.isA(EmailCommunicationMessage.class));
 		} catch (SegueDatabaseException e1) {
             fail("Exception should not be thrown during database email preference filtering");
 		}
