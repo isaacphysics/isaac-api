@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -32,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
@@ -506,7 +508,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		
 		//Create a list of Ids
 		ArrayList<Long> ids = Lists.newArrayList();
-		for(RegisteredUserDTO userDTO : allSelectedUsers){
+		for (RegisteredUserDTO userDTO : allSelectedUsers) {
 			ids.add(userDTO.getId());
 		}
 		
@@ -543,6 +545,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		           .put("type", email.getType())
 		           .build();
     	
+    	// don't send an email if we know it has failed before
+    	if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
+    		return;
+    	}
+    	
     	// if this is an email type that cannot have a preference, send it and log as appropriate
     	if (!email.getType().isValidEmailPreference()) {
 	        logManager.logInternalEvent(userDTO, Constants.SEND_EMAIL, eventDetails);
@@ -564,7 +571,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
     
     /**
-     * This method allows us to send system email without checking for preferences.
+     * This method allows us to send system email without checking for preferences. This should
+     * not be used to send email to users
      * 
      * @param email
      * 		- the email we want to send

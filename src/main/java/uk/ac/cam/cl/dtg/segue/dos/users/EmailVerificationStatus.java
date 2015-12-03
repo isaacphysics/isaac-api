@@ -22,5 +22,5 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
  *
  */
 public enum EmailVerificationStatus {
-    VERIFIED, NOT_VERIFIED;
+    VERIFIED, NOT_VERIFIED, DELIVERY_FAILED;
 }
