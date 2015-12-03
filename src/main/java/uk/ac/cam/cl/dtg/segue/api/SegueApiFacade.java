@@ -1096,7 +1096,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Missing form details.");
             return error.toResponse();
         }
-
+        
         // Build email
         StringBuilder builder = new StringBuilder();
         builder.append("The contact form has been submitted, please see the details below.\n\n");
@@ -1119,23 +1119,22 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
         builder.append("Message:\n");
         builder.append(form.get("message"));
-
-        EmailCommunicationMessage email = new EmailCommunicationMessage(null, this.getProperties().getProperty(
-                "MAIL_RECEIVERS"), "Administrator", "Contact Isaac: " + form.get("subject"), builder.toString(), null,
-                form.get("emailAddress"));
-
+        
+        //TODO create contact form email template, and use that instead of string builder
         try {
-			emailManager.filterByPreferencesAndAddToQueue(email);
+			emailManager.sendContactUsFormEmail("Contact Isaac: " + form.get("subject"), builder.toString(), 
+							this.getProperties().getProperty("MAIL_RECEIVERS"));
 			getLogManager().logEvent(userManager.getCurrentUser(request), request, 
 							CONTACT_US_FORM_USED, builder.toString());
-
 			return Response.ok().build();
-		} catch (SegueDatabaseException e) {
-            log.error("Database error has occurred", e);
+		} catch (ContentManagerException e) {
+            log.error("Content error has occurred", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A content error has occurred.").toResponse();
+		} catch (SegueDatabaseException e1) {
+            log.error("Database error has occurred", e1);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
 		}
 
-        
     }
 
     /**

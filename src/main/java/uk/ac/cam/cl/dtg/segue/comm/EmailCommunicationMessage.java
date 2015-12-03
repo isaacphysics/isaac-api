@@ -30,8 +30,6 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
     private final String recipientAddress;
 
-    private final String recipientName;
-
     private final String subject;
 
     private final String htmlMessage;
@@ -47,8 +45,6 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      *            id of the user
      * @param recipientAddress
      *            address of user
-     * @param recipientName
-     *            user name
      * @param subject
      *            subject of email
      * @param plainTextMessage
@@ -58,10 +54,10 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param htmlMessage
      *            message in email
      */
-    public EmailCommunicationMessage(final Long userId, final String recipientAddress, final String recipientName, 
+    public EmailCommunicationMessage(final Long userId, final String recipientAddress, 
     				final String subject, final String plainTextMessage, final EmailType type, 
     				final String htmlMessage) {
-        this(userId, recipientAddress, recipientName, subject, plainTextMessage, htmlMessage, type,  null);
+        this(userId, recipientAddress, subject, plainTextMessage, htmlMessage, type,  null);
     }
     
     /**
@@ -69,8 +65,6 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      *            id of the user
      * @param recipientAddress
      *            address of user
-     * @param recipientName
-     *            user name
      * @param subject
      *            subject of email
      * @param plainTextMessage
@@ -82,13 +76,12 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param type
      * 			  the type of the message
      */
-    public EmailCommunicationMessage(final Long userId, final String recipientAddress, final String recipientName,
+    public EmailCommunicationMessage(final Long userId, final String recipientAddress,
             final String subject, final String plainTextMessage, final String htmlMessage, final EmailType type,
             @Nullable final String replyToAddress) {
         this.userId = userId;
     	this.plainTextMessage = plainTextMessage;
         this.recipientAddress = recipientAddress;
-        this.recipientName = recipientName;
         this.subject = subject;
         this.htmlMessage = htmlMessage;
         this.replyToAddress = replyToAddress;
@@ -121,13 +114,6 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      */
     public String getRecipientAddress() {
         return recipientAddress;
-    }
-
-    /**
-     * @return the recipientName
-     */
-    public String getRecipientName() {
-        return recipientName;
     }
 
     /**
