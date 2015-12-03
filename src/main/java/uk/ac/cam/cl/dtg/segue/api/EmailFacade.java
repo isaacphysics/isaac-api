@@ -123,7 +123,6 @@ public class EmailFacade extends AbstractSegueFacade {
 		}
     	if (currentUser.getRole() == Role.ADMIN) {
     		int queueLength = this.emailManager.getQueueLength();
-    		log.info("Email queue size queried " + queueLength);
     		return Response.ok(queueLength).build();
     	}
         SegueErrorResponse error = new SegueErrorResponse(Status.FORBIDDEN, 
@@ -344,6 +343,13 @@ public class EmailFacade extends AbstractSegueFacade {
 		    		selectedUsers = this.userManager.findUsers(prototype);
 		    		allSelectedUsers.addAll(selectedUsers);
     			}
+    		}
+    		
+    		if (allSelectedUsers.size() == 0) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                        "There are no users in the groups you have selected!.");
+    			log.error(error.getErrorMessage());
+    			return error.toResponse();
     		}
     		
 			emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
