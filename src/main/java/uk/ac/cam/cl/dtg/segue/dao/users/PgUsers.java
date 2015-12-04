@@ -235,7 +235,6 @@ public class PgUsers implements IUserDataManager {
     @Override
     public RegisteredUser getByEmail(final String email) throws SegueDatabaseException {
         Validate.notBlank(email);
-        // TODO Currently this uses the old mongo id for look ups.
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement("SELECT * FROM users WHERE email ILIKE ?");
@@ -330,7 +329,6 @@ public class PgUsers implements IUserDataManager {
 
     @Override
     public List<RegisteredUser> findUsers(final List<Long> usersToLocate) throws SegueDatabaseException {
-        //TODO: this uses the legacy id still
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             
@@ -546,7 +544,6 @@ public class PgUsers implements IUserDataManager {
                             + "reset_expiry = ?, email_verification_token = ?, email_verification_token_expiry = ? "
                             + "WHERE id = ?;");
             
-            // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getLegacyDbId());
             setValueHelper(pst, 2, userToCreate.getFamilyName());
             setValueHelper(pst, 3, userToCreate.getGivenName());
