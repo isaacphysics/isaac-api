@@ -36,7 +36,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
     private final String replyToAddress;
     
-    private final EmailType type;
+    private final EmailType emailType;
 
 
 	/**
@@ -62,7 +62,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     
     /**
      * @param userId
-     *            id of the user
+     *            (nullable) id of the user
      * @param recipientAddress
      *            address of user
      * @param subject
@@ -70,14 +70,14 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * @param plainTextMessage
      *            message in email
      * @param htmlMessage
-     *            message in email
+     *            html message in email
+     * @param emailType
+     * 			  the type of the message
      * @param replyToAddress
      *            (nullable) the preferred reply to address.
-     * @param type
-     * 			  the type of the message
      */
-    public EmailCommunicationMessage(final Long userId, final String recipientAddress,
-            final String subject, final String plainTextMessage, final String htmlMessage, final EmailType type,
+    public EmailCommunicationMessage(@Nullable final Long userId, final String recipientAddress,
+            final String subject, final String plainTextMessage, final String htmlMessage, final EmailType emailType,
             @Nullable final String replyToAddress) {
         this.userId = userId;
     	this.plainTextMessage = plainTextMessage;
@@ -85,7 +85,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         this.subject = subject;
         this.htmlMessage = htmlMessage;
         this.replyToAddress = replyToAddress;
-        this.type = type;
+        this.emailType = emailType;
     }
 
     /**
@@ -132,14 +132,14 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 
 	@Override
 	public int getPriority() {
-		return type.getPriority();
+		return emailType.getPriority();
 	}
 	
     /**
 	 * @return the type
 	 */
-	public EmailType getType() {
-		return type;
+	public EmailType getEmailType() {
+		return emailType;
 	}
 
 }
