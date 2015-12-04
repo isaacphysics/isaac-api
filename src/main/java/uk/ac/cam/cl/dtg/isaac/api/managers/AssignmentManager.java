@@ -291,13 +291,6 @@ public class AssignmentManager implements IGroupObserver {
         return groups;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * uk.ac.cam.cl.dtg.segue.api.managers.IGroupInterest#onGroupMembershipRemoved(uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO
-     * , uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO)
-     */
     @Override
     public void onGroupMembershipRemoved(final UserGroupDTO group, final RegisteredUserDTO user) {
 		// do nothing
