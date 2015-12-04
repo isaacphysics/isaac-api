@@ -81,6 +81,8 @@ import com.google.inject.Inject;
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Isaac site.
  * 
+ * TODO: This class should be refactored, as it is just a random collection of endpoints.
+ * 
  */
 @Path("/")
 @Api(value = "/")
