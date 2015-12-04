@@ -432,7 +432,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
     @Path("content/{version}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getContentById(@Context HttpServletRequest request,
+    public final Response getContentById(@Context final HttpServletRequest request,
             @PathParam("version") final String version, @PathParam("id") final String id) {
         IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
@@ -535,6 +535,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
      *            - the max number of results to return.
      * @return a response containing the search results (results wrapper) or an empty list.
      * @throws ContentManagerException
+     *             - an exception when the content is not found
      */
     public final ResultsWrapper<ContentDTO> segueSearch(final String searchString, @Nullable final String version,
             @Nullable final Map<String, List<String>> fieldsThatMustMatch, @Nullable final Integer startIndex,
@@ -594,16 +595,17 @@ public class SegueApiFacade extends AbstractSegueFacade {
      *            so that we can determine whether we can make use of caching via etags.
      * @return a set of tags used in the specified version
      * @throws ContentManagerException
+     *             - an exception when the content is not found
      */
     @GET
     @Path("content/tags/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getTagListByVersion(@PathParam("version") final String version, @Context final Request request)
-            throws ContentManagerException {
+    public final Response getTagListByVersion(@PathParam("version") final String version,
+            @Context final Request request) throws ContentManagerException {
         // Calculate the ETag on last modified date of tags list
-        EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "tagList".hashCode()
-                + "");
+        EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode()
+                + "tagList".hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
 
@@ -1176,6 +1178,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
      *            - prefix / id to match against.
      * @return a results wrapper containing any matching content.
      * @throws ContentManagerException
+     *             - an exception when the content is not found
      */
     @Deprecated
     public final ResultsWrapper<ContentDTO> searchByIdPrefix(final String version, final String idPrefix)
@@ -1203,6 +1206,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
      *            - the content to augment.
      * @return content which has been augmented
      * @throws ContentManagerException
+     *             - an exception when the content is not found
      */
     public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
             throws ContentManagerException {

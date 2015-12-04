@@ -56,8 +56,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
@@ -124,7 +122,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * @param misuseMonitor
      *            - so we can check for misuse
      * @param emailPreferenceManager
-     * 			  - so we can provide email preferences
+     *            - so we can provide email preferences
      */
     @Inject
     public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
@@ -294,7 +292,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validateEmailResetRequest(@PathParam("token") final String token) {
+    public Response validatePasswordResetRequest(@PathParam("token") final String token) {
         try {
             if (userManager.validatePasswordResetToken(token)) {
                 return Response.ok().build();
@@ -428,91 +426,6 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
 
-    /**
-     * End point that allows a user to generate an email verification request.
-     * 
-     * @param email
-     *            - Email address requested for verification
-     * @param request
-     *            - For logging purposes.
-     * @return a successful response regardless of whether the email exists or an error code if there is a technical
-     *         fault
-     */
-    @GET
-    @Path("users/verifyemail/{email}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response generateEmailVerificationToken(@PathParam("email") final String email,
-                                                    @Context final HttpServletRequest request) {
-        try {
-            
-            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisusehandler.class.toString());
-        
-            userManager.emailVerificationRequest(request, email);
-
-            this.getLogManager()
-                .logEvent(userManager.getCurrentUser(request), request, Constants.EMAIL_VERIFICATION_REQUEST_RECEIVED,
-                            ImmutableMap.of(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME, email));
-
-            return Response.ok().build();
-        } catch (CommunicationException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error sending verification message.", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error sending verification message.", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
-            log.error(String.format("VerifyEmail request endpoint has reached hard limit (%s)", email));
-            return SegueErrorResponse.getRateThrottledResponse(message);            
-        }
-    }
-
-    /**
-     * End point that verifies whether or not a validation token is valid. If the email address given is not the same as
-     * the one we have, change it.
-     * 
-     * @param userid
-     *            - the user's id.
-     * @param newemail
-     *            - the email they want to verify - could be new
-     * @param token
-     *            - A password reset token
-     * @return Success if the token is valid, otherwise returns not found
-     */
-    @GET
-    @Path("users/verifyemail/{userid}/{newemail}/{token}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response validateEmailVerificationRequest(@PathParam("userid") final String userid,
-            @PathParam("newemail") final String newemail, @PathParam("token") final String token) {
-
-        try {
-            misuseMonitor.notifyEvent(newemail, EmailVerificationMisusehandler.class.toString());
-            userManager.processEmailVerification(userid, newemail, token);
-
-            // assume that if there are no exceptions that it worked.
-            return Response.ok().build();
-        } catch (SegueResourceMisuseException e) {
-            return SegueErrorResponse
-                    .getRateThrottledResponse("You have exceeded the number of requests allowed for this endpoint");
-        } catch (InvalidTokenException | NoUserException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Token invalid or expired.");
-            log.error("Invalid token received", e);
-            return error.toResponse();
-        } catch (SegueDatabaseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "There was an error processing your request.");
-            log.error(String.format("Invalid email token request"));
-            return error.toResponse();
-        }
-    }
 
 
 
@@ -558,39 +471,7 @@ public class UsersFacade extends AbstractSegueFacade {
         }
     }
     
-    /**
-     * Get a Set of all schools reported by users in the school other field.
-     * 
-     * @param request
-     *            for caching purposes.
-     * @param httpServletRequest
-     * 			  to get the user object
-     * @return list of strings.
-     */
-    @GET
-    @Path("users/email_preferences")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    public Response getUserEmailPreferences(@Context final Request request,
-            @Context final HttpServletRequest httpServletRequest) {
 
-    	try {
-            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-			List<IEmailPreference> userEmailPreferences = 
-									emailPreferenceManager.getEmailPreferences(currentUser.getId());
-			
-			Map<String, Boolean> emailPreferences = 
-									emailPreferenceManager.mapToEmailPreferencePair(userEmailPreferences);
-			
-			return Response.ok(emailPreferences).build();
-		} catch (SegueDatabaseException e) {
-			log.warn("Segue Database Exception");
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
-            					"Error while getting email preferences").toResponse();
-		} catch (NoUserLoggedInException e) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-		}
-    }
 
     /**
      * Update a user object.
