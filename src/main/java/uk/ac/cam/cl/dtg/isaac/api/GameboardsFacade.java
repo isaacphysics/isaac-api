@@ -98,6 +98,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      *            - for managing logs.
      * @param gameManager
      *            - for games interaction
+     * @param questionManager
+     *            - for question content
      * @param userManager
      *            - to get user details
      * @param associationManager

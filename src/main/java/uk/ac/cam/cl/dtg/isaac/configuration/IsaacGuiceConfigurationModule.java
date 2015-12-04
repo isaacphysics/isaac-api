@@ -103,8 +103,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static SegueApiFacade getSegueFacadeSingleton(final PropertiesLoader properties,
             final ContentMapper mapper, @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
             final ContentVersionController versionController, final UserManager userManager,
-            final QuestionManager questionManager, final EmailManager emailManager,
-            final ILogManager logManager) {
+            final QuestionManager questionManager, final EmailManager emailManager, final ILogManager logManager) {
         if (null == segueApi) {
             segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule, versionController, userManager,
                     questionManager, emailManager, logManager);

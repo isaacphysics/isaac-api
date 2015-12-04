@@ -718,7 +718,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-            final RegisteredUser userObjectFromClient, Map<String, Boolean> emailPreferences) {
+            final RegisteredUser userObjectFromClient, final Map<String, Boolean> emailPreferences) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient);

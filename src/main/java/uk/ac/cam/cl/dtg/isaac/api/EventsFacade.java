@@ -67,7 +67,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
- * Games boards Facade.
+ * Events Facade.
  */
 @Path("/events")
 @Api(value = "/events")
