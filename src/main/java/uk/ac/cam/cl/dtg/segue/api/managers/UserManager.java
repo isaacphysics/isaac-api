@@ -1048,8 +1048,9 @@ public class UserManager {
 
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
         if (evStatus != null && evStatus == EmailVerificationStatus.VERIFIED && user.getEmail().equals(email)) {
-            log.warn(String.format("Recieved an invalid email token request for (%s) - already verified", email));
-            throw new InvalidTokenException();
+            log.warn(String
+                    .format("Recieved a duplicate email verification request for (%s) - already verified", email));
+            return this.convertUserDOToUserDTO(user);
         }
 
         if (authenticator.isValidEmailVerificationToken(user, email, token)) {

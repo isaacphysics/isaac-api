@@ -41,6 +41,8 @@ public class UserFromAuthProvider {
      *            - Equivalent to second name
      * @param email
      *            - primary e-mail address
+     * @param emailVerificationStatus
+     *            - email verification status of user
      * @param role
      *            - role description
      * @param dateOfBirth
