@@ -28,8 +28,8 @@ import javax.ws.rs.core.Response.Status;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * A wrapper object used to indicate an error has occurred to the client using the API. TODO: should this be converted
- * into some kind of throwable?
+ * A wrapper object used to indicate an error has occurred to the client using the API. 
+ * TODO: should this be converted into some kind of throwable?
  */
 public class SegueErrorResponse implements Serializable {
     @JsonIgnore

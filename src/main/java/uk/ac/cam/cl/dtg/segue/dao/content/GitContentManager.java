@@ -259,7 +259,7 @@ public class GitContentManager implements IContentManager {
         // setup object mapper to use preconfigured deserializer module.
         // Required to deal with type polymorphism
         List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
-        // TODO: does the above cause a performance issue?
+
         List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
         finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());

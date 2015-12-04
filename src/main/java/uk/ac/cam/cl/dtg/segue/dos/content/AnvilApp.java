@@ -28,10 +28,10 @@ public class AnvilApp extends Content {
     private String appAccessKey;
 
     /**
-	 * 
+	 * AnvilApp.
 	 */
     public AnvilApp() {
-        // TODO Auto-generated constructor stub
+
     }
 
     /**

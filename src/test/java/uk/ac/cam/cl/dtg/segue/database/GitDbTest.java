@@ -90,11 +90,6 @@ public class GitDbTest {
 	}
 
 	@Test
-	public void testGetFileByCommitSHA() {
-		// TODO Test getFileByCommitSHA method
-	}
-
-	@Test
 	public void getTreeWalk_checkThatBlankPathsAreAllowed_noExceptionThrown() throws IOException {
 		
 		Git git = EasyMock.createMock(Git.class);
@@ -137,37 +132,5 @@ public class GitDbTest {
 		EasyMock.replay(repo);
 		
 		assertNull(db.getTreeWalk("sha", "")); // Blank path is explicitly allowed. This should not throw an exception. But in this case we've passed an invalid sha, so we should get null back.
-		
 	}
-
-	@Test
-	public void testGetGitRepository() {
-		// TODO Test getGitRepository method
-	}
-
-	@Test
-	public void testVerifyGitObject() {
-		// TODO Test verifyGitObject method
-	}
-
-	@Test
-	public void testVerifyCommitExists() {
-		// TODO Test verifyCommitExists method
-	}
-
-	@Test
-	public void testListCommits() {
-		// TODO Test listCommits method
-	}
-
-	@Test
-	public void testPullLatestFromRemote() {
-		// TODO Test pullLatestFromRemote method
-	}
-
-	@Test
-	public void testGetHeadSha() {
-		// TODO Test getHeadSha method
-	}
-
 }

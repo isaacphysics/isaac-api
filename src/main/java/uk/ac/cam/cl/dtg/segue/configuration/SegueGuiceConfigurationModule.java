@@ -580,7 +580,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Get singleton of misuseMonitor.
      * 
-     * @param communicator
+     * @param emailManager
      *            - so that the monitors can send e-mails.
      * @param properties
      *            - so that the monitors can look up email settings etc.

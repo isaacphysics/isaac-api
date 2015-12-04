@@ -397,8 +397,6 @@ public class UserManagerTest {
         assertTrue(u instanceof RegisteredUserDTO);
     }
 
-    // TODO: Write a test to check what happens with anonymous users and merges.
-
     /**
      * Verify that a bad CSRF response from the authentication provider causes an error response.
      * 

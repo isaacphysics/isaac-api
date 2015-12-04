@@ -187,7 +187,6 @@ public class GameManager {
 
             return augmentGameboardWithUserInformation(gameboardDTO, usersQuestionAttempts, boardOwner);
         } else {
-            // TODO: this should be an exception.
             return null;
         }
     }
@@ -588,15 +587,9 @@ public class GameManager {
                 .getMatchingQuestionAttempts(users, questionPageIds);
 
         for (RegisteredUserDTO user : users) {
-//            Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsBySession = 
-//                    questionAttemptsForAllUsersOfInterest
-//                        .get(user.getId());
-
             List<GameboardItemState> listOfQuestionStates = Lists.newArrayList();
 
             for (GameboardItem question : gameboard.getQuestions()) {
-                // TODO: this will be horribly inefficient as it looks up
-                // questions in the question page lots of times.
                 listOfQuestionStates.add(this.calculateQuestionState(question.getId(),
                         questionAttemptsForAllUsersOfInterest.get(user.getId())));
             }

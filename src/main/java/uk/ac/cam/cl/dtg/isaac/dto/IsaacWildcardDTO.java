@@ -58,7 +58,7 @@ public class IsaacWildcardDTO extends ContentDTO {
     }
 
     /**
-     * Default constructor required for Jackson
+     * Default constructor required for Jackson.
      */
     public IsaacWildcardDTO() {
 

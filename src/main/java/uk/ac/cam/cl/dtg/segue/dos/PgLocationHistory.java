@@ -28,6 +28,8 @@ import java.util.Map;
 
 import org.elasticsearch.common.lang3.Validate;
 import org.postgresql.util.PGobject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -44,9 +46,10 @@ import com.google.inject.Inject;
  *
  */
 public class PgLocationHistory implements LocationHistory {
-
     private final PostgresSqlDb database;
 
+    private static final Logger log = LoggerFactory.getLogger(PgLocationHistory.class);
+    
     /**
      * PgLocationHistory.
      * 
@@ -176,7 +179,7 @@ public class PgLocationHistory implements LocationHistory {
             ps.setLong(3, id);
 
             ps.executeUpdate();
-            ps.close();
+
         } catch (SQLException se) {
             throw new SegueDatabaseException("Postgres exception", se);
         }
@@ -250,8 +253,7 @@ public class PgLocationHistory implements LocationHistory {
         try {
             location = new ObjectMapper().readValue(results.getString("location_information"), Location.class);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("IOException while trying to convert location entry.", e);
             return null;
         }
 

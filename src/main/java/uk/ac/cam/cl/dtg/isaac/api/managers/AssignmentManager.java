@@ -67,6 +67,10 @@ public class AssignmentManager implements IGroupObserver {
      *            - email manager
      * @param userManager
      *            - the user manager object
+     * @param gameManager
+     *            - the game manager object
+     * @param userAssociationManager
+     *            - the userAssociationManager manager object
      */
     @Inject
     public AssignmentManager(final PgAssignmentPersistenceManager assignmentPersistenceManager,
@@ -299,13 +303,6 @@ public class AssignmentManager implements IGroupObserver {
 		// do nothing
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * uk.ac.cam.cl.dtg.segue.api.managers.IGroupInterest#onMemberAddedToGroup(uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO,
-     * uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO)
-     */
     @Override
     public void onMemberAddedToGroup(final UserGroupDTO group, final RegisteredUserDTO user) {
 		Validate.notNull(group);
@@ -321,14 +318,10 @@ public class AssignmentManager implements IGroupObserver {
 
         } catch (ContentManagerException e) {
             log.info(String.format("Could not send group welcome email "), e);
-            e.printStackTrace();
         } catch (NoUserException e) {
             log.info(String.format("Could not find owner user object of group %s", group.getId()), e);
-            e.printStackTrace();
         } catch (SegueDatabaseException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("Unable to send group welcome e-mail due to a database error. Failing silently.", e);
         }
-
     }
 }

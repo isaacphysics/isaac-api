@@ -32,9 +32,6 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	private Mailer mailer;
 	private String fromAddress;
 
-	// TODO: remove reference to isaac
-	private static final String SIGNATURE = "Isaac Physics";
-
 	/**
 	 * Creates an instance of an email communicator that can send e-mails.
 	 * 
