@@ -86,7 +86,7 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
     protected void addToQueue(final T queueObject) {
     	messageSenderRunnableQueue.add(queueObject);
     	executorService.submit(new MessageSenderRunnable());
-    	log.info("Added to the email queue. Current size: " + messageSenderRunnableQueue.size());
+        log.debug("Added to the email queue. Current size: " + messageSenderRunnableQueue.size());
     }
 
 
@@ -119,8 +119,8 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
             // Send the actual message
             try {
             	T queueItem = getLatestQueueItem();
-            	log.warn("About to send message ");
                 communicator.sendMessage(queueItem);
+                log.info("Sent message. Current size: " + messageSenderRunnableQueue.size());
             } catch (CommunicationException e) {
                 log.warn("Communication Exception:" + e.getMessage());
             } catch (InterruptedException e) {
