@@ -426,25 +426,28 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
     
 
-	/**
-	 * @param subject
-	 * 		- the subject of the email
-	 * @param contactFormMessage
-	 * 		- the message from the contact form
-	 * @param emailAddress
-	 * 		- the email address it is being sent to
-	 * @throws ContentManagerException
-	 * 		- if some content is not found
-	 * @throws SegueDatabaseException
-	 * 		- if the database cannot be accessed
-	 */
-	public void sendContactUsFormEmail(final String subject, final String contactFormMessage, 
-					final String emailAddress) throws ContentManagerException, SegueDatabaseException {
-		
-		EmailCommunicationMessage e = constructMultiPartEmail(null, emailAddress, contactFormMessage, subject, 
-						emailAddress);
-		this.addSystemEmailToQueue(e);
-	}
+    /**
+     * @param subject
+     *            - the subject of the email
+     * @param contactFormMessage
+     *            - the message from the contact form
+     * @param recipientEmailAddress
+     *            - the email address it is being sent to
+     * @param replyToAddress
+     *            - the email address we want to reply to
+     * @throws ContentManagerException
+     *             - if some content is not found
+     * @throws SegueDatabaseException
+     *             - if the database cannot be accessed
+     */
+    public void sendContactUsFormEmail(final String subject, final String contactFormMessage,
+            final String recipientEmailAddress, final String replyToAddress) throws ContentManagerException,
+            SegueDatabaseException {
+
+        EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, contactFormMessage, subject,
+                replyToAddress);
+        this.addSystemEmailToQueue(e);
+    }
     
     /**
 	 * @param sendingUser
@@ -460,67 +463,63 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	 * @throws ContentManagerException
 	 * 				- a content management exception
 	 */
-	public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId, 
-					final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) 
-					throws SegueDatabaseException, ContentManagerException {
-    	Validate.notNull(allSelectedUsers);
-    	Validate.notNull(contentObjectId);
-		
-		SeguePageDTO segueContent = getSegueDTOEmailTemplate(contentObjectId);
-		
-		Map<Long, Map<EmailType, Boolean>> allUserPreferences = 
-						this.emailPreferenceManager.getEmailPreferences(allSelectedUsers);
-		
-		int numberOfUnfilteredUsers = allSelectedUsers.size();
-		Iterator<RegisteredUserDTO> userIterator = allSelectedUsers.iterator();
-		while (userIterator.hasNext()) {
-			RegisteredUserDTO user = userIterator.next();
-			
-			// don't continue if user has preference against this type of email
-			if (allUserPreferences.containsKey(user.getId())) {
-				Map<EmailType, Boolean> userPreferences = allUserPreferences.get(user.getId());
-				if (userPreferences.containsKey(emailType) && !userPreferences.get(emailType)) {
-					userIterator.remove();
-					continue;
-				}
-			}
-			
-	        Properties p = new Properties();
-	        p.put("givenname", user.getGivenName());
-	        p.put("familyname", user.getFamilyName());
-	        p.put("email", user.getEmail());
-	        p.put("sig", SIGNATURE);
-	        String content = completeTemplateWithProperties(segueContent, p);
+    public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
+            final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
+            ContentManagerException {
+        Validate.notNull(allSelectedUsers);
+        Validate.notNull(contentObjectId);
 
-	        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), 
-	        					content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
-	        
-			ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
-			           .put("userIds", user.getId())
-			           .put("email", e.getRecipientAddress())
-			           .put("type", e.getEmailType())
-			           .build();
-	        logManager.logInternalEvent(user, Constants.SEND_EMAIL, eventDetails);
-	        
-	        // add to the queue without using filterByPreferencesAndAddToQueue as we've already filtered for preferences
-	        super.addToQueue(e);
-		}
-		
-		//Create a list of Ids
-		ArrayList<Long> ids = Lists.newArrayList();
-		for (RegisteredUserDTO userDTO : allSelectedUsers) {
-			ids.add(userDTO.getId());
-		}
-		
-		ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
-		           .put("userIds", ids)
-		           .put("contentObjectId", contentObjectId)
-		           .put("contentVersionId", this.contentVersionController.getLiveVersion())
-		           .build();
-		this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
-		log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(), 
-						numberOfUnfilteredUsers - allSelectedUsers.size()));
-	}
+        SeguePageDTO segueContent = getSegueDTOEmailTemplate(contentObjectId);
+
+        Map<Long, Map<EmailType, Boolean>> allUserPreferences = this.emailPreferenceManager
+                .getEmailPreferences(allSelectedUsers);
+
+        int numberOfUnfilteredUsers = allSelectedUsers.size();
+        Iterator<RegisteredUserDTO> userIterator = allSelectedUsers.iterator();
+        while (userIterator.hasNext()) {
+            RegisteredUserDTO user = userIterator.next();
+
+            // don't continue if user has preference against this type of email
+            if (allUserPreferences.containsKey(user.getId())) {
+                Map<EmailType, Boolean> userPreferences = allUserPreferences.get(user.getId());
+                if (userPreferences.containsKey(emailType) && !userPreferences.get(emailType)) {
+                    userIterator.remove();
+                    continue;
+                }
+            }
+
+            Properties p = new Properties();
+            p.put("givenname", user.getGivenName());
+            p.put("familyname", user.getFamilyName());
+            p.put("email", user.getEmail());
+            p.put("sig", SIGNATURE);
+            String content = completeTemplateWithProperties(segueContent, p);
+
+            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), content,
+                    segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS));
+
+            ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
+                    .put("userIds", user.getId()).put("email", e.getRecipientAddress()).put("type", e.getEmailType())
+                    .build();
+            logManager.logInternalEvent(user, Constants.SEND_EMAIL, eventDetails);
+
+            // add to the queue without using filterByPreferencesAndAddToQueue as we've already filtered for preferences
+            super.addToQueue(e);
+        }
+
+        // Create a list of Ids
+        ArrayList<Long> ids = Lists.newArrayList();
+        for (RegisteredUserDTO userDTO : allSelectedUsers) {
+            ids.add(userDTO.getId());
+        }
+
+        ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put("userIds", ids)
+                .put("contentObjectId", contentObjectId)
+                .put("contentVersionId", this.contentVersionController.getLiveVersion()).build();
+        this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
+        log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(),
+                numberOfUnfilteredUsers - allSelectedUsers.size()));
+    }
     
     
     /**

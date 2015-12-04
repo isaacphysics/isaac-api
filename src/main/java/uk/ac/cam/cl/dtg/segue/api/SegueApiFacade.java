@@ -1123,7 +1123,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
         //TODO create contact form email template, and use that instead of string builder
         try {
 			emailManager.sendContactUsFormEmail("Contact Isaac: " + form.get("subject"), builder.toString(), 
-							this.getProperties().getProperty("MAIL_RECEIVERS"));
+							this.getProperties().getProperty("MAIL_RECEIVERS"), form.get("emailAddress"));
 			getLogManager().logEvent(userManager.getCurrentUser(request), request, 
 							CONTACT_US_FORM_USED, builder.toString());
 			return Response.ok().build();
