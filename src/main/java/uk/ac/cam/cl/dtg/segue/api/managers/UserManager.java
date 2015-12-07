@@ -843,7 +843,7 @@ public class UserManager {
         // Make sure the email address is preserved (can't be changed until new email is verified)
         if (!userToSave.getEmail().equals(existingUser.getEmail())) {
             try {
-            	RegisteredUserDTO userToSaveDTO = this.getUserDTOById(userToSave.getId());
+                RegisteredUserDTO userToSaveDTO = mapper.map(userToSave, RegisteredUserDTO.class);
                 this.emailManager.sendEmailVerification(userToSaveDTO, userToSave.getEmailVerificationToken());
             } catch (ContentManagerException e) {
                 log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
