@@ -37,28 +37,6 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     private final String replyToAddress;
     
     private final EmailType emailType;
-
-
-	/**
-     * 
-     * @param userId
-     *            id of the user
-     * @param recipientAddress
-     *            address of user
-     * @param subject
-     *            subject of email
-     * @param plainTextMessage
-     *            message in email
-     * @param type
-     * 			  email type
-     * @param htmlMessage
-     *            message in email
-     */
-    public EmailCommunicationMessage(final Long userId, final String recipientAddress, 
-    				final String subject, final String plainTextMessage, final EmailType type, 
-    				final String htmlMessage) {
-        this(userId, recipientAddress, subject, plainTextMessage, htmlMessage, type,  null);
-    }
     
     /**
      * @param userId

@@ -85,8 +85,9 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
         final String subject = "HARD Threshold limit reached for LoginMisuseHandler";
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(null,
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, EmailType.ADMIN, null);
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
+                null);
+
         try {
 			emailManager.addSystemEmailToQueue(e);
 		} catch (SegueDatabaseException e1) {

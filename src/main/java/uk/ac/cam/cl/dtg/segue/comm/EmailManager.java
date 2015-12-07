@@ -773,10 +773,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         plainTextTemplateProperties.put("email", userEmail);
 
         String plainTextMessage = completeTemplateWithProperties(plainTextTemplate, plainTextTemplateProperties);
-        
-        EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, 
-		        		 subject, plainTextMessage, htmlMessage, 
-		        		emailType, replyToAddress);
+
+        EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, subject, plainTextMessage,
+                htmlMessage, emailType, replyToAddress);
 
         return e;
     }
