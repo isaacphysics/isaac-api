@@ -134,7 +134,7 @@ public class PgAssociationDataManager implements IAssociationDataManager {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             
-            pst = conn.prepareStatement("DELETE user_id_granting_permission groups"
+            pst = conn.prepareStatement("DELETE FROM user_associations"
                     + " WHERE user_id_granting_permission = ? AND user_id_receiving_permission = ?");
             
             pst.setLong(1, userIdWhoGrantedAccess);
