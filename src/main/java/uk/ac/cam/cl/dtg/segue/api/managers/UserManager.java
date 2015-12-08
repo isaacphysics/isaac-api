@@ -1232,26 +1232,40 @@ public class UserManager {
 
     /**
      * Method to migrate anonymously generated data to a persisted account.
-     * @param anonymousUser to look up.
-     * @param user to migrate to.
+     * 
+     * @param anonymousUser
+     *            to look up.
+     * @param user
+     *            to migrate to.
      */
     private void mergeAnonymousUserWithRegisteredUser(final AnonymousUser anonymousUser, final RegisteredUser user) {
         if (anonymousUser != null) {
             // merge any anonymous information collected with this user.
             try {
-                RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
+                final RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
 
                 this.questionAttemptDb.mergeAnonymousQuestionAttemptsIntoRegisteredUser(
                         this.dtoMapper.map(anonymousUser, AnonymousUserDTO.class), userDTO);
 
-                this.logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
-                        .toString());
+                // may as well spawn a new thread to do the log migration stuff asynchronously
+                // work now.
+                Thread logMigrationJob = new Thread() {
+                    @Override
+                    public void run() {
+                        // run this asynchronously as there is no need to block and it is quite slow.
+                        logManager.transferLogEventsToRegisteredUser(anonymousUser.getSessionId(), user.getId()
+                                .toString());
 
-                this.logManager.logInternalEvent(userDTO, MERGE_USER,
-                        ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
+                        logManager.logInternalEvent(userDTO, MERGE_USER,
+                                ImmutableMap.of("oldAnonymousUserId", anonymousUser.getSessionId()));
 
-                // delete the session attribute as merge has completed.
-                this.temporaryUserCache.invalidate(anonymousUser.getSessionId());
+                        // delete the session attribute as merge has completed.
+                        temporaryUserCache.invalidate(anonymousUser.getSessionId());
+                    }
+                };
+
+                logMigrationJob.start();
+
             } catch (SegueDatabaseException e) {
                 log.error("Unable to merge anonymously collected data with stored user object.", e);
             }
