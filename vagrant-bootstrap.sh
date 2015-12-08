@@ -30,7 +30,7 @@ apt-get -y install mongodb
 
 apt-get -y install postgresql-9.4
 
-## After installing postgres, need to create user. This will prompt for password
+## After installing postgres, need to create user. This will prompt for password - use the POSTGRES_DB_PASSWORD from your segue-config.properties
 #
 #     sudo -u postgres createuser -D -A -P rutherford
 #     sudo -u postgres createdb -O rutherford rutherford
@@ -40,7 +40,9 @@ apt-get -y install postgresql-9.4
 #     listen_address = '*'
 # to /etc/postgresql/9.4/main/postgresql.conf
 #
-# Then add
+# Then find 'host all all 127.0.0.1/32 md5' in /etc/postgresql/9.4/main/pg_hba.conf and replace with:
+#
 #     host all all 0.0.0.0/0 md5
-# to /etc/postgresql/9.4/main/pg_hba.conf
+#
+# Then sudo service postgresql restart
 
