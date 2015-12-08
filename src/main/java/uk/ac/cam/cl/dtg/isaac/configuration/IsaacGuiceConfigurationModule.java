@@ -15,9 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.GAMEBOARD_COLLECTION_NAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.USERS_GAMEBOARD_COLLECTION_NAME;
-
 import javax.annotation.Nullable;
 
 import ma.glasnost.orika.MapperFacade;
@@ -28,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.GameboardDO;
-import uk.ac.cam.cl.dtg.isaac.dos.UserGameboardsDO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -38,8 +33,10 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
@@ -113,8 +110,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         return segueApi;
     }
     
-
-
     /**
      * Gets a Game manager.
      * 
@@ -156,12 +151,12 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private static GameboardPersistenceManager getGameboardPersistenceManager(final SegueApiFacade api,
-            final MapperFacade mapper, final URIManager uriManager) {
+    private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
+            final SegueApiFacade api, final MapperFacade mapper, final ObjectMapper objectMapper,
+            final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
-            gameboardPersistenceManager = new GameboardPersistenceManager(api.requestAppDataManager(
-                    GAMEBOARD_COLLECTION_NAME, GameboardDO.class), api.requestAppDataManager(
-                    USERS_GAMEBOARD_COLLECTION_NAME, UserGameboardsDO.class), api, mapper, uriManager);
+            gameboardPersistenceManager = new GameboardPersistenceManager(database, api, mapper, objectMapper,
+                    uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

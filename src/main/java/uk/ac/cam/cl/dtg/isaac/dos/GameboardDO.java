@@ -36,7 +36,7 @@ public class GameboardDO {
     private Integer wildCardPosition;
     private Date creationDate;
     private GameFilter gameFilter;
-    private String ownerUserId;
+    private Long ownerUserId;
     private GameboardCreationMethod creationMethod;
 
     /**
@@ -63,7 +63,7 @@ public class GameboardDO {
      */
     public GameboardDO(final String id, final String title, final List<String> questions, final IsaacWildcard wildCard,
             final Integer wildcardPosition, final Date creationDate, final GameFilter gameFilter,
-            final String ownerUserId, final GameboardCreationMethod creationMethod) {
+            final Long ownerUserId, final GameboardCreationMethod creationMethod) {
         this.id = id;
         this.title = title;
         this.questions = questions;
@@ -220,7 +220,7 @@ public class GameboardDO {
      * 
      * @return the userId
      */
-    public final String getOwnerUserId() {
+    public final Long getOwnerUserId() {
         return ownerUserId;
     }
 
@@ -230,7 +230,7 @@ public class GameboardDO {
      * @param ownerUserId
      *            the ownerUserId to set
      */
-    public final void setOwnerUserId(final String ownerUserId) {
+    public final void setOwnerUserId(final Long ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
 
