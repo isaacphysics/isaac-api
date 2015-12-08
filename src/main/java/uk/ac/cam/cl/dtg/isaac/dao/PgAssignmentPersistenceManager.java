@@ -141,6 +141,10 @@ public class PgAssignmentPersistenceManager {
                 throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
                         + listOfResults);
             }
+            
+            if (listOfResults.size() == 0) {
+                return null;
+            }
 
             return this.convertToAssignmentDTO(listOfResults.get(0));
 

@@ -297,7 +297,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 if (e.getValue() > 1) {
                     GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(e.getKey());
 
-                    RegisteredUserDTO ownerUser = userManager.getUserDTOByLegacyId(liteGameboard.getOwnerUserId());
+                    RegisteredUserDTO ownerUser = userManager.getUserDTOById(liteGameboard.getOwnerUserId());
                     if (ownerUser != null) {
                         liteGameboard.setOwnerUserInformation(associationManager.enforceAuthorisationPrivacy(
                                 currentUser, userManager.convertToUserSummaryObject(ownerUser)));
@@ -479,7 +479,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 .getTitle().equals(newGameboardObject.getTitle()))) {
 
             // do they have permission?
-            if (!existingGameboard.getOwnerUserId().equals(user.getLegacyDbId())) {
+            if (!existingGameboard.getOwnerUserId().equals(user.getId())) {
                 // user not logged in return not authorized
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You are not allowed to change another user's gameboard.").toResponse();
@@ -659,6 +659,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
 
         } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to save gameboard to user link.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error whilst trying to access the gameboard database.", e).toResponse();
         }
