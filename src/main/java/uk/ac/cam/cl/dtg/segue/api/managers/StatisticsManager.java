@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -30,6 +31,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.elasticsearch.common.lang3.tuple.ImmutablePair;
+import org.elasticsearch.common.lang3.tuple.Pair;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -142,19 +147,21 @@ public class StatisticsManager {
             log.info("Calculating General Statistics");
         }
 
+        // get all the users
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
 
         List<RegisteredUserDTO> male = Lists.newArrayList();
         List<RegisteredUserDTO> female = Lists.newArrayList();
-        List<RegisteredUserDTO> unknownGender = Lists.newArrayList();
+        List<RegisteredUserDTO> otherGender = Lists.newArrayList();
         ib.put("totalUsers", "" + users.size());
 
         List<RegisteredUserDTO> studentOrUnknownRole = Lists.newArrayList();
         List<RegisteredUserDTO> teacherRole = Lists.newArrayList();
         List<RegisteredUserDTO> adminStaffRole = Lists.newArrayList();
         List<RegisteredUserDTO> contentEditorStaffRole = Lists.newArrayList();
-        List<RegisteredUserDTO> testerStaffRole = Lists.newArrayList();
+        List<RegisteredUserDTO> testerRole = Lists.newArrayList();
+        List<RegisteredUserDTO> staffRole = Lists.newArrayList();
         List<RegisteredUserDTO> eventManagerStaffRole = Lists.newArrayList();
         List<RegisteredUserDTO> hasSchool = Lists.newArrayList();
         List<RegisteredUserDTO> hasNoSchool = Lists.newArrayList();
@@ -163,7 +170,7 @@ public class StatisticsManager {
 
         for (RegisteredUserDTO user : users) {
             if (user.getGender() == null) {
-                unknownGender.add(user);
+                otherGender.add(user);
             } else {
                 switch (user.getGender()) {
                     case MALE:
@@ -173,10 +180,10 @@ public class StatisticsManager {
                         female.add(user);
                         break;
                     case OTHER:
-                        unknownGender.add(user);
+                        otherGender.add(user);
                         break;
                     default:
-                        unknownGender.add(user);
+                        otherGender.add(user);
                         break;
                 }
 
@@ -201,8 +208,11 @@ public class StatisticsManager {
                     case TEACHER:
                         teacherRole.add(user);
                         break;
+                    case STAFF:
+                        staffRole.add(user);
+                        break;
                     case TESTER:
-                    	testerStaffRole.add(user);
+                    	testerRole.add(user);
                         break;
                     default:
                         studentOrUnknownRole.add(user);
@@ -227,16 +237,21 @@ public class StatisticsManager {
 
         }
 
-        ib.put("maleUsers", "" + male.size());
-        ib.put("femaleUsers", "" + female.size());
-        ib.put("unknownGenderUsers", "" + unknownGender.size());
+        Map<String, Object> gender = Maps.newHashMap();
+        gender.put(Gender.MALE.toString(), male.size());
+        gender.put(Gender.FEMALE.toString(), female.size());
+        gender.put(Gender.OTHER.toString(), otherGender.size());
+        ib.put("gender", gender);
 
-        ib.put("adminUsers", "" + adminStaffRole.size());
-        ib.put("contentEditorUsers", "" + contentEditorStaffRole.size());
-        ib.put("eventManagerUsers", "" + eventManagerStaffRole.size());
-        ib.put("teacherUsers", "" + teacherRole.size());
-        ib.put("testerUsers", "" + testerStaffRole.size());
-        ib.put("studentUsers", "" + studentOrUnknownRole.size());
+        Map<String, Object> role = Maps.newHashMap();
+        role.put(Role.ADMIN.toString(), adminStaffRole.size());
+        role.put(Role.CONTENT_EDITOR.toString(), contentEditorStaffRole.size());
+        role.put(Role.EVENT_MANAGER.toString(), eventManagerStaffRole.size());
+        role.put(Role.TEACHER.toString(), teacherRole.size());
+        role.put(Role.TESTER.toString(), testerRole.size());
+        role.put(Role.STUDENT.toString(), studentOrUnknownRole.size());
+        role.put(Role.STAFF.toString(), staffRole.size());
+        ib.put("role", role);
 
         ib.put("viewQuestionEvents", "" + logManager.getLogCountByType(VIEW_QUESTION));
         ib.put("answeredQuestionEvents", "" + logManager.getLogCountByType(ANSWER_QUESTION));

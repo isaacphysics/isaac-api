@@ -449,44 +449,15 @@ public class EmailFacade extends AbstractSegueFacade {
 				RegisteredUserDTO prototype = new RegisteredUserDTO();
 				List<RegisteredUserDTO> selectedUsers = Lists.newArrayList();
     			
-				// TODO: This should really match against enum values 
-				// otherwise this list has to be maintained separately.
-				// This is the same in the stats page, which needs to be changed too.
-				switch (key) {
-	    			case "adminUsers":
-	    				if (users.get("adminUsers")) {
-	    		    		prototype.setRole(Role.ADMIN);
-	    				}
-	    				break;
-	    			case "eventManagerUsers":
-	    				if (users.get("eventManagerUsers")) {
-	    		    		prototype.setRole(Role.EVENT_MANAGER);
-	    				}
-	    				break;
-	    			case "studentUsers":
-	    				if (users.get("studentUsers")) {
-	    		    		prototype.setRole(Role.STUDENT);
-	    				}
-	    				break;
-	    			case "contentEditorUsers":
-	    				if (users.get("contentEditorUsers")) {
-	    		    		prototype.setRole(Role.CONTENT_EDITOR);
-	    				}
-	    				break;
-	    			case "teacherUsers":
-	    				if (users.get("teacherUsers")) {
-	    		    		prototype.setRole(Role.TEACHER);
-	    				}
-	    				break;
-	    			case "testerUsers":
-	    				if (users.get("testerUsers")) {
-	    		    		prototype.setRole(Role.TESTER);
-	    				}
-	    				break;
-					default:
-						break;
-    			}
-    			if (prototype.getRole() != null) {
+                Role inferredRole = Role.valueOf(key);
+                Boolean userGroupSelected = users.get(key);
+
+                if (null == userGroupSelected || !userGroupSelected) {
+                    continue;
+                }
+
+                if (inferredRole != null) {
+                    prototype.setRole(inferredRole);
 		    		selectedUsers = this.userManager.findUsers(prototype);
 		    		allSelectedUsers.addAll(selectedUsers);
     			}
@@ -506,7 +477,11 @@ public class EmailFacade extends AbstractSegueFacade {
                     "There was an error processing your request.");
 			log.error(error.getErrorMessage());
 			return error.toResponse();
-		} catch (ContentManagerException e) {
+        } catch (IllegalArgumentException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "An unknown type of user was supplied.");
+            log.debug(error.getErrorMessage());
+        } catch (ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error retrieving content.");
 			log.debug(error.getErrorMessage());
