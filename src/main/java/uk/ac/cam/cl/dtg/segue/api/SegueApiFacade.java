@@ -119,7 +119,6 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
     private EmailManager emailManager;
 
-
     /**
      * Constructor that allows pre-configuration of the segue api.
      * 

@@ -39,7 +39,9 @@ import com.mongodb.MongoException;
  * 
  * @param <T>
  *            the type that this App Data Manager looks after.
+ * @deprecated use postgres instead.
  */
+@Deprecated
 public class MongoAppDataManager<T> implements IAppDatabaseManager<T> {
     private static final Logger log = LoggerFactory.getLogger(MongoAppDataManager.class);
 
