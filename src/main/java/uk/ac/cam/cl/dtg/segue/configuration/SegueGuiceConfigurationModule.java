@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
@@ -27,7 +26,6 @@ import javax.servlet.ServletContextListener;
 
 import ma.glasnost.orika.MapperFacade;
 
-import org.apache.commons.lang3.Validate;
 import org.elasticsearch.client.Client;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -56,10 +54,8 @@ import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
-import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
-import uk.ac.cam.cl.dtg.segue.dao.MongoAppDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
@@ -74,7 +70,6 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgGroupDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.database.MongoDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
@@ -96,7 +91,6 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.mongodb.MongoClientOptions;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -106,7 +100,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
     // we only ever want there to be one instance of each of these.
-    private static MongoDb mongoDB = null;
     private static PostgresSqlDb postgresDB;
 
     private static ContentMapper mapper = null;
@@ -226,14 +219,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties
                         .getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties
                         .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
-
-        // force mongo load eagerly until we can remove it completely. This fixes guice config errors.
-        getMongoDB(globalProperties.getProperty(Constants.MONGO_DB_HOSTNAME),
-                globalProperties.getProperty(Constants.MONGO_DB_PORT),
-                globalProperties.getProperty(Constants.SEGUE_DB_NAME),
-                globalProperties.getProperty(Constants.MONGO_CONNECTIONS_PER_HOST),
-                globalProperties.getProperty(Constants.MONGO_CONNECTION_TIMEOUT),
-                globalProperties.getProperty(Constants.MONGO_SOCKET_TIMEOUT));
 
         bind(IUserGroupDataManager.class).to(PgGroupDataManager.class);
 
@@ -639,46 +624,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * Gets the instance of the mongodb client object.
-     * 
-     * @param host
-     *            - database host to connect to.
-     * @param port
-     *            - port that the mongodb service is running on.
-     * @param dbName
-     *            - the name of the database to configure the wrapper to use.
-     * @param connectionsPerHost
-     *            - the number of connections available from the pool
-     * @param connectTimeout
-     *            - time out for individual tcp connections
-     * @param socketTimeout
-     *            - socket timeout
-     * @return MongoDB db object preconfigured to work with the segue database.
-     * @throws UnknownHostException
-     *             - when we are unable to access the host.
-     */
-    @Provides
-    @Singleton
-    @Inject
-    private static MongoDb getMongoDB(@Named(Constants.MONGO_DB_HOSTNAME) final String host,
-            @Named(Constants.MONGO_DB_PORT) final String port, @Named(Constants.SEGUE_DB_NAME) final String dbName,
-            @Named(Constants.MONGO_CONNECTIONS_PER_HOST) final String connectionsPerHost,
-            @Named(Constants.MONGO_CONNECTION_TIMEOUT) final String connectTimeout,
-            @Named(Constants.MONGO_SOCKET_TIMEOUT) final String socketTimeout) throws UnknownHostException {
-        if (null == mongoDB) {
-            MongoClientOptions options = MongoClientOptions.builder().autoConnectRetry(true)
-                    .connectionsPerHost(Integer.parseInt(connectionsPerHost))
-                    .connectTimeout(Integer.parseInt(connectTimeout)).socketTimeout(Integer.parseInt(socketTimeout))
-                    .build();
-
-            mongoDB = new MongoDb(host, Integer.parseInt(port), dbName, options);
-            log.info("Created Singleton of MongoDb wrapper");
-        }
-
-        return mongoDB;
-    }
-
-    /**
      * Gets the instance of the postgres connection wrapper.
      * 
      * @param databaseUrl
@@ -796,23 +741,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return contextListeners;
     }
 
-    /**
-     * Segue utility method for providing a new instance of an application manager.
-     * 
-     * @param databaseName
-     *            - the database / table name - should be unique.
-     * @param classType
-     *            - the class type that represents what can be managed by this app manager.
-     * @param <T>
-     *            the type that can be managed by this App Manager.
-     * @return the application manager ready to use.
-     */
-    public static <T> IAppDatabaseManager<T> getAppDataManager(final String databaseName, final Class<T> classType) {
-        Validate.notNull(mongoDB, "Error: mongoDB has not yet been initialised.");
-
-        return new MongoAppDataManager<T>(mongoDB, databaseName, classType);
-    }
-
     @Override
     public void contextInitialized(final ServletContextEvent sce) {
         // nothing needed
@@ -824,14 +752,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         log.info("Segue Config Module notified of shutdown. Releasing resources");
         elasticSearchClient.close();
         elasticSearchClient = null;
-
-        try {
-            mongoDB.close();
-            mongoDB = null;
-        } catch (IOException e) {
-            log.error("Unable to close external connection", e);
-        }
-
+        
         try {
             postgresDB.close();
             postgresDB = null;

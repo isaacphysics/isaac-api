@@ -50,7 +50,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
 
     private static SegueApiFacade segueApi = null;
-    private static GameManager gameManager = null;
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
@@ -109,36 +108,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
 
         return segueApi;
     }
-    
-    /**
-     * Gets a Game manager.
-     * 
-     * @param questionManager
-     *            - so we can resolve game progress information.
-     * @param versionManager
-     *            - so we can augment game objects with actual detailed content
-     * @param gameboardPersistenceManager
-     *            - a persistence manager that deals with storing and retrieving gameboards.
-     * @param mapper
-     *            - allows mapping between DO and DTO object types.
-     * @return Game manager object.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static GameManager getGameManager(final QuestionManager questionManager,
-            final ContentVersionController versionManager,
-            final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper) {
-        if (null == gameManager) {
-            gameManager = new GameManager(versionManager, gameboardPersistenceManager, mapper, questionManager);
-            log.info("Creating Singleton of Game Manager");
-        }
-
-        return gameManager;
-    }
 
     /**
      * Gets a Game persistence manager.
+     * 
+     * This needs to be a singleton as it maintains temporary boards in memory.
      * 
      * @param api
      *            - api that the game manager can use for content resolution.
