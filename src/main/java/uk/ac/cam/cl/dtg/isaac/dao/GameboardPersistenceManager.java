@@ -718,13 +718,13 @@ public class GameboardPersistenceManager {
      */
     private GameboardDTO getGameboardById(final String gameboardId, final boolean fullyPopulate)
             throws SegueDatabaseException {
+        if (null == gameboardId) {
+            return null;
+        }
+        
         // first try temporary storage
         if (this.gameboardNonPersistentStorage.getIfPresent(gameboardId) != null) {
             return this.convertToGameboardDTO(this.gameboardNonPersistentStorage.getIfPresent(gameboardId));
-        }
-
-        if (null == gameboardId) {
-            return null;
         }
 
         try (Connection conn = database.getDatabaseConnection()) {
@@ -740,14 +740,14 @@ public class GameboardPersistenceManager {
                 listOfResults.add(this.convertFromSQLToGameboardDO(results));
             }
 
-            if (listOfResults.size() > 1) {
-                throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
-                        + listOfResults);
-            } 
-            
             if (listOfResults.size() == 0) {
                 return null;
             }
+            
+            if (listOfResults.size() > 1) {
+                throw new SegueDatabaseException("Ambiguous result, expected single result and found more than one"
+                        + listOfResults);
+            }          
 
             return this.convertToGameboardDTO(listOfResults.get(0), fullyPopulate);
 
