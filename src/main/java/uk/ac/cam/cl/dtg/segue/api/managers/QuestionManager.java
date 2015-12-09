@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -331,6 +333,40 @@ public class QuestionManager {
 
         return this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
                 questionPageIds);
+    }
+    
+    /**
+     * Convenient method for requesting only question attempts we are interested in.
+     * @param user
+     *            who we are interested in.
+     * @param questionPageIds
+     *            we want to look up.
+     * @return a map of user id to question page id to question_id to list of attempts.
+     * @throws SegueDatabaseException
+     *             if there is a database error.
+     */
+    public Map<String, Map<String, List<QuestionValidationResponse>>> 
+        getMatchingQuestionAttempts(final AbstractSegueUserDTO user,
+            final List<String> questionPageIds) throws SegueDatabaseException {
+        Validate.notNull(user);
+
+        if (user instanceof RegisteredUserDTO) {
+            RegisteredUserDTO ru = (RegisteredUserDTO) user;
+            List<Long> userIds = Arrays.asList(ru.getId());
+            Map<String, Map<String, List<QuestionValidationResponse>>> mapToReturn 
+                = this.questionAttemptPersistenceManager.getQuestionAttemptsByUsersAndQuestionPrefix(userIds,
+                    questionPageIds).get(user);
+            
+            if (mapToReturn == null) {
+                return Maps.newHashMap();
+            }
+            
+            return mapToReturn;
+        } else {
+            AnonymousUserDTO anonymousUser = (AnonymousUserDTO) user;
+            // since no user is logged in assume that we want to use any anonymous attempts
+            return this.questionAttemptPersistenceManager.getAnonymousQuestionAttempts(anonymousUser.getSessionId());
+        }
     }
     
     /**
