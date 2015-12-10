@@ -36,6 +36,7 @@ public final class Constants {
     public static final String PAGE_FRAGMENT_TYPE = "isaacPageFragment";
     public static final String POD_FRAGMENT_TYPE = "isaacPod";
     public static final String PAGE_TYPE = "page";
+    public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
     public static final String EVENT_TYPE = "isaacEventPage";
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";

@@ -15,16 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_ID_LOG_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.MAX_PODS_TO_RETURN;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_FRAGMENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_ID_LOG_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.POD_FRAGMENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_ID_LOG_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
@@ -472,7 +463,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
 
         // options
         if (null != pageId) {
