@@ -166,20 +166,4 @@ public interface ILogManager {
      * @throws SegueDatabaseException - if there is a problem contacting the underlying database
      */
     Set<String> getAllEventTypes() throws SegueDatabaseException;
-    
-//    /**
-//     * Utility method to allows filtering by date range using a lazy iterator.
-//     * 
-//     * @param type
-//     *            - string representing the type of event to find.
-//     * @param fromDate
-//     *            - date to start search
-//     * @param toDate
-//     *            - date to end search.
-//     * @param usersOfInterest
-//     *            - users of interest.
-//     * @return all events of the type requested or null if none available. The map should be of type String, Object
-//     */
-//    Iterator<LogEvent> getLogsIteratorByType(String type, Date fromDate, Date toDate,
-//            List<RegisteredUserDTO> usersOfInterest);
 }
