@@ -722,7 +722,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                     }
                     template += end;
 
-
                     offset += templateProperties.getProperty(strippedTag).length() - tag.length();
                 } else {
                     throw new IllegalArgumentException("Email template contains tag that was not provided! - " + tag);

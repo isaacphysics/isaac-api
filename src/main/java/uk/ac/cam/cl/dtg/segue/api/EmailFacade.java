@@ -407,15 +407,18 @@ public class EmailFacade extends AbstractSegueFacade {
     }
 
     /**
-     * GetEmailTypes returns the valid email preferences.
+     * sendEmails returns the valid email preferences.
      * 
      * This method will return serialised html that displays an email object
      * 
      * @param request
-     *            - so that we can allow only logged in users to view their own data. 
-     * @param contentId - of the e-mail to send
-     * @param emailTypeInt - the type of e-mail that is being sent. 
-     * @param users - string of user type to boolean (i.e. whether or not to send to this type) 
+     *            - so that we can allow only logged in users to view their own data.
+     * @param contentId
+     *            - of the e-mail to send
+     * @param emailTypeInt
+     *            - the type of e-mail that is being sent.
+     * @param users
+     *            - string of user type to boolean (i.e. whether or not to send to this type)
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
@@ -488,6 +491,85 @@ public class EmailFacade extends AbstractSegueFacade {
 		}
     	
 		return Response.ok().build();
+    }
+
+    /**
+     * sendemailwithuserids allows sending an email to a given list of userids.
+     * 
+     * This method will return serialised html that displays an email object
+     * 
+     * @param request
+     *            - so that we can allow only logged in users to view their own data.
+     * @param contentId
+     *            - of the e-mail to send
+     * @param emailTypeInt
+     *            - the type of e-mail that is being sent.
+     * @param userids
+     *            - string of user type to boolean (i.e. whether or not to send to this type)
+     * @return Response object containing the serialized content object. (with no levels of recursion into the content)
+     */
+    @POST
+    @Path("/email/sendemailwithuserids/{contentid}/{emailtype}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
+            @PathParam("contentid") final String contentId, @PathParam("emailtype") final Integer emailTypeInt,
+            final List<Long> userIds) {
+        RegisteredUserDTO sender;
+
+        try {
+            sender = this.api.getCurrentUser(request);
+
+            if (!isUserAnAdmin(userManager, request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+        } catch (NoUserLoggedInException e2) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
+
+        List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
+
+        try {
+
+            for (Long userId : userIds) {
+                RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
+                allSelectedUsers.add(userDTO);
+            }
+
+            if (allSelectedUsers.size() == 0) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                        "There are no users in the groups you have selected!.");
+                log.error(error.getErrorMessage());
+                return error.toResponse();
+            }
+
+            emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
+
+        } catch (NoUserException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "One or more userId(s) did not map to a valid user!.");
+            log.error(error.getErrorMessage());
+            return error.toResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error processing your request.");
+            log.error(error.getErrorMessage());
+            return error.toResponse();
+        } catch (IllegalArgumentException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                    "An unknown type of user was supplied.");
+            log.debug(error.getErrorMessage());
+        } catch (ContentManagerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "There was an error retrieving content.");
+            log.debug(error.getErrorMessage());
+        }
+
+        return Response.ok().build();
     }
 
 }
