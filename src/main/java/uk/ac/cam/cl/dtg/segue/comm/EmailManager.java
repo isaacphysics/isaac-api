@@ -106,7 +106,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, resetToken);
 
         Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName());
+        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
         p.put("resetURL", verificationURL);
         p.put("sig", SIGNATURE);
@@ -147,7 +147,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 emailVerificationToken.substring(0, TRUNCATED_TOKEN_LENGTH));
 
         Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName());
+        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
         p.put("verificationURL", verificationURL);
         p.put("sig", SIGNATURE);
@@ -178,7 +178,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation-federated");
         
         Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName());
+        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
         p.put("sig", SIGNATURE);
         String content = completeTemplateWithProperties(segueContent, p);
@@ -218,7 +218,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 emailVerificationToken.substring(0, TRUNCATED_TOKEN_LENGTH));
 
         Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName());
+        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
         p.put("verificationURL", verificationURL);
         p.put("sig", SIGNATURE);
@@ -251,7 +251,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-verification-change");
         
         Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName());
+        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("requestedemail", newUser.getEmail());
         p.put("sig", SIGNATURE);
         String content = completeTemplateWithProperties(segueContent, p);
@@ -292,7 +292,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             String myAssignmentsURL = String.format("https://%s/assignments",
                     globalProperties.getProperty(HOST_NAME));
             Properties p = new Properties();
-            p.put("givenname", userDTO.getGivenName());
+            p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
             p.put("gameboardURL", gameboardURL);
             p.put("gameboardName", gameboardName);
             p.put("myAssignmentsURL", myAssignmentsURL);
@@ -337,7 +337,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
 
         String groupOwnerName = "Unknown";
-        if (groupOwner != null) {
+        if (groupOwner != null && groupOwner.getGivenName() != null && groupOwner.getFamilyName() != null) {
             groupOwnerName = groupOwner.getGivenName() + " " + groupOwner.getFamilyName();
         }
         
@@ -379,8 +379,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName());
-        p.put("teacherName", groupOwnerName);
+        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
+        p.put("teacherName", groupOwnerName == null);
         p.put("assignmentsInfo", sb.toString());
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
@@ -415,11 +415,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendFederatedPasswordReset(final RegisteredUserDTO userDTO, final String providerString,
             final String providerWord) throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
+        Validate.notNull(providerString);
+        Validate.notNull(providerWord);
 
         SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
 
         Properties contentProperties = new Properties();
-        contentProperties.put("givenname", userDTO.getGivenName());
+        contentProperties.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         contentProperties.put("providerString", providerString);
         contentProperties.put("providerWord", providerWord);
         contentProperties.put("sig", SIGNATURE);
@@ -497,8 +499,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             }
 
             Properties p = new Properties();
-            p.put("givenname", user.getGivenName());
-            p.put("familyname", user.getFamilyName());
+            p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+            p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
             p.put("email", user.getEmail());
             p.put("sig", SIGNATURE);
             String content = completeTemplateWithProperties(segueContent, p);
@@ -618,9 +620,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
 
         Properties p = new Properties();
-        p.put("givenname", user.getGivenName());
-        p.put("familyname", user.getFamilyName());
-        p.put("email", user.getFamilyName());
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
+        p.put("email", user.getEmail());
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
@@ -658,9 +660,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         SeguePageDTO plainTextTemplate = getSegueDTOEmailTemplate("email-template-ascii");
 
         Properties p = new Properties();
-        p.put("givenname", user.getGivenName());
-        p.put("familyname", user.getFamilyName());
-        p.put("email", user.getFamilyName());
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
+        p.put("email", user.getEmail());
         p.put("sig", SIGNATURE);
         String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
@@ -713,7 +715,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 if (templateProperties.containsKey(strippedTag)) {
                     String start = template.substring(0, m.start() + offset);
                     String end = template.substring(m.end() + offset, template.length());
-                    template = start + templateProperties.getProperty(strippedTag) + end;
+
+                    template = start;
+                    if (templateProperties.getProperty(strippedTag) != null) {
+                        template += templateProperties.getProperty(strippedTag);
+                    }
+                    template += end;
+
+
                     offset += templateProperties.getProperty(strippedTag).length() - tag.length();
                 } else {
                     throw new IllegalArgumentException("Email template contains tag that was not provided! - " + tag);
