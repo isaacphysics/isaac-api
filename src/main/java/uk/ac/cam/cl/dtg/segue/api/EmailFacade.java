@@ -537,7 +537,11 @@ public class EmailFacade extends AbstractSegueFacade {
 
             for (Long userId : userIds) {
                 RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
-                allSelectedUsers.add(userDTO);
+                if (userDTO != null) {
+                    allSelectedUsers.add(userDTO);
+                } else {
+                    log.error(String.format("Skipping - User could not be found from given userId: %s", userId));
+                }
             }
 
             if (allSelectedUsers.size() == 0) {
