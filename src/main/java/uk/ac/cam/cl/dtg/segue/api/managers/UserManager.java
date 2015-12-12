@@ -1122,7 +1122,6 @@ public class UserManager {
         return this.convertUserDOToUserDTO(createOrUpdateUser);
     }
     
-    
     /**
      * This method will change the users' current password.
      *

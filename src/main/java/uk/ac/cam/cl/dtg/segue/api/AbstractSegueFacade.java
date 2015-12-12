@@ -174,27 +174,7 @@ public abstract class AbstractSegueFacade {
         
         return cc;
     }
-
-    /**
-     * Library method to allow applications to access a segue persistence manager. This allows applications to save data
-     * using the segue database.
-     * 
-     * These objects should be used with care as it is possible to create managers for segue managed objects and get
-     * conflicts. e.g. requesting a manager that manages users could give you an object equivalent to a low level segue
-     * object.
-     * 
-     * @param <T>
-     *            - the type that the app data manager looks after.
-     * @param databaseName
-     *            - the databaseName / collection name / internal reference for objects of this type.
-     * @param classType
-     *            - the class of the type <T>.
-     * @return IAppDataManager where <T> is the type the manager is responsible for.
-     */
-    public final <T> IAppDatabaseManager<T> requestAppDataManager(final String databaseName, final Class<T> classType) {
-        return SegueGuiceConfigurationModule.getAppDataManager(databaseName, classType);
-    }
-
+    
     /**
      * Gets the logManager.
      * 

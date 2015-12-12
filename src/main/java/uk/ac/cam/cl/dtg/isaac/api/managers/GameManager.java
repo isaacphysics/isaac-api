@@ -157,9 +157,9 @@ public class GameManager {
             final AbstractSegueUserDTO boardOwner) throws NoWildcardException, SegueDatabaseException,
             ContentManagerException {
 
-        String boardOwnerId;
+        Long boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
-            boardOwnerId = ((RegisteredUserDTO) boardOwner).getLegacyDbId();
+            boardOwnerId = ((RegisteredUserDTO) boardOwner).getId();
         } else {
             // anonymous users do not get to own a board so just mark it as unowned.
             boardOwnerId = null;
@@ -205,15 +205,15 @@ public class GameManager {
             throws SegueDatabaseException {
         // if the gameboard has no owner we should add the user who is first linking to it as the owner.
         if (gameboardToLink.getOwnerUserId() == null) {
-            gameboardToLink.setOwnerUserId(userToLinkTo.getLegacyDbId());
+            gameboardToLink.setOwnerUserId(userToLinkTo.getId());
         }
 
         // determine if we need to permanently store the gameboard
-        if (!this.gameboardPersistenceManager.isPermanentlyStored(gameboardToLink)) {
+        if (!this.gameboardPersistenceManager.isPermanentlyStored(gameboardToLink.getId())) {
             this.permanentlyStoreGameboard(gameboardToLink);
         }
 
-        this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getLegacyDbId(),
+        this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getId(),
                 gameboardToLink.getId());
     }
 
@@ -229,7 +229,7 @@ public class GameManager {
      */
     public void unlinkUserToGameboard(final GameboardDTO gameboardToUnlink, final RegisteredUserDTO user)
             throws SegueDatabaseException {
-        this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getLegacyDbId(), gameboardToUnlink.getId());
+        this.gameboardPersistenceManager.removeUserLinkToGameboard(user.getId(), gameboardToUnlink.getId());
     }
 
     /**
@@ -508,12 +508,15 @@ public class GameManager {
 
         if (gameboardDTO.getWildCard() == null) {
             gameboardDTO.setWildCard(this.getRandomWildcard(mapper));
+        } 
+        
+        if (gameboardDTO.getWildCardPosition() == null) {
             gameboardDTO.setWildCardPosition(this.generateRandomWildCardPosition());
         }
 
         // set creation date to now.
         gameboardDTO.setCreationDate(new Date());
-        gameboardDTO.setOwnerUserId(owner.getLegacyDbId());
+        gameboardDTO.setOwnerUserId(owner.getId());
 
         // this will throw an exception if it doesn't validate.
         validateGameboard(gameboardDTO);
@@ -729,7 +732,7 @@ public class GameManager {
      */
     private boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
             throws SegueDatabaseException {
-        return this.gameboardPersistenceManager.isBoardLinkedToUser(user.getLegacyDbId(), gameboardId);
+        return this.gameboardPersistenceManager.isBoardLinkedToUser(user.getId(), gameboardId);
     }    
     
     /**
@@ -964,9 +967,8 @@ public class GameManager {
     }
     
     /**
-     * @param questionId
-     * @param questionAnsweredMap
-     * @return
+     * @param questionAttempts - to check
+     * @return true or false
      */
     private Boolean hasCorrectAnsweredCorrectly(final List<QuestionValidationResponse> questionAttempts) {
         if (null == questionAttempts || questionAttempts.size() == 0) {

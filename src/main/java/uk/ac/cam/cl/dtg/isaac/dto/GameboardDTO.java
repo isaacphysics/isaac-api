@@ -35,7 +35,7 @@ public class GameboardDTO {
     private Integer wildCardPosition;
     private Date creationDate;
     private GameFilter gameFilter;
-    private String ownerUserId;
+    private Long ownerUserId;
     private UserSummaryDTO ownerUserInformation;
     
     private Boolean isSavedToCurrentUser;
@@ -79,7 +79,7 @@ public class GameboardDTO {
      */
     public GameboardDTO(final String id, final String title, final List<GameboardItem> questions,
             final IsaacWildcard wildCard, final Integer wildcardPosition, final Date creationDate,
-            final GameFilter gameFilter, final String ownerUserId, final GameboardCreationMethod creationMethod) {
+            final GameFilter gameFilter, final Long ownerUserId, final GameboardCreationMethod creationMethod) {
         this.id = id;
         this.title = title;
         this.questions = questions;
@@ -229,7 +229,7 @@ public class GameboardDTO {
      * 
      * @return the userId
      */
-    public String getOwnerUserId() {
+    public Long getOwnerUserId() {
         return ownerUserId;
     }
 
@@ -239,7 +239,7 @@ public class GameboardDTO {
      * @param ownerUserId
      *            the ownerUserId to set
      */
-    public void setOwnerUserId(final String ownerUserId) {
+    public void setOwnerUserId(final Long ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
 
