@@ -101,6 +101,25 @@ ALTER SEQUENCE event_bookings_id_seq OWNED BY event_bookings.id;
 
 
 --
+-- Name: gameboards; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE gameboards (
+    id character varying NOT NULL,
+    title text,
+    questions character varying[],
+    wildcard jsonb,
+    wildcard_position integer,
+    game_filter jsonb,
+    owner_user_id integer,
+    creation_method character varying,
+    creation_date timestamp without time zone
+);
+
+
+ALTER TABLE gameboards OWNER TO rutherford;
+
+--
 -- Name: group_memberships; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -126,6 +145,27 @@ CREATE TABLE groups (
 
 
 ALTER TABLE groups OWNER TO rutherford;
+
+--
+-- Name: groups_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+--
+
+CREATE SEQUENCE groups_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE groups_id_seq OWNER TO rutherford;
+
+--
+-- Name: groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
+--
+
+ALTER SEQUENCE groups_id_seq OWNED BY groups.id;
+
 
 --
 -- Name: ip_location_history; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
@@ -307,25 +347,18 @@ CREATE TABLE user_email_preferences (
 ALTER TABLE user_email_preferences OWNER TO rutherford;
 
 --
--- Name: user_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: rutherford
+-- Name: user_gameboards; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
-CREATE SEQUENCE user_groups_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
+CREATE TABLE user_gameboards (
+    user_id integer NOT NULL,
+    gameboard_id character varying NOT NULL,
+    created timestamp without time zone,
+    last_visited timestamp without time zone
+);
 
 
-ALTER TABLE user_groups_id_seq OWNER TO rutherford;
-
---
--- Name: user_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: rutherford
---
-
-ALTER SEQUENCE user_groups_id_seq OWNED BY groups.id;
-
+ALTER TABLE user_gameboards OWNER TO rutherford;
 
 --
 -- Name: user_notifications; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
@@ -411,7 +444,7 @@ ALTER TABLE ONLY event_bookings ALTER COLUMN id SET DEFAULT nextval('event_booki
 -- Name: id; Type: DEFAULT; Schema: public; Owner: rutherford
 --
 
-ALTER TABLE ONLY groups ALTER COLUMN id SET DEFAULT nextval('user_groups_id_seq'::regclass);
+ALTER TABLE ONLY groups ALTER COLUMN id SET DEFAULT nextval('groups_id_seq'::regclass);
 
 
 --
@@ -472,6 +505,14 @@ ALTER TABLE ONLY linked_accounts
 
 ALTER TABLE ONLY event_bookings
     ADD CONSTRAINT "eventbooking id pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: gameboard-id-pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY gameboards
+    ADD CONSTRAINT "gameboard-id-pkey" PRIMARY KEY (id);
 
 
 --
@@ -571,6 +612,14 @@ ALTER TABLE ONLY user_associations
 
 
 --
+-- Name: user_gameboard_composite_key; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY user_gameboards
+    ADD CONSTRAINT user_gameboard_composite_key PRIMARY KEY (user_id, gameboard_id);
+
+
+--
 -- Name: user_id_email_preference_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -579,17 +628,24 @@ ALTER TABLE ONLY user_email_preferences
 
 
 --
--- Name: fki_notification_user_id_fkey; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
---
-
-CREATE INDEX fki_notification_user_id_fkey ON event_bookings USING btree (user_id);
-
-
---
 -- Name: fki_user_id fkey; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
+
+
+--
+-- Name: log_events_user_id; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE INDEX log_events_user_id ON logged_events USING btree (user_id);
+
+
+--
+-- Name: question-attempts-by-user; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE INDEX "question-attempts-by-user" ON question_attempts USING btree (user_id);
 
 
 --
@@ -606,6 +662,30 @@ ALTER TABLE ONLY assignments
 
 ALTER TABLE ONLY event_bookings
     ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: gameboard_assignment_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY assignments
+    ADD CONSTRAINT gameboard_assignment_fkey FOREIGN KEY (gameboard_id) REFERENCES gameboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: gameboard_id_fkey_gameboard_link; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_gameboards
+    ADD CONSTRAINT gameboard_id_fkey_gameboard_link FOREIGN KEY (gameboard_id) REFERENCES gameboards(id) ON DELETE CASCADE;
+
+
+--
+-- Name: gameboard_user_id_pkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY gameboards
+    ADD CONSTRAINT gameboard_user_id_pkey FOREIGN KEY (owner_user_id) REFERENCES users(id);
 
 
 --
@@ -678,6 +758,14 @@ ALTER TABLE ONLY user_notifications
 
 ALTER TABLE ONLY user_email_preferences
     ADD CONSTRAINT user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_id_fkey_gameboard_link; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_gameboards
+    ADD CONSTRAINT user_id_fkey_gameboard_link FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --
