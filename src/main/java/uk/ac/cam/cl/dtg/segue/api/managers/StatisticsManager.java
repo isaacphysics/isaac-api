@@ -16,7 +16,6 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -31,9 +30,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.elasticsearch.common.lang3.tuple.ImmutablePair;
-import org.elasticsearch.common.lang3.tuple.Pair;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
