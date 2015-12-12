@@ -53,21 +53,13 @@ ALTER TABLE user_gameboards
 
 
 -- Step 2 - Modify existing tables - create indexes etc.
-  
--- Foreign Key: gameboard_assignment_fkey
 
--- ALTER TABLE assignments DROP CONSTRAINT gameboard_assignment_fkey;
-
-ALTER TABLE assignments
-  ADD CONSTRAINT gameboard_assignment_fkey FOREIGN KEY (gameboard_id)
-      REFERENCES gameboards (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE CASCADE;
-      
+     
 -- Index: "question-attempts-by-user"
 
 -- DROP INDEX "question-attempts-by-user";
 
-CREATE INDEX CONCURRENTLY "question-attempts-by-user"
+CREATE INDEX "question-attempts-by-user"
   ON question_attempts
   USING btree
   (user_id);
@@ -81,4 +73,14 @@ CREATE INDEX log_events_user_id
   ON logged_events
   USING btree
   (user_id COLLATE pg_catalog."default");  
-  
+
+
+-- run this after migration  
+-- Foreign Key: gameboard_assignment_fkey
+
+-- ALTER TABLE assignments DROP CONSTRAINT gameboard_assignment_fkey;
+
+--ALTER TABLE assignments
+--  ADD CONSTRAINT gameboard_assignment_fkey FOREIGN KEY (gameboard_id)
+--      REFERENCES gameboards (id) MATCH SIMPLE
+--      ON UPDATE NO ACTION ON DELETE CASCADE;  
