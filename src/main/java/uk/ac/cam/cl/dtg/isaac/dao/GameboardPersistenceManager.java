@@ -780,7 +780,7 @@ public class GameboardPersistenceManager {
             gameboardDO.setCreationMethod(GameboardCreationMethod.valueOf(results.getString("creation_method")));    
         }
         
-        gameboardDO.setCreationDate(results.getTimestamp("creation_date"));
+        gameboardDO.setCreationDate(new Date(results.getTimestamp("creation_date").getTime()));
         return gameboardDO;
     }
 
