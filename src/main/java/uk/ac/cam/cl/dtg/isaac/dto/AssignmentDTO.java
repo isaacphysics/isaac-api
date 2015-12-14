@@ -178,7 +178,7 @@ public class AssignmentDTO {
      * Sets the assignerSummary.
      * @param assignerSummary the assignerSummary to set
      */
-    public void setAssignerSummary(UserSummaryDTO assignerSummary) {
+    public void setAssignerSummary(final UserSummaryDTO assignerSummary) {
         this.assignerSummary = assignerSummary;
     }
 
