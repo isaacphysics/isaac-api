@@ -685,7 +685,7 @@ ALTER TABLE ONLY user_gameboards
 --
 
 ALTER TABLE ONLY gameboards
-    ADD CONSTRAINT gameboard_user_id_pkey FOREIGN KEY (owner_user_id) REFERENCES users(id);
+    ADD CONSTRAINT gameboard_user_id_pkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 
 --
