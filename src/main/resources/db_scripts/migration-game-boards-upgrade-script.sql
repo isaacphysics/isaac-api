@@ -18,7 +18,7 @@ CREATE TABLE gameboards
   CONSTRAINT "gameboard-id-pkey" PRIMARY KEY (id),
   CONSTRAINT gameboard_user_id_pkey FOREIGN KEY (owner_user_id)
       REFERENCES users (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+      ON UPDATE NO ACTION ON DELETE SET NULL
 )
 WITH (
   OIDS=FALSE
