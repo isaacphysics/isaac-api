@@ -380,7 +380,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("teacherName", groupOwnerName == null);
+        p.put("teacherName", groupOwnerName == null ? "" : groupOwnerName);
         p.put("assignmentsInfo", sb.toString());
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
