@@ -15,16 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_ID_LOG_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.CONCEPT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.MAX_PODS_TO_RETURN;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_FRAGMENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_ID_LOG_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PAGE_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.POD_FRAGMENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_ID_LOG_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
@@ -65,8 +56,13 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionSummaryPage;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -75,6 +71,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -106,6 +103,8 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final URIManager uriManager;
     private final QuestionManager questionManager;
 
+    private final GameManager gameManager;
+
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
      * 
@@ -125,11 +124,14 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - URI manager so we can augment uris
      * @param questionManager
      *            - So we can look up attempt information.
+     * @param gameManager
+     *            - For looking up gameboard information.
      */
     @Inject
     public PagesFacade(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final ContentVersionController versionManager,
-            final UserManager userManager, final URIManager uriManager, final QuestionManager questionManager) {
+            final UserManager userManager, final URIManager uriManager, final QuestionManager questionManager,
+            final GameManager gameManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -137,6 +139,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.userManager = userManager;
         this.uriManager = uriManager;
         this.questionManager = questionManager;
+        this.gameManager = gameManager;
     }
 
     /**
@@ -446,6 +449,85 @@ public class PagesFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Rest end point that gets a question summary page with augmented gameboard and question content..
+     * 
+     * @param request
+     *            - so we can deal with caching.
+     * @param httpServletRequest
+     *            - so that we can extract user information.
+     * @param pageId
+     *            as a string
+     * @return A Response object containing a page object or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("question_summary/{page}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getQuestionSummaryPage(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest, @PathParam("page") final String pageId) {
+        // Calculate the ETag on current live version of the content
+        // NOTE: Assumes that the latest version of the content is being used.
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + pageId.hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(request, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+        
+        try {
+            Content contentDOById = this.versionManager.getContentManager().getContentDOById(
+                    this.versionManager.getLiveVersion(), pageId);
+
+            if (!(contentDOById instanceof IsaacQuestionSummaryPage) || null == contentDOById) {
+                return SegueErrorResponse.getResourceNotFoundResponse(String.format(
+                        "Unable to locate question summary page with id: %s", pageId));
+            }
+
+            IsaacQuestionSummaryPage summaryPageDO = (IsaacQuestionSummaryPage) contentDOById;
+            IsaacQuestionSummaryPageDTO summaryPageDTO = this.mapper.map(summaryPageDO,
+                    IsaacQuestionSummaryPageDTO.class);
+            // initialise collections
+            summaryPageDTO.setTopBoards(new ArrayList<GameboardDTO>());
+            summaryPageDTO.setFeaturedQuestions(new ArrayList<GameboardItem>());
+
+            // augment gameboards
+            for (String id : summaryPageDO.getTopBoards()) {
+                try {
+                    GameboardDTO liteGameboard = this.gameManager.getLiteGameboard(id);
+                    if (liteGameboard != null) {
+                        summaryPageDTO.getTopBoards().add(liteGameboard);    
+                    } else {
+                        log.error(String.format("Unable to locate gameboard requested for the summary page: %s.", id));
+                    }
+                    
+                } catch (SegueDatabaseException e) {
+                    log.info(String.format("Problem with retrieving gameboard: %s", id));
+                }
+            }
+
+            // augment featuredQuestions
+            for (GameboardItem id : summaryPageDO.getFeaturedQuestions()) {
+                ContentDTO question = this.versionManager.getContentManager().getContentById(
+                        this.versionManager.getLiveVersion(), id.getId());
+                if (!(question instanceof IsaacQuestionPageDTO) || question == null) {
+                    log.error(String.format(
+                            "Unable to locate question id: %s. Removing from the question summary page. ", id.getId()));
+                }
+                this.mapper.map(question, id);
+                summaryPageDTO.getFeaturedQuestions().add(id);
+            }
+
+            Response cachableResult = Response.status(Status.OK).entity(summaryPageDTO)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+            return cachableResult;
+        } catch (ContentManagerException e) {
+            log.error("Content manager exception while trying to request question summary page.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable to retrieve Content requested due to an internal server error.", e).toResponse();
+        }
+    }
+    
+    /**
      * Rest end point that gets a single page based on a given id.
      * 
      * @param request
@@ -472,7 +554,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE));
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_TYPE, QUESTIONS_PAGE_TYPE));
 
         // options
         if (null != pageId) {
