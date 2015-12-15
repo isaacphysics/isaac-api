@@ -17,6 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 
 /**
@@ -33,7 +35,11 @@ public class GameboardItem {
 
     private Integer level;
     private GameboardItemState state;
-
+    
+    // optional field if we want to use the gameboard item outside of the context of a board.
+    @Nullable
+    private String boardId;
+    
     /**
      * Gets the id.
      * 
@@ -165,6 +171,22 @@ public class GameboardItem {
      */
     public final void setState(final GameboardItemState state) {
         this.state = state;
+    }
+
+    /**
+     * Gets the boardId.
+     * @return the boardId
+     */
+    public String getBoardId() {
+        return boardId;
+    }
+
+    /**
+     * Sets the boardId.
+     * @param boardId the boardId to set
+     */
+    public void setBoardId(final String boardId) {
+        this.boardId = boardId;
     }
 
     @Override

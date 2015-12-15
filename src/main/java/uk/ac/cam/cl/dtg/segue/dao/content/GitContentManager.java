@@ -482,7 +482,8 @@ public class GitContentManager implements IContentManager {
         }
 
         // build query the db to get full content information
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap
+            = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
 
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
