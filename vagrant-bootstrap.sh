@@ -19,6 +19,9 @@ usermod -a -G docker vagrant
 ### Install ElasticSearch
 apt-get -y install openjdk-7-jre-headless elasticsearch
 
+# Once ElasticSearch is installed, run this to make it start at startup:
+# sudo update-rc.d elasticsearch defaults 95 10
+
 ### Install MongoDB
 
 apt-get -y install mongodb
