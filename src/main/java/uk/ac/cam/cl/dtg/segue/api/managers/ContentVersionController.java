@@ -18,6 +18,8 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
@@ -78,6 +80,7 @@ public class ContentVersionController implements ServletContextListener {
 
         // Check on object creation if we need to clear caches.
         if (Boolean.parseBoolean(this.properties.getProperty(Constants.CLEAR_CACHES_ON_APP_START))) {
+            log.info("Segue is configured to clear all content indices on start up... Clearing");
             contentManager.clearCache();
         }
 
@@ -164,7 +167,8 @@ public class ContentVersionController implements ServletContextListener {
         // for use by ContentSynchronisationWorkers to alert the controller that
         // they have finished
         if (!success) {
-            log.error("ContentSynchronisationWorker reported a failure to synchronise");
+            log.error(String.format("ContentSynchronisationWorker reported a failure to synchronise %s. Giving up...",
+                    version));
             return;
         }
 
@@ -263,6 +267,8 @@ public class ContentVersionController implements ServletContextListener {
         // This method will be used to indicate if a version is currently being
         // used in A/B testing in the future. For now it is just checking if it
         // is the live one.
+        // TODO The current live version should be stored in the database in the future not a conf file.
+        
         return getLiveVersion().equals(version);
     }
 
@@ -287,23 +293,31 @@ public class ContentVersionController implements ServletContextListener {
         if (contentManager.getCachedVersionList().size() > maxCacheSize) {
             log.info("Cache is too full (" + contentManager.getCachedVersionList().size()
                     + ") finding and deleting old versions");
+
+            
             // Now we want to decide which versions we can safely get rid of.
-            List<String> allVersions = contentManager.listAvailableVersions();
-
-            // got through all versions in reverse until you find the oldest one
-            // that is also in the cached versions list and then remove it.
-            for (int index = allVersions.size() - 1; contentManager.getCachedVersionList().size() > maxCacheSize
-                    && index >= 0; index--) {
-
-                // check if the version is cached
-                if (contentManager.getCachedVersionList().contains(allVersions.get(index))) {
-                    // check we are not deleting the version that is currently
-                    // in use before we delete it.
-                    if (!isVersionInUse(allVersions.get(index)) && !versionJustIndexed.equals(allVersions.get(index))) {
-                        log.info("Requesting to delete the content at version " + allVersions.get(index)
-                                + " from the cache.");
-                        contentManager.clearCache(allVersions.get(index));
-                    }
+            List<String> allCachedVersions = Lists.newArrayList(contentManager.getCachedVersionList());
+            // sort them so they are in ascending order with the oldest version first.
+            Collections.sort(allCachedVersions, new Comparator<String>() {
+                @Override
+                public int compare(final String arg0, final String arg1) {
+                    return contentManager.compareTo(arg0, arg1);
+                }                
+            });
+            
+            for (String version : allCachedVersions) {
+                // we want to stop when we have deleted enough.
+                if (contentManager.getCachedVersionList().size() <= maxCacheSize) {
+                    log.info("Cache clear complete");
+                    break;
+                }
+                
+                // check we are not deleting the version that is currently
+                // in use before we delete it.
+                if (!isVersionInUse(version) && !versionJustIndexed.equals(version)) {
+                    log.info("Requesting to delete the content at version " + version
+                            + " from the cache.");
+                    contentManager.clearCache(version);
                 }
             }
 

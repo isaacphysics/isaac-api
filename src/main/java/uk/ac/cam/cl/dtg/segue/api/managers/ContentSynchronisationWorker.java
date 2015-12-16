@@ -66,40 +66,35 @@ public class ContentSynchronisationWorker implements Callable<String> {
     public String call() {
         // Verify with Content manager that we can sync to the version requested
         // / get the latest one
-        log.info("Starting synchronisation task (" + version + ") for the content repository.");
+        log.info(String.format("Starting synchronisation task (%s) for the content repository.", version));
 
         if (null == version) {
             // assume we are just trying to get the latest version when we have
             // a null version field.
             version = contentVersionController.getContentManager().getLatestVersionId();
+        } else if (!contentVersionController.getContentManager().isValidVersion(version)) {
+            log.error("Error while trying to run index operation for version: " + version + " . Terminating Sync Job.");
+            // call the content controller to tell them we failed to sync the
+            // version requested
+            contentVersionController.syncJobCompleteCallback(version, false);
+            return null;
         }
 
-        if (contentVersionController.getContentManager().isValidVersion(version)) {
-            // trigger index operation with content Manager.
-            log.debug("Triggering index operation as a result of Content Synchronisation job.");
+        // trigger index operation with content Manager.
+        try {
+            this.contentVersionController.getContentManager().ensureCache(version);
+            // successful indexing operation.
+            // Call the content controller to tell them we have finished our
+            // job and they may like to do something.
+            contentVersionController.syncJobCompleteCallback(version, true);
 
-            try {
-                this.contentVersionController.getContentManager().ensureCache(version);
-                // successful indexing operation.
-                // Call the content controller to tell them we have finished our
-                // job and they may like to do something.
-                contentVersionController.syncJobCompleteCallback(version, true);
-
-                log.info("Content synchronisation job completed for " + version + ".");
-                return version;
-            } catch (ContentManagerException e) {
-                log.error("Error while trying to run index operation", e);
-                contentVersionController.syncJobCompleteCallback(version, false);
-                return null;
-            }
+            log.info(String.format("Synchronisation task completed for (%s).", version));
+            return version;
+        } catch (ContentManagerException e) {
+            log.error(String.format("Error while trying to index version: %s.", version), e);
+            contentVersionController.syncJobCompleteCallback(version, false);
+            return null;
         }
-
-        log.error("Error while trying to run index operation for version: " + version + " . Terminating Sync Job.");
-        // call the content controller to tell them we failed to sync the
-        // version requested
-        contentVersionController.syncJobCompleteCallback(version, false);
-
-        return null;
     }
 
     @Override

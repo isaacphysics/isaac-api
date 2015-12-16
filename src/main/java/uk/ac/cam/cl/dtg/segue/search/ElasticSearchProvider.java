@@ -33,6 +33,7 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -124,7 +125,7 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         try {
             // execute bulk request
-            BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+            BulkResponse bulkResponse = bulkRequest.setRefresh(true).execute().actionGet();
             if (bulkResponse.hasFailures()) {
                 // process failures by iterating through each bulk response item
                 for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
@@ -353,7 +354,12 @@ public class ElasticSearchProvider implements ISearchProvider {
         Validate.notNull(index);
         return client.admin().indices().exists(new IndicesExistsRequest(index)).actionGet().isExists();
     }
-
+    
+    @Override
+    public Collection<String> getAllIndices() {       
+        return client.admin().indices().stats(new IndicesStatsRequest()).actionGet().getIndices().keySet();
+    }
+    
     @Override
     public void registerRawStringFields(final List<String> fieldNames) {
         this.rawFieldsList.addAll(fieldNames);

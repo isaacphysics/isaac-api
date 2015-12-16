@@ -88,7 +88,12 @@ public interface ISearchProvider {
      * @return true if the index exists false if not.
      */
     boolean hasIndex(final String index);
-
+    
+    /**
+     * @return the list of all indices.
+     */
+    Collection<String> getAllIndices();
+    
     /**
      * Paginated Match search for one field.
      * 

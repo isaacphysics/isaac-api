@@ -315,7 +315,7 @@ public interface IContentManager {
      * @return A set of all of the version id's which are currently available without reindexing.
      */
     Set<String> getCachedVersionList();
-
+    
     /**
      * Utility method that will check whether a version number supplied validates.
      * 
@@ -336,6 +336,7 @@ public interface IContentManager {
      *            - version to make sure exists.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
+     * @throws IOException 
      */
     void ensureCache(String version) throws ContentManagerException;
 
@@ -401,5 +402,4 @@ public interface IContentManager {
      * @return summary of content
      */
     ContentSummaryDTO extractContentSummary(ContentDTO content);
-
 }

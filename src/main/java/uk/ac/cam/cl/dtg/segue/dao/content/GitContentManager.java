@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +42,8 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.elasticsearch.common.collect.ImmutableSet;
+import org.elasticsearch.common.collect.ImmutableSet.Builder;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +82,6 @@ public class GitContentManager implements IContentManager {
 
     private static final String CONTENT_TYPE = "content";
 
-    private final Map<String, Map<String, Content>> gitCache;
     private final Map<String, Map<Content, List<String>>> indexProblemCache;
     private final Map<String, Set<String>> tagsList;
     private final Map<String, Map<String, String>> allUnits;
@@ -106,8 +108,7 @@ public class GitContentManager implements IContentManager {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
-
-        this.gitCache = new ConcurrentHashMap<String, Map<String, Content>>();
+       
         this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
         this.tagsList = new ConcurrentHashMap<String, Set<String>>();
         this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
@@ -125,19 +126,15 @@ public class GitContentManager implements IContentManager {
      *            - search provider that the content manager manages and controls.
      * @param contentMapper
      *            - The utility class for mapping content objects.
-     * @param gitCache
-     *            - A manually constructed gitCache for testing purposes.
      * @param indexProblemCache
      *            - A manually constructed indexProblemCache for testing purposes
      */
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper, final Map<String, Map<String, Content>> gitCache,
-            final Map<String, Map<Content, List<String>>> indexProblemCache) {
+            final ContentMapper contentMapper, final Map<String, Map<Content, List<String>>> indexProblemCache) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
-
-        this.gitCache = gitCache;
+        
         this.indexProblemCache = indexProblemCache;
         this.tagsList = new ConcurrentHashMap<String, Set<String>>();
         this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
@@ -164,14 +161,16 @@ public class GitContentManager implements IContentManager {
 
         this.ensureCache(version);
 
-        Content result = gitCache.get(version).get(id);
-        if (null == result) {
+        List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
+                CONTENT_TYPE, Arrays.asList(id),
+                Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1).getResults());
+        
+        if (null == searchResults || searchResults.isEmpty()) {
             log.error("Failed to locate the content (" + id + ") in the cache for version " + version);
-        } else {
-            log.debug("Loading content from cache: " + id);
+            return null;
         }
 
-        return result;
+        return searchResults.get(0);
     }
 
     @Override
@@ -204,8 +203,8 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final ResultsWrapper<ContentDTO> searchForContent(final String version, final String searchString,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, final Integer startIndex, final Integer limit)
-            throws ContentManagerException {
+            @Nullable final Map<String, List<String>> fieldsThatMustMatch, 
+            final Integer startIndex, final Integer limit) throws ContentManagerException {
 
         this.ensureCache(version);
 
@@ -316,7 +315,7 @@ public class GitContentManager implements IContentManager {
 
         return result;
     }
-
+    
     @Override
     public final boolean isValidVersion(final String version) {
         if (null == version || version.isEmpty()) {
@@ -344,13 +343,20 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Set<String> getCachedVersionList() {
-        return gitCache.keySet();
+        Builder<String> builder = ImmutableSet.builder();
+        for (String index : this.searchProvider.getAllIndices()) {
+            // check to see if index looks like a content sha otherwise we will get loads of other search indexes come
+            // back.
+            if (index.matches("[a-fA-F0-9]{40}")) {
+                builder.add(index);
+            }
+        }
+        return builder.build();
     }
-
+    
     @Override
     public final void clearCache() {
         log.info("Clearing all content caches.");
-        gitCache.clear();
         searchProvider.expungeEntireSearchCache();
         indexProblemCache.clear();
         tagsList.clear();
@@ -361,10 +367,9 @@ public class GitContentManager implements IContentManager {
     public final void clearCache(final String version) {
         Validate.notBlank(version);
 
-        if (gitCache.containsKey(version)) {
-            gitCache.remove(version);
-            searchProvider.expungeIndexFromSearchCache(version);
+        if (this.searchProvider.hasIndex(version)) {
             indexProblemCache.remove(version);
+            searchProvider.expungeIndexFromSearchCache(version);
             tagsList.remove(version);
             allUnits.remove(version);
         }
@@ -400,53 +405,56 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public void ensureCache(final String version) throws ContentManagerException {
-        if (version == null) {
+        if (null == version) {
             throw new ContentVersionUnavailableException(
                     "You must specify a non-null version to make sure it is cached.");
         }
-
-        if (!gitCache.containsKey(version)) {
+        
+        // In order to serve all content requests we need to index both the search provider and problem cache.
+        boolean searchIndexed;
+        if (!this.getCachedVersionList().contains(version)) {
             synchronized (this) {
-                if (!gitCache.containsKey(version)) {
-                    if (database.verifyCommitExists(version)) {
-                        log.debug("Rebuilding cache as sha does not exist in hashmap");
-                        buildGitContentIndex(version);
+                final Map<String, Content> gitCache;
 
-                        // may as well spawn a new thread to do the validation
-                        // work now.
-                        Thread validationJob = new Thread() {
-                            @Override
-                            public void run() {
-                                checkForContentErrors(version);
-                            }
-                        };
-                        validationJob.setDaemon(true);
-                        validationJob.start();
+                // now we have acquired the lock check if someone else has indexed this.
+                searchIndexed = searchProvider.hasIndex(version);
+                if (searchIndexed && this.indexProblemCache.containsKey(version)) {
+                    return;
+                }
 
-                        buildSearchIndexFromLocalGitIndex(version);
-                    } else {
-                        throw new ContentVersionUnavailableException(String.format(
-                                "Unable find the version (%s) in git to ensure the cache", version));
+                log.info(String.format(
+                        "Rebuilding content index as sha (%s) does not exist in search provider.",
+                        version));
+                
+                // anytime we build the git index we have to empty the problem cache
+                this.indexProblemCache.remove(version);
+                gitCache = buildGitContentIndex(version);
+
+                // may as well spawn a new thread to do the validation
+                // work now.
+                Thread validationJob = new Thread() {
+                    @Override
+                    public void run() {
+                        checkForContentErrors(version, gitCache);
                     }
+                };
+
+                validationJob.setDaemon(true);
+                validationJob.start();
+                
+                if (!searchIndexed) {
+                    buildSearchIndexFromLocalGitIndex(version, gitCache);                   
+                } else {
+                    log.info(String.format("Search index for %s is already available. Not reindexing...", version));
                 }
             }
         }
 
-        boolean searchIndexed = searchProvider.hasIndex(version);
-        if (!searchIndexed) {
-            log.warn("Search does not have a valid index for the " + version + " version of the content");
-            synchronized (this) {
-                this.buildSearchIndexFromLocalGitIndex(version);
-            }
-        }
-
+        // verification step. Make sure that this segue instance is happy it can access the content requested.
+        // if not then throw an exception.
         StringBuilder errorMessageStringBuilder = new StringBuilder();
-
-        if (!gitCache.containsKey(version)) {
-            errorMessageStringBuilder
-                    .append(String.format("Version %s does not exist in the internal cache.", version));
-        }
-
+        searchIndexed = searchProvider.hasIndex(version);
+        
         if (!searchIndexed) {
             errorMessageStringBuilder.append(String.format("Version %s does not exist in the searchIndex.", version));
         }
@@ -459,6 +467,22 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
+        if (indexProblemCache.get(version) == null) {
+            // this check is to prevent memory leaks as currently the search provider is the only thing we use to keep
+            // track of what is available to serve.
+            if (!this.searchProvider.hasIndex(version)) {
+                log.error("Cannot request a problem map for a version that is not currently "
+                        + "indexed by the search provider.");
+                return null;
+            }
+            
+            // on the off chance that we haven't prepared the problem map requested go ahead and build it.
+            try {
+                checkForContentErrors(version, buildGitContentIndex(version));
+            } catch (ContentManagerException e) {
+                log.error("Unable to build problem map requested", e);
+            }
+        }
         return indexProblemCache.get(version);
     }
 
@@ -525,13 +549,10 @@ public class GitContentManager implements IContentManager {
      * 
      * @param sha
      *            - the version in the git cache to send to the search provider.
+     * @param gitCache
+     *            a map that represents indexed content for a given sha.
      */
-    private synchronized void buildSearchIndexFromLocalGitIndex(final String sha) {
-        if (!gitCache.containsKey(sha)) {
-            log.error("Unable to create search index as git cache does not exist locally");
-            return;
-        }
-
+    private synchronized void buildSearchIndexFromLocalGitIndex(final String sha, final Map<String, Content> gitCache) {
         if (this.searchProvider.hasIndex(sha)) {
             log.info("Search index has already been updated by" + " another thread. No need to reindex. Aborting...");
             return;
@@ -543,7 +564,7 @@ public class GitContentManager implements IContentManager {
         // Required to deal with type polymorphism
         List<Map.Entry<String, String>> thingsToIndex = Lists.newArrayList();
         ObjectMapper objectMapper = mapper.generateNewPreconfiguredContentMapper();
-        for (Content content : gitCache.get(sha).values()) {
+        for (Content content : gitCache.values()) {
             try {
                 thingsToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
             } catch (JsonProcessingException e) {
@@ -569,14 +590,20 @@ public class GitContentManager implements IContentManager {
      * 
      * @param sha
      *            - the version to index.
+     * @return the map representing all indexed content.
+     * @throws ContentManagerException 
      */
-    private synchronized void buildGitContentIndex(final String sha) {
+    private synchronized Map<String, Content> buildGitContentIndex(final String sha) throws ContentManagerException {
         // This set of code only needs to happen if we have to read from git
         // again.
-        if (null == sha || gitCache.get(sha) != null) {
-            return;
+        if (null == sha) {
+            throw new ContentManagerException(String.format("SHA: %s is null. Cannot index.", sha));
         }
 
+        if (this.indexProblemCache.containsKey(sha)) {
+            throw new ContentManagerException(String.format("SHA: %s has already been indexed. Failing... ", sha)); 
+        }
+        
         // iterate through them to create content objects
         Repository repository = database.getGitRepository();
 
@@ -584,8 +611,8 @@ public class GitContentManager implements IContentManager {
             ObjectId commitId = repository.resolve(sha);
 
             if (null == commitId) {
-                log.error("Failed to buildGitIndex - Unable to locate resource with SHA: " + sha);
-                return;
+                throw new ContentManagerException("Failed to buildGitIndex - Unable to locate resource with SHA: "
+                        + sha);
             }
 
             Map<String, Content> shaCache = new HashMap<String, Content>();
@@ -692,15 +719,16 @@ public class GitContentManager implements IContentManager {
                                     + ". The following error occurred: " + e.getMessage());
                 }
             }
-
-            // add all of the work we have done to the git cache.
-            gitCache.put(sha, shaCache);
+            
             repository.close();
             log.debug("Tags available " + tagsList);
             log.debug("All units: " + allUnits);
             log.info("Git content cache population for " + sha + " completed!");
+            
+            return shaCache;
         } catch (IOException e) {
             log.error("IOException while trying to access git repository. ", e);
+            throw new ContentManagerException("Unable to index content, due to an IOException.");
         }
     }
 
@@ -850,10 +878,12 @@ public class GitContentManager implements IContentManager {
      * 
      * @param sha
      *            version to validate integrity of.
+     * @param gitCache
+     *            Data structure containing all content for a given sha.
      * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
      */
-    private boolean checkForContentErrors(final String sha) {
-        log.info("Starting content Validation.");
+    private boolean checkForContentErrors(final String sha, final Map<String, Content> gitCache) {
+        log.info(String.format("Starting content Validation (%s).", sha));
         Set<Content> allObjectsSeen = new HashSet<Content>();
         Set<String> expectedIds = new HashSet<String>();
         Set<String> definedIds = new HashSet<String>();
@@ -861,7 +891,7 @@ public class GitContentManager implements IContentManager {
         Map<String, Content> whoAmI = new HashMap<String, Content>();
 
         // Build up a set of all content (and content fragments for validation)
-        for (Content c : gitCache.get(sha).values()) {
+        for (Content c : gitCache.values()) {
             if (c instanceof IsaacSymbolicQuestion) {
                 // do not validate these questions for now.
                 continue;
@@ -988,8 +1018,8 @@ public class GitContentManager implements IContentManager {
                         + "The following ids are referenced but do not exist: " + expectedIds.toString());
             }
         }
-        log.info("Validation processing complete. There are " + this.indexProblemCache.get(sha).size()
-                + " files with content problems");
+        log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
+                this.indexProblemCache.get(sha).size()));
 
         return false;
     }
