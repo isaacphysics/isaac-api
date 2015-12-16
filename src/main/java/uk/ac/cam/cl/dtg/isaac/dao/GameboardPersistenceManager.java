@@ -691,12 +691,15 @@ public class GameboardPersistenceManager {
 		// Search for questions that match the ids.
 		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
                 questionIds.size());
-
-		List<ContentDTO> questionsForGameboard = results.getResults();
+	    Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
+		
+	    if (null == results) {
+	        return gameboardReadyQuestions;
+		}
+		
+	    List<ContentDTO> questionsForGameboard = results.getResults();
 
 		// Map each Content object into an GameboardItem object
-		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
-
 		for (ContentDTO c : questionsForGameboard) {
 			GameboardItem questionInfo = this.convertToGameboardItem(c);
 			gameboardReadyQuestions.put(c.getId(), questionInfo);

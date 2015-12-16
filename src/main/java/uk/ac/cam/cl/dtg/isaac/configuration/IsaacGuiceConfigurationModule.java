@@ -22,7 +22,6 @@ import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;

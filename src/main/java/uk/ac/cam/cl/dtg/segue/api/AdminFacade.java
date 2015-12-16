@@ -422,8 +422,9 @@ public class AdminFacade extends AbstractSegueFacade {
         try {
             if (isUserAnAdmin(request)) {
                 IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-
-                log.info("Clearing all caches...");
+                RegisteredUserDTO currentRegisteredUser = userManager.getCurrentRegisteredUser(request);
+                
+                log.info(String.format("Admin user: (%s) triggered cache clears...", currentRegisteredUser.getEmail()));
                 contentPersistenceManager.clearCache();
 
                 ImmutableMap<String, String> response = new ImmutableMap.Builder<String, String>().put("result",

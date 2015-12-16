@@ -504,8 +504,8 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - of the e-mail to send
      * @param emailTypeInt
      *            - the type of e-mail that is being sent.
-     * @param userids
-     *            - string of user type to boolean (i.e. whether or not to send to this type)
+     * @param userIds
+     *            - list of user ids
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
@@ -534,7 +534,6 @@ public class EmailFacade extends AbstractSegueFacade {
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
 
         try {
-
             for (Long userId : userIds) {
                 RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
                 if (userDTO != null) {
