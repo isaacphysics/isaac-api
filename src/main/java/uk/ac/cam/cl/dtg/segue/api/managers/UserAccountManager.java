@@ -341,8 +341,8 @@ public class UserAccountManager {
     }
     
     /**
-     * Utility method to ensure that the credentials provided are valid. If they are invalid an exception will be thrown
-     * otherwise nothing will happen.
+     * Utility method to ensure that the credentials provided are the current correct ones. If they are invalid an
+     * exception will be thrown otherwise nothing will happen.
      * 
      * @param provider
      *            - the password provider who will validate the credentials.
@@ -361,7 +361,7 @@ public class UserAccountManager {
      * @throws SegueDatabaseException
      *             - if there is a problem with the database.
      */
-    public void ensureValidPassword(final String provider, final String email, final String password)
+    public void ensureCorrectPassword(final String provider, final String email, final String password)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
             NoCredentialsAvailableException, SegueDatabaseException {
         Validate.notBlank(email);

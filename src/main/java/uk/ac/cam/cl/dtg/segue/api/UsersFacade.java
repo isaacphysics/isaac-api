@@ -125,9 +125,10 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can provide email preferences
      */
     @Inject
-    public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager, final ILogManager logManager,
-            final StatisticsManager statsManager, final UserAssociationManager userAssociationManager, 
-            final IMisuseMonitor misuseMonitor, final AbstractEmailPreferenceManager emailPreferenceManager) {
+    public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
+            final ILogManager logManager, final StatisticsManager statsManager,
+            final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
+            final AbstractEmailPreferenceManager emailPreferenceManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.statsManager = statsManager;
@@ -511,20 +512,21 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
             
-            // only admins can change passwords without verifying the current password
-            if (passwordCurrent != null 
-            				&& !passwordCurrent.equals("")) {
-            	if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
-            					&& currentlyLoggedInUser.getRole() != Role.ADMIN) {
+            // only admins and the account owner can change other peoples' passwords 
+            if (userObjectFromClient.getPassword() != null && !userObjectFromClient.getPassword().isEmpty()) {
+                if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
+                        && currentlyLoggedInUser.getRole() != Role.ADMIN) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' password.")
-                    .toResponse();
-            	}
-            	
-            	// authenticate the user to check they are allowed to change the password
-            	this.userManager.ensureValidPassword(
-            					AuthenticationProvider.SEGUE.name(), userObjectFromClient.getEmail(), 
-            					passwordCurrent);
+                            .toResponse();
+                }
                 
+                // if we are not an admin verify the current password.
+                if (currentlyLoggedInUser.getRole() != Role.ADMIN) {
+                    // authenticate the user to check they are allowed to change the password
+                    this.userManager.ensureCorrectPassword(
+                                    AuthenticationProvider.SEGUE.name(), userObjectFromClient.getEmail(), 
+                                    passwordCurrent);
+                }
             }
             
             // check that any changes to protected fields being made are
