@@ -253,9 +253,6 @@ public class PgUsers implements IUserDataManager {
         Map<String, Object> fieldsOfInterest = Maps.newHashMap();
         
         // Interesting fields to use for prototypical search
-        if (null != prototype.getLegacyDbId()) {
-            fieldsOfInterest.put("_id", prototype.getLegacyDbId());
-        }
         if (null != prototype.getId()) {
             fieldsOfInterest.put("id", prototype.getId());
         }
@@ -459,12 +456,7 @@ public class PgUsers implements IUserDataManager {
      * @return a register user as just created.
      * @throws SegueDatabaseException
      */
-    private RegisteredUser createUser(final RegisteredUser userToCreate) throws SegueDatabaseException {
-        // quick hack to give a legacy id.
-        if (userToCreate.getLegacyDbId() == null) {
-            userToCreate.setLegacyDbId(UUID.randomUUID().toString());
-        }
-        
+    private RegisteredUser createUser(final RegisteredUser userToCreate) throws SegueDatabaseException {    
         // make sure student is default role if none set
         if (null == userToCreate.getRole()) {
         	userToCreate.setRole(Role.STUDENT);
@@ -474,34 +466,33 @@ public class PgUsers implements IUserDataManager {
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement(
-                            "INSERT INTO users(_id, family_name, given_name, email, role, "
+                            "INSERT INTO users(family_name, given_name, email, role, "
                             + "date_of_birth, gender, registration_date, school_id, "
                             + "school_other, last_updated, email_verification_status, "
                             + "last_seen, default_level, password, secure_salt, reset_token, "
                             + "reset_expiry, email_verification_token, email_verification_token_expiry) "
-                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
-            setValueHelper(pst, 1, userToCreate.getLegacyDbId());
-            setValueHelper(pst, 2, userToCreate.getFamilyName());
-            setValueHelper(pst, 3, userToCreate.getGivenName());
-            setValueHelper(pst, 4, userToCreate.getEmail());
-            setValueHelper(pst, 5, userToCreate.getRole());
-            setValueHelper(pst, 6, userToCreate.getDateOfBirth());
-            setValueHelper(pst, 7, userToCreate.getGender());
-            setValueHelper(pst, 8, userToCreate.getRegistrationDate());
-            setValueHelper(pst, 9, userToCreate.getSchoolId());
-            setValueHelper(pst, 10, userToCreate.getSchoolOther());
-            setValueHelper(pst, 11, userToCreate.getLastUpdated());
-            setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
-            setValueHelper(pst, 13, userToCreate.getLastSeen());
-            setValueHelper(pst, 14, userToCreate.getDefaultLevel());
-            setValueHelper(pst, 15, userToCreate.getPassword());
-            setValueHelper(pst, 16, userToCreate.getSecureSalt());
-            setValueHelper(pst, 17, userToCreate.getResetToken());
-            setValueHelper(pst, 18, userToCreate.getResetExpiry());
-            setValueHelper(pst, 19, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 20, userToCreate.getEmailVerificationTokenExpiry());
+            setValueHelper(pst, 1, userToCreate.getFamilyName());
+            setValueHelper(pst, 2, userToCreate.getGivenName());
+            setValueHelper(pst, 3, userToCreate.getEmail());
+            setValueHelper(pst, 4, userToCreate.getRole());
+            setValueHelper(pst, 5, userToCreate.getDateOfBirth());
+            setValueHelper(pst, 6, userToCreate.getGender());
+            setValueHelper(pst, 7, userToCreate.getRegistrationDate());
+            setValueHelper(pst, 8, userToCreate.getSchoolId());
+            setValueHelper(pst, 9, userToCreate.getSchoolOther());
+            setValueHelper(pst, 10, userToCreate.getLastUpdated());
+            setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
+            setValueHelper(pst, 12, userToCreate.getLastSeen());
+            setValueHelper(pst, 13, userToCreate.getDefaultLevel());
+            setValueHelper(pst, 14, userToCreate.getPassword());
+            setValueHelper(pst, 15, userToCreate.getSecureSalt());
+            setValueHelper(pst, 16, userToCreate.getResetToken());
+            setValueHelper(pst, 17, userToCreate.getResetExpiry());
+            setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 19, userToCreate.getEmailVerificationTokenExpiry());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -537,34 +528,33 @@ public class PgUsers implements IUserDataManager {
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
                     .prepareStatement(
-                            "UPDATE users SET _id = ?, family_name = ?, given_name = ?, email = ?, role = ?, "
+                            "UPDATE users SET family_name = ?, given_name = ?, email = ?, role = ?, "
                             + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
                             + "school_other = ?, last_updated = ?, email_verification_status = ?, "
                             + "last_seen = ?, default_level = ?, password = ?, secure_salt = ?, reset_token = ?, "
                             + "reset_expiry = ?, email_verification_token = ?, email_verification_token_expiry = ? "
                             + "WHERE id = ?;");
             
-            setValueHelper(pst, 1, userToCreate.getLegacyDbId());
-            setValueHelper(pst, 2, userToCreate.getFamilyName());
-            setValueHelper(pst, 3, userToCreate.getGivenName());
-            setValueHelper(pst, 4, userToCreate.getEmail());
-            setValueHelper(pst, 5, userToCreate.getRole());
-            setValueHelper(pst, 6, userToCreate.getDateOfBirth());
-            setValueHelper(pst, 7, userToCreate.getGender());
-            setValueHelper(pst, 8, userToCreate.getRegistrationDate());
-            setValueHelper(pst, 9, userToCreate.getSchoolId());
-            setValueHelper(pst, 10, userToCreate.getSchoolOther());
-            setValueHelper(pst, 11, userToCreate.getLastUpdated());
-            setValueHelper(pst, 12,  userToCreate.getEmailVerificationStatus());
-            setValueHelper(pst, 13, userToCreate.getLastSeen());
-            setValueHelper(pst, 14, userToCreate.getDefaultLevel());
-            setValueHelper(pst, 15, userToCreate.getPassword());
-            setValueHelper(pst, 16, userToCreate.getSecureSalt());
-            setValueHelper(pst, 17, userToCreate.getResetToken());
-            setValueHelper(pst, 18, userToCreate.getResetExpiry());
-            setValueHelper(pst, 19, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 20, userToCreate.getEmailVerificationTokenExpiry());
-            setValueHelper(pst, 21, userToCreate.getId());
+            setValueHelper(pst, 1, userToCreate.getFamilyName());
+            setValueHelper(pst, 2, userToCreate.getGivenName());
+            setValueHelper(pst, 3, userToCreate.getEmail());
+            setValueHelper(pst, 4, userToCreate.getRole());
+            setValueHelper(pst, 5, userToCreate.getDateOfBirth());
+            setValueHelper(pst, 6, userToCreate.getGender());
+            setValueHelper(pst, 7, userToCreate.getRegistrationDate());
+            setValueHelper(pst, 8, userToCreate.getSchoolId());
+            setValueHelper(pst, 9, userToCreate.getSchoolOther());
+            setValueHelper(pst, 10, userToCreate.getLastUpdated());
+            setValueHelper(pst, 11,  userToCreate.getEmailVerificationStatus());
+            setValueHelper(pst, 12, userToCreate.getLastSeen());
+            setValueHelper(pst, 13, userToCreate.getDefaultLevel());
+            setValueHelper(pst, 14, userToCreate.getPassword());
+            setValueHelper(pst, 15, userToCreate.getSecureSalt());
+            setValueHelper(pst, 16, userToCreate.getResetToken());
+            setValueHelper(pst, 17, userToCreate.getResetExpiry());
+            setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
+            setValueHelper(pst, 19, userToCreate.getEmailVerificationTokenExpiry());
+            setValueHelper(pst, 20, userToCreate.getId());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -596,7 +586,6 @@ public class PgUsers implements IUserDataManager {
         
         RegisteredUser u = new RegisteredUser();
         u.setId(results.getLong("id"));
-        u.setLegacyDbId(results.getString("_id"));
         u.setFamilyName(results.getString("family_name"));
         u.setGivenName(results.getString("given_name"));
         u.setEmail(results.getString("email"));

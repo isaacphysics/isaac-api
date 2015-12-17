@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dos.users;
 
 import java.util.Date;
 
-import org.mongojack.ObjectId;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -27,10 +25,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class RegisteredUser extends AbstractSegueUser {
-    private Long id;
     @JsonProperty("_id")
-    @ObjectId
-    private String databaseId;
+    private Long id;
+
     private String givenName;
     private String familyName;
     private String email;
@@ -64,7 +61,7 @@ public class RegisteredUser extends AbstractSegueUser {
     /**
      * Full constructor for the User object.
      * 
-     * @param databaseId
+     * @param id
      *            - Our database Unique ID
      * @param givenName
      *            - Equivalent to firstname
@@ -84,8 +81,6 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - the list of linked authentication provider accounts.
      * @param password
      *            - password for local segue authentication.
-     * @param password
-	   			  - password for local segue authentication.
      * @param resetToken
      *            - resetToken for local segue authentication.
      * @param resetExpiry
@@ -100,7 +95,7 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - whether the user has verified their email or not
      */
     @JsonCreator
-    public RegisteredUser(@JsonProperty("_id") final String databaseId,
+    public RegisteredUser(@JsonProperty("id") final Long id,
             @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
             @JsonProperty("email") final String email, @JsonProperty("role") final Role role,
             @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
@@ -111,7 +106,7 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
             @JsonProperty("emailVerificationTokenExpiry") final Date emailVerificationTokenExpiry, 
             @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
-        this.databaseId = databaseId;
+        this.id = id;
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
@@ -140,6 +135,7 @@ public class RegisteredUser extends AbstractSegueUser {
      * Gets the id (integer form).
      * @return the id
      */
+    @JsonProperty("_id")
     public Long getId() {
         return id;
     }
@@ -149,36 +145,9 @@ public class RegisteredUser extends AbstractSegueUser {
      * Sets the id.
      * @param id the id to set
      */
+    @JsonProperty("_id")
     public void setId(final Long id) {
         this.id = id;
-    }
-    
-
-    /**
-     * Gets the database id (sha form) for the user object.
-     * 
-     * @return database id as a string.
-     * @deprecated use getId
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    @Deprecated
-    public String getLegacyDbId() {
-        return databaseId;
-    }
-
-    /**
-     * Sets the database id for the user object.
-     * 
-     * @param id
-     *            the db id for the user.
-     * @deprecated use getId
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    @Deprecated
-    public void setLegacyDbId(final String id) {
-        this.databaseId = id;
     }
 
     /**
@@ -548,7 +517,7 @@ public class RegisteredUser extends AbstractSegueUser {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((databaseId == null) ? 0 : databaseId.hashCode());
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
     }
 
@@ -564,11 +533,11 @@ public class RegisteredUser extends AbstractSegueUser {
             return false;
         }
         RegisteredUser other = (RegisteredUser) obj;
-        if (databaseId == null) {
-            if (other.databaseId != null) {
+        if (id == null) {
+            if (other.id != null) {
                 return false;
             }
-        } else if (!databaseId.equals(other.databaseId)) {
+        } else if (!id.equals(other.id)) {
             return false;
         }
         return true;

@@ -512,8 +512,9 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
             
-            // only admins and the account owner can change other peoples' passwords 
+            // check if they are trying to change a password
             if (userObjectFromClient.getPassword() != null && !userObjectFromClient.getPassword().isEmpty()) {
+                // only admins and the account owner can change passwords 
                 if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                         && currentlyLoggedInUser.getRole() != Role.ADMIN) {
                     return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' password.")
@@ -533,7 +534,6 @@ public class UsersFacade extends AbstractSegueFacade {
             // allowed.
             RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
                     .getId());
-            
             
             if (Role.EVENT_MANAGER.equals(currentlyLoggedInUser.getRole())) {
                 if (Role.ADMIN.equals(existingUserFromDb.getRole())

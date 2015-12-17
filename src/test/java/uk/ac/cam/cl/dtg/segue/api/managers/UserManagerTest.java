@@ -36,6 +36,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
 import ma.glasnost.orika.MapperFacade;
 
 import org.easymock.EasyMock;
@@ -59,7 +60,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -169,14 +169,13 @@ public class UserManagerTest {
         UserAuthenticationManager authManager = buildTestAuthenticationManager();
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
-        String validLegacyUserId = "533ee66842f639e95ce35e29";
         Long validUserId = 533L;
         String validDateString = sdf.format(new Date());
 
         Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId.toString(), validDateString);
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
-        RegisteredUser returnUser = new RegisteredUser(validLegacyUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
+        RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
                 new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, 
                 null);
         returnUser.setId(validUserId);

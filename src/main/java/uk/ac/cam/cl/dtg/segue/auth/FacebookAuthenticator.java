@@ -66,7 +66,6 @@ import com.google.inject.name.Named;
  * @author Nick Rogers
  */
 public class FacebookAuthenticator implements IOAuth2Authenticator {
-
 	private static final Logger log = LoggerFactory
 			.getLogger(FacebookAuthenticator.class);
 

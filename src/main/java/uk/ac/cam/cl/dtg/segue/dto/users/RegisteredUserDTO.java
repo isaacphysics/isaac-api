@@ -18,8 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 import java.util.Date;
 import java.util.List;
 
-import org.mongojack.ObjectId;
-
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
@@ -33,10 +31,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 
  */
 public class RegisteredUserDTO extends AbstractSegueUserDTO {
-    
-    private Long id;
     @JsonProperty("_id")
-    private String databaseId;
+    private Long id;
+
     private String givenName;
     private String familyName;
     private String email;
@@ -61,8 +58,6 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     /**
      * Full constructor for the User object.
      * 
-     * @param databaseId
-     *            - Our database Unique ID
      * @param givenName
      *            - Equivalent to firstname
      * @param familyName
@@ -81,14 +76,13 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      *            - the list of linked authentication provider accounts.
      */
     @JsonCreator
-    public RegisteredUserDTO(@JsonProperty("_id") final String databaseId,
+    public RegisteredUserDTO(
             @JsonProperty("givenName") final String givenName, @JsonProperty("familyName") final String familyName,
             @JsonProperty("email") final String email, 
             @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
             @JsonProperty("dateOfBirth") final Date dateOfBirth,
             @JsonProperty("gender") final Gender gender, @JsonProperty("registrationDate") final Date registrationDate,
             @JsonProperty("schoolId") final Long schoolId) {
-        this.databaseId = databaseId;
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
@@ -111,6 +105,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * Gets the id.
      * @return the id
      */
+    @JsonProperty("_id")
     public Long getId() {
         return id;
     }
@@ -120,35 +115,9 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * Sets the id.
      * @param id the id to set
      */
+    @JsonProperty("_id")
     public void setId(final Long id) {
         this.id = id;
-    }
-
-    /**
-     * Gets the database id for the user object.
-     * 
-     * @return database id as a string.
-     * @deprecated use getId
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    @Deprecated
-    public String getLegacyDbId() {
-        return databaseId;
-    }
-
-    /**
-     * Sets the database id for the user object.
-     * 
-     * @param id
-     *            the db id for the user.
-     * @deprecated use getId
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    @Deprecated
-    public void setLegacyDbId(final String id) {
-        this.databaseId = id;
     }
 
     /**
@@ -454,7 +423,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((databaseId == null) ? 0 : databaseId.hashCode());
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
     }
 
@@ -470,11 +439,11 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
             return false;
         }
         RegisteredUserDTO other = (RegisteredUserDTO) obj;
-        if (databaseId == null) {
-            if (other.databaseId != null) {
+        if (id == null) {
+            if (other.id != null) {
                 return false;
             }
-        } else if (!databaseId.equals(other.databaseId)) {
+        } else if (!id.equals(other.id)) {
             return false;
         }
         return true;
@@ -498,11 +467,11 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
             return false;
         }
         RegisteredUserDTO other = (RegisteredUserDTO) obj;
-        if (databaseId == null) {
-            if (other.databaseId != null) {
+        if (id == null) {
+            if (other.id != null) {
                 return false;
             }
-        } else if (!databaseId.equals(other.databaseId)) {
+        } else if (!id.equals(other.id)) {
             return false;
         }
         if (dateOfBirth == null) {
@@ -599,7 +568,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
 
     @Override
     public String toString() {
-        return "RegisteredUserDTO [databaseId=" + databaseId + ", givenName=" + givenName + ", familyName="
+        return "RegisteredUserDTO [id=" + id + ", givenName=" + givenName + ", familyName="
                 + familyName + ", email=" + email + ", role=" + role + ", dateOfBirth=" + dateOfBirth + ", gender="
                 + gender + ", registrationDate=" + registrationDate + ", schoolId=" + schoolId + ", schoolOther="
                 + schoolOther + ", defaultLevel=" + defaultLevel + ", emailVerificationStatus=" 

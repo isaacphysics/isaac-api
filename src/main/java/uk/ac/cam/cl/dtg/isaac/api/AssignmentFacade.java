@@ -116,8 +116,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
-            final UserAccountManager userManager, final GroupManager groupManager, final PropertiesLoader propertiesLoader,
-            final GameManager gameManager, final ILogManager logManager,
+            final UserAccountManager userManager, final GroupManager groupManager,
+            final PropertiesLoader propertiesLoader, final GameManager gameManager, final ILogManager logManager,
             final UserAssociationManager associationManager) {
         super(propertiesLoader, logManager);
         this.questionManager = questionManager;

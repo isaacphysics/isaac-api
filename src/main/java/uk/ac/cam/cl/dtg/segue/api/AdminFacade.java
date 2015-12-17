@@ -683,7 +683,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response findUsers(@Context final HttpServletRequest httpServletRequest, @Context final Request request,
-            @QueryParam("id") final String userId, @QueryParam("email") @Nullable final String email,
+            @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther) {
 
@@ -707,8 +707,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
         try {
             RegisteredUserDTO userPrototype = new RegisteredUserDTO();
-            if (null != userId && !userId.isEmpty()) {
-                userPrototype.setLegacyDbId(userId);
+            if (null != userId) {
+                userPrototype.setId(userId);
             }
 
             if (null != email && !email.isEmpty()) {

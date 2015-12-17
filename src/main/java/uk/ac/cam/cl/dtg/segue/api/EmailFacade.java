@@ -337,7 +337,7 @@ public class EmailFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response validateEmailVerificationRequest(@PathParam("userid") final String userid,
+    public Response validateEmailVerificationRequest(@PathParam("userid") final Long userid,
             @PathParam("newemail") final String newemail, @PathParam("token") final String token) {
 
         try {

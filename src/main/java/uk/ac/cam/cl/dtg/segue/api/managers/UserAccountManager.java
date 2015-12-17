@@ -517,24 +517,6 @@ public class UserAccountManager {
     public final RegisteredUserDTO getUserDTOById(final Long id) throws NoUserException, SegueDatabaseException {
         return this.convertUserDOToUserDTO(this.findUserById(id));
     }
-    
-    /**
-     * This function can be used to find user information about a user when given an id.
-     * 
-     * @param id
-     *            - the id of the user to search for.
-     * @return the userDTO
-     * @throws NoUserException
-     *             - If we cannot find a valid user with the email address provided.
-     * @throws SegueDatabaseException
-     *             - If there is another database error
-     * @deprecated uses getUserDTOById            
-     */
-    @Deprecated
-    public final RegisteredUserDTO getUserDTOByLegacyId(final String id) throws NoUserException,
-            SegueDatabaseException {
-        return this.convertUserDOToUserDTO(this.findUserByLegacyId(id));
-    }
 
     /**
      * This function can be used to find user information about a user when given an email.
@@ -631,7 +613,7 @@ public class UserAccountManager {
         userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
 
         // default role is unset
-        userToSave.setRole(null);
+        userToSave.setRole(Role.STUDENT);
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
 
@@ -930,19 +912,19 @@ public class UserAccountManager {
      * @throws InvalidTokenException - if something is wrong with the token provided
      * @throws NoUserException - if the user does not exist.
      */
-    public RegisteredUserDTO processEmailVerification(final String userid, final String email, final String token) 
+    public RegisteredUserDTO processEmailVerification(final Long userid, final String email, final String token) 
             throws SegueDatabaseException, InvalidTokenException, NoUserException {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        RegisteredUser user = this.findUserByLegacyId(userid);
+        RegisteredUser user = this.findUserById(userid);
 
         if (null == user) {
             log.warn(String.format("Recieved an invalid email token request for (%s)", email));
             throw new NoUserException();    
         }
 
-        if (!userid.equals(user.getLegacyDbId())) {
+        if (!userid.equals(user.getId())) {
             log.warn(String.format("Recieved an invalid email token request for (%s)" + " - provided bad userid",
                     email));
             throw new InvalidTokenException();
@@ -1084,24 +1066,6 @@ public class UserAccountManager {
                 log.error("Unable to merge anonymously collected data with stored user object.", e);
             }
         }
-    }
-
-    /**
-     * Library method that allows the api to locate a user object from the database based on a given unique id.
-     *
-     * @param userId
-     *            - to search for.
-     * @return user or null if we cannot find it.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     * @deprecated use findUserById
-     */
-    @Deprecated
-    private RegisteredUser findUserByLegacyId(final String userId) throws SegueDatabaseException {
-        if (null == userId) {
-            return null;
-        }
-        return this.database.getByLegacyId(userId);
     }
     
     /**
