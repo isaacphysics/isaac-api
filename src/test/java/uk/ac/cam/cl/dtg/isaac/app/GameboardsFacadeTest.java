@@ -35,7 +35,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -54,7 +54,7 @@ public class GameboardsFacadeTest {
 	private PropertiesLoader dummyPropertiesLoader = null;
 	private GameManager dummyGameManager = null;
 	private ILogManager dummyLogManager = null;
-	private UserManager userManager;
+	private UserAccountManager userManager;
 	private UserAssociationManager userAssociationManager;
     private QuestionManager questionManager;
 
@@ -70,7 +70,7 @@ public class GameboardsFacadeTest {
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.dummyGameManager = createMock(GameManager.class);
 		this.dummyLogManager = createMock(ILogManager.class);
-		this.userManager = createMock(UserManager.class);
+		this.userManager = createMock(UserAccountManager.class);
 	    this.questionManager = createMock(QuestionManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
 	}

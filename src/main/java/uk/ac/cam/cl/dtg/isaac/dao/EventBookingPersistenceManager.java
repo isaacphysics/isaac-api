@@ -15,7 +15,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBookings;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -33,7 +33,7 @@ public class EventBookingPersistenceManager {
 
     private final PostgresSqlDb database;
     private final EventBookings dao;
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final ContentVersionController versionManager;
 
     /**
@@ -47,7 +47,7 @@ public class EventBookingPersistenceManager {
      *            - Instance of User Manager
      */
     @Inject
-    public EventBookingPersistenceManager(final PostgresSqlDb database, final UserManager userManager,
+    public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
             final ContentVersionController versionManager) {
         this.database = database;
         this.userManager = userManager;

@@ -46,7 +46,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
@@ -77,7 +77,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 public class AuthenticationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFacade.class);
 
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
 
     private final IMisuseMonitor misuseMonitor;
 
@@ -94,7 +94,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
      *            - so that we can prevent overuse of protected resources.
      */
     @Inject
-    public AuthenticationFacade(final PropertiesLoader properties, final UserManager userManager,
+    public AuthenticationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
             final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
         this.userManager = userManager;
@@ -290,6 +290,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             @Context final HttpServletResponse response, @PathParam("provider") final String signinProvider,
             final Map<String, String> credentials) {
 
+        
         // in this case we expect a username and password to have been
         // sent in the json response.
         if (null == credentials || credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME) == null
@@ -298,7 +299,10 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                     "You must specify credentials email and password to use this authentication provider.");
             return error.toResponse();
         }
-
+        
+        String email = credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME);
+        String password = credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME);
+        
         final String rateThrottleMessage = "There have been too many attempts to login to this account. "
                 + "Please try again after 10 minutes.";
 
@@ -313,7 +317,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         // ok we need to hand over to user manager
         try {
             return Response
-                    .ok(userManager.authenticateWithCredentials(request, response, signinProvider, credentials))
+                    .ok(userManager.authenticateWithCredentials(request, response, signinProvider, email, password))
                     .build();
         } catch (AuthenticationProviderMappingException e) {
             String errorMsg = "Unable to locate the provider specified";

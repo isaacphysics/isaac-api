@@ -27,7 +27,7 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
@@ -195,7 +195,7 @@ public abstract class AbstractSegueFacade {
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */
-    public static boolean isUserAnAdmin(final UserManager userManager, final HttpServletRequest request)
+    public static boolean isUserAnAdmin(final UserAccountManager userManager, final HttpServletRequest request)
             throws NoUserLoggedInException {
         return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN));
     }
@@ -211,7 +211,7 @@ public abstract class AbstractSegueFacade {
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */
-    public static boolean isUserAnAdminOrEventManager(final UserManager userManager, final HttpServletRequest request)
+    public static boolean isUserAnAdminOrEventManager(final UserAccountManager userManager, final HttpServletRequest request)
             throws NoUserLoggedInException {
         return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER));
     }
@@ -227,7 +227,7 @@ public abstract class AbstractSegueFacade {
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */
-    public static boolean isUserStaff(final UserManager userManager, final HttpServletRequest request)
+    public static boolean isUserStaff(final UserAccountManager userManager, final HttpServletRequest request)
             throws NoUserLoggedInException {
         return userManager.checkUserRole(request,
                 Arrays.asList(Role.ADMIN, Role.STAFF, Role.CONTENT_EDITOR, Role.EVENT_MANAGER));

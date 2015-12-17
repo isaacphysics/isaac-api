@@ -27,7 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -97,7 +97,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Singleton
     private static SegueApiFacade getSegueFacadeSingleton(final PropertiesLoader properties,
             final ContentMapper mapper, @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-            final ContentVersionController versionController, final UserManager userManager,
+            final ContentVersionController versionController, final UserAccountManager userManager,
             final QuestionManager questionManager, final EmailManager emailManager, final ILogManager logManager) {
         if (null == segueApi) {
             segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule, versionController, userManager,

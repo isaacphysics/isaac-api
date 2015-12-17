@@ -30,7 +30,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.IGroupObserver;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -52,7 +52,7 @@ public class AssignmentManager implements IGroupObserver {
     private final PgAssignmentPersistenceManager assignmentPersistenceManager;
     private final GroupManager groupManager;
     private final EmailManager emailManager;
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
 	private final GameManager gameManager;
     private final UserAssociationManager userAssociationManager;
 
@@ -74,7 +74,7 @@ public class AssignmentManager implements IGroupObserver {
      */
     @Inject
     public AssignmentManager(final PgAssignmentPersistenceManager assignmentPersistenceManager,
-            final GroupManager groupManager, final EmailManager emailManager, final UserManager userManager,
+            final GroupManager groupManager, final EmailManager emailManager, final UserAccountManager userManager,
             final GameManager gameManager, final UserAssociationManager userAssociationManager) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;

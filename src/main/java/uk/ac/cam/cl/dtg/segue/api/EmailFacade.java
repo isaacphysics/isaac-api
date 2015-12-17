@@ -45,7 +45,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -83,7 +83,7 @@ import org.slf4j.LoggerFactory;
 public class EmailFacade extends AbstractSegueFacade {
 	
     private EmailManager emailManager;
-    private UserManager userManager;
+    private UserAccountManager userManager;
     private ContentVersionController versionManager;
     private final SegueApiFacade api;
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
@@ -112,7 +112,7 @@ public class EmailFacade extends AbstractSegueFacade {
      */
     @Inject
     public EmailFacade(final SegueApiFacade api, final PropertiesLoader properties, final ILogManager logManager,
-            final EmailManager emailManager, final UserManager userManager,
+            final EmailManager emailManager, final UserAccountManager userManager,
             final ContentVersionController contentVersionController,
             final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);

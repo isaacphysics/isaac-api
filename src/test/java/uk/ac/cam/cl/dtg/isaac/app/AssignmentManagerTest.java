@@ -31,7 +31,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
@@ -45,7 +45,7 @@ public class AssignmentManagerTest {
 	private PgAssignmentPersistenceManager dummyAssignmentPersistenceManager;
 	private GroupManager dummyGroupManager;
     private EmailManager dummyEmailManager;
-    private UserManager dummyUserManager;
+    private UserAccountManager dummyUserManager;
     private GameManager dummyGameManager;
     private UserAssociationManager userAssociationManager;
 
@@ -60,7 +60,7 @@ public class AssignmentManagerTest {
 		this.dummyGroupManager = createMock(GroupManager.class);
 		this.dummyAssignmentPersistenceManager = createMock(PgAssignmentPersistenceManager.class);
         this.dummyEmailManager = createMock(EmailManager.class);
-        this.dummyUserManager = createMock(UserManager.class);
+        this.dummyUserManager = createMock(UserAccountManager.class);
         this.dummyGameManager = createMock(GameManager.class);
         this.userAssociationManager = createMock(UserAssociationManager.class);
 	}

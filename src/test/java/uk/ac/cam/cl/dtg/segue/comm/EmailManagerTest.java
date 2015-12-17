@@ -37,7 +37,7 @@ import com.google.api.client.util.Maps;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -72,7 +72,7 @@ public class EmailManagerTest {
     private SegueLocalAuthenticator mockAuthenticator;
     private AbstractEmailPreferenceManager emailPreferenceManager;
     private ILogManager logManager;
-    private UserManager userManager;
+    private UserAccountManager userManager;
 
     /**
      * Initial configuration of tests.
@@ -143,7 +143,7 @@ public class EmailManagerTest {
         EasyMock.expectLastCall().anyTimes();
 
         // Create user manager
-        userManager = EasyMock.createMock(UserManager.class);
+        userManager = EasyMock.createMock(UserAccountManager.class);
 
         capturedArgument = new Capture<EmailCommunicationMessage>();
 

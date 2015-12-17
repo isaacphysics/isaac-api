@@ -61,7 +61,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -96,7 +96,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final ContentVersionController contentVersionController;
 
     private final StatisticsManager statsManager;
@@ -124,7 +124,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - for looking up school information
      */
     @Inject
-    public AdminFacade(final PropertiesLoader properties, final UserManager userManager,
+    public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
             final ContentVersionController contentVersionController, final ILogManager logManager,
             final StatisticsManager statsManager, final LocationHistoryManager locationManager,
             final SchoolListReader schoolReader) {

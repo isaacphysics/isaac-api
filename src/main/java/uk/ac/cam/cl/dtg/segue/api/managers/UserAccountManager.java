@@ -19,31 +19,20 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import java.io.IOException;
 import java.net.URI;
-import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,12 +40,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuth1Authenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuthAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.OAuth1Token;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
@@ -65,7 +49,6 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
@@ -88,8 +71,6 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -97,23 +78,22 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 /**
- * This class is responsible for all low level user management actions e.g. authentication and registration.
+ * This class is responsible for managing all user data and orchestration of calls to a user Authentication Manager for
+ * dealing with sessions and passwords.
  */
-public class UserManager {
-    private static final Logger log = LoggerFactory.getLogger(UserManager.class);
-    private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
+public class UserAccountManager {
+    private static final Logger log = LoggerFactory.getLogger(UserAccountManager.class);
 
-    private final PropertiesLoader properties;
     private final IUserDataManager database;
     private final QuestionManager questionAttemptDb;
     private final ILogManager logManager;
     private final MapperFacade dtoMapper;
     private final EmailManager emailManager;
-    private final ObjectMapper serializationMapper;
     
     private final Cache<String, AnonymousUser> temporaryUserCache;
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
-    
+    private final UserAuthenticationManager userAuthenticationManager;
+
     /**
      * Create an instance of the user manager class.
      * 
@@ -130,15 +110,18 @@ public class UserManager {
      * @param emailQueue
      *            - the preconfigured communicator manager for sending e-mails.
      * @param logManager
-     *            - so that we can log events for users..
+     *            - so that we can log events for users.
+     * @param userAuthenticationManager
+     *            - Class responsible for handling sessions, passwords and linked accounts.
      */
     @Inject
-    public UserManager(final IUserDataManager database, final QuestionManager questionDb,
+    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager) {
+            final MapperFacade dtoMapper, final EmailManager emailQueue, final ILogManager logManager,
+            final UserAuthenticationManager userAuthenticationManager) {
         this(database, questionDb, properties, providersToRegister, dtoMapper, emailQueue, CacheBuilder.newBuilder()
                 .expireAfterAccess(ANONYMOUS_SESSION_DURATION_IN_MINUTES, TimeUnit.MINUTES)
-                .<String, AnonymousUser> build(), logManager);
+                .<String, AnonymousUser> build(), logManager, userAuthenticationManager);
     }
 
     /**
@@ -160,11 +143,14 @@ public class UserManager {
      *            - the preconfigured communicator manager for sending e-mails.
      * @param logManager
      *            - so that we can log events for users..
+     * @param userAuthenticationManager
+     *            - Class responsible for handling sessions, passwords and linked accounts.
      */
-    public UserManager(final IUserDataManager database, final QuestionManager questionDb,
+    public UserAccountManager(final IUserDataManager database, final QuestionManager questionDb,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
             final MapperFacade dtoMapper, final EmailManager emailQueue,
-            final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager) {
+            final Cache<String, AnonymousUser> temporaryUserCache, final ILogManager logManager,
+            final UserAuthenticationManager userAuthenticationManager) {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
         Validate.notNull(properties.getProperty(HOST_NAME));
@@ -173,13 +159,13 @@ public class UserManager {
         this.questionAttemptDb = questionDb;
         this.temporaryUserCache = temporaryUserCache;
         this.logManager = logManager;
-        this.properties = properties;
 
         this.registeredAuthProviders = providersToRegister;
         this.dtoMapper = dtoMapper;
 
         this.emailManager = emailQueue;
-        this.serializationMapper = new ObjectMapper();
+
+        this.userAuthenticationManager = userAuthenticationManager;
     }
 
     /**
@@ -200,7 +186,7 @@ public class UserManager {
      */
     public URI authenticate(final HttpServletRequest request, final String provider) 
             throws IOException, AuthenticationProviderMappingException {
-        return this.initiateAuthenticationFlow(request, provider);
+        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
     }
 
     /**
@@ -224,7 +210,7 @@ public class UserManager {
         // record our intention to link an account.
         request.getSession().setAttribute(LINK_ACCOUNT_PARAM_NAME, Boolean.TRUE);
 
-        return this.initiateAuthenticationFlow(request, provider);
+        return this.userAuthenticationManager.getThirdPartyAuthURI(request, provider);
     }
 
     /**
@@ -233,6 +219,7 @@ public class UserManager {
      * 
      * This method will either register a new user and attach the linkedAccount or locate the existing account of the
      * user and create a session for that.
+     * 
      * @param request
      *            - http request from the user - should contain url encoded token details.
      * @param response
@@ -240,96 +227,78 @@ public class UserManager {
      * @param provider
      *            - the provider who has just authenticated the user.
      * @return Response containing the user object. Alternatively a SegueErrorResponse could be returned.
-     * @throws AuthenticationProviderMappingException - if we cannot locate an appropriate authenticator.
-     * @throws SegueDatabaseException - if there is a local database error.
-     * @throws IOException - Problem reading something
-     * @throws NoUserException - If the user doesn't exist with the provider.
-     * @throws AuthenticatorSecurityException - If there is a security probably with the authenticator.
-     * @throws CrossSiteRequestForgeryException - as per exception description.
-     * @throws CodeExchangeException - as per exception description.
-     * @throws AuthenticationCodeException - as per exception description.
+     * @throws AuthenticationProviderMappingException
+     *             - if we cannot locate an appropriate authenticator.
+     * @throws SegueDatabaseException
+     *             - if there is a local database error.
+     * @throws IOException
+     *             - Problem reading something
+     * @throws NoUserException
+     *             - If the user doesn't exist with the provider.
+     * @throws AuthenticatorSecurityException
+     *             - If there is a security probably with the authenticator.
+     * @throws CrossSiteRequestForgeryException
+     *             - as per exception description.
+     * @throws CodeExchangeException
+     *             - as per exception description.
+     * @throws AuthenticationCodeException
+     *             - as per exception description.
      */
     public RegisteredUserDTO authenticateCallback(final HttpServletRequest request,
             final HttpServletResponse response, final String provider) throws AuthenticationProviderMappingException,
             AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException,
             AuthenticationCodeException, CodeExchangeException, CrossSiteRequestForgeryException {
-        IAuthenticator authenticator = mapToProvider(provider);
+        IAuthenticator authenticator = this.userAuthenticationManager.mapToProvider(provider);
+        // get the auth provider user data.
+        UserFromAuthProvider providerUserDO = this.userAuthenticationManager.getThirdPartyUserInformation(request,
+                provider);
 
-        IOAuthAuthenticator oauthProvider;
-
-        // this is a reference that the provider can use to look up user details.
-        String providerSpecificUserLookupReference = null;
-
-        // if we are an OAuth2Provider complete next steps of oauth
-        if (authenticator instanceof IOAuthAuthenticator) {
-            oauthProvider = (IOAuthAuthenticator) authenticator;
-
-            providerSpecificUserLookupReference = this.getOauthInternalRefCode(oauthProvider, request);
-        } else {
-            throw new AuthenticationProviderMappingException("Unable to map to a known authenticator. The provider: "
-                    + provider + " is unknown");
+        // if the UserFromAuthProvider exists then this is a login request so process it.
+        RegisteredUser userFromLinkedAccount = this.userAuthenticationManager.getSegueUserFromLinkedAccount(
+                authenticator.getAuthenticationProvider(), providerUserDO.getProviderUserId());
+        if (userFromLinkedAccount != null) {
+            return this.logUserIn(request, response, userFromLinkedAccount);
         }
 
-        // If the user is currently logged in this must be a
-        // request to link accounts
         RegisteredUser currentUser = getCurrentRegisteredUserDO(request);
-
-        // if we are already logged in - check if we have already got this
-        // provider assigned already? If not this is probably a link request.
+        // if the user is currently logged in and this is a request for a linked account, then create the new link.
         if (null != currentUser) {
+            Boolean intentionToLinkRegistered = (Boolean) request.getSession().getAttribute(LINK_ACCOUNT_PARAM_NAME);
+            if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
+                throw new SegueDatabaseException("User is already authenticated - "
+                        + "expected request to link accounts but none was found.");
+            }
+            
             List<AuthenticationProvider> usersProviders = this.database.getAuthenticationProvidersByUser(currentUser);
-
-            if (null != usersProviders && usersProviders.contains(authenticator.getAuthenticationProvider())) {
-                // they are already connected to this provider just return the user object
-                return this.convertUserDOToUserDTO(currentUser);
-            } else {
-                // This extra check is to prevent callbacks to this method from merging accounts unexpectedly
-                Boolean intentionToLinkRegistered = (Boolean) request.getSession().getAttribute(
-                        LINK_ACCOUNT_PARAM_NAME);
-                if (intentionToLinkRegistered == null || !intentionToLinkRegistered) {
-                    throw new SegueDatabaseException("User is already authenticated - "
-                            + "expected request to link accounts but none was found.");
-                }
-
+            if (!usersProviders.contains(authenticator.getAuthenticationProvider())) {
+                // create linked account
+                this.userAuthenticationManager.linkProviderToExistingAccount(currentUser,
+                        authenticator.getAuthenticationProvider(), providerUserDO);
                 // clear link accounts intention until next time
                 request.removeAttribute(LINK_ACCOUNT_PARAM_NAME);
-
-                // Decide if this is a link operation or an authenticate / register
-                // operation.
-                log.debug("Linking existing user to another provider account.");
-                this.linkProviderToExistingAccount(currentUser, oauthProvider, providerSpecificUserLookupReference);
-                return this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
             }
-        }
 
-        RegisteredUser segueUserDO = this.getUserFromFederatedProvider(oauthProvider,
-                providerSpecificUserLookupReference);
-        RegisteredUserDTO segueUserDTO = null;
-        // decide if this is a registration or an existing user.
-        if (null == segueUserDO) {
-            // new user
-            segueUserDO = this.registerUserWithFederatedProvider(oauthProvider, providerSpecificUserLookupReference);
-            segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
-            segueUserDTO.setFirstLogin(true);
-            try {
-				emailManager.sendFederatedRegistrationConfirmation(segueUserDTO);
-			} catch (ContentManagerException e) {
-	            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
-			}
+            return this.convertUserDOToUserDTO(getCurrentRegisteredUserDO(request));
         } else {
-            // existing user
-            segueUserDTO = this.convertUserDOToUserDTO(segueUserDO);
+            // this must be a registration request
+            RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
+                    authenticator.getAuthenticationProvider(), providerUserDO);
+            RegisteredUserDTO segueUserDTO = this.logUserIn(request, response, segueUserDO);
+            segueUserDTO.setFirstLogin(true);
+            
+            try {
+                emailManager.sendFederatedRegistrationConfirmation(segueUserDTO);
+            } catch (ContentManagerException e) {
+                log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+            }
+            
+            return segueUserDTO;
         }
-
-        // create a signed session for this user so that we don't need
-        // to do this again for a while.
-        this.createSession(request, response, segueUserDO);
-        return segueUserDTO;
     }
 
     /**
-     * This method will attempt to authenticate the user using the provided credentials and if successful will provide a
-     * redirect response to the user based on the redirectUrl provided.
+     * This method will attempt to authenticate the user using the provided credentials and if successful will log the
+     * user in and create a session.
      * 
      * @param request
      *            - http request that we can attach the session to.
@@ -337,8 +306,10 @@ public class UserManager {
      *            to store the session in our own segue cookie.
      * @param provider
      *            - the provider the user wishes to authenticate with.
-     * @param credentials
-     *            - Credentials email and password credentials should be specified in a map
+     * @param email
+     *            - the email address of the account holder.
+     * @param password
+     *            - the plain text password.
      * @return A response containing the UserDTO object or a SegueErrorResponse.
      * @throws AuthenticationProviderMappingException
      *             - if we cannot find an authenticator
@@ -352,11 +323,11 @@ public class UserManager {
      *             - if there is a problem with the database.
      */
     public final RegisteredUserDTO authenticateWithCredentials(final HttpServletRequest request,
-            final HttpServletResponse response, final String provider, @Nullable final Map<String, String> credentials)
+            final HttpServletResponse response, final String provider, final String email, final String password)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
             NoCredentialsAvailableException, SegueDatabaseException {
-        Validate.notBlank(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME));
-        Validate.notNull(credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
+        Validate.notBlank(email);
+        Validate.notBlank(password);
 
         // get the current user based on their session id information.
         RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
@@ -364,52 +335,42 @@ public class UserManager {
             return currentUser;
         }
 
-        RegisteredUser user = this.authenticateWithCredentials(provider, 
-	            		credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME),
-	                    credentials.get(LOCAL_AUTH_PASSWORD_FIELDNAME));
-        this.createSession(request, response, user);
-        return this.convertUserDOToUserDTO(user);
+        RegisteredUser user = this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
 
+        return this.logUserIn(request, response, user);
     }
     
     /**
+     * Utility method to ensure that the credentials provided are valid. If they are invalid an exception will be thrown
+     * otherwise nothing will happen.
+     * 
      * @param provider
-     *            - the provider the user wishes to authenticate with.
+     *            - the password provider who will validate the credentials.
      * @param email
-     * 			  - the email the user wishes to use
-     * @param plainTextPassword
-     * 			  - the plain text password the user has provided
-     * @return
-     * 			  - a registered user object
+     *            - the email address of the account holder.
+     * @param password
+     *            - the plain text password.
      * @throws AuthenticationProviderMappingException
      *             - if we cannot find an authenticator
-     * @throws SegueDatabaseException
-     *             - if there is a problem with the database.
      * @throws IncorrectCredentialsProvidedException
      *             - if the password is incorrect
      * @throws NoUserException
      *             - if the user does not exist
      * @throws NoCredentialsAvailableException
      *             - If the account exists but does not have a local password
+     * @throws SegueDatabaseException
+     *             - if there is a problem with the database.
      */
-    public final RegisteredUser authenticateWithCredentials(final String provider, final String email, 
-    					final String plainTextPassword) throws AuthenticationProviderMappingException, 
-    					SegueDatabaseException, IncorrectCredentialsProvidedException, NoUserException, 
-    					NoCredentialsAvailableException {
+    public void ensureValidPassword(final String provider, final String email, final String password)
+            throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
+            NoCredentialsAvailableException, SegueDatabaseException {
         Validate.notBlank(email);
-        Validate.notNull(plainTextPassword);
-		IAuthenticator authenticator = mapToProvider(provider);
-		
-		if (authenticator instanceof IPasswordAuthenticator) {
-		    IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
-		    
-		    RegisteredUser user = passwordAuthenticator.authenticate(email, plainTextPassword);
-		    return user;
-		} else {
-		    throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
-		         + "raw credentials for the given provider: " + provider);
-		}
+        Validate.notBlank(password);
+
+        // this method will throw an error if the credentials are incorrect.
+        this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
     }
+   
 
     /**
      * Unlink User From AuthenticationProvider
@@ -430,20 +391,7 @@ public class UserManager {
     public void unlinkUserFromProvider(final RegisteredUserDTO user, final String providerString)
             throws SegueDatabaseException, MissingRequiredFieldException, AuthenticationProviderMappingException {
         RegisteredUser userDO = this.findUserById(user.getId());
-        // check if the provider is there to delete in the first place. If not just return.
-        if (!this.database.getAuthenticationProvidersByUser(userDO).contains(
-                this.mapToProvider(providerString).getAuthenticationProvider())) {
-            return;
-        }
-
-        // make sure that the change doesn't prevent the user from logging in again.
-        if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1) || userDO.getPassword() != null) {
-            this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
-                    .getAuthenticationProvider());
-        } else {
-            throw new MissingRequiredFieldException("This modification would mean that the user"
-                    + " no longer has a way of authenticating. Failing change.");
-        }
+        this.userAuthenticationManager.unlinkUserAndProvider(userDO, providerString);
     }
 
     /**
@@ -625,7 +573,7 @@ public class UserManager {
         try {
             return this.getCurrentRegisteredUser(request);
         } catch (NoUserLoggedInException e) {
-            return this.getAnonymousUser(request);
+            return this.getAnonymousUserDTO(request);
         }
     }
 
@@ -639,17 +587,7 @@ public class UserManager {
      */
     public void logUserOut(final HttpServletRequest request, final HttpServletResponse response) {
         Validate.notNull(request);
-        try {
-            request.getSession().invalidate();
-            Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
-            logoutCookie.setPath("/");
-            logoutCookie.setMaxAge(0);
-            logoutCookie.setHttpOnly(true);
-
-            response.addCookie(logoutCookie);
-        } catch (IllegalStateException e) {
-            log.info("The session has already been invalidated. " + "Unable to logout again...", e);
-        }
+        this.userAuthenticationManager.destroyUserSession(request, response);
     }
 
     /**
@@ -697,7 +635,7 @@ public class UserManager {
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
 
-        this.checkForSeguePasswordChange(user, userToSave);
+        this.userAuthenticationManager.checkForSeguePasswordChange(user, userToSave);
 
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
@@ -739,10 +677,8 @@ public class UserManager {
         logManager.logInternalEvent(this.convertUserDOToUserDTO(userToReturn), Constants.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
-        this.createSession(request, response, userToReturn);
-
         // return it to the caller.
-        return this.convertUserDOToUserDTO(userToReturn);
+        return this.logUserIn(request, response, userToReturn);
     }
 
     /**
@@ -829,7 +765,7 @@ public class UserManager {
             userToSave.setSchoolId(null);
         }
         
-        this.checkForSeguePasswordChange(user, userToSave);
+        this.userAuthenticationManager.checkForSeguePasswordChange(user, userToSave);
 
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
@@ -897,42 +833,8 @@ public class UserManager {
     public final void resetPasswordRequest(final RegisteredUserDTO userObject) throws InvalidKeySpecException,
             NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
         RegisteredUser user = this.findUserByEmail(userObject.getEmail());
-
-        if (user == null) {
-            // Email address does not exist in the DB
-            // Fail silently
-            log.error(String.format("Unable to locate user with email (%s) while "
-                    + "trying to generate a reset token. Failing silently.", userObject == null ? "null email address"
-                    : userObject.getEmail()));
-
-            return;
-        }
-
-        if (this.database.hasALinkedAccount(user) && (user.getPassword() == null || user.getPassword().isEmpty())) {
-            // User is not authenticated locally
-            this.sendFederatedAuthenticatorResetMessage(user);
-            return;
-        }
-
-        // User is valid and authenticated locally, proceed with reset
-        // Generate token
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        user = authenticator.createPasswordResetTokenForUser(user);
-
-        // Save user object
-        this.database.createOrUpdateUser(user);
-
-        log.info(String.format("Sending password reset message to %s", user.getEmail()));
-        try {
-        	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
-            this.emailManager.sendPasswordReset(userDTO, user.getResetToken());
-        } catch (ContentManagerException e) {
-            log.debug("ContentManagerException " + e.getMessage());
-        } catch (NoUserException e) {
-            log.debug("ContentManagerException " + e.getMessage());
-		}
+        RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
+        this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
     }
 
     /**
@@ -972,7 +874,7 @@ public class UserManager {
             return;
         }
 
-        // User is valid and authenticated locally, proceed with verification
+        // TODO: Email verification stuff does not belong in the password authenticator... It should be moved.
         // Generate token
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
@@ -1089,70 +991,9 @@ public class UserManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public final RegisteredUserDTO resetPassword(final String token, final RegisteredUser userObject)
+    public RegisteredUserDTO resetPassword(final String token, final RegisteredUser userObject)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
-        // Ensure new password is valid
-        if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
-            throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
-        }
-
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        // Ensure reset token is valid
-        RegisteredUser user = this.findUserByResetToken(token);
-        if (!authenticator.isValidResetToken(user)) {
-            throw new InvalidTokenException();
-        }
-
-        // Set user's password
-        authenticator.setOrChangeUsersPassword(user, userObject.getPassword());
-
-        // clear plainTextPassword
-        userObject.setPassword(null);
-
-        // Nullify reset token
-        user.setResetToken(null);
-        user.setResetExpiry(null);
-
-        // Save user
-        RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-        log.info(String.format("Password Reset for user (%s) has completed successfully.",
-                createOrUpdateUser.getId()));
-        return this.convertUserDOToUserDTO(createOrUpdateUser);
-    }
-    
-    /**
-     * This method will change the users' current password.
-     *
-     * @param userObject
-     *            - the supplied user DO
-     * @return the user which has had the password reset.
-     * @throws InvalidTokenException
-     *             - If the token provided is invalid.
-     * @throws InvalidPasswordException
-     *             - If the password provided is invalid.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    public final RegisteredUserDTO changePassword(final RegisteredUser userObject, final String passwordCurrent)
-            throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
-        // Ensure new password is valid
-        if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
-            throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
-        }
-
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        // Set user's password
-        authenticator.setOrChangeUsersPassword(userObject, passwordCurrent);
-
-        // Save user
-        RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(userObject);
-        log.info(String.format("Password Reset for user (%s) has completed successfully.",
-                createOrUpdateUser.getId()));
-        return this.convertUserDOToUserDTO(createOrUpdateUser);
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, userObject));
     }
 
     /**
@@ -1183,50 +1024,24 @@ public class UserManager {
     }
 
     /**
-     * Create a session and attach it to the request provided.
+     * Logs the user in and creates the signed sessions.
      * 
      * @param request
-     *            to enable access to anonymous user information.
+     *            - for the session to be attached
      * @param response
-     *            to store the session in our own segue cookie.
+     *            - for the session to be attached.
      * @param user
-     *            account to associate the session with.
+     *            - the user who is being logged in.
+     * @return the DTO version of the user.
      */
-    private void createSession(final HttpServletRequest request, final HttpServletResponse response,
+    private RegisteredUserDTO logUserIn(final HttpServletRequest request, final HttpServletResponse response,
             final RegisteredUser user) {
-        Validate.notNull(response);
-        Validate.notNull(user);
-        Validate.notNull(user.getId());
-        SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-        Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
+        AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
 
-        String userId = user.getId().toString();
-        String hmacKey = properties.getProperty(HMAC_SALT);
-
-        try {
-            String currentDate = sessionDateFormat.format(new Date());
-            String sessionHMAC = this.calculateSessionHMAC(hmacKey, userId, currentDate);
-
-            Map<String, String> sessionInformation = ImmutableMap.of(SESSION_USER_ID, userId, DATE_SIGNED,
-                    currentDate, HMAC, sessionHMAC);
-
-            Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
-                    serializationMapper.writeValueAsString(sessionInformation));
-            authCookie.setMaxAge(sessionExpiryTimeInSeconds);
-            authCookie.setPath("/");
-            authCookie.setHttpOnly(true);
-
-            response.addCookie(authCookie);
-
-            AnonymousUser anonymousUser = this.temporaryUserCache.getIfPresent(this.getAnonymousUser(request)
-                    .getSessionId());
-
-            // now we want to clean up any data generated by the user while they weren't logged in.
-            mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
-            
-        } catch (JsonProcessingException e1) {
-            log.error("Unable to save cookie.", e1);
-        }
+        // now we want to clean up any data generated by the user while they weren't logged in.
+        mergeAnonymousUserWithRegisteredUser(anonymousUser, user);
+        
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.createUserSession(request, response, user));
     }
 
     /**
@@ -1268,39 +1083,6 @@ public class UserManager {
             } catch (SegueDatabaseException e) {
                 log.error("Unable to merge anonymously collected data with stored user object.", e);
             }
-        }
-    }
-    
-    /**
-     * Helper method to handle the setting of segue passwords when user objects are updated.
-     * 
-     * This method will mutate the password fields in both parameters.
-     * 
-     * @param userContainingPlainTextPassword
-     *            - the object to extract the plain text password from (and then nullify it)
-     * @param userToSave
-     *            - the object to store the hashed credentials prior to saving.
-     * 
-     * @throws AuthenticationProviderMappingException
-     *             - if we can't map to a valid authenticator.
-     * @throws InvalidPasswordException
-     *             - if the password is not valid.
-     */
-    private void checkForSeguePasswordChange(final RegisteredUser userContainingPlainTextPassword,
-            final RegisteredUser userToSave) throws AuthenticationProviderMappingException, InvalidPasswordException {
-        // do we need to do local password storage using the segue
-        // authenticator? I.e. is the password changing?
-        if (null != userContainingPlainTextPassword.getPassword()
-                && !userContainingPlainTextPassword.getPassword().isEmpty()) {
-            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
-                    .mapToProvider(AuthenticationProvider.SEGUE.name());
-            String plainTextPassword = userContainingPlainTextPassword.getPassword();
-
-            // clear reference to plainTextPassword
-            userContainingPlainTextPassword.setPassword(null);
-
-            // set the new password on the object to be saved.
-            authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
         }
     }
 
@@ -1373,308 +1155,13 @@ public class UserManager {
     }
 
     /**
-     * This method will trigger the authentication flow for a 3rd party authenticator.
-     * 
-     * This method can be used for regular logins, new registrations or for linking 3rd party authenticators to an
-     * existing Segue user account.
-     * 
-     * @param request
-     *            - http request that we can attach the session to and that already has a redirect url attached.
-     * @param provider
-     *            - the provider the user wishes to authenticate with.
-     * @return A json response containing a URI to the authentication provider if authorization / login is required.
-     *         Alternatively a SegueErrorResponse could be returned.
-     * @throws IOException - 
-     * @throws AuthenticationProviderMappingException - as per exception description.
-     */
-    private URI initiateAuthenticationFlow(final HttpServletRequest request, final String provider) 
-            throws IOException, AuthenticationProviderMappingException {
-        IAuthenticator federatedAuthenticator = mapToProvider(provider);
-
-        // if we are an OAuthProvider redirect to the provider
-        // authorisation URL.
-        URI redirectLink = null;
-        if (federatedAuthenticator instanceof IOAuth2Authenticator) {
-            IOAuth2Authenticator oauth2Provider = (IOAuth2Authenticator) federatedAuthenticator;
-            String antiForgeryTokenFromProvider = oauth2Provider.getAntiForgeryStateToken();
-
-            // Store antiForgeryToken in the users session.
-            request.getSession().setAttribute(STATE_PARAM_NAME, antiForgeryTokenFromProvider);
-
-            redirectLink = URI.create(oauth2Provider.getAuthorizationUrl(antiForgeryTokenFromProvider));
-        } else if (federatedAuthenticator instanceof IOAuth1Authenticator) {
-            IOAuth1Authenticator oauth1Provider = (IOAuth1Authenticator) federatedAuthenticator;
-            OAuth1Token token = oauth1Provider.getRequestToken();
-
-            // Store token and secret in the users session.
-            request.getSession().setAttribute(OAUTH_TOKEN_PARAM_NAME, token.getToken());
-
-            redirectLink = URI.create(oauth1Provider.getAuthorizationUrl(token));
-        } else {
-            throw new AuthenticationProviderMappingException("Unable to map to a known authenticator. "
-                    + "The provider: " + provider + " is unknown");
-        }
-
-        return redirectLink;
-    }
-
-    /**
-     * Executes checks on the users sessions to ensure it is valid
-     * 
-     * Checks include verifying the HMAC and the session creation date.
-     * 
-     * @param sessionInformation
-     *            - map containing session information retrieved from the cookie.
-     * @return true if it is still valid, false if not.
-     */
-    private boolean isValidUsersSession(final Map<String, String> sessionInformation) {
-        Validate.notNull(sessionInformation);
-
-        Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));
-
-        SimpleDateFormat sessionDateFormat = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-
-        String hmacKey = properties.getProperty(HMAC_SALT);
-
-        String userId = sessionInformation.get(SESSION_USER_ID);
-        String sessionCreationDate = sessionInformation.get(DATE_SIGNED);
-        String sessionHMAC = sessionInformation.get(HMAC);
-
-        String ourHMAC = this.calculateSessionHMAC(hmacKey, userId, sessionCreationDate);
-
-        if (null == userId) {
-            log.debug("No session set so not validating user identity.");
-            return false;
-        }
-
-        // check it hasn't expired
-        Calendar sessionExpiryDate = Calendar.getInstance();
-        try {
-            sessionExpiryDate.setTime(sessionDateFormat.parse(sessionCreationDate));
-            sessionExpiryDate.add(Calendar.SECOND, sessionExpiryTimeInSeconds);
-
-            if (new Date().after(sessionExpiryDate.getTime())) {
-                log.debug("Session expired");
-                return false;
-            }
-        } catch (ParseException e) {
-            return false;
-        }
-
-        // check no one has tampered with the session.
-        if (ourHMAC.equals(sessionHMAC)) {
-            log.debug("Valid user session continuing...");
-            return true;
-        } else {
-            log.debug("Invalid HMAC detected for user id " + userId);
-            return false;
-        }
-    }
-
-    /**
-     * Calculate the session HMAC value based on the properties of interest.
-     * 
-     * @param key
-     *            - secret key.
-     * @param userId
-     *            - User Id
-     * @param currentDate
-     *            - Current date
-     * @return HMAC signature.
-     */
-    private String calculateSessionHMAC(final String key, final String userId, final String currentDate) {
-        return UserManager.calculateHMAC(key, userId + "|" + currentDate);
-    }
-
-    /**
-     * Generate an HMAC using a key and the data to sign.
-     * 
-     * @param key
-     *            - HMAC key for signing
-     * @param dataToSign
-     *            - data to be signed
-     * @return HMAC - Unique HMAC.
-     */
-    public static String calculateHMAC(final String key, final String dataToSign) {
-        Validate.notEmpty(key, "Signing key cannot be blank.");
-        Validate.notEmpty(dataToSign, "Data to sign cannot be blank.");
-
-        try {
-            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA_ALGORITHM);
-            Mac mac = Mac.getInstance(HMAC_SHA_ALGORITHM);
-            mac.init(signingKey);
-
-            byte[] rawHmac = mac.doFinal(dataToSign.getBytes());
-
-            String result = new String(Base64.encodeBase64(rawHmac));
-            return result;
-        } catch (GeneralSecurityException e) {
-            log.warn("Unexpected error while creating hash: " + e.getMessage(), e);
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /**
-     * Attempts to map a string to a known provider.
-     * 
-     * @param provider
-     *            - String representation of the provider requested
-     * @return the FederatedAuthenticator object which can be used to get a user.
-     * @throws AuthenticationProviderMappingException
-     *             if we are unable to locate the provider requested.
-     */
-    private IAuthenticator mapToProvider(final String provider) throws AuthenticationProviderMappingException {
-        Validate.notEmpty(provider, "Provider name must not be empty or null if we are going "
-                + "to map it to an implementation.");
-
-        AuthenticationProvider enumProvider = null;
-        try {
-            enumProvider = AuthenticationProvider.valueOf(provider.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new AuthenticationProviderMappingException("The provider requested is "
-                    + "invalid and not a known AuthenticationProvider: " + provider);
-        }
-
-        if (!registeredAuthProviders.containsKey(enumProvider)) {
-            throw new AuthenticationProviderMappingException("This authentication provider"
-                    + " has not been registered / implemented yet: " + provider);
-        }
-
-        log.debug("Mapping provider: " + provider + " to " + enumProvider);
-
-        return this.registeredAuthProviders.get(enumProvider);
-    }
-
-    /**
-     * Verify with the request that there is no CSRF violation.
-     * 
-     * @param request
-     *            - http request to verify there is no CSRF
-     * @param oauthProvider
-     *            -
-     * @return true if we are happy , false if we think a violation has occurred.
-     * @throws CrossSiteRequestForgeryException
-     *             - if we suspect cross site request forgery.
-     */
-    private boolean ensureNoCSRF(final HttpServletRequest request, final IOAuthAuthenticator oauthProvider)
-            throws CrossSiteRequestForgeryException {
-        Validate.notNull(request);
-
-        String key;
-        if (oauthProvider instanceof IOAuth2Authenticator) {
-            key = STATE_PARAM_NAME;
-        } else if (oauthProvider instanceof IOAuth1Authenticator) {
-            key = OAUTH_TOKEN_PARAM_NAME;
-        } else {
-            throw new CrossSiteRequestForgeryException("Provider not recognized.");
-        }
-
-        // to deal with cross site request forgery
-        String csrfTokenFromUser = (String) request.getSession().getAttribute(key);
-        String csrfTokenFromProvider = request.getParameter(key);
-
-        if (null == csrfTokenFromUser || null == csrfTokenFromProvider
-                || !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
-            log.error("Invalid state parameter - Provider said: " + request.getParameter(STATE_PARAM_NAME)
-                    + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
-            return false;
-        } else {
-            log.debug("State parameter matches - Provider said: " + request.getParameter(STATE_PARAM_NAME)
-                    + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
-            return true;
-        }
-    }
-
-    /**
-     * This method should handle the situation where we haven't seen a user before.
-     * 
-     * @param user
-     *            from authentication provider
-     * @param provider
-     *            information
-     * @param providerUserId
-     *            - unique id of provider.
-     * @return The localUser account user id of the user after registration.
-     * @throws DuplicateAccountException
-     *             - If there is an account that already exists in the system with matching indexed fields.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private Long registerUser(final RegisteredUser user, final AuthenticationProvider provider,
-            final String providerUserId) throws DuplicateAccountException, SegueDatabaseException {
-        RegisteredUser newlyRegisteredUser = database.registerNewUserWithProvider(user, provider, providerUserId);
-        return newlyRegisteredUser.getId();
-    }
-
-    /**
-     * This method will attempt to find a segue user using a 3rd party provider and a unique id that identifies the user
-     * to the provider.
-     * 
-     * @param provider
-     *            - the provider that we originally validated with
-     * @param providerId
-     *            - the unique ID of the user as given to us from the provider.
-     * @return A user object or null if we were unable to find the user with the information provided.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser getUserFromLinkedAccount(final AuthenticationProvider provider, final String providerId)
-            throws SegueDatabaseException {
-        Validate.notNull(provider);
-        Validate.notBlank(providerId);
-
-        RegisteredUser user = database.getByLinkedAccount(provider, providerId);
-        if (null == user) {
-            log.debug("Unable to locate user based on provider " + "information provided.");
-        }
-        return user;
-    }
-
-    /**
-     * Gets an existing Segue user from a 3rd party authenticator.
-     * 
-     * @param federatedAuthenticator
-     *            the federatedAuthenticator we are using for authentication
-     * @param providerSpecificUserLookupReference
-     *            - the look up reference provided by the authenticator after any authenticator specific actions have
-     *            been completed.
-     * @return a Segue UserDO that exists in the segue database.
-     * @throws AuthenticatorSecurityException
-     *             - error with authenticator.
-     * @throws NoUserException
-     *             - If we are unable to locate the user id based on the lookup reference provided.
-     * @throws IOException
-     *             - if there is an io error.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser getUserFromFederatedProvider(final IFederatedAuthenticator federatedAuthenticator,
-            final String providerSpecificUserLookupReference) throws SegueDatabaseException, NoUserException,
-            IOException, AuthenticatorSecurityException {
-        UserFromAuthProvider userFromProvider = federatedAuthenticator
-                .getUserInfo(providerSpecificUserLookupReference);
-
-        if (null == userFromProvider) {
-            log.warn("Unable to create user for the provider "
-                    + federatedAuthenticator.getAuthenticationProvider().name());
-            throw new NoUserException();
-        }
-
-        log.debug("User with name " + userFromProvider.getEmail() + " retrieved");
-
-        return this.getUserFromLinkedAccount(federatedAuthenticator.getAuthenticationProvider(),
-                userFromProvider.getProviderUserId());
-    }
-
-    /**
      * This method should use the provider specific reference to either register a new user or retrieve an existing
      * user.
      * 
      * @param federatedAuthenticator
      *            the federatedAuthenticator we are using for authentication
-     * @param providerSpecificUserLookupReference
-     *            - the look up reference provided by the authenticator after any authenticator specific actions have
-     *            been completed.
+     * @param userFromProvider
+     *            - the user object returned by the auth provider.
      * @return a Segue UserDO that exists in the segue database.
      * @throws AuthenticatorSecurityException
      *             - error with authenticator.
@@ -1685,132 +1172,38 @@ public class UserManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    private RegisteredUser registerUserWithFederatedProvider(final IFederatedAuthenticator federatedAuthenticator,
-            final String providerSpecificUserLookupReference) throws AuthenticatorSecurityException, NoUserException,
+    private RegisteredUser registerUserWithFederatedProvider(final AuthenticationProvider federatedAuthenticator,
+            final UserFromAuthProvider userFromProvider) throws AuthenticatorSecurityException, NoUserException,
             IOException, SegueDatabaseException {
-        // get user info from federated provider
-        RegisteredUser localUserInformation = this.getUserFromFederatedProvider(federatedAuthenticator,
-                providerSpecificUserLookupReference);
 
-        // decide if we need to register a new user or link to an existing
-        // account
-        if (null == localUserInformation) {
-            log.debug(String.format("New registration (%s) as user does not already exist.", federatedAuthenticator
-                    .getAuthenticationProvider().name()));
+        log.debug(String.format("New registration (%s) as user does not already exist.", federatedAuthenticator));
 
-            UserFromAuthProvider userFromProvider = federatedAuthenticator
-                    .getUserInfo(providerSpecificUserLookupReference);
-
-            if (null == userFromProvider) {
-                log.warn("Unable to create user for the provider "
-                        + federatedAuthenticator.getAuthenticationProvider().name());
-                throw new NoUserException();
-            }
-
-            RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
-            newLocalUser.setRegistrationDate(new Date());
-
-            // register user
-            Long localUserId = registerUser(newLocalUser, federatedAuthenticator.getAuthenticationProvider(),
-                    userFromProvider.getProviderUserId());
-            localUserInformation = this.database.getById(localUserId);
-
-            if (null == localUserInformation) {
-                // we just put it in so something has gone very wrong.
-                log.error("Failed to retreive user even though we " + "just put it in the database.");
-                throw new NoUserException();
-            }
-
-            logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation),
-                    Constants.USER_REGISTRATION,
-                    ImmutableMap.builder().put("provider", federatedAuthenticator.getAuthenticationProvider().name())
-                            .build());
-
-        } else {
-            log.error("Returning user detected" + localUserInformation.getId()
-                    + " unable to create a new segue user.");
+        if (null == userFromProvider) {
+            log.warn("Unable to create user for the provider "
+                    + federatedAuthenticator);
+            throw new NoUserException();
         }
+
+        RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
+        newLocalUser.setRegistrationDate(new Date());
+
+        // register user
+        RegisteredUser newlyRegisteredUser = database.registerNewUserWithProvider(newLocalUser,
+                federatedAuthenticator, userFromProvider.getProviderUserId());
+
+        RegisteredUser localUserInformation = this.database.getById(newlyRegisteredUser.getId());
+
+        if (null == localUserInformation) {
+            // we just put it in so something has gone very wrong.
+            log.error("Failed to retreive user even though we " + "just put it in the database.");
+            throw new NoUserException();
+        }
+
+        logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), Constants.USER_REGISTRATION,
+                ImmutableMap.builder().put("provider", federatedAuthenticator.name())
+                        .build());
 
         return localUserInformation;
-    }
-
-    /**
-     * Link Provider To Existing Account.
-     * 
-     * @param currentUser
-     *            - the current user to link provider to.
-     * @param federatedAuthenticator
-     *            the federatedAuthenticator we are using for authentication
-     * @param providerSpecificUserLookupReference
-     *            - the look up reference provided by the authenticator after any authenticator specific actions have
-     *            been completed.
-     * 
-     * @throws AuthenticatorSecurityException
-     *             - If a third party authenticator fails a security check.
-     * @throws NoUserException
-     *             - If we are unable to find a user that matches
-     * @throws IOException
-     *             - If there is a problem reading from the data source.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private void linkProviderToExistingAccount(final RegisteredUser currentUser,
-            final IFederatedAuthenticator federatedAuthenticator, final String providerSpecificUserLookupReference)
-            throws AuthenticatorSecurityException, NoUserException, IOException, SegueDatabaseException {
-        Validate.notNull(currentUser);
-        Validate.notNull(federatedAuthenticator);
-        Validate.notEmpty(providerSpecificUserLookupReference);
-
-        // get user info from federated provider
-        UserFromAuthProvider userFromProvider = federatedAuthenticator
-                .getUserInfo(providerSpecificUserLookupReference);
-
-        this.database.linkAuthProviderToAccount(currentUser, federatedAuthenticator.getAuthenticationProvider(),
-                userFromProvider.getProviderUserId());
-
-    }
-
-    /**
-     * This method is an oauth2 specific method which will ultimately provide an internal reference number that the
-     * oauth2 provider can use to lookup the information of the user who has just authenticated.
-     * 
-     * @param oauthProvider
-     *            - The provider to authenticate against.
-     * @param request
-     *            - The request that will contain session information.
-     * @return an internal reference number that will allow retrieval of the users information from the provider.
-     * @throws AuthenticationCodeException
-     *             - possible authentication code issues.
-     * @throws IOException
-     *             - error reading from client key?
-     * @throws CodeExchangeException
-     *             - exception whilst exchanging codes
-     * @throws NoUserException
-     *             - cannot find the user requested
-     * @throws CrossSiteRequestForgeryException
-     *             - Unable to guarantee no CSRF
-     */
-    private String getOauthInternalRefCode(final IOAuthAuthenticator oauthProvider, final HttpServletRequest request)
-            throws AuthenticationCodeException, IOException, CodeExchangeException, NoUserException,
-            CrossSiteRequestForgeryException {
-        // verify there is no cross site request forgery going on.
-        if (request.getQueryString() == null || !ensureNoCSRF(request, oauthProvider)) {
-            throw new CrossSiteRequestForgeryException("CSRF check failed");
-        }
-
-        // this will have our authorization code within it.
-        StringBuffer fullUrlBuf = request.getRequestURL();
-        fullUrlBuf.append('?').append(request.getQueryString());
-
-        // extract auth code from string buffer
-        String authCode = oauthProvider.extractAuthCode(fullUrlBuf.toString());
-
-        if (authCode != null) {
-            String internalReference = oauthProvider.exchangeCode(authCode);
-            return internalReference;
-        } else {
-            throw new AuthenticationCodeException("User denied access to our app.");
-        }
     }
 
     /**
@@ -1887,104 +1280,7 @@ public class UserManager {
      *         invalid session
      */
     private RegisteredUser getCurrentRegisteredUserDO(final HttpServletRequest request) {
-        Validate.notNull(request);
-
-        Map<String, String> currentSessionInformation;
-        try {
-            currentSessionInformation = this.getSegueSessionFromRequest(request);
-        } catch (IOException e1) {
-            log.error("Error parsing session information ");
-            return null;
-        } catch (InvalidSessionException e) {
-            log.debug("We cannot read the session information. It probably doesn't exist");
-            // assuming that no user is logged in.
-            return null;
-        }
-
-        // check if the users session is valid.
-        if (!this.isValidUsersSession(currentSessionInformation)) {
-            log.debug("User session has failed validation. Assume they are not logged in. Session: "
-                    + currentSessionInformation);
-            return null;
-        }
-
-        // retrieve the user from database.
-        try {
-            // get the current user based on their session id information
-            Long currentUserId = Long.parseLong(currentSessionInformation.get(SESSION_USER_ID));
-            
-            // should be ok as isValidUser checks this.
-            Validate.notNull(currentUserId);
-            
-            return database.getById(currentUserId);
-        } catch (SegueDatabaseException e) {
-            log.error("Internal Database error. Failed to resolve current user.", e);
-            return null;
-        } catch (NumberFormatException e) {
-            log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
-            return null;            
-        }
-    }
-
-    /**
-     * This method will send a message to a user explaining that they only use a federated authenticator.
-     *
-     * @param user
-     *            - a user with the givenName, email and token fields set
-     * @throws CommunicationException
-     *             - if a fault occurred whilst sending the communique
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user) throws CommunicationException,
-            SegueDatabaseException {
-    	Validate.notNull(user);
-    	
-        // Get the user's federated authenticators
-        List<AuthenticationProvider> providers = this.database.getAuthenticationProvidersByUser(user);
-        List<String> providerNames = new ArrayList<>();
-        for (AuthenticationProvider provider : providers) {
-            IAuthenticator authenticator = this.registeredAuthProviders.get(provider);
-            if (!(authenticator instanceof IFederatedAuthenticator)) {
-                continue;
-            }
-
-            String providerName = provider.name().toLowerCase();
-            providerName = providerName.substring(0, 1).toUpperCase() + providerName.substring(1);
-            providerNames.add(providerName);
-        }
-
-        String providersString;
-        if (providerNames.size() == 1) {
-            providersString = providerNames.get(0);
-        } else {
-            StringBuilder providersBuilder = new StringBuilder();
-            for (int i = 0; i < providerNames.size(); i++) {
-                if (i == providerNames.size() - 1) {
-                    providersBuilder.append(" and ");
-                } else if (i > 1) {
-                    providersBuilder.append(", ");
-                }
-                providersBuilder.append(providerNames.get(i));
-            }
-            providersString = providersBuilder.toString();
-        }
-
-        String providerWord = "provider";
-        if (providerNames.size() > 1) {
-            providerWord += "s";
-        }
-
-        try {
-        	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
-            emailManager.sendFederatedPasswordReset(userDTO, providersString, providerWord);
-        } catch (ContentManagerException contentException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-            				contentException.getMessage()));
-        } catch (NoUserException noUserException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-            				noUserException.getMessage()));
-		}
+        return this.userAuthenticationManager.getUserFromSession(request);
     }
 
     /**
@@ -1994,7 +1290,7 @@ public class UserManager {
      *            - request containing session information.
      * @return An anonymous user containing any anonymous question attempts (which could be none)
      */
-    private AnonymousUserDTO getAnonymousUser(final HttpServletRequest request) {
+    private AnonymousUserDTO getAnonymousUserDTO(final HttpServletRequest request) {
         return this.dtoMapper.map(this.getAnonymousUserDO(request), AnonymousUserDTO.class);
     }
 
@@ -2037,41 +1333,6 @@ public class UserManager {
     }
 
     /**
-     * This method will extract the segue session information from a given request.
-     * 
-     * @param request
-     *            - possibly containing a segue cookie.
-     * @return The segue session information (unchecked or validated)
-     * @throws IOException
-     *             - problem parsing session information.
-     * @throws InvalidSessionException
-     *             - if there is no session set or if it is not valid.
-     */
-    private Map<String, String> getSegueSessionFromRequest(final HttpServletRequest request) throws IOException,
-            InvalidSessionException {
-        Cookie segueAuthCookie = null;
-        if (request.getCookies() == null) {
-            throw new InvalidSessionException("There are no cookies set.");
-        }
-
-        for (Cookie c : request.getCookies()) {
-            if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
-                segueAuthCookie = c;
-            }
-        }
-
-        if (null == segueAuthCookie) {
-            throw new InvalidSessionException("There are no cookies set.");
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<String, String> sessionInformation = this.serializationMapper.readValue(segueAuthCookie.getValue(),
-                HashMap.class);
-
-        return sessionInformation;
-    }
-
-    /**
      * Update the users' last seen field.
      * 
      * @param user
@@ -2091,5 +1352,4 @@ public class UserManager {
             }
         }
     }
-
 }

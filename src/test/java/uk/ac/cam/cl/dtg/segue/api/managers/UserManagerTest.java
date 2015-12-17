@@ -133,7 +133,7 @@ public class UserManagerTest {
      */
     @Test
     public final void getCurrentUser_isNotLoggedIn_NoUserLoggedInExceptionThrown() {
-        UserManager userManager = buildTestUserManager();
+        UserAccountManager userManager = buildTestUserManager();
 
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -165,14 +165,15 @@ public class UserManagerTest {
      */
     @Test
     public final void getCurrentUser_IsAuthenticatedWithValidHMAC_userIsReturned() throws Exception {
-        UserManager userManager = buildTestUserManager();
+        UserAccountManager userManager = buildTestUserManager();
+        UserAuthenticationManager authManager = buildTestAuthenticationManager();
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
         String validLegacyUserId = "533ee66842f639e95ce35e29";
         Long validUserId = 533L;
         String validDateString = sdf.format(new Date());
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, validUserId.toString(), validDateString);
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId.toString(), validDateString);
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
         RegisteredUser returnUser = new RegisteredUser(validLegacyUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
@@ -209,7 +210,7 @@ public class UserManagerTest {
      */
     @Test
     public final void authenticate_badProviderGiven_authenticationProviderException() throws Exception {
-        UserManager userManager = buildTestUserManager();
+        UserAccountManager userManager = buildTestUserManager();
 
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
@@ -241,7 +242,7 @@ public class UserManagerTest {
             throws IOException, AuthenticationProviderMappingException {
         // Arrange
         IOAuth2Authenticator dummyAuth = createMock(IOAuth2Authenticator.class);
-        UserManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
+        UserAccountManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
 
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -284,8 +285,9 @@ public class UserManagerTest {
     @Test
     public final void authenticateCallback_checkNewUserIsAuthenticated_createInternalUserAccount() throws Exception {
         IOAuth2Authenticator dummyAuth = createMock(FacebookAuthenticator.class);
-        UserManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
-
+        UserAccountManager userManager = buildTestUserManager(AuthenticationProvider.TEST, dummyAuth);
+        UserAuthenticationManager authManager = buildTestAuthenticationManager(AuthenticationProvider.TEST, dummyAuth);
+        
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -375,7 +377,7 @@ public class UserManagerTest {
 
         expect(dummyDatabase.getById(someSegueUserId)).andReturn(mappedUser);
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, someSegueUserId.toString(),
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, someSegueUserId.toString(),
                 validDateString);
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
@@ -410,7 +412,7 @@ public class UserManagerTest {
     @Test
     public final void authenticateCallback_checkInvalidCSRF_throwsCSRFException() throws IOException,
             CodeExchangeException, NoUserException {
-        UserManager userManager = buildTestUserManager();
+        UserAccountManager userManager = buildTestUserManager();
 
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -461,7 +463,7 @@ public class UserManagerTest {
     @Test
     public final void authenticateCallback_checkWhenNoCSRFProvided_throwsCSRFException() throws IOException,
             CodeExchangeException, NoUserException {
-        UserManager userManager = buildTestUserManager();
+        UserAccountManager userManager = buildTestUserManager();
 
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
@@ -508,8 +510,9 @@ public class UserManagerTest {
      */
     @Test
     public final void validateUsersSession_checkForValidHMAC_shouldReturnAsCorrect() throws Exception {
-        UserManager userManager = buildTestUserManager();
-
+        UserAccountManager userManager = buildTestUserManager();
+        UserAuthenticationManager authManager = buildTestAuthenticationManager();
+        
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -517,14 +520,14 @@ public class UserManagerTest {
         String validUserId = "533ee66842f639e95ce35e29";
         String validDateString = sdf.format(new Date());
 
-        Map<String, String> sessionInformation = getSessionInformationAsAMap(userManager, validUserId, validDateString);
+        Map<String, String> sessionInformation = getSessionInformationAsAMap(authManager, validUserId, validDateString);
 
         replay(dummySession);
         replay(request);
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(userManager, "isValidUsersSession", sessionInformation);
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", sessionInformation);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -538,8 +541,9 @@ public class UserManagerTest {
      */
     @Test
     public final void validateUsersSession_badUsersSession_shouldReturnAsIncorrect() throws Exception {
-        UserManager userManager = buildTestUserManager();
-
+        UserAccountManager userManager = buildTestUserManager();
+        UserAuthenticationManager authManager = buildTestAuthenticationManager();
+        
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -547,7 +551,7 @@ public class UserManagerTest {
         String validUserId = "533ee66842f639e95ce35e29";
         String validDateString = sdf.format(new Date());
 
-        Map<String, String> validSessionInformation = getSessionInformationAsAMap(userManager, validUserId,
+        Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
                 validDateString);
 
         Map<String, String> tamperedSessionInformation = ImmutableMap.of(Constants.SESSION_USER_ID, validUserId,
@@ -559,7 +563,7 @@ public class UserManagerTest {
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(userManager, "isValidUsersSession", tamperedSessionInformation);
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", tamperedSessionInformation);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -573,8 +577,9 @@ public class UserManagerTest {
      */
     @Test
     public final void validateUsersSession_expiredUsersSession_shouldReturnAsIncorrect() throws Exception {
-        UserManager userManager = buildTestUserManager();
-
+        UserAccountManager userManager = buildTestUserManager();
+        UserAuthenticationManager authManager = buildTestAuthenticationManager();
+        
         // method param setup for method under test
         HttpSession dummySession = createMock(HttpSession.class);
         HttpServletRequest request = createMock(HttpServletRequest.class);
@@ -582,7 +587,7 @@ public class UserManagerTest {
         String validUserId = "533ee66842f639e95ce35e29";
         String validDateString = sdf.format(sdf.parse("Mon Oct 06 15:36:27 +0100 2013"));
 
-        Map<String, String> validSessionInformation = getSessionInformationAsAMap(userManager, validUserId,
+        Map<String, String> validSessionInformation = getSessionInformationAsAMap(authManager, validUserId,
                 validDateString);
 
         replay(dummySession);
@@ -590,7 +595,7 @@ public class UserManagerTest {
         replay(dummyQuestionDatabase);
 
         // Act
-        boolean valid = Whitebox.<Boolean> invokeMethod(userManager, "isValidUsersSession", validSessionInformation);
+        boolean valid = Whitebox.<Boolean> invokeMethod(authManager, "isValidUsersSession", validSessionInformation);
 
         // Assert
         verify(dummyQuestionDatabase, dummySession, request);
@@ -602,7 +607,7 @@ public class UserManagerTest {
      * 
      * @return A new UserManager instance
      */
-    private UserManager buildTestUserManager() {
+    private UserAccountManager buildTestUserManager() {
         return buildTestUserManager(AuthenticationProvider.TEST, createMock(IOAuth2Authenticator.class));
     }
 
@@ -615,17 +620,30 @@ public class UserManagerTest {
      *            - The associated authenticating engine
      * @return A new UserManager instance
      */
-    private UserManager buildTestUserManager(final AuthenticationProvider provider,
+    private UserAccountManager buildTestUserManager(final AuthenticationProvider provider,
             final IFederatedAuthenticator authenticator) {
         HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
         providerMap.put(provider, authenticator);
-        return new UserManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader, providerMap, this.dummyMapper,
-                this.dummyQueue, this.dummyUserCache, this.dummyLogManager);
+        return new UserAccountManager(dummyDatabase, this.dummyQuestionDatabase, this.dummyPropertiesLoader,
+                providerMap, this.dummyMapper, this.dummyQueue, this.dummyUserCache, this.dummyLogManager,
+                buildTestAuthenticationManager(provider, authenticator));
+    }
+    
+    private UserAuthenticationManager buildTestAuthenticationManager() {
+        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, dummyProvidersMap, dummyMapper,
+                dummyQueue);
+    }
+    
+    private UserAuthenticationManager buildTestAuthenticationManager(AuthenticationProvider provider, IAuthenticator authenticator) {
+        HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
+        providerMap.put(provider, authenticator);
+        return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyMapper,
+                dummyQueue);
     }
 
-    private Map<String, String> getSessionInformationAsAMap(UserManager userManager, String userId, String dateCreated)
+    private Map<String, String> getSessionInformationAsAMap(UserAuthenticationManager userAuthManager, String userId, String dateCreated)
             throws Exception {
-        String validHMAC = Whitebox.<String> invokeMethod(userManager, "calculateSessionHMAC", dummyHMACSalt, userId,
+        String validHMAC = Whitebox.<String> invokeMethod(userAuthManager, "calculateSessionHMAC", dummyHMACSalt, userId,
                 dateCreated);
         return ImmutableMap.of(Constants.SESSION_USER_ID, userId, Constants.DATE_SIGNED, dateCreated, Constants.HMAC,
                 validHMAC);

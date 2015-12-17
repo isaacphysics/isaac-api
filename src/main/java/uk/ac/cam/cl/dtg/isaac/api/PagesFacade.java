@@ -66,7 +66,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -99,7 +99,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final SegueApiFacade api;
     private final MapperFacade mapper;
     private final ContentVersionController versionManager;
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final URIManager uriManager;
     private final QuestionManager questionManager;
 
@@ -130,7 +130,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Inject
     public PagesFacade(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final ContentVersionController versionManager,
-            final UserManager userManager, final URIManager uriManager, final QuestionManager questionManager,
+            final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
             final GameManager gameManager) {
         super(propertiesLoader, logManager);
         this.api = api;

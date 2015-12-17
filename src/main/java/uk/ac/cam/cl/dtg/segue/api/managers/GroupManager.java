@@ -44,7 +44,7 @@ public class GroupManager {
     private static final Logger log = LoggerFactory.getLogger(GroupManager.class);
 
     private final IUserGroupDataManager groupDatabase;
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final MapperFacade dtoMapper;
     private List<IGroupObserver> groupsObservers;
 
@@ -59,7 +59,7 @@ public class GroupManager {
      *            - Preconfigured dto mapper
      */
     @Inject
-    public GroupManager(final IUserGroupDataManager groupDatabase, final UserManager userManager,
+    public GroupManager(final IUserGroupDataManager groupDatabase, final UserAccountManager userManager,
             final MapperFacade dtoMapper) {
         Validate.notNull(groupDatabase);
         Validate.notNull(userManager);

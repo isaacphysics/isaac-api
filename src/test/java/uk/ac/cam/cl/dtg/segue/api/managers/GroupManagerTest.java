@@ -59,7 +59,7 @@ public class GroupManagerTest {
 	private SimpleDateFormat sdf;
 	
 	private IUserGroupDataManager groupDataManager;
-	private UserManager userManager;
+	private UserAccountManager userManager;
 	
 	/**
 	 * Initial configuration of tests.
@@ -75,7 +75,7 @@ public class GroupManagerTest {
 		this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 		
 		this.groupDataManager = createMock(IUserGroupDataManager.class);
-		this.userManager = createMock(UserManager.class);
+		this.userManager = createMock(UserAccountManager.class);
 		
 		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS)).andReturn("60")
 				.anyTimes();

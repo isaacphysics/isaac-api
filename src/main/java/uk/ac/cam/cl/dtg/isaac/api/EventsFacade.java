@@ -49,7 +49,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -78,7 +78,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     private EventBookingPersistenceManager bookingManager;
 
-    private UserManager userManager;
+    private UserAccountManager userManager;
 
     /**
      * EventsFacade.
@@ -97,7 +97,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Inject
     public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
             final ContentVersionController versionManager, final EventBookingPersistenceManager bookingManager,
-            final UserManager userManager) {
+            final UserAccountManager userManager) {
         super(properties, logManager);
         this.versionManager = versionManager;
         this.bookingManager = bookingManager;

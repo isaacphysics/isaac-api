@@ -57,7 +57,7 @@ import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -93,7 +93,7 @@ public class IsaacController extends AbstractIsaacFacade {
     private final MapperFacade mapper;
     private final StatisticsManager statsManager;
     private final ContentVersionController versionManager;
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final URIManager uriManager;
 
@@ -122,7 +122,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @Inject
     public IsaacController(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
-            final ContentVersionController versionManager, final UserManager userManager,
+            final ContentVersionController versionManager, final UserAccountManager userManager,
             final UserAssociationManager associationManager, final URIManager uriManager) {
         super(propertiesLoader, logManager);
         this.api = api;

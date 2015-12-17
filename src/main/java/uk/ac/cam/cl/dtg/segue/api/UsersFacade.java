@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
@@ -100,7 +100,7 @@ import com.google.inject.Inject;
 @Api(value = "/users")
 public class UsersFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(UsersFacade.class);
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final StatisticsManager statsManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
@@ -125,7 +125,7 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - so we can provide email preferences
      */
     @Inject
-    public UsersFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
+    public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager, final ILogManager logManager,
             final StatisticsManager statsManager, final UserAssociationManager userAssociationManager, 
             final IMisuseMonitor misuseMonitor, final AbstractEmailPreferenceManager emailPreferenceManager) {
         super(properties, logManager);
@@ -521,7 +521,7 @@ public class UsersFacade extends AbstractSegueFacade {
             	}
             	
             	// authenticate the user to check they are allowed to change the password
-            	this.userManager.authenticateWithCredentials(
+            	this.userManager.ensureValidPassword(
             					AuthenticationProvider.SEGUE.name(), userObjectFromClient.getEmail(), 
             					passwordCurrent);
                 
@@ -603,7 +603,6 @@ public class UsersFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient);
-            
             
             List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
                     savedUser.getId(), emailPreferences);

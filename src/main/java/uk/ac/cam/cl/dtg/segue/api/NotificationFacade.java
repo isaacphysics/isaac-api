@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.NotificationPicker;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -61,7 +61,7 @@ public class NotificationFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(NotificationFacade.class);
 
     private NotificationPicker notificationPicker;
-    private UserManager userManager;
+    private UserAccountManager userManager;
 
     /**
      * NotificationFacade.
@@ -77,7 +77,7 @@ public class NotificationFacade extends AbstractSegueFacade {
      */
     @Inject
     public NotificationFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final UserManager userManager, final NotificationPicker notificationPicker) {
+            final UserAccountManager userManager, final NotificationPicker notificationPicker) {
         super(properties, logManager);
         this.userManager = userManager;
         this.notificationPicker = notificationPicker;

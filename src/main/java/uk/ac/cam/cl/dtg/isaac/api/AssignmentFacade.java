@@ -54,7 +54,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -86,7 +86,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(AssignmentFacade.class);
 
     private final AssignmentManager assignmentManager;
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final GroupManager groupManager;
     private final GameManager gameManager;
 
@@ -116,7 +116,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      */
     @Inject
     public AssignmentFacade(final AssignmentManager assignmentManager, final QuestionManager questionManager,
-            final UserManager userManager, final GroupManager groupManager, final PropertiesLoader propertiesLoader,
+            final UserAccountManager userManager, final GroupManager groupManager, final PropertiesLoader propertiesLoader,
             final GameManager gameManager, final ILogManager logManager,
             final UserAssociationManager associationManager) {
         super(propertiesLoader, logManager);

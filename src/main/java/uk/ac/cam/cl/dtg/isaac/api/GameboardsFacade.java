@@ -63,7 +63,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -83,7 +83,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 @Api(value = "/gameboards")
 public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
-    private UserManager userManager;
+    private UserAccountManager userManager;
     private UserAssociationManager associationManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
@@ -107,7 +107,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      */
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final GameManager gameManager, final QuestionManager questionManager, final UserManager userManager,
+            final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
             final UserAssociationManager associationManager) {
         super(properties, logManager);
 

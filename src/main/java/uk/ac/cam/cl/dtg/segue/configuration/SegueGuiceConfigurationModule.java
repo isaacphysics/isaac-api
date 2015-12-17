@@ -37,7 +37,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
@@ -108,7 +109,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
 
-    private static UserManager userManager = null;
+    private static UserAccountManager userManager = null;
     
     private static PgQuestionAttempts questionPersistenceManager = null;
     
@@ -481,13 +482,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private UserManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
+    private UserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade) {
+            final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade, final UserAuthenticationManager userAuthenticationManager) {
 
         if (null == userManager) {
-            userManager = new UserManager(database, questionManager, properties, providersToRegister, mapperFacade,
-                    emailQueue, logManager);
+            userManager = new UserAccountManager(database, questionManager, properties, providersToRegister, mapperFacade,
+                    emailQueue, logManager, userAuthenticationManager);
             log.info("Creating singleton of UserManager");
         }
 
@@ -528,7 +529,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	@Singleton
 	private GroupManager getGroupManager(
 			final IUserGroupDataManager userGroupDataManager,
-			final UserManager userManager, final MapperFacade dtoMapper) {
+			final UserAccountManager userManager, final MapperFacade dtoMapper) {
 
 		if (null == groupManager) {
 			groupManager = new GroupManager(userGroupDataManager, userManager,
@@ -679,7 +680,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static StatisticsManager getStatsManager(final UserManager userManager, final ILogManager logManager,
+    private static StatisticsManager getStatsManager(final UserAccountManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
             final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager) {

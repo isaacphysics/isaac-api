@@ -33,7 +33,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
@@ -70,6 +70,8 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      * 
      * @param userDataManager
      *            - the user data manager which allows us to store and query user information.
+     * @param properties
+     *            - so we can look up system properties.
      */
     @Inject
     public SegueLocalAuthenticator(final IUserDataManager userDataManager, final PropertiesLoader properties) {
@@ -148,7 +150,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         
         //Get HMAC
         String key = properties.getProperty(HMAC_SALT);
-        String token = UserManager.calculateHMAC(key, email);      
+        String token = UserAuthenticationManager.calculateHMAC(key, email);      
 
         userToAttachVerificationToken.setEmailVerificationToken(token.replace("=", "")
                                                                      .replace("/", "")
@@ -170,7 +172,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         if (userToken != null && userToken.startsWith(token)) {
             // Check if the email corresponds to the token
             String key = properties.getProperty(HMAC_SALT);
-            String hmacToken = UserManager.calculateHMAC(key, email).replace("=", "")
+            String hmacToken = UserAuthenticationManager.calculateHMAC(key, email).replace("=", "")
                                                                     .replace("/", "")
                                                                     .replace("+", ""); 
             if (userToken.equals(hmacToken)) {
@@ -215,8 +217,6 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         return user != null && user.getResetExpiry().after(now);
     }
 
-
-
     /**
      * Hash the password using the preconfigured hashing function.
      *
@@ -232,7 +232,6 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      */
     private String hashPassword(final String password, final String salt) throws NoSuchAlgorithmException,
             InvalidKeySpecException {
-
         BigInteger hashedPassword = new BigInteger(computeHash(password, salt, KEY_LENGTH));
 
         return new String(Base64.encodeBase64(hashedPassword.toByteArray()));

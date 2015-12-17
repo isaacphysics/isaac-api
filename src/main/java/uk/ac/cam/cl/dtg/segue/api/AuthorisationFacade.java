@@ -43,7 +43,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -67,7 +67,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 @Path("/authorisations")
 @Api(value = "/authorisations")
 public class AuthorisationFacade extends AbstractSegueFacade {
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
 
     private static final Logger log = LoggerFactory.getLogger(AuthorisationFacade.class);
@@ -88,7 +88,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
      *            - so that we can prevent overuse of protected resources.
      */
     @Inject
-    public AuthorisationFacade(final PropertiesLoader properties, final UserManager userManager,
+    public AuthorisationFacade(final PropertiesLoader properties, final UserAccountManager userManager,
             final ILogManager logManager, final UserAssociationManager associationManager,
             final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);

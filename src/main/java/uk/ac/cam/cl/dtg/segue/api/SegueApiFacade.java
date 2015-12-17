@@ -69,7 +69,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -114,7 +114,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
     private static ContentMapper mapper;
 
     private ContentVersionController contentVersionController;
-    private UserManager userManager;
+    private UserAccountManager userManager;
     private QuestionManager questionManager;
 
     private EmailManager emailManager;
@@ -143,7 +143,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
     @Inject
     public SegueApiFacade(final PropertiesLoader properties, final ContentMapper mapper,
             @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-            final ContentVersionController contentVersionController, final UserManager userManager,
+            final ContentVersionController contentVersionController, final UserAccountManager userManager,
             final QuestionManager questionManager, final EmailManager emailManager,
             final ILogManager logManager) {
         super(properties, logManager);

@@ -45,7 +45,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -65,7 +65,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 @Path("/groups")
 @Api(value = "/groups")
 public class GroupsFacade extends AbstractSegueFacade {
-    private final UserManager userManager;
+    private final UserAccountManager userManager;
 
     private static final Logger log = LoggerFactory.getLogger(GroupsFacade.class);
     private final GroupManager groupManager;
@@ -86,7 +86,7 @@ public class GroupsFacade extends AbstractSegueFacade {
      *            - so we can decide what information is allowed to be exposed.
      */
     @Inject
-    public GroupsFacade(final PropertiesLoader properties, final UserManager userManager, final ILogManager logManager,
+    public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager, final ILogManager logManager,
             final GroupManager groupManager, final UserAssociationManager associationsManager) {
         super(properties, logManager);
         this.userManager = userManager;

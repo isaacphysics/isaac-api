@@ -67,7 +67,7 @@ import com.google.inject.Inject;
  * TODO this file is a mess... it needs refactoring.
  */
 public class StatisticsManager {
-    private UserManager userManager;
+    private UserAccountManager userManager;
     private ILogManager logManager;
     private SchoolListReader schoolManager;
     private ContentVersionController versionManager;
@@ -106,7 +106,7 @@ public class StatisticsManager {
      *            - so that we can see how many questions were answered.
      */
     @Inject
-    public StatisticsManager(final UserManager userManager, final ILogManager logManager,
+    public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
             final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager) {
