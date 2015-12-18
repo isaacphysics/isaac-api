@@ -38,7 +38,7 @@ public class ContentSynchronisationWorker implements Callable<String> {
     private final Date dateRequested;
 
     /**
-     * Create a synch worker providing a conntentVersionController and a version to index.
+     * Create a synch worker providing a contentVersionController and a version to index.
      * 
      * @param contentVersionController
      *            - the object providing access to high level sync methods.
@@ -52,7 +52,7 @@ public class ContentSynchronisationWorker implements Callable<String> {
     }
 
     /**
-     * Create a synch worker providing a conntentVersionController. This constructor assumes that the latest version of
+     * Create a synch worker providing a contentVersionController. This constructor assumes that the latest version of
      * the content available should be indexed.
      * 
      * @param contentVersionController

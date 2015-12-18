@@ -68,6 +68,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.inject.Inject;
@@ -98,7 +99,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Inject
     public ElasticSearchProvider(final Client searchClient) {
         this.client = searchClient;
-        rawFieldsList = new ArrayList<String>();
+        rawFieldsList = Lists.newArrayList();
         this.randomNumberGenerator = new Random();
     }
 
