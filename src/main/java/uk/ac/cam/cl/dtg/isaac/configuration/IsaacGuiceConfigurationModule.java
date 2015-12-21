@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
@@ -66,6 +68,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         // file.
 
         bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
+        bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
     }
 
     /**

@@ -38,7 +38,7 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 /**
  * This class is responsible for managing and persisting user data.
  */
-public class PgAssignmentPersistenceManager {
+public class PgAssignmentPersistenceManager implements IAssignmentPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(PgAssignmentPersistenceManager.class);
 
     private final MapperFacade mapper;
@@ -59,15 +59,7 @@ public class PgAssignmentPersistenceManager {
         this.mapper = mapper;
     }
 
-    /**
-     * Save an Assignment.
-     * 
-     * @param assignment
-     *            - assignment to save
-     * @return internal database id for the saved assignment.
-     * @throws SegueDatabaseException
-     *             - if there is a problem saving the assignment in the database.
-     */
+    @Override
     public Long saveAssignment(final AssignmentDTO assignment) throws SegueDatabaseException {
         AssignmentDO assignmentToSave = mapper.map(assignment, AssignmentDO.class);
 
@@ -110,15 +102,7 @@ public class PgAssignmentPersistenceManager {
         }
     }
 
-    /**
-     * Find a assignment by id.
-     * 
-     * @param assignmentId
-     *            - the id to search for.
-     * @return the assignment or null if we can't find it..
-     * @throws SegueDatabaseException
-     *             - if there is a problem accessing the database.
-     */
+    @Override
     public AssignmentDTO getAssignmentById(final Long assignmentId) throws SegueDatabaseException {
         if (null == assignmentId) {
             return null;
@@ -153,15 +137,7 @@ public class PgAssignmentPersistenceManager {
         }
     }
 
-    /**
-     * Retrieve all Assignments for a given group.
-     * 
-     * @param groupId
-     *            - to search for
-     * @return assignments as a list
-     * @throws SegueDatabaseException
-     *             - if there is an error when accessing the database.
-     */
+    @Override
     public List<AssignmentDTO> getAssignmentsByGroupId(final Long groupId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
@@ -184,17 +160,7 @@ public class PgAssignmentPersistenceManager {
         }
     }
 
-    /**
-     * Retrieve all Assignments for a given group and set by a given user.
-     * 
-     * @param assignmentOwnerId
-     *            - to search for
-     * @param groupId
-     *            - to search for
-     * @return assignments as a list
-     * @throws SegueDatabaseException
-     *             - if there is an error when accessing the database.
-     */
+    @Override
     public List<AssignmentDTO> getAssignmentsByOwnerIdAndGroupId(final Long assignmentOwnerId, final Long groupId)
             throws SegueDatabaseException {
 
@@ -221,18 +187,7 @@ public class PgAssignmentPersistenceManager {
     }
 
 
-    /**
-     * getAssignmentsByGameboardAndGroup.
-     * 
-     * @param gameboardId
-     *            - gameboard of interest
-     * @param groupId
-     *            - the group id has the gameboard assigned.
-     * @return assignment if found null if not.
-     * @throws SegueDatabaseException
-     *             - if there is an error when accessing the database or if duplicate assignments exist in the
-     *             database..
-     */
+    @Override
     public List<AssignmentDTO> getAssignmentsByGameboardAndGroup(final String gameboardId, final Long groupId)
             throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
@@ -257,15 +212,7 @@ public class PgAssignmentPersistenceManager {
         }
     }
 
-    /**
-     * getAssignmentsByOwner.
-     * 
-     * @param ownerId
-     *            - the user id who might have assigned the gameboard.
-     * @return list of assignments
-     * @throws SegueDatabaseException
-     *             - if there is an error when accessing the database.
-     */
+    @Override
     public List<AssignmentDTO> getAssignmentsByOwner(final Long ownerId) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
@@ -288,14 +235,7 @@ public class PgAssignmentPersistenceManager {
         }
     }
 
-    /**
-     * deleteAssignment.
-     * 
-     * @param id
-     *            - assignment id to delete.
-     * @throws SegueDatabaseException
-     *             - if we are unable to perform the delete operation.
-     */
+    @Override
     public void deleteAssignment(final Long id) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
@@ -331,6 +271,7 @@ public class PgAssignmentPersistenceManager {
      */
     private AssignmentDO convertFromSQLToAssignmentDO(final ResultSet sqlResults) throws SQLException {
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
-                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), sqlResults.getDate("creation_date"));
+                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"),
+                sqlResults.getDate("creation_date"));
     }
 }

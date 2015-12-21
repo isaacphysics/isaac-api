@@ -65,9 +65,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -221,7 +221,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                         .getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties
                         .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH)));
 
-        bind(IUserGroupDataManager.class).to(PgGroupDataManager.class);
+        bind(IUserGroupPersistenceManager.class).to(PgUserGroupPersistenceManager.class);
 
         bind(IAssociationDataManager.class).to(PgAssociationDataManager.class);
     }
@@ -528,7 +528,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	@Provides
 	@Singleton
 	private GroupManager getGroupManager(
-			final IUserGroupDataManager userGroupDataManager,
+			final IUserGroupPersistenceManager userGroupDataManager,
 			final UserAccountManager userManager, final MapperFacade dtoMapper) {
 
 		if (null == groupManager) {

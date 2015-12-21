@@ -22,10 +22,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 
 /**
- * Interface for data manager classes that deal with user association data.
+ * Interface for data manager classes that deal with group data.
  *
  */
-public interface IUserGroupDataManager {
+public interface IUserGroupPersistenceManager {
 
     /**
      * Get groups by owner.
@@ -33,6 +33,8 @@ public interface IUserGroupDataManager {
      * @param ownerUserId
      *            the owner Id to find all groups for.
      * @return List of groups belonging to owner user.
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
      */
     List<UserGroup> getGroupsByOwner(Long ownerUserId) throws SegueDatabaseException;
 
@@ -42,6 +44,8 @@ public interface IUserGroupDataManager {
      * @param groupId
      *            - the id of the group to find.
      * @return group
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
      */
     UserGroup findById(Long groupId) throws SegueDatabaseException;
 
@@ -49,6 +53,8 @@ public interface IUserGroupDataManager {
      * @param groupId
      *            group to lookup
      * @return member user ids.
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
      */
     List<Long> getGroupMemberIds(Long groupId) throws SegueDatabaseException;
 
@@ -124,6 +130,8 @@ public interface IUserGroupDataManager {
     /**
      * Useful for getting the number of groups in the database.
      * @return the total number of groups
+     * @throws SegueDatabaseException
+     *             - if we cannot contact the database.
      */
     Long getGroupCount() throws SegueDatabaseException;
 

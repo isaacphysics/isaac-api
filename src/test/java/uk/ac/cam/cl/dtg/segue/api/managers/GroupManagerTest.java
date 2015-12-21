@@ -39,7 +39,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -58,7 +58,7 @@ public class GroupManagerTest {
 	private ICommunicator<EmailCommunicationMessage> dummyCommunicator;
 	private SimpleDateFormat sdf;
 	
-	private IUserGroupDataManager groupDataManager;
+	private IUserGroupPersistenceManager groupDataManager;
 	private UserAccountManager userManager;
 	
 	/**
@@ -74,7 +74,7 @@ public class GroupManagerTest {
 		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 		this.sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 		
-		this.groupDataManager = createMock(IUserGroupDataManager.class);
+		this.groupDataManager = createMock(IUserGroupPersistenceManager.class);
 		this.userManager = createMock(UserAccountManager.class);
 		
 		expect(this.dummyPropertiesLoader.getProperty(Constants.SESSION_EXPIRY_SECONDS)).andReturn("60")

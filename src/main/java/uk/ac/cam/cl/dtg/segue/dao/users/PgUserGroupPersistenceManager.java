@@ -38,8 +38,8 @@ import com.google.inject.Inject;
  * MongoAssociationDataManager.
  * 
  */
-public class PgGroupDataManager implements IUserGroupDataManager {
-    private static final Logger log = LoggerFactory.getLogger(PgGroupDataManager.class);
+public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManager {
+    private static final Logger log = LoggerFactory.getLogger(PgUserGroupPersistenceManager.class);
 
     private final PostgresSqlDb database;
 
@@ -50,7 +50,7 @@ public class PgGroupDataManager implements IUserGroupDataManager {
      *            - preconfigured connection
      */
     @Inject
-    public PgGroupDataManager(final PostgresSqlDb database) {
+    public PgUserGroupPersistenceManager(final PostgresSqlDb database) {
         this.database = database;
     }
 
@@ -105,6 +105,8 @@ public class PgGroupDataManager implements IUserGroupDataManager {
             pst.setLong(2, group.getOwnerId());
             pst.setTimestamp(3, new Timestamp(group.getCreated().getTime()));
             pst.setLong(4, group.getId());
+            
+            log.debug(pst.toString());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save group.");

@@ -27,6 +27,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -42,7 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  * 
  */
 public class AssignmentManagerTest {
-	private PgAssignmentPersistenceManager dummyAssignmentPersistenceManager;
+	private IAssignmentPersistenceManager dummyAssignmentPersistenceManager;
 	private GroupManager dummyGroupManager;
     private EmailManager dummyEmailManager;
     private UserAccountManager dummyUserManager;

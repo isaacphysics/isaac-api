@@ -24,7 +24,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -49,7 +49,7 @@ import com.google.inject.Inject;
 public class AssignmentManager implements IGroupObserver {
     private static final Logger log = LoggerFactory.getLogger(AssignmentManager.class);
 
-    private final PgAssignmentPersistenceManager assignmentPersistenceManager;
+    private final IAssignmentPersistenceManager assignmentPersistenceManager;
     private final GroupManager groupManager;
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
@@ -73,7 +73,7 @@ public class AssignmentManager implements IGroupObserver {
      *            - the userAssociationManager manager object
      */
     @Inject
-    public AssignmentManager(final PgAssignmentPersistenceManager assignmentPersistenceManager,
+    public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
             final GroupManager groupManager, final EmailManager emailManager, final UserAccountManager userManager,
             final GameManager gameManager, final UserAssociationManager userAssociationManager) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;

@@ -30,7 +30,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupDataManager;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.UserGroup;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -43,7 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 public class GroupManager {
     private static final Logger log = LoggerFactory.getLogger(GroupManager.class);
 
-    private final IUserGroupDataManager groupDatabase;
+    private final IUserGroupPersistenceManager groupDatabase;
     private final UserAccountManager userManager;
     private final MapperFacade dtoMapper;
     private List<IGroupObserver> groupsObservers;
@@ -59,7 +59,7 @@ public class GroupManager {
      *            - Preconfigured dto mapper
      */
     @Inject
-    public GroupManager(final IUserGroupDataManager groupDatabase, final UserAccountManager userManager,
+    public GroupManager(final IUserGroupPersistenceManager groupDatabase, final UserAccountManager userManager,
             final MapperFacade dtoMapper) {
         Validate.notNull(groupDatabase);
         Validate.notNull(userManager);
