@@ -300,6 +300,7 @@ public final class Constants {
 
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
+    public static final Integer MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES = 1000000;
     public static final String LOG_TABLE_NAME = "loggedEvents";
     public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
     public static final String MERGE_USER = "MERGE_USER";

@@ -65,7 +65,17 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
             throws SegueResourceMisuseException {
         Validate.notBlank(agentIdentifier);
         Validate.notBlank(eventLabel);
+        this.notifyEvent(agentIdentifier, eventLabel, 1);
+    }
 
+    @Override
+    public synchronized void notifyEvent(final String agentIdentifier, final String eventLabel,
+            final Integer adjustmentValue) throws SegueResourceMisuseException {
+        Validate.notBlank(agentIdentifier);
+        Validate.notBlank(eventLabel);
+        Validate.notNull(adjustmentValue);
+        Validate.isTrue(adjustmentValue >= 0, "Expected positive integer value.");
+        
         IMisuseHandler handler = handlerMap.get(eventLabel);
         Validate.notNull(handler, "No handler has been registered for " + eventLabel);
 
@@ -74,34 +84,39 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
         if (null == existingHistory) {
             existingHistory = Maps.newConcurrentMap();
 
-            existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
+            existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
             nonPersistentDatabase.put(agentIdentifier, existingHistory);
         } else {
             Entry<Date, Integer> entry = existingHistory.get(eventLabel);
             if (null == entry) {
-                existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
+                existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
                 log.debug("New Event " + existingHistory.get(eventLabel));
             } else {
 
                 // deal with expired events
                 if (!isCountStillFresh(entry.getKey(), handler.getAccountingIntervalInSeconds())) {
-                    existingHistory.put(eventLabel, immutableEntry(new Date(), 1));
+                    existingHistory.put(eventLabel, immutableEntry(new Date(), adjustmentValue));
                     log.debug("Event expired starting count over");
                 } else {
                     // last events not expired yet so add them.
-                    existingHistory.put(eventLabel, immutableEntry(entry.getKey(), entry.getValue() + 1));
+                    existingHistory.put(eventLabel, immutableEntry(entry.getKey(), entry.getValue() + adjustmentValue));
                     log.debug("Event NOT expired so adding one " + existingHistory.get(eventLabel));
                 }
 
                 entry = existingHistory.get(eventLabel);
-
+                int previousValue = entry.getValue() - adjustmentValue;
+                
                 // deal with threshold violations
-                if (handler.getSoftThreshold() != null && entry.getValue() == handler.getSoftThreshold()) {
+                if (handler.getSoftThreshold() != null
+                        && (previousValue < handler.getSoftThreshold() && entry.getValue() >= handler
+                                .getSoftThreshold())) {
                     handler.executeSoftThresholdAction(String.format(
                             "(%s) has exceeded the soft limit specified by (%s)", agentIdentifier, eventLabel));
                 }
-                
-                if (handler.getHardThreshold() != null && entry.getValue() == handler.getHardThreshold()) {
+
+                if (handler.getHardThreshold() != null
+                        && (previousValue < handler.getHardThreshold() && entry.getValue() >= handler
+                                .getHardThreshold())) {
                     String errMessage = String.format("(%s) has exceeded the hard limit specified by (%s)",
                             agentIdentifier, eventLabel);
 
@@ -114,7 +129,7 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
             }
         }
     }
-
+    
     @Override
     public boolean hasMisused(final String agentIdentifier, final String eventToCheck) {
         Map<String, Entry<Date, Integer>> existingHistory = nonPersistentDatabase.getIfPresent(agentIdentifier);

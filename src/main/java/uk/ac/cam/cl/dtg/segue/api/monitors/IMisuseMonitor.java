@@ -35,6 +35,23 @@ public interface IMisuseMonitor {
     void notifyEvent(final String agentIdentifier, final String eventLabel) throws SegueResourceMisuseException;
 
     /**
+     * Method to notify the monitor that an event which is protected has been triggered. This method allows for the
+     * internal value to be adjusted by an arbitrary amount.
+     * 
+     * @param agentIdentifier
+     *            - a unique identifier for the agent using the resource
+     * @param eventLabel
+     *            - event describing the use of the resource and any threshold criteria.
+     * @param adjustmentValue
+     *            - Allows the data recorded regarding the quantity of events to be adjusted. This is useful if you wish
+     *            use weighted events.
+     * @throws SegueResourceMisuseException
+     *             - this only happens when the hard threshold has been reached and indicates possible misuse.
+     */
+    void notifyEvent(String agentIdentifier, String eventLabel, Integer adjustmentValue)
+            throws SegueResourceMisuseException;
+    
+    /**
      * Allows inspection of internal state such that we can give early warning as to whether user has reached threshold
      * before an event notification / exception takes place.
      * 

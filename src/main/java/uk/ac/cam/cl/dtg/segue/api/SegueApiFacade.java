@@ -26,7 +26,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTACT_US_FORM_USED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
@@ -113,11 +112,11 @@ public class SegueApiFacade extends AbstractSegueFacade {
 
     private static ContentMapper mapper;
 
-    private ContentVersionController contentVersionController;
-    private UserAccountManager userManager;
-    private QuestionManager questionManager;
+    private final ContentVersionController contentVersionController;
+    private final UserAccountManager userManager;
+    private final QuestionManager questionManager;
 
-    private EmailManager emailManager;
+    private final EmailManager emailManager;
 
     /**
      * Constructor that allows pre-configuration of the segue api.
@@ -139,6 +138,7 @@ public class SegueApiFacade extends AbstractSegueFacade {
      *            - An implementation of ICommunicator for sending communiques
      * @param logManager
      *            - An instance of the log manager used for recording usage of the CMS.
+
      */
     @Inject
     public SegueApiFacade(final PropertiesLoader properties, final ContentMapper mapper,
@@ -176,35 +176,6 @@ public class SegueApiFacade extends AbstractSegueFacade {
         }
     }
 
-    /**
-     * Method to allow clients to log front-end specific behaviour in the database.
-     * 
-     * @param httpRequest
-     *            - to enable retrieval of session information.
-     * @param eventJSON
-     *            - the event information to record as a json map <String, String>.
-     * @return 200 for success or 400 for failure.
-     */
-    @POST
-    @Path("log")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
-
-        if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
-            log.error("Error during log operation, no event type specified. Event: " + eventJSON);
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Unable to record log message as the log has no " + TYPE_FIELDNAME + " property.");
-            return error.toResponse();
-        }
-
-        String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
-        // remove the type information as we don't need it.
-        eventJSON.remove(TYPE_FIELDNAME);
-
-        this.getLogManager().logEvent(this.userManager.getCurrentUser(httpRequest), httpRequest, eventType, eventJSON);
-
-        return Response.ok().cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
-    }
     
     /**
      * Redirect to swagger ui.

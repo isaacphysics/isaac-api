@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
 import uk.ac.cam.cl.dtg.segue.api.EmailFacade;
 import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
+import uk.ac.cam.cl.dtg.segue.api.LogEventFacade;
 import uk.ac.cam.cl.dtg.segue.api.NotificationFacade;
 import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
 import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
@@ -82,6 +83,7 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
 
             // initialise segue framework.
+            this.singletons.add(injector.getInstance(LogEventFacade.class));
             this.singletons.add(injector.getInstance(SegueApiFacade.class));
             this.singletons.add(injector.getInstance(UsersFacade.class));
             this.singletons.add(injector.getInstance(AuthenticationFacade.class));
