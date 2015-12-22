@@ -22,13 +22,6 @@ apt-get -y install openjdk-7-jre-headless elasticsearch
 # Once ElasticSearch is installed, run this to make it start at startup:
 # sudo update-rc.d elasticsearch defaults 95 10
 
-### Install MongoDB
-
-apt-get -y install mongodb
-
-# Once MongoDB is installed, need to edit /etc/mongodb.conf to set bind_ip = 0.0.0.0
-# Then sudo service mongodb restart
-
 ### Install PostgreSQL
 
 apt-get -y install postgresql-9.4
