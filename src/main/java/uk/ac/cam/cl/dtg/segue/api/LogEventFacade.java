@@ -108,7 +108,6 @@ public class LogEventFacade extends AbstractSegueFacade {
         }
 
         try {
-            log.info("Log event of size " + httpRequest.getContentLength());
             misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.toString(), httpRequest.getContentLength());
         } catch (SegueResourceMisuseException e) {
             log.error(String
