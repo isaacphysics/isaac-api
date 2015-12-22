@@ -379,10 +379,13 @@ public class GitContentManager implements IContentManager {
     public final Set<String> getTagsList(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        this.ensureCache(version);
+        if (!tagsList.containsKey(version)) {
+            log.warn("The version requested does not exist in the tag list. Reindexing.");
+            buildGitContentIndex(version);
+        }
 
         if (!tagsList.containsKey(version)) {
-            log.warn("The version requested does not exist in the tag list.");
+            log.warn("The version requested does not exist in the tag list, even after reindexing.");
             return null;
         }
 
@@ -393,10 +396,13 @@ public class GitContentManager implements IContentManager {
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        this.ensureCache(version);
+        if (!allUnits.containsKey(version)) {
+            log.warn("The version requested does not exist in the set of all units. Reindexing.");
+            buildGitContentIndex(version);
+        }
 
         if (!allUnits.containsKey(version)) {
-            log.warn("The version requested does not exist in the set of all units.");
+            log.warn("The version requested does not exist in the set of all units, even after reindexing.");
             return null;
         }
 
