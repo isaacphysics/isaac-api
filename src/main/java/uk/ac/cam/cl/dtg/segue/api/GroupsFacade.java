@@ -86,8 +86,9 @@ public class GroupsFacade extends AbstractSegueFacade {
      *            - so we can decide what information is allowed to be exposed.
      */
     @Inject
-    public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager, final ILogManager logManager,
-            final GroupManager groupManager, final UserAssociationManager associationsManager) {
+    public GroupsFacade(final PropertiesLoader properties, final UserAccountManager userManager,
+            final ILogManager logManager, final GroupManager groupManager,
+            final UserAssociationManager associationsManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.groupManager = groupManager;

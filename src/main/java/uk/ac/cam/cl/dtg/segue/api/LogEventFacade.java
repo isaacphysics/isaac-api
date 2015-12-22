@@ -47,8 +47,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.google.inject.Inject;
 
 /**
- * Segue School Lookup service.
- * 
+ * LogEventFacade. This facade is responsible for allowing the front end to log arbitrary information in the log
+ * database.
  */
 @Path("/log")
 @Api(value = "/log")
@@ -94,8 +94,8 @@ public class LogEventFacade extends AbstractSegueFacade {
     public Response postLog(@Context final HttpServletRequest httpRequest, final Map<String, Object> eventJSON) {
         if (null == eventJSON || eventJSON.get(TYPE_FIELDNAME) == null) {
             log.error("Error during log operation, no event type specified. Event: " + eventJSON);
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "Unable to record log message as the log has no " + TYPE_FIELDNAME + " property.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to record log message as the log has no "
+                    + TYPE_FIELDNAME + " property.").toResponse();
         }
 
         // implement arbitrary log size limit.
@@ -110,15 +110,14 @@ public class LogEventFacade extends AbstractSegueFacade {
         try {
             misuseMonitor.notifyEvent(uid, LogEventMisuseHandler.class.toString(), httpRequest.getContentLength());
         } catch (SegueResourceMisuseException e) {
-            log.error(String
-                    .format("Logging Event Failed - log event requested (%s bytes) "
-                            + "and would exceed daily limit size limit (%s bytes) ",
-                            httpRequest.getContentLength(), Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES));
+            log.error(String.format("Logging Event Failed - log event requested (%s bytes) "
+                    + "and would exceed daily limit size limit (%s bytes) ", httpRequest.getContentLength(),
+                    Constants.MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES));
             return SegueErrorResponse.getRateThrottledResponse(String.format(
                     "Log event request (%s bytes) would exceed limit for this endpoint.",
                     httpRequest.getContentLength()));
         }
-        
+
         String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
         // remove the type information as we don't need it.
         eventJSON.remove(TYPE_FIELDNAME);

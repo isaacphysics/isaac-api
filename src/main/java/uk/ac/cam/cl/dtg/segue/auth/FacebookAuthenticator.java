@@ -66,8 +66,7 @@ import com.google.inject.name.Named;
  * @author Nick Rogers
  */
 public class FacebookAuthenticator implements IOAuth2Authenticator {
-	private static final Logger log = LoggerFactory
-			.getLogger(FacebookAuthenticator.class);
+    private static final Logger log = LoggerFactory.getLogger(FacebookAuthenticator.class);
 
 	private final JsonFactory jsonFactory;
 	private final HttpTransport httpTransport;
@@ -79,10 +78,9 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	
 	private static final String FACEBOOK_API_VERSION = "2.3";
 	
-	private static final String AUTH_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
-			+ "/oauth/authorize";
-	private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
-			+ "/oauth/access_token";
+    private static final String AUTH_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION + "/oauth/authorize";
+    private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
+            + "/oauth/access_token";
 	private static final String USER_INFO_URL = "https://graph.facebook.com/me";
 	private static final String TOKEN_VERIFICATION_URL = "https://graph.facebook.com/debug_token";
 
@@ -90,35 +88,33 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private static WeakHashMap<String, Credential> credentialStore;
 	private static GoogleIdTokenVerifier tokenVerifier;
 
-	/**
-	 * @param clientId 
-	 * @param clientSecret 
-	 * @param callbackUri 
-	 * @param requestedScopes 
-	 */
-	@Inject
-	public FacebookAuthenticator(
-			@Named(Constants.FACEBOOK_CLIENT_ID) final String clientId,
-			@Named(Constants.FACEBOOK_SECRET) final String clientSecret,
-			@Named(Constants.FACEBOOK_CALLBACK_URI) final String callbackUri,
-			@Named(Constants.FACEBOOK_OAUTH_SCOPES) final String requestedScopes) {
-		this.jsonFactory = new JacksonFactory();
-		this.httpTransport = new NetHttpTransport();
+    /**
+     * @param clientId 
+     * @param clientSecret 
+     * @param callbackUri 
+     * @param requestedScopes 
+     */
+    @Inject
+    public FacebookAuthenticator(@Named(Constants.FACEBOOK_CLIENT_ID) final String clientId,
+            @Named(Constants.FACEBOOK_SECRET) final String clientSecret,
+            @Named(Constants.FACEBOOK_CALLBACK_URI) final String callbackUri,
+            @Named(Constants.FACEBOOK_OAUTH_SCOPES) final String requestedScopes) {
+        this.jsonFactory = new JacksonFactory();
+        this.httpTransport = new NetHttpTransport();
 
-		this.clientSecret = clientSecret;
-		this.clientId = clientId;
-		this.callbackUri = callbackUri;
-		this.requestedScopes = Arrays.asList(requestedScopes.split(","));
+        this.clientSecret = clientSecret;
+        this.clientId = clientId;
+        this.callbackUri = callbackUri;
+        this.requestedScopes = Arrays.asList(requestedScopes.split(","));
 
-		if (null == credentialStore) {
-			credentialStore = new WeakHashMap<String, Credential>();
-		}
+        if (null == credentialStore) {
+            credentialStore = new WeakHashMap<String, Credential>();
+        }
 
-		if (null == tokenVerifier) {
-			tokenVerifier = new GoogleIdTokenVerifier(httpTransport,
-					jsonFactory);
-		}
-	}
+        if (null == tokenVerifier) {
+            tokenVerifier = new GoogleIdTokenVerifier(httpTransport, jsonFactory);
+        }
+    }
 
 	@Override
 	public AuthenticationProvider getAuthenticationProvider() {
@@ -127,8 +123,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 	@Override
 	public String getAuthorizationUrl(final String antiForgeryStateToken) throws IOException {
-		AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(
-				AUTH_URL, clientId);
+        AuthorizationCodeRequestUrl urlBuilder = new AuthorizationCodeRequestUrl(AUTH_URL, clientId);
 
 		urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
 		urlBuilder.set("redirect_uri", callbackUri);
@@ -140,8 +135,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	@Override
 	public String extractAuthCode(final String url) throws IOException {
 		// Copied verbatim from GoogleAuthenticator.extractAuthCode
-		AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(
-				url.toString());
+        AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url.toString());
 
 		if (authResponse.getError() == null) {
 			log.debug("User granted access to our app.");
@@ -156,12 +150,10 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	public String exchangeCode(final String authorizationCode)
 		throws CodeExchangeException {
 		try {
-			AuthorizationCodeTokenRequest request = new AuthorizationCodeTokenRequest(
-					httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
-					authorizationCode);
+            AuthorizationCodeTokenRequest request = new AuthorizationCodeTokenRequest(httpTransport, jsonFactory,
+                    new GenericUrl(TOKEN_EXCHANGE_URL), authorizationCode);
 
-			request.setClientAuthentication(new ClientParametersAuthentication(
-					clientId, clientSecret));
+            request.setClientAuthentication(new ClientParametersAuthentication(clientId, clientSecret));
 			request.setRedirectUri(callbackUri);
 			
 			TokenResponse response = request.execute();
@@ -185,23 +177,20 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			tokenResponse.setAccessToken(accessToken);
 			tokenResponse.setExpiresInSeconds(expires);
 
-			// I don't really want to use the flow storage but it seems to be
-			// easier to get credentials this way.
-			Builder builder = new AuthorizationCodeFlow.Builder(
-					BearerToken.authorizationHeaderAccessMethod(),
-					httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
-					new ClientParametersAuthentication(clientId, clientSecret),
-					clientId, AUTH_URL);
-			builder.setScopes(requestedScopes);
+            // I don't really want to use the flow storage but it seems to be
+            // easier to get credentials this way.
+            Builder builder = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
+                    httpTransport, jsonFactory, new GenericUrl(TOKEN_EXCHANGE_URL),
+                    new ClientParametersAuthentication(clientId, clientSecret), clientId, AUTH_URL);
+            builder.setScopes(requestedScopes);
 
-			AuthorizationCodeFlow flow = builder.setDataStoreFactory(
-					MemoryDataStoreFactory.getDefaultInstance()).build();
+            AuthorizationCodeFlow flow = builder.setDataStoreFactory(MemoryDataStoreFactory.getDefaultInstance())
+                    .build();
 
-			Credential credential = flow.createAndStoreCredential(
-					tokenResponse, authorizationCode);
-			String internalReferenceToken = UUID.randomUUID().toString();
-			credentialStore.put(internalReferenceToken, credential);
-			flow.getCredentialDataStore().clear();
+            Credential credential = flow.createAndStoreCredential(tokenResponse, authorizationCode);
+            String internalReferenceToken = UUID.randomUUID().toString();
+            credentialStore.put(internalReferenceToken, credential);
+            flow.getCredentialDataStore().clear();
 
 			return internalReferenceToken;
 		} catch (IOException e) {
@@ -215,11 +204,10 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		final int numberOfBits = 130;
 		final int radix = 130;
 		
-		String antiForgerySalt = new BigInteger(numberOfBits, new SecureRandom())
-				.toString(radix);
-		String antiForgeryStateToken = "facebook" + antiForgerySalt;
-		return antiForgeryStateToken;
-	}
+        String antiForgerySalt = new BigInteger(numberOfBits, new SecureRandom()).toString(radix);
+        String antiForgeryStateToken = "facebook" + antiForgerySalt;
+        return antiForgeryStateToken;
+    }
 
 	@Override
 	public synchronized UserFromAuthProvider getUserInfo(final String internalProviderReference)
@@ -260,44 +248,41 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		}
 	}
 
-	/**
-	 * This method will contact the identity provider to verify that the token
-	 * is valid for our application.
-	 * 
-	 * @param credentials to verify
-	 * @return true if the token passes our validation false if not.
-	 */
-	private boolean verifyAccessTokenIsValid(final Credential credentials) {
-		Validate.notNull(credentials, "Credentials cannot be null");
+    /**
+     * This method will contact the identity provider to verify that the token is valid for our application.
+     * 
+     * @param credentials
+     *            to verify
+     * @return true if the token passes our validation false if not.
+     */
+    private boolean verifyAccessTokenIsValid(final Credential credentials) {
+        Validate.notNull(credentials, "Credentials cannot be null");
 
-		try {
-			GenericUrl urlBuilder = new GenericUrl(TOKEN_VERIFICATION_URL);
-			urlBuilder.set("access_token", clientId + "|" + clientSecret);
-			urlBuilder.set("input_token", credentials.getAccessToken());
-			
-			FacebookTokenInfo info = JsonLoader.load(
-					inputStreamToString(urlBuilder.toURL().openStream()),
-					FacebookTokenInfo.class, true);
-			return info.getData().getAppId().equals(clientId)
-					&& info.getData().isValid();
-		} catch (IOException e) {
-			log.error("IO error while trying to validate oauth2 security token.");
-			e.printStackTrace();
-		}
-		return false;
-	}
+        try {
+            GenericUrl urlBuilder = new GenericUrl(TOKEN_VERIFICATION_URL);
+            urlBuilder.set("access_token", clientId + "|" + clientSecret);
+            urlBuilder.set("input_token", credentials.getAccessToken());
 
-	/**
-	 * Helper method to merge a collection of strings into a single string.
-	 * 
-	 * @param delim
-	 *            - The delimiter to be inserted between the merged strings
-	 * @param strings
-	 *            - A collection of strings to be merged
-	 * @return the merged string
-	 */
-	private String mergeStrings(final String delim,
-			final Collection<String> strings) {
+            FacebookTokenInfo info = JsonLoader.load(inputStreamToString(urlBuilder.toURL().openStream()),
+                    FacebookTokenInfo.class, true);
+            return info.getData().getAppId().equals(clientId) && info.getData().isValid();
+        } catch (IOException e) {
+            log.error("IO error while trying to validate oauth2 security token.");
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Helper method to merge a collection of strings into a single string.
+     * 
+     * @param delim
+     *            - The delimiter to be inserted between the merged strings
+     * @param strings
+     *            - A collection of strings to be merged
+     * @return the merged string
+     */
+    private String mergeStrings(final String delim, final Collection<String> strings) {
 		if (strings == null) {
 			return null;
 		}

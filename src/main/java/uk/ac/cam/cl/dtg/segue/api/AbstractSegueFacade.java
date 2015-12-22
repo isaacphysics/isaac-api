@@ -29,8 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.IAppDatabaseManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -211,8 +209,8 @@ public abstract class AbstractSegueFacade {
      * @throws NoUserLoggedInException
      *             - if we are unable to tell because they are not logged in.
      */
-    public static boolean isUserAnAdminOrEventManager(final UserAccountManager userManager, final HttpServletRequest request)
-            throws NoUserLoggedInException {
+    public static boolean isUserAnAdminOrEventManager(final UserAccountManager userManager,
+            final HttpServletRequest request) throws NoUserLoggedInException {
         return userManager.checkUserRole(request, Arrays.asList(Role.ADMIN, Role.EVENT_MANAGER));
     }
 

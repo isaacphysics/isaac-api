@@ -81,12 +81,12 @@ import org.slf4j.LoggerFactory;
 @Path("/")
 @Api(value = "/email")
 public class EmailFacade extends AbstractSegueFacade {
-	
-    private EmailManager emailManager;
-    private UserAccountManager userManager;
-    private ContentVersionController versionManager;
-    private final SegueApiFacade api;
     private static final Logger log = LoggerFactory.getLogger(EmailFacade.class);
+    
+    private final EmailManager emailManager;
+    private final UserAccountManager userManager;
+    private final ContentVersionController versionManager;
+    private final SegueApiFacade api;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
 
