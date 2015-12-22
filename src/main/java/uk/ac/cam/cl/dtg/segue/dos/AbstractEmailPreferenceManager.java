@@ -47,7 +47,7 @@ public abstract class AbstractEmailPreferenceManager {
 									final EmailType emailPreference) throws SegueDatabaseException;
 	
 	/**
-     * @param userIds - a list of user ids to look up
+     * @param users - a list of users to look up
      * @return a map of user ids and email preferences.
      * @throws SegueDatabaseException - if a database error has occurred.
 	 */

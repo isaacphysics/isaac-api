@@ -941,7 +941,8 @@ public class GitContentManager implements IContentManager {
             if (c instanceof Media) {
                 Media f = (Media) c;
 
-                if (f.getSrc() != null && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())) {
+                if (f.getSrc() != null 
+                        && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())) {
                     this.registerContentProblem(sha, c, "Unable to find Image: " + f.getSrc()
                             + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
                 }

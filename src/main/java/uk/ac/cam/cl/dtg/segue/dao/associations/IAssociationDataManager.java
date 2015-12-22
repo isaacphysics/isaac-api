@@ -44,6 +44,8 @@ public interface IAssociationDataManager {
      * @param tokenCode
      *            the token code
      * @return an AssociationToken containing owner information and group id if set.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
      */
     AssociationToken lookupAssociationToken(final String tokenCode) throws SegueDatabaseException;
 
@@ -53,6 +55,8 @@ public interface IAssociationDataManager {
      * @param groupId
      *            - id of the group to check.
      * @return token if the group has a token already otherwise null.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
      */
     AssociationToken getAssociationTokenByGroupId(Long groupId) throws SegueDatabaseException;
 
@@ -112,6 +116,8 @@ public interface IAssociationDataManager {
      * @param userId
      *            - User to find the associations for.
      * @return the list of user associations.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
      */
     List<UserAssociation> getUserAssociations(Long userId) throws SegueDatabaseException;
 
@@ -123,6 +129,8 @@ public interface IAssociationDataManager {
      * @param userId
      *            - User to find the associations for.
      * @return the list of user associations.
+     * @throws SegueDatabaseException
+     *             - if there is a database error.
      */
     List<UserAssociation> getUsersThatICanSee(Long userId) throws SegueDatabaseException;
 }

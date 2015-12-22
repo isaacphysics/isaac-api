@@ -22,7 +22,6 @@ import java.util.Map;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.api.client.util.Maps;
 
 /**
  * Domain Object to represent an Anonymous user of the system.
@@ -47,7 +46,6 @@ public class AnonymousUser extends AbstractSegueUser {
      *            - Our session Unique ID
      */
     public AnonymousUser(@JsonProperty("_id") final String sessionId) {
-        
         this.sessionId = sessionId;
     }
 

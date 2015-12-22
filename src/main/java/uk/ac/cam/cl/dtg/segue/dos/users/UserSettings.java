@@ -42,7 +42,7 @@ public class UserSettings {
 	/**
 	 * @param passwordCurrent the passwordCurrent to set
 	 */
-	public void setPasswordCurrent(String passwordCurrent) {
+	public void setPasswordCurrent(final String passwordCurrent) {
 		this.passwordCurrent = passwordCurrent;
 	}
 

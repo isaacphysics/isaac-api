@@ -17,12 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dos;
 
 import java.util.Date;
 
-import javax.annotation.Nullable;
-
-import org.mongojack.ObjectId;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * A UserAssociation represents the fact that a user has granted permissions to view their users information to another
  * user.
@@ -43,8 +37,6 @@ public class UserAssociation {
     /**
      * UserAssociation.
      * 
-     * @param id
-     *            - unique identifier for the database use only.
      * @param userIdGrantingPermission
      *            - The user who is granting permission (the owner of the data)
      * @param userIdReceivingPermission

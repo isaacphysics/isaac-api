@@ -24,8 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
-
 import org.apache.commons.lang3.Validate;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
