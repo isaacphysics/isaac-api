@@ -76,7 +76,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
 		    		emailPreferenceManager, final PropertiesLoader globalProperties, 
 		    		final ContentVersionController contentVersionController, final ILogManager logManager) {
-        super(communicator, logManager);
+        super(communicator);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentVersionController = contentVersionController;
@@ -745,6 +745,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- the subject of the email
      * @param replyToAddress
      * 		- the reply-to address of the email - needed for contact form
+     * @param emailType
+     *      - the type of e-mail being created
      * @return
      * 		- a multi-part EmailCommunicationMessage
      * @throws ContentManagerException

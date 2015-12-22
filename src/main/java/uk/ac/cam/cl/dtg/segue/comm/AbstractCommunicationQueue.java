@@ -22,7 +22,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 
 
 /**
@@ -34,8 +33,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
  *            type of message to send
  */
 public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage> {
-	
-    private final ILogManager logManager;
 	
 	/**
 	 * Comparator that tells the priority queue which email should be sent first.
@@ -69,13 +66,9 @@ public abstract class AbstractCommunicationQueue<T extends ICommunicationMessage
      * 
      * @param communicator
      *            A class to send messages
-     * @param logManager
-     *            the log manager
      */
-    public AbstractCommunicationQueue(final ICommunicator<T> communicator, 
-    	    final ILogManager logManager) {
+    public AbstractCommunicationQueue(final ICommunicator<T> communicator) {
         this.communicator = communicator;
-        this.logManager = logManager;
         this.executorService = Executors.newFixedThreadPool(2); 
     }
 
