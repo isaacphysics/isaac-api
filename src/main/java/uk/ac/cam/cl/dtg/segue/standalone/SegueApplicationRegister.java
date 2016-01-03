@@ -25,7 +25,7 @@ import com.google.inject.Injector;
 
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 /**
@@ -50,7 +50,7 @@ public class SegueApplicationRegister extends Application {
         // Registers segue singleton endpoints as /isaac/segue/api
         Injector injector = Guice.createInjector(new IsaacGuiceConfigurationModule(),
                 new SegueGuiceConfigurationModule());
-        this.singletons.add(injector.getInstance(SegueApiFacade.class));
+        this.singletons.add(injector.getInstance(SegueDefaultFacade.class));
         return this.singletons;
     }
 

@@ -86,15 +86,12 @@ public class EmailFacade extends AbstractSegueFacade {
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
     private final ContentVersionController versionManager;
-    private final SegueApiFacade api;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
 
 	        /**
      * EmailFacade. This class is responsible for orchestrating e-mail operations
      * 
-     * @param api
-     *            - a reference to the segue api facade.
      * @param properties
      *            - global properties loader
      * @param logManager
@@ -111,12 +108,11 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - misuse monitor.
      */
     @Inject
-    public EmailFacade(final SegueApiFacade api, final PropertiesLoader properties, final ILogManager logManager,
+    public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
             final EmailManager emailManager, final UserAccountManager userManager,
             final ContentVersionController contentVersionController,
             final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
-		this.api = api;
 		this.versionManager = contentVersionController;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
@@ -145,7 +141,7 @@ public class EmailFacade extends AbstractSegueFacade {
     	
     	RegisteredUserDTO currentUser;
 		try {
-			currentUser = this.api.getCurrentUser(request);			
+			currentUser = this.userManager.getCurrentRegisteredUser(request);			
 		} catch (NoUserLoggedInException e2) {
     		return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -179,7 +175,7 @@ public class EmailFacade extends AbstractSegueFacade {
     	
     	RegisteredUserDTO currentUser;
 		try {
-			currentUser = this.api.getCurrentUser(request);			
+			currentUser = this.userManager.getCurrentRegisteredUser(request);			
 		} catch (NoUserLoggedInException e2) {
     		return SegueErrorResponse.getNotLoggedInResponse();
 		}
@@ -433,7 +429,7 @@ public class EmailFacade extends AbstractSegueFacade {
     	RegisteredUserDTO sender;
     	
 		try {
-			sender = this.api.getCurrentUser(request);
+			sender = this.userManager.getCurrentRegisteredUser(request);
 			
 			if (!isUserAnAdmin(userManager, request)) {
 			    return SegueErrorResponse.getIncorrectRoleResponse();
@@ -519,7 +515,7 @@ public class EmailFacade extends AbstractSegueFacade {
         RegisteredUserDTO sender;
 
         try {
-            sender = this.api.getCurrentUser(request);
+            sender = this.userManager.getCurrentRegisteredUser(request);
 
             if (!isUserAnAdmin(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();

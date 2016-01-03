@@ -29,7 +29,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,8 +49,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -81,7 +81,7 @@ public class GameboardPersistenceManager {
 	private final MapperFacade mapper; // used for content object mapping.
 	private final ObjectMapper objectMapper; // used for json serialisation
 	
-	private final SegueApiFacade api;
+	private final ContentVersionController versionManager;
 
     private final URIManager uriManager;
 
@@ -90,9 +90,8 @@ public class GameboardPersistenceManager {
      * 
      * @param database
      *            - the database reference used for persistence.
-     * @param api
-     *            - handle to segue api so that we can perform queries to augment gameboard data before and after
-     *            persistence.
+     * @param versionManager
+     *            - allows us to lookup gameboard content.
      * @param mapper
      *            - An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
      * @param objectMapper
@@ -102,11 +101,11 @@ public class GameboardPersistenceManager {
      *            - so we can generate appropriate content URIs.
      */
 	@Inject
-    public GameboardPersistenceManager(final PostgresSqlDb database, final SegueApiFacade api,
+    public GameboardPersistenceManager(final PostgresSqlDb database, final ContentVersionController versionManager,
             final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager) {
 		this.database = database;
 		this.mapper = mapper;
-		this.api = api;
+		this.versionManager = versionManager;
         this.objectMapper = objectMapper;
         this.uriManager = uriManager;		
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
@@ -401,14 +400,20 @@ public class GameboardPersistenceManager {
         fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
                 Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
-        // Search for questions that match the ids.
-        ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0, gameboardDO
-                .getQuestions().size());
-
+        // Search for questions that match the ids.       
+        ResultsWrapper<ContentDTO> results;
+        try {
+            results = this.versionManager.getContentManager().findByFieldNames(versionManager.getLiveVersion(),
+                    fieldsToMap, 0, gameboardDO.getQuestions().size());
+        } catch (ContentManagerException e) {
+            results = new ResultsWrapper<ContentDTO>();
+            log.error("Unable to select questions for gameboard.", e);
+        }
+        
 		List<ContentDTO> questionsForGameboard = results.getResults();
 
 		// Map each Content object into an GameboardItem object
-		Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
+		Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
 
 		for (ContentDTO c : questionsForGameboard) {
 			GameboardItem questionInfo = mapper.map(c, GameboardItem.class);
@@ -689,9 +694,16 @@ public class GameboardPersistenceManager {
                 Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
 		// Search for questions that match the ids.
-		ResultsWrapper<ContentDTO> results = api.findMatchingContent(api.getLiveVersion(), fieldsToMap, 0,
-                questionIds.size());
-	    Map<String, GameboardItem> gameboardReadyQuestions = new HashMap<String, GameboardItem>();
+		ResultsWrapper<ContentDTO> results;
+        try {
+            results = this.versionManager.getContentManager().findByFieldNames(this.versionManager.getLiveVersion(),
+                    fieldsToMap, 0, questionIds.size());
+        } catch (ContentManagerException e) {
+            results = new ResultsWrapper<ContentDTO>();
+            log.error("Unable to locate questions for gameboard. Using empty results", e);
+        }
+        
+	    Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
 		
 	    if (null == results) {
 	        return gameboardReadyQuestions;

@@ -27,6 +27,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 import io.swagger.annotations.Api;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,7 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
@@ -89,7 +90,7 @@ import com.google.inject.Inject;
 public class IsaacController extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(IsaacController.class);
 
-    private final SegueApiFacade api;
+    private final SegueContentFacade api;
     private final MapperFacade mapper;
     private final StatisticsManager statsManager;
     private final ContentVersionController versionManager;
@@ -120,7 +121,7 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - URI manager so we can augment uris
      */
     @Inject
-    public IsaacController(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
+    public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
             final ContentVersionController versionManager, final UserAccountManager userManager,
             final UserAssociationManager associationManager, final URIManager uriManager) {

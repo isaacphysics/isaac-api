@@ -30,12 +30,16 @@ import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
+import uk.ac.cam.cl.dtg.segue.api.ContactFacade;
 import uk.ac.cam.cl.dtg.segue.api.EmailFacade;
 import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
+import uk.ac.cam.cl.dtg.segue.api.InfoFacade;
 import uk.ac.cam.cl.dtg.segue.api.LogEventFacade;
 import uk.ac.cam.cl.dtg.segue.api.NotificationFacade;
+import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
 import uk.ac.cam.cl.dtg.segue.api.SchoolLookupServiceFacade;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
@@ -83,14 +87,20 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(SchoolLookupServiceFacade.class));
 
             // initialise segue framework.
+            this.singletons.add(injector.getInstance(SegueContentFacade.class));
+            this.singletons.add(injector.getInstance(InfoFacade.class));
+            this.singletons.add(injector.getInstance(ContactFacade.class));
+            this.singletons.add(injector.getInstance(QuestionFacade.class));
             this.singletons.add(injector.getInstance(LogEventFacade.class));
-            this.singletons.add(injector.getInstance(SegueApiFacade.class));
+            this.singletons.add(injector.getInstance(SegueDefaultFacade.class));
             this.singletons.add(injector.getInstance(UsersFacade.class));
             this.singletons.add(injector.getInstance(AuthenticationFacade.class));
             this.singletons.add(injector.getInstance(AdminFacade.class));
             this.singletons.add(injector.getInstance(AuthorisationFacade.class));
             this.singletons.add(injector.getInstance(AssignmentFacade.class));
             this.singletons.add(injector.getInstance(GroupsFacade.class));
+            
+            // initialise isaac specific facades
             this.singletons.add(injector.getInstance(GameboardsFacade.class));
             this.singletons.add(injector.getInstance(IsaacController.class));
             this.singletons.add(injector.getInstance(PagesFacade.class));

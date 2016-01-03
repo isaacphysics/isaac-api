@@ -26,9 +26,8 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -50,7 +49,7 @@ import com.google.inject.Singleton;
 public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
 
-    private static SegueApiFacade segueApi = null;
+    private static SegueDefaultFacade segueApi = null;
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
@@ -58,7 +57,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      * Creates a new isaac guice configuration module.
      */
     public IsaacGuiceConfigurationModule() {
-        
+
     }
 
     @Override
@@ -87,8 +86,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      *            - the version controller that is in charge of managing content versions.
      * @param userManager
      *            - The user manager instance for segue.
-     * @param questionManager
-     *            - The Question Manager object for segue.
      * @param emailManager
      *            - The communication Manager object for segue.
      * @param logManager
@@ -98,13 +95,13 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private static SegueApiFacade getSegueFacadeSingleton(final PropertiesLoader properties,
+    private static SegueDefaultFacade getSegueFacadeSingleton(final PropertiesLoader properties,
             final ContentMapper mapper, @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
             final ContentVersionController versionController, final UserAccountManager userManager,
-            final QuestionManager questionManager, final EmailManager emailManager, final ILogManager logManager) {
+            final EmailManager emailManager, final ILogManager logManager) {
         if (null == segueApi) {
-            segueApi = new SegueApiFacade(properties, mapper, segueConfigurationModule, versionController, userManager,
-                    questionManager, emailManager, logManager);
+            segueApi = new SegueDefaultFacade(properties, mapper, segueConfigurationModule, versionController,
+                    userManager, emailManager, logManager);
             log.info("Creating Singleton of Segue API");
         }
 
@@ -116,10 +113,14 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      * 
      * This needs to be a singleton as it maintains temporary boards in memory.
      * 
-     * @param api
+     * @param database
+     *            - the database that persists gameboards.
+     * @param versionManager
      *            - api that the game manager can use for content resolution.
      * @param mapper
-     *            - an instance of an auto mapper.
+     *            - an instance of an auto mapper for translating gameboard DOs and DTOs efficiently.
+     * @param objectMapper
+     *            - a mapper to allow content to be resolved.
      * @param uriManager
      *            - so that the we can create content that is aware of its own location
      * @return Game persistence manager object.
@@ -128,11 +129,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-            final SegueApiFacade api, final MapperFacade mapper, final ObjectMapper objectMapper,
+            final ContentVersionController versionManager, final MapperFacade mapper, final ObjectMapper objectMapper,
             final URIManager uriManager) {
         if (null == gameboardPersistenceManager) {
-            gameboardPersistenceManager = new GameboardPersistenceManager(database, api, mapper, objectMapper,
-                    uriManager);
+            gameboardPersistenceManager = new GameboardPersistenceManager(database, versionManager, mapper,
+                    objectMapper, uriManager);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

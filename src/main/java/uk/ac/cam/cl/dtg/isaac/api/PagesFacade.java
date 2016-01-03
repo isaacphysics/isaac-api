@@ -63,7 +63,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionSummaryPageDTO;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -96,7 +96,7 @@ import com.google.inject.Inject;
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
-    private final SegueApiFacade api;
+    private final SegueContentFacade api;
     private final MapperFacade mapper;
     private final ContentVersionController versionManager;
     private final UserAccountManager userManager;
@@ -128,7 +128,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - For looking up gameboard information.
      */
     @Inject
-    public PagesFacade(final SegueApiFacade api, final PropertiesLoader propertiesLoader,
+    public PagesFacade(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
             final ILogManager logManager, final MapperFacade mapper, final ContentVersionController versionManager,
             final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
             final GameManager gameManager) {
@@ -430,7 +430,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                 userIdForRandomisation = ((RegisteredUserDTO) user).getId().toString();
             }
 
-            content = api.getQuestionManager().augmentQuestionObjects(content, userIdForRandomisation,
+            content = this.questionManager.augmentQuestionObjects(content, userIdForRandomisation,
                     userQuestionAttempts);
 
             // the request log
@@ -641,7 +641,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
 
         ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
-                SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
         Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                 .tag(etag)
@@ -650,6 +650,24 @@ public class PagesFacade extends AbstractIsaacFacade {
         return cachableResult;
     }
 
+    /**
+     * Utility method to allow related content to be populated as summary objects.
+     * 
+     * By default content summary objects may just have ids.
+     * 
+     * @param version
+     *            - version of the content to use for augmentation.
+     * @param contentToAugment
+     *            - the content to augment.
+     * @return content which has been augmented
+     * @throws ContentManagerException
+     *             - an exception when the content is not found
+     */
+    public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
+            throws ContentManagerException {
+        return this.versionManager.getContentManager().populateRelatedContent(version, contentToAugment);
+    }
+    
     /**
      * This method will extract basic information from a content object so the lighter ContentInfo object can be sent to
      * the client instead.
@@ -704,7 +722,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      */
     private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
         ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(versionManager.getLiveVersion(),
-                SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
                                                                                         // type
                                                                                         // checking.
         ContentDTO c = null;
@@ -720,7 +738,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            return Response.ok(api.augmentContentWithRelatedContent(versionManager.getLiveVersion(), c)).build();
+            return Response.ok(this.augmentContentWithRelatedContent(versionManager.getLiveVersion(), c)).build();
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);
@@ -747,7 +765,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         ResultsWrapper<ContentDTO> c;
 
         c = api.findMatchingContent(versionManager.getLiveVersion(),
-                SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
+                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
                 this.extractContentSummaryFromList(c.getResults()),

@@ -47,7 +47,7 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.SegueApiFacade;
+import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -182,7 +182,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
-                    versionManager.getLiveVersion(), SegueApiFacade.generateDefaultFieldToMatch(fieldsToMatch),
+                    versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             return Response.ok(findByFieldNames).build();
