@@ -36,7 +36,6 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
@@ -53,6 +52,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 

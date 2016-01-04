@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.dao.users;
+package uk.ac.cam.cl.dtg.segue.quiz;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANONYMOUS_SESSION_DURATION_IN_MINUTES;
 

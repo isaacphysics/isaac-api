@@ -114,8 +114,8 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 
 
 	@Override
-	public Map<Long, Map<EmailType, Boolean>> getEmailPreferences(
-			final List<RegisteredUserDTO> users) throws SegueDatabaseException {
+    public Map<Long, Map<EmailType, Boolean>> getEmailPreferences(final List<RegisteredUserDTO> users)
+            throws SegueDatabaseException {
 		
 		Map<Long, Map<EmailType, Boolean>> returnMap = Maps.newHashMap(); 
         try (Connection conn = database.getDatabaseConnection()) {
@@ -186,7 +186,7 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
     	PreparedStatement pst;
     	try (Connection conn = database.getDatabaseConnection()) {
     		conn.setAutoCommit(false);
-    		for(IEmailPreference preference : emailPreferences) {
+    		for (IEmailPreference preference : emailPreferences) {
 	    		pst = conn.prepareStatement("WITH upsert AS (UPDATE user_email_preferences "
 	    				+ "SET email_preference_status=? WHERE user_id=? AND email_preference=? RETURNING *) "
 	    				+ "INSERT INTO user_email_preferences (user_id, email_preference, email_preference_status) "
@@ -256,7 +256,5 @@ public class PgEmailPreferenceManager extends AbstractEmailPreferenceManager {
 			returnObject.put(preference.getEmailType().toString(), preference.getEmailPreferenceStatus());
 		}
 		return returnObject;
-	}
-
-	
+	}	
 }

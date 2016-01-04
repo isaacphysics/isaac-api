@@ -108,7 +108,6 @@ public class AssignmentManager implements IGroupObserver {
             assignments.addAll(this.assignmentPersistenceManager.getAssignmentsByGroupId(group.getId()));
         }
 
-
         return assignments;
     }
 
@@ -179,7 +178,6 @@ public class AssignmentManager implements IGroupObserver {
             log.error("Could not send group assignment emails due to content issue", e);
         }
         
-
         return newAssignment;
     }
 

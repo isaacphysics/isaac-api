@@ -1,4 +1,4 @@
-package uk.ac.cam.cl.dtg.segue.dao.users;
+package uk.ac.cam.cl.dtg.segue.quiz;
 
 import java.util.List;
 import java.util.Map;

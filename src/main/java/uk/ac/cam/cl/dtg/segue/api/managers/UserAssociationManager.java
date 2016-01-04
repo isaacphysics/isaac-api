@@ -42,12 +42,10 @@ import com.google.inject.Inject;
  * view rights to another.
  */
 public class UserAssociationManager {
-    private final IAssociationDataManager associationDatabase;
-
-    private final int tokenLength = 6;
-
     private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
-
+    
+    private final IAssociationDataManager associationDatabase;
+    private final int tokenLength = 6;
     private final GroupManager userGroupManager;
 
     /**
@@ -63,6 +61,7 @@ public class UserAssociationManager {
             final GroupManager userGroupManager) {
         this.associationDatabase = associationDatabase;
         this.userGroupManager = userGroupManager;
+        log.debug("Creating an instance of the UserAssociationManager.");
     }
 
     /**

@@ -100,7 +100,7 @@ public class UserAccountManager {
      * @param database
      *            - an IUserDataManager that will support persistence.
      * @param questionDb
-     *            - supports persistence of question attempt info.
+     *            - allows this class to instruct the questionDB to merge an anonymous user with a registered user.  
      * @param properties
      *            - A property loader
      * @param providersToRegister

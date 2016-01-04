@@ -36,7 +36,6 @@ import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
@@ -67,9 +66,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -77,6 +74,8 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
+import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -101,38 +100,26 @@ import com.google.inject.name.Names;
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
-    // we only ever want there to be one instance of each of these.
-    private static PostgresSqlDb postgresDB;
-
-    private static ContentMapper mapper = null;
-    private static ContentVersionController contentVersionController = null;
-
-    private static GitContentManager contentManager = null;
-    private static Client elasticSearchClient = null;
-
-    private static UserAccountManager userManager = null;
-    
-    private static PgQuestionAttempts questionPersistenceManager = null;
-    
     private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
-
-    private static UserAssociationManager userAssociationManager = null;
-
-    private static ILogManager logManager;
-
-    private static EmailManager emailCommunicationQueue = null;
-
-    private static IMisuseMonitor misuseMonitor = null;
     
+    // Singletons - we only ever want there to be one instance of each of these.
+    private static PostgresSqlDb postgresDB;
+    private static ContentMapper mapper = null;
+    private static ContentVersionController contentVersionController = null;
+    private static GitContentManager contentManager = null;
+    private static Client elasticSearchClient = null;
+    private static UserAccountManager userManager = null;
+    private static IQuestionAttemptManager questionPersistenceManager = null;
+    private static ILogManager logManager;
+    private static EmailManager emailCommunicationQueue = null;
+    private static IMisuseMonitor misuseMonitor = null;
     private static StatisticsManager statsManager = null;
-
 	private static GroupManager groupManager = null;
-	
-    private static AbstractEmailPreferenceManager abstractEmailPreferenceManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
-
+    private static Reflections reflections = null;
+    
     /**
      * Create a SegueGuiceConfigurationModule.
      */
@@ -202,7 +189,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     private void configureDataPersistence() throws IOException {
         // Setup different persistence bindings
-        // MongoDb
+        // MongoDb - currently not used.
         this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
         this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
         this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
@@ -271,18 +258,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Deals with application data managers.
      */
     private void configureApplicationManagers() {
-        // Allows Mongo to take over Content Management
-        // bind(IContentManager.class).to(MongoContentManager.class);
-
         // Allows GitDb to take over content Management
         bind(IContentManager.class).to(GitContentManager.class);
 
         bind(LocationHistory.class).to(PgLocationHistory.class);
         
-        bind(IQuestionAttemptManager.class).to(PgQuestionAttempts.class);
         bind(IUserDataManager.class).to(PgUsers.class);
         
         bind(ICommunicator.class).to(EmailCommunicator.class);
+        
+        bind(AbstractEmailPreferenceManager.class).to(PgEmailPreferenceManager.class);
     }
 
     /**
@@ -308,23 +293,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == elasticSearchClient) {
             elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
             log.info("Creating singleton of ElasticSearchProvider");
-        }
+        } 
+        // eventually we want to do something like the below to make sure we get updated clients        
+//        if (elasticSearchClient instanceof TransportClient) {
+//            TransportClient tc = (TransportClient) elasticSearchClient;
+//            if (tc.connectedNodes().isEmpty()) {
+//                tc.close();        
+//                log.error("The elasticsearch client is not connected to any nodes. Trying to reconnect...");
+//                elasticSearchClient = null;
+//                return getSearchConnectionInformation(clusterName, address, port);
+//            }
+//        }
 
         return elasticSearchClient;
-    }
-
-    /**
-     * @param database - the database needed to support the manager
-     * @return singelton AbstractEmailPreferenceManager object.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static AbstractEmailPreferenceManager getAbstractEmailPreferenceManager(final PostgresSqlDb database) {
-    	if (null == abstractEmailPreferenceManager) {
-    		abstractEmailPreferenceManager = new PgEmailPreferenceManager(database);
-    	}
-    	return abstractEmailPreferenceManager;
     }
     
     /**
@@ -358,6 +339,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the git content manager for the segue facade.
      * 
+     * TODO: This is a singleton as the units and tags are stored in memory. If we move these out it can be an instance.
+     * This would be better as then we can give it a new search provider if the client has closed.
+     * 
      * @param database
      *            - database reference
      * @param searchProvider
@@ -381,6 +365,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the LogManager for the Segue facade.
+     * 
+     * Note: This is a singleton as logs are created very often and we wanted to minimise the overhead in class
+     * creation. Although we can convert this to instances if we want to tidy this up.
      * 
      * @param database
      *            - database reference
@@ -412,7 +399,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * This provides a singleton of the contentVersionController for the segue facade.
+     * This provides a singleton of the contentVersionController for the segue facade. 
+     * Note: This is a singleton because this content mapper has to use reflection to register all content classes.
      * 
      * @return Content version controller with associated dependencies.
      */
@@ -421,15 +409,17 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static ContentMapper getContentMapper() {
         if (null == mapper) {
-            String packageToSearchForValidContentDOs = "uk.ac.cam.cl.dtg.segue";
-            mapper = new ContentMapper(packageToSearchForValidContentDOs);
-            log.info("Initialising Content Mapper");
+            mapper = new ContentMapper(getReflectionsClass());
+            log.info("Creating Singleton of the Content Mapper");
         }
 
         return mapper;
     }
 
     /**
+     * This provides a singleton of the e-mail manager class.
+     * 
+     * Note: This has to be a singleton because it manages all emails sent using this JVM.
      * 
      * @param database
      * 			- the database to access preferences
@@ -466,6 +456,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * This provides a singleton of the UserManager for various facades.
      * 
+     * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
+     * 
+     * @param database
+     *            - the user persistence manager.
      * @param questionManager
      *            - IUserManager
      * @param properties
@@ -478,6 +472,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - so that we can log interesting user based events.
      * @param mapperFacade
      *            - for DO and DTO mapping.
+     * @param userAuthenticationManager
+     *            - Responsible for handling the various authentication functions.
      * @return Content version controller with associated dependencies.
      */
     @Inject
@@ -485,11 +481,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private UserAccountManager getUserManager(final IUserDataManager database, final QuestionManager questionManager,
             final PropertiesLoader properties, final Map<AuthenticationProvider, IAuthenticator> providersToRegister,
-            final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade, final UserAuthenticationManager userAuthenticationManager) {
+            final EmailManager emailQueue, final ILogManager logManager, final MapperFacade mapperFacade,
+            final UserAuthenticationManager userAuthenticationManager) {
 
         if (null == userManager) {
-            userManager = new UserAccountManager(database, questionManager, properties, providersToRegister, mapperFacade,
-                    emailQueue, logManager, userAuthenticationManager);
+            userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
+                    mapperFacade, emailQueue, logManager, userAuthenticationManager);
             log.info("Creating singleton of UserManager");
         }
 
@@ -497,6 +494,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
     
     /**
+     * QuestionManager.
+     * Note: This has to be a singleton as the question manager keeps anonymous question attempts in memory.
+     * 
      * @param ds - postgres data source
      * @param objectMapper - mapper
      * @return a singleton for question persistence.
@@ -504,68 +504,47 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private PgQuestionAttempts getQuestionManager(final PostgresSqlDb ds, final ContentMapper objectMapper) {
+    private IQuestionAttemptManager getQuestionManager(final PostgresSqlDb ds, final ContentMapper objectMapper) {
         // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
         if (null == questionPersistenceManager) {
             questionPersistenceManager = new PgQuestionAttempts(ds, objectMapper);
-            log.info("Creating singleton of QuestionPersistenceManager");
+            log.info("Creating singleton of IQuestionAttemptManager");
         }
 
         return questionPersistenceManager;
     }
 
-	/**
-	 * This provides a singleton of the GroupManager.
-	 * 
-	 * @param userGroupDataManager
-	 *            - user group data manager
-	 * @param userManager
-	 *            - user manager
-	 * @param dtoMapper
-	 *            - dtoMapper
-	 * @return group manager
-	 */
-	@Inject
-	@Provides
-	@Singleton
-	private GroupManager getGroupManager(
-			final IUserGroupPersistenceManager userGroupDataManager,
-			final UserAccountManager userManager, final MapperFacade dtoMapper) {
-
-		if (null == groupManager) {
-			groupManager = new GroupManager(userGroupDataManager, userManager,
-					dtoMapper);
-			log.info("Creating singleton of GroupManager");
-		}
-
-		return groupManager;
-	}
-
     /**
-     * This provides a singleton of the UserAssociationManager for the Authorisation facade.
+     * This provides a singleton of the GroupManager.
      * 
-     * @param database
-     *            - IUserManager
-     * @param userGroupDatabase
-     *            - group database
+     * Note: This needs to be a singleton as we register observers for groups.
      * 
-     * @return Content version controller with associated dependencies.
+     * @param userGroupDataManager
+     *            - user group data manager
+     * @param userManager
+     *            - user manager
+     * @param dtoMapper
+     *            - dtoMapper
+     * @return group manager
      */
     @Inject
     @Provides
     @Singleton
-    private UserAssociationManager getAssociationManager(final IAssociationDataManager database,
-            final GroupManager userGroupDatabase) {
-        if (null == userAssociationManager) {
-            userAssociationManager = new UserAssociationManager(database, userGroupDatabase);
-            log.info("Creating singleton of UserAssociationManager");
+    private GroupManager getGroupManager(final IUserGroupPersistenceManager userGroupDataManager,
+            final UserAccountManager userManager, final MapperFacade dtoMapper) {
+
+        if (null == groupManager) {
+            groupManager = new GroupManager(userGroupDataManager, userManager, dtoMapper);
+            log.info("Creating singleton of GroupManager");
         }
 
-        return userAssociationManager;
+        return groupManager;
     }
 
     /**
      * Get singleton of misuseMonitor.
+     * 
+     * Note: this has to be a singleton as it tracks (in memory) the number of misuses.
      * 
      * @param emailManager
      *            - so that the monitors can send e-mails.
@@ -580,7 +559,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == misuseMonitor) {
             misuseMonitor = new InMemoryMisuseMonitor();
             log.info("Creating singleton of MisuseMonitor");
-
+            
             // TODO: We should automatically register all handlers that implement this interface using reflection?
             // register handlers segue specific handlers
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
@@ -631,6 +610,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     /**
      * Gets the instance of the postgres connection wrapper.
      * 
+     * Note: This needs to be a singleton as it contains a connection pool.
+     * 
      * @param databaseUrl
      *            - database to connect to.
      * @param username
@@ -662,6 +643,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Gets the instance of the StatisticsManager.
+     * Note: this class is a hack and needs to be refactored.... It is currently only a singleton as it keeps a cache.
      * 
      * @param userManager
      *            - dependency
@@ -684,13 +666,13 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     @Inject
-    private static StatisticsManager getStatsManager(final UserAccountManager userManager, final ILogManager logManager,
-            final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
-            final GroupManager groupManager, final QuestionManager questionManager) {
+    private static StatisticsManager getStatsManager(final UserAccountManager userManager,
+            final ILogManager logManager, final SchoolListReader schoolManager,
+            final ContentVersionController versionManager, final IContentManager contentManager,
+            final LocationHistoryManager locationHistoryManager, final GroupManager groupManager,
+            final QuestionManager questionManager) {
 
         if (null == statsManager) {
-
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
                     contentManager, locationHistoryManager, groupManager, questionManager);
             log.info("Created Singleton of Statistics Manager");
@@ -701,7 +683,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
     
     /**
-     * This provides an instance of the location resolver.
+     * This provides a new instance of the location resolver.
      *
      * @param apiKey
      *            - for using the third party service.
@@ -726,6 +708,19 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
+     * Utility method to get a pre-generated reflections class for the uk.ac.cam.cl.dtg.segue package.
+     * 
+     * @return reflections.
+     */
+    public static Reflections getReflectionsClass() {
+        if (null == reflections) {
+            log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
+            reflections = new Reflections("uk.ac.cam.cl.dtg.segue");            
+        }
+        return reflections;
+    }
+    
+    /**
      * Gets the segue classes that should be registered as context listeners.
      * 
      * @return the list of context listener classes (these should all be singletons).
@@ -734,8 +729,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         if (null == contextListeners) {
             contextListeners = Lists.newArrayList();
-            Reflections reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
-            Set<Class<? extends ServletContextListener>> subTypes = reflections
+
+            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass()
                     .getSubTypesOf(ServletContextListener.class);
 
             for (Class<? extends ServletContextListener> contextListener : subTypes) {

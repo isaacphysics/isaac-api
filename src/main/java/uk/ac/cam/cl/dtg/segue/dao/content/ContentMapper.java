@@ -87,18 +87,17 @@ public class ContentMapper {
     /**
      * Alternative constructor that will attempt to search for valid types to pre-register.
      * 
-     * @param packageToSearch
+     * @param configuredReflectionClass
      *            - string representing the parent package to search for content classes. e.g. uk.ac.cam.cl.dtg.segue
      */
     @SuppressWarnings("unchecked")
-    public ContentMapper(final String packageToSearch) {
+    public ContentMapper(final Reflections configuredReflectionClass) {
         this();
-        Validate.notBlank(packageToSearch);
+        Validate.notNull(configuredReflectionClass);
 
         // We need to pre-register different content objects here for the
         // auto-mapping to work
-        Reflections reflections = new Reflections(packageToSearch);
-        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(JsonContentType.class);
+        Set<Class<?>> annotated = configuredReflectionClass.getTypesAnnotatedWith(JsonContentType.class);
 
         for (Class<?> classToAdd : annotated) {
             if (Content.class.isAssignableFrom(classToAdd)) {
