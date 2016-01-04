@@ -642,8 +642,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
     /**
-     * Gets the instance of the StatisticsManager.
-     * Note: this class is a hack and needs to be refactored.... It is currently only a singleton as it keeps a cache.
+     * Gets the instance of the StatisticsManager. Note: this class is a hack and needs to be refactored.... It is
+     * currently only a singleton as it keeps a cache.
      * 
      * @param userManager
      *            - dependency
@@ -652,8 +652,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @param schoolManager
      *            - dependency
      * @param versionManager
-     *            - dependency
-     * @param contentManager
      *            - dependency
      * @param locationHistoryManager
      *            - dependency
@@ -668,13 +666,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
             final ILogManager logManager, final SchoolListReader schoolManager,
-            final ContentVersionController versionManager, final IContentManager contentManager,
-            final LocationHistoryManager locationHistoryManager, final GroupManager groupManager,
-            final QuestionManager questionManager) {
+            final ContentVersionController versionManager, final LocationHistoryManager locationHistoryManager,
+            final GroupManager groupManager, final QuestionManager questionManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
-                    contentManager, locationHistoryManager, groupManager, questionManager);
+                    locationHistoryManager, groupManager, questionManager);
             log.info("Created Singleton of Statistics Manager");
 
         }

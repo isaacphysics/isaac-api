@@ -39,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -71,7 +70,7 @@ public class StatisticsManager {
     private ILogManager logManager;
     private SchoolListReader schoolManager;
     private ContentVersionController versionManager;
-    private IContentManager contentManager;
+    //private IContentManager contentManager;
     private GroupManager groupManager;
     private QuestionManager questionManager;
     
@@ -96,8 +95,6 @@ public class StatisticsManager {
      *            - to query School information
      * @param versionManager
      *            - to query live version information
-     * @param contentManager
-     *            - to query content
      * @param locationHistoryManager
      *            - so that we can query our location database (ip addresses)
      * @param groupManager
@@ -108,15 +105,14 @@ public class StatisticsManager {
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final IContentManager contentManager, final LocationHistoryManager locationHistoryManager,
+            final LocationHistoryManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
 
         this.versionManager = versionManager;
-        this.contentManager = contentManager;
-
+        
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
@@ -334,7 +330,8 @@ public class StatisticsManager {
     public List<Map<String, Object>> getSchoolStatistics() 
             throws UnableToIndexSchoolsException, SegueDatabaseException {
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache.getIfPresent(SCHOOL_STATS);
+        List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
+                .getIfPresent(SCHOOL_STATS);
         if (cachedOutput != null) {
             log.debug("Using cached statistics.");
             return cachedOutput;
@@ -721,8 +718,8 @@ public class StatisticsManager {
                 Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
         // Search for questions that match the ids.
-        ResultsWrapper<ContentDTO> findByFieldNames = contentManager.findByFieldNames(versionManager.getLiveVersion(),
-                fieldsToMap, 0, ids.size());
+        ResultsWrapper<ContentDTO> findByFieldNames = versionManager.getContentManager().findByFieldNames(
+                versionManager.getLiveVersion(), fieldsToMap, 0, ids.size());
 
         List<ContentDTO> questionsForGameboard = findByFieldNames.getResults();
 

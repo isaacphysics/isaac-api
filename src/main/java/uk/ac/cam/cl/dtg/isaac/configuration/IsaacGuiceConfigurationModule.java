@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
-import javax.annotation.Nullable;
-
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
@@ -26,16 +24,9 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -48,8 +39,6 @@ import com.google.inject.Singleton;
  */
 public class IsaacGuiceConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(IsaacGuiceConfigurationModule.class);
-
-    private static SegueDefaultFacade segueApi = null;
 
     private static GameboardPersistenceManager gameboardPersistenceManager = null;
 
@@ -69,44 +58,6 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
         
         bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
-    }
-
-    /**
-     * This provides a singleton of the segue api facade that can be used by isaac to serve api requests as a library or
-     * register the endpoints with resteasy.
-     * 
-     * Note: A lot of the dependencies are injected from the segue project itself.
-     * 
-     * @param properties
-     *            - the propertiesLoader instance
-     * @param mapper
-     *            - the content mapper
-     * @param segueConfigurationModule
-     *            - the Guice configuration module for segue.
-     * @param versionController
-     *            - the version controller that is in charge of managing content versions.
-     * @param userManager
-     *            - The user manager instance for segue.
-     * @param emailManager
-     *            - The communication Manager object for segue.
-     * @param logManager
-     *            - The log Manager object for segue.
-     * @return segueApi - The live instance of the segue api.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static SegueDefaultFacade getSegueFacadeSingleton(final PropertiesLoader properties,
-            final ContentMapper mapper, @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-            final ContentVersionController versionController, final UserAccountManager userManager,
-            final EmailManager emailManager, final ILogManager logManager) {
-        if (null == segueApi) {
-            segueApi = new SegueDefaultFacade(properties, mapper, segueConfigurationModule, versionController,
-                    userManager, emailManager, logManager);
-            log.info("Creating Singleton of Segue API");
-        }
-
-        return segueApi;
     }
 
     /**
