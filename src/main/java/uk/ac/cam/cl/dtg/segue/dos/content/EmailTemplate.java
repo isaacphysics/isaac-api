@@ -18,11 +18,13 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 import java.util.List;
 import java.util.Set;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
+
 /**
- * EmailTemplate.
+ * EmailTemplate DTO.
  * 
  */
-@DTOMapping(EmailTemplate.class)
+@DTOMapping(EmailTemplateDTO.class)
 @JsonContentType("emailTemplate")
 public class EmailTemplate extends Content {
     private String subject;
@@ -85,7 +87,7 @@ public class EmailTemplate extends Content {
      * Sets the subject.
      * @param subject the subject to set
      */
-    public void setSubject(String subject) {
+    public void setSubject(final String subject) {
         this.subject = subject;
     }
 
@@ -101,7 +103,7 @@ public class EmailTemplate extends Content {
      * Sets the plainTextContent.
      * @param plainTextContent the plainTextContent to set
      */
-    public void setPlainTextContent(String plainTextContent) {
+    public void setPlainTextContent(final String plainTextContent) {
         this.plainTextContent = plainTextContent;
     }
 
@@ -117,7 +119,7 @@ public class EmailTemplate extends Content {
      * Sets the htmlContent.
      * @param htmlContent the htmlContent to set
      */
-    public void setHtmlContent(String htmlContent) {
+    public void setHtmlContent(final String htmlContent) {
         this.htmlContent = htmlContent;
     }
 
@@ -133,7 +135,7 @@ public class EmailTemplate extends Content {
      * Sets the replyToEmailAddress.
      * @param replyToEmailAddress the replyToEmailAddress to set
      */
-    public void setReplyToEmailAddress(String replyToEmailAddress) {
+    public void setReplyToEmailAddress(final String replyToEmailAddress) {
         this.replyToEmailAddress = replyToEmailAddress;
     }
 }
