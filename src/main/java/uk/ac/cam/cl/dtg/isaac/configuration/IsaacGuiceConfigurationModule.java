@@ -67,6 +67,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         // file.
 
         bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
+        
         bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
     }
 

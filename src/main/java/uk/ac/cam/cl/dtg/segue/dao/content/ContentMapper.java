@@ -83,7 +83,7 @@ public class ContentMapper {
         jsonTypes = Maps.newConcurrentMap();
         mapOfDOsToDTOs = Maps.newConcurrentMap();
     }
-
+    
     /**
      * Alternative constructor that will attempt to search for valid types to pre-register.
      * 
@@ -211,12 +211,16 @@ public class ContentMapper {
      */
     public synchronized void registerJsonTypes(final List<Class<? extends Content>> newTypes) {
         Validate.notNull(newTypes, "New types map cannot be null");
-
-        log.info("Adding new content Types to Segue");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Adding new content Types to Segue: ");
 
         for (Class<? extends Content> contentClass : newTypes) {
             this.registerJsonTypeAndDTOMapping(contentClass);
+            sb.append(contentClass.toString());
+            sb.append(", ");
         }
+
+        log.info(sb.toString());
     }
 
     /**

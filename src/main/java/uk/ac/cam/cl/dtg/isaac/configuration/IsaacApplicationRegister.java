@@ -22,6 +22,9 @@ import java.util.Set;
 
 import javax.ws.rs.core.Application;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
@@ -44,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.api.UsersFacade;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PerformanceMonitor;
 import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Guice;
@@ -60,6 +64,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * 
  */
 public class IsaacApplicationRegister extends Application {
+    private static final Logger log = LoggerFactory.getLogger(IsaacApplicationRegister.class);
     private Set<Object> singletons;
     
     private final Injector injector;
@@ -74,6 +79,14 @@ public class IsaacApplicationRegister extends Application {
         
         injector = Guice.createInjector(new SchoolLookupConfigurationModule(),
                 isaacGuiceConfigurationModule, segueGuiceConfigurationModule);
+        
+        SegueConfigurationModule segueConfigurationModule = injector.getInstance(SegueConfigurationModule.class);
+        ContentMapper mapper = injector.getInstance(ContentMapper.class);
+        if (segueConfigurationModule != null) {
+            // register the isaac specific data types.
+            log.info("Registering isaac specific datatypes with the segue content mapper.");
+            mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
+        }
         
         setupSwaggerApiAdvertiser();
     }

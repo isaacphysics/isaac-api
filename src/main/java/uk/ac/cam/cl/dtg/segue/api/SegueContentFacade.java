@@ -32,8 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -84,8 +82,6 @@ import com.google.inject.Inject;
 public class SegueContentFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueContentFacade.class);
 
-    private static ContentMapper mapper;
-
     private final ContentVersionController contentVersionController;
     private final UserAccountManager userManager;
 
@@ -111,29 +107,8 @@ public class SegueContentFacade extends AbstractSegueFacade {
             final ILogManager logManager) {
         super(properties, logManager);
 
-        // We only want to do this if the mapper needs to be changed - I expect
-        // the same instance to be injected from Guice each time.
-        if (SegueContentFacade.mapper != mapper) {
-            SegueContentFacade.mapper = mapper;
-
-            // Add client specific data structures to the set of managed DTOs.
-            if (null != segueConfigurationModule) {
-                SegueContentFacade.mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
-            }
-        }
-
         this.contentVersionController = contentVersionController;
         this.userManager = userManager;
-
-        try {
-            // We need to do this to make sure we have an up to date content repo.
-            log.info("Segue just initialized - Sending content index request "
-                    + "so that we can service some content requests.");
-
-            this.contentVersionController.triggerSyncJob().get();
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Initial segue initialisation failure.");
-        }
     }
     
 

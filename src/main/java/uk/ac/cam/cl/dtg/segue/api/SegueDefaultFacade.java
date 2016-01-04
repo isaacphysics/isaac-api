@@ -16,27 +16,19 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTACT_US_FORM_USED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 import io.swagger.annotations.Api;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,16 +38,13 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
 
 /**
- * Segue Api Facade
+ * Segue Default Api Facade.
  * 
  * This class specifically caters for the Rutherford physics server and is expected to provide extended functionality to
  * the Segue api for use only on the Rutherford site.
@@ -65,10 +54,6 @@ import com.google.inject.Inject;
 @Api(value = "/")
 public class SegueDefaultFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(SegueDefaultFacade.class);
-
-    private static ContentMapper mapper;
-
-    private final ContentVersionController contentVersionController;
 
     /**
      * Constructor that allows pre-configuration of the segue api.
@@ -96,33 +81,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
             final EmailManager emailManager,
             final ILogManager logManager) {
         super(properties, logManager);
-
-        // TODO: Move all this initialisation stuff some where better.
-        
-        // We only want to do this if the mapper needs to be changed - I expect
-        // the same instance to be injected from Guice each time.
-        if (SegueDefaultFacade.mapper != mapper) {
-            SegueDefaultFacade.mapper = mapper;
-
-            // Add client specific data structures to the set of managed DTOs.
-            if (null != segueConfigurationModule) {
-                SegueDefaultFacade.mapper.registerJsonTypes(segueConfigurationModule.getContentDataTransferObjectMap());
-            }
-        }
-
-        this.contentVersionController = contentVersionController;
-
-//        try {
-//            // We need to do this to make sure we have an up to date content repo.
-//            log.info("Segue just initialized - Sending content index request "
-//                    + "so that we can service some content requests.");
-//
-//            this.contentVersionController.triggerSyncJob().get();
-//        } catch (InterruptedException | ExecutionException e) {
-//            log.error("Initial segue initialisation failure.");
-//        }
     }
-
     
     /**
      * Redirect to swagger ui.
@@ -147,7 +106,9 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
             uri.append(hostname);
             uri.append("/api-docs/");
         }
-
+        
+        log.info("Redirecting to swagger.");
+        
         return Response.temporaryRedirect(new URI(uri.toString())).build();
     }
 }
