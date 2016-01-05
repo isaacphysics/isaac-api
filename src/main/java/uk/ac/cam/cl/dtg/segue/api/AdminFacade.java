@@ -171,6 +171,10 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - to determine access.
      * @param requestForCaching
      *            - to speed up access.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
      * @return stats
      */
     @GET
@@ -178,18 +182,23 @@ public class AdminFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getLastLocations(@Context final HttpServletRequest request,
-            @Context final Request requestForCaching) {
+            @Context final Request requestForCaching, @QueryParam("from_date") final Long fromDate,
+                                     @QueryParam("to_date") final Long toDate) {
         try {
             if (!isUserStaff(request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
                         .toResponse();
             }
+            if (null == fromDate || null == toDate) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "You must specify the from_date and to_date you are interested in.").toResponse();
+            }
+            if (toDate < fromDate) {
+                return new SegueErrorResponse(Status.BAD_REQUEST,
+                        "The from_date must be before the to_date.").toResponse();
+            }
 
-            Calendar threshold = Calendar.getInstance();
-            threshold.setTime(new Date());
-            threshold.add(Calendar.MONTH, -1);
-
-            Collection<Location> locationInformation = statsManager.getLocationInformation(threshold.getTime());
+            Collection<Location> locationInformation = statsManager.getLocationInformation(new Date(fromDate), new Date(toDate));
 
             return Response.ok(locationInformation).cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
                     .build();

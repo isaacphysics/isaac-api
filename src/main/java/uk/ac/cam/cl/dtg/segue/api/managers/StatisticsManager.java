@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -82,6 +83,7 @@ public class StatisticsManager {
     private static final String SCHOOL_STATS = "SCHOOL_STATS";
     private static final String LOCATION_STATS = "LOCATION_STATS";
     private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
+    private static final long LONG_STATS_MAX_ITEMS = 20;
 
     
     /**
@@ -118,7 +120,8 @@ public class StatisticsManager {
         this.questionManager = questionManager;
 
         this.longStatsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES).<String, Object> build();
+                .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
+                .maximumSize(LONG_STATS_MAX_ITEMS).build();
     }
 
     /**
@@ -673,28 +676,32 @@ public class StatisticsManager {
     }
 
     /**
-     * getRecentLocationInformation.
-     * 
-     * @param threshold
-     *            - the earliest date to include in the search.
+     * getLocationInformation.
+     *
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
      * @return the list of all locations we know about..
      * @throws SegueDatabaseException
      *             if we can't read from the database.
      */
     @SuppressWarnings("unchecked")
-    public Collection<Location> getLocationInformation(final Date threshold) throws SegueDatabaseException {
-        if (this.longStatsCache.getIfPresent(LOCATION_STATS) != null) {
-            return (Set<Location>) this.longStatsCache.getIfPresent(LOCATION_STATS);
+    public Collection<Location> getLocationInformation(final Date fromDate, final Date toDate) throws SegueDatabaseException {
+        SimpleDateFormat cacheFormat = new SimpleDateFormat("yyyyMMdd");
+        String cacheDateTag =  cacheFormat.format(fromDate) + cacheFormat.format(toDate);
+        if (this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag) != null) {
+            return (Set<Location>) this.longStatsCache.getIfPresent(LOCATION_STATS + cacheDateTag);
         }
 
         Set<Location> result = Sets.newHashSet();
 
-        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(threshold,
-                new Date());
+        Map<String, Location> locationsFromHistory = locationHistoryManager.getLocationsByLastAccessDate(fromDate,
+                toDate);
 
         result.addAll(locationsFromHistory.values());
 
-        this.longStatsCache.put(LOCATION_STATS, result);
+        this.longStatsCache.put(LOCATION_STATS + cacheDateTag, result);
 
         return result;
     }
