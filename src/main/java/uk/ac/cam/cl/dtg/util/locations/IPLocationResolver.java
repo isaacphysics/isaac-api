@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * Interface to hide location resolvers.
  */
-public interface ILocationResolver {
+public interface IPLocationResolver {
 
     /**
      * Get location with as much information as possible.

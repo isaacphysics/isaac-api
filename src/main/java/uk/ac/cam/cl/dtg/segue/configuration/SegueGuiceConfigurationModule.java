@@ -56,7 +56,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
+import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
@@ -78,10 +78,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.util.PostCodeLocationResolverTest;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
-import uk.ac.cam.cl.dtg.util.locations.ILocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
@@ -263,6 +266,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         bind(LocationHistory.class).to(PgLocationHistory.class);
         
+        bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
+
         bind(IUserDataManager.class).to(PgUsers.class);
         
         bind(ICommunicator.class).to(EmailCommunicator.class);
@@ -381,7 +386,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static ILogManager getLogManager(final PostgresSqlDb database,
-            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationHistoryManager lhm) {
+            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm) {
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
             
@@ -666,7 +671,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
             final ILogManager logManager, final SchoolListReader schoolManager,
-            final ContentVersionController versionManager, final LocationHistoryManager locationHistoryManager,
+            final ContentVersionController versionManager, final LocationManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager) {
 
         if (null == statsManager) {
@@ -688,7 +693,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     @Inject
     @Provides
-    private ILocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
+    private IPLocationResolver getIPLocator(@Named(Constants.IP_INFO_DB_API_KEY) final String apiKey) {
         return new IPInfoDBLocationResolver(apiKey);
     }
 

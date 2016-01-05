@@ -33,7 +33,7 @@ import com.google.inject.Inject;
  * http://www.ipinfodb.com/
  * 
  */
-public class IPInfoDBLocationResolver implements ILocationResolver {
+public class IPInfoDBLocationResolver implements IPLocationResolver {
     /**
      * Enum mapping IPInfoDB properties to something we can use.
      */

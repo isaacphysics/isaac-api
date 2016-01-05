@@ -21,13 +21,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import javassist.bytecode.Descriptor.Iterator;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -65,7 +69,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
+import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -101,7 +105,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final StatisticsManager statsManager;
 
-    private final LocationHistoryManager locationManager;
+    private final LocationManager locationManager;
 
     private final SchoolListReader schoolReader;
 
@@ -126,7 +130,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
             final ContentVersionController contentVersionController, final ILogManager logManager,
-            final StatisticsManager statsManager, final LocationHistoryManager locationManager,
+            final StatisticsManager statsManager, final LocationManager locationManager,
             final SchoolListReader schoolReader) {
         super(properties, logManager);
         this.userManager = userManager;
@@ -694,17 +698,18 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response findUsers(@Context final HttpServletRequest httpServletRequest, @Context final Request request,
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
-            @QueryParam("schoolOther") @Nullable final String schoolOther) {
+            @QueryParam("schoolOther") @Nullable final String schoolOther,
+            @QueryParam("postcode") @Nullable final String postcode) {
 
         RegisteredUserDTO currentUser;
         try {
             currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserAnAdminOrEventManager(httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
+            if (!isUserStaff(httpServletRequest)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You are not authorised to access this function.")
+                        .toResponse();
             }
             
-            if (currentUser.getRole().equals(Role.EVENT_MANAGER)
+            if (!currentUser.getRole().equals(Role.ADMIN)
                     && (familyName.isEmpty() && null == schoolOther  && email.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
@@ -746,6 +751,56 @@ public class AdminFacade extends AbstractSegueFacade {
                 }
             } else {
                 findUsers = this.userManager.findUsers(userPrototype);
+            }
+
+            // if postcode is set, filter found users
+            if (null != postcode) {
+                try {
+                    HashMap<String, ArrayList<Long>> postCodeAndUserIds = Maps.newHashMap();
+                    for (RegisteredUserDTO userDTO : findUsers) {
+                        if (userDTO.getSchoolId() != null) {
+                            School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
+                            String schoolPostCode = school.getPostcode();
+                            ArrayList<Long> ids = null;
+                            if (postCodeAndUserIds.containsKey(schoolPostCode)) {
+                                ids = postCodeAndUserIds.get(schoolPostCode);
+                            } else {
+                                ids = Lists.newArrayList();
+                            }
+                            ids.add(userDTO.getId());
+                            postCodeAndUserIds.put(schoolPostCode, ids);
+                        }
+                    }
+                    List<Long> userIdsWithinRadius = locationManager.getUsersWithinPostCodeDistanceOf(
+                            postCodeAndUserIds, postcode, 50);
+
+                    // Make sure the list returned is users who have schools in our postcode radius
+                    findUsers.clear();
+                    for (Long id : userIdsWithinRadius) {
+                        RegisteredUserDTO user = this.userManager.getUserDTOById(id);
+                        if (user != null) {
+                            findUsers.add(user);
+                        }
+                    }
+
+                } catch (LocationServerException e) {
+                    return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,
+                            "Unable to process request using 3rd party location provider").toResponse();
+                } catch (UnableToIndexSchoolsException e) {
+                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                            "Unable to process schools information").toResponse();
+                } catch (JsonParseException | JsonMappingException e) {
+                    log.error("Problem parsing school", e);
+                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school")
+                            .toResponse();
+                } catch (IOException e) {
+                    log.error("Problem parsing school", e);
+                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                            "IOException while trying to communicate with the school service.").toResponse();
+                } catch (NoUserException e) {
+                    log.error("User cannot be found from user Id", e);
+                }
+                
             }
 
             // Calculate the ETag

@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationHistoryManager;
+import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -76,7 +76,7 @@ public class StatisticsManager {
     private QuestionManager questionManager;
     
     private Cache<String, Object> longStatsCache;
-    private LocationHistoryManager locationHistoryManager;
+    private LocationManager locationHistoryManager;
 
     private static final Logger log = LoggerFactory.getLogger(StatisticsManager.class);
     private static final String GENERAL_STATS = "GENERAL_STATS";
@@ -107,14 +107,14 @@ public class StatisticsManager {
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final LocationHistoryManager locationHistoryManager,
+            final LocationManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
 
         this.versionManager = versionManager;
-        
+
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;

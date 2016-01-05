@@ -60,7 +60,7 @@ public class PgLogManager implements ILogManager {
     private static final Logger log = LoggerFactory.getLogger(PgLogManager.class);
 
     private final PostgresSqlDb database;
-    private final LocationHistoryManager locationManager;
+    private final LocationManager locationManager;
     private final boolean loggingEnabled;
     private final ObjectMapper objectMapper;
 
@@ -78,7 +78,7 @@ public class PgLogManager implements ILogManager {
      */
     public PgLogManager(final PostgresSqlDb database, final ObjectMapper objectMapper,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled,
-            final LocationHistoryManager locationManager) {
+            final LocationManager locationManager) {
 
         this.database = database;
         this.objectMapper = objectMapper;

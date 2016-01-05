@@ -16,9 +16,12 @@
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -34,37 +37,43 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistoryEvent;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.util.locations.ILocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 /**
  * LocationHistoryManager. This class is intended to be used to maintain a database of geocoded ip addresses such that
  * we can look up historically where a particular ip address was. This is based on the assumption that ip address
  * allocation change over time.
  * 
- * @author sac92
+ * @author sac92, ags46
  *
  */
-public class LocationHistoryManager implements ILocationResolver {
-    private static final Logger log = LoggerFactory.getLogger(LocationHistoryManager.class);
+public class LocationManager implements IPLocationResolver {
+    private static final Logger log = LoggerFactory.getLogger(LocationManager.class);
     private static final int LOCATION_UPDATE_FREQUENCY_IN_DAYS = 30;
     private static final int NON_PERSISTENT_CACHE_TIME_IN_HOURS = 1;
 
     private final LocationHistory dao;
-    private final ILocationResolver locationResolver;
+    private final IPLocationResolver ipLocationResolver;
+    private final PostCodeLocationResolver postCodeLocationResolver;
     private final Cache<String, Location> locationCache;
 
     /**
      * @param dao
      *            - the location history data access object.
-     * @param locationResolver
-     *            - the external location resolver.
+     * @param ipLocationResolver
+     *            - the external ip location resolver.
+     * @param postCodeLocationResolver
+     *            - the external postCode location resolver.
      */
     @Inject
-    public LocationHistoryManager(final LocationHistory dao, final ILocationResolver locationResolver) {
+    public LocationManager(final LocationHistory dao, final IPLocationResolver ipLocationResolver,
+            final PostCodeLocationResolver postCodeLocationResolver) {
         this.dao = dao;
-        this.locationResolver = locationResolver;
+        this.ipLocationResolver = ipLocationResolver;
+        this.postCodeLocationResolver = postCodeLocationResolver;
 
         // This cache is here to prevent lots of needless look ups to the database.
         locationCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS)
@@ -107,7 +116,8 @@ public class LocationHistoryManager implements ILocationResolver {
 
                 if (new Date().after(locationExpiry.getTime())) {
                     // lookup to see if ip location data is different. If so update it.
-                    Location locationInformation = locationResolver.resolveAllLocationInformation(ipAddress);
+                    Location locationInformation = ipLocationResolver
+                            .resolveAllLocationInformation(ipAddress);
 
                     if (locationInformation.equals(latestByIPAddress.getLocationInformation())) {
                         dao.updateLocationEventDate(latestByIPAddress.getId(), true);
@@ -121,7 +131,7 @@ public class LocationHistoryManager implements ILocationResolver {
                     }
                 }
             } else {
-                Location locationInformation = locationResolver.resolveAllLocationInformation(ipAddress);
+                Location locationInformation = ipLocationResolver.resolveAllLocationInformation(ipAddress);
                 locationToCache = dao.storeLocationEvent(ipAddress, locationInformation).getLocationInformation();
             }
 
@@ -135,13 +145,13 @@ public class LocationHistoryManager implements ILocationResolver {
 
     @Override
     public Location resolveAllLocationInformation(final String ipAddress) throws IOException, LocationServerException {
-        return locationResolver.resolveAllLocationInformation(ipAddress);
+        return ipLocationResolver.resolveAllLocationInformation(ipAddress);
 
     }
 
     @Override
     public Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException {
-        return locationResolver.resolveCountryOnly(ipAddress);
+        return ipLocationResolver.resolveCountryOnly(ipAddress);
     }
 
     /**
@@ -212,6 +222,24 @@ public class LocationHistoryManager implements ILocationResolver {
         }
         
         return resultToReturn;
+    }
+
+    /**
+     * @param postCodeAndUserIds
+     *            - A map of postcodes to userids
+     * @param targetPostCode
+     *            - The post code we want to find users near to
+     * @param radius
+     *            - radius to search
+     * @return - a list of userids who have schools in that radius
+     * @throws LocationServerException
+     *             - anm exception when the location service fails
+     */
+    public List<Long> getUsersWithinPostCodeDistanceOf(
+            final HashMap<String, ArrayList<Long>> postCodeAndUserIds, final String targetPostCode,
+            final int radius) throws LocationServerException {
+        return postCodeLocationResolver.filterPostcodesWithinProximityOfPostcode(postCodeAndUserIds,
+                targetPostCode, radius);
     }
     
 }
