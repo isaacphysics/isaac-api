@@ -158,4 +158,29 @@ public class PostCodeLocationResolverTest {
         }
     }
 
+    @Test
+    public void filterPostcodesWithinProximityOfPostcode_passingPostCodesWithRandomSpaces_ExpectNonEmptyListReturned() {
+        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
+
+        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+
+        ArrayList<Long> list1 = new ArrayList<Long>();
+        list1.add(1l);
+
+        ArrayList<Long> list2 = new ArrayList<Long>();
+        list2.add(2l);
+
+        map.put("BD17  5TP", list1);
+
+        map.put("  CB23   6FE  ", list2);
+
+        try {
+            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN", 20);
+            Assert.assertTrue(ids.contains(2l));
+        } catch (LocationServerException e) {
+            System.out.println(e.getMessage());
+            Assert.fail();
+        }
+    }
+
 }

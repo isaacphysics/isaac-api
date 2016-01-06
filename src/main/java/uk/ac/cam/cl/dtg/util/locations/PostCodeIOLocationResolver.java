@@ -26,18 +26,14 @@ import java.util.Map;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.elasticsearch.common.lang3.Validate;
 import org.elasticsearch.common.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -54,12 +50,17 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
     private final String url = "http://api.postcodes.io/postcodes";
 
-    /* (non-Javadoc)
-     * @see uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver#filterPostcodesWithinProximityOfPostcode(java.util.HashMap, java.lang.String, int)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver#filterPostcodesWithinProximityOfPostcode(
+     * java.util.HashMap, java.lang.String, int)
      */
+    @SuppressWarnings("unchecked")
     @Override
     public List<Long> filterPostcodesWithinProximityOfPostcode(
-            HashMap<String, ArrayList<Long>> postCodeAndUserIds, String targetPostCode, int distanceInMiles)
+            final HashMap<String, ArrayList<Long>> postCodeAndUserIds, final String targetPostCode,
+            final int distanceInMiles)
             throws LocationServerException {
 
         if (null == postCodeAndUserIds) {
@@ -114,27 +115,25 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
         // Calculate distances from target postcode
         int responseCode = (int) response.get("status");
         if (responseCode == HttpResponseStatus.OK.getCode()) {
-            ArrayList<HashMap<String, Object>> list = (ArrayList<HashMap<String, Object>>) response
+            ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) response
                     .get("result");
             Double targetLat = null, targetLon = null;
 
             // First find target lat and lon
-            Iterator it = list.iterator();
+            Iterator<HashMap<String, Object>> it = responseResult.iterator();
             while (it.hasNext()) {
-                Map<String, Object> item = (Map<String, Object>) it.next();
-                String queryPostcode = (String) item.get("query");
+                Map<String, Object> responseResultItem = it.next();
+                String queryPostcode = (String) responseResultItem.get("query");
                 if (queryPostcode.equals(targetPostCode)) {
-                    HashMap<String, Object> result = (HashMap<String, Object>) item.get("result");
+                    HashMap<String, Object> result = (HashMap<String, Object>) responseResultItem.get("result");
                     if (result != null) {
                         targetLat = (Double) result.get("latitude");
                         targetLon = (Double) result.get("longitude");
-                        list.remove(item);
-                        break; // TODO check this works
+                        responseResult.remove(responseResultItem);
+                        break;
                     }
                 }
             }
-
-            // TODO check if format of query changes - string comparison of postcode could fail
 
             if (null == targetLat || null == targetLon) {
                 throw new LocationServerException(
@@ -142,9 +141,9 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             }
 
             // Iterate and filter other postcodes by distance
-            it = list.iterator();
+            it = responseResult.iterator();
             while (it.hasNext()) {
-                Map<String, Object> item = (Map<String, Object>) it.next();
+                Map<String, Object> item = it.next();
                 HashMap<String, Object> postCodeDetails = (HashMap<String, Object>) item.get("result");
 
                 if (postCodeDetails != null) {
@@ -156,8 +155,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
                         String postCodeQuery = (String) item.get("query");
 
-                        if (distInMiles <= distanceInMiles
- && postCodeAndUserIds.containsKey(postCodeQuery)) {
+                        if (distInMiles <= distanceInMiles && postCodeAndUserIds.containsKey(postCodeQuery)) {
                             // Add this to a list, with user ids
                             resultingUserIds.addAll(postCodeAndUserIds.get(postCodeQuery));
                         }
