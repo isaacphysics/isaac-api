@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -100,7 +101,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendPasswordReset(final RegisteredUserDTO userDTO, final String resetToken) 
     				throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
-    	SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-password-reset");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-password-reset");
         
         String hostName = globalProperties.getProperty(HOST_NAME);
         String verificationURL = String.format("https://%s/resetpassword/%s", hostName, resetToken);
@@ -111,14 +112,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("resetURL", verificationURL);
         p.put("sig", SIGNATURE);
         
-        String content = completeTemplateWithProperties(segueContent, p);
         
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
-                        EmailType.SYSTEM);
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
+                EmailType.SYSTEM);
 
         this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
+
 
     /**
      * Sends email registration confirmation using email registration template. Assumes that a verification code has
@@ -138,7 +138,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendRegistrationConfirmation(final RegisteredUserDTO userDTO, final String emailVerificationToken) 
     				throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation");
         
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
                 globalProperties.getProperty(HOST_NAME), 
@@ -151,10 +151,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("email", userDTO.getEmail());
         p.put("verificationURL", verificationURL);
         p.put("sig", SIGNATURE);
-        String content = completeTemplateWithProperties(segueContent, p);
         
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
         
         this.filterByPreferencesAndAddToQueue(userDTO, e);
@@ -175,16 +173,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO) 
 					throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(userDTO);
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-registration-confirmation-federated");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation-federated");
         
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
         p.put("sig", SIGNATURE);
-        String content = completeTemplateWithProperties(segueContent, p);
         
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
         
         this.filterByPreferencesAndAddToQueue(userDTO, e);
@@ -208,7 +204,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendEmailVerification(final RegisteredUserDTO userDTO, final String emailVerificationToken) 
     					throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-email-verification");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-email-verification");
 
 
         String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
@@ -222,10 +218,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("email", userDTO.getEmail());
         p.put("verificationURL", verificationURL);
         p.put("sig", SIGNATURE);
-        String content = completeTemplateWithProperties(segueContent, p);
         
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
         this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
@@ -248,16 +242,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
     	Validate.notNull(newUser);
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-verification-change");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-verification-change");
         
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("requestedemail", newUser.getEmail());
         p.put("sig", SIGNATURE);
-        String content = completeTemplateWithProperties(segueContent, p);
         
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
         this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
@@ -278,7 +270,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		            throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(users);
 
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-assignment");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-assignment");
    
 		String gameboardName = gameboard.getId();
 		if (gameboard.getTitle() != null) {
@@ -297,12 +289,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("gameboardName", gameboardName);
             p.put("myAssignmentsURL", myAssignmentsURL);
             p.put("sig", SIGNATURE);
-            String content = completeTemplateWithProperties(segueContent, p);
 
 
 
-            EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-            				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
+            EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent,
+                    p,
                             EmailType.ASSIGNMENTS);
             this.filterByPreferencesAndAddToQueue(userDTO, e);
         }
@@ -334,7 +325,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 		            			throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(userDTO);
 
-		SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-group-welcome");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-welcome");
 
         String groupOwnerName = "Unknown";
         if (groupOwner != null && groupOwner.getGivenName() != null && groupOwner.getFamilyName() != null) {
@@ -350,6 +341,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             
         });
         
+        // TODO old assignments are listed as HTML in both html and plain text versions. Not obvious how to make this
+        // work.
         StringBuilder sb = new StringBuilder();
         if (existingAssignments != null && existingAssignments.size() > 0) {
             sb.append("Your teacher has assigned the following assignments:\n");
@@ -384,12 +377,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("assignmentsInfo", sb.toString());
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
-        String content = completeTemplateWithProperties(segueContent, p);
 
         
 
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
         this.filterByPreferencesAndAddToQueue(userDTO, e);
 
@@ -418,7 +409,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Validate.notNull(providerString);
         Validate.notNull(providerWord);
 
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate("email-template-federated-password-reset");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-federated-password-reset");
 
         Properties contentProperties = new Properties();
         contentProperties.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
@@ -426,11 +417,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         contentProperties.put("providerWord", providerWord);
         contentProperties.put("sig", SIGNATURE);
 
-        String content = completeTemplateWithProperties(segueContent, contentProperties);      
 
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), 
-        				content, segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS),
-                        EmailType.SYSTEM);
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent,
+                contentProperties, EmailType.SYSTEM);
         this.filterByPreferencesAndAddToQueue(userDTO, e);
         
     }
@@ -454,8 +443,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             final String recipientEmailAddress, final String replyToAddress) throws ContentManagerException,
             SegueDatabaseException {
 
-        EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, contactFormMessage, subject,
-                replyToAddress, EmailType.SYSTEM);
+        EmailTemplateDTO dummyContentDTO = new EmailTemplateDTO();
+        dummyContentDTO.setPlainTextContent(contactFormMessage);
+        dummyContentDTO.setHtmlContent(contactFormMessage);
+        dummyContentDTO.setReplyToEmailAddress(replyToAddress);
+        // TODO create an actual contact us form template in the content
+
+        Properties contentProperties = new Properties();
+        contentProperties.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, dummyContentDTO,
+                contentProperties,
+                EmailType.SYSTEM);
+
         this.addSystemEmailToQueue(e);
     }
     
@@ -479,7 +479,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Validate.notNull(allSelectedUsers);
         Validate.notNull(contentObjectId);
 
-        SeguePageDTO segueContent = getSegueDTOEmailTemplate(contentObjectId);
+        EmailTemplateDTO emailContent = getEmailTemplateDTO(contentObjectId);
 
         Map<Long, Map<EmailType, Boolean>> allUserPreferences = this.emailPreferenceManager
                 .getEmailPreferences(allSelectedUsers);
@@ -503,10 +503,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
             p.put("email", user.getEmail());
             p.put("sig", SIGNATURE);
-            String content = completeTemplateWithProperties(segueContent, p);
 
-            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), content,
-                    segueContent.getTitle(), globalProperties.getProperty(Constants.REPLY_TO_ADDRESS), emailType);
+            EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
+                    emailType);
 
             ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
                     .put("userId", user.getId()).put("email", e.getRecipientAddress()).put("type", emailType)
@@ -611,26 +610,27 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws IllegalArgumentException
      * 			- when the HTML template cannot be completed
      */
-    public String getHTMLTemplatePreview(final SeguePageDTO segueContent, final RegisteredUserDTO user) 
+    public String getHTMLTemplatePreview(final EmailTemplateDTO emailTemplateDTO, final RegisteredUserDTO user)
 		    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, 
 		    		IllegalArgumentException {    	
-        Validate.notNull(segueContent);
+        Validate.notNull(emailTemplateDTO);
     	Validate.notNull(user);
         
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
+        ContentDTO htmlTemplate = getContentDTO("email-template-html");
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
         p.put("email", user.getEmail());
         p.put("sig", SIGNATURE);
-        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
         
+        String plainTextMessage = completeTemplateWithProperties(emailTemplateDTO.getHtmlContent(), p);
+
         Properties htmlTemplateProperties = new Properties();
         htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
         htmlTemplateProperties.put("email", user.getEmail());
 
-        return completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        return completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties);
         
     }
     
@@ -651,30 +651,30 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws IllegalArgumentException
      * 			- when the HTML template cannot be completed
      */
-    public String getPlainTextTemplatePreview(final SeguePageDTO segueContent, final RegisteredUserDTO user) 
+    public String getPlainTextTemplatePreview(final EmailTemplateDTO emailTemplateDTO, final RegisteredUserDTO user)
 		    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, 
 		    		IllegalArgumentException {    	
-        Validate.notNull(segueContent);
+        Validate.notNull(emailTemplateDTO);
     	Validate.notNull(user);
         
-        SeguePageDTO plainTextTemplate = getSegueDTOEmailTemplate("email-template-ascii");
+        ContentDTO plainTextTemplate = getContentDTO("email-template-ascii");
 
         Properties p = new Properties();
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
         p.put("email", user.getEmail());
         p.put("sig", SIGNATURE);
-        String plainTextMessage = completeTemplateWithProperties(segueContent, p);
+        String plainTextMessage = completeTemplateWithProperties(emailTemplateDTO.getPlainTextContent(), p);
         
         Properties plainTextTemplateProperties = new Properties();
         plainTextTemplateProperties.put("content", plainTextMessage);
         plainTextTemplateProperties.put("email", user.getEmail());
 
-        return completeTemplateWithProperties(plainTextTemplate, plainTextTemplateProperties);
+        return completeTemplateWithProperties(plainTextTemplate.getValue(), plainTextTemplateProperties);
         
     }
    
-    
+
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
      * 
@@ -686,15 +686,18 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws IllegalArgumentException
      *             - exception when the provided page object is incorrect
      */
-    private String completeTemplateWithProperties(final SeguePageDTO page, final Properties templateProperties)
+    private String completeTemplateWithProperties(final String content, final Properties templateProperties)
             throws IllegalArgumentException {
 
-        ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) page.getChildren();
-        if (!(children.size() == 1 && children.get(0) instanceof ContentDTO)) {
-            throw new IllegalArgumentException("SeguePage does not contain child for email template!");
-        }
+        // ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) content.getChildren();
+        // if (!(children.size() == 1 && children.get(0) instanceof ContentDTO)) {
+        // throw new IllegalArgumentException(
+        // "Content object does not contain child with which to complete template properties!");
+        // }
+        //
+        // String template = ((ContentDTO) children.get(0)).getValue();
 
-        String template = ((ContentDTO) children.get(0)).getValue();
+        String template = content;
 
         Pattern p = Pattern.compile("\\{\\{[A-Za-z]+\\}\\}");
         Matcher m = p.matcher(template);
@@ -756,52 +759,57 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 	
      */
     private EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail, 
-    				final String content, final String subject, final String replyToAddress, final EmailType emailType)
+            EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType)
 					throws ContentManagerException, ResourceNotFoundException {
     	Validate.notNull(userEmail);
     	Validate.notEmpty(userEmail);
     	
-        SeguePageDTO htmlTemplate = getSegueDTOEmailTemplate("email-template-html");
-        SeguePageDTO plainTextTemplate = getSegueDTOEmailTemplate("email-template-ascii");
+        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
+        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties);
+
+        String replyToAddress = emailContent.getReplyToEmailAddress();
+        if (replyToAddress == null || replyToAddress.isEmpty()) {
+            replyToAddress = globalProperties.getProperty(Constants.REPLY_TO_ADDRESS);
+        }
+
+        ContentDTO htmlTemplate = getContentDTO("email-template-html");
+        ContentDTO plainTextTemplate = getContentDTO("email-template-ascii");
         
-        // Remove bad things for HTML
-        String htmlContent = content;
-        htmlContent = htmlContent.replace("\n", "<br>");
         
         Properties htmlTemplateProperties = new Properties();
-        htmlTemplateProperties.put("content", htmlContent); 
+        htmlTemplateProperties.put("content", HTMLContent);
         htmlTemplateProperties.put("email", userEmail);
 
-        String htmlMessage = completeTemplateWithProperties(htmlTemplate, htmlTemplateProperties);
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties);
         
-        // Remove bad things for plain text
-        String plainTextContent = content;
-        //plainTextContent = plainTextContent.replace("<span>", ""); //TODO finalise this with James/Steve
         
         Properties plainTextTemplateProperties = new Properties();
-        plainTextTemplateProperties.put("content", plainTextContent); 
+        plainTextTemplateProperties.put("content", plainTextContent);
         plainTextTemplateProperties.put("email", userEmail);
 
-        String plainTextMessage = completeTemplateWithProperties(plainTextTemplate, plainTextTemplateProperties);
+        String plainTextMessage = completeTemplateWithProperties(plainTextTemplate.getValue(),
+                plainTextTemplateProperties);
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, subject, plainTextMessage,
+        EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
+                plainTextMessage,
                 htmlMessage, emailType, replyToAddress);
 
         return e;
     }
     
+
     /**
      * Returns the SegueDTO we will use as an email template.
      * 
-     * @param id  
-     *          - the content id of the email template required
-     * @return  - the SegueDTO content object
-     * @throws ContentManagerException 
-     *          - error if there is a problem accessing content
-     * @throws ResourceNotFoundException 
-     *          - error if the content is not of the right type
+     * @param id
+     *            - the content id of the email template required
+     * @return - the SegueDTO content object
+     * @throws ContentManagerException
+     *             - error if there is a problem accessing content
+     * @throws ResourceNotFoundException
+     *             - error if the content is not of the right type
      */
-    private SeguePageDTO getSegueDTOEmailTemplate(final String id) 
+    private ContentDTO getContentDTO(final String id)
             throws ContentManagerException, ResourceNotFoundException {
     	
         ContentDTO c = contentVersionController.getContentManager().getContentById(
@@ -811,15 +819,47 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
         }
         
-        SeguePageDTO segueContentDTO = null;
+        ContentDTO contentDTO = null;
 
-        if (c instanceof SeguePageDTO) {
-            segueContentDTO = (SeguePageDTO) c;
+        if (c instanceof ContentDTO) {
+            contentDTO = c;
         } else {
             throw new ContentManagerException("Content is of incorrect type:" + c.getType());
         }
         
-        return segueContentDTO;
+        return contentDTO;
+    }
+
+    /**
+     * Returns the EmailTemplateDTO we will use as an email template.
+     * 
+     * @param id
+     *            - the content id of the email template required
+     * @return - the SegueDTO content object
+     * @throws ContentManagerException
+     *             - error if there is a problem accessing content
+     * @throws ResourceNotFoundException
+     *             - error if the content is not of the right type
+     */
+    private EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
+            ResourceNotFoundException {
+
+        ContentDTO c = contentVersionController.getContentManager().getContentById(
+                contentVersionController.getLiveVersion(), id);
+
+        if (null == c) {
+            throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
+        }
+
+        EmailTemplateDTO emailTemplateDTO = null;
+
+        if (c instanceof EmailTemplateDTO) {
+            emailTemplateDTO = (EmailTemplateDTO) c;
+        } else {
+            throw new ContentManagerException("Content is of incorrect type:" + c.getType());
+        }
+
+        return emailTemplateDTO;
     }
 
 	
