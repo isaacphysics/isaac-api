@@ -25,6 +25,172 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 SET search_path = public, pg_catalog;
 
+--
+-- Name: mergeuser(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION mergeuser() RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+	targetUserIdToKeep INTEGER := 1624;
+	targetUserIdToDelete INTEGER := 3073;
+BEGIN
+UPDATE linked_accounts
+   SET user_id = targetUserIdToKeep
+ WHERE user_id = targetUserIdToDelete;
+
+UPDATE question_attempts
+   SET user_id = targetUserIdToKeep
+ WHERE user_id = targetUserIdToDelete;
+
+ UPDATE logged_events
+   SET user_id = targetUserIdToKeep::varchar(255)
+ WHERE user_id = targetUserIdToDelete::varchar(255);
+
+ UPDATE groups
+   SET owner_id = targetUserIdToKeep
+ WHERE owner_id = targetUserIdToDelete;
+
+ UPDATE group_memberships
+   SET user_id = targetUserIdToKeep
+ WHERE user_id = targetUserIdToDelete;
+
+ UPDATE assignments
+   SET owner_user_id = targetUserIdToKeep
+ WHERE owner_user_id = targetUserIdToDelete;
+
+ UPDATE event_bookings
+   SET user_id = targetUserIdToKeep
+ WHERE user_id = targetUserIdToDelete;
+ 
+ UPDATE gameboards
+   SET owner_user_id = targetUserIdToKeep
+ WHERE owner_user_id = targetUserIdToDelete;
+
+ UPDATE user_gameboards
+   SET user_id = targetUserIdToKeep
+ WHERE user_id = targetUserIdToDelete;
+
+-- Deal with user associations
+
+ UPDATE user_associations_tokens
+   SET owner_user_id = targetUserIdToKeep
+ WHERE owner_user_id = targetUserIdToDelete;
+
+ UPDATE user_associations
+   SET user_id_granting_permission = targetUserIdToKeep
+ WHERE user_id_granting_permission = targetUserIdToDelete;
+
+ UPDATE user_associations
+   SET user_id_receiving_permission = targetUserIdToKeep
+ WHERE user_id_receiving_permission = targetUserIdToDelete;
+
+ DELETE FROM users
+ WHERE id = targetUserIdToDelete;
+ RETURN 1;
+END
+$$;
+
+
+ALTER FUNCTION public.mergeuser() OWNER TO postgres;
+
+--
+-- Name: mergeuser(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	BEGIN
+		UPDATE linked_accounts
+		SET user_id = targetUserIdToKeep
+		WHERE user_id = targetUserIdToDelete;
+	EXCEPTION WHEN unique_violation THEN
+	    -- Ignore duplicate inserts.
+	END;
+
+UPDATE question_attempts
+SET user_id = targetUserIdToKeep
+WHERE user_id = targetUserIdToDelete;
+
+UPDATE logged_events
+SET user_id = targetUserIdToKeep::varchar(255)
+WHERE user_id = targetUserIdToDelete::varchar(255);
+
+UPDATE groups
+SET owner_id = targetUserIdToKeep
+WHERE owner_id = targetUserIdToDelete;
+
+	BEGIN
+		UPDATE group_memberships
+		SET user_id = targetUserIdToKeep
+		WHERE user_id = targetUserIdToDelete;
+	EXCEPTION WHEN unique_violation THEN
+	    -- Ignore duplicate inserts.
+	END;
+
+UPDATE assignments
+SET owner_user_id = targetUserIdToKeep
+WHERE owner_user_id = targetUserIdToDelete;
+
+	BEGIN
+		UPDATE event_bookings
+		SET user_id = targetUserIdToKeep
+		WHERE user_id = targetUserIdToDelete;	
+	EXCEPTION WHEN unique_violation THEN
+	    -- Ignore duplicate inserts.
+	END;	
+
+
+
+-- Deal with user associations
+ 
+UPDATE gameboards
+SET owner_user_id = targetUserIdToKeep
+WHERE owner_user_id = targetUserIdToDelete;
+
+	BEGIN
+		UPDATE user_gameboards
+		SET user_id = targetUserIdToKeep
+		WHERE user_id = targetUserIdToDelete;
+	EXCEPTION WHEN unique_violation THEN
+	    -- Ignore duplicate inserts.
+	END;	
+
+-- Deal with user associations
+
+UPDATE user_associations_tokens
+SET owner_user_id = targetUserIdToKeep
+WHERE owner_user_id = targetUserIdToDelete;
+
+	BEGIN
+		UPDATE user_associations
+		SET user_id_granting_permission = targetUserIdToKeep
+		WHERE user_id_granting_permission = targetUserIdToDelete;
+	EXCEPTION WHEN unique_violation THEN
+	    -- Ignore duplicate inserts.
+	END;	
+
+	BEGIN
+		UPDATE user_associations
+		SET user_id_receiving_permission = targetUserIdToKeep
+		WHERE user_id_receiving_permission = targetUserIdToDelete;
+	EXCEPTION WHEN unique_violation THEN
+	    -- Ignore duplicate inserts.
+	END;		
+
+ DELETE FROM users
+ WHERE id = targetUserIdToDelete;
+ 
+ RETURN true;
+END
+$$;
+
+
+ALTER FUNCTION public.mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_with_oids = false;
@@ -588,14 +754,6 @@ ALTER TABLE ONLY user_associations_tokens
 
 
 --
--- Name: unique email; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
---
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT "unique email" UNIQUE (email);
-
-
---
 -- Name: unique sha id; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -646,6 +804,20 @@ CREATE INDEX log_events_user_id ON logged_events USING btree (user_id);
 --
 
 CREATE INDEX "question-attempts-by-user" ON question_attempts USING btree (user_id);
+
+
+--
+-- Name: unique email case insensitive; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE UNIQUE INDEX "unique email case insensitive" ON users USING btree (lower(email));
+
+
+--
+-- Name: user_email; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE UNIQUE INDEX user_email ON users USING btree (email);
 
 
 --
@@ -797,4 +969,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-
