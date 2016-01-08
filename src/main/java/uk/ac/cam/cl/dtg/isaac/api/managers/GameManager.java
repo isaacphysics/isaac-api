@@ -770,8 +770,7 @@ public class GameManager {
         
         for (ContentBaseDTO child : c.getChildren()) {
             if (child instanceof QuestionDTO) {
-                QuestionDTO q = (QuestionDTO) child;
-                result.add(q);
+                result.add((QuestionDTO) child);
                 // assume that we can't have nested questions
             } else {
                 depthFirstQuestionSearch((ContentDTO) child, result);
