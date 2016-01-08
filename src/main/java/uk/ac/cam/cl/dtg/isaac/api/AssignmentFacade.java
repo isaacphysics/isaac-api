@@ -388,12 +388,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     + currentlyLoggedInUser.getGivenName() + " " + currentlyLoggedInUser.getFamilyName() + "\n");
             
             headerBuilder.append("\n");
-            headerBuilder.append(",,");
+            headerBuilder.append(",,");            
             
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 int index = 0;
                 
-                for (QuestionDTO question : gameManager.getAllMarkableQuestionParts(questionPage.getId())) {
+                for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                     int newCharIndex = 'A' + index;
                     headerBuilder.append(questionPage.getTitle() + " - Part " + Character.toChars(newCharIndex)[0]
                             + ",");
