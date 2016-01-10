@@ -778,6 +778,37 @@ public class UserAccountManager {
     }
 
     /**
+     * @param id
+     *            - the user id
+     * @param requestedRole
+     *            - the new role
+     * @throws SegueDatabaseException
+     *             - an exception when accessing the database
+     */
+    public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
+        Validate.notNull(requestedRole);
+        RegisteredUser userToSave = this.findUserById(id);
+        userToSave.setRole(requestedRole);
+        this.database.createOrUpdateUser(userToSave);
+    }
+
+    /**
+     * @param id
+     *            - the user id
+     * @param requestedEmailVerificationStatus
+     *            - the new email verification status
+     * @throws SegueDatabaseException
+     *             - an exception when accessing the database
+     */
+    public void updateUserEmailVerificationStatus(final Long id,
+            final EmailVerificationStatus requestedEmailVerificationStatus) throws SegueDatabaseException {
+        Validate.notNull(requestedEmailVerificationStatus);
+        RegisteredUser userToSave = this.findUserById(id);
+        userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
+        this.database.createOrUpdateUser(userToSave);
+    }
+
+    /**
      * This method facilitates the removal of personal user data from Segue.
      * 
      * @param userToDelete
@@ -1316,4 +1347,6 @@ public class UserAccountManager {
             }
         }
     }
+
+
 }

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
+import uk.ac.cam.cl.dtg.util.locations.PostCode;
 
 /**
  *
@@ -106,5 +107,22 @@ public interface LocationHistory {
      *             - if something goes wrong with the database.
      */
     Map<String, LocationHistoryEvent> getLatestByIPAddresses(Date fromDate, Date toDate)
-            throws SegueDatabaseException;    
+            throws SegueDatabaseException;   
+    
+    /**
+     * @param postCode
+     *            - a given postcode
+     * @return - a postcode object
+     * @throws SegueDatabaseException
+     *             - if something goes wrong with the database.
+     */
+    PostCode getPostCode(final String postCode) throws SegueDatabaseException;
+
+    /**
+     * @param postCodes
+     *            - a list of given postcodes
+     * @throws SegueDatabaseException
+     *             - if something goes wrong with the database.
+     */
+    void storePostCodes(List<PostCode> postCodes) throws SegueDatabaseException;
 }

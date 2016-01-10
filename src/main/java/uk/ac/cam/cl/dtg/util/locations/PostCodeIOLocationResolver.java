@@ -35,9 +35,15 @@ import org.elasticsearch.common.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
+import com.google.inject.Inject;
 
 /**
  * Class to allow postcode-related searches using external service.
@@ -49,6 +55,13 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private static final Logger log = LoggerFactory.getLogger(PostCodeIOLocationResolver.class);
 
     private final String url = "http://api.postcodes.io/postcodes";
+    
+    private final LocationHistory locationHistory;
+
+    @Inject
+    public PostCodeIOLocationResolver(final LocationHistory locationHistory) {
+        this.locationHistory = locationHistory;
+    }
 
     /*
      * (non-Javadoc)
@@ -56,32 +69,127 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
      * @see uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver#filterPostcodesWithinProximityOfPostcode(
      * java.util.HashMap, java.lang.String, int)
      */
-    @SuppressWarnings("unchecked")
     @Override
-    public List<Long> filterPostcodesWithinProximityOfPostcode(
-            final HashMap<String, ArrayList<Long>> postCodeAndUserIds, final String targetPostCode,
-            final int distanceInMiles)
-            throws LocationServerException {
+    public List<Long> filterPostcodesWithinProximityOfPostcode(final Map<String, List<Long>> postCodeIDMap,
+            final String targetPostCode, final int distanceInMiles) throws LocationServerException,
+            SegueDatabaseException {
 
-        if (null == postCodeAndUserIds) {
+        if (null == postCodeIDMap) {
             throw new LocationServerException("Map of postcodes cannot be null");
+        }
+
+        final Map<String, List<Long>> cleanPostCodeIDMap = Maps.newHashMap();
+        for (String key : postCodeIDMap.keySet()) {
+            List<Long> val = postCodeIDMap.get(key);
+            cleanPostCodeIDMap.put(key.replace(" ", ""), val);
         }
 
         LinkedList<Long> resultingUserIds = new LinkedList<Long>();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("{ \"postcodes\" : [");
-        for (String key : postCodeAndUserIds.keySet()) {
-            sb.append("\"");
-            sb.append(key);
-            sb.append("\"");
-            sb.append(", ");
+        // first do a database lookup, then fallback on the service
+        List<PostCode> knownPostCodes = Lists.newArrayList();
+        List<String> unknownPostCodes = Lists.newArrayList();
+        for (String postCode : cleanPostCodeIDMap.keySet()) {
+            PostCode result = this.locationHistory.getPostCode(postCode);
+            if (null == result) {
+                unknownPostCodes.add(postCode);
+            } else {
+                knownPostCodes.add(result);
+            }
         }
 
         // add the target postcode, so we can do it in one request
-        sb.append("\"");
-        sb.append(targetPostCode);
-        sb.append("\"] }");
+        PostCode targetPostCodeObject = this.locationHistory.getPostCode(targetPostCode);
+        
+        if (null == targetPostCodeObject) {
+            List<String> targetPostCodeList = Lists.newArrayList();
+            targetPostCodeList.add(targetPostCode);
+            List<PostCode> results = submitPostCodeRequest(targetPostCodeList);
+            if (results != null && results.size() == 1) {
+                targetPostCodeObject = results.get(0);
+            } else {
+                throw new LocationServerException(
+                        "Location service failed to return valid lat/lon for target postcode");
+            } 
+        }
+
+        List<PostCode> foundPostCodes = carryOutExternalPostCodeServiceRequest(unknownPostCodes);
+
+        // Store new postcodes back to the database
+        this.locationHistory.storePostCodes(foundPostCodes);
+
+        knownPostCodes.addAll(foundPostCodes);
+        
+        for (PostCode postCode : knownPostCodes) {
+            
+            if (null == postCode.getLat() || null == postCode.getLon()) {
+                continue;
+            }
+            
+            double distInMiles = getLatLonDistanceInMiles(targetPostCodeObject.getLat(),
+                    targetPostCodeObject.getLon(), postCode.getLat(),
+                    postCode.getLon());
+            
+            if (distInMiles <= distanceInMiles && cleanPostCodeIDMap.containsKey(postCode.getPostCode())) {
+                // Add this to a list, with user ids
+                resultingUserIds.addAll(cleanPostCodeIDMap.get(postCode.getPostCode()));
+            }
+            
+        }
+        
+        return resultingUserIds;
+    }
+    
+    /**
+     * @param unknownPostCodes
+     *            - a list of postcodes not exceeding 100 in length
+     * @return - the results
+     * @throws LocationServerException
+     *             - if there was an issue with the service
+     */
+    private List<PostCode> carryOutExternalPostCodeServiceRequest(final List<String> unknownPostCodes)
+            throws LocationServerException {
+        // TODO ensure only up to 100 are requested at a time
+
+        if (unknownPostCodes.size() > 100) {
+            List<PostCode> completeResults = Lists.newArrayList();
+            for (int i = 0; i < unknownPostCodes.size(); i += 100) {
+                List<String> subList = unknownPostCodes.subList(i, Math.min(i + 100, unknownPostCodes.size()));
+                List<PostCode> results = submitPostCodeRequest(subList);
+                completeResults.addAll(results);
+            }
+            return completeResults;
+        } else {
+            return submitPostCodeRequest(unknownPostCodes);
+        }
+
+    }
+
+    /**
+     * @param unknownPostCodes
+     *            - a list of postcodes not exceeding 100 in length
+     * @return - the results
+     * @throws LocationServerException
+     *             - if there was an issue with the service
+     */
+    private List<PostCode> submitPostCodeRequest(final List<String> unknownPostCodes)
+            throws LocationServerException {
+
+        if (unknownPostCodes.size() > 100) {
+            throw new IllegalArgumentException("Number of postcodes cannot be bigger than 100!");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("{ \"postcodes\" : [");
+        for (int i = 0; i < unknownPostCodes.size(); i++) {
+            sb.append("\"");
+            sb.append(unknownPostCodes.get(i));
+            sb.append("\"");
+            if (i < unknownPostCodes.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append("] }");
 
         String requestJson = sb.toString();
 
@@ -89,7 +197,6 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         HttpClient httpclient = new DefaultHttpClient();
         HttpPost httppost = new HttpPost(url);
-
 
         StringEntity requestEntity;
         try {
@@ -102,6 +209,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             ObjectMapper objectMapper = new ObjectMapper();
 
             response = objectMapper.readValue(jsonResponse, HashMap.class);
+
         } catch (UnsupportedEncodingException | JsonParseException | JsonMappingException e) {
             String error = "Unable to parse postcode location response " + e.getMessage();
             log.error(error);
@@ -112,36 +220,13 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
             throw new LocationServerException(error);
         }
 
-        // Calculate distances from target postcode
+        List<PostCode> returnList = Lists.newArrayList();
         int responseCode = (int) response.get("status");
         if (responseCode == HttpResponseStatus.OK.getCode()) {
             ArrayList<HashMap<String, Object>> responseResult = (ArrayList<HashMap<String, Object>>) response
                     .get("result");
-            Double targetLat = null, targetLon = null;
 
-            // First find target lat and lon
             Iterator<HashMap<String, Object>> it = responseResult.iterator();
-            while (it.hasNext()) {
-                Map<String, Object> responseResultItem = it.next();
-                String queryPostcode = (String) responseResultItem.get("query");
-                if (queryPostcode.equals(targetPostCode)) {
-                    HashMap<String, Object> result = (HashMap<String, Object>) responseResultItem.get("result");
-                    if (result != null) {
-                        targetLat = (Double) result.get("latitude");
-                        targetLon = (Double) result.get("longitude");
-                        responseResult.remove(responseResultItem);
-                        break;
-                    }
-                }
-            }
-
-            if (null == targetLat || null == targetLon) {
-                throw new LocationServerException(
-                        "Location service failed to return valid lat/lon for target postcode");
-            }
-
-            // Iterate and filter other postcodes by distance
-            it = responseResult.iterator();
             while (it.hasNext()) {
                 Map<String, Object> item = it.next();
                 HashMap<String, Object> postCodeDetails = (HashMap<String, Object>) item.get("result");
@@ -149,23 +234,15 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
                 if (postCodeDetails != null) {
                     Double sourceLat = (Double) postCodeDetails.get("latitude");
                     Double sourceLon = (Double) postCodeDetails.get("longitude");
-                    if (sourceLat != null && sourceLon != null) {
-                        double distInMiles = getLatLonDistanceInMiles(targetLat, targetLon, sourceLat,
-                                sourceLon);
-
-                        String postCodeQuery = (String) item.get("query");
-
-                        if (distInMiles <= distanceInMiles && postCodeAndUserIds.containsKey(postCodeQuery)) {
-                            // Add this to a list, with user ids
-                            resultingUserIds.addAll(postCodeAndUserIds.get(postCodeQuery));
-                        }
-                    }
+                    PostCode postcode = new PostCode((String) item.get("query"), sourceLat,
+                            sourceLon);
+                    returnList.add(postcode);
                 }
 
             }
-
         }
-        return resultingUserIds;
+
+        return returnList;
     }
     
 

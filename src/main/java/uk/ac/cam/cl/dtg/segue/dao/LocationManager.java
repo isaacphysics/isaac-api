@@ -234,10 +234,12 @@ public class LocationManager implements IPLocationResolver {
      * @return - a list of userids who have schools in that radius
      * @throws LocationServerException
      *             - anm exception when the location service fails
+     * @throws SegueDatabaseException
+     *             - anm exception when the database service fails
      */
-    public List<Long> getUsersWithinPostCodeDistanceOf(
-            final HashMap<String, ArrayList<Long>> postCodeAndUserIds, final String targetPostCode,
-            final int radius) throws LocationServerException {
+    public List<Long> getUsersWithinPostCodeDistanceOf(final Map<String, List<Long>> postCodeAndUserIds,
+            final String targetPostCode,
+            final int radius) throws LocationServerException, SegueDatabaseException {
         return postCodeLocationResolver.filterPostcodesWithinProximityOfPostcode(postCodeAndUserIds,
                 targetPostCode, radius);
     }

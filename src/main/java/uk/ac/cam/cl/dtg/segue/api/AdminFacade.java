@@ -35,6 +35,7 @@ import javassist.bytecode.Descriptor.Iterator;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -48,6 +49,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import ma.glasnost.orika.MapperFacade;
 
 import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
@@ -77,6 +80,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -280,6 +285,144 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
+    }
+
+
+    /**
+     * This method will allow users to be mass-converted to a new role.
+     * 
+     * @param request
+     *            - to help determine access rights.
+     * @param role
+     *            - new role.
+     * @param userIds
+     *            - a list of user ids to change en-mass
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/change_role/{role}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public synchronized Response modifyUsersRole(@Context final HttpServletRequest request,
+            @PathParam("role") final String role, final List<Long> userIds) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
+                        .toResponse();
+            }
+
+            Role requestedRole = Role.valueOf(role);
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+            
+            if (userIds.contains(requestingUser.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannoted modify your own role.")
+                .toResponse();
+            }
+            
+            if (requestedRole.ordinal() >= requestingUser.getRole().ordinal()) {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "Cannot change to role equal or higher than your own.").toResponse();
+            }
+
+            // fail fast - break if any of the users given already have the role they are being elevated to
+            for (Long userid : userIds) {
+                RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
+
+                if (null == user) {
+                    throw new NoUserException();
+                }
+
+                if (user.getRole() != null && user.getRole() == requestedRole) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST,
+                            "Aborted - cannot demote one or more users "
+                                    + "who have roles equal or higher than new role,").toResponse();
+                }
+            }
+
+            for (Long userid : userIds) {
+                this.userManager.updateUserRole(userid, requestedRole);
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            log.error("NoUserException when attempting to demote users.", e);
+            return new SegueErrorResponse(Status.BAD_GATEWAY, "One or more users could not be found")
+                    .toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Could not save new role to the database").toResponse();
+        }
+
+        return Response.ok().build();
+    }
+
+    /**
+     * This method will allow users' email verification status to be changed en-mass.
+     * 
+     * @param request
+     *            - to help determine access rights.
+     * @param emailVerificationStatus
+     *            - new emailVerificationStatus.
+     * @param userIds
+     *            - a list of user ids to change en-mass
+     * @return Success shown by returning an ok response
+     */
+    @POST
+    @Path("/users/change_email_verification_status/{emailVerificationStatus}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public synchronized Response modifyUsersEmailVerificationStatus(
+            @Context final HttpServletRequest request,
+            @PathParam("emailVerificationStatus") final String emailVerificationStatus,
+            final List<Long> userIds) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
+                        .toResponse();
+            }
+
+            EmailVerificationStatus requestedEmailVerificationStatus = EmailVerificationStatus
+                    .valueOf(emailVerificationStatus);
+            RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
+
+            if (userIds.contains(requestingUser.getId())) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannoted modify yourself.")
+                        .toResponse();
+            }
+
+            // fail fast - break if any of the users given already have the role they are being elevated to
+            for (Long userid : userIds) {
+                RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
+
+                if (null == user) {
+                    throw new NoUserException();
+                }
+
+                if (user.getEmailVerificationStatus() != null
+                        && user.getEmailVerificationStatus() == requestedEmailVerificationStatus) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST,
+                            "Aborted - one or more users already have the requested verification status.")
+                            .toResponse();
+                }
+            }
+
+            for (Long userid : userIds) {
+                this.userManager.updateUserEmailVerificationStatus(userid, requestedEmailVerificationStatus);
+            }
+
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NoUserException e) {
+            log.error("NoUserException when attempting to change users verification status.", e);
+            return new SegueErrorResponse(Status.BAD_GATEWAY, "One or more users could not be found")
+                    .toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Could not save new email verification status to the database").toResponse();
+        }
+
+        return Response.ok().build();
     }
 
     /**
@@ -756,19 +899,21 @@ public class AdminFacade extends AbstractSegueFacade {
             // if postcode is set, filter found users
             if (null != postcode) {
                 try {
-                    HashMap<String, ArrayList<Long>> postCodeAndUserIds = Maps.newHashMap();
+                    Map<String, List<Long>> postCodeAndUserIds = Maps.newHashMap();
                     for (RegisteredUserDTO userDTO : findUsers) {
                         if (userDTO.getSchoolId() != null) {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
-                            String schoolPostCode = school.getPostcode();
-                            ArrayList<Long> ids = null;
-                            if (postCodeAndUserIds.containsKey(schoolPostCode)) {
-                                ids = postCodeAndUserIds.get(schoolPostCode);
-                            } else {
-                                ids = Lists.newArrayList();
+                            if (school != null) {
+                                String schoolPostCode = school.getPostcode();
+                                List<Long> ids = null;
+                                if (postCodeAndUserIds.containsKey(schoolPostCode)) {
+                                    ids = postCodeAndUserIds.get(schoolPostCode);
+                                } else {
+                                    ids = Lists.newArrayList();
+                                }
+                                ids.add(userDTO.getId());
+                                postCodeAndUserIds.put(schoolPostCode, ids);
                             }
-                            ids.add(userDTO.getId());
-                            postCodeAndUserIds.put(schoolPostCode, ids);
                         }
                     }
                     List<Long> userIdsWithinRadius = locationManager.getUsersWithinPostCodeDistanceOf(

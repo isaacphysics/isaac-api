@@ -15,11 +15,26 @@
  */
 package uk.ac.cam.cl.dtg.segue.util;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import junit.framework.Assert;
+
+import org.easymock.EasyMock;
+import org.junit.Before;
 import org.junit.Test;
+
+import com.google.api.client.util.Maps;
+
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 
@@ -31,12 +46,40 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
  */
 public class PostCodeLocationResolverTest {
 
+    private LocationHistory locationHistory;
+    private PostCodeIOLocationResolver resolver;
+    private PostgresSqlDb mockDatabase;
+
+    @Before
+    public final void setUp() throws Exception {
+        mockDatabase = EasyMock.createMock(PostgresSqlDb.class);
+        locationHistory = new PgLocationHistory(mockDatabase);
+        resolver = new PostCodeIOLocationResolver(locationHistory);
+
+        ResultSet mockResultSet = EasyMock.createMock(ResultSet.class);
+        EasyMock.expect(mockResultSet.next()).andReturn(false).anyTimes();
+        EasyMock.replay(mockResultSet);
+
+        PreparedStatement mockPst = EasyMock.createNiceMock(PreparedStatement.class);
+        EasyMock.expect(mockPst.executeQuery()).andReturn(mockResultSet).anyTimes();
+        mockPst.setString(EasyMock.anyInt(), EasyMock.anyString());
+        EasyMock.expectLastCall().anyTimes();
+        mockPst.setDouble(EasyMock.anyInt(), EasyMock.anyDouble());
+        EasyMock.expectLastCall().anyTimes();
+        EasyMock.expect(mockPst.executeUpdate()).andReturn(1).anyTimes();
+        EasyMock.replay(mockPst);
+
+        Connection mockConnection = EasyMock.createNiceMock(Connection.class);
+        EasyMock.expect(mockConnection.prepareStatement(EasyMock.anyString())).andReturn(mockPst).anyTimes();
+        EasyMock.replay(mockConnection);
+        EasyMock.expect(mockDatabase.getDatabaseConnection()).andReturn(mockConnection).anyTimes();
+        EasyMock.replay(mockDatabase);
+    }
+
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingCorrectPostCodesOfKnownDistance_ListOfSizeOneReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
         
-        
-        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+        Map<String, List<Long>> map = Maps.newHashMap();
 
         ArrayList<Long> list1 = new ArrayList<Long>();
         list1.add(5l);
@@ -54,14 +97,15 @@ public class PostCodeLocationResolverTest {
             Assert.assertTrue(ids.contains(5l));
         } catch (LocationServerException e) {
             Assert.fail();
+        } catch (SegueDatabaseException e) {
+            Assert.fail();
         }
     }
 
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingGoodPostCodesOutOfProximity_ExpectEmptyListReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
 
-        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+        HashMap<String, List<Long>> map = Maps.newHashMap();
 
         ArrayList<Long> list1 = new ArrayList<Long>();
         list1.add(1l);
@@ -77,16 +121,15 @@ public class PostCodeLocationResolverTest {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN", 200);
             System.out.println(ids.toString());
             Assert.assertTrue(ids.size() == 1);
-        } catch (LocationServerException e) {
+        } catch (LocationServerException | SegueDatabaseException e) {
             Assert.fail();
         }
     }
 
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingBadPostCodes_ExpectEmptyListReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
 
-        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+        HashMap<String, List<Long>> map = Maps.newHashMap();
 
         ArrayList<Long> list1 = new ArrayList<Long>();
         list1.add(1l);
@@ -102,31 +145,27 @@ public class PostCodeLocationResolverTest {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT", 20);
             Assert.assertTrue(ids.isEmpty());
             System.out.println(ids.toString());
-        } catch (LocationServerException e) {
+        } catch (LocationServerException | SegueDatabaseException e) {
             Assert.fail();
         }
     }
 
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingEmptyMap_ExpectEmptyListReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
-
-        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+        HashMap<String, List<Long>> map = Maps.newHashMap();
 
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT", 20);
             Assert.assertTrue(ids.isEmpty());
             System.out.println(ids.toString());
-        } catch (LocationServerException e) {
+        } catch (LocationServerException | SegueDatabaseException e) {
             Assert.fail();
         }
     }
 
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingBadTargetPostCode_ExpectEmptyListReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
-
-        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+        HashMap<String, List<Long>> map = Maps.newHashMap();
 
         ArrayList<Long> list1 = new ArrayList<Long>();
         list1.add(1l);
@@ -141,28 +180,25 @@ public class PostCodeLocationResolverTest {
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "46346364", 20);
             Assert.fail();
-        } catch (LocationServerException e) {
+        } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
         }
     }
 
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingBadArguments_ExpectEmptyListReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
 
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(null, "", 0);
             Assert.fail();
-        } catch (LocationServerException e) {
+        } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
         }
     }
 
     @Test
     public void filterPostcodesWithinProximityOfPostcode_passingPostCodesWithRandomSpaces_ExpectNonEmptyListReturned() {
-        PostCodeIOLocationResolver resolver = new PostCodeIOLocationResolver();
-
-        HashMap<String, ArrayList<Long>> map = new HashMap<String, ArrayList<Long>>();
+        HashMap<String, List<Long>> map = Maps.newHashMap();
 
         ArrayList<Long> list1 = new ArrayList<Long>();
         list1.add(1l);
@@ -177,7 +213,7 @@ public class PostCodeLocationResolverTest {
         try {
             List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN", 20);
             Assert.assertTrue(ids.contains(2l));
-        } catch (LocationServerException e) {
+        } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
             Assert.fail();
         }

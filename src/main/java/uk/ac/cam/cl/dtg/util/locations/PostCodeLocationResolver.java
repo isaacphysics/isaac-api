@@ -18,6 +18,9 @@ package uk.ac.cam.cl.dtg.util.locations;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /**
  * Interface to allow postcode-related searches using external service.
@@ -37,9 +40,11 @@ public interface PostCodeLocationResolver {
      * @return - a list of userids within the specified distance from the target postcode
      * @throws LocationServerException
      *             - an exception when there's an issue with the location service
+     * @throws SegueDatabaseException
+     *             - something went wrong in the database
      */
-    List<Long> filterPostcodesWithinProximityOfPostcode(
-            final HashMap<String, ArrayList<Long>> postCodeAndUserIds, final String targetPostCode,
-            final int distanceInMiles) throws LocationServerException;
+    List<Long> filterPostcodesWithinProximityOfPostcode(final Map<String, List<Long>> postCodeAndUserIds,
+            final String targetPostCode,
+            final int distanceInMiles) throws LocationServerException, SegueDatabaseException;
 
 }

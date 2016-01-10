@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.locations.Location;
+import uk.ac.cam.cl.dtg.util.locations.PostCode;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,6 +83,33 @@ public class PgLocationHistory implements LocationHistory {
 
             while (results.next()) {
                 return buildPgLocationEntry(results);
+            }
+
+            // we must not have found anything.
+            return null;
+
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    @Override
+    public PostCode getPostCode(final String postCode) throws SegueDatabaseException {
+        if (null == postCode || postCode.isEmpty()) {
+            return null;
+        }
+
+        try (Connection conn = database.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("Select postcode, lat, lon FROM uk_post_codes WHERE postcode = ?");
+
+            pst.setString(1, postCode);
+
+            ResultSet results = pst.executeQuery();
+
+            while (results.next()) {
+                return new PostCode(results.getString("postcode"), results.getDouble("lat"),
+                        results.getDouble("lon"));
             }
 
             // we must not have found anything.
@@ -282,6 +310,47 @@ public class PgLocationHistory implements LocationHistory {
             }
 
             return resultToReturn;
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see uk.ac.cam.cl.dtg.segue.dos.LocationHistory#storePostCodes(java.util.List)
+     */
+    @Override
+    public void storePostCodes(List<PostCode> foundPostCodes) throws SegueDatabaseException {
+        PreparedStatement pst;
+        try (Connection conn = database.getDatabaseConnection()) {
+            conn.setAutoCommit(false);
+
+            for(PostCode postCode : foundPostCodes) {
+
+                // Ignore post codes with invalid lat/lon
+                if (postCode.getLat() == null || postCode.getLon() == null) {
+                    continue;
+                }
+
+                pst = conn.prepareStatement("INSERT INTO uk_post_codes "
+                        + "(postcode, lat, lon) "
+                        + "VALUES (?, ?, ?)");
+    
+                pst.setString(1, postCode.getPostCode());
+                pst.setDouble(2, postCode.getLat());
+                pst.setDouble(3, postCode.getLon());
+    
+    
+                if (pst.executeUpdate() == 0) {
+                    throw new SegueDatabaseException("Unable to save location event.");
+                }
+            }
+            conn.commit();
+            conn.setAutoCommit(true);
+
+
+
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
