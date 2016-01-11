@@ -351,7 +351,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
 
                 String gameboardName = existingAssignments.get(i).getGameboardId();
-                if (gameboard != null && !gameboard.getTitle().isEmpty()) {
+                if (gameboard != null && gameboard.getTitle() != null && gameboard.getTitle().isEmpty()) {
                 	gameboardName = gameboard.getTitle();
                 }
                 
