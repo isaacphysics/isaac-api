@@ -87,7 +87,9 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
         final Map<String, List<Long>> cleanPostCodeIDMap = Maps.newHashMap();
         for (String key : postCodeIDMap.keySet()) {
             List<Long> val = postCodeIDMap.get(key);
-            cleanPostCodeIDMap.put(key.replace(" ", ""), val);
+            if (key != null) {
+                cleanPostCodeIDMap.put(key.replace(" ", ""), val);
+            }
         }
 
         LinkedList<Long> resultingUserIds = new LinkedList<Long>();
