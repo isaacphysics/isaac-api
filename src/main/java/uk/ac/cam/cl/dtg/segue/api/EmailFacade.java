@@ -66,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -187,7 +188,7 @@ public class EmailFacade extends AbstractSegueFacade {
 
         ContentDTO c = null;
 
-        // Deserialize object into POJO of specified type, providing one exists.
+        // Deserialize object into POJO of specified type, provided one exists.
         try {
 
             IContentManager contentPersistenceManager = versionManager.getContentManager();
@@ -211,10 +212,10 @@ public class EmailFacade extends AbstractSegueFacade {
             return error.toResponse();
         } 
         
-        SeguePageDTO segueContentDTO = null;
+        EmailTemplateDTO emailTemplateDTO = null;
 
-        if (c instanceof SeguePageDTO) {
-            segueContentDTO = (SeguePageDTO) c;
+        if (c instanceof EmailTemplateDTO) {
+            emailTemplateDTO = (EmailTemplateDTO) c;
         } else {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Content is of incorrect type: " + id);
             log.debug(error.getErrorMessage());
@@ -222,13 +223,13 @@ public class EmailFacade extends AbstractSegueFacade {
         }
         
 		try {
-			String htmlTemplatePreview = this.emailManager.getHTMLTemplatePreview(segueContentDTO, currentUser);
-			String plainTextTemplatePreview = 
-							this.emailManager.getPlainTextTemplatePreview(segueContentDTO, currentUser);
+            String htmlTemplatePreview = this.emailManager.getHTMLTemplatePreview(emailTemplateDTO, currentUser);
+            String plainTextTemplatePreview = this.emailManager.getPlainTextTemplatePreview(emailTemplateDTO,
+                    currentUser);
 			
 			
 			HashMap<String, String> previewMap = Maps.newHashMap();
-			previewMap.put("subject", segueContentDTO.getTitle());
+            previewMap.put("subject", emailTemplateDTO.getSubject());
 			previewMap.put("html", htmlTemplatePreview);
 			previewMap.put("plainText", plainTextTemplatePreview);
 			return Response.ok(previewMap).build();
