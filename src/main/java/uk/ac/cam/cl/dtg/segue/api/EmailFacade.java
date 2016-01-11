@@ -20,6 +20,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import io.swagger.annotations.Api;
 
@@ -139,18 +140,19 @@ public class EmailFacade extends AbstractSegueFacade {
     @GZIP
     public final Response getEmailQueueSize(@Context final HttpServletRequest request) {
     	
-    	RegisteredUserDTO currentUser;
-		try {
-			currentUser = this.userManager.getCurrentRegisteredUser(request);			
-		} catch (NoUserLoggedInException e2) {
-    		return SegueErrorResponse.getNotLoggedInResponse();
-		}
-    	if (currentUser.getRole() == Role.ADMIN) {
-    		int queueLength = this.emailManager.getQueueLength();
-    		return Response.ok(queueLength).build();
-    	}
-        SegueErrorResponse error = new SegueErrorResponse(Status.FORBIDDEN, 
-												"User does not have appropriate privilages: ");
+        RegisteredUserDTO currentUser;
+        try {
+            currentUser = this.userManager.getCurrentRegisteredUser(request);
+        } catch (NoUserLoggedInException e2) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+        if (currentUser.getRole() == Role.ADMIN) {
+            ImmutableMap<String, Integer> response = new ImmutableMap.Builder<String, Integer>().put(
+                    "length", this.emailManager.getQueueLength()).build();
+            return Response.ok(response).build();
+        }
+        SegueErrorResponse error = new SegueErrorResponse(Status.FORBIDDEN,
+                "User does not have appropriate privilages: ");
 		log.error(error.getErrorMessage());
 		return error.toResponse();
     }
