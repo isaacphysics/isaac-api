@@ -311,6 +311,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 .toResponse();
             }
             
+            // can't promote anyone to a role higher than yourself
             if (requestedRole.ordinal() >= requestingUser.getRole().ordinal()) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "Cannot change to role equal or higher than your own.").toResponse();
@@ -324,10 +325,18 @@ public class AdminFacade extends AbstractSegueFacade {
                     throw new NoUserException();
                 }
 
+                // if a user already has this role, abort
                 if (user.getRole() != null && user.getRole() == requestedRole) {
                     return new SegueErrorResponse(Status.BAD_REQUEST,
                             "Aborted - cannot demote one or more users "
                                     + "who have roles equal or higher than new role,").toResponse();
+                }
+
+                // if a user has a higher role than the requester, abort
+                if (user.getRole() != null && user.getRole().ordinal() >= requestingUser.getRole().ordinal()) {
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "Aborted - cannot demote one or more users "
+                                    + "who have roles equal or higher than you,").toResponse();
                 }
             }
 
@@ -824,6 +833,10 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by role
      * @param schoolOther
      *            - if searching by school other field.
+     * @param postcode
+     *            - if searching by postcode.
+     * @param schoolURN
+     *            - if searching by school by the URN.
      * @return a userDTO or a segue error response
      */
     @GET
@@ -834,7 +847,8 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
-            @QueryParam("postcode") @Nullable final String postcode) {
+            @QueryParam("postcode") @Nullable final String postcode,
+            @QueryParam("schoolURN") @Nullable final Long schoolURN) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -845,7 +859,7 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (familyName.isEmpty() && null == schoolOther  && email.isEmpty())) {
+                    && (familyName.isEmpty() && null == schoolOther && email.isEmpty() && null == schoolURN && null == postcode)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -876,6 +890,10 @@ public class AdminFacade extends AbstractSegueFacade {
                 userPrototype.setSchoolOther(schoolOther);
             }
             
+            if (null != schoolURN) {
+                userPrototype.setSchoolId(schoolURN);
+            }
+
             List<RegisteredUserDTO> findUsers;
             
             if (null != email && !email.isEmpty()) {
