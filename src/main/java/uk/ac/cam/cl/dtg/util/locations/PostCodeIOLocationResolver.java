@@ -58,6 +58,12 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     
     private final LocationHistory locationHistory;
 
+    /**
+     * PostCode resolver that uses queries postcodes from the local database and external postcodes.io database.
+     * 
+     * @param locationHistory
+     *            - the location history so we can access the database of existing post codes
+     */
     @Inject
     public PostCodeIOLocationResolver(final LocationHistory locationHistory) {
         this.locationHistory = locationHistory;
@@ -141,15 +147,19 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     }
     
     /**
+     * Method to ensure that only 100 (the max) post codes are queried using the external service at once.
+     * 
      * @param unknownPostCodes
-     *            - a list of postcodes not exceeding 100 in length
-     * @return - the results
+     *            - a list of post codes not exceeding 100 in length
+     * @return - a list of post code objects
      * @throws LocationServerException
      *             - if there was an issue with the service
      */
     private List<PostCode> carryOutExternalPostCodeServiceRequest(final List<String> unknownPostCodes)
             throws LocationServerException {
-        // TODO ensure only up to 100 are requested at a time
+
+        log.info(String.format("Carrying out external postcode service request with %d unknown postcodes",
+                unknownPostCodes.size()));
 
         if (unknownPostCodes.size() > 100) {
             List<PostCode> completeResults = Lists.newArrayList();

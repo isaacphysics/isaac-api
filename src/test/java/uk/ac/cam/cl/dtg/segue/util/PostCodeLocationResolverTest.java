@@ -178,7 +178,7 @@ public class PostCodeLocationResolverTest {
         map.put("654653", list2);
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "46346364", 20);
+            resolver.filterPostcodesWithinProximityOfPostcode(map, "46346364", 20);
             Assert.fail();
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
@@ -189,7 +189,7 @@ public class PostCodeLocationResolverTest {
     public void filterPostcodesWithinProximityOfPostcode_passingBadArguments_ExpectEmptyListReturned() {
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(null, "", 0);
+            resolver.filterPostcodesWithinProximityOfPostcode(null, "", 0);
             Assert.fail();
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
