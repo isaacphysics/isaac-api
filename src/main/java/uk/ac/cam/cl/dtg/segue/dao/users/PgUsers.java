@@ -468,8 +468,8 @@ public class PgUsers implements IUserDataManager {
                             + "date_of_birth, gender, registration_date, school_id, "
                             + "school_other, last_updated, email_verification_status, "
                             + "last_seen, default_level, password, secure_salt, reset_token, "
-                            + "reset_expiry, email_verification_token, email_verification_token_expiry) "
-                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                    + "reset_expiry, email_verification_token) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                             Statement.RETURN_GENERATED_KEYS);
             // TODO: Change this to annotations or something to rely exclusively on the pojo.
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -529,7 +529,7 @@ public class PgUsers implements IUserDataManager {
                             + "date_of_birth = ?, gender = ?, registration_date = ?, school_id = ?, "
                             + "school_other = ?, last_updated = ?, email_verification_status = ?, "
                             + "last_seen = ?, default_level = ?, password = ?, secure_salt = ?, reset_token = ?, "
-                            + "reset_expiry = ?, email_verification_token = ?, email_verification_token_expiry = ? "
+                            + "reset_expiry = ?, email_verification_token = ? "
                             + "WHERE id = ?;");
             
             setValueHelper(pst, 1, userToCreate.getFamilyName());
@@ -550,7 +550,7 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 16, userToCreate.getResetToken());
             setValueHelper(pst, 17, userToCreate.getResetExpiry());
             setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 20, userToCreate.getId());
+            setValueHelper(pst, 19, userToCreate.getId());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
