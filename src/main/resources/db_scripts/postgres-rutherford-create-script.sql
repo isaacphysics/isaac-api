@@ -26,77 +26,7 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 SET search_path = public, pg_catalog;
 
 --
--- Name: mergeuser(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION mergeuser() RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-	targetUserIdToKeep INTEGER := 1624;
-	targetUserIdToDelete INTEGER := 3073;
-BEGIN
-UPDATE linked_accounts
-   SET user_id = targetUserIdToKeep
- WHERE user_id = targetUserIdToDelete;
-
-UPDATE question_attempts
-   SET user_id = targetUserIdToKeep
- WHERE user_id = targetUserIdToDelete;
-
- UPDATE logged_events
-   SET user_id = targetUserIdToKeep::varchar(255)
- WHERE user_id = targetUserIdToDelete::varchar(255);
-
- UPDATE groups
-   SET owner_id = targetUserIdToKeep
- WHERE owner_id = targetUserIdToDelete;
-
- UPDATE group_memberships
-   SET user_id = targetUserIdToKeep
- WHERE user_id = targetUserIdToDelete;
-
- UPDATE assignments
-   SET owner_user_id = targetUserIdToKeep
- WHERE owner_user_id = targetUserIdToDelete;
-
- UPDATE event_bookings
-   SET user_id = targetUserIdToKeep
- WHERE user_id = targetUserIdToDelete;
- 
- UPDATE gameboards
-   SET owner_user_id = targetUserIdToKeep
- WHERE owner_user_id = targetUserIdToDelete;
-
- UPDATE user_gameboards
-   SET user_id = targetUserIdToKeep
- WHERE user_id = targetUserIdToDelete;
-
--- Deal with user associations
-
- UPDATE user_associations_tokens
-   SET owner_user_id = targetUserIdToKeep
- WHERE owner_user_id = targetUserIdToDelete;
-
- UPDATE user_associations
-   SET user_id_granting_permission = targetUserIdToKeep
- WHERE user_id_granting_permission = targetUserIdToDelete;
-
- UPDATE user_associations
-   SET user_id_receiving_permission = targetUserIdToKeep
- WHERE user_id_receiving_permission = targetUserIdToDelete;
-
- DELETE FROM users
- WHERE id = targetUserIdToDelete;
- RETURN 1;
-END
-$$;
-
-
-ALTER FUNCTION public.mergeuser() OWNER TO postgres;
-
---
--- Name: mergeuser(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: mergeuser(integer, integer); Type: FUNCTION; Schema: public; Owner: rutherford
 --
 
 CREATE FUNCTION mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) RETURNS boolean
@@ -141,9 +71,7 @@ WHERE owner_user_id = targetUserIdToDelete;
 		WHERE user_id = targetUserIdToDelete;	
 	EXCEPTION WHEN unique_violation THEN
 	    -- Ignore duplicate inserts.
-	END;	
-
-
+	END;
 
 -- Deal with user associations
  
@@ -189,7 +117,7 @@ END
 $$;
 
 
-ALTER FUNCTION public.mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) OWNER TO postgres;
+ALTER FUNCTION public.mergeuser(targetuseridtokeep integer, targetuseridtodelete integer) OWNER TO rutherford;
 
 SET default_tablespace = '';
 
@@ -474,6 +402,19 @@ ALTER SEQUENCE question_attempts_id_seq OWNED BY question_attempts.id;
 
 
 --
+-- Name: uk_post_codes; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+CREATE TABLE uk_post_codes (
+    postcode character varying(255) NOT NULL,
+    lat numeric NOT NULL,
+    lon numeric NOT NULL
+);
+
+
+ALTER TABLE uk_post_codes OWNER TO rutherford;
+
+--
 -- Name: user_associations; Type: TABLE; Schema: public; Owner: rutherford; Tablespace: 
 --
 
@@ -564,8 +505,7 @@ CREATE TABLE users (
     secure_salt text,
     reset_token text,
     reset_expiry timestamp without time zone,
-    email_verification_token text,
-    email_verification_token_expiry timestamp without time zone
+    email_verification_token text
 );
 
 
@@ -751,6 +691,14 @@ ALTER TABLE ONLY question_attempts
 
 ALTER TABLE ONLY user_associations_tokens
     ADD CONSTRAINT token_pkey PRIMARY KEY (token);
+
+
+--
+-- Name: uk_post_codes_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford; Tablespace: 
+--
+
+ALTER TABLE ONLY uk_post_codes
+    ADD CONSTRAINT uk_post_codes_pk PRIMARY KEY (postcode);
 
 
 --
@@ -969,3 +917,4 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
+
