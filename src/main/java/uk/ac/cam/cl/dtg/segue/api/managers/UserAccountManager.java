@@ -971,7 +971,6 @@ public class UserAccountManager {
         if (authenticator.isValidEmailVerificationToken(user, email, token)) {
             user.setEmailVerificationStatus(EmailVerificationStatus.VERIFIED);
             user.setEmailVerificationToken(null);
-            user.setEmailVerificationTokenExpiry(null);
 
             // Update the email address if different
             if (!user.getEmail().equals(email)) {

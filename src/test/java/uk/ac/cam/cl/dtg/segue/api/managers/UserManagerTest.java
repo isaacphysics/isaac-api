@@ -176,7 +176,7 @@ public class UserManagerTest {
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, 
+ new Date(), Gender.MALE, new Date(), null, null, null, null, null, null,
                 null);
         returnUser.setId(validUserId);
        
@@ -356,7 +356,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "", Role.STUDENT,
-                new Date(), Gender.MALE, new Date(), null, null, null, null, new Date(), null, null, null);
+ new Date(), Gender.MALE, new Date(), null, null, null, null, null, null, null);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
                 Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();

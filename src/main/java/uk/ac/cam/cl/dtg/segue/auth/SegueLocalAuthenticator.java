@@ -155,11 +155,6 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         userToAttachVerificationToken.setEmailVerificationToken(token.replace("=", "")
                                                                      .replace("/", "")
                                                                      .replace("+", ""));
-        //Finally add an expiry date
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        c.add(Calendar.DATE, 1);
-        userToAttachVerificationToken.setEmailVerificationTokenExpiry(c.getTime());
 
         return userToAttachVerificationToken;
     }
@@ -175,13 +170,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             String hmacToken = UserAuthenticationManager.calculateHMAC(key, email).replace("=", "")
                                                                     .replace("/", "")
                                                                     .replace("+", ""); 
-            if (userToken.equals(hmacToken)) {
-                // The key is valid
-                Date now = new Date();
-                Date expiryDate = user.getEmailVerificationTokenExpiry();
-                return expiryDate != null && expiryDate.after(now);
-  
-            }
+            return userToken.equals(hmacToken);
         }
         return false;
     }

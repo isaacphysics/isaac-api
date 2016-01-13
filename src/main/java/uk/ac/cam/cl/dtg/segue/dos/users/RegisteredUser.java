@@ -52,7 +52,6 @@ public class RegisteredUser extends AbstractSegueUser {
     private Date resetExpiry;
 
     private String emailVerificationToken;
-    private Date emailVerificationTokenExpiry;
     private EmailVerificationStatus emailVerificationStatus;
 
     private Date lastUpdated;
@@ -89,8 +88,6 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - the date this user was last updated.
      * @param emailVerificationToken
      *            - the most recent token generated to verify email addresses
-     * @param emailVerificationTokenExpiry
-     *            - the expiry date of the most recent token
      * @param emailVerificationStatus
      *            - whether the user has verified their email or not
      */
@@ -104,7 +101,6 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("resetToken") final String resetToken, @JsonProperty("resetExpiry") final Date resetExpiry,
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
-            @JsonProperty("emailVerificationTokenExpiry") final Date emailVerificationTokenExpiry, 
             @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
         this.id = id;
         this.familyName = familyName;
@@ -120,7 +116,6 @@ public class RegisteredUser extends AbstractSegueUser {
         this.resetExpiry = resetExpiry;
         this.lastUpdated = lastUpdated;
         this.emailVerificationToken = emailVerificationToken;
-        this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
         this.emailVerificationStatus = emailVerificationStatus;
     }
 
@@ -439,25 +434,6 @@ public class RegisteredUser extends AbstractSegueUser {
      */
     public final String getEmailVerificationToken() {
         return this.emailVerificationToken;
-    }
-
-    /**
-     * Gets the resetExpiry.
-     * 
-     * @return the resetExpiry
-     */
-    public final Date getEmailVerificationTokenExpiry() {
-        return emailVerificationTokenExpiry;
-    }
-
-    /**
-     * Sets the resetExpiry.
-     * 
-     * @param resetExpiry
-     *            the resetExpiry to set
-     */
-    public final void setEmailVerificationTokenExpiry(final Date resetExpiry) {
-        this.emailVerificationTokenExpiry = resetExpiry;
     }
 
     /**

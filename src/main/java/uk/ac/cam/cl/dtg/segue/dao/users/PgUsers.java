@@ -490,7 +490,6 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 16, userToCreate.getResetToken());
             setValueHelper(pst, 17, userToCreate.getResetExpiry());
             setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 19, userToCreate.getEmailVerificationTokenExpiry());
             
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save user.");
@@ -551,7 +550,6 @@ public class PgUsers implements IUserDataManager {
             setValueHelper(pst, 16, userToCreate.getResetToken());
             setValueHelper(pst, 17, userToCreate.getResetExpiry());
             setValueHelper(pst, 18, userToCreate.getEmailVerificationToken());
-            setValueHelper(pst, 19, userToCreate.getEmailVerificationTokenExpiry());
             setValueHelper(pst, 20, userToCreate.getId());
             
             if (pst.executeUpdate() == 0) {
@@ -608,7 +606,6 @@ public class PgUsers implements IUserDataManager {
         u.setEmailVerificationToken(results.getString("email_verification_token"));
         u.setEmailVerificationStatus(results.getString("email_verification_status") != null ? EmailVerificationStatus
                 .valueOf(results.getString("email_verification_status")) : null);
-        u.setEmailVerificationTokenExpiry(results.getTimestamp("email_verification_token_expiry"));
         
         return u;
     }
