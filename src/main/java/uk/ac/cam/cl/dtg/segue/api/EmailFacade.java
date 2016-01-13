@@ -20,7 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import io.swagger.annotations.Api;
 
@@ -67,7 +66,6 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -91,7 +89,7 @@ public class EmailFacade extends AbstractSegueFacade {
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
 
-	        /**
+    /**
      * EmailFacade. This class is responsible for orchestrating e-mail operations
      * 
      * @param properties

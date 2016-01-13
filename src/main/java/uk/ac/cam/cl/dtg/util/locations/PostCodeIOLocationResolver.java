@@ -184,6 +184,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
      * @throws LocationServerException
      *             - if there was an issue with the service
      */
+    @SuppressWarnings("unchecked")
     private List<PostCode> submitPostCodeRequest(final List<String> unknownPostCodes)
             throws LocationServerException {
 
