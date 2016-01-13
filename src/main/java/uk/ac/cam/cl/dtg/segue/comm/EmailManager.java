@@ -328,10 +328,15 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-welcome");
 
         String groupOwnerName = "Unknown";
-        if (groupOwner != null && groupOwner.getGivenName() != null && groupOwner.getFamilyName() != null) {
-            groupOwnerName = groupOwner.getGivenName() + " " + groupOwner.getFamilyName();
+
+        if (groupOwner != null && groupOwner.getFamilyName() != null) {
+            groupOwnerName = groupOwner.getFamilyName();
         }
         
+        if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
+            groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
+        }
+
         Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
 
             @Override
