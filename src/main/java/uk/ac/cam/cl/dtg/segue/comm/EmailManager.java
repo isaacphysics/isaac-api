@@ -16,6 +16,9 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,12 +140,16 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     				throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation");
-        
-        String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
-                globalProperties.getProperty(HOST_NAME), 
-                userDTO.getId(),
-                userDTO.getEmail(),
-                emailVerificationToken.substring(0, TRUNCATED_TOKEN_LENGTH));
+
+        List<NameValuePair> urlParamPairs = Lists.newArrayList();
+        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
+        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
+        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
+                TRUNCATED_TOKEN_LENGTH)));
+        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
+
+        String verificationURL = String.format("https://%s/verifyemail?%s",
+                globalProperties.getProperty(HOST_NAME), urlParams);
 
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
@@ -204,12 +211,15 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	Validate.notNull(userDTO);
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-email-verification");
 
+        List<NameValuePair> urlParamPairs = Lists.newArrayList();
+        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
+        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
+        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
+                TRUNCATED_TOKEN_LENGTH)));
+        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
 
-        String verificationURL = String.format("https://%s/verifyemail?userid=%s&email=%s&token=%s", 
-                globalProperties.getProperty(HOST_NAME),
-                userDTO.getId(),
-                userDTO.getEmail(),
-                emailVerificationToken.substring(0, TRUNCATED_TOKEN_LENGTH));
+        String verificationURL = String.format("https://%s/verifyemail?%s",
+                globalProperties.getProperty(HOST_NAME), urlParams);
 
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
@@ -289,10 +299,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("sig", SIGNATURE);
 
 
-
-            EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent,
-                    p,
-                            EmailType.ASSIGNMENTS);
+            EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(),
+                    emailContent, p, EmailType.ASSIGNMENTS);
             this.filterByPreferencesAndAddToQueue(userDTO, e);
         }
     }
