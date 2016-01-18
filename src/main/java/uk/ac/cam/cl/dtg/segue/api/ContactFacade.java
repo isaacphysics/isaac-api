@@ -95,35 +95,13 @@ public class ContactFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        // Build email
-        StringBuilder builder = new StringBuilder();
-        builder.append("The contact form has been submitted, please see the details below.\n\n");
-
-        builder.append("First Name: ");
-        builder.append(form.get("firstName"));
-        builder.append("\n");
-
-        builder.append("Last Name: ");
-        builder.append(form.get("lastName"));
-        builder.append("\n");
-
-        builder.append("Email Address: ");
-        builder.append(form.get("emailAddress"));
-        builder.append("\n");
-
-        builder.append("Subject: ");
-        builder.append(form.get("subject"));
-        builder.append("\n\n");
-
-        builder.append("Message:\n");
-        builder.append(form.get("message"));
-
-        // TODO create contact form email template, and use that instead of string builder
         try {
-            emailManager.sendContactUsFormEmail("Contact Isaac: " + form.get("subject"), builder.toString(), this
+            emailManager.sendContactUsFormEmail(form.get("firstName"), form.get("lastName"), form
+                    .get("emailAddress"), form.get("subject"), form.get("message"), this
                     .getProperties().getProperty("MAIL_RECEIVERS"), form.get("emailAddress"));
             getLogManager().logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED,
-                    builder.toString());
+                    String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
+                            form.get("emailAddress"), form.get("message")));
             return Response.ok().build();
         } catch (ContentManagerException e) {
             log.error("Content error has occurred", e);

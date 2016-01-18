@@ -352,11 +352,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             
         });
         
-        // TODO old assignments are listed as HTML in both html and plain text versions. Not obvious how to make this
-        // work.
-        StringBuilder sb = new StringBuilder();
+        StringBuilder htmlSB = new StringBuilder();
+        StringBuilder plainTextSB = new StringBuilder();
         if (existingAssignments != null && existingAssignments.size() > 0) {
-            sb.append("Your teacher has assigned the following assignments:\n");
+            htmlSB.append("Your teacher has assigned the following assignments:\n");
+            plainTextSB.append("Your teacher has assigned the following assignments:\n");
             for (int i = 0; i < existingAssignments.size(); i++) {
                 DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
                 GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
@@ -370,22 +370,26 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 								globalProperties.getProperty(HOST_NAME),
 								existingAssignments.get(i).getGameboardId());
 
-				sb.append(String.format(
-								"%d. <a href='%s'>%s</a> (set on %s)\n",
-								i + 1,
-								gameboardUrl,
-		                        gameboardName,
-		                        df.format(existingAssignments.get(i).getCreationDate())));
+                htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s)<br>", i + 1, gameboardUrl,
+                        gameboardName, df.format(existingAssignments.get(i).getCreationDate())));
+
+                plainTextSB.append(String.format("%d. %s (set on %s)\n", i + 1, gameboardName,
+                        df.format(existingAssignments.get(i).getCreationDate())));
             }
         } else if (existingAssignments != null && existingAssignments.size() == 0) {
-            sb.append("No assignments have been set yet.");
+            htmlSB.append("No assignments have been set yet.");
+            plainTextSB.append("No assignments have been set yet.");
         }
+        
+        // TODO we need to fill in assignments differently in text vs. html
+        final String tag = "{{assignmentsInfo}}";
+        emailContent.setHtmlContent(emailContent.getHtmlContent().replace(tag, htmlSB.toString()));
+        emailContent.setPlainTextContent(emailContent.getHtmlContent().replace(tag, plainTextSB.toString()));
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("teacherName", groupOwnerName == null ? "" : groupOwnerName);
-        p.put("assignmentsInfo", sb.toString());
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
 
@@ -435,35 +439,42 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
     }
     
-
     /**
+     * @param givenName
+     *            - users given name
+     * @param familyName
+     *            - users family name
+     * @param emailAddress
+     *            - the email address of the user
      * @param subject
      *            - the subject of the email
-     * @param contactFormMessage
-     *            - the message from the contact form
+     * @param message
+     *            - message from user
      * @param recipientEmailAddress
-     *            - the email address it is being sent to
+     *            - email address this email is being sent to
      * @param replyToAddress
-     *            - the email address we want to reply to
+     *            - the email address we want to be replied to
      * @throws ContentManagerException
      *             - if some content is not found
      * @throws SegueDatabaseException
      *             - if the database cannot be accessed
      */
-    public void sendContactUsFormEmail(final String subject, final String contactFormMessage,
+    public void sendContactUsFormEmail(final String givenName, final String familyName,
+            final String emailAddress, final String subject, final String message,
             final String recipientEmailAddress, final String replyToAddress) throws ContentManagerException,
             SegueDatabaseException {
 
-        EmailTemplateDTO dummyContentDTO = new EmailTemplateDTO();
-        dummyContentDTO.setPlainTextContent(contactFormMessage);
-        dummyContentDTO.setHtmlContent(contactFormMessage);
-        dummyContentDTO.setReplyToEmailAddress(replyToAddress);
-        // TODO create an actual contact us form template in the content
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-form");
 
         Properties contentProperties = new Properties();
+        contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
+        contentProperties.put("contactFamilyName", familyName == null ? "" : familyName);
+        contentProperties.put("contactEmail", emailAddress == null ? "" : emailAddress);
+        contentProperties.put("contactSubject", subject == null ? "" : subject);
+        contentProperties.put("contactMessage", message == null ? "" : message);
         contentProperties.put("sig", SIGNATURE);
 
-        EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, dummyContentDTO,
+        EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
                 contentProperties,
                 EmailType.SYSTEM);
 
