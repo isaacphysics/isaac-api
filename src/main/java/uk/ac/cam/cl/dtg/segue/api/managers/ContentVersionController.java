@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.ws.rs.NotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,8 +189,19 @@ public class ContentVersionController implements ServletContextListener {
             // acquire the lock for an atomic update
             synchronized (liveVersion) {
                 // set it to the live version only if it is newer than the
-                // current live version.
-                if (contentManager.compareTo(version, this.getLiveVersion()) > 0) {
+                // current live version OR if the current live version no-longer
+                // exists (a rebase might have happened, for example).
+
+                boolean newer;
+                try {
+                    newer = contentManager.compareTo(version, this.getLiveVersion()) > 0;
+                } catch (NotFoundException e) {
+                    // The current live version was not found. A rebase probably happened underneath us.
+                    log.info("Failed to find current live version, someone probably rebased and force-pushed. Tut tut.");
+                    newer = true;
+                }
+
+                if (newer) {
                     this.setLiveVersion(version);
                 } else {
                     log.info("Not changing live version as part of sync job as the " + "version (" + version
