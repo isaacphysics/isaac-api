@@ -28,18 +28,12 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
-import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig;
+import org.eclipse.jgit.transport.*;
 import org.eclipse.jgit.transport.OpenSshConfig.Host;
-import org.eclipse.jgit.transport.RefSpec;
-import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
@@ -369,9 +363,14 @@ public class GitDb {
             }
 
             RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
-            gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
+            FetchResult result = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
-            log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+            if (result.getTrackingRefUpdate("refs/remotes/origin/master").getResult() == RefUpdate.Result.LOCK_FAILURE) {
+                log.error("Failed to fetch. Not sure why.");
+            } else {
+                log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+            }
+
 
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
