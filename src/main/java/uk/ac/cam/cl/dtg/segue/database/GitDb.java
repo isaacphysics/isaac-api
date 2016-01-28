@@ -140,7 +140,7 @@ public class GitDb {
      *             - This method is intended to only locate one file at a time. If your search matches multiple files
      *             then this exception will be thrown.
      */
-    public ByteArrayOutputStream getFileByCommitSHA(final String sha, final String fullFilePath) throws IOException,
+    public synchronized ByteArrayOutputStream getFileByCommitSHA(final String sha, final String fullFilePath) throws IOException,
             UnsupportedOperationException {
         if (null == sha || null == fullFilePath) {
             return null;
@@ -175,7 +175,7 @@ public class GitDb {
      * @throws UnsupportedOperationException
      *             - if git does not support the operation requested.
      */
-    public TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
+    public synchronized TreeWalk getTreeWalk(final String sha, final String searchString) throws IOException,
             UnsupportedOperationException {
         Validate.notBlank(sha);
         Validate.notNull(searchString);
@@ -217,7 +217,7 @@ public class GitDb {
      *            - the full path of the file in git.
      * @return True if we can successfully find the object, false if not. False if we encounter an exception.
      */
-    public boolean verifyGitObject(final String sha, final String fullfilePath) {
+    public synchronized boolean verifyGitObject(final String sha, final String fullfilePath) {
         try {
             if (findGitObject(sha, fullfilePath) != null) {
                 return true;
@@ -235,7 +235,7 @@ public class GitDb {
      *            - the version that the treewalk should be configured to search within.
      * @return True if we have found the git sha false if not.
      */
-    public boolean verifyCommitExists(final String sha) {
+    public synchronized boolean verifyCommitExists(final String sha) {
         if (null == sha) {
             log.warn("Null version provided. Unable to verify commit exists.");
             return false;
@@ -278,7 +278,7 @@ public class GitDb {
      * @throws NotFoundException
      *             - if we cannot find the commit requested.
      */
-    public int getCommitTime(final String sha) throws NotFoundException {
+    public synchronized int getCommitTime(final String sha) throws NotFoundException {
         Validate.notBlank(sha);
 
         try {
@@ -312,7 +312,7 @@ public class GitDb {
      * 
      * @return List of the commit shas we have found in the git repository.
      */
-    public List<RevCommit> listCommits() {
+    public synchronized List<RevCommit> listCommits() {
         List<RevCommit> logList = null;
         try {
             Iterable<RevCommit> logs = gitHandle.log().all().call();
@@ -383,7 +383,7 @@ public class GitDb {
      * 
      * @return String of sha id
      */
-    public String getHeadSha() {
+    public synchronized String getHeadSha() {
         String result = null;
 
         try {
@@ -414,7 +414,7 @@ public class GitDb {
      * @throws UnsupportedOperationException
      *             - if git does not support the operation requested.
      */
-    private ObjectId findGitObject(final String sha, final String filename) throws IOException,
+    private synchronized ObjectId findGitObject(final String sha, final String filename) throws IOException,
             UnsupportedOperationException {
         if (null == sha || null == filename) {
             return null;
