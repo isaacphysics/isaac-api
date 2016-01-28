@@ -366,11 +366,10 @@ public class GitDb {
             FetchResult result = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
             if (result.getTrackingRefUpdate("refs/remotes/origin/master").getResult() == RefUpdate.Result.LOCK_FAILURE) {
-                log.error("Failed to fetch. Not sure why.");
+                log.error("Failed to fetch. The git repository may be corrupted. Hopefully, this will not be a problem.");
             } else {
                 log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
             }
-
 
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
