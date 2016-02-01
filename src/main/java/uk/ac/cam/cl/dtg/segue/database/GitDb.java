@@ -365,11 +365,16 @@ public class GitDb {
             RefSpec refSpec = new RefSpec("+refs/heads/*:refs/remotes/origin/*");
             FetchResult result = gitHandle.fetch().setRefSpecs(refSpec).setRemote(sshFetchUrl).call();
 
-            if (result.getTrackingRefUpdate("refs/remotes/origin/master").getResult() == RefUpdate.Result.LOCK_FAILURE) {
-                log.error("Failed to fetch. The git repository may be corrupted. Hopefully, this will not be a problem.");
-            } else {
-                log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+            TrackingRefUpdate refUpdate = result.getTrackingRefUpdate("refs/remotes/origin/master");
+            if (refUpdate != null) {
+                if (refUpdate.getResult() == RefUpdate.Result.LOCK_FAILURE) {
+                    log.error("Failed to fetch. The git repository may be corrupted. "
+                            + "Hopefully, this will not be a problem.");
+                } else {
+                    log.info("Fetched latest from git. Latest version is: " + this.getHeadSha());
+                }
             }
+
 
         } catch (GitAPIException e) {
             log.error("Error while trying to pull the latest from the remote repository.", e);
