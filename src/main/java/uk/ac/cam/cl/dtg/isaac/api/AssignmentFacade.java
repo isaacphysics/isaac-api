@@ -397,8 +397,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 for (QuestionDTO question : gameManager.getAllMarkableQuestionPartsDFSOrder(questionPage.getId())) {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
-                    headerBuilder.append(questionPage.getTitle() + " - Q" + newCharIndex
-                            + ",");
+                    if (question.getTitle() != null) {
+                        headerBuilder.append(questionPage.getTitle() + " - " + question.getTitle() + ",");
+                    } else {
+                        headerBuilder.append(questionPage.getTitle() + " - Q" + newCharIndex + ",");
+                    }
+
                     questionIds.add(question.getId());
                     index++;
                 }
