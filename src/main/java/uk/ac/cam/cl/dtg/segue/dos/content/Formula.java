@@ -15,31 +15,35 @@
  */
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
+import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
+
 /**
- * TODO Comment Here
+ * Formula is a specialised choice object that allows a python expression representing the formula to be stored.
  *
  * @author Alistair Stead
  *
  */
-public class Equation extends Choice {
-    private String pythonValue;
+@DTOMapping(FormulaDTO.class)
+@JsonContentType("formula")
+public class Formula extends Choice {
+    private String pythonExpression;
     
-    public Equation() {
+    public Formula() {
         
     }
     
     /**
-     * @return the pythonValue
+     * @return the pythonExpression
      */
-    public String getPythonValue() {
-        return pythonValue;
+    public String getPythonExpression() {
+        return pythonExpression;
     }
 
     /**
-     * @param pythonValue the pythonValue to set
+     * @param pythonExpression the pythonExpression to set
      */
-    public void setPythonValue(final String pythonValue) {
-        this.pythonValue = pythonValue;
+    public void setPythonExpression(final String pythonExpression) {
+        this.pythonExpression = pythonExpression;
     }
 
 }

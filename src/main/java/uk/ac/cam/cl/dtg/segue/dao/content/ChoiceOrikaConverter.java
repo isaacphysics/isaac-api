@@ -16,8 +16,10 @@
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
+import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
@@ -46,6 +48,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
 
         if (source instanceof Quantity) {
             return super.mapperFacade.map(source, QuantityDTO.class);
+        } else if (source instanceof Formula) {
+            return super.mapperFacade.map(source, FormulaDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -63,6 +67,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
 
         if (source instanceof QuantityDTO) {
             return super.mapperFacade.map(source, Quantity.class);
+        } else if (source instanceof FormulaDTO) {
+            return super.mapperFacade.map(source, Formula.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.

@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 
 /**
@@ -67,6 +68,8 @@ public class ChoiceDeserializer extends JsonDeserializer<Choice> {
 
         if (contentType.equals("quantity")) {
             return getSingletonChoiceMapper().readValue(root.toString(), Quantity.class);
+        } else if (contentType.equals("formula")) {
+            return getSingletonChoiceMapper().readValue(root.toString(), Formula.class);
         } else {
             return getSingletonChoiceMapper().readValue(root.toString(), Choice.class);
         }

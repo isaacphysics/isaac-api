@@ -24,7 +24,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.Equation;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
@@ -48,37 +49,19 @@ public class IsaacSymbolicValidator implements IValidator {
                     question.getId()));
         }
         
-        if (!(answer instanceof Equation)) {
+        if (!(answer instanceof Formula)) {
             throw new IllegalArgumentException(String.format(
-                    "Expected Equation for IsaacSymbolicQuestion: %s. Received (%s) ", question.getId(),
+                    "Expected Formula for IsaacSymbolicQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
 
         IsaacSymbolicQuestion symbolicQuestion = (IsaacSymbolicQuestion) question;
-        Equation symbolicAnswer = (Equation) answer;
+        Formula submittedFormula = (Formula) answer;
 
-        final String trustedAnswer = symbolicQuestion.getPythonAnswer();
-        
-        // To determine correctness, we just need to compare 
-        symbolicAnswer.setCorrect(checkSymbolicEquality(trustedAnswer, symbolicAnswer.getPythonValue()));
+        // TODO: Look through available choices on question, deciding whether the submitted answer is right.
 
-        // TODO Connect to the equality checker here, and return the answer
-
-        return new QuestionValidationResponse(symbolicQuestion.get_id(), answer, symbolicAnswer.isCorrect(),
-                null, new Date());
+        // For now, just say it was wrong.
+        return new QuestionValidationResponse(symbolicQuestion.getId(), answer, false,
+                new Content("This was wrong. Sorry."), new Date());
     }
-
-    /**
-     * @param trustedAnswer
-     *            - the answer given in the content
-     * @param answer
-     *            - the answer given by the student
-     * @return - a boolean describing correctness
-     */
-    private boolean checkSymbolicEquality(final String trustedAnswer, final String answer) {
-        log.info(String.format("Checking with equality checker..."));
-        return false;
-
-    }
-
 }
