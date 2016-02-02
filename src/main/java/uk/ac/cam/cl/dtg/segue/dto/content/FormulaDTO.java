@@ -32,7 +32,7 @@ public class FormulaDTO extends ChoiceDTO {
     /**
      * Gets the python expression.
      *
-     * @return the units
+     * @return the python expression
      */
     public final String getPythonExpression() {
         return pythonExpression;
@@ -44,7 +44,7 @@ public class FormulaDTO extends ChoiceDTO {
      * @param pythonExpression
      *            the python expression to set
      */
-    public final void setUnits(final String pythonExpression) {
+    public final void setPythonExpression(final String pythonExpression) {
         this.pythonExpression = pythonExpression;
     }
 }
