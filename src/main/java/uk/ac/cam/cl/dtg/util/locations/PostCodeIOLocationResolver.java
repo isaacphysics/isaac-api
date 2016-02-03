@@ -55,6 +55,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private static final Logger log = LoggerFactory.getLogger(PostCodeIOLocationResolver.class);
 
     private final String url = "http://api.postcodes.io/postcodes";
+    private final int POSTCODEIO_MAX_REQUESTS = 100;
     
     private final LocationHistory locationHistory;
 
@@ -179,7 +180,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
     /**
      * @param unknownPostCodes
-     *            - a list of postcodes not exceeding 100 in length
+     *            - a list of postcodes not exceeding maxRequests in length
      * @return - the results
      * @throws LocationServerException
      *             - if there was an issue with the service
@@ -188,8 +189,9 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private List<PostCode> submitPostCodeRequest(final List<String> unknownPostCodes)
             throws LocationServerException {
 
-        if (unknownPostCodes.size() > 100) {
-            throw new IllegalArgumentException("Number of postcodes cannot be bigger than 100!");
+        if (unknownPostCodes.size() > POSTCODEIO_MAX_REQUESTS) {
+            throw new IllegalArgumentException(String.format("Number of postcodes cannot be bigger than %d!",
+                    POSTCODEIO_MAX_REQUESTS));
         }
 
         StringBuilder sb = new StringBuilder();
