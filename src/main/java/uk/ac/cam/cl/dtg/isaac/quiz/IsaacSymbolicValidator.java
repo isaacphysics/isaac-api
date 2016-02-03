@@ -191,9 +191,9 @@ public class IsaacSymbolicValidator implements IValidator {
                     if (response.containsKey("error")) {
                         log.error("Failed to check formula with symbolic checker: " + response.get("error"));
                     } else {
-                        if ((boolean)response.get("equal")) {
-                            symbolicMatch =  response.get("equality_type") == "symbolic";
-                            numericMatch = response.get("equality_type") == "numeric";
+                        if (response.get("equal").equals("true")) {
+                            symbolicMatch =  response.get("equality_type").equals("symbolic");
+                            numericMatch = response.get("equality_type").equals("numeric");
                         }
                     }
 
