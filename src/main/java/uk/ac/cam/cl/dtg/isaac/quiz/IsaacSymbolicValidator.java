@@ -15,9 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
-import java.util.Date;
+import java.io.*;
+import java.util.*;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Maps;
 import org.apache.commons.lang3.Validate;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +125,6 @@ public class IsaacSymbolicValidator implements IValidator {
                     symbolicCorrect = formulaChoice.isCorrect();
                     numericCorrect = formulaChoice.isCorrect();
                 }
-
             }
         }
 
@@ -126,7 +137,6 @@ public class IsaacSymbolicValidator implements IValidator {
 
             Formula closestMatch = null;
             boolean closestMatchSymbolicCorrect = false;
-            boolean closestMatchNumericCorrect = false;
 
             // For all the choices on this question...
             for (Choice c : symbolicQuestion.getChoices()) {
@@ -147,30 +157,80 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 // ... test their answer against this choice with the symbolic checker.
 
-                // TODO: Call the symbolic checker here, passing in submittedFormula.getPythonExpression(), getting back a (symbolicMatch, numericMatch) tuple.
+                // We don't do any sanitisation of user input here, we'll leave that to the python.
 
-                boolean symbolicMatch = false; // TODO: Replace dummy value
-                boolean numericMatch = false;  // TODO: Replace dummy value
+                boolean symbolicMatch = false;
+                boolean numericMatch = false;
+
+                try {
+                    // This is ridiculous. All I want to do is pass some JSON to a REST endpoint and get some JSON back.
+
+                    ObjectMapper mapper = new ObjectMapper();
+
+                    HashMap<String, String> req = Maps.newHashMap();
+                    req.put("target", formulaChoice.getPythonExpression());
+                    req.put("test", submittedFormula.getPythonExpression());
+
+                    StringWriter sw = new StringWriter();
+                    JsonGenerator g = new JsonFactory().createGenerator(sw);
+                    mapper.writeValue(g, req);
+                    g.close();
+                    String requestString = sw.toString();
+
+                    HttpClient httpClient = new DefaultHttpClient();
+                    HttpPost httpPost = new HttpPost("http://localhost:5000/check");
+
+                    httpPost.setEntity(new StringEntity(requestString));
+                    httpPost.addHeader("Content-Type", "application/json");
+
+                    HttpResponse httpResponse = httpClient.execute(httpPost);
+                    HttpEntity responseEntity = httpResponse.getEntity();
+                    String responseString = EntityUtils.toString(responseEntity);
+                    HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
+
+                    if (response.containsKey("error")) {
+                        log.error("Failed to check formula with symbolic checker: " + response.get("error"));
+                    } else {
+                        if ((boolean)response.get("equal")) {
+                            symbolicMatch =  response.get("equality_type") == "symbolic";
+                            numericMatch = response.get("equality_type") == "numeric";
+                        }
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    log.error("Failed to check formula with symbolic checker.", e);
+                }
+
 
                 if (symbolicMatch) {
                     // This is the best kind of match. No need to continue checking.
                     closestMatch = formulaChoice;
                     closestMatchSymbolicCorrect = true;
-                    closestMatchNumericCorrect = true;
                     break;
-                } else if (numericMatch) {
+                } else if (numericMatch && null == closestMatch) {
                     // This is an acceptable match, but we may yet find a better one. Continue checking.
                     closestMatch = formulaChoice;
-                    closestMatchSymbolicCorrect = false;
-                    closestMatchNumericCorrect = true;
                 }
             }
 
             if (null != closestMatch) {
                 // We found a decent match.
+
                 feedback = (Content) closestMatch.getExplanation();
                 symbolicCorrect = closestMatchSymbolicCorrect;
-                numericCorrect = closestMatchNumericCorrect;
+                numericCorrect = true;
+
+                if (!symbolicCorrect) {
+                    log.info("User submitted an answer that was only numerically equivalent to one of our choices "
+                            + "for question " + symbolicQuestion.getId() + ". Choice: "
+                            + closestMatch.getPythonExpression() + ", submitted: "
+                            + submittedFormula.getPythonExpression());
+
+                    // TODO: Decide whether we want to add something to the explanation along the lines of "you got it
+                    //       right, but only numerically.
+                }
+
             }
         }
 
