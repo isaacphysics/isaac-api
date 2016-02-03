@@ -28,7 +28,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
 /**
- * DO for isaacNumericQuestions.
+ * DTO for isaacNumericQuestions.
  * 
  */
 @JsonContentType("isaacNumericQuestion")
