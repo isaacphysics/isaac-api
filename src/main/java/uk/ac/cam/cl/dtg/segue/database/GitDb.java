@@ -391,7 +391,7 @@ public class GitDb {
         String result = null;
 
         try {
-            ObjectId fetchHead = gitHandle.getRepository().resolve(Constants.FETCH_HEAD);
+            ObjectId fetchHead = gitHandle.getRepository().resolve("origin/master");
             if (null != fetchHead) {
                 result = fetchHead.getName();
             } else {

@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
+import javax.ws.rs.NotFoundException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
@@ -330,8 +331,19 @@ public class GitContentManager implements IContentManager {
         Validate.notBlank(version1);
         Validate.notBlank(version2);
 
-        int version1Epoch = this.database.getCommitTime(version1);
-        int version2Epoch = this.database.getCommitTime(version2);
+        int version1Epoch;
+        try {
+            version1Epoch = this.database.getCommitTime(version1);
+        } catch (NotFoundException e) {
+            version1Epoch = 0; // We didn't find it in the repo, so this commit is VERY old for all useful purposes.
+        }
+
+        int version2Epoch;
+        try {
+            version2Epoch = this.database.getCommitTime(version2);
+        } catch (NotFoundException e) {
+            version2Epoch = 0; // We didn't find it in the repo, so this commit is VERY old for all useful purposes.
+        }
 
         return version1Epoch - version2Epoch;
     }
