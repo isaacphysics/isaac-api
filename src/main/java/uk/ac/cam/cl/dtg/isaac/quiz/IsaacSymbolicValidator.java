@@ -136,6 +136,7 @@ public class IsaacSymbolicValidator implements IValidator {
             // this loop immediately. A numeric match may later be replaced with a symbolic match, but otherwise will suffice.
 
             Formula closestMatch = null;
+            boolean closestMatchExactMatch = false;
             boolean closestMatchSymbolicCorrect = false;
 
             // For all the choices on this question...
@@ -159,6 +160,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 // We don't do any sanitisation of user input here, we'll leave that to the python.
 
+                boolean exactMatch = false;
                 boolean symbolicMatch = false;
                 boolean numericMatch = false;
 
@@ -192,6 +194,7 @@ public class IsaacSymbolicValidator implements IValidator {
                         log.error("Failed to check formula with symbolic checker: " + response.get("error"));
                     } else {
                         if (response.get("equal").equals("true")) {
+                            exactMatch = response.get("equality_type").equals("exact");
                             symbolicMatch =  response.get("equality_type").equals("symbolic");
                             numericMatch = response.get("equality_type").equals("numeric");
                         }
@@ -203,11 +206,16 @@ public class IsaacSymbolicValidator implements IValidator {
                 }
 
 
-                if (symbolicMatch) {
+                if (exactMatch) {
                     // This is the best kind of match. No need to continue checking.
                     closestMatch = formulaChoice;
+                    closestMatchExactMatch = true;
                     closestMatchSymbolicCorrect = true;
                     break;
+                } else if (symbolicMatch && null == closestMatch) {
+                    // This is an acceptable match, but we may yet find a better one. Continue checking.
+                    closestMatch = formulaChoice;
+                    closestMatchSymbolicCorrect = true;
                 } else if (numericMatch && null == closestMatch) {
                     // This is an acceptable match, but we may yet find a better one. Continue checking.
                     closestMatch = formulaChoice;
@@ -217,7 +225,11 @@ public class IsaacSymbolicValidator implements IValidator {
             if (null != closestMatch) {
                 // We found a decent match.
 
-                feedback = (Content) closestMatch.getExplanation();
+                if (closestMatchExactMatch) {
+                    feedback = (Content) closestMatch.getExplanation();
+                } else if (closestMatchSymbolicCorrect){
+                    feedback = new Content("Can you simplify your answer?");
+                }
                 symbolicCorrect = closestMatchSymbolicCorrect;
                 numericCorrect = true;
 
