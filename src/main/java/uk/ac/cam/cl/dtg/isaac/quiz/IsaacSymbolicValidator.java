@@ -227,12 +227,12 @@ public class IsaacSymbolicValidator implements IValidator {
                     closestMatchExact = true;
                     closestMatchSymbolic = true;
                     break;
-                } else if (symbolicMatch && null == closestMatch) {
+                } else if (symbolicMatch) {
                     // This is an acceptable match, but we may yet find a better one. Continue checking.
                     closestMatch = formulaChoice;
                     closestMatchSymbolic = true;
-                } else if (numericMatch && null == closestMatch) {
-                    // This is an acceptable match, but we may yet find a better one. Continue checking.
+                } else if (numericMatch && !closestMatchSymbolic) {
+                    // This is an acceptable match if no symbolic ones have been found, but we may yet find a better one. Continue checking.
                     closestMatch = formulaChoice;
                 }
             }
@@ -240,14 +240,16 @@ public class IsaacSymbolicValidator implements IValidator {
             if (null != closestMatch) {
                 // We found a decent match. Of course, it still might be wrong.
 
-                if (closestMatchExact) {
-                    feedback = (Content) closestMatch.getExplanation();
-                } else if (closestMatchSymbolic){
-                    feedback = new Content("Can you simplify your answer?");
-                }
                 exactCorrect = closestMatch.isCorrect() && closestMatchExact;
                 symbolicCorrect = closestMatch.isCorrect() && closestMatchSymbolic;
                 numericCorrect = closestMatch.isCorrect();
+
+                if (closestMatchExact) {
+                    feedback = (Content) closestMatch.getExplanation();
+                } else if (symbolicCorrect){
+                    feedback = new Content("Can you simplify your answer?");
+                }
+
 
                 if (!symbolicCorrect) {
                     log.info("User submitted an answer that was only numerically equivalent to one of our choices "
