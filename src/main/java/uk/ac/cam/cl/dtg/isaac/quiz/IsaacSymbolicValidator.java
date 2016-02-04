@@ -145,7 +145,7 @@ public class IsaacSymbolicValidator implements IValidator {
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
 
-            orderedChoices.sort(new Comparator<Choice>() {
+            Collections.sort(orderedChoices, new Comparator<Choice>() {
                 @Override
                 public int compare(Choice o1, Choice o2) {
                     int o1Val = o1.isCorrect() ? 0 : 1;
