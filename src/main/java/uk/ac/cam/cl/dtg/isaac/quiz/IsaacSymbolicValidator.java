@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -73,6 +74,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
         // These variables store the important features of the response we'll send.
         Content feedback = null;          // The feedback we send the user
+        boolean exactCorrect = false;     // Whether their answer was exactly (modulo ordering) equivalent to one of ours.
         boolean symbolicCorrect = false;  // Whether their answer was symbolically equivalent to one of ours
         boolean numericCorrect = false;   // Whether their answer was numerically equivalent to one of ours
 
@@ -122,6 +124,7 @@ public class IsaacSymbolicValidator implements IValidator {
                 // ... look for an exact match to the submitted answer.
                 if (formulaChoice.getPythonExpression().equals(submittedFormula.getPythonExpression())) {
                     feedback = (Content)formulaChoice.getExplanation();
+                    exactCorrect = formulaChoice.isCorrect();
                     symbolicCorrect = formulaChoice.isCorrect();
                     numericCorrect = formulaChoice.isCorrect();
                 }
@@ -136,11 +139,23 @@ public class IsaacSymbolicValidator implements IValidator {
             // this loop immediately. A numeric match may later be replaced with a symbolic match, but otherwise will suffice.
 
             Formula closestMatch = null;
-            boolean closestMatchExactMatch = false;
-            boolean closestMatchSymbolicCorrect = false;
+            boolean closestMatchExact = false;
+            boolean closestMatchSymbolic = false;
+
+            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
+            List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
+
+            orderedChoices.sort(new Comparator<Choice>() {
+                @Override
+                public int compare(Choice o1, Choice o2) {
+                    int o1Val = o1.isCorrect() ? 0 : 1;
+                    int o2Val = o2.isCorrect() ? 0 : 1;
+                    return o1Val - o2Val;
+                }
+            });
 
             // For all the choices on this question...
-            for (Choice c : symbolicQuestion.getChoices()) {
+            for (Choice c : orderedChoices) {
 
                 // ... that are of the Formula type, ...
                 if (!(c instanceof Formula)) {
@@ -209,13 +224,13 @@ public class IsaacSymbolicValidator implements IValidator {
                 if (exactMatch) {
                     // This is the best kind of match. No need to continue checking.
                     closestMatch = formulaChoice;
-                    closestMatchExactMatch = true;
-                    closestMatchSymbolicCorrect = true;
+                    closestMatchExact = true;
+                    closestMatchSymbolic = true;
                     break;
                 } else if (symbolicMatch && null == closestMatch) {
                     // This is an acceptable match, but we may yet find a better one. Continue checking.
                     closestMatch = formulaChoice;
-                    closestMatchSymbolicCorrect = true;
+                    closestMatchSymbolic = true;
                 } else if (numericMatch && null == closestMatch) {
                     // This is an acceptable match, but we may yet find a better one. Continue checking.
                     closestMatch = formulaChoice;
@@ -223,15 +238,16 @@ public class IsaacSymbolicValidator implements IValidator {
             }
 
             if (null != closestMatch) {
-                // We found a decent match.
+                // We found a decent match. Of course, it still might be wrong.
 
-                if (closestMatchExactMatch) {
+                if (closestMatchExact) {
                     feedback = (Content) closestMatch.getExplanation();
-                } else if (closestMatchSymbolicCorrect){
+                } else if (closestMatchSymbolic){
                     feedback = new Content("Can you simplify your answer?");
                 }
-                symbolicCorrect = closestMatchSymbolicCorrect;
-                numericCorrect = true;
+                exactCorrect = closestMatch.isCorrect() && closestMatchExact;
+                symbolicCorrect = closestMatch.isCorrect() && closestMatchSymbolic;
+                numericCorrect = closestMatch.isCorrect();
 
                 if (!symbolicCorrect) {
                     log.info("User submitted an answer that was only numerically equivalent to one of our choices "
