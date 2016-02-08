@@ -266,6 +266,6 @@ public class IsaacSymbolicValidator implements IValidator {
 
         // If we got this far and feedback is still null, they were wrong. There's no useful feedback we can give at this point.
 
-        return new FormulaValidationResponse(symbolicQuestion.getId(), answer, feedback, symbolicCorrect, numericCorrect, new Date());
+        return new FormulaValidationResponse(symbolicQuestion.getId(), answer, feedback, exactCorrect, symbolicCorrect, numericCorrect, new Date());
     }
 }

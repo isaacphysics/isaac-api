@@ -31,25 +31,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.MapMaker;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.RefUpdate;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.collect.ImmutableSet.Builder;
 import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +96,7 @@ public class GitContentManager implements IContentManager {
 
     private boolean indexOnlyPublishedParentContent = false;
 
-    private ConcurrentMap<Object,Object> cache;
+    private Cache<Object, Object> cache;
 
 
     /**
@@ -121,7 +120,7 @@ public class GitContentManager implements IContentManager {
         this.tagsList = new ConcurrentHashMap<String, Set<String>>();
         this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
 
-        this.cache = new MapMaker().softValues().makeMap();
+        this.cache = CacheBuilder.newBuilder().softValues().build();
 
         searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
                 Constants.TYPE_FIELDNAME));
@@ -162,11 +161,11 @@ public class GitContentManager implements IContentManager {
     public final ContentDTO getContentById(final String version, final String id) throws ContentManagerException {
 
         String k = "getContentById~" + version + "~" + id;
-        if (!cache.containsKey(k)) {
+        if (!cache.asMap().containsKey(k)) {
             cache.put(k, this.mapper.getDTOByDO(this.getContentDOById(version, id)));
         }
 
-        return (ContentDTO) cache.get(k);
+        return (ContentDTO) cache.getIfPresent(k);
     }
 
     @Override
@@ -176,7 +175,7 @@ public class GitContentManager implements IContentManager {
         }
 
         String k = "getContentDOById~" + version + "~" + id;
-        if (!cache.containsKey(k)) {
+        if (!cache.asMap().containsKey(k)) {
             this.ensureCache(version);
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
@@ -191,7 +190,7 @@ public class GitContentManager implements IContentManager {
             cache.put(k, searchResults.get(0));
         }
 
-        return (Content) cache.get(k);
+        return (Content) cache.getIfPresent(k);
 
     }
 
@@ -200,7 +199,7 @@ public class GitContentManager implements IContentManager {
             final int limit) throws ContentManagerException {
 
         String k = "getByIdPrefix~" + version + "~" + idPrefix + "~" + startIndex + "~" + limit;
-        if (!cache.containsKey(k)) {
+        if (!cache.asMap().containsKey(k)) {
             this.ensureCache(version);
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
@@ -211,7 +210,7 @@ public class GitContentManager implements IContentManager {
             cache.put(k, new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
         }
 
-        return (ResultsWrapper<ContentDTO>) cache.get(k);
+        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
     
     @Override
@@ -220,7 +219,7 @@ public class GitContentManager implements IContentManager {
 
         String k = "getAllByTypeRegEx~" + version + "~" + regex + "~" + startIndex + "~" + limit;
 
-        if (!cache.containsKey(k)) {
+        if (!cache.asMap().containsKey(k)) {
 
             this.ensureCache(version);
 
@@ -232,7 +231,7 @@ public class GitContentManager implements IContentManager {
             cache.put(k, new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
         }
 
-        return (ResultsWrapper<ContentDTO>) cache.get(k);
+        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
 
     @Override
@@ -406,7 +405,7 @@ public class GitContentManager implements IContentManager {
         indexProblemCache.clear();
         tagsList.clear();
         allUnits.clear();
-        cache.clear();
+        cache.invalidateAll();
     }
 
     @Override
@@ -418,7 +417,7 @@ public class GitContentManager implements IContentManager {
             searchProvider.expungeIndexFromSearchCache(version);
             tagsList.remove(version);
             allUnits.remove(version);
-            cache.clear();
+            cache.invalidateAll();
         }
     }
 

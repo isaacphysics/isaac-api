@@ -30,6 +30,7 @@ import java.util.Date;
 public class FormulaValidationResponse extends QuestionValidationResponse {
     private Boolean correctSymbolic;
     private Boolean correctNumeric;
+    private Boolean correctExact;
 
     /**
      * Default constructor.
@@ -55,25 +56,47 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
      *            -
      */
     public FormulaValidationResponse(final String questionId, final Choice answer,
-                                     final Content explanation, final Boolean correctSymbolic,
-                                     final Boolean correctNumeric, final Date dateAttempted) {
-        super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
+                                     final Content explanation, final Boolean correctExact,
+                                     final Boolean correctSymbolic, final Boolean correctNumeric,
+                                     final Date dateAttempted) {
+        super(questionId, answer, correctExact || correctSymbolic || correctNumeric, explanation, dateAttempted);
+        this.correctExact = correctExact;
         this.correctSymbolic = correctSymbolic;
         this.correctNumeric = correctNumeric;
     }
 
     /**
-     * Gets the correctValue.
-     * 
-     * @return the correctValue
+     * Gets the correctExact.
+     *
+     * @return the correctExact
+     */
+    public final Boolean getCorrectExact() {
+        return correctExact;
+    }
+
+    /**
+     * Sets the correctExact.
+     *
+     * @param correctExact
+     *            the correctExact to set
+     */
+    public final void setCorrectExact(final Boolean correctExact) {
+        this.correctSymbolic = correctSymbolic;
+        // N.B. If we ever get here, it's likely that this.correct is now out of date.
+        // This should really be an immutable object, so we shouldn't need this method.
+    }
+    /**
+     * Gets the correctSymbolic.
+     *
+     * @return the correctSymbolic
      */
     public final Boolean getCorrectSymbolic() {
         return correctSymbolic;
     }
 
     /**
-     * Sets the correctValue.
-     * 
+     * Sets the correctSymbolic.
+     *
      * @param correctSymbolic
      *            the correctSymbolic to set
      */
@@ -84,7 +107,7 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
     }
 
     /**
-     * Gets the correctUnits.
+     * Gets the correctNumeric.
      * 
      * @return the correctNumeric
      */
@@ -93,7 +116,7 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
     }
 
     /**
-     * Sets the correctUnits.
+     * Sets the correctNumeric.
      * 
      * @param correctNumeric
      *            the correctNumeric to set
@@ -106,6 +129,6 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
 
     @Override
     public String toString() {
-        return "QuantityValidationResponse [correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
+        return "FormulaValidationResponse [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
     }
 }

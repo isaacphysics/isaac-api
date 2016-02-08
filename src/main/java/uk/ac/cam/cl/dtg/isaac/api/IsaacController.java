@@ -26,12 +26,17 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.cache.Cache;
 import io.swagger.annotations.Api;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
@@ -97,6 +102,19 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final URIManager uriManager;
+
+    // Question counts are slow to calculate, so cache for up to 10 minutes. We may want to move this to a more
+    // reusable place (such as statsManager.getLogCount) if we find ourselves using this pattern more).
+    private final Supplier<Long> questionCountCache = Suppliers.memoizeWithExpiration(new Supplier<Long>() {
+        public Long get() {
+            try {
+                return statsManager.getLogCount(ANSWER_QUESTION);
+            } catch (SegueDatabaseException e) {
+                // If we fail to work out how many questions have been answered, just return 0.
+                return 0L;
+            }
+        }
+    }, 10, TimeUnit.MINUTES);
 
     /**
      * Creates an instance of the isaac controller which provides the REST endpoints for the isaac api.
@@ -304,12 +322,9 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getQuestionCount(@Context final HttpServletRequest request) {
-        try {
-            return Response.ok(ImmutableMap.of("answeredQuestionCount", statsManager.getLogCount(ANSWER_QUESTION)))
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
-        } catch (SegueDatabaseException e) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
-        }
+
+        return Response.ok(ImmutableMap.of("answeredQuestionCount", questionCountCache.get()))
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
     }
     
     /**

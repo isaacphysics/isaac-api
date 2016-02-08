@@ -26,6 +26,7 @@ import java.util.Date;
  * 
  */
 public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO {
+    private Boolean correctExact;
     private Boolean correctSymbolic;
     private Boolean correctNumeric;
 
@@ -53,16 +54,39 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
      *            -
      */
     public FormulaValidationResponseDTO(final String questionId, final ChoiceDTO answer,
-                                        final ContentDTO explanation, final Boolean correctSymbolic,
-                                        final Boolean correctNumeric, final Date dateAttempted) {
+                                        final ContentDTO explanation, final Boolean correctExact,
+                                        final Boolean correctSymbolic, final Boolean correctNumeric,
+                                        final Date dateAttempted) {
         super(questionId, answer, correctSymbolic || correctNumeric, explanation, dateAttempted);
+        this.correctExact = correctExact;
         this.correctSymbolic = correctSymbolic;
         this.correctNumeric = correctNumeric;
     }
 
     /**
+     * Gets the correctExact.
+     *
+     * @return the correctExact
+     */
+    public final Boolean getCorrectExact() {
+        return correctExact;
+    }
+
+    /**
+     * Sets the correctExact.
+     *
+     * @param correctExact
+     *            the correctExact to set
+     */
+    public final void setCorrectExact(final Boolean correctExact) {
+        this.correctExact = correctExact;
+        // N.B. If we ever get here, it's likely that this.correct is now out of date.
+        // This should really be an immutable object, so we shouldn't need this method.
+    }
+
+    /**
      * Gets the correctSymbolic.
-     * 
+     *
      * @return the correctSymbolic
      */
     public final Boolean getCorrectSymbolic() {
@@ -71,7 +95,7 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
 
     /**
      * Sets the correctSymbolic.
-     * 
+     *
      * @param correctSymbolic
      *            the correctSymbolic to set
      */
@@ -104,6 +128,6 @@ public class FormulaValidationResponseDTO extends QuestionValidationResponseDTO 
 
     @Override
     public String toString() {
-        return "QuantityValidationResponseDTO [correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
+        return "FormulaValidationResponseDTO [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
     }
 }
