@@ -21,6 +21,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
  */
 public class FormulaDTO extends ChoiceDTO {
     private String pythonExpression;
+    private boolean requiresExactMatch;
 
     /**
      * Default constructor required for mapping.
@@ -46,5 +47,21 @@ public class FormulaDTO extends ChoiceDTO {
      */
     public final void setPythonExpression(final String pythonExpression) {
         this.pythonExpression = pythonExpression;
+    }
+
+    /**
+     * @return Whether this formula requires an exact match. Believe it or not.
+     */
+    public boolean requiresExactMatch() {
+        return requiresExactMatch;
+    }
+
+    /**
+     * Yes, you guessed it. Sets whether this formula requires an exact match.
+     *
+     * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
+     */
+    public void setRequiresExactMatch(boolean requiresExactMatch) {
+        this.requiresExactMatch = requiresExactMatch;
     }
 }

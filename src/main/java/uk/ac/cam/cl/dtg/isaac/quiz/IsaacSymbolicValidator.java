@@ -52,6 +52,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 public class IsaacSymbolicValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicValidator.class);
 
+    private enum MatchType {
+        NONE,
+        NUMERIC,
+        SYMBOLIC,
+        EXACT
+    }
+
     @Override
     public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
         Validate.notNull(question);
@@ -73,10 +80,9 @@ public class IsaacSymbolicValidator implements IValidator {
         Formula submittedFormula = (Formula) answer;
 
         // These variables store the important features of the response we'll send.
-        Content feedback = null;          // The feedback we send the user
-        boolean exactCorrect = false;     // Whether their answer was exactly (modulo ordering) equivalent to one of ours.
-        boolean symbolicCorrect = false;  // Whether their answer was symbolically equivalent to one of ours
-        boolean numericCorrect = false;   // Whether their answer was numerically equivalent to one of ours
+        Content feedback = null;                        // The feedback we send the user
+        MatchType responseMatchType = MatchType.NONE;   // The match type we found
+        boolean responseCorrect = false;                // Whether we're right or wrong
 
 
         // There are several specific responses the user can receive. Each of them will set feedback content, so
@@ -124,9 +130,8 @@ public class IsaacSymbolicValidator implements IValidator {
                 // ... look for an exact match to the submitted answer.
                 if (formulaChoice.getPythonExpression().equals(submittedFormula.getPythonExpression())) {
                     feedback = (Content)formulaChoice.getExplanation();
-                    exactCorrect = formulaChoice.isCorrect();
-                    symbolicCorrect = formulaChoice.isCorrect();
-                    numericCorrect = formulaChoice.isCorrect();
+                    responseMatchType = MatchType.EXACT;
+                    responseCorrect = formulaChoice.isCorrect();
                 }
             }
         }
@@ -139,8 +144,7 @@ public class IsaacSymbolicValidator implements IValidator {
             // this loop immediately. A numeric match may later be replaced with a symbolic match, but otherwise will suffice.
 
             Formula closestMatch = null;
-            boolean closestMatchExact = false;
-            boolean closestMatchSymbolic = false;
+            MatchType closestMatchType = MatchType.NONE;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
@@ -175,9 +179,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 // We don't do any sanitisation of user input here, we'll leave that to the python.
 
-                boolean exactMatch = false;
-                boolean symbolicMatch = false;
-                boolean numericMatch = false;
+                MatchType matchType = MatchType.NONE;
 
                 try {
                     // This is ridiculous. All I want to do is pass some JSON to a REST endpoint and get some JSON back.
@@ -209,49 +211,55 @@ public class IsaacSymbolicValidator implements IValidator {
                         log.error("Failed to check formula with symbolic checker: " + response.get("error"));
                     } else {
                         if (response.get("equal").equals("true")) {
-                            exactMatch = response.get("equality_type").equals("exact");
-                            symbolicMatch =  response.get("equality_type").equals("symbolic");
-                            numericMatch = response.get("equality_type").equals("numeric");
+                            matchType = MatchType.valueOf(((String)response.get("equality_type")).toUpperCase());
                         }
                     }
 
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    log.error("Failed to check formula with symbolic checker.", e);
+                    log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
+                    break;
                 }
 
-
-                if (exactMatch) {
-                    // This is the best kind of match. No need to continue checking.
+                if (matchType == MatchType.EXACT) {
                     closestMatch = formulaChoice;
-                    closestMatchExact = true;
-                    closestMatchSymbolic = true;
+                    closestMatchType = MatchType.EXACT;
                     break;
-                } else if (symbolicMatch) {
-                    // This is an acceptable match, but we may yet find a better one. Continue checking.
-                    closestMatch = formulaChoice;
-                    closestMatchSymbolic = true;
-                } else if (numericMatch && !closestMatchSymbolic) {
-                    // This is an acceptable match if no symbolic ones have been found, but we may yet find a better one. Continue checking.
-                    closestMatch = formulaChoice;
+                } else if (matchType.compareTo(closestMatchType) > 0) {
+                    if (formulaChoice.getRequiresExactMatch() && formulaChoice.isCorrect()) {
+                        closestMatch = formulaChoice;
+                        closestMatchType = matchType;
+                    } else {
+                        if (closestMatch == null || !closestMatch.getRequiresExactMatch()) {
+                            closestMatch = formulaChoice;
+                            closestMatchType = matchType;
+                        } else {
+                            // This is not as good a match as the one we already have.
+                        }
+                    }
                 }
             }
+
 
             if (null != closestMatch) {
                 // We found a decent match. Of course, it still might be wrong.
 
-                exactCorrect = closestMatch.isCorrect() && closestMatchExact;
-                symbolicCorrect = closestMatch.isCorrect() && closestMatchSymbolic;
-                numericCorrect = closestMatch.isCorrect();
+                if (closestMatchType != MatchType.EXACT && closestMatch.getRequiresExactMatch()) {
+                    // We know that closestMatch is correct, or it wouldn't be the closest match. See above.
+                    feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
+                    responseCorrect = false;
+                    responseMatchType = closestMatchType;
 
-                if (closestMatchExact) {
+                    log.info("User submitted an answer that was close to an exact match, but not exact "
+                            + "for question " + symbolicQuestion.getId() + ". Choice: "
+                            + closestMatch.getPythonExpression() + ", submitted: "
+                            + submittedFormula.getPythonExpression());
+                } else {
                     feedback = (Content) closestMatch.getExplanation();
-                } else if (symbolicCorrect){
-                    feedback = new Content("Can you simplify your answer?");
+                    responseCorrect = closestMatch.isCorrect();
+                    responseMatchType = closestMatchType;
                 }
 
-
-                if (!symbolicCorrect) {
+                if (closestMatchType == MatchType.NUMERIC) {
                     log.info("User submitted an answer that was only numerically equivalent to one of our choices "
                             + "for question " + symbolicQuestion.getId() + ". Choice: "
                             + closestMatch.getPythonExpression() + ", submitted: "
@@ -266,6 +274,6 @@ public class IsaacSymbolicValidator implements IValidator {
 
         // If we got this far and feedback is still null, they were wrong. There's no useful feedback we can give at this point.
 
-        return new FormulaValidationResponse(symbolicQuestion.getId(), answer, feedback, exactCorrect, symbolicCorrect, numericCorrect, new Date());
+        return new FormulaValidationResponse(symbolicQuestion.getId(), answer, feedback, responseCorrect, responseMatchType.toString(), new Date());
     }
 }

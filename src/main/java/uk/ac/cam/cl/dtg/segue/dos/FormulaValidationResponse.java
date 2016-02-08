@@ -28,9 +28,7 @@ import java.util.Date;
  */
 @DTOMapping(FormulaValidationResponseDTO.class)
 public class FormulaValidationResponse extends QuestionValidationResponse {
-    private Boolean correctSymbolic;
-    private Boolean correctNumeric;
-    private Boolean correctExact;
+    private String matchType;
 
     /**
      * Default constructor.
@@ -48,87 +46,41 @@ public class FormulaValidationResponse extends QuestionValidationResponse {
      *            -
      * @param explanation
      *            -
-     * @param correctSymbolic
+     * @param correct
      *            -
-     * @param correctNumeric
+     * @param matchType
      *            -
      * @param dateAttempted
      *            -
      */
     public FormulaValidationResponse(final String questionId, final Choice answer,
-                                     final Content explanation, final Boolean correctExact,
-                                     final Boolean correctSymbolic, final Boolean correctNumeric,
-                                     final Date dateAttempted) {
-        super(questionId, answer, correctExact || correctSymbolic || correctNumeric, explanation, dateAttempted);
-        this.correctExact = correctExact;
-        this.correctSymbolic = correctSymbolic;
-        this.correctNumeric = correctNumeric;
+                                     final Content explanation, final Boolean correct,
+                                     final String matchType, final Date dateAttempted) {
+        super(questionId, answer, correct, explanation, dateAttempted);
+        this.matchType = matchType;
     }
 
     /**
-     * Gets the correctExact.
+     * Gets the matchType.
      *
-     * @return the correctExact
+     * @return the matchType
      */
-    public final Boolean getCorrectExact() {
-        return correctExact;
+    public final String matchType() {
+        return matchType;
     }
 
     /**
-     * Sets the correctExact.
+     * Sets the matchType.
      *
-     * @param correctExact
-     *            the correctExact to set
+     * @param matchType
+     *            the matchType to set
      */
-    public final void setCorrectExact(final Boolean correctExact) {
-        this.correctSymbolic = correctSymbolic;
-        // N.B. If we ever get here, it's likely that this.correct is now out of date.
-        // This should really be an immutable object, so we shouldn't need this method.
-    }
-    /**
-     * Gets the correctSymbolic.
-     *
-     * @return the correctSymbolic
-     */
-    public final Boolean getCorrectSymbolic() {
-        return correctSymbolic;
-    }
-
-    /**
-     * Sets the correctSymbolic.
-     *
-     * @param correctSymbolic
-     *            the correctSymbolic to set
-     */
-    public final void setCorrectSymbolic(final Boolean correctSymbolic) {
-        this.correctSymbolic = correctSymbolic;
-        // N.B. If we ever get here, it's likely that this.correct is now out of date.
-        // This should really be an immutable object, so we shouldn't need this method.
-    }
-
-    /**
-     * Gets the correctNumeric.
-     * 
-     * @return the correctNumeric
-     */
-    public final Boolean getCorrectNumeric() {
-        return correctNumeric;
-    }
-
-    /**
-     * Sets the correctNumeric.
-     * 
-     * @param correctNumeric
-     *            the correctNumeric to set
-     */
-    public final void setCorrectNumeric(final Boolean correctNumeric) {
-        this.correctNumeric = correctNumeric;
-        // N.B. If we ever get here, it's likely that this.correct is now out of date.
-        // This should really be an immutable object, so we shouldn't need this method.
+    public final void matchType(final String matchType) {
+        this.matchType = matchType;
     }
 
     @Override
     public String toString() {
-        return "FormulaValidationResponse [correctExact=" + correctExact + "correctSymbolic=" + correctSymbolic + ", correctNumeric=" + correctNumeric + "]";
+        return "FormulaValidationResponse [correct=" + this.isCorrect() + ",matchType=" + this.matchType + "]";
     }
 }

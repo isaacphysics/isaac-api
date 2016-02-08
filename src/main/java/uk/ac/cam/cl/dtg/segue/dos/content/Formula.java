@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 @JsonContentType("formula")
 public class Formula extends Choice {
     private String pythonExpression;
+    private boolean requiresExactMatch;
     
     public Formula() {
         
@@ -44,6 +45,22 @@ public class Formula extends Choice {
      */
     public void setPythonExpression(final String pythonExpression) {
         this.pythonExpression = pythonExpression;
+    }
+
+    /**
+     * @return Whether this formula requires an exact match. Believe it or not.
+     */
+    public boolean getRequiresExactMatch() {
+        return requiresExactMatch;
+    }
+
+    /**
+     * Yes, you guessed it. Sets whether this formula requires an exact match.
+     *
+     * @param requiresExactMatch Whether this formula requires an exact match. I'm not kidding.
+     */
+    public void setRequiresExactMatch(boolean requiresExactMatch) {
+        this.requiresExactMatch = requiresExactMatch;
     }
 
 }
