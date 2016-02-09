@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.util.locations.Address;
 @JsonContentType("isaacEventPage")
 public class IsaacEventPage extends Content {
 	private Date date;
+	private Date end_date;
 	private Address location;
 
 	private List<ExternalReference> preResources;
@@ -62,7 +63,8 @@ public class IsaacEventPage extends Content {
 			@JsonProperty("children") List<ContentBase> children,
 			@JsonProperty("relatedContent") List<String> relatedContent,
 			@JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
-			@JsonProperty("date") Date date, @JsonProperty("location") Address location,
+			@JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
+		    @JsonProperty("location") Address location,
 			@JsonProperty("preResources") List<ExternalReference> preResources,
 			@JsonProperty("postResources") List<ExternalReference> postResources,
 			@JsonProperty("eventThumbnail") Image eventThumbnail,
@@ -72,6 +74,7 @@ public class IsaacEventPage extends Content {
 				null, relatedContent, published, tags, null);
 
 		this.date = date;
+		this.end_date = end_date;
 		this.location = location;
 		this.preResources = preResources;
 		this.postResources = postResources;
@@ -103,6 +106,21 @@ public class IsaacEventPage extends Content {
 		this.date = date;
 	}
 
+	/**
+	 * Gets the end date.
+	 * @return the end date
+	 */
+	public Date getEndDate() {
+		return end_date;
+	}
+
+	/**
+	 * Sets the end date.
+	 * @param date the end date to set
+	 */
+	public void setEndDate(final Date end_date) {
+		this.end_date = end_date;
+	}
 	/**
 	 * Gets the location.
 	 * @return the location
