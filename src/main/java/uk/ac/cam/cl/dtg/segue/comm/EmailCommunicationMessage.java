@@ -35,6 +35,8 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     private final String htmlMessage;
 
     private final String replyToAddress;
+
+    private final String replyToName;
     
     private final EmailType emailType;
     
@@ -53,16 +55,19 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      * 			  the type of the message
      * @param replyToAddress
      *            (nullable) the preferred reply to address.
+     * @param replyToName
+     *            (nullable) the name to add to the reply-to field.
      */
     public EmailCommunicationMessage(@Nullable final Long userId, final String recipientAddress,
             final String subject, final String plainTextMessage, final String htmlMessage, final EmailType emailType,
-            @Nullable final String replyToAddress) {
+            @Nullable final String replyToAddress, @Nullable final String replyToName) {
         this.userId = userId;
     	this.plainTextMessage = plainTextMessage;
         this.recipientAddress = recipientAddress;
         this.subject = subject;
         this.htmlMessage = htmlMessage;
         this.replyToAddress = replyToAddress;
+        this.replyToName = replyToName;
         this.emailType = emailType;
     }
 
@@ -106,6 +111,13 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
      */
     public String getReplyToAddress() {
         return replyToAddress;
+    }
+
+    /**
+     * @return replyToName if set.
+     */
+    public String getReplyToName() {
+        return replyToName;
     }
 
 	@Override

@@ -81,7 +81,7 @@ public class LogEventMisuseHandler implements IMisuseHandler {
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(null,
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null);
+                null, null);
 
         try {
 			emailManager.addSystemEmailToQueue(e);

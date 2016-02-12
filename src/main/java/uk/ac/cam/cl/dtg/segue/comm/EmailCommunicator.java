@@ -19,11 +19,14 @@ import javax.mail.MessagingException;
 
 import org.apache.commons.lang3.Validate;
 
+import org.elasticsearch.common.recycler.Recycler;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.Mailer;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * @author nr378 and Alistair Stead
@@ -40,17 +43,20 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
 	 *            implementation.
 	 * @param fromAddress
 	 *            - The email address to show as the from address.
+	 * @param mailName
+	 *            - The name email will be sent from.
 	 */
 	@Inject
 	public EmailCommunicator(@Named(Constants.MAILER_SMTP_SERVER) final String smtpAddress,
-							 @Named(Constants.MAIL_FROM_ADDRESS) final String fromAddress) {
+							 @Named(Constants.MAIL_FROM_ADDRESS) final String fromAddress,
+							 @Named(Constants.MAIL_NAME) final String mailName) {
 		Validate.notNull(smtpAddress);
 		Validate.notNull(fromAddress);
 
 		this.fromAddress = fromAddress;
 
 		// Construct a new instance of the mailer object
-		this.mailer = new Mailer(smtpAddress, fromAddress);
+		this.mailer = new Mailer(smtpAddress, fromAddress, mailName);
 	}
 
     /**
@@ -64,15 +70,17 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
         try {
             if (email.getHTMLMessage() == null) {
                 mailer.sendPlainTextMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-                        email.getReplyToAddress(), email.getSubject(),
+                        email.getReplyToAddress(), email.getReplyToName(), email.getSubject(),
                         email.getPlainTextMessage());
             } else {
                 mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
-                        email.getReplyToAddress(), email.getSubject(),
+                        email.getReplyToAddress(), email.getReplyToName(), email.getSubject(),
                         email.getPlainTextMessage(), email.getHTMLMessage());
             }
         } catch (MessagingException e) {
             throw new CommunicationException(e);
-        }
+        } catch (UnsupportedEncodingException e) {
+			throw new CommunicationException(e);
+		}
 	}
 }

@@ -461,10 +461,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendContactUsFormEmail(final String givenName, final String familyName,
             final String emailAddress, final String subject, final String message,
-            final String recipientEmailAddress, final String replyToAddress) throws ContentManagerException,
-            SegueDatabaseException {
+            final String recipientEmailAddress, final String replyToAddress, final String replyToName)
+            throws ContentManagerException, SegueDatabaseException {
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-form");
+        emailContent.setReplyToEmailAddress(replyToAddress);
+        emailContent.setReplyToName(replyToName);
 
         Properties contentProperties = new Properties();
         contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
@@ -790,8 +792,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties);
 
         String replyToAddress = emailContent.getReplyToEmailAddress();
+        String replyToName = emailContent.getReplyToName();
         if (replyToAddress == null || replyToAddress.isEmpty()) {
             replyToAddress = globalProperties.getProperty(Constants.REPLY_TO_ADDRESS);
+            replyToName = globalProperties.getProperty(Constants.MAIL_NAME);
         }
 
         ContentDTO htmlTemplate = getContentDTO("email-template-html");
@@ -814,7 +818,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
                 plainTextMessage,
-                htmlMessage, emailType, replyToAddress);
+                htmlMessage, emailType, replyToAddress, replyToName);
 
         return e;
     }

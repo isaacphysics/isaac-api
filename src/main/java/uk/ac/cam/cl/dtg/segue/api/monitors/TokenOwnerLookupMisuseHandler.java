@@ -81,7 +81,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
         final String subject = "Soft Threshold limit reached for TokenOwnershipRequest endpoint";
         EmailCommunicationMessage e = new EmailCommunicationMessage(null,
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null);
+                null, null);
         try {
 			emailManager.addSystemEmailToQueue(e);
 		} catch (SegueDatabaseException e1) {
@@ -98,7 +98,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
 
         EmailCommunicationMessage e = new EmailCommunicationMessage(null,
                 properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null);
+                null, null);
         try {
 			emailManager.addSystemEmailToQueue(e);
 		} catch (SegueDatabaseException e1) {

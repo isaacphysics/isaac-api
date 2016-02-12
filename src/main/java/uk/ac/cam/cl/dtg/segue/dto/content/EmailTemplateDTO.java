@@ -32,6 +32,7 @@ public class EmailTemplateDTO extends ContentDTO {
     private String plainTextContent;
     private String htmlContent;
     private String replyToEmailAddress;
+    private String replyToName;
     
     /**
      * EmailTemplate.
@@ -139,5 +140,21 @@ public class EmailTemplateDTO extends ContentDTO {
      */
     public void setReplyToEmailAddress(final String replyToEmailAddress) {
         this.replyToEmailAddress = replyToEmailAddress;
+    }
+
+    /**
+     * Gets the replyToName.
+     * @return the replyToName
+     */
+    public String getReplyToName() {
+        return replyToName;
+    }
+
+    /**
+     * Sets the replyToName.
+     * @param replyToName the replyToName to set
+     */
+    public void setReplyToName(final String replyToName) {
+        this.replyToName = replyToName;
     }
 }

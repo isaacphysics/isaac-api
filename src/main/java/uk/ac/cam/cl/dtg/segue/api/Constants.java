@@ -57,6 +57,11 @@ public final class Constants {
      * Constant representing the mail receiver address for contact us e-mails sent by the endpoint.
      */
     public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
+
+    /**
+     * Constant representing the name emails will be sent from.
+     */
+    public static final String MAIL_NAME = "MAIL_NAME";
     
     /**
      * Constant representing the key for the SERVER_ADMIN_ADDRESS property - Email address to send admin related emails

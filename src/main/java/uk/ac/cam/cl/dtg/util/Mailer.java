@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.util;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
 import javax.annotation.Nullable;
@@ -29,6 +30,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.validation.constraints.Null;
 
 import org.elasticsearch.common.lang3.Validate;
 
@@ -41,6 +43,7 @@ import org.elasticsearch.common.lang3.Validate;
 public class Mailer {
 	private String smtpAddress;
 	private String mailAddress;
+	private String mailName;
 	private String smtpPort;
 
 	/**
@@ -52,10 +55,13 @@ public class Mailer {
 	 * @param mailAddress
 	 *            The mail address of the sending account - used for
 	 *            authentication sometimes.
+	 * @param mailName
+	 *			  The name to send emails from.
 	 */
-	public Mailer(final String smtpAddress, final String mailAddress) {
+	public Mailer(final String smtpAddress, final String mailAddress, final String mailName) {
 		this.smtpAddress = smtpAddress;
 		this.mailAddress = mailAddress;
+		this.mailName = mailName;
 	}
 
     /**
@@ -66,7 +72,9 @@ public class Mailer {
      * @param from
      *            - the e-mail address that should be used as the sending address
      * @param replyTo
-     *            - (nullable) the e-mail address that should be used as the reply-to address 
+     *            - (nullable) the e-mail address that should be used as the reply-to address
+	 * @param replyToName
+	 *            - (nullable) the name that should be used as the reply-to name
      * @param subject
      *            - The message subject
      * @param contents
@@ -77,8 +85,8 @@ public class Mailer {
      *             - if the address is not valid.
      */
     public void sendPlainTextMail(final String[] recipient, final String from, @Nullable final String replyTo,
-            final String subject, final String contents) throws MessagingException, AddressException {
-        Message msg = this.setupMessage(recipient, from, replyTo, subject);
+            @Nullable final String replyToName, final String subject, final String contents) throws MessagingException, AddressException, UnsupportedEncodingException {
+        Message msg = this.setupMessage(recipient, from, replyTo, replyToName, subject);
         
         msg.setText(contents);
         
@@ -95,6 +103,8 @@ public class Mailer {
      *            - the e-mail address that should be used as the sending address
      * @param replyTo
      *            - (nullable) the e-mail address that should be used as the reply-to address
+	 * @param replyToName
+	 *            - (nullable) the name that should be used as the reply-to name
      * @param subject
      *            - The message subject
      * @param plainText
@@ -107,9 +117,9 @@ public class Mailer {
      *             - if the address is not valid.
      */
     public void sendMultiPartMail(final String[] recipient, final String from, @Nullable final String replyTo,
-            final String subject, final String plainText, final String html) throws MessagingException,
-            AddressException {
-        Message msg = this.setupMessage(recipient, from, replyTo, subject);
+			@Nullable final String replyToName, final String subject, final String plainText, final String html)
+			throws MessagingException, AddressException, UnsupportedEncodingException {
+        Message msg = this.setupMessage(recipient, from, replyTo, replyToName, subject);
         
         // Create the text part
         MimeBodyPart textPart = new MimeBodyPart();
@@ -158,7 +168,21 @@ public class Mailer {
 	public void setMailAddress(final String mailAddress) {
 		this.mailAddress = mailAddress;
 	}
+	/**
+	 * Gets the mailName.
+	 * @return the mailName
+	 */
+	public String getMailName() {
+		return mailName;
+	}
 
+	/**
+	 * Sets the mailName.
+	 * @param mailName the mailName to set
+	 */
+	public void setMailName(final String mailName) {
+		this.mailName = mailName;
+	}
 	/**
 	 * Gets the smtpPort.
 	 * @return the smtpPort
@@ -188,7 +212,7 @@ public class Mailer {
      * @throws MessagingException - if there is an error in setting up the message
      */
     private Message setupMessage(final String[] recipient, final String from, @Nullable final String replyTo,
-            final String subject) throws MessagingException {
+			 @Nullable final String replyToName, final String subject) throws MessagingException, UnsupportedEncodingException {
         Validate.notEmpty(recipient);
         Validate.notBlank(recipient[0]);
         Validate.notBlank(from);
@@ -209,7 +233,7 @@ public class Mailer {
         InternetAddress[] sender = new InternetAddress[1];
         InternetAddress[] recievers = new InternetAddress[recipient.length];
 
-        sentBy = new InternetAddress(mailAddress);
+        sentBy = new InternetAddress(mailAddress, mailName);
         sender[0] = new InternetAddress(from);
         for (int i = 0; i < recipient.length; i++) {
             recievers[i] = new InternetAddress(recipient[i]);
@@ -220,10 +244,8 @@ public class Mailer {
             msg.setRecipients(RecipientType.TO, recievers);
             msg.setSubject(subject);
 
-            if (null == replyTo) {
-                msg.setReplyTo(sender);
-            } else {
-                msg.setReplyTo(new InternetAddress[] { new InternetAddress(replyTo) });
+            if (null != replyTo && null != replyToName) {
+                msg.setReplyTo(new InternetAddress[] { new InternetAddress(replyTo, replyToName) });
             }
         }
         return msg;
