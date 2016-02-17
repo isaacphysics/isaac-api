@@ -196,6 +196,7 @@ public class IsaacSymbolicValidator implements IValidator {
                     g.close();
                     String requestString = sw.toString();
 
+                    // TODO: Factor this URL out into a property
                     HttpClient httpClient = new DefaultHttpClient();
                     HttpPost httpPost = new HttpPost("http://localhost:5000/check");
 
