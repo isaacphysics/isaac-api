@@ -123,6 +123,8 @@ public class EmailManagerTest {
         EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
         EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com")
                 .anyTimes();
+        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Physics")
+                .anyTimes();
 
         EasyMock.replay(mockPropertiesLoader);
 
@@ -472,14 +474,6 @@ public class EmailManagerTest {
     @Test
     public final void sendRegistrationConfirmation_checkTemplatesWithNoTagsWorks_emailIsGeneratedWithoutTemplateContent() {
         EmailTemplateDTO template = createDummyEmailTemplate("this is a template with no tags");
-
-        PropertiesLoader mockPropertiesLoader = EasyMock.createMock(PropertiesLoader.class);
-        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org");
-
-        EasyMock.expect(mockPropertiesLoader.getProperty(Constants.REPLY_TO_ADDRESS))
-                .andReturn("test-reply-to@test.com").anyTimes();
-
-        EasyMock.replay(mockPropertiesLoader);
 
         ContentVersionController mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
         EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion").anyTimes();

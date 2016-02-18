@@ -750,7 +750,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     @Override
     public void contextDestroyed(final ServletContextEvent sce) {
-        // Close all resoureces we hold.
+        // Close all resources we hold.
         log.info("Segue Config Module notified of shutdown. Releasing resources");
         elasticSearchClient.close();
         elasticSearchClient = null;

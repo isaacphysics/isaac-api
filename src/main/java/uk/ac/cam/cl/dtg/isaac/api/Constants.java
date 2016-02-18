@@ -23,7 +23,6 @@ public final class Constants {
     public static final String MAILER_SMTP_SERVER = "MAILER_SMTP_SERVER";
     public static final String MAIL_FROM_ADDRESS = "MAIL_FROM_ADDRESS";
     public static final String MAIL_RECEIVERS = "MAIL_RECEIVERS";
-    public static final String MAIL_NAME = "MAIL_NAME";
     public static final String PROXY_PATH = "PROXY_PATH";
     public static final String ANALYTICS_TRACKING_ID = "ANALYTICS_TRACKING_ID";
 

@@ -307,7 +307,8 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
             
             if (userIds.contains(requestingUser.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannoted modify your own role.")
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "Aborted - you cannoted modify your own role.")
                 .toResponse();
             }
             
@@ -329,7 +330,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 if (user.getRole() != null && user.getRole() == requestedRole) {
                     return new SegueErrorResponse(Status.BAD_REQUEST,
                             "Aborted - cannot demote one or more users "
-                                    + "who have roles equal or higher than new role,").toResponse();
+                                    + "who have roles equal or higher than new role").toResponse();
                 }
 
                 // if a user has a higher role than the requester, abort
@@ -388,7 +389,7 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
             if (userIds.contains(requestingUser.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannoted modify yourself.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannot modify yourself.")
                         .toResponse();
             }
 
