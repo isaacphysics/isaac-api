@@ -316,7 +316,7 @@ public class StatisticsManager {
      *             if there is a problem with the database.
      */
     public Long getLogCount(final String logTypeOfInterest) throws SegueDatabaseException {
-        return this.logManager.getLogCountByType(ANSWER_QUESTION);
+        return this.logManager.getLogCountByType(logTypeOfInterest);
     }
     
     /**
