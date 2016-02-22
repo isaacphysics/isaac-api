@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
@@ -439,6 +440,40 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
     }
     
+    /**
+     * Sends email notifying users that their account role has changed.
+     * 
+     * @param oldUserDTO
+     *            - user object used to complete template (with the new role)
+     * @param newRole
+     *            - the old role of the user
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     * @throws NoUserException
+     *             - if no user DTO could be found
+     */
+    public void sendRoleChange(final RegisteredUserDTO oldUserDTO, final Role newRole)
+            throws ContentManagerException,
+            SegueDatabaseException, NoUserException {
+        Validate.notNull(oldUserDTO);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-default-role-change");
+
+        Properties contentProperties = new Properties();
+        contentProperties
+                .put("givenname", oldUserDTO.getGivenName() == null ? "" : oldUserDTO.getGivenName());
+        contentProperties
+                .put("oldrole", oldUserDTO.toString() == null ? "" : oldUserDTO.getRole().toString());
+        contentProperties.put("newrole", oldUserDTO.getRole() == null ? "" : newRole.toString());
+        contentProperties.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(oldUserDTO.getId(), oldUserDTO.getEmail(),
+                emailContent, contentProperties, EmailType.SYSTEM);
+        this.filterByPreferencesAndAddToQueue(oldUserDTO, e);
+    }
+
     /**
      * Sends email notifying users that their account has been elevated from STUDENT to TEACHER.
      * 

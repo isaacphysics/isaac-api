@@ -728,13 +728,20 @@ public class UserAccountManager {
         }
 
         // Send a welcome email if the user has become a teacher
-        if (user.getRole() == Role.TEACHER && existingUser.getRole() != Role.TEACHER) {
-            try {
-                RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
-                this.emailManager.sendTeacherWelcome(existingUserDTO);
-            } catch (ContentManagerException | NoUserException e) {
-                log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
+        try {
+            RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
+            if (user.getRole() != existingUser.getRole()) {
+                switch (user.getRole()) {
+                    case TEACHER:
+                        this.emailManager.sendTeacherWelcome(existingUserDTO);
+                        break;
+                    default:
+                        this.emailManager.sendRoleChange(existingUserDTO, user.getRole());
+                        break;
+                }
             }
+        } catch (ContentManagerException | NoUserException e) {
+            log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
         }
 
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
@@ -791,14 +798,21 @@ public class UserAccountManager {
         Validate.notNull(requestedRole);
         RegisteredUser userToSave = this.findUserById(id);
 
-        // Send a welcome email if the user has become a teacher
-        if (requestedRole == Role.TEACHER && userToSave.getRole() != Role.TEACHER) {
-            try {
-                RegisteredUserDTO existingUserDTO = this.getUserDTOById(userToSave.getId());
-                this.emailManager.sendTeacherWelcome(existingUserDTO);
-            } catch (ContentManagerException | NoUserException e) {
-                log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
+        // Send welcome email if user has become teacher, otherwise, role change notification
+        try {
+            RegisteredUserDTO existingUserDTO = this.getUserDTOById(id);
+            if (userToSave.getRole() != requestedRole) {
+                switch (requestedRole) {
+                    case TEACHER:
+                        this.emailManager.sendTeacherWelcome(existingUserDTO);
+                        break;
+                    default:
+                        this.emailManager.sendRoleChange(existingUserDTO, requestedRole);
+                        break;
+                }
             }
+        } catch (ContentManagerException | NoUserException e) {
+            log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
         }
 
         userToSave.setRole(requestedRole);
