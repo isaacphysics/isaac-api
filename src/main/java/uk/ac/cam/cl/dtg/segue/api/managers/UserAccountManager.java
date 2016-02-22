@@ -820,17 +820,17 @@ public class UserAccountManager {
     }
 
     /**
-     * @param id
-     *            - the user id
+     * @param email
+     *            - the user email
      * @param requestedEmailVerificationStatus
      *            - the new email verification status
      * @throws SegueDatabaseException
      *             - an exception when accessing the database
      */
-    public void updateUserEmailVerificationStatus(final Long id,
+    public void updateUserEmailVerificationStatus(final String email, 
             final EmailVerificationStatus requestedEmailVerificationStatus) throws SegueDatabaseException {
         Validate.notNull(requestedEmailVerificationStatus);
-        RegisteredUser userToSave = this.findUserById(id);
+        RegisteredUser userToSave = this.findUserByEmail(email);
         userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
         this.database.createOrUpdateUser(userToSave);
     }

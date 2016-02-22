@@ -366,8 +366,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - to help determine access rights.
      * @param emailVerificationStatus
      *            - new emailVerificationStatus.
-     * @param userIds
-     *            - a list of user ids to change en-mass
+     * @param emails
+     *            - a list of user emails that need to be changed
      * @return Success shown by returning an ok response
      */
     @POST
@@ -377,7 +377,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public synchronized Response modifyUsersEmailVerificationStatus(
             @Context final HttpServletRequest request,
             @PathParam("emailVerificationStatus") final String emailVerificationStatus,
-            final List<Long> userIds) {
+            final List<String> emails) {
         try {
             if (!isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
@@ -388,29 +388,22 @@ public class AdminFacade extends AbstractSegueFacade {
                     .valueOf(emailVerificationStatus);
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (userIds.contains(requestingUser.getId())) {
+            if (emails.equals(requestingUser.getEmail())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannot modify yourself.")
                         .toResponse();
             }
 
             // fail fast - break if any of the users given already have the role they are being elevated to
-            for (Long userid : userIds) {
-                RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
+            for (String email : emails) {
+                RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
 
                 if (null == user) {
                     throw new NoUserException();
                 }
-
-                if (user.getEmailVerificationStatus() != null
-                        && user.getEmailVerificationStatus() == requestedEmailVerificationStatus) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST,
-                            "Aborted - one or more users already have the requested verification status.")
-                            .toResponse();
-                }
             }
 
-            for (Long userid : userIds) {
-                this.userManager.updateUserEmailVerificationStatus(userid, requestedEmailVerificationStatus);
+            for (String email : emails) {
+                this.userManager.updateUserEmailVerificationStatus(email, requestedEmailVerificationStatus);
             }
 
         } catch (NoUserLoggedInException e) {
