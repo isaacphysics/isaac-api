@@ -298,7 +298,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public synchronized Response modifyUsersRole(@Context final HttpServletRequest request,
             @PathParam("role") final String role, final List<Long> userIds) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
                         .toResponse();
             }
@@ -379,7 +379,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @PathParam("emailVerificationStatus") final String emailVerificationStatus,
             final List<Long> userIds) {
         try {
-            if (!isUserStaff(request)) {
+            if (!isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
                         .toResponse();
             }
@@ -854,7 +854,7 @@ public class AdminFacade extends AbstractSegueFacade {
         RegisteredUserDTO currentUser;
         try {
             currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            if (!isUserStaff(httpServletRequest)) {
+            if (!isUserAnAdminOrEventManager(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You are not authorised to access this function.")
                         .toResponse();
             }
