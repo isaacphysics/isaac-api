@@ -721,12 +721,20 @@ public class UserAccountManager {
             try {
             	RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
                 this.emailManager.sendEmailVerificationChange(existingUserDTO, user);
-            } catch (ContentManagerException e) {
-                log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-            } catch (NoUserException e) {
+            } catch (ContentManagerException | NoUserException e) {
                 log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
 			}
 
+        }
+
+        // Send a welcome email if the user has become a teacher
+        if (user.getRole() == Role.TEACHER && existingUser.getRole() != Role.TEACHER) {
+            try {
+                RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
+                this.emailManager.sendTeacherWelcome(existingUserDTO);
+            } catch (ContentManagerException | NoUserException e) {
+                log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
+            }
         }
 
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
@@ -736,12 +744,6 @@ public class UserAccountManager {
         mergeMapper.map(userDTOContainingUpdates, userToSave);
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
         userToSave.setLastUpdated(new Date());
-
-        // special case if user used to have a role and admin user has removed it - it needs to be removed.
-        // this is safe as it is equivalent to having no permissions.
-        if (user.getRole() == null && existingUser.getRole() != null) {
-            userToSave.setRole(null);
-        }
 
         if (user.getSchoolId() == null && existingUser.getSchoolId() != null) {
             userToSave.setSchoolId(null);
@@ -788,6 +790,17 @@ public class UserAccountManager {
     public void updateUserRole(final Long id, final Role requestedRole) throws SegueDatabaseException {
         Validate.notNull(requestedRole);
         RegisteredUser userToSave = this.findUserById(id);
+
+        // Send a welcome email if the user has become a teacher
+        if (requestedRole == Role.TEACHER && userToSave.getRole() != Role.TEACHER) {
+            try {
+                RegisteredUserDTO existingUserDTO = this.getUserDTOById(userToSave.getId());
+                this.emailManager.sendTeacherWelcome(existingUserDTO);
+            } catch (ContentManagerException | NoUserException e) {
+                log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
+            }
+        }
+
         userToSave.setRole(requestedRole);
         this.database.createOrUpdateUser(userToSave);
     }

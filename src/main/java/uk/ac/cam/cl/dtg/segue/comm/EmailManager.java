@@ -440,6 +440,33 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
     
     /**
+     * Sends email notifying users that their account has been elevated from STUDENT to TEACHER.
+     * 
+     * @param userDTO
+     *            - user object used to complete template
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     * @throws NoUserException
+     *             - if no user DTO could be found
+     */
+    public void sendTeacherWelcome(final RegisteredUserDTO userDTO) throws ContentManagerException,
+            SegueDatabaseException, NoUserException {
+        Validate.notNull(userDTO);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-teacher-welcome");
+
+        Properties contentProperties = new Properties();
+        contentProperties.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
+        contentProperties.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(),
+                emailContent, contentProperties, EmailType.SYSTEM);
+        this.filterByPreferencesAndAddToQueue(userDTO, e);
+    }
+
+    /**
      * @param givenName
      *            - users given name
      * @param familyName
