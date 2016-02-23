@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 /**
  * Test suite to check that the use of the 3rd party service postcodes.io
@@ -92,7 +93,8 @@ public class PostCodeLocationResolverTest {
         map.put("CB237AN", list2);
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT", 20);
+            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT",
+                    PostCodeRadius.TWENTY_FIVE_MILES);
             System.out.println(ids.toString());
             Assert.assertTrue(ids.contains(5l));
         } catch (LocationServerException e) {
@@ -115,10 +117,11 @@ public class PostCodeLocationResolverTest {
 
         map.put("BD175TP", list1);
 
-        map.put("PA477S", list2);
+        map.put("IP327JY", list2);
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN", 200);
+            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN",
+                    PostCodeRadius.FIFTY_MILES);
             System.out.println(ids.toString());
             Assert.assertTrue(ids.size() == 1);
         } catch (LocationServerException | SegueDatabaseException e) {
@@ -142,7 +145,8 @@ public class PostCodeLocationResolverTest {
         map.put("654653", list2);
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT", 20);
+            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT",
+                    PostCodeRadius.TWENTY_FIVE_MILES);
             Assert.assertTrue(ids.isEmpty());
             System.out.println(ids.toString());
         } catch (LocationServerException | SegueDatabaseException e) {
@@ -155,7 +159,8 @@ public class PostCodeLocationResolverTest {
         HashMap<String, List<Long>> map = Maps.newHashMap();
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT", 20);
+            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "BD175TT",
+                    PostCodeRadius.TWENTY_FIVE_MILES);
             Assert.assertTrue(ids.isEmpty());
             System.out.println(ids.toString());
         } catch (LocationServerException | SegueDatabaseException e) {
@@ -178,7 +183,8 @@ public class PostCodeLocationResolverTest {
         map.put("654653", list2);
 
         try {
-            resolver.filterPostcodesWithinProximityOfPostcode(map, "46346364", 20);
+            resolver.filterPostcodesWithinProximityOfPostcode(map, "46346364",
+                    PostCodeRadius.TWENTY_FIVE_MILES);
             Assert.fail();
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
@@ -189,7 +195,7 @@ public class PostCodeLocationResolverTest {
     public void filterPostcodesWithinProximityOfPostcode_passingBadArguments_ExpectEmptyListReturned() {
 
         try {
-            resolver.filterPostcodesWithinProximityOfPostcode(null, "", 0);
+            resolver.filterPostcodesWithinProximityOfPostcode(null, "", null);
             Assert.fail();
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
@@ -211,7 +217,8 @@ public class PostCodeLocationResolverTest {
         map.put("  CB23   6FE  ", list2);
 
         try {
-            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN", 20);
+            List<Long> ids = resolver.filterPostcodesWithinProximityOfPostcode(map, "CB237AN",
+                    PostCodeRadius.TWENTY_FIVE_MILES);
             Assert.assertTrue(ids.contains(2l));
         } catch (LocationServerException | SegueDatabaseException e) {
             System.out.println(e.getMessage());
