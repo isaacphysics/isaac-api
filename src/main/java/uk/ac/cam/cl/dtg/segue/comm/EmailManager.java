@@ -710,10 +710,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("email", user.getEmail());
         p.put("sig", SIGNATURE);
         
-        String plainTextMessage = completeTemplateWithProperties(emailTemplateDTO.getHtmlContent(), p);
+        String compltedHTMLTemplate = completeTemplateWithProperties(emailTemplateDTO.getHtmlContent(), p);
 
         Properties htmlTemplateProperties = new Properties();
-        htmlTemplateProperties.put("content", plainTextMessage.replace("\n", "<br>"));
+        htmlTemplateProperties.put("content", compltedHTMLTemplate);
         htmlTemplateProperties.put("email", user.getEmail());
 
         return completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties);
