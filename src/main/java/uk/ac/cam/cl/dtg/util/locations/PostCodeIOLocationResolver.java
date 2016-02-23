@@ -78,7 +78,8 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
      */
     @Override
     public List<Long> filterPostcodesWithinProximityOfPostcode(final Map<String, List<Long>> postCodeIDMap,
-            final String targetPostCode, final int distanceInMiles) throws LocationServerException,
+            final String targetPostCode, final PostCodeRadius postCodeRadius)
+            throws LocationServerException,
             SegueDatabaseException {
 
         if (null == postCodeIDMap) {
@@ -139,7 +140,8 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
                     targetPostCodeObject.getLon(), postCode.getLat(),
                     postCode.getLon());
             
-            if (distInMiles <= distanceInMiles && cleanPostCodeIDMap.containsKey(postCode.getPostCode())) {
+            if (distInMiles <= postCodeRadius.getDistance()
+                    && cleanPostCodeIDMap.containsKey(postCode.getPostCode())) {
                 // Add this to a list, with user ids
                 resultingUserIds.addAll(cleanPostCodeIDMap.get(postCode.getPostCode()));
             }
@@ -292,6 +294,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
 
         return d;
     }
+
 
 
 

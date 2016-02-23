@@ -84,6 +84,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -842,6 +843,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
+            @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
             @QueryParam("schoolURN") @Nullable final Long schoolURN) {
 
         RegisteredUserDTO currentUser;
@@ -920,8 +922,11 @@ public class AdminFacade extends AbstractSegueFacade {
                             }
                         }
                     }
+
+                    PostCodeRadius radius = PostCodeRadius.valueOf(postcodeRadius);
+
                     List<Long> userIdsWithinRadius = locationManager.getUsersWithinPostCodeDistanceOf(
-                            postCodeAndUserIds, postcode, 50);
+                            postCodeAndUserIds, postcode, radius);
 
                     // Make sure the list returned is users who have schools in our postcode radius
                     findUsers.clear();

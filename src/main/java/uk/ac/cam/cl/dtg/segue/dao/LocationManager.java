@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 /**
  * LocationHistoryManager. This class is intended to be used to maintain a database of geocoded ip addresses such that
@@ -236,8 +237,8 @@ public class LocationManager implements IPLocationResolver {
      *             - anm exception when the database service fails
      */
     public List<Long> getUsersWithinPostCodeDistanceOf(final Map<String, List<Long>> postCodeAndUserIds,
-            final String targetPostCode,
-            final int radius) throws LocationServerException, SegueDatabaseException {
+            final String targetPostCode, final PostCodeRadius radius) throws LocationServerException,
+            SegueDatabaseException {
         return postCodeLocationResolver.filterPostcodesWithinProximityOfPostcode(postCodeAndUserIds,
                 targetPostCode, radius);
     }

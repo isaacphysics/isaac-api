@@ -42,7 +42,7 @@ public interface PostCodeLocationResolver {
      *             - something went wrong in the database
      */
     List<Long> filterPostcodesWithinProximityOfPostcode(final Map<String, List<Long>> postCodeAndUserIds,
-            final String targetPostCode,
-            final int distanceInMiles) throws LocationServerException, SegueDatabaseException;
+            final String targetPostCode, final PostCodeRadius distanceInMiles)
+            throws LocationServerException, SegueDatabaseException;
 
 }
