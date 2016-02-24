@@ -356,7 +356,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
         if (existingAssignments != null && existingAssignments.size() > 0) {
-            htmlSB.append("Your teacher has assigned the following assignments:\n");
+            htmlSB.append("Your teacher has assigned the following assignments:<br>");
             plainTextSB.append("Your teacher has assigned the following assignments:\n");
             for (int i = 0; i < existingAssignments.size(); i++) {
                 DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
@@ -378,14 +378,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                         df.format(existingAssignments.get(i).getCreationDate())));
             }
         } else if (existingAssignments != null && existingAssignments.size() == 0) {
-            htmlSB.append("No assignments have been set yet.");
-            plainTextSB.append("No assignments have been set yet.");
+            htmlSB.append("No assignments have been set yet.<br>");
+            plainTextSB.append("No assignments have been set yet.\n");
         }
         
-        // TODO we need to fill in assignments differently in text vs. html
         final String tag = "{{assignmentsInfo}}";
         emailContent.setHtmlContent(emailContent.getHtmlContent().replace(tag, htmlSB.toString()));
-        emailContent.setPlainTextContent(emailContent.getHtmlContent().replace(tag, plainTextSB.toString()));
+        emailContent.setPlainTextContent(emailContent.getPlainTextContent().replace(tag,
+                plainTextSB.toString()));
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
@@ -641,6 +641,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	
     	// don't send an email if we know it has failed before
     	if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.DELIVERY_FAILED) {
+            log.info("Email sending abandoned - verification status is DELIVERY_FAILED");
     		return;
     	}
     	
