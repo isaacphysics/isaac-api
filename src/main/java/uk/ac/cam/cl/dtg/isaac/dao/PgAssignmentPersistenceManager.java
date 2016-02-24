@@ -20,8 +20,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
+
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
@@ -270,8 +274,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
      * @throws SQLException if we cannot access a required field.
      */
     private AssignmentDO convertFromSQLToAssignmentDO(final ResultSet sqlResults) throws SQLException {
+        java.util.Date preciseDate = new java.util.Date(sqlResults.getTimestamp("creation_date").getTime());
         return new AssignmentDO(sqlResults.getLong("id"), sqlResults.getString("gameboard_id"),
-                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"),
-                sqlResults.getDate("creation_date"));
+                sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate);
     }
 }
