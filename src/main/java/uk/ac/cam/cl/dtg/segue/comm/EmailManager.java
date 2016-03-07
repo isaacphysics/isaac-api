@@ -230,7 +230,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
+
+        // This has to ignore email verification status, as when changing email address, it needs to be
+        // sent to the new address.
+        this.addSystemEmailToQueue(e);
     }
     
     /**
