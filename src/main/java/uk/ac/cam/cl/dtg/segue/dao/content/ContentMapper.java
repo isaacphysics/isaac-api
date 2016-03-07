@@ -161,7 +161,7 @@ public class ContentMapper {
      *            to the DBObject obj
      * @return A content object or any subclass of Content or Null if the obj param is not provided.
      */
-    public Content mapDBOjectToContentDO(final DBObject obj) {
+    public Content mapDBObjectToContentDO(final DBObject obj) {
         Validate.notNull(obj);
 
         // Create an ObjectMapper capable of deserializing mongo ObjectIDs
