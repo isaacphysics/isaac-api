@@ -350,7 +350,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             log.error("NoUserException when attempting to demote users.", e);
-            return new SegueErrorResponse(Status.BAD_GATEWAY, "One or more users could not be found")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -418,7 +418,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             log.error("NoUserException when attempting to change users verification status.", e);
-            return new SegueErrorResponse(Status.BAD_GATEWAY, "One or more users could not be found")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
