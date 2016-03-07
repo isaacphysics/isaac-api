@@ -831,6 +831,12 @@ public class UserAccountManager {
             final EmailVerificationStatus requestedEmailVerificationStatus) throws SegueDatabaseException {
         Validate.notNull(requestedEmailVerificationStatus);
         RegisteredUser userToSave = this.findUserByEmail(email);
+        if (null == userToSave) {
+            log.error(String.format(
+                    "Could not update email verification status of email address (%s) - does not exist",
+                    email));
+            return;
+        }
         userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
         this.database.createOrUpdateUser(userToSave);
     }

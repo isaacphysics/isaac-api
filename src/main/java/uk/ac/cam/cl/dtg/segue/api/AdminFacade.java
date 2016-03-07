@@ -369,6 +369,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - new emailVerificationStatus.
      * @param emails
      *            - a list of user emails that need to be changed
+     * @param checkEmailsExistBeforeApplying
+     *            - tells us whether to check whether all emails exist before applying
      * @return Success shown by returning an ok response
      */
     @POST
@@ -378,7 +380,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public synchronized Response modifyUsersEmailVerificationStatus(
             @Context final HttpServletRequest request,
             @PathParam("emailVerificationStatus") final String emailVerificationStatus,
-            final List<String> emails) {
+            final List<String> emails, final Boolean checkEmailsExistBeforeApplying) {
         try {
             if (!isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
@@ -394,12 +396,16 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            // fail fast - break if any of the users given already have the role they are being elevated to
-            for (String email : emails) {
-                RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
 
-                if (null == user) {
-                    throw new NoUserException();
+            if (checkEmailsExistBeforeApplying) {
+                // fail fast - break if any of the users given already have the role they are being elevated to
+                for (String email : emails) {
+                    RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
+
+                    if (null == user) {
+                        log.error(String.format("No user could be found with email (%s)"), email);
+                        throw new NoUserException();
+                    }
                 }
             }
 
