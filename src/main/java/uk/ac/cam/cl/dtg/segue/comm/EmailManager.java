@@ -532,6 +532,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-form");
         emailContent.setReplyToEmailAddress(replyToAddress);
         emailContent.setReplyToName(replyToName);
+        emailContent.setSubject(subject);
 
         Properties contentProperties = new Properties();
         contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
@@ -832,12 +833,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- (nullable) the id of the user the email should be sent to
      * @param userEmail
      * 		- the email of the user 
-     * @param content
-     * 		- the text in the email
-     * @param subject
-     * 		- the subject of the email
-     * @param replyToAddress
-     * 		- the reply-to address of the email - needed for contact form
      * @param emailType
      *      - the type of e-mail being created
      * @return
