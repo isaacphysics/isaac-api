@@ -374,13 +374,14 @@ public class AdminFacade extends AbstractSegueFacade {
      * @return Success shown by returning an ok response
      */
     @POST
-    @Path("/users/change_email_verification_status/{emailVerificationStatus}")
+    @Path("/users/change_email_verification_status/{emailVerificationStatus}/{checkEmailsExistBeforeApplying}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public synchronized Response modifyUsersEmailVerificationStatus(
             @Context final HttpServletRequest request,
             @PathParam("emailVerificationStatus") final String emailVerificationStatus,
-            final List<String> emails, final Boolean checkEmailsExistBeforeApplying) {
+            @PathParam("checkEmailsExistBeforeApplying") final boolean checkEmailsExistBeforeApplying,
+            final List<String> emails) {
         try {
             if (!isUserAnAdminOrEventManager(request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be staff to access this endpoint.")
