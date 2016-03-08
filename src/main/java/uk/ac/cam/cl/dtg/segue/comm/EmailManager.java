@@ -532,6 +532,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-form");
         emailContent.setReplyToEmailAddress(replyToAddress);
         emailContent.setReplyToName(replyToName);
+        emailContent.setSubject("(Contact Form) " + subject);
 
         Properties contentProperties = new Properties();
         contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
