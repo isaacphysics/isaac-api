@@ -521,12 +521,11 @@ public class UsersFacade extends AbstractSegueFacade {
                             .toResponse();
                 }
                 
-                // if we are not an admin verify the current password.
-                if (currentlyLoggedInUser.getRole() != Role.ADMIN) {
+                // Password change requires auth check unless admin is modifying non-admin user account
+                if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
-                    this.userManager.ensureCorrectPassword(
-                                    AuthenticationProvider.SEGUE.name(), userObjectFromClient.getEmail(), 
-                                    passwordCurrent);
+                    this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
+                            userObjectFromClient.getEmail(), passwordCurrent);
                 }
             }
             
