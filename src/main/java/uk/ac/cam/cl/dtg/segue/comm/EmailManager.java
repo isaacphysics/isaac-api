@@ -176,14 +176,16 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws NoUserException 
      * 			   - when no matching user is found 
 	 */
-	public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO) 
+    public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO, final String provider)
 					throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(userDTO);
+        Validate.notNull(provider);
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation-federated");
         
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
+        p.put("provider", provider.toLowerCase());
         p.put("sig", SIGNATURE);
         
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
