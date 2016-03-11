@@ -1,0 +1,22 @@
+export APP_VERSION=$1
+export API_VERSION=$2
+export ENV=$3
+
+shift 3
+
+if [ "$ENV" == "dev" ]; then
+  export ES=es-tracking
+  export PG=pg-dev
+elif [ "$ENV" == "staging" ]; then
+  export ES=es-tracking
+  export PG=pg-live
+elif [ "$ENV" == "live" ]; then
+  export ES=es-live
+  export PG=pg-live
+else
+  echo "Must set environment to dev, staging or live."
+  exit 1
+fi
+
+
+docker-compose -f compose-release.yml $@

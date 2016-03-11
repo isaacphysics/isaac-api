@@ -19,4 +19,4 @@ services:
 networks:
   default:
     external:
-      name: isaac-api
+      name: isaac
