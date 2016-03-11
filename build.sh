@@ -1,1 +1,1 @@
-docker build -t api-$1 .
+docker build -t isaac-api-$1 .
