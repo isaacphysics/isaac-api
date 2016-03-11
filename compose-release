@@ -1,8 +1,8 @@
 export APP_VERSION=$1
-export API_VERSION=$2
-export ENV=$3
+export API_VERSION=`docker inspect -f '{{.Config.Labels.apiVersion}}' isaac-app-$APP_VERSION`
+export ENV=$2
 
-shift 3
+shift 2
 
 if [ "$ENV" == "dev" ]; then
   export ES=es-tracking
@@ -19,4 +19,36 @@ else
 fi
 
 
-docker-compose -f compose-release.yml $@
+cat << EOF | docker-compose -f - $@
+version: '2'
+services:
+  app-$ENV-$APP_VERSION:
+    container_name: app-$ENV-$APP_VERSION
+    image: isaac-app-$APP_VERSION
+    networks:
+      default:
+        aliases:
+          - app-$ENV
+  api-$ENV-$API_VERSION:
+    container_name: api-$ENV-$API_VERSION
+    image: isaac-api-$API_VERSION
+    external_links:
+      - $ES:elasticsearch
+      - $PG:postgres
+    networks:
+      default:
+        aliases:
+          - api-$ENV-$API_VERSION
+    volumes:
+      - /local/data/conf/segue-config.$ENV.properties:/local/data/rutherford/conf/segue-config.properties
+      - /local/data/conf/live_version.properties:/local/data/rutherford/conf/live_version.properties
+      - /local/data/rutherford-content:/local/data/rutherford/git-contentstore/rutherford-content
+      - /local/data/keys:/local/data/rutherford/keys
+
+networks:
+  default:
+    external:
+      name: isaac
+EOF
+
+exit 0
