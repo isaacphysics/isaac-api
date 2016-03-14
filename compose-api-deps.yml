@@ -8,12 +8,12 @@ services:
     image: elasticsearch:1.4
   pg-live:
     container_name: pg-live
-    image: pg
+    image: isaac-pg
     volumes_from:
       - container:pgstore-live
   pg-dev:
     container_name: pg-dev
-    image: pg
+    image: isaac-pg
     volumes_from:
       - container:pgstore-dev
 networks:
