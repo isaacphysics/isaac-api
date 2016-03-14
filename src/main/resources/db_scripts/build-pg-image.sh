@@ -1,1 +1,1 @@
-docker build -t pg .
+docker build -t isaac-pg .
