@@ -68,6 +68,8 @@ public final class Constants {
     public static final String GAMEBOARD_ID_FKEY = "gameboardId";
 
     public static final String EVENT_DATE_FIELDNAME = "date";
+    public static final String EVENT_ENDDATE_FIELDNAME = "endDate";
+
 
     public static final Integer DEFAULT_GAMEBOARDS_RESULTS_LIMIT = 6;
     public static final Integer MAX_PODS_TO_RETURN = 10;

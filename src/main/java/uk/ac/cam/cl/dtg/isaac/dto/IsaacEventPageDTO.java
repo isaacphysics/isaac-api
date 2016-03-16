@@ -68,7 +68,7 @@ public class IsaacEventPageDTO extends ContentDTO {
                 relatedContent, published, tags, null);
 
         this.date = date;
-        this.end_date = end_date;
+        this.setEndDate(end_date);
         this.location = location;
         this.preResources = preResources;
         this.postResources = postResources;
@@ -114,12 +114,15 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     /**
      * Sets the end date.
-     *
-     * @param end_date
-     *            the end date to set
+     * @param end_date the end date to set
      */
     public void setEndDate(final Date end_date) {
-        this.end_date = end_date;
+        // Don't want 'end_date' to be null ever; force it to 'date' for consistency if necessary.
+        if (null != end_date) {
+            this.end_date = end_date;
+        } else {
+            this.end_date = this.date;
+        }
     }
     /**
      * Gets the location.
