@@ -335,7 +335,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 								final List<AssignmentDTO> existingAssignments,
 					            final GameManager gameManager)
 		            			throws ContentManagerException, SegueDatabaseException {
-    	Validate.notNull(userDTO);
+        Validate.notNull(userDTO);
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-welcome");
 
@@ -344,19 +344,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         if (groupOwner != null && groupOwner.getFamilyName() != null) {
             groupOwnerName = groupOwner.getFamilyName();
         }
-        
+
         if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
             groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
         }
 
-        Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
+        if (existingAssignments != null) {
+            Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
 
-            @Override
-            public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
-                return o1.getCreationDate().compareTo(o2.getCreationDate());
-            }
-            
-        });
+                @Override
+                public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
+                    return o1.getCreationDate().compareTo(o2.getCreationDate());
+                }
+
+            });
+        }
+
         
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
@@ -386,11 +389,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlSB.append("No assignments have been set yet.<br>");
             plainTextSB.append("No assignments have been set yet.\n");
         }
-        
-        final String tag = "{{assignmentsInfo}}";
-        emailContent.setHtmlContent(emailContent.getHtmlContent().replace(tag, htmlSB.toString()));
-        emailContent.setPlainTextContent(emailContent.getPlainTextContent().replace(tag,
-                plainTextSB.toString()));
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
@@ -398,8 +396,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("teacherName", groupOwnerName == null ? "" : groupOwnerName);
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
-
-        
+        p.put("assignmentsInfo", plainTextSB.toString());
+        p.put("assignmentsInfo_HTML", htmlSB.toString());
 
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
