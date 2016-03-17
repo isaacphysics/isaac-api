@@ -764,7 +764,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         return completeTemplateWithProperties(plainTextTemplate.getValue(), plainTextTemplateProperties);
         
     }
-   
+
+    private String completeTemplateWithProperties(final String content, final Properties templateProperties)
+            throws IllegalArgumentException {
+        return completeTemplateWithProperties(content, templateProperties, false);
+    }
 
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
@@ -777,7 +781,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws IllegalArgumentException
      *             - exception when the provided page object is incorrect
      */
-    private String completeTemplateWithProperties(final String content, final Properties templateProperties)
+    private String completeTemplateWithProperties(final String content, final Properties templateProperties, final boolean html)
             throws IllegalArgumentException {
 
         // ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) content.getChildren();
@@ -795,7 +799,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         int offset = 0;
 
         while (m.find()) {
-            if (template != null && m.start() + offset >= 0 && m.end() + offset <= template.length()) {
+            if (m.start() + offset >= 0 && m.end() + offset <= template.length()) {
                 String tag = template.substring(m.start() + offset, m.end() + offset);
 
                 if (tag.length() <= MINIMUM_TAG_LENGTH) {
@@ -806,7 +810,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 String strippedTag = tag.substring(2, tag.length() - 2);
 
                 // Check all properties required in the page are in the properties list
-                if (templateProperties.containsKey(strippedTag)) {
+                if (html && templateProperties.containsKey(strippedTag + "_HTML")) {
+                    String start = template.substring(0, m.start() + offset);
+                    String end = template.substring(m.end() + offset, template.length());
+
+                    template = start;
+                    if (templateProperties.getProperty(strippedTag + "_HTML") != null) {
+                        template += templateProperties.getProperty(strippedTag + "_HTML");
+                    }
+                    template += end;
+
+                    offset += templateProperties.getProperty(strippedTag + "_HTML").length() - tag.length();
+                }
+                else if (templateProperties.containsKey(strippedTag)) {
                     String start = template.substring(0, m.start() + offset);
                     String end = template.substring(m.end() + offset, template.length());
 
@@ -850,7 +866,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	Validate.notEmpty(userEmail);
     	
         String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
-        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties);
+        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties, true);
 
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();
@@ -867,7 +883,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         htmlTemplateProperties.put("content", HTMLContent);
         htmlTemplateProperties.put("email", userEmail);
 
-        String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties);
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties, true);
         
         
         Properties plainTextTemplateProperties = new Properties();
@@ -877,11 +893,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String plainTextMessage = completeTemplateWithProperties(plainTextTemplate.getValue(),
                 plainTextTemplateProperties);
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
+        return new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
                 plainTextMessage,
                 htmlMessage, emailType, replyToAddress, replyToName);
 
-        return e;
     }
     
 
