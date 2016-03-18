@@ -12,6 +12,7 @@ COPY . /isaac-api
 
 WORKDIR /isaac-api
 
-RUN mvn package -P deploy
+VOLUME /root/.m2
+#RUN mvn package -P deploy
 
 CMD ["mvn", "jetty:run", "-P", "deploy"] 
