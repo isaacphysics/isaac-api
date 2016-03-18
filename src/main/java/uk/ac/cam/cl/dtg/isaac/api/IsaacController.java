@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -103,16 +104,26 @@ public class IsaacController extends AbstractIsaacFacade {
     private final UserAssociationManager associationManager;
     private final URIManager uriManager;
 
+    private static long lastQuestionCount = 0L;
+
     // Question counts are slow to calculate, so cache for up to 10 minutes. We may want to move this to a more
     // reusable place (such as statsManager.getLogCount) if we find ourselves using this pattern more).
     private final Supplier<Long> questionCountCache = Suppliers.memoizeWithExpiration(new Supplier<Long>() {
         public Long get() {
-            try {
-                return statsManager.getLogCount(ANSWER_QUESTION);
-            } catch (SegueDatabaseException e) {
-                // If we fail to work out how many questions have been answered, just return 0.
-                return 0L;
-            }
+            Executors.newSingleThreadExecutor().submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        log.info("Triggering question answer count query.");
+                        lastQuestionCount = statsManager.getLogCount(ANSWER_QUESTION);
+                        log.info("Question answer count query complete.");
+                    } catch (SegueDatabaseException e) {
+                        lastQuestionCount = 0L;
+                    }
+                }
+            });
+
+            return lastQuestionCount;
         }
     }, 10, TimeUnit.MINUTES);
 
@@ -322,8 +333,11 @@ public class IsaacController extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getQuestionCount(@Context final HttpServletRequest request) {
+        // Update the question count if it's expired
+        questionCountCache.get();
 
-        return Response.ok(ImmutableMap.of("answeredQuestionCount", questionCountCache.get()))
+        // Return the old question count
+        return Response.ok(ImmutableMap.of("answeredQuestionCount", lastQuestionCount))
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).build();
     }
     

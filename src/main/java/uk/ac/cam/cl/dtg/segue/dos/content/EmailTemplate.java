@@ -31,7 +31,8 @@ public class EmailTemplate extends Content {
     private String plainTextContent;
     private String htmlContent;
     private String replyToEmailAddress;
-    
+    private String replyToName;
+
     /**
      * EmailTemplate.
      * 
@@ -137,5 +138,20 @@ public class EmailTemplate extends Content {
      */
     public void setReplyToEmailAddress(final String replyToEmailAddress) {
         this.replyToEmailAddress = replyToEmailAddress;
+    }
+
+    /**
+     * @return the replyToName
+     */
+    public String getReplyToName() {
+        return replyToName;
+    }
+
+    /**
+     * @param replyToName
+     *            the replyToName to set
+     */
+    public void setReplyToName(String replyToName) {
+        this.replyToName = replyToName;
     }
 }

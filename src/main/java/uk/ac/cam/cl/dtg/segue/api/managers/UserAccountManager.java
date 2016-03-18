@@ -287,7 +287,7 @@ public class UserAccountManager {
             segueUserDTO.setFirstLogin(true);
             
             try {
-                emailManager.sendFederatedRegistrationConfirmation(segueUserDTO);
+                emailManager.sendFederatedRegistrationConfirmation(segueUserDTO, provider);
             } catch (ContentManagerException e) {
                 log.error("Registration email could not be sent due to content issue: " + e.getMessage());
             }
@@ -612,8 +612,9 @@ public class UserAccountManager {
         // This is a new registration
         userToSave = mapper.map(userDtoForNewUser, RegisteredUser.class);
 
-        // default role is unset
+        // Set defaults
         userToSave.setRole(Role.STUDENT);
+        userToSave.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
 
@@ -646,7 +647,6 @@ public class UserAccountManager {
         try {
         	RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
             emailManager.sendRegistrationConfirmation(userToReturnDTO, userToReturn.getEmailVerificationToken());
-            userToReturn.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         } catch (NoUserException e) {
@@ -831,6 +831,12 @@ public class UserAccountManager {
             final EmailVerificationStatus requestedEmailVerificationStatus) throws SegueDatabaseException {
         Validate.notNull(requestedEmailVerificationStatus);
         RegisteredUser userToSave = this.findUserByEmail(email);
+        if (null == userToSave) {
+            log.error(String.format(
+                    "Could not update email verification status of email address (%s) - does not exist",
+                    email));
+            return;
+        }
         userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
         this.database.createOrUpdateUser(userToSave);
     }

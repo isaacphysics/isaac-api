@@ -164,19 +164,19 @@ public class EventsFacade extends AbstractIsaacFacade {
         if (null == showActiveOnly || showActiveOnly) {
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
-            filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsFromNow);
+            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsFromNow);
             sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
         }
 
         if (showInactiveOnly != null && showInactiveOnly) {
             if (showActiveOnly) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
-                        "You cannot request both show active and in active only.").toResponse();
+                        "You cannot request both show active and inactive only.").toResponse();
             }
 
             filterInstructions = Maps.newHashMap();
             DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-            filterInstructions.put(EVENT_DATE_FIELDNAME, anyEventsToNow);
+            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsToNow);
             sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
         }
 

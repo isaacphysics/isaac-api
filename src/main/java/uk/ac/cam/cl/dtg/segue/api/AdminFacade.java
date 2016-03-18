@@ -350,7 +350,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             log.error("NoUserException when attempting to demote users.", e);
-            return new SegueErrorResponse(Status.BAD_GATEWAY, "One or more users could not be found")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -369,15 +369,18 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - new emailVerificationStatus.
      * @param emails
      *            - a list of user emails that need to be changed
+     * @param checkEmailsExistBeforeApplying
+     *            - tells us whether to check whether all emails exist before applying
      * @return Success shown by returning an ok response
      */
     @POST
-    @Path("/users/change_email_verification_status/{emailVerificationStatus}")
+    @Path("/users/change_email_verification_status/{emailVerificationStatus}/{checkEmailsExistBeforeApplying}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public synchronized Response modifyUsersEmailVerificationStatus(
             @Context final HttpServletRequest request,
             @PathParam("emailVerificationStatus") final String emailVerificationStatus,
+            @PathParam("checkEmailsExistBeforeApplying") final boolean checkEmailsExistBeforeApplying,
             final List<String> emails) {
         try {
             if (!isUserAnAdminOrEventManager(request)) {
@@ -394,12 +397,16 @@ public class AdminFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            // fail fast - break if any of the users given already have the role they are being elevated to
-            for (String email : emails) {
-                RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
 
-                if (null == user) {
-                    throw new NoUserException();
+            if (checkEmailsExistBeforeApplying) {
+                // fail fast - break if any of the users given already have the role they are being elevated to
+                for (String email : emails) {
+                    RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
+
+                    if (null == user) {
+                        log.error(String.format("No user could be found with email (%s)"), email);
+                        throw new NoUserException();
+                    }
                 }
             }
 
@@ -411,7 +418,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (NoUserException e) {
             log.error("NoUserException when attempting to change users verification status.", e);
-            return new SegueErrorResponse(Status.BAD_GATEWAY, "One or more users could not be found")
+            return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
