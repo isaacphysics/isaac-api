@@ -38,6 +38,7 @@ import javax.ws.rs.NotFoundException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.MapMaker;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
@@ -67,12 +68,14 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
+import uk.ac.cam.cl.dtg.segue.dos.content.EmailTemplate;
 import uk.ac.cam.cl.dtg.segue.dos.content.Media;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
@@ -1027,6 +1030,19 @@ public class GitContentManager implements IContentManager {
                                         + " found without a correct answer. "
                                         + "This question will always be automatically marked " + "as incorrect");
                     }
+                }
+            }
+
+            if (c instanceof EmailTemplate) {
+                EmailTemplate e = (EmailTemplate) c;
+                if (e.getPlainTextContent() == null) {
+                    this.registerContentProblem(sha, c,
+                            "Email template should always have plain text content field");
+                }
+
+                if (e.getReplyToEmailAddress() != null && null == e.getReplyToName()) {
+                    this.registerContentProblem(sha, c,
+                            "Email template contains replyToEmailAddress but not replyToName");
                 }
             }
 

@@ -431,12 +431,13 @@ public class QuestionManager {
             return;
         }
 
-        // shuffle all choices based on the seed provided.
+        // shuffle all choices based on the seed provided, augmented by individual question ID.
         for (QuestionDTO question : questions) {
             if (question instanceof ChoiceQuestionDTO) {
                 ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
+                String qSeed = seed + choiceQuestion.getId();
                 if (choiceQuestion.getChoices() != null) {
-                    Collections.shuffle(choiceQuestion.getChoices(), new Random(seed.hashCode()));
+                    Collections.shuffle(choiceQuestion.getChoices(), new Random(qSeed.hashCode()));
                 }
             }
         }

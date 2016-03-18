@@ -176,14 +176,16 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws NoUserException 
      * 			   - when no matching user is found 
 	 */
-	public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO) 
+    public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO, final String provider)
 					throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(userDTO);
+        Validate.notNull(provider);
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation-federated");
         
         Properties p = new Properties();
         p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         p.put("email", userDTO.getEmail());
+        p.put("provider", provider.toLowerCase());
         p.put("sig", SIGNATURE);
         
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
@@ -230,7 +232,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
+
+        // This has to ignore email verification status, as when changing email address, it needs to be
+        // sent to the new address.
+        this.addSystemEmailToQueue(e);
     }
     
     /**
@@ -330,7 +335,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 								final List<AssignmentDTO> existingAssignments,
 					            final GameManager gameManager)
 		            			throws ContentManagerException, SegueDatabaseException {
-    	Validate.notNull(userDTO);
+        Validate.notNull(userDTO);
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-welcome");
 
@@ -339,19 +344,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         if (groupOwner != null && groupOwner.getFamilyName() != null) {
             groupOwnerName = groupOwner.getFamilyName();
         }
-        
+
         if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
             groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
         }
 
-        Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
+        if (existingAssignments != null) {
+            Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
 
-            @Override
-            public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
-                return o1.getCreationDate().compareTo(o2.getCreationDate());
-            }
-            
-        });
+                @Override
+                public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
+                    return o1.getCreationDate().compareTo(o2.getCreationDate());
+                }
+
+            });
+        }
+
         
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
@@ -381,11 +389,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlSB.append("No assignments have been set yet.<br>");
             plainTextSB.append("No assignments have been set yet.\n");
         }
-        
-        final String tag = "{{assignmentsInfo}}";
-        emailContent.setHtmlContent(emailContent.getHtmlContent().replace(tag, htmlSB.toString()));
-        emailContent.setPlainTextContent(emailContent.getPlainTextContent().replace(tag,
-                plainTextSB.toString()));
 
         String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
         Properties p = new Properties();
@@ -393,8 +396,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("teacherName", groupOwnerName == null ? "" : groupOwnerName);
         p.put("accountURL", accountURL);
         p.put("sig", SIGNATURE);
-
-        
+        p.put("assignmentsInfo", plainTextSB.toString());
+        p.put("assignmentsInfo_HTML", htmlSB.toString());
 
         EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
                         EmailType.SYSTEM);
@@ -529,6 +532,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-form");
         emailContent.setReplyToEmailAddress(replyToAddress);
         emailContent.setReplyToName(replyToName);
+        emailContent.setSubject("(Contact Form) " + subject);
 
         Properties contentProperties = new Properties();
         contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
@@ -760,7 +764,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         return completeTemplateWithProperties(plainTextTemplate.getValue(), plainTextTemplateProperties);
         
     }
-   
+
+    private String completeTemplateWithProperties(final String content, final Properties templateProperties)
+            throws IllegalArgumentException {
+        return completeTemplateWithProperties(content, templateProperties, false);
+    }
 
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
@@ -773,7 +781,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws IllegalArgumentException
      *             - exception when the provided page object is incorrect
      */
-    private String completeTemplateWithProperties(final String content, final Properties templateProperties)
+    private String completeTemplateWithProperties(final String content, final Properties templateProperties, final boolean html)
             throws IllegalArgumentException {
 
         // ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) content.getChildren();
@@ -791,7 +799,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         int offset = 0;
 
         while (m.find()) {
-            if (template != null && m.start() + offset >= 0 && m.end() + offset <= template.length()) {
+            if (m.start() + offset >= 0 && m.end() + offset <= template.length()) {
                 String tag = template.substring(m.start() + offset, m.end() + offset);
 
                 if (tag.length() <= MINIMUM_TAG_LENGTH) {
@@ -802,7 +810,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 String strippedTag = tag.substring(2, tag.length() - 2);
 
                 // Check all properties required in the page are in the properties list
-                if (templateProperties.containsKey(strippedTag)) {
+                if (html && templateProperties.containsKey(strippedTag + "_HTML")) {
+                    String start = template.substring(0, m.start() + offset);
+                    String end = template.substring(m.end() + offset, template.length());
+
+                    template = start;
+                    if (templateProperties.getProperty(strippedTag + "_HTML") != null) {
+                        template += templateProperties.getProperty(strippedTag + "_HTML");
+                    }
+                    template += end;
+
+                    offset += templateProperties.getProperty(strippedTag + "_HTML").length() - tag.length();
+                }
+                else if (templateProperties.containsKey(strippedTag)) {
                     String start = template.substring(0, m.start() + offset);
                     String end = template.substring(m.end() + offset, template.length());
 
@@ -829,12 +849,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- (nullable) the id of the user the email should be sent to
      * @param userEmail
      * 		- the email of the user 
-     * @param content
-     * 		- the text in the email
-     * @param subject
-     * 		- the subject of the email
-     * @param replyToAddress
-     * 		- the reply-to address of the email - needed for contact form
      * @param emailType
      *      - the type of e-mail being created
      * @return
@@ -852,7 +866,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	Validate.notEmpty(userEmail);
     	
         String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
-        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties);
+        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties, true);
 
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();
@@ -869,7 +883,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         htmlTemplateProperties.put("content", HTMLContent);
         htmlTemplateProperties.put("email", userEmail);
 
-        String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties);
+        String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties, true);
         
         
         Properties plainTextTemplateProperties = new Properties();
@@ -879,11 +893,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String plainTextMessage = completeTemplateWithProperties(plainTextTemplate.getValue(),
                 plainTextTemplateProperties);
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
+        return new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
                 plainTextMessage,
                 htmlMessage, emailType, replyToAddress, replyToName);
 
-        return e;
     }
     
 

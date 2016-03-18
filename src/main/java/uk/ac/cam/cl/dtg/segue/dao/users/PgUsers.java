@@ -460,6 +460,11 @@ public class PgUsers implements IUserDataManager {
         	userToCreate.setRole(Role.STUDENT);
         }
         
+        // make sure NOT_VERIFIED is default email verification status if none set
+        if (null == userToCreate.getEmailVerificationStatus()) {
+            userToCreate.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
+        }
+
         PreparedStatement pst;
         try (Connection conn = database.getDatabaseConnection()) {
             pst = conn
