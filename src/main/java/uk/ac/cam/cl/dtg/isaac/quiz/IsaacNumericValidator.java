@@ -125,7 +125,7 @@ public class IsaacNumericValidator implements IValidator {
                         answerFromUser,
                         false,
                         new Content(
-                                "<strong>Significant figures</strong> are incorrect, "
+                                "Your <strong>Significant figures</strong> are incorrect, "
                                 + "read our "
                                 + "<strong><a target='_blank' href='/solving_problems#acc_solving_problems_sig_figs'>"
                                 + "sig fig guide</a></strong>."),
