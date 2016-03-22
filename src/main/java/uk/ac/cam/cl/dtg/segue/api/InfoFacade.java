@@ -247,7 +247,7 @@ public class InfoFacade extends AbstractSegueFacade {
 
         // TODO: Factor this URL out into a property
         HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://equality-checker:5000/")
+        HttpGet httpGet = new HttpGet("http://equality-checker:5000/");
 
         HttpResponse httpResponse = null;
         try {
