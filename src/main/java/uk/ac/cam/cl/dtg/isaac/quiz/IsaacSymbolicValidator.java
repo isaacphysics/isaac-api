@@ -198,7 +198,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                     // TODO: Factor this URL out into a property
                     HttpClient httpClient = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost("http://localhost:5000/check");
+                    HttpPost httpPost = new HttpPost("http://equality-checker:5000/check");
 
                     httpPost.setEntity(new StringEntity(requestString));
                     httpPost.addHeader("Content-Type", "application/json");
