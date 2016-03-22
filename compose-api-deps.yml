@@ -1,21 +1,35 @@
 version: '2'
 services:
+  equality-checker:
+    container_name: equality-checker
+    image: ucamcldtg/equality-checker
+    restart: always
   es-tracking:
     container_name: es-tracking
     image: elasticsearch:1.4
+    restart: always
   es-live:
     container_name: es-live
     image: elasticsearch:1.4
+    restart: always
   pg-live:
     container_name: pg-live
     image: isaac-pg
     volumes_from:
       - container:pgstore-live
+    restart: always
+  pg-staging:
+    container_name: pg-staging
+    image: isaac-pg
+    volumes_from:
+      - container:pgstore-staging
+    restart: always
   pg-dev:
     container_name: pg-dev
     image: isaac-pg
     volumes_from:
       - container:pgstore-dev
+    restart: always
 networks:
   default:
     external:
