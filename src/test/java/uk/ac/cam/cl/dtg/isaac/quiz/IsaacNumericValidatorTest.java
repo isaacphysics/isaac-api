@@ -72,7 +72,7 @@ public class IsaacNumericValidatorTest {
 		IsaacNumericValidator validator = new IsaacNumericValidator();
 		QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 		
-		assertFalse(response.isCorrect());
+		assertTrue(response.isCorrect());
 		assertTrue(response.getExplanation().getValue().contains(explanationShouldContain));
 	}
 	
