@@ -15,22 +15,29 @@ services:
   pg-live:
     container_name: pg-live
     image: isaac-pg
-    volumes_from:
-      - container:pgstore-live
+    volumes:
+      - pg-live:/pgdata
     restart: always
   pg-staging:
     container_name: pg-staging
     image: isaac-pg
-    volumes_from:
-      - container:pgstore-staging
+    volumes:
+      - pg-staging:/pgdata
     restart: always
   pg-dev:
     container_name: pg-dev
     image: isaac-pg
-    volumes_from:
-      - container:pgstore-dev
+    volumes:
+      - pg-dev:/pgdata
     restart: always
 networks:
   default:
     external:
       name: isaac
+volumes:
+  pg-live:
+    external: true
+  pg-staging:
+    external: true
+  pg-dev:
+    external: true
