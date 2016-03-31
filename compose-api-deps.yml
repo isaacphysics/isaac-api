@@ -7,10 +7,14 @@ services:
   es-tracking:
     container_name: es-tracking
     image: elasticsearch:1.4
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     restart: always
   es-live:
     container_name: es-live
     image: elasticsearch:1.4
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     restart: always
   pg-live:
     container_name: pg-live
