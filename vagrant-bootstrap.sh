@@ -26,9 +26,11 @@ apt-get -y install openjdk-7-jre-headless elasticsearch
 
 apt-get -y install postgresql-9.4
 
-## After installing postgres, need to create user. This will prompt for password - use the POSTGRES_DB_PASSWORD from your segue-config.properties
+## After installing postgres, need to create user. Replace 'password' (keep single quotes) with
+## the POSTGRES_DB_PASSWORD from your segue-config.properties
 #
-#     sudo -u postgres createuser -D -A -P rutherford
+#     sudo -u postgres createuser -D -A rutherford
+#     sudo -u postgres psql -c "ALTER user rutherford WITH superuser password 'password';"
 #     sudo -u postgres createdb -O rutherford rutherford
 #     sudo -u postgres psql -f /isaac-api/src/main/resources/db_scripts/postgres-rutherford-create-script.sql rutherford
 #
