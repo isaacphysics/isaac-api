@@ -506,8 +506,8 @@ public class StatisticsManager {
 
     /**
      * getUserQuestionInformation. Produces a map that contains information about the total questions attempted,
-     * (correct and correct first time) "totalQuestionsAttempted", "totalCorrect",
-     * "totalCorrectFirstTime","attemptsByTag", questionAttemptsByLevelStats.
+     * (and those correct) "totalQuestionsAttempted", "totalCorrect",
+     *  ,"attemptsByTag", questionAttemptsByLevelStats.
      * 
      * @param userOfInterest
      *            - the user you wish to compile statistics for.
@@ -527,9 +527,6 @@ public class StatisticsManager {
         // get total questions attempted
         int totalQuestionsAttempted = 0;
 
-        // get total questions answered first time correctly
-        int questionsFirstTime = 0;
-
         Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager
                 .getQuestionAttemptsByUser(userOfInterest);
 
@@ -541,14 +538,8 @@ public class StatisticsManager {
                 totalQuestionsAttempted++;
 
                 for (int i = 0; question.getValue().size() > i; i++) {
-                    // assumption that the order of the list is in chronological
-                    // order
 
                     QuestionValidationResponse validationResponse = question.getValue().get(i);
-                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect() && i == 0) {
-                        questionsFirstTime++;
-                    }
-
                     if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
                         questionsAnsweredCorrectly++;
                         break;
@@ -584,17 +575,17 @@ public class StatisticsManager {
 
             String questionLevel = questionContentDTO.getLevel().toString();
 
-            if (questionAttemptsByLevelStats.containsKey(questionLevel.toString())) {
-                questionAttemptsByLevelStats.put(questionLevel.toString(),
-                        questionAttemptsByLevelStats.get(questionLevel.toString()) + 1);
+            if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
+                questionAttemptsByLevelStats.put(questionLevel,
+                        questionAttemptsByLevelStats.get(questionLevel) + 1);
             } else {
-                questionAttemptsByLevelStats.put(questionLevel.toString(), 1);
+                questionAttemptsByLevelStats.put(questionLevel, 1);
             }
         }
 
         ImmutableMap<String, Object> immutableMap = new ImmutableMap.Builder<String, Object>()
                 .put("totalQuestionsAttempted", totalQuestionsAttempted)
-                .put("totalCorrect", questionsAnsweredCorrectly).put("totalCorrectFirstTime", questionsFirstTime)
+                .put("totalCorrect", questionsAnsweredCorrectly)
                 .put("attemptsByTag", questionAttemptsByTagStats).put("attemptsByLevel", questionAttemptsByLevelStats)
                 .put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest)).build();
 
