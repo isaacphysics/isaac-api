@@ -38,17 +38,23 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -71,6 +77,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final ContentVersionController contentVersionController;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
+    private IMisuseMonitor misuseMonitor;
 
     /**
      * 
@@ -93,13 +100,14 @@ public class QuestionFacade extends AbstractSegueFacade {
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
             final ContentVersionController contentVersionController, final UserAccountManager userManager,
             final QuestionManager questionManager, 
-            final ILogManager logManager) {
+            final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
         this.mapper = mapper;
         this.contentVersionController = contentVersionController;
         this.userManager = userManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
@@ -122,6 +130,21 @@ public class QuestionFacade extends AbstractSegueFacade {
             @PathParam("question_id") final String questionId, final String jsonAnswer) {
         if (null == jsonAnswer || jsonAnswer.isEmpty()) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
+        }
+
+        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+        try {
+            if (currentUser instanceof RegisteredUserDTO) {
+                misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString(),
+                        QuestionAttemptMisuseHandler.class.toString());
+            } else {
+                misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId(),
+                        QuestionAttemptMisuseHandler.class.toString());
+            }
+
+        } catch (SegueResourceMisuseException e) {
+            String message = "You have made too many attempts. Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);
         }
 
         Content contentBasedOnId;
@@ -171,8 +194,6 @@ public class QuestionFacade extends AbstractSegueFacade {
         Response response;
         try {
             response = this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
-
-            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
