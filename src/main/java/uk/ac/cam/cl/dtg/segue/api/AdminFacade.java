@@ -878,10 +878,18 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             if (null != email && !email.isEmpty()) {
+                if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                            .toResponse();
+                }
                 userPrototype.setEmail(email);
             }
 
             if (null != familyName && !familyName.isEmpty()) {
+                if (currentUser.getRole().equals(Role.EVENT_MANAGER) && familyName.replaceAll("[^A-z]", "").length() < 4) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                            .toResponse();
+                }
                 userPrototype.setFamilyName(familyName);
             }
 
