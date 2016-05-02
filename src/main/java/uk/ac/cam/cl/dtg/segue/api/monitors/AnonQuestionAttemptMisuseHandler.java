@@ -29,8 +29,8 @@ public class AnonQuestionAttemptMisuseHandler implements IMisuseHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AnonQuestionAttemptMisuseHandler.class);
 
-    private static final Integer SOFT_THRESHOLD = 5;
-    private static final Integer HARD_THRESHOLD = 10;
+    private static final Integer SOFT_THRESHOLD = 3;
+    private static final Integer HARD_THRESHOLD = 5;
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIVE_MINUTES;
 
     /**

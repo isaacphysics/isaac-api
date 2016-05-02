@@ -30,7 +30,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(QuestionAttemptMisuseHandler.class);
 
     private static final Integer SOFT_THRESHOLD = 10;
-    private static final Integer HARD_THRESHOLD = 50;
+    private static final Integer HARD_THRESHOLD = 30;
     private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIFTEEN_MINUTES;
 
     private PropertiesLoader properties;
