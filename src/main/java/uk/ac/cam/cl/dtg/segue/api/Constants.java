@@ -377,6 +377,7 @@ public final class Constants {
     public static final int NUMBER_SECONDS_IN_MINUTE = 60;
     public static final int NUMBER_SECONDS_IN_FIVE_MINUTES = NUMBER_SECONDS_IN_MINUTE * 5;
     public static final int NUMBER_SECONDS_IN_TEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 10;
+    public static final int NUMBER_SECONDS_IN_FIFTEEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 15;
     public static final int NUMBER_SECONDS_IN_ONE_HOUR = NUMBER_SECONDS_IN_MINUTE * 60;
     public static final int NUMBER_SECONDS_IN_ONE_DAY = NUMBER_SECONDS_IN_ONE_HOUR * 24;
     public static final int NUMBER_SECONDS_IN_ONE_WEEK = NUMBER_SECONDS_IN_ONE_DAY * 7;

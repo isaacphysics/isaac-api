@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 James Sharkey
+ * Copyright 2016 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
 
     private static final Integer SOFT_THRESHOLD = 10;
     private static final Integer HARD_THRESHOLD = 50;
-    private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
+    private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_FIFTEEN_MINUTES;
 
     private PropertiesLoader properties;
     private EmailManager emailManager;

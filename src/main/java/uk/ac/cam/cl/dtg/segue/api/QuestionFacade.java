@@ -40,6 +40,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -133,18 +134,23 @@ public class QuestionFacade extends AbstractSegueFacade {
         }
 
         AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
-        try {
-            if (currentUser instanceof RegisteredUserDTO) {
+
+        if (currentUser instanceof RegisteredUserDTO) {
+            try {
                 misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString(),
                         QuestionAttemptMisuseHandler.class.toString());
-            } else {
-                misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId(),
-                        QuestionAttemptMisuseHandler.class.toString());
+            } catch (SegueResourceMisuseException e) {
+                String message = "You have made too many attempts. Please try again later.";
+                return SegueErrorResponse.getRateThrottledResponse(message);
             }
-
-        } catch (SegueResourceMisuseException e) {
-            String message = "You have made too many attempts. Please try again later.";
-            return SegueErrorResponse.getRateThrottledResponse(message);
+        } else {
+            try {
+                misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId(),
+                        AnonQuestionAttemptMisuseHandler.class.toString());
+            } catch (SegueResourceMisuseException e) {
+                String message = "You have made too many attempts. Please log in or try again later.";
+                return SegueErrorResponse.getRateThrottledResponse(message);
+            }
         }
 
         Content contentBasedOnId;
