@@ -55,9 +55,7 @@ public class AnonQuestionAttemptMisuseHandler implements IMisuseHandler {
     }
 
     @Override
-    public void executeSoftThresholdAction(String message) {
-//        log.warn("Soft threshold limit reached for AnonQuestionAttemptMisuseHandler " + message);
-    }
+    public void executeSoftThresholdAction(String message) {}
 
     @Override
     public void executeHardThresholdAction(String message) {

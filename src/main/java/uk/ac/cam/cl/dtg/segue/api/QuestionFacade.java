@@ -137,18 +137,18 @@ public class QuestionFacade extends AbstractSegueFacade {
 
         if (currentUser instanceof RegisteredUserDTO) {
             try {
-                misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString(),
+                misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
                         QuestionAttemptMisuseHandler.class.toString());
             } catch (SegueResourceMisuseException e) {
-                String message = "You have made too many attempts. Please try again later.";
+                String message = "You have made too many attempts at this question part. Please try again later.";
                 return SegueErrorResponse.getRateThrottledResponse(message);
             }
         } else {
             try {
-                misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId(),
+                misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
                         AnonQuestionAttemptMisuseHandler.class.toString());
             } catch (SegueResourceMisuseException e) {
-                String message = "You have made too many attempts. Please log in or try again later.";
+                String message = "You have made too many attempts at this question part. Please log in or try again later.";
                 return SegueErrorResponse.getRateThrottledResponse(message);
             }
         }
