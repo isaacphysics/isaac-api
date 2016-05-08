@@ -151,6 +151,26 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Acquire a globally unique database lock.
+     * This lock must be released manually.
+     * @param resourceId - the unique id for the object to be locked.
+     * @throws SegueDatabaseException if there is a problem acquiring the lock
+     */
+    public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
+        dao.acquireDistributedLock(resourceId);
+    }
+
+    /**
+     * Release a globally unique database lock.
+     * This lock must be released manually.
+     * @param resourceId - the unique id for the object to be locked.
+     * @throws SegueDatabaseException if there is a problem releasing the lock
+     */
+    public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
+        dao.releaseDistributedLock(resourceId);
+    }
+
+    /**
      * @param eb
      *            - raw booking do
      * @param eventInformation

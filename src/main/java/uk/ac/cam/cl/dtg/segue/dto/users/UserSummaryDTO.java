@@ -143,12 +143,12 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Sets the email.
+     * Sets the role.
      *
      * @param role
      *            the role to set
      */
-    public void setEmail(final Role role) {
+    public void setRole(final Role role) {
         this.role = role;
     }
 

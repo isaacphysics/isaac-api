@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.CRC32;
 
 import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
@@ -42,6 +43,8 @@ import com.google.api.client.util.Lists;
 public class PgEventBookings implements EventBookings {
     private static final Logger log = LoggerFactory.getLogger(PgEventBookings.class);
     private PostgresSqlDb ds;
+
+    private static final String TABLE_NAME = "event_bookings";
 
     /**
      * 
@@ -106,6 +109,59 @@ public class PgEventBookings implements EventBookings {
         }
     }
 
+    /**
+     * Acquire a globally unique database lock.
+     * This method will block until the lock is released.
+     * Any locks must be released manually.
+     *
+     * @param resourceId - the unique id for the object to be locked.
+     */
+    @Override
+    public void acquireDistributedLock(final String resourceId) throws SegueDatabaseException {
+        // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
+        CRC32 crc = new CRC32();
+        crc.update((TABLE_NAME + resourceId).getBytes());
+
+        // acquire lock
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("Select pg_advisory_lock(?)");
+            pst.setLong(1, crc.getValue());
+            pst.executeQuery();
+        } catch (SQLException e) {
+            String msg = String.format(
+                "Unable to acquire lock for event (%s).", resourceId);
+            log.error(msg);
+            throw new SegueDatabaseException(msg);
+        }
+    }
+
+    /**
+     * Release a globally unique database lock.
+     * This method will release a previously acquired lock.
+     *
+     * @param resourceId - the unique id for the object to be locked.
+     */
+    @Override
+    public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
+        // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
+        CRC32 crc = new CRC32();
+        crc.update((TABLE_NAME + resourceId).getBytes());
+
+        // acquire lock
+        try (Connection conn = ds.getDatabaseConnection()) {
+            PreparedStatement pst;
+            pst = conn.prepareStatement("Select pg_advisory_unlock(?)");
+            pst.setLong(1, crc.getValue());
+            pst.executeQuery();
+        } catch (SQLException e) {
+            String msg = String.format(
+                "Unable to release lock for event (%s).", resourceId);
+            log.error(msg);
+            throw new SegueDatabaseException(msg);
+        }
+    }
+
     /*
      * (non-Javadoc)
      * 
@@ -162,7 +218,6 @@ public class PgEventBookings implements EventBookings {
             List<EventBooking> returnResult = Lists.newArrayList();
             while (results.next()) {
                 returnResult.add(buildPgEventBooking(results));
-
             }
             return returnResult;
         } catch (SQLException e) {
@@ -187,7 +242,6 @@ public class PgEventBookings implements EventBookings {
             List<EventBooking> returnResult = Lists.newArrayList();
             while (results.next()) {
                 returnResult.add(buildPgEventBooking(results));
-
             }
             return returnResult;
         } catch (SQLException e) {

@@ -44,6 +44,9 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateBookingException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -52,6 +55,8 @@ import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -76,7 +81,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     private final ContentVersionController versionManager;
 
-    private EventBookingPersistenceManager bookingManager;
+    private EventBookingManager bookingManager;
 
     private UserAccountManager userManager;
 
@@ -96,7 +101,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      */
     @Inject
     public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final ContentVersionController versionManager, final EventBookingPersistenceManager bookingManager,
+            final ContentVersionController versionManager, final EventBookingManager bookingManager,
             final UserAccountManager userManager) {
         super(properties, logManager);
         this.versionManager = versionManager;
@@ -208,7 +213,6 @@ public class EventsFacade extends AbstractIsaacFacade {
     @GZIP
     public final Response getEvent(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
-
         try {
             ContentDTO c = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
                     eventId);
@@ -218,16 +222,31 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             if (c instanceof IsaacEventPageDTO) {
-                return Response.ok(c).build();
+                IsaacEventPageDTO page = (IsaacEventPageDTO) c;
+
+                try {
+                    RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+                    page.setUserBooked(this.bookingManager.isUserBooked(eventId, user.getId()));
+                } catch (NoUserLoggedInException e) {
+                    // no action as we don't require the user to be logged in.
+                    page.setUserBooked(null);
+                }
+
+                page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
+
+                return Response.ok(page).build();
             } else {
                 return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                         "The content found is of the incorrect type.").toResponse();
             }
-
         } catch (ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error resolving event bookings.")
+                .toResponse();
         }
     }
 
@@ -260,7 +279,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Database error ocurred while trying to retrieve all event booking information.";
+            String errorMsg = "Database error occurred while trying to retrieve all event booking information.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         }
@@ -295,7 +314,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (ResourceNotFoundException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "The booking you requested does not exist.").toResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Database error ocurred while trying to retrieve all event booking information.";
+            String errorMsg = "Database error occurred while trying to retrieve all event booking information.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         }
@@ -326,14 +345,14 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String message = "Database error ocurred while trying to retrieve all event booking information.";
+            String message = "Database error occurred while trying to retrieve all event booking information.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
         }
     }
 
     /**
-     * createBooking.
+     * createBooking for a specific isaac user.
      * 
      * @param request
      *            - for authentication
@@ -347,7 +366,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Path("{event_id}/bookings/{user_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response createBooking(@Context final HttpServletRequest request,
+    public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
             if (!isUserStaff(userManager, request)) {
@@ -357,12 +376,13 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
 
-            ContentDTO event = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+            ContentDTO unverifiedContent = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
                     eventId);
 
-            // TODO: make it so anyone can book on to a future event.
-
-            if (null == event) {
+            IsaacEventPageDTO event;
+            if (unverifiedContent != null && unverifiedContent instanceof IsaacEventPageDTO) {
+                event = (IsaacEventPageDTO) unverifiedContent;
+            } else {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the event requested").toResponse();
             }
 
@@ -371,19 +391,86 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            return Response.ok(bookingManager.createBooking(eventId, bookedUser.getId())).build();
+            return Response.ok(bookingManager.createBooking(event, bookedUser)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Database error ocurred while trying to book a user onto an event.";
+            String errorMsg = "Database error occurred while trying to book a user onto an event.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (NoUserException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the user requested").toResponse();
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Content Database error ocurred while trying to retrieve all event booking information.")
+                    "Content Database error occurred while trying to retrieve all event booking information.")
                     .toResponse();
+        } catch (DuplicateBookingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "User already booked on this event. Unable to create a duplicate booking.")
+                .toResponse();
+        }
+    }
+
+    /**
+     * createBooking for the current user.
+     *
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - event id
+     * @return the new booking
+     */
+    @POST
+    @Path("{event_id}/bookings")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response createBookingForMe(@Context final HttpServletRequest request,
+                                        @PathParam("event_id") final String eventId) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            ContentDTO unverifiedContent = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+                eventId);
+
+            IsaacEventPageDTO event;
+            if (unverifiedContent != null && unverifiedContent instanceof IsaacEventPageDTO) {
+                event = (IsaacEventPageDTO) unverifiedContent;
+            } else {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the event requested").toResponse();
+            }
+
+            if (bookingManager.isUserBooked(eventId, user.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
+                    .toResponse();
+            }
+
+            return Response.ok(bookingManager.requestBooking(event, user)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to book a user onto an event.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                "Content Database error occurred while trying to retrieve all event booking information.")
+                .toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
+                .toResponse();
+        } catch (DuplicateBookingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "You have already been booked on this event. Unable to create a duplicate booking.")
+                .toResponse();
+        } catch (EventIsFullException e) {
+            return new SegueErrorResponse(Status.CONFLICT,
+                "This event is already full. Unable to book you on to it.")
+                .toResponse();
+        } catch (RoleNotAuthorisedException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN,
+                "You do not have the correct type of account to book on to this event.")
+                .toResponse();
         }
     }
 
@@ -420,7 +507,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
-            String errorMsg = "Database error ocurred while trying to delete an event booking.";
+            String errorMsg = "Database error occurred while trying to delete an event booking.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         }
