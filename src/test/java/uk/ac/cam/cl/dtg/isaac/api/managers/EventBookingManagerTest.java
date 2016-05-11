@@ -18,6 +18,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static org.easymock.EasyMock.*;
@@ -181,6 +182,36 @@ public class EventBookingManagerTest {
 			ebm.requestBooking(testEvent, someUser);
 			fail("Expected an EventFullException and one didn't happen.");
 		} catch (EmailMustBeVerifiedException e) {
+			// success !
+		}
+	}
+
+	@Test
+	public void requestBooking_expiredBooking_EventExpiredExceptionThrown() throws Exception {
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
+		testEvent.setId("someEventId");
+		testEvent.setNumberOfPlaces(1);
+
+		// old deadline
+		Date old = new Date();
+		old.setTime(958074310000L);
+
+		testEvent.setBookingDeadline(old);
+		testEvent.setTags(ImmutableSet.of("student", "physics"));
+
+		RegisteredUserDTO someUser = new RegisteredUserDTO();
+		someUser.setId(6L);
+		someUser.setEmailVerificationStatus(EmailVerificationStatus.NOT_VERIFIED);
+		someUser.setRole(Role.STUDENT);
+
+		expect(dummyEventBookingPersistenceManager.isUserBooked(testEvent.getId(), someUser.getId())).andReturn(false);
+
+		replay(dummyEventBookingPersistenceManager);
+		try {
+			ebm.requestBooking(testEvent, someUser);
+			fail("Expected an Event Expiry Exception and one didn't happen.");
+		} catch (EventDeadlineException e) {
 			// success !
 		}
 	}

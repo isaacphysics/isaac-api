@@ -39,6 +39,8 @@ import uk.ac.cam.cl.dtg.util.locations.Address;
 public class IsaacEventPage extends Content {
 	private Date date;
 	private Date end_date;
+	private Date bookingDeadline;
+
 	private Address location;
 
 	private List<ExternalReference> preResources;
@@ -69,6 +71,7 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("relatedContent") List<String> relatedContent,
 						  @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
 						  @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
+						  @JsonProperty("bookingDeadline") Date bookingDeadline,
 						  @JsonProperty("location") Address location,
 						  @JsonProperty("preResources") List<ExternalReference> preResources,
 						  @JsonProperty("postResources") List<ExternalReference> postResources,
@@ -80,6 +83,7 @@ public class IsaacEventPage extends Content {
 
 		this.date = date;
 		this.end_date = end_date;
+		this.bookingDeadline = bookingDeadline;
 		this.location = location;
 		this.preResources = preResources;
 		this.postResources = postResources;
@@ -120,6 +124,24 @@ public class IsaacEventPage extends Content {
 	 */
 	public Date getEndDate() {
 		return end_date;
+	}
+
+	/**
+	 * getBookingDeadline.
+	 *
+	 * @return bookingDeadline.
+	 */
+	public Date getBookingDeadline() {
+		return bookingDeadline;
+	}
+
+	/**
+	 * setBookingDeadline.
+	 *
+	 * @param bookingDeadline the booking deadline.
+	 */
+	public void setBookingDeadline(final Date bookingDeadline) {
+		this.bookingDeadline = bookingDeadline;
 	}
 
 	/**

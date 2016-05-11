@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -149,13 +150,26 @@ public class EventBookingManager {
      * @param user
      *            - user to book on to the event.
      * @return the newly created booking.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
-     */
-    public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventIsFullException {
+     * @throws SegueDatabaseException - if there is a database error
+     * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
+     * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
+     * @throws RoleNotAuthorisedException - You have to be a particular role
+     * @throws EventIsFullException - No space on the event
+     * @throws EventDeadlineException - The deadline for booking has passed.
+	 */
+    public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
         boolean isStudentEvent = event.getTags().contains("student");
         boolean isTeacherEvent = event.getTags().contains("teacher");
         boolean isVirtual = event.getTags().contains("virtual");
+
+        final Date now = new Date();
+
+        // check if the deadline has expired or not - if the end date has passed
+        if (event.getBookingDeadline() != null && now.after(event.getBookingDeadline())
+            || event.getEndDate() != null && now.after(event.getEndDate())
+            || event.getDate() != null && now.after(event.getDate())) {
+            throw new EventDeadlineException("The event deadline () has passed.");
+        }
 
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
@@ -168,12 +182,12 @@ public class EventBookingManager {
 
         // must have verified email
         if (!EmailVerificationStatus.VERIFIED.equals(user.getEmailVerificationStatus())) {
-            throw new EmailMustBeVerifiedException(String.format("Unable to book onto event (%s) without a verified email address for user (%s).", event.getId(), user.getEmail()));
+            throw new EmailMustBeVerifiedException(String.format("Unable to book onto event (%s) without a verified email address for user (%s).",
+                event.getId(), user.getEmail()));
         }
 
         // is there space on the event? Teachers don't count for student events.
         // work out capacity information for the event at this moment in time.
-
         try {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
@@ -203,7 +217,8 @@ public class EventBookingManager {
                 return this.bookingPersistenceManager.createBooking(event.getId(), user.getId());
             }
 
-            if ((isStudentEvent && studentCount >= numberOfPlaces) ||
+            if ((isStudentEvent && studentCount >= numberOfPlaces)
+                ||
                 totalBooked >= numberOfPlaces) {
                 // sorry over booked - do something clever with waiting list.
                 throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full (%s/%s).", user.getEmail(), event.getId(), studentCount, event.getNumberOfPlaces()));

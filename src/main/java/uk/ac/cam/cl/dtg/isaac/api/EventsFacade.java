@@ -46,6 +46,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateBookingException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -470,6 +471,10 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (RoleNotAuthorisedException e) {
             return new SegueErrorResponse(Status.FORBIDDEN,
                 "You do not have the correct type of account to book on to this event.")
+                .toResponse();
+        } catch (EventDeadlineException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "The booking deadline for this event has passed. No more bookings are being accepted.")
                 .toResponse();
         }
     }
