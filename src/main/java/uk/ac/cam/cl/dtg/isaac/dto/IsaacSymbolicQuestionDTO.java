@@ -22,6 +22,9 @@ import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Isaac Symbolic Question DTO.
  *
@@ -29,6 +32,24 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonContentType("isaacSymbolicQuestion")
 @ValidatesWith(IsaacSymbolicValidator.class)
 public class IsaacSymbolicQuestionDTO extends IsaacQuestionBaseDTO {
+    private String formulaSeed;
+    private List<String> availableSymbols;
+
+    public final String getFormulaSeed() {
+        return formulaSeed;
+    }
+
+    public void setFormulaSeed(String formulaSeed) {
+        this.formulaSeed = formulaSeed;
+    }
+
+    public final List<String> getAvailableSymbols() {
+        return availableSymbols;
+    }
+
+    public void setAvailableSymbols(List<String> availableSymbols) {
+        this.availableSymbols = availableSymbols;
+    }
 
     // stop the answer being returned for this type of question
     @JsonIgnore
