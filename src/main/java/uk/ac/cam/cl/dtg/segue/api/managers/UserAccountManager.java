@@ -364,8 +364,6 @@ public class UserAccountManager {
     public void ensureCorrectPassword(final String provider, final String email, final String password)
             throws AuthenticationProviderMappingException, IncorrectCredentialsProvidedException, NoUserException,
             NoCredentialsAvailableException, SegueDatabaseException {
-        Validate.notBlank(email);
-        Validate.notBlank(password);
 
         // this method will throw an error if the credentials are incorrect.
         this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
@@ -877,8 +875,13 @@ public class UserAccountManager {
      *             - If there is an internal database error.
      */
     public final void resetPasswordRequest(final RegisteredUserDTO userObject) throws InvalidKeySpecException,
-            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
+            NoSuchAlgorithmException, CommunicationException, SegueDatabaseException, NoUserException {
         RegisteredUser user = this.findUserByEmail(userObject.getEmail());
+
+        if (null == user) {
+            throw new NoUserException();
+        }
+
         RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
         this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
     }

@@ -21,11 +21,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -74,6 +70,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -909,9 +906,9 @@ public class AdminFacade extends AbstractSegueFacade {
             
             if (null != email && !email.isEmpty()) {
                 try {
-                    findUsers = Arrays.asList(this.userManager.getUserDTOByEmail(email));
+                    findUsers = Collections.singletonList(this.userManager.getUserDTOByEmail(email));
                 } catch (NoUserException e) {
-                    findUsers = Lists.newArrayList();
+                    findUsers = Collections.emptyList();
                 }
             } else {
                 findUsers = this.userManager.findUsers(userPrototype);
@@ -944,13 +941,14 @@ public class AdminFacade extends AbstractSegueFacade {
                             postCodeAndUserIds, postcode, radius);
 
                     // Make sure the list returned is users who have schools in our postcode radius
-                    findUsers.clear();
+                    List<RegisteredUserDTO> nearbyUsers = new ArrayList<>();
                     for (Long id : userIdsWithinRadius) {
                         RegisteredUserDTO user = this.userManager.getUserDTOById(id);
                         if (user != null) {
-                            findUsers.add(user);
+                            nearbyUsers.add(user);
                         }
                     }
+                    findUsers = nearbyUsers;
 
                 } catch (LocationServerException e) {
                     return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,

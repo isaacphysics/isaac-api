@@ -197,17 +197,17 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
             pst.setLong(1, groupId);
 
             ResultSet results = pst.executeQuery();
-            
-            List<UserGroup> listOfResults = Lists.newArrayList();
-            while (results.next()) {
-                listOfResults.add(this.buildGroup(results));
+
+            if (results.next()) {
+                if (!results.isLast()) {
+                    throw new SegueDatabaseException("Expected a single object and found more than one.");
+                }
+                return this.buildGroup(results);
+            } else {
+                // Lots of places that call this function expect null if no group was found, i.e. was probably deleted.
+                return null;
             }
 
-            if (listOfResults.size() > 1) {
-                throw new SegueDatabaseException("Expected a single object and found more than one.");
-            }
-            
-            return listOfResults.get(0);
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
