@@ -390,7 +390,7 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
             if (emails.equals(requestingUser.getEmail())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannot modify yourself.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
                         .toResponse();
             }
 
@@ -401,7 +401,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
 
                     if (null == user) {
-                        log.error(String.format("No user could be found with email (%s)"), email);
+                        log.error(String.format("No user could be found with email (%s)", email));
                         throw new NoUserException();
                     }
                 }

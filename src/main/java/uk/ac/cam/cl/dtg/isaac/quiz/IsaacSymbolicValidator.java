@@ -127,9 +127,9 @@ public class IsaacSymbolicValidator implements IValidator {
                     continue;
                 }
 
-                // ... look for an exact match to the submitted answer.
+                // ... look for an exact string match to the submitted answer.
                 if (formulaChoice.getPythonExpression().equals(submittedFormula.getPythonExpression())) {
-                    feedback = (Content)formulaChoice.getExplanation();
+                    feedback = (Content) formulaChoice.getExplanation();
                     responseMatchType = MatchType.EXACT;
                     responseCorrect = formulaChoice.isCorrect();
                 }
@@ -218,6 +218,7 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 } catch (IOException e) {
                     log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
+                    // TODO: warn the user it's not working rather than just say Incorrect
                     break;
                 }
 
@@ -245,15 +246,18 @@ public class IsaacSymbolicValidator implements IValidator {
                 // We found a decent match. Of course, it still might be wrong.
 
                 if (closestMatchType != MatchType.EXACT && closestMatch.getRequiresExactMatch()) {
-                    // We know that closestMatch is correct, or it wouldn't be the closest match. See above.
-                    feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
-                    responseCorrect = false;
-                    responseMatchType = closestMatchType;
+                    if (closestMatch.isCorrect()) {
+                        feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
+                        responseCorrect = false;
+                        responseMatchType = closestMatchType;
 
-                    log.info("User submitted an answer that was close to an exact match, but not exact "
-                            + "for question " + symbolicQuestion.getId() + ". Choice: "
-                            + closestMatch.getPythonExpression() + ", submitted: "
-                            + submittedFormula.getPythonExpression());
+                        log.info("User submitted an answer that was close to an exact match, but not exact "
+                                + "for question " + symbolicQuestion.getId() + ". Choice: "
+                                + closestMatch.getPythonExpression() + ", submitted: "
+                                + submittedFormula.getPythonExpression());
+                    } else {
+                        // This is weak match to a wrong answer; we can't use the feedback for the choice.
+                    }
                 } else {
                     feedback = (Content) closestMatch.getExplanation();
                     responseCorrect = closestMatch.isCorrect();
