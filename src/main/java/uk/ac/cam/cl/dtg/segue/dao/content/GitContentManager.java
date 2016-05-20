@@ -165,7 +165,10 @@ public class GitContentManager implements IContentManager {
 
         String k = "getContentById~" + version + "~" + id;
         if (!cache.asMap().containsKey(k)) {
-            cache.put(k, this.mapper.getDTOByDO(this.getContentDOById(version, id)));
+            ContentDTO c = this.mapper.getDTOByDO(this.getContentDOById(version, id));
+            if (c != null) {
+                cache.put(k, c);
+            }
         }
 
         return (ContentDTO) cache.getIfPresent(k);
