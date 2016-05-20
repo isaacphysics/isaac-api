@@ -23,6 +23,7 @@ import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
@@ -309,6 +310,45 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                     emailContent, p, EmailType.ASSIGNMENTS);
             this.filterByPreferencesAndAddToQueue(userDTO, e);
         }
+    }
+
+    /**
+     * Sends notification that a user is booked onto an event.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventWelcomeEmail(final RegisteredUserDTO user,
+                                      final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-confirmed");
+
+        String myAssignmentsURL = String.format("https://%s/assignments",
+            globalProperties.getProperty(HOST_NAME));
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("contactUsURL", contactUsURL);
+        p.put("myAssignmentsURL", myAssignmentsURL);
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.ASSIGNMENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+
     }
 
     /**

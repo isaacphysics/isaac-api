@@ -28,6 +28,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -41,7 +43,7 @@ import java.util.List;
 public class EventBookingManager {
     private static final Logger log = LoggerFactory.getLogger(EventBookingManager.class);
 
-    private EventBookingPersistenceManager bookingPersistenceManager;
+    private final EventBookingPersistenceManager bookingPersistenceManager;
 
     private final GroupManager groupManager;
     private final EmailManager emailManager;
@@ -158,9 +160,8 @@ public class EventBookingManager {
      * @throws EventDeadlineException - The deadline for booking has passed.
 	 */
     public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
-        boolean isStudentEvent = event.getTags().contains("student");
-        boolean isTeacherEvent = event.getTags().contains("teacher");
-        boolean isVirtual = event.getTags().contains("virtual");
+        final boolean isStudentEvent = event.getTags().contains("student");
+        final boolean isTeacherEvent = event.getTags().contains("teacher");
 
         final Date now = new Date();
 
@@ -192,39 +193,34 @@ public class EventBookingManager {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-            Integer numberOfPlaces = event.getNumberOfPlaces();
-            if (null == numberOfPlaces) {
-                // if the number of places is null just book on to it as there is no restriction
-                return this.bookingPersistenceManager.createBooking(event.getId(), user.getId());
-            }
-
-            List<EventBookingDTO> getCurrentBookings = this.getBookingByEventId(event.getId());
-            int teacherCount = 0;
-            int studentCount = 0;
-            int totalBooked = 0;
-
-            for (EventBookingDTO booking : getCurrentBookings) {
-                if (booking.getUserBooked().getRole().equals(Role.TEACHER)) {
-                    teacherCount++;
-                } else if (booking.getUserBooked().getRole() == null || booking.getUserBooked().getRole().equals(Role.STUDENT)) {
-                    studentCount++;
+            Integer numberOfPlaces = getPlacesAvailable(event);
+            if (numberOfPlaces != null) {
+                // teachers can book on student events and do not count towards capacity
+                if ((isStudentEvent && !Role.TEACHER.equals(user.getRole()) && numberOfPlaces <= 0)
+                    || (!isStudentEvent && numberOfPlaces <= 0)) {
+                    throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full.", user.getEmail(), event.getId()));
                 }
-                totalBooked++;
             }
 
-            // book teacher on to student event regardless of capacity as they don't count
-            if (isStudentEvent && Role.TEACHER.equals(user.getRole())) {
-                return this.bookingPersistenceManager.createBooking(event.getId(), user.getId());
+            // attempt to book them on the event
+            final EventBookingDTO booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId());
+
+            try {
+                this.emailManager.sendEventWelcomeEmail(user, event);
+            } catch (ContentManagerException e) {
+                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user.getEmail()), e);
             }
 
-            if ((isStudentEvent && studentCount >= numberOfPlaces)
-                ||
-                totalBooked >= numberOfPlaces) {
-                // sorry over booked - do something clever with waiting list.
-                throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full (%s/%s).", user.getEmail(), event.getId(), studentCount, event.getNumberOfPlaces()));
+            // auto add them to the group and grant the owner permission
+            if (event.getIsaacGroupToken() != null) {
+                try {
+                    this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
+                } catch (InvalidUserAssociationTokenException e) {
+                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.", user.getEmail(), event.getIsaacGroupToken()));
+                }
             }
 
-            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId());
+            return booking;
         } finally {
             // release lock
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
@@ -240,8 +236,6 @@ public class EventBookingManager {
      */
     public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
         boolean isStudentEvent = event.getTags().contains("student");
-        boolean isTeacherEvent = event.getTags().contains("teacher");
-        boolean isVirtual = event.getTags().contains("virtual");
 
         // or use stored procedure that can fail?
         Integer numberOfPlaces = event.getNumberOfPlaces();
