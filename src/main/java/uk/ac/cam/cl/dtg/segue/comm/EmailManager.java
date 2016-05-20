@@ -686,9 +686,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     
     /**
      * This method allows the front end to preview simple email in the browser.
-     * 
-     * @param segueContent
-     * 			- the email template 
+     *
      * @param user
      * 			- the user requesting a preview
      * @return serialised HTML
@@ -727,9 +725,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     
     /**
      * This method allows the front end to preview simple email in the browser.
-     * 
-     * @param segueContent
-     * 			- the email template 
+     *
      * @param user
      * 			- the user requesting a preview
      * @return serialised HTML
@@ -772,9 +768,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
-     * 
-     * @param page
-     *            SeguePage that contains SeguePage child with template value
+     *
      * @param templateProperties
      *            list of properties from which we can fill in the template
      * @return template with completed fields
