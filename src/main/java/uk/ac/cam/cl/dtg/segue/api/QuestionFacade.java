@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
+
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
@@ -135,24 +137,6 @@ public class QuestionFacade extends AbstractSegueFacade {
 
         AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
 
-        if (currentUser instanceof RegisteredUserDTO) {
-            try {
-                misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
-                        QuestionAttemptMisuseHandler.class.toString());
-            } catch (SegueResourceMisuseException e) {
-                String message = "You have made too many attempts at this question part. Please try again later.";
-                return SegueErrorResponse.getRateThrottledResponse(message);
-            }
-        } else {
-            try {
-                misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
-                        AnonQuestionAttemptMisuseHandler.class.toString());
-            } catch (SegueResourceMisuseException e) {
-                String message = "You have made too many attempts at this question part. Please log in or try again later.";
-                return SegueErrorResponse.getRateThrottledResponse(message);
-            }
-        }
-
         Content contentBasedOnId;
         try {
             contentBasedOnId = contentVersionController.getContentManager().getContentDOById(
@@ -164,7 +148,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        Question question = null;
+        Question question;
         if (contentBasedOnId instanceof Question) {
             question = (Question) contentBasedOnId;
         } else {
@@ -200,6 +184,32 @@ public class QuestionFacade extends AbstractSegueFacade {
         Response response;
         try {
             response = this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
+
+            // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in
+            // the log, but don't save it for the user. Also, return an error.
+
+            // We store response.getEntity() in either case so that we can treat them the same in later analysis.
+            if (currentUser instanceof RegisteredUserDTO) {
+                try {
+                    misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
+                            QuestionAttemptMisuseHandler.class.toString());
+                } catch (SegueResourceMisuseException e) {
+                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    String message = "You have made too many attempts at this question part. Please try again later.";
+                    return SegueErrorResponse.getRateThrottledResponse(message);
+                }
+            } else {
+                try {
+                    misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
+                            AnonQuestionAttemptMisuseHandler.class.toString());
+                } catch (SegueResourceMisuseException e) {
+                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    String message = "You have made too many attempts at this question part. Please log in or try again later.";
+                    return SegueErrorResponse.getRateThrottledResponse(message);
+                }
+            }
+
+            // If we get to this point, this is a valid question attempt. Record it.
 
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,
