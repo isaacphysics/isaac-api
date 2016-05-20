@@ -82,9 +82,9 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     private final ContentVersionController versionManager;
 
-    private EventBookingManager bookingManager;
+    private final EventBookingManager bookingManager;
 
-    private UserAccountManager userManager;
+    private final UserAccountManager userManager;
 
     /**
      * EventsFacade.

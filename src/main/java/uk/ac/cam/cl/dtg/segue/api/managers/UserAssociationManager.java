@@ -179,13 +179,11 @@ public class UserAssociationManager {
      *            - the user who wishes to grant permissions to another.
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
-     * @throws UserAssociationException
-     *             - if we cannot create the association because it is invalid.
      * @throws InvalidUserAssociationTokenException
      *             - If the token provided is invalid.
      */
     public void createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
-            throws SegueDatabaseException, UserAssociationException, InvalidUserAssociationTokenException {
+            throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
         Validate.notNull(userGrantingPermission);
 
