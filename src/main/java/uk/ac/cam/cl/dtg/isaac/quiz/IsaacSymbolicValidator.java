@@ -189,6 +189,7 @@ public class IsaacSymbolicValidator implements IValidator {
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
+                    req.put("description", symbolicQuestion.getId());
 
                     StringWriter sw = new StringWriter();
                     JsonGenerator g = new JsonFactory().createGenerator(sw);
