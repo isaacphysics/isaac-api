@@ -59,7 +59,7 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
         }
     }
 
-    private final String urlBase = "http://api.ipinfodb.com/v3/";
+    private final String urlBase = "https://api.ipinfodb.com/v3/";
     private final String urlFull = "ip-city/";
     private final String urlMinimal = "ip-country/";
     private final String apiAuthKey;
