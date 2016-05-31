@@ -135,6 +135,12 @@ public class SchoolListReader {
      */
     public School findSchoolById(final Long schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
             JsonMappingException, IOException {
+
+        if (!this.ensureSchoolList()) {
+            log.error("Unable to ensure school search cache.");
+            throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
+        }
+
         List<String> matchingSchoolList;
         
         matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
@@ -157,10 +163,9 @@ public class SchoolListReader {
      * Trigger a thread to index the schools list. If needed.
      */
     public synchronized void prepareSchoolList() {
-        // if the search provider has the index just return.
-        if (searchProvider.hasIndex(SCHOOLS_SEARCH_INDEX)) {
-            return;
-        }
+
+        // We mustn't throw any exceptions here, as this is called from the constructor of SchoolLookupServiceFacade,
+        // called by Guice. And if anything dies while Guice is working, we never recover.
 
         Thread thread = new Thread() {
             public void run() {
