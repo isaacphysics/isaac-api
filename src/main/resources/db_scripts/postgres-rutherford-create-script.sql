@@ -746,12 +746,16 @@ CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
 
 CREATE INDEX log_events_user_id ON logged_events USING btree (user_id);
 
+create index log_events_type on logged_events (event_type);
+
 
 --
 -- Name: question-attempts-by-user; Type: INDEX; Schema: public; Owner: rutherford; Tablespace: 
 --
 
 CREATE INDEX "question-attempts-by-user" ON question_attempts USING btree (user_id);
+
+create index "question_attempts_by_question" on question_attempts (question_id);
 
 
 --
