@@ -279,7 +279,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error(message, e);
+            log.error(message, e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
