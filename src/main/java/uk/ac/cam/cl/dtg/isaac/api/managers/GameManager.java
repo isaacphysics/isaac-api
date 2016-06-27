@@ -45,11 +45,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
-import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.*;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
@@ -920,6 +916,16 @@ public class GameManager {
 
         // Map each Content object into an GameboardItem object
         for (ContentDTO c : questionsForGameboard) {
+            // Only keep questions that have not been superseded.
+            // Yes, this should probably be done in the fieldsToMap filter above, but this is simpler.
+            if (c instanceof IsaacQuestionPageDTO) {
+                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO)c;
+                if (qp.getSupersededBy() != null && !qp.getSupersededBy().equals("")) {
+                    // This question has been superseded. Don't include it.
+                    continue;
+                }
+            }
+
             GameboardItem questionInfo = this.gameboardPersistenceManager.convertToGameboardItem(c);
             selectionOfGameboardQuestions.add(questionInfo);
         }
