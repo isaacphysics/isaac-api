@@ -46,6 +46,20 @@ public interface EventBooking {
      */
     String getEventId();
 
+	/**
+     * Gets the current status of the booking.
+     *
+     * @return booking status
+     */
+    BookingStatus getBookingStatus();
+
+	/**
+     * Get the date that this booking was last updated.
+     *
+     * @return the date that an update or booking creation was made.
+     */
+    Date getUpdateDate();
+
     /**
      * Getter for Creation date.
      * 

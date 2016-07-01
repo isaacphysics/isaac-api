@@ -8,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBookings;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBooking;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.PgEventBookings;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
@@ -78,6 +75,39 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Gets a specific event booking
+     * @param eventId
+     *            - of interest
+     * @param userId
+     *            - of interest
+     * @return event booking or null if we can't find one.
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO getBookingByEventIdAndUserId(final String eventId, final Long userId) throws SegueDatabaseException {
+        return this.convertToDTO(dao.findBookingByEventAndUser(eventId, userId));
+    }
+
+	/**
+     * Modify an existing event booking's status
+     * @param eventId - the id of the event
+     * @param userId = the user who is registered against the event
+     * @param bookingStatus - the new booking status for this booking.
+     * @return The newly updated event booking
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus) throws SegueDatabaseException {
+        dao.updateStatus(eventId, userId, bookingStatus);
+
+        return this.getBookingByEventIdAndUserId(eventId, userId);
+    }
+
+    /**
+     * Get all bookings in the database..
+     *
+     * Warning, this is likely to be slow.
+     *
      * @return event bookings
      * @throws SegueDatabaseException
      *             - if an error occurs.
@@ -113,26 +143,31 @@ public class EventBookingPersistenceManager {
      *            - of interest
      * @param userId
      *            - user to book on to the event.
+     * @param status
+     *            - The status of the booking to create.
      * @return the newly created booking.
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId));
+    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(eventId, userId, status));
     }
 
     /**
+     * This method only counts bookings that are confirmed.
+     *
      * @param eventId
      *            - of interest
      * @param userId
      *            - of interest.
-     * @return true if a booking exists false if not
+     * @return true if a booking exists and is in the confirmed state, false if not
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
     public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
         try {
-            return dao.findBookingByEventAndUser(eventId, userId) != null;
+            final EventBooking bookingByEventAndUser = dao.findBookingByEventAndUser(eventId, userId);
+            return bookingByEventAndUser != null && bookingByEventAndUser.getBookingStatus() == BookingStatus.CONFIRMED;
         } catch (ResourceNotFoundException e) {
             return false;
         }
@@ -192,9 +227,11 @@ public class EventBookingPersistenceManager {
             result.setEventId(eventInformation.getId());
             result.setEventTitle(eventInformation.getTitle());
             result.setBookingDate(eb.getCreationDate());
+            result.setUpdated(eb.getUpdateDate());
+            result.setBookingStatus(eb.getBookingStatus());
             result.setUserBooked(user);
-            return result;
 
+            return result;
         } catch (NoUserException e) {
             log.error("Unable to create event booking dto as user is unavailable");
             throw new SegueDatabaseException("Unable to create event booking dto as user is unavailable", e);

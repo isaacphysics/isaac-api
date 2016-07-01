@@ -17,6 +17,8 @@ package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
+import javax.annotation.Nullable;
+
 /**
  * Representation of a collection of event bookings.
  * 
@@ -25,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
  * @author sac92
  */
 public interface EventBookings {
+
     /**
      * Add booking to the database.
      * 
@@ -32,11 +35,24 @@ public interface EventBookings {
      *            - the event id
      * @param userId
      *            - the user id
+     * @param status
+     *            - the initial status of the booking.
      * @return the newly created booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final Long userId) throws SegueDatabaseException;
+    EventBooking add(final String eventId, final Long userId, final BookingStatus status) throws SegueDatabaseException;
+
+	/**
+     * updateStatus.
+     *
+     * @param eventId - the id of the event
+     * @param userId - the id of the user booked on to the event
+     * @param status - the new status to change the booking to
+     * @return the newly updated event booking.
+     * @throws SegueDatabaseException - if the database goes wrong.
+     */
+    void updateStatus(final String eventId, final Long userId, final BookingStatus status) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.
@@ -49,7 +65,6 @@ public interface EventBookings {
      *             - if an error occurs.
      */
     void delete(final String eventId, final Long userId) throws SegueDatabaseException;
-
 
     /**
      * Acquire a globally unique database lock.
@@ -85,6 +100,21 @@ public interface EventBookings {
      *             - if an error occurs.
      */
     Iterable<EventBooking> findAllByEventId(final String eventId) throws SegueDatabaseException;
+
+    /**
+     * Find all bookings for a given event with a given status.
+     *
+     * Useful for finding all on a waiting list or confirmed.
+     *
+     * @param eventId
+     *            - the event of interest.
+     * @param status
+     *            - The event status that should match in the bookings returned.
+     * @return an iterable with all the events matching the criteria.
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    Iterable<EventBooking> findAllByEventIdAndStatus(String eventId, @Nullable BookingStatus status) throws SegueDatabaseException;
 
     /**
      * Find all bookings for a given event.

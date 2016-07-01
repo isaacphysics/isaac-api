@@ -26,15 +26,18 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 /**
- * @author sac92
+ * Postgres specific implementation for event booking.
  *
  */
 public class PgEventBooking implements EventBooking {
     private PostgresSqlDb ds;
+
     private Long bookingId;
     private Long userId;
     private String eventId;
+    private BookingStatus bookingStatus;
     private Date created;
+    private Date updated;
 
     /**
      * Partial Constructor - the remaining fields will be populated.
@@ -67,17 +70,18 @@ public class PgEventBooking implements EventBooking {
      *            - the date the booking was made.
      */
     public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final Long userId, final String eventId,
-            final Date created) {
+            final BookingStatus bookingStatus, final Date created, final Date updated) {
         this.ds = ds;
         this.bookingId = bookingId;
         this.userId = userId;
         this.eventId = eventId;
+        this.bookingStatus = bookingStatus;
+        this.updated = updated;
         this.created = created;
     }
 
     @Override
     public Long getId() {
-
         return bookingId;
     }
 
@@ -92,9 +96,18 @@ public class PgEventBooking implements EventBooking {
     }
 
     @Override
+    public BookingStatus getBookingStatus() { return bookingStatus; }
+
+    @Override
     public Date getCreationDate() {
         return created;
     }
+
+    @Override
+    public Date getUpdateDate() {
+        return updated;
+    }
+
 
     /**
      * populateBookingDetails - will attempt to populate missing details.
@@ -133,7 +146,9 @@ public class PgEventBooking implements EventBooking {
                 this.bookingId = results.getLong("id");
                 this.eventId = results.getString("event_id");
                 this.userId = results.getLong("user_id");
+                this.bookingStatus = BookingStatus.valueOf(results.getString("booking_status"));
                 this.created = results.getDate("created");
+                this.updated = results.getDate("updated");
             }
 
             if (count == 0) {

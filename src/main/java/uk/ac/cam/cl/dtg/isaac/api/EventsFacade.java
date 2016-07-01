@@ -44,11 +44,8 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateBookingException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventDeadlineException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.EventIsFullException;
-import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.*;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
@@ -62,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -215,31 +213,9 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response getEvent(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId) {
         try {
-            ContentDTO c = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
-                    eventId);
+            IsaacEventPageDTO page = getEventDTOById(request, eventId);
 
-            if (null == c) {
-                return SegueErrorResponse.getResourceNotFoundResponse("The event requested could not be located");
-            }
-
-            if (c instanceof IsaacEventPageDTO) {
-                IsaacEventPageDTO page = (IsaacEventPageDTO) c;
-
-                try {
-                    RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-                    page.setUserBooked(this.bookingManager.isUserBooked(eventId, user.getId()));
-                } catch (NoUserLoggedInException e) {
-                    // no action as we don't require the user to be logged in.
-                    page.setUserBooked(null);
-                }
-
-                page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
-
-                return Response.ok(page).build();
-            } else {
-                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                        "The content found is of the incorrect type.").toResponse();
-            }
+            return Response.ok(page).build();
         } catch (ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
@@ -322,6 +298,73 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Allow a staff user to update a booking status.
+     *
+     * @param request
+     *            - for authentication
+     * @param eventBooking
+     *            - event booking containing updates, must contain primary id.
+     * @return the updated booking.
+     */
+    @POST
+    @Path("/bookings/{booking_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response updateBooking(@Context final HttpServletRequest request,
+                                        final EventBooking eventBooking) {
+        try {
+            if (!isUserStaff(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                    .toResponse();
+            }
+
+            // TODO: allow staff to update the event status of a user.
+
+            // e.g. promote from waiting list
+
+            RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(eventBooking.getUserId());
+
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventBooking.getEventId());
+
+            return Response.ok(this.bookingManager.promoteFromWaitingList(event, userOfInterest)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to update a event booking";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                "Content Database error occurred while trying to retrieve event booking information.")
+                .toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "In order to book on this event the user account must have a verified email address. ")
+                .toResponse();
+        } catch (DuplicateBookingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "The user has already been booked on this event. Unable to create a duplicate booking.")
+                .toResponse();
+        } catch (EventIsFullException e) {
+            return new SegueErrorResponse(Status.CONFLICT,
+                "This event is already full. Unable to book the user on to it.")
+                .toResponse();
+        } catch (RoleNotAuthorisedException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN,
+                "The user does not have the correct type of account to book on to this event.")
+                .toResponse();
+        } catch (EventBookingUpdateException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "Unable to modify the booking", e)
+                .toResponse();
+        } catch (NoUserException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "The user doesn't exist, so unable to book them onto an event", e)
+                .toResponse();
+        }
+    }
+
+    /**
      * gets a list of event bookings based on a given event id.
      * 
      * @param request
@@ -354,6 +397,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * createBooking for a specific isaac user.
+     * Must be a Staff user.
      * 
      * @param request
      *            - for authentication
@@ -377,15 +421,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             RegisteredUserDTO bookedUser = userManager.getUserDTOById(userId);
 
-            ContentDTO unverifiedContent = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
-                    eventId);
-
-            IsaacEventPageDTO event;
-            if (unverifiedContent != null && unverifiedContent instanceof IsaacEventPageDTO) {
-                event = (IsaacEventPageDTO) unverifiedContent;
-            } else {
-                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the event requested").toResponse();
-            }
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             if (bookingManager.isUserBooked(eventId, userId)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is already booked on this event.")
@@ -409,6 +445,10 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "User already booked on this event. Unable to create a duplicate booking.")
                 .toResponse();
+        } catch (EventIsFullException e) {
+            return new SegueErrorResponse(Status.CONFLICT,
+                "This event is already full. Unable to book the user on to it.")
+                .toResponse();
         }
     }
 
@@ -419,7 +459,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      *            - for authentication
      * @param eventId
      *            - event id
-     * @return the new booking
+     * @return the new booking if allowed to book.
      */
     @POST
     @Path("{event_id}/bookings")
@@ -430,15 +470,7 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            ContentDTO unverifiedContent = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
-                eventId);
-
-            IsaacEventPageDTO event;
-            if (unverifiedContent != null && unverifiedContent instanceof IsaacEventPageDTO) {
-                event = (IsaacEventPageDTO) unverifiedContent;
-            } else {
-                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the event requested").toResponse();
-            }
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
@@ -480,8 +512,116 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * Add current user to waiting list for the given event.
+     *
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - event id
+     * @return the new booking
+     */
+    @POST
+    @Path("{event_id}/waiting_list")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response addMeToWaitingList(@Context final HttpServletRequest request,
+                                             @PathParam("event_id") final String eventId) {
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            if (bookingManager.isUserBooked(eventId, user.getId())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
+                    .toResponse();
+            }
+
+            return Response.ok(bookingManager.requestWaitingListBooking(event, user)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to book a user onto an event.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                "Content Database error occurred while trying to retrieve all event booking information.")
+                .toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "In order to book on this event your user account must have a verified email address. Please verify your address to make a booking.")
+                .toResponse();
+        } catch (DuplicateBookingException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "You have already been booked on this event. Unable to create a duplicate booking.")
+                .toResponse();
+        } catch (RoleNotAuthorisedException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN,
+                "You do not have the correct type of account to book on to this event.")
+                .toResponse();
+        } catch (EventDeadlineException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                "The booking deadline for this event has passed. No more bookings are being accepted.")
+                .toResponse();
+        } catch (EventIsNotFullException e) {
+            return new SegueErrorResponse(Status.CONFLICT,
+                "There are spaces on this event. Please use the request booking endpoint to book you on to it.")
+                .toResponse();
+        }
+    }
+
+    /**
+     * This function allows a user who has booked onto an event to cancel their booking.
+     *
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - event id
+     * @param userId
+     *            - user id
+     * @return the new booking
+     */
+    @DELETE
+    @Path("{event_id}/bookings/{user_id}/cancel")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response cancelBooking(@Context final HttpServletRequest request,
+                                        @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+        try {
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+
+            RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
+
+            if (!userLoggedIn.getId().equals(userId) && !isUserStaff(userManager, request) ) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
+                    .toResponse();
+            }
+
+            if (!bookingManager.isUserBooked(eventId, userId)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
+            }
+
+            bookingManager.cancelBooking(event, userLoggedIn);
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to delete an event booking.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                .toResponse();
+        }
+    }
+
+    /**
      * Delete a booking.
-     * 
+     *
+     * This is an admin function to allow staff to delete a booking permanently.
+     *
      * @param request
      *            - for authentication
      * @param eventId
@@ -516,5 +656,40 @@ public class EventsFacade extends AbstractIsaacFacade {
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         }
+    }
+
+    /**
+     * A helper method for retrieving an event and the number of places available and if the user is booked or not.
+     *
+     *
+     * @param request so we can determine if the user is logged in
+     * @param id the id of the event of interest
+     * @return the fully populated event dto with user context information.
+     * @throws ContentManagerException - if there is a problem finding the event information
+     * @throws SegueDatabaseException if there is a database error.
+	 */
+    private IsaacEventPageDTO getEventDTOById(final HttpServletRequest request, final String id) throws ContentManagerException, SegueDatabaseException {
+        ContentDTO c = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+            id);
+
+        if (null == c) {
+            throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", id));
+        }
+
+        IsaacEventPageDTO page = null;
+        if (c instanceof IsaacEventPageDTO) {
+            page = (IsaacEventPageDTO) c;
+
+            try {
+                RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+                page.setUserBooked(this.bookingManager.isUserBooked(id, user.getId()));
+            } catch (NoUserLoggedInException e) {
+                // no action as we don't require the user to be logged in.
+                page.setUserBooked(null);
+            }
+
+            page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
+        }
+        return page;
     }
 }

@@ -352,6 +352,82 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
+     * Sends notification that a user has been promoted from the waiting list and been booked onto an event.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventWelcomeEmailForWaitingListPromotion(final RegisteredUserDTO user,
+                                      final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed");
+
+        String myAssignmentsURL = String.format("https://%s/assignments",
+            globalProperties.getProperty(HOST_NAME));
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        String authorisationURL = String.format("https://%s/account?authToken=%s",
+            globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("contactUsURL", contactUsURL);
+        p.put("myAssignmentsURL", myAssignmentsURL);
+        p.put("authorizationLink", event.getIsaacGroupToken() == null ? "" : authorisationURL);
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.ASSIGNMENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+    }
+
+    /**
+     * Sends notification that an event booking has been cancelled.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventCancellationEmail(final RegisteredUserDTO user,
+                                                             final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-cancellation-confirmed");
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("contactUsURL", contactUsURL);
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.ASSIGNMENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+    }
+
+    /**
      * Sends notification for groups being given an assignment.
      * 
      * @param userDTO

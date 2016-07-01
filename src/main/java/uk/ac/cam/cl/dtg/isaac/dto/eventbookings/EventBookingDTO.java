@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.dto.eventbookings;
 
 import java.util.Date;
 
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 /**
@@ -33,6 +34,10 @@ public class EventBookingDTO {
     private String eventTitle;
 
     private Date eventDate;
+
+    private BookingStatus bookingStatus;
+
+    private Date lastUpdated;
 
     private Date bookingDate;
 
@@ -58,12 +63,14 @@ public class EventBookingDTO {
      *            booking date.
      */
     public EventBookingDTO(final Long bookingId, final UserSummaryDTO userBooked, final String eventId,
-            final String eventTitle, final Date eventDate, final Date bookingDate) {
+            final String eventTitle, final Date eventDate, final Date bookingDate, final Date lastUpdated, final BookingStatus status) {
         this.bookingId = bookingId;
         this.userBooked = userBooked;
         this.eventId = eventId;
         this.eventTitle = eventTitle;
         this.eventDate = eventDate;
+        this.bookingStatus = status;
+        this.lastUpdated = lastUpdated;
         this.bookingDate = bookingDate;
     }
 
@@ -179,5 +186,37 @@ public class EventBookingDTO {
      */
     public void setBookingDate(final Date bookingDate) {
         this.bookingDate = bookingDate;
+    }
+
+	/**
+     * Get the lastUpdate date.
+     * @return
+     */
+    public Date getUpdated() {
+        return lastUpdated;
+    }
+
+	/**
+     * Set the lastUpdate Date.
+     * @param lastUpdated - date it was updated.
+     */
+    public void setUpdated(final Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+	/**
+	 * Get the booking status.
+     * @return the status of the booking.
+     */
+    public BookingStatus getBookingStatus() {
+        return bookingStatus;
+    }
+
+	/**
+     * Set the status of the booking.
+     * @param bookingStatus - the status to set.
+     */
+    public void setBookingStatus(final BookingStatus bookingStatus) {
+        this.bookingStatus = bookingStatus;
     }
 }
