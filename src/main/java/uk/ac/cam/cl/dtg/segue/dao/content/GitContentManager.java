@@ -60,6 +60,7 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -1046,6 +1047,13 @@ public class GitContentManager implements IContentManager {
                 if (e.getReplyToEmailAddress() != null && null == e.getReplyToName()) {
                     this.registerContentProblem(sha, c,
                             "Email template contains replyToEmailAddress but not replyToName");
+                }
+            }
+
+            if (c instanceof IsaacEventPage) {
+                IsaacEventPage e = (IsaacEventPage) c;
+                if (e.getEndDate().before(e.getDate())) {
+                    this.registerContentProblem(sha, c, "Event has end date before start date");
                 }
             }
 
