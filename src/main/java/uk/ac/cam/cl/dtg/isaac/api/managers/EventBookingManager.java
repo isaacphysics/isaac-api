@@ -19,7 +19,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
@@ -27,10 +26,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
+import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -203,7 +202,15 @@ public class EventBookingManager {
             this.ensureCapacity(event, user);
 
             // attempt to book them on the event
-            final EventBookingDTO booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED);
+            EventBookingDTO booking = null;
+
+            // attempt to book them on the event
+            if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
+                // if the user has previously cancelled we should let them book again.
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CONFIRMED);
+            } else {
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED);
+            }
 
             try {
                 this.emailManager.sendEventWelcomeEmail(user, event);
@@ -256,7 +263,7 @@ public class EventBookingManager {
         }
 
         // check if already booked
-        if (this.isUserBooked(event.getId(), user.getId())) {
+        if (this.isUserBooked(event.getId(), user.getId()) || this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST)) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already booked on to it.", event.getId(), user.getEmail()));
         }
 
@@ -283,14 +290,21 @@ public class EventBookingManager {
                 }
             }
 
-            // attempt to book them on the event
-            final EventBookingDTO booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.WAITING_LIST);
+            EventBookingDTO booking = null;
 
-            /*try {
-                this.emailManager.sendEventWelcomeEmail(user, event);
+            // attempt to book them on the event
+            if (this.hasBookingWithStatus(event.getId(),user.getId(),BookingStatus.CANCELLED)) {
+                // if the user has previously cancelled we should let them book again.
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST);
+            } else {
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.WAITING_LIST);
+            }
+
+            try {
+                this.emailManager.sendEventWaitingListEmail(user, event);
             } catch (ContentManagerException e) {
                 log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user.getEmail()), e);
-            }*/
+            }
 
             return booking;
         } finally {
@@ -438,17 +452,24 @@ public class EventBookingManager {
     }
 
     /**
-     * Find out if a user is already on the waiting list for an event.
+     * Find out if a user has a booking with a given status.
+     *
      * @param eventId
      *            - of interest
      * @param userId
      *            - of interest.
+     * @param bookingStatus - the status of the booking.
      * @return true if a waitinglist booking exists false if not
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public boolean isUserOnWaitingList(final String eventId, final Long userId) throws SegueDatabaseException {
-        return BookingStatus.WAITING_LIST.equals(this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId).getBookingStatus());
+    public boolean hasBookingWithStatus(final String eventId, final Long userId, final BookingStatus bookingStatus) throws SegueDatabaseException {
+        try {
+            Boolean result = bookingStatus.equals(this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId).getBookingStatus());
+            return result;
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
     }
 
     /**

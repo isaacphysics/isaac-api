@@ -46,6 +46,8 @@ public class IsaacEventPage extends Content {
 	private List<ExternalReference> preResources;
 	private List<Content> preResourceContent;
 
+	private String emailJoiningInstructions;
+
 	private List<ExternalReference> postResources;
 	private List<Content> postResourceContent;
 
@@ -327,5 +329,13 @@ public class IsaacEventPage extends Content {
 	 */
 	public void setPostResourceContent(final List<Content> postResourceContent) {
 		this.postResourceContent = postResourceContent;
+	}
+
+	public String getEmailJoiningInstructions() {
+		return emailJoiningInstructions;
+	}
+
+	public void setEmailJoiningInstructions(final String emailJoiningInstructions) {
+		this.emailJoiningInstructions = emailJoiningInstructions;
 	}
 }

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -44,6 +45,8 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private List<ExternalReference> preResources;
     private List<ContentDTO> preResourceContent;
+    private String emailJoiningInstructions;
+
     private List<ExternalReference> postResources;
     private List<ContentDTO> postResourceContent;
 
@@ -56,6 +59,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     private String isaacGroupToken;
 
     private Boolean isUserBooked;
+    private Boolean isUserOnWaitList;
 
     private Integer placesAvailable;
 
@@ -388,4 +392,20 @@ public class IsaacEventPageDTO extends ContentDTO {
         this.placesAvailable = placesAvailable;
     }
 
+    public Boolean isUserOnWaitList() {
+        return isUserOnWaitList;
+    }
+
+    public void setUserOnWaitList(Boolean userOnWaitList) {
+        isUserOnWaitList = userOnWaitList;
+    }
+
+    @JsonIgnore
+    public String getEmailJoiningInstructions() {
+        return emailJoiningInstructions;
+    }
+
+    public void setEmailJoiningInstructions(final String emailJoiningInstructions) {
+        this.emailJoiningInstructions = emailJoiningInstructions;
+    }
 }

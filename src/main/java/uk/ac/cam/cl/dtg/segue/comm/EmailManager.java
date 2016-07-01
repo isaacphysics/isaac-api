@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
+import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -63,6 +64,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final String SIGNATURE = "Isaac Physics Project";
     private static final int MINIMUM_TAG_LENGTH = 4;
     private static final int TRUNCATED_TOKEN_LENGTH = 5;
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
 
     /**
      * @param communicator
@@ -86,8 +88,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.contentVersionController = contentVersionController;
         this.logManager = logManager;
     }
-
-    
 
     /**
      * @param userDTO
@@ -121,7 +121,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
-
 
     /**
      * Sends email registration confirmation using email registration template. Assumes that a verification code has
@@ -340,17 +339,65 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // givenname should be camel case but I have left it to be in line with the others.
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("contactUsURL", contactUsURL);
-        p.put("myAssignmentsURL", myAssignmentsURL);
+        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("myAssignmentsURL", myAssignmentsURL == null ? "" : myAssignmentsURL);
 
+        StringBuilder sb = new StringBuilder();
+        if (event.getPreResources() != null && event.getPreResources().size() > 0) {
+            for (ExternalReference er : event.getPreResources()){
+                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
+                sb.append("\n");
+            }
+            p.put("preResources", sb.toString());
+        } else {
+            p.put("preResources", "");
+        }
+
+        p.put("joiningInstructions", myAssignmentsURL == null ? "" : event.getEmailJoiningInstructions());
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.ASSIGNMENTS);
+            emailContent, p, EmailType.EVENTS);
         this.filterByPreferencesAndAddToQueue(user, e);
 
     }
 
+    /**
+     * Sends notification that a user is on the waiting list.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventWaitingListEmail(final RegisteredUserDTO user,
+                                      final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-waiting-list-addition-notification");
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.EVENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+
+    }
     /**
      * Sends notification that a user has been promoted from the waiting list and been booked onto an event.
      * @param user
@@ -382,14 +429,28 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // givenname should be camel case but I have left it to be in line with the others.
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
         p.put("contactUsURL", contactUsURL);
         p.put("myAssignmentsURL", myAssignmentsURL);
         p.put("authorizationLink", event.getIsaacGroupToken() == null ? "" : authorisationURL);
 
+        StringBuilder sb = new StringBuilder();
+        if (event.getPreResources() != null && event.getPreResources().size() > 0) {
+            for (ExternalReference er : event.getPreResources()){
+                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
+                sb.append("\n");
+            }
+            p.put("preResources", sb.toString());
+        } else {
+            p.put("preResources", "");
+        }
+
+        p.put("joiningInstructions", myAssignmentsURL == null ? "" : event.getEmailJoiningInstructions());
+
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.ASSIGNMENTS);
+            emailContent, p, EmailType.EVENTS);
         this.filterByPreferencesAndAddToQueue(user, e);
     }
 
@@ -418,12 +479,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // givenname should be camel case but I have left it to be in line with the others.
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
         p.put("contactUsURL", contactUsURL);
-
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.ASSIGNMENTS);
+            emailContent, p, EmailType.EVENTS);
         this.filterByPreferencesAndAddToQueue(user, e);
     }
 
@@ -483,7 +544,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlSB.append("Your teacher has assigned the following assignments:<br>");
             plainTextSB.append("Your teacher has assigned the following assignments:\n");
             for (int i = 0; i < existingAssignments.size(); i++) {
-                DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
+
                 GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
 
                 String gameboardName = existingAssignments.get(i).getGameboardId();
@@ -496,10 +557,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 								existingAssignments.get(i).getGameboardId());
 
                 htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s)<br>", i + 1, gameboardUrl,
-                        gameboardName, df.format(existingAssignments.get(i).getCreationDate())));
+                        gameboardName, DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
 
                 plainTextSB.append(String.format("%d. %s (set on %s)\n", i + 1, gameboardName,
-                        df.format(existingAssignments.get(i).getCreationDate())));
+                    DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
             }
         } else if (existingAssignments != null && existingAssignments.size() == 0) {
             htmlSB.append("No assignments have been set yet.<br>");

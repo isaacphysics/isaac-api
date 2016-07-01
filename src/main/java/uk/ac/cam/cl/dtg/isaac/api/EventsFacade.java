@@ -45,7 +45,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.*;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
@@ -59,7 +59,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -298,33 +297,31 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Allow a staff user to update a booking status.
+     * Allow a staff user to promote a user from the waiting list.
      *
      * @param request
      *            - for authentication
-     * @param eventBooking
+     * @param eventId
      *            - event booking containing updates, must contain primary id.
+     * @param userId
+     *            - the user to be promoted.
      * @return the updated booking.
      */
     @POST
-    @Path("/bookings/{booking_id}")
+    @Path("{event_id}/bookings/{user_id}/promote")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response updateBooking(@Context final HttpServletRequest request,
-                                        final EventBooking eventBooking) {
+    public final Response promoteUserFromWaitingList(@Context final HttpServletRequest request,
+                                                     @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
             if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                     .toResponse();
             }
 
-            // TODO: allow staff to update the event status of a user.
+            RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(userId);
 
-            // e.g. promote from waiting list
-
-            RegisteredUserDTO userOfInterest = this.userManager.getUserDTOById(eventBooking.getUserId());
-
-            IsaacEventPageDTO event = this.getEventDTOById(request, eventBooking.getEventId());
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             return Response.ok(this.bookingManager.promoteFromWaitingList(event, userOfInterest)).build();
         } catch (NoUserLoggedInException e) {
@@ -536,6 +533,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            if (event.getPlacesAvailable() > 0 && new Date().after(event.getBookingDeadline())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "There are spaces available on this event. Unable to add to waiting list.")
+                    .toResponse();
+            }
+
             return Response.ok(bookingManager.requestWaitingListBooking(event, user)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -570,8 +572,27 @@ public class EventsFacade extends AbstractIsaacFacade {
         }
     }
 
+
     /**
      * This function allows a user who has booked onto an event to cancel their booking.
+     *
+     * @param request
+     *            - for authentication
+     * @param eventId
+     *            - event id
+     * @return the new booking
+     */
+    @DELETE
+    @Path("{event_id}/bookings/cancel")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response cancelBooking(@Context final HttpServletRequest request,
+                                        @PathParam("event_id") final String eventId) {
+        return this.cancelBooking(request, eventId, null);
+    }
+
+    /**
+     * This function allows cancellation of a booking.
      *
      * @param request
      *            - for authentication
@@ -591,17 +612,25 @@ public class EventsFacade extends AbstractIsaacFacade {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
+            RegisteredUserDTO userOwningBooking = null;
 
-            if (!userLoggedIn.getId().equals(userId) && !isUserStaff(userManager, request) ) {
+            if (null == userId) {
+                userOwningBooking = userLoggedIn;
+            } else {
+                userOwningBooking = this.userManager.getUserDTOById(userId);
+            }
+
+            // if the user id is null then it means they are changing their own booking.
+            if (userId != null && !isUserStaff(userManager, request) ) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
                     .toResponse();
             }
 
-            if (!bookingManager.isUserBooked(eventId, userId)) {
+            if (!bookingManager.hasBookingWithStatus(eventId, userOwningBooking.getId(), BookingStatus.WAITING_LIST) && !bookingManager.hasBookingWithStatus(eventId, userOwningBooking.getId(), BookingStatus.CONFIRMED)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
-            bookingManager.cancelBooking(event, userLoggedIn);
+            bookingManager.cancelBooking(event, userOwningBooking);
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -614,6 +643,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                 .toResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
         }
     }
 
@@ -642,7 +673,8 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            if (!bookingManager.isUserBooked(eventId, userId)) {
+            if (!bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.WAITING_LIST) && !bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.CONFIRMED)
+                && !bookingManager.hasBookingWithStatus(eventId, userId, BookingStatus.CANCELLED)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "User is not booked on this event.").toResponse();
             }
 
@@ -682,7 +714,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             try {
                 RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
-                page.setUserBooked(this.bookingManager.isUserBooked(id, user.getId()));
+
+                Boolean userBooked = this.bookingManager.isUserBooked(id, user.getId());
+                page.setUserBooked(userBooked);
+                page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(id, user.getId(), BookingStatus.WAITING_LIST));
             } catch (NoUserLoggedInException e) {
                 // no action as we don't require the user to be logged in.
                 page.setUserBooked(null);
