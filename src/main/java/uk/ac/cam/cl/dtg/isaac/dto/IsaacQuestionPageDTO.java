@@ -33,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonContentType("isaacQuestionPage")
 public class IsaacQuestionPageDTO extends SeguePageDTO {
     protected Float passMark;
+    protected String supersededBy;
 
     @JsonCreator
     public IsaacQuestionPageDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
@@ -43,12 +44,14 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
             @JsonProperty("value") String value, @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("published") Boolean published, @JsonProperty("tags") Set<String> tags,
-            @JsonProperty("level") Integer level, @JsonProperty("passMark") Float passMark) {
+            @JsonProperty("level") Integer level, @JsonProperty("passMark") Float passMark,
+            @JsonProperty("supersededBy") String supersededBy) {
 
         super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.passMark = passMark;
+        this.supersededBy = supersededBy;
     }
 
     /**
@@ -65,5 +68,9 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     public void setPassMark(Float passMark) {
         this.passMark = passMark;
     }
+
+    public String getSupersededBy() { return supersededBy; }
+
+    public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
 
 }

@@ -177,8 +177,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 assignments = newList;
             }
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, null);
-
             return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
         } catch (NoUserLoggedInException e) {

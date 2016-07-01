@@ -189,6 +189,7 @@ public class IsaacSymbolicValidator implements IValidator {
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
+                    req.put("description", symbolicQuestion.getId());
 
                     StringWriter sw = new StringWriter();
                     JsonGenerator g = new JsonFactory().createGenerator(sw);
@@ -209,10 +210,19 @@ public class IsaacSymbolicValidator implements IValidator {
                     HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
 
                     if (response.containsKey("error")) {
-                        log.error("Failed to check formula with symbolic checker: " + response.get("error"));
+                        if (response.containsKey("code")) {
+                            log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
+                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": "
+                                    + response.get("error"));
+                        } else {
+                            // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
+                            // problem with the submitted answer.
+                            log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
+                                    + "\" with symbolic checker: " + response.get("error"));
+                        }
                     } else {
                         if (response.get("equal").equals("true")) {
-                            matchType = MatchType.valueOf(((String)response.get("equality_type")).toUpperCase());
+                            matchType = MatchType.valueOf(((String) response.get("equality_type")).toUpperCase());
                         }
                     }
 

@@ -59,7 +59,7 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
         }
     }
 
-    private final String urlBase = "http://api.ipinfodb.com/v3/";
+    private final String urlBase = "https://api.ipinfodb.com/v3/";
     private final String urlFull = "ip-city/";
     private final String urlMinimal = "ip-country/";
     private final String apiAuthKey;
@@ -102,22 +102,26 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
      * @param url
      *            - fully qualified api request url.
      * @return the json response as a string.
-     * @throws IOException
+     * @throws LocationServerException
      *             - if there is an error contacting the server.
      */
-    private String resolveFromServer(final URL url) throws IOException {
-        URLConnection ipInfoDBService = url.openConnection();
-        BufferedReader in = new BufferedReader(new InputStreamReader(ipInfoDBService.getInputStream()));
-        String inputLine;
-        StringBuilder jsonResponseBuilder = new StringBuilder();
+    private String resolveFromServer(final URL url) throws LocationServerException {
+        try {
+            URLConnection ipInfoDBService = url.openConnection();
+            BufferedReader in = new BufferedReader(new InputStreamReader(ipInfoDBService.getInputStream()));
+            String inputLine;
+            StringBuilder jsonResponseBuilder = new StringBuilder();
 
-        while ((inputLine = in.readLine()) != null) {
-            jsonResponseBuilder.append(inputLine);
+            while ((inputLine = in.readLine()) != null) {
+                jsonResponseBuilder.append(inputLine);
+            }
+
+            in.close();
+
+            return jsonResponseBuilder.toString();
+        } catch (java.io.IOException e) {
+            throw new LocationServerException(e.getMessage());
         }
-
-        in.close();
-
-        return jsonResponseBuilder.toString();
     }
 
     /**
