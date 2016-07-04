@@ -76,6 +76,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         // There's no useful feedback we can give at this point.
 
-        return new QuestionValidationResponse(symbolicQuestion.getId(), answer, false, new Content("Chemical formulae cannot yet be marked"), new Date());
+        return new QuestionValidationResponse(symbolicQuestion.getId(), answer, false, new Content("Chemical formulae ("
+                + submittedFormula.getMhchemExpression() + ") cannot yet be marked"), new Date());
     }
 }
