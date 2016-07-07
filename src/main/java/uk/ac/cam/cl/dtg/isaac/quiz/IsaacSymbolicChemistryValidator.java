@@ -82,6 +82,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         MatchType responseMatchType = MatchType.NONE;   // The match type we found
         boolean responseCorrect = false;                // Whether we're right or wrong
 
+        boolean allTypeMismatch = true;                 // Whether type of answer matches one of the correct answers
+        boolean containsError = false;                  // Whether answer contains any error terms.
+        boolean isEquation = false;
+        boolean isBalanced = false;
+
         // STEP 0: Do we even have any answers for this question? Always do this check, because we know we
         //         won't have feedback yet.
 
@@ -140,7 +145,6 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             ChemicalFormula closestMatch = null;
             HashMap<String, Object> closestResponse = null;
             IsaacSymbolicChemistryValidator.MatchType closestMatchType = IsaacSymbolicChemistryValidator.MatchType.NONE;
-            boolean allTypeMismatch = true, containsError = false;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
@@ -229,6 +233,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                     if (c.isCorrect())
                         allTypeMismatch = allTypeMismatch && response.get("typeMismatch").equals(true);
+
+                    if (!isEquation && response.get("typeMismatch").equals(false) && response.get("expectedType").equals("equation")) {
+                        isEquation = true;
+                        isBalanced = response.get("isBalanced").equals(true);
+                    }
 
 
                     if (response.containsKey("error")) {
@@ -340,29 +349,30 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     if (closestMatch.isCorrect()) {
 
                         // Weak match to a correct answer: Give suitable advices to user.
-                        String contentString = "Your answer is close to the correct answer.\n";
-
-                        // Equation-only checks: Check if input is balanced, and arrow used is correct.
-                        if (closestResponse.get("expectedType").equals("equation")) {
-                            if (closestResponse.get("balancedAtoms").equals(false))
-                                contentString += "Atom counts are not balanced in equation.\n";
-
-                            if (closestResponse.get("balancedCharge").equals(false))
-                                contentString += "Charges are not balanced in equation.\n";
-
-                            if (closestResponse.get("sameArrow").equals(false))
-                                contentString += "The equation has wrong arrow.\n";
-                        }
+                        String contentString = "Your answer is close to the correct answer.<br>";
 
                         // Normal checks: Checks if states and coefficients differ from correct answer.
                         if (closestResponse.get("sameState").equals(false))
-                            contentString += "Some term(s) have wrong state symbols.\n";
+                            contentString += "Some term(s) have wrong state symbols.<br>";
 
-                        if (closestResponse.get("sameCoefficient").equals(false))
-                            contentString += "Some term(s) have wrong coefficients.\n";
+                        else if (closestResponse.get("sameCoefficient").equals(false))
+                            contentString += "Some term(s) have wrong coefficients.<br>";
+
+                        // Equation-only checks: Check if input is balanced, and arrow used is correct.
+                        else if (closestResponse.get("expectedType").equals("equation")) {
+
+                            if (closestResponse.get("balancedAtoms").equals(false))
+                                contentString += "Atom counts are not balanced in equation.<br>";
+
+                            else if (closestResponse.get("balancedCharge").equals(false))
+                                contentString += "Charges are not balanced in equation.<br>";
+
+                            else if (closestResponse.get("sameArrow").equals(false))
+                                contentString += "The equation has wrong arrow.<br>";
+                        }
 
                         // Supply all wrong terms in user input.
-                        contentString += "Wrong terms: " + closestResponse.get("wrongTerms");
+                        contentString += "Wrong term(s): " + closestResponse.get("wrongTerms") + ".";
 
                         responseCorrect = false;
 
@@ -382,7 +392,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     responseCorrect = closestMatch.isCorrect();
                 }
 
-                if (closestMatchType.compareTo(IsaacSymbolicChemistryValidator.MatchType.WEAK0) >= 0 &&
+                if (!closestMatch.isCorrect() &&
+                        closestMatchType.compareTo(IsaacSymbolicChemistryValidator.MatchType.WEAK0) >= 0 &&
                         closestMatchType.compareTo(IsaacSymbolicChemistryValidator.MatchType.WEAK3) <= 0) {
 
                     // Inform log about the weakly equivalent choice.
@@ -391,28 +402,23 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                             + closestMatch.getMhchemExpression() + ", submitted: "
                             + submittedFormula.getMhchemExpression());
 
-                    /* TODO: Decide whether we want to add something to the explanation along the lines of "you got it
-                           right, but only numerically. */
-                }
-
-            }
-
-            // TODO STEP 4: Provide default error messages (containsError, typeMismatch, isBalanced)
-            if (feedback == null) {
-
-                if (containsError) {
-                    feedback = new Content("Your input contains error terms.");
-                } else if (allTypeMismatch) {
-                    feedback = new Content("Type of input does not match with our correct answer.");
-                } else if (1 + 1 == 2) {
-
-                } else {
-                    feedback = new Content("Something is wrong, and we cannot help you!");
+                    /* TODO: Decide whether we want to add something to the explanation along the lines of "you got it right, but only numerically. */
                 }
             }
         }
 
-
+        // STEP 4: Provide default error messages (containsError, typeMismatch, isBalanced)
+        if (feedback == null) {
+            if (containsError) {
+                feedback = new Content("Your input contains error term(s).");
+            } else if (allTypeMismatch) {
+                feedback = new Content("Type of input does not match with our correct answer.");
+            } else if (isEquation && !isBalanced) {
+                feedback = new Content("Equation inputted is not balanced.");
+            } else {
+                // Input is too wrong, and we cannot help user!
+            }
+        }
 
         return new QuestionValidationResponse(symbolicQuestion.getId(), answer, responseCorrect, feedback, new Date());
     }
