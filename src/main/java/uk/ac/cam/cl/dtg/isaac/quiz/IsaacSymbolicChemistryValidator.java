@@ -21,6 +21,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
@@ -30,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -175,9 +182,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     ObjectMapper mapper = new ObjectMapper();
 
                     HashMap<String, String> req = Maps.newHashMap();
-                    req.put("target", formulaChoice.getMhchemExpression());
+                    req.put("target", formulaChoice.getValue());
                     req.put("test", submittedFormula.getMhchemExpression());
-                    req.put("description", symbolicQuestion.getId());
+//                    req.put("description", symbolicQuestion.getId());
 
                     StringWriter sw = new StringWriter();
                     JsonGenerator g = new JsonFactory().createGenerator(sw);
@@ -186,16 +193,22 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     String requestString = sw.toString();
 
                     // TODO: Do some real checking through HTTP
-                    /*HttpClient httpClient = new DefaultHttpClient();
-                    HttpPost httpPost = new HttpPost("http://equality-checker:5000/check");
+                    HttpClient httpClient = new DefaultHttpClient();
+//                    HttpPost httpPost = new HttpPost("http://equality-checker:5000/check");
+                    // FIXME: THIS IS NOT HOW IT SHOULD BE DONE! NOT AT ALL!
+                    // But it works for debugging purposes, and that's all right for now.
+                    String params = "?test=" + URLEncoder.encode(submittedFormula.getMhchemExpression(), "UTF-8") + "&target=" + URLEncoder.encode(formulaChoice.getValue(), "UTF-8");
+                    HttpPost httpPost = new HttpPost("http://localhost:9090/check" + params);
 
-                    httpPost.setEntity(new StringEntity(requestString));
-                    httpPost.addHeader("Content-Type", "application/json");
+
+//                    httpPost.setEntity(new StringEntity(requestString));
+//                    httpPost.addHeader("Content-Type", "application/json");
 
                     HttpResponse httpResponse = httpClient.execute(httpPost);
                     HttpEntity responseEntity = httpResponse.getEntity();
-                    String responseString = EntityUtils.toString(responseEntity);*/
-                    response = new HashMap<>();
+                    String responseString = EntityUtils.toString(responseEntity);
+                    response = mapper.readValue(responseString, HashMap.class);//new HashMap<>();
+                    log.info("Response was:", response);
 
                     response.put("testString",       "H2+O2->H2O");
                     response.put("targetString",     "2H2+O2->2H2O");
@@ -223,7 +236,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                         // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
                         // problem with the submitted answer.
-                        log.warn("Problem checking formula \"" + submittedFormula.getMhchemExpression()
+                        log.warn("Problem checking formula \"" + submittedFormula.getValue()
                                 + "\" with symbolic chemistry checker: " + response.get("error"));
                         break;
 
@@ -360,7 +373,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         log.info("User submitted an answer that was close to an exact match, but not exact "
                                 + "for question " + symbolicQuestion.getId() + ". Choice: "
                                 + closestMatch.getMhchemExpression() + ", submitted: "
-                                + submittedFormula.getMhchemExpression());
+                                + submittedFormula.getValue());
                     } else {
                         // This is weak match to a wrong answer; we can't use the feedback for the choice.
                     }
@@ -378,7 +391,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     log.info("User submitted an answer that was close to to one of our choices "
                             + "for question " + symbolicQuestion.getId() + ". Choice: "
                             + closestMatch.getMhchemExpression() + ", submitted: "
-                            + submittedFormula.getMhchemExpression());
+                            + submittedFormula.getValue());
 
                     /* TODO: Decide whether we want to add something to the explanation along the lines of "you got it
                            right, but only numerically. */
