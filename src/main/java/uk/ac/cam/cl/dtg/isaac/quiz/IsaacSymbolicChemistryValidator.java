@@ -115,14 +115,14 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 ChemicalFormula formulaChoice = (ChemicalFormula) c;
 
                 // ... and that have a mhchem expression ...
-                if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
+                if (null == formulaChoice.getValue() || formulaChoice.getValue().isEmpty()) {
                     log.error("Expected python expression, but none found in choice for question id: "
                             + symbolicQuestion.getId());
                     continue;
                 }
 
                 // ... look for an exact string match to the submitted answer (lazy).
-                if (formulaChoice.getMhchemExpression().equals(submittedFormula.getMhchemExpression())) {
+                if (formulaChoice.getValue().equals(submittedFormula.getMhchemExpression())) {
                     feedback = (Content) formulaChoice.getExplanation();
                     responseMatchType = IsaacSymbolicChemistryValidator.MatchType.EXACT;
                     responseCorrect = formulaChoice.isCorrect();
@@ -166,7 +166,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 ChemicalFormula formulaChoice = (ChemicalFormula) c;
 
                 // ... and that have a mhchem expression ...
-                if (null == formulaChoice.getMhchemExpression() || formulaChoice.getMhchemExpression().isEmpty()) {
+                if (null == formulaChoice.getValue() || formulaChoice.getValue().isEmpty()) {
                     // Don't need to log this - it will have been logged above.
                     continue;
                 }
@@ -208,25 +208,24 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     HttpEntity responseEntity = httpResponse.getEntity();
                     String responseString = EntityUtils.toString(responseEntity);
                     response = mapper.readValue(responseString, HashMap.class);//new HashMap<>();
-                    log.info("Response was:", response);
 
-                    response.put("testString",       "H2+O2->H2O");
-                    response.put("targetString",     "2H2+O2->2H2O");
-                    response.put("test",             "H2 + O2 -> H2O");
-                    response.put("target",           "2H2 + O2 -> 2H2O");
-                    response.put("error",            false);
-                    response.put("equal",            false);
-                    response.put("typeMismatch",     false);
-                    response.put("expectedType",     "equation");
-                    response.put("receivedType",     "equation");
-                    response.put("weaklyEquivalent", true);
-                    response.put("sameCoefficient",  false);
-                    response.put("sameState",        true);
-                    response.put("sameArrow",        true);
-                    response.put("isBalanced",       false);
-                    response.put("balancedAtoms",    false);
-                    response.put("balancedCharge",   true);
-                    response.put("wrongTerms", "[ \"H2\", \"H2O\" ]");
+//                    response.put("testString",       "H2+O2->H2O");
+//                    response.put("targetString",     "2H2+O2->2H2O");
+//                    response.put("test",             "H2 + O2 -> H2O");
+//                    response.put("target",           "2H2 + O2 -> 2H2O");
+//                    response.put("error",            false);
+//                    response.put("equal",            false);
+//                    response.put("typeMismatch",     false);
+//                    response.put("expectedType",     "equation");
+//                    response.put("receivedType",     "equation");
+//                    response.put("weaklyEquivalent", true);
+//                    response.put("sameCoefficient",  false);
+//                    response.put("sameState",        true);
+//                    response.put("sameArrow",        true);
+//                    response.put("isBalanced",       false);
+//                    response.put("balancedAtoms",    false);
+//                    response.put("balancedCharge",   true);
+//                    response.put("wrongTerms", "[ \"H2\", \"H2O\" ]");
 
                     if (c.isCorrect())
                         allTypeMismatch = allTypeMismatch && response.get("typeMismatch").equals(true);
@@ -236,7 +235,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                         // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
                         // problem with the submitted answer.
-                        log.warn("Problem checking formula \"" + submittedFormula.getValue()
+                        log.warn("Problem checking formula \"" + submittedFormula.getMhchemExpression()
                                 + "\" with symbolic chemistry checker: " + response.get("error"));
                         break;
 
@@ -344,8 +343,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         String contentString = "Your answer is close to the correct answer.\n";
 
                         // Equation-only checks: Check if input is balanced, and arrow used is correct.
-                        if (closestResponse.get("expectedType").equals("equation"))
-                        {
+                        if (closestResponse.get("expectedType").equals("equation")) {
                             if (closestResponse.get("balancedAtoms").equals(false))
                                 contentString += "Atom counts are not balanced in equation.\n";
 
@@ -373,7 +371,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         log.info("User submitted an answer that was close to an exact match, but not exact "
                                 + "for question " + symbolicQuestion.getId() + ". Choice: "
                                 + closestMatch.getMhchemExpression() + ", submitted: "
-                                + submittedFormula.getValue());
+                                + submittedFormula.getMhchemExpression());
                     } else {
                         // This is weak match to a wrong answer; we can't use the feedback for the choice.
                     }
@@ -391,7 +389,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     log.info("User submitted an answer that was close to to one of our choices "
                             + "for question " + symbolicQuestion.getId() + ". Choice: "
                             + closestMatch.getMhchemExpression() + ", submitted: "
-                            + submittedFormula.getValue());
+                            + submittedFormula.getMhchemExpression());
 
                     /* TODO: Decide whether we want to add something to the explanation along the lines of "you got it
                            right, but only numerically. */
@@ -402,20 +400,13 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             // TODO STEP 4: Provide default error messages (containsError, typeMismatch, isBalanced)
             if (feedback == null) {
 
-                if (containsError)
-                {
+                if (containsError) {
                     feedback = new Content("Your input contains error terms.");
-                }
-                else if (allTypeMismatch)
-                {
+                } else if (allTypeMismatch) {
                     feedback = new Content("Type of input does not match with our correct answer.");
-                }
-                else if (1 + 1 == 2)
-                {
+                } else if (1 + 1 == 2) {
 
-                }
-                else
-                {
+                } else {
                     feedback = new Content("Something is wrong, and we cannot help you!");
                 }
             }
