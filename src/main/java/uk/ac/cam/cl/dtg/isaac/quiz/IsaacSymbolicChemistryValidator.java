@@ -133,6 +133,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
             ChemicalFormula closestMatch = null;
             HashMap<String, Object> closestResponse = null;
             IsaacSymbolicChemistryValidator.MatchType closestMatchType = IsaacSymbolicChemistryValidator.MatchType.NONE;
+            boolean allTypeMismatch = true, containsError = false;
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
             List<Choice> orderedChoices = Lists.newArrayList(symbolicQuestion.getChoices());
@@ -214,7 +215,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     response.put("balancedCharge",   true);
                     response.put("wrongTerms", "[ \"H2\", \"H2O\" ]");
 
-                    if (response.get("error").equals(true)) {
+                    if (c.isCorrect())
+                        allTypeMismatch = allTypeMismatch && response.get("typeMismatch").equals(true);
+
+
+                    if (response.containsKey("error")) {
 
                         // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
                         // problem with the submitted answer.
@@ -222,28 +227,18 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                                 + "\" with symbolic chemistry checker: " + response.get("error"));
                         break;
 
-                    } else if (response.get("equal").equals(true)) {
+                    } else if (response.get("containsError").equals(true)) {
+
+                        // Contains error term in expression: Cannot be matched with any terms.
+                        containsError = true;
+                        break;
+
+                    }
+                    else if (response.get("equal").equals(true)) {
 
                         matchType = MatchType.EXACT;
 
-                    } else if (response.get("typeMismatch").equals(true)) {
-
-                        // Choice is not a good match: Skip to next choice.
-                        continue;
-
                     } else if (response.get("expectedType").equals("equation")) {
-
-                        // Response & Answer have type Equation.
-                        if (response.get("isBalanced").equals(false)) {
-
-                            if (response.get("balancedAtoms").equals(false))
-                                feedback = new Content("Atoms are unbalanced in equation!");
-                            else
-                                feedback = new Content("Charges are unbalanced in equation!");
-
-                            break; // user input has unbalanced equation: better stop comparing.
-
-                        }
 
                         if (response.get("weaklyEquivalent").equals(false)) {
 
@@ -303,7 +298,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                 } else if (matchType.compareTo(closestMatchType) > 0) {
 
-                    // Found a partial match, with matchType > current closest matchType.
+                    // Found a better partial match than current match.
 
                     if (formulaChoice.isCorrect() || closestMatch == null) {
 
@@ -335,15 +330,25 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Weak match to a correct answer: Give suitable advices to user.
                         String contentString = "Your answer is close to the correct answer.\n";
 
-                        if (closestResponse.get("sameState").equals("false"))
+                        // Equation-only checks: Check if input is balanced, and arrow used is correct.
+                        if (closestResponse.get("expectedType").equals("equation"))
+                        {
+                            if (closestResponse.get("balancedAtoms").equals(false))
+                                contentString += "Atom counts are not balanced in equation.\n";
+
+                            if (closestResponse.get("balancedCharge").equals(false))
+                                contentString += "Charges are not balanced in equation.\n";
+
+                            if (closestResponse.get("sameArrow").equals(false))
+                                contentString += "The equation has wrong arrow.\n";
+                        }
+
+                        // Normal checks: Checks if states and coefficients differ from correct answer.
+                        if (closestResponse.get("sameState").equals(false))
                             contentString += "Some term(s) have wrong state symbols.\n";
 
-                        if (closestResponse.get("sameCoefficient").equals("false"))
+                        if (closestResponse.get("sameCoefficient").equals(false))
                             contentString += "Some term(s) have wrong coefficients.\n";
-
-                        if (closestResponse.get("expectedType").equals("equation") &&
-                                closestResponse.get("sameArrow").equals("false"))
-                            contentString += "The equation has wrong arrow.\n";
 
                         // Supply all wrong terms in user input.
                         contentString += "Wrong terms: " + closestResponse.get("wrongTerms");
@@ -380,9 +385,30 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 }
 
             }
+
+            // TODO STEP 4: Provide default error messages (containsError, typeMismatch, isBalanced)
+            if (feedback == null) {
+
+                if (containsError)
+                {
+                    feedback = new Content("Your input contains error terms.");
+                }
+                else if (allTypeMismatch)
+                {
+                    feedback = new Content("Type of input does not match with our correct answer.");
+                }
+                else if (1 + 1 == 2)
+                {
+
+                }
+                else
+                {
+                    feedback = new Content("Something is wrong, and we cannot help you!");
+                }
+            }
         }
 
-        // There's no useful feedback we can give at this point.
+
 
         return new QuestionValidationResponse(symbolicQuestion.getId(), answer, responseCorrect, feedback, new Date());
     }
