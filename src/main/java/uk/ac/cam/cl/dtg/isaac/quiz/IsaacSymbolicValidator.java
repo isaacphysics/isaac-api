@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 /**
  * Validator that only provides functionality to validate symbolic questions.
@@ -60,7 +61,8 @@ public class IsaacSymbolicValidator implements IValidator {
     }
 
     @Override
-    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer)
+            throws ValidatorUnavailableException {
         Validate.notNull(question);
         Validate.notNull(answer);
 
@@ -228,8 +230,8 @@ public class IsaacSymbolicValidator implements IValidator {
 
                 } catch (IOException e) {
                     log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
-                    // TODO: warn the user it's not working rather than just say Incorrect
-                    break;
+                    throw new ValidatorUnavailableException("We are having problems marking Symbolic Questions."
+                            + " Please try again later!");
                 }
 
                 if (matchType == MatchType.EXACT) {
