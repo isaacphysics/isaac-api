@@ -20,19 +20,4 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 @DTOMapping(ChemicalFormulaDTO.class)
 @JsonContentType("chemicalFormula")
 public class ChemicalFormula extends Choice {
-    private String mhchemExpression;
-
-    /**
-     * @return the mhchemExpression
-     */
-    public String getMhchemExpression() {
-        return mhchemExpression;
-    }
-
-    /**
-     * @param mhchemExpression the pythonExpression to set
-     */
-    public void setMhchemExpression(final String mhchemExpression) {
-        this.mhchemExpression = mhchemExpression;
-    }
 }

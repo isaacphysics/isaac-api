@@ -99,7 +99,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         // STEP 1: Did they provide an answer?
 
-        if (null == feedback && (null == submittedFormula.getMhchemExpression() || submittedFormula.getMhchemExpression().isEmpty())) {
+        if (null == feedback && (null == submittedFormula.getValue() || submittedFormula.getValue().isEmpty())) {
             feedback = new Content("You did not provide an answer");
         }
 
@@ -127,7 +127,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 }
 
                 // ... look for an exact string match to the submitted answer (lazy).
-                if (formulaChoice.getValue().equals(submittedFormula.getMhchemExpression())) {
+                if (formulaChoice.getValue().equals(submittedFormula.getValue())) {
                     feedback = (Content) formulaChoice.getExplanation();
                     responseMatchType = IsaacSymbolicChemistryValidator.MatchType.EXACT;
                     responseCorrect = formulaChoice.isCorrect();
@@ -187,7 +187,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getValue());
-                    req.put("test", submittedFormula.getMhchemExpression());
+                    req.put("test", submittedFormula.getValue());
 //                    req.put("description", symbolicQuestion.getId());
 
                     StringWriter sw = new StringWriter();
@@ -201,7 +201,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 //                    HttpPost httpPost = new HttpPost("http://equality-checker:5000/check");
                     // FIXME: THIS IS NOT HOW IT SHOULD BE DONE! NOT AT ALL!
                     // But it works for debugging purposes, and that's all right for now.
-                    String params = "?test=" + URLEncoder.encode(submittedFormula.getMhchemExpression(), "UTF-8") + "&target=" + URLEncoder.encode(formulaChoice.getValue(), "UTF-8");
+                    String params = "?test=" + URLEncoder.encode(submittedFormula.getValue(), "UTF-8") + "&target=" + URLEncoder.encode(formulaChoice.getValue(), "UTF-8");
                     HttpPost httpPost = new HttpPost("http://localhost:9090/check" + params);
 
 
@@ -244,7 +244,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                         // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
                         // problem with the submitted answer.
-                        log.warn("Problem checking formula \"" + submittedFormula.getMhchemExpression()
+                        log.warn("Problem checking formula \"" + submittedFormula.getValue()
                                 + "\" with symbolic chemistry checker: " + response.get("error"));
                         break;
 
@@ -351,15 +351,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Weak match to a correct answer: Give suitable advices to user.
                         String contentString = "Your answer is close to the correct answer.<br>";
 
-                        // Normal checks: Checks if states and coefficients differ from correct answer.
-                        if (closestResponse.get("sameState").equals(false))
-                            contentString += "Some term(s) have wrong state symbols.<br>";
-
-                        else if (closestResponse.get("sameCoefficient").equals(false))
-                            contentString += "Some term(s) have wrong coefficients.<br>";
-
-                        // Equation-only checks: Check if input is balanced, and arrow used is correct.
-                        else if (closestResponse.get("expectedType").equals("equation")) {
+                        // Equation-only checks: Check if input is balanced.
+                        if (closestResponse.get("expectedType").equals("equation") && closestResponse.get("isBalanced").equals(false) ) {
 
                             if (closestResponse.get("balancedAtoms").equals(false))
                                 contentString += "Atom counts are not balanced in equation.<br>";
@@ -367,9 +360,20 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                             else if (closestResponse.get("balancedCharge").equals(false))
                                 contentString += "Charges are not balanced in equation.<br>";
 
-                            else if (closestResponse.get("sameArrow").equals(false))
-                                contentString += "The equation has wrong arrow.<br>";
                         }
+
+                        // Normal checks: Checks if states and coefficients differ from correct answer.
+                        else if (closestResponse.get("sameState").equals(false))
+                            contentString += "Some term(s) have wrong state symbols.<br>";
+
+                        else if (closestResponse.get("sameCoefficient").equals(false))
+                            contentString += "Some term(s) have wrong coefficients.<br>";
+
+                        // Last equation-only check: Check if arrow differ from correct answer.
+                        else if (closestResponse.get("expectedType").equals("equation") && closestResponse.get("sameArrow").equals(false))
+                            contentString += "The equation has wrong arrow.<br>";
+
+
 
                         // Supply all wrong terms in user input.
                         contentString += "Wrong term(s): " + closestResponse.get("wrongTerms") + ".";
@@ -380,8 +384,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                         log.info("User submitted an answer that was close to an exact match, but not exact "
                                 + "for question " + symbolicQuestion.getId() + ". Choice: "
-                                + closestMatch.getMhchemExpression() + ", submitted: "
-                                + submittedFormula.getMhchemExpression());
+                                + closestMatch.getValue() + ", submitted: "
+                                + submittedFormula.getValue());
                     } else {
                         // This is weak match to a wrong answer; we can't use the feedback for the choice.
                     }
@@ -399,8 +403,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     // Inform log about the weakly equivalent choice.
                     log.info("User submitted an answer that was close to to one of our choices "
                             + "for question " + symbolicQuestion.getId() + ". Choice: "
-                            + closestMatch.getMhchemExpression() + ", submitted: "
-                            + submittedFormula.getMhchemExpression());
+                            + closestMatch.getValue() + ", submitted: "
+                            + submittedFormula.getValue());
 
                     /* TODO: Decide whether we want to add something to the explanation along the lines of "you got it right, but only numerically. */
                 }
