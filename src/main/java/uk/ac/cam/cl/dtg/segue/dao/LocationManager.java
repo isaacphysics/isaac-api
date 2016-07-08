@@ -139,7 +139,7 @@ public class LocationManager implements IPLocationResolver {
             log.debug("Location Cache currently has " + locationCache.size() + " ip addresses");
 
         } catch (LocationServerException e) {
-            log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e);
+            log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e.getMessage());
         }
     }
 

@@ -220,7 +220,7 @@ public class IsaacSymbolicValidator implements IValidator {
                             // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
                             // problem with the submitted answer.
                             log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
-                                    + "\" with symbolic checker: " + response.get("error"));
+                                    + "\" for (" + symbolicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
                         }
                     } else {
                         if (response.get("equal").equals("true")) {
