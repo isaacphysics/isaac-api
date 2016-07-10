@@ -465,8 +465,11 @@ public class EventBookingManager {
      */
     public boolean hasBookingWithStatus(final String eventId, final Long userId, final BookingStatus bookingStatus) throws SegueDatabaseException {
         try {
-            Boolean result = bookingStatus.equals(this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId).getBookingStatus());
-            return result;
+            EventBookingDTO eb = this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
+            if (null == eb) {
+                return false;
+            }
+            return bookingStatus.equals(eb.getBookingStatus());
         } catch (ResourceNotFoundException e) {
             return false;
         }
