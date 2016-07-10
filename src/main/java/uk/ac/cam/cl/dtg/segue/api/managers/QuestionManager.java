@@ -51,10 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.quiz.IMultiFieldValidator;
-import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
-import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.*;
 
 /**
  * This class is responsible for validating correct answers using the ValidatesWith annotation when it is applied on to
@@ -116,8 +113,13 @@ public class QuestionManager {
             }
             
             Choice answerFromUser = mapper.getAutoMapper().map(answers.get(0), Choice.class);
-            QuestionValidationResponse validateQuestionResponse = validator.validateQuestionResponse(question,
-                    answerFromUser);
+            QuestionValidationResponse validateQuestionResponse = null;
+            try {
+                validateQuestionResponse = validator.validateQuestionResponse(question,
+                        answerFromUser);
+            } catch (ValidatorUnavailableException e) {
+                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":" + e.getMessage());
+            }
 
             return Response.ok(
                     mapper.getAutoMapper().map(validateQuestionResponse, QuestionValidationResponseDTO.class)).build();
