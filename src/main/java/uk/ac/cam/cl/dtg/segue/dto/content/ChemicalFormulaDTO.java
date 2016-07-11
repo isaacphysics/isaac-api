@@ -17,8 +17,29 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 
 public class ChemicalFormulaDTO extends ChoiceDTO {
 
+    private String mhchemExpression;
+
     /**
      * Default constructor required for mapping.
      */
     public ChemicalFormulaDTO() {}
+
+    /**
+     * Gets the mhchem expression.
+     *
+     * @return the mhchem expression
+     */
+    public final String getMhchemExpression() {
+        return mhchemExpression;
+    }
+
+    /**
+     * Sets the mhchem expression.
+     *
+     * @param mhchemExpression
+     *            the python expression to set
+     */
+    public final void setMhchemExpression(final String mhchemExpression) {
+        this.mhchemExpression = mhchemExpression;
+    }
 }
