@@ -39,8 +39,10 @@ public class IsaacNumericValidator implements IValidator {
     private static final String DEFAULT_VALIDATION_RESPONSE = "Check your working.";
     private static final String DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE = "Check your units.";
     // Many users are getting answers wrong solely because we don't allow their (unambiguous) syntax for 10^x. Be nicer!
-    // Allow spaces either side of the times and allow * x X × and \times !
-    private static final String NUMERIC_QUESTION_PARSE_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10\\^|e)";
+    // Allow spaces either side of the times and allow * x X × and \times as multiplication!
+    // Also allow ^ or ** for powers. Allow e or E. Allow optional brackets around the powers of 10.
+    // Extract exponent as either group <exp1> or <exp2> (the other will become '').
+    private static final String NUMERIC_QUESTION_PARSE_REGEX = "[ ]?((\\*|x|X|×|\\\\times)[ ]?10(\\^|\\*\\*)|e|E)([({](?<exp1>-?[0-9]+)[)}]|(?<exp2>-?[0-9]+))";
     
     @Override
     public final QuestionValidationResponse validateQuestionResponse(
@@ -270,11 +272,11 @@ public class IsaacNumericValidator implements IValidator {
             final int significantFiguresRequired) throws NumberFormatException {
         double trustedDouble, untrustedDouble;
 
-        // Replace "x10^" with "e", allowing many common unambiguous cases!
-        String untrustedParsedValue = untrustedValue.replace("(", "").replace(")", "").replace("−", "-");;
-        untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e");
+        // Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases!
+        String untrustedParsedValue = untrustedValue.replace("−", "-");
+        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
 
-        trustedDouble = Double.parseDouble(trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e"));
+        trustedDouble = Double.parseDouble(trustedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}"));
         untrustedDouble = Double.parseDouble(untrustedParsedValue);
         
         // Round to N s.f. for trusted value
@@ -314,9 +316,9 @@ public class IsaacNumericValidator implements IValidator {
      * @return true if yes false if not.
      */
     private boolean verifyCorrectNumberofSignificantFigures(final String valueToCheck, final int significantFigures) {
-        // Replace "x10^" with "e", allowing many common unambiguous cases!
-        String untrustedParsedValue = valueToCheck.replace("(", "").replace(")", "").replace("−", "-");
-        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e");
+        // Replace "x10^(...)" with "e(...)", allowing many common unambiguous cases!
+        String untrustedParsedValue = valueToCheck.replace("−", "-");
+        untrustedParsedValue = untrustedParsedValue.replaceFirst(NUMERIC_QUESTION_PARSE_REGEX, "e${exp1}${exp2}");
 
         // check significant figures match
         BigDecimal bd = new BigDecimal(untrustedParsedValue);
