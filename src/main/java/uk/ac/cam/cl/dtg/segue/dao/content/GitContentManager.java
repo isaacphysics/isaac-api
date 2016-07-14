@@ -62,22 +62,15 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.EmailTemplate;
-import uk.ac.cam.cl.dtg.segue.dos.content.Media;
-import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
-import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
@@ -1082,24 +1075,46 @@ public class GitContentManager implements IContentManager {
             }
 
             // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
-            if (c instanceof IsaacSymbolicQuestion && c.getClass().equals(IsaacSymbolicQuestion.class)) {
-                IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) c;
-                for (String sym : q.getAvailableSymbols()) {
-                    if (sym.contains("\\")) {
-                        this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
-                                + sym + ") which contains a '\\' character.");
-                    }
-                }
-                for (Choice choice : q.getChoices()) {
-                    if (choice instanceof Formula) {
-                        Formula f = (Formula) choice;
-                        if (f.getPythonExpression().contains("\\")) {
-                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
-                                    + choice.getValue() + ") with pythonExpression which contains a '\\' character.");
+            if (c instanceof IsaacSymbolicQuestion) {
+                if (c.getClass().equals(IsaacSymbolicQuestion.class)) {
+                    IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) c;
+                    for (String sym : q.getAvailableSymbols()) {
+                        if (sym.contains("\\")) {
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
+                                    + sym + ") which contains a '\\' character.");
                         }
-                    } else {
-                        this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
-                                + choice.getValue() + "). It must be deleted and a new Formula Choice created.");
+                    }
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof Formula) {
+                            Formula f = (Formula) choice;
+                            if (f.getPythonExpression().contains("\\")) {
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with pythonExpression which contains a '\\' character.");
+                            } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with empty pythonExpression!");
+                            }
+                        } else {
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new Formula Choice created.");
+                        }
+                    }
+                } else if (c.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
+                    IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) c;
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof ChemicalFormula) {
+                            ChemicalFormula f = (ChemicalFormula) choice;
+                            if (f.getMhchemExpression().contains("\\")) {
+                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula ("
+                                        + choice.getValue() + ") with mhchemExpression which contains a '\\' character.");
+                            } else if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
+                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula ("
+                                        + choice.getValue() + ") with empty mhchemExpression!");
+                            }
+                        } else {
+                            this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.");
+                        }
                     }
                 }
             }
