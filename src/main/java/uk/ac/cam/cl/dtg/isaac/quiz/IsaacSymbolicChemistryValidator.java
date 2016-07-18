@@ -231,8 +231,6 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 //                    response.put("balancedCharge",   true);
 //                    response.put("wrongTerms", "[ \"H2\", \"H2O\" ]");
 
-                    //TODO: Validate nuclear equations as well.
-
                     if (response.containsKey("error")) {
 
                         // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
