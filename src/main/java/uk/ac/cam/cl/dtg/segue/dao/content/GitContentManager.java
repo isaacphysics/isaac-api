@@ -1104,7 +1104,7 @@ public class GitContentManager implements IContentManager {
                     for (Choice choice : q.getChoices()) {
                         if (choice instanceof ChemicalFormula) {
                             ChemicalFormula f = (ChemicalFormula) choice;
-                            if (f.getMhchemExpression().contains("\\")) {
+                            if (f.getMhchemExpression() != null && f.getMhchemExpression().contains("\\")) {
                                 this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula ("
                                         + choice.getValue() + ") with mhchemExpression which contains a '\\' character.");
                             } else if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
