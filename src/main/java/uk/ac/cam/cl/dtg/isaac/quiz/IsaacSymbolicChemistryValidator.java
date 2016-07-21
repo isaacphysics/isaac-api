@@ -60,6 +60,49 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         EXACT
     }
 
+    /**
+     * Given two formulae, where one is student answer, and another is the target mhchem string,
+     * this method generates a JSON object of them, and sends it to a back end chemistry checker
+     * for comparison. Comparison results are sent back from server as a JSON string and returned here.
+     *
+     * @param submittedFormula Formula submitted by user.
+     * @param formulaChoice Formula of one of the choice in content editor.
+     * @return The JSON string returned from the ChemicalChecker server.
+     * @throws IOException Trouble connecting to the ChemicalChecker server.
+     */
+    private String JsonPostAndGet(String submittedFormula, String formulaChoice) throws IOException
+    {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Complicated: Put formulae into a JSON object
+        HashMap<String, String> req = Maps.newHashMap();
+        req.put("target", formulaChoice);
+        req.put("test", submittedFormula);
+//      req.put("description", symbolicQuestion.getId());
+
+        StringWriter sw = new StringWriter();
+        JsonGenerator g = new JsonFactory().createGenerator(sw);
+        mapper.writeValue(g, req);
+        g.close();
+        String requestString = sw.toString();
+
+        // Do some real checking through HTTP
+        HttpClient httpClient = new DefaultHttpClient();
+
+        // THIS IS HOW IT SHOULD BE DONE!
+        HttpPost httpPost = new HttpPost("http://localhost:5000/check");
+
+        // Send JSON object across ChemistryChecker server.
+        httpPost.setEntity(new StringEntity(requestString));
+        httpPost.addHeader("Content-Type", "application/json");
+
+        // Receive JSON response from server.
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+        HttpEntity responseEntity = httpResponse.getEntity();
+
+        return EntityUtils.toString(responseEntity);
+    }
+
     @Override
     public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
         Validate.notNull(question);
@@ -191,34 +234,11 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 HashMap<String, Object> response;
 
                 try {
-                    // This is ridiculous. All I want to do is pass some JSON to a REST endpoint and get some JSON back.
+
+                    // Pass some JSON to a REST endpoint and get some JSON back.
 
                     ObjectMapper mapper = new ObjectMapper();
-
-                    HashMap<String, String> req = Maps.newHashMap();
-                    req.put("target", formulaChoice.getMhchemExpression());
-                    req.put("test", submittedFormula.getMhchemExpression());
-//                    req.put("description", symbolicQuestion.getId());
-
-                    StringWriter sw = new StringWriter();
-                    JsonGenerator g = new JsonFactory().createGenerator(sw);
-                    mapper.writeValue(g, req);
-                    g.close();
-                    String requestString = sw.toString();
-
-                    // Do some real checking through HTTP
-                    HttpClient httpClient = new DefaultHttpClient();
-
-                    // THIS IS HOW IT SHOULD BE DONE!
-                    HttpPost httpPost = new HttpPost("http://localhost:5000/check");
-
-                    // Send JSON object across ChemistryChecker server.
-                    httpPost.setEntity(new StringEntity(requestString));
-                    httpPost.addHeader("Content-Type", "application/json");
-
-                    HttpResponse httpResponse = httpClient.execute(httpPost);
-                    HttpEntity responseEntity = httpResponse.getEntity();
-                    String responseString = EntityUtils.toString(responseEntity);
+                    String responseString = JsonPostAndGet(submittedFormula.getMhchemExpression(), formulaChoice.getMhchemExpression());
                     response = mapper.readValue(responseString, HashMap.class);//new HashMap<>();
 
                     if (response.containsKey("error")) {
