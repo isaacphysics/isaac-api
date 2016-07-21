@@ -283,7 +283,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     }
 
                     // Check if equation is balanced, given that choice is of type equation.
-                    if (!balancedKnownFlag && isEquation && ((String) response.get("expectedType")).contains("equation")) {
+                    if (!balancedKnownFlag && isEquation && response.get("typeMismatch").equals(false)) {
 
                         // Check if equation (physical/chemical) is balanced.
                         isBalanced = response.get("isBalanced").equals(true);
@@ -292,7 +292,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     }
 
                     // Check if equation is valid, given that choice is of type nuclear.
-                    if (!validityKnownFlag && isNuclear && ((String) response.get("expectedType")).contains("nuclear")) {
+                    if (!validityKnownFlag && isNuclear && response.get("typeMismatch").equals(false)) {
 
                         // Check if nuclear (equation/expression) has valid atomic numbers.
                         isValid = response.get("validAtomicNumber").equals(true);
@@ -439,13 +439,13 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 feedback = new Content("Your answer is an equation but we expected an expression.");
 
             }
-            else if (isEquation && !isBalanced) {
+            else if (isEquation && balancedKnownFlag && !isBalanced) {
 
                 // Input is an unbalanced equation.
                 feedback = new Content("Your equation is unbalanced.");
 
             }
-            else if (isNuclear && !isValid) {
+            else if (isNuclear && validityKnownFlag && !isValid) {
 
                 // Input is nuclear, but atomic/mass numbers are invalid.
                 feedback = new Content("Check your atomic/mass numbers!");
