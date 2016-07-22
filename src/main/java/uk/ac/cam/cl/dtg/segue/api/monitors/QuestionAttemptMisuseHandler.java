@@ -73,16 +73,17 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     public void executeHardThresholdAction(String message) {
         final String subject = "HARD Threshold limit reached for QuestionAttemptMisuseHandler";
 
-        EmailCommunicationMessage e = new EmailCommunicationMessage(null,
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null, null);
-
-        try {
-            emailManager.addSystemEmailToQueue(e);
-        } catch (SegueDatabaseException e1) {
-            log.error("Database access error when attempting to send hard threshold limit warnings: "
-                    + e1.getMessage());
-        }
+        // No more emails. I think we don't need these any more!
+//        EmailCommunicationMessage e = new EmailCommunicationMessage(null,
+//                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
+//                null, null);
+//
+//        try {
+//            emailManager.addSystemEmailToQueue(e);
+//        } catch (SegueDatabaseException e1) {
+//            log.error("Database access error when attempting to send hard threshold limit warnings: "
+//                    + e1.getMessage());
+//        }
         log.warn("Hard threshold limit reached for QuestionAttemptMisuseHandler: " + message);
     }
 }
