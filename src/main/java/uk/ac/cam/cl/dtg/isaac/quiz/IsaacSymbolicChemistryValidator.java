@@ -40,7 +40,12 @@ import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
+import java.util.Comparator;
+import java.util.Date;
 
 /**
  * Validator that only provides functionality to validate symbolic chemistry questions.
@@ -51,6 +56,9 @@ import java.util.*;
 public class IsaacSymbolicChemistryValidator implements IValidator {
     private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicChemistryValidator.class);
 
+    /**
+     * Describes the level of equivalence between two mhchem expressions.
+     */
     private enum MatchType {
         NONE,
         WEAK0,
@@ -70,8 +78,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
      * @return The JSON string returned from the ChemicalChecker server.
      * @throws IOException Trouble connecting to the ChemicalChecker server.
      */
-    private String JsonPostAndGet(String submittedFormula, String formulaChoice) throws IOException
-    {
+    private String jsonPostAndGet(final String submittedFormula, final String formulaChoice) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
         // Complicated: Put formulae into a JSON object
@@ -88,8 +95,6 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         // Do some real checking through HTTP
         HttpClient httpClient = new DefaultHttpClient();
-
-        // THIS IS HOW IT SHOULD BE DONE!
         HttpPost httpPost = new HttpPost("http://localhost:5000/check");
 
         // Send JSON object across ChemistryChecker server.
@@ -110,7 +115,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         if (!(question instanceof IsaacSymbolicChemistryQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with Isaac Symbolic Chemistry Questions... (%s is not symbolic chemistry)",
+                    "This validator only works with Isaac Symbolic Chemistry Questions... "
+                            + "(%s is not symbolic chemistry)",
                     question.getId()));
         }
         
@@ -150,7 +156,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         // STEP 1: Did they provide an answer?
 
-        if (null == feedback && (null == submittedFormula.getMhchemExpression() || submittedFormula.getMhchemExpression().isEmpty())) {
+        if (null == feedback && (null == submittedFormula.getMhchemExpression()
+                || submittedFormula.getMhchemExpression().isEmpty())) {
             feedback = new Content("You did not provide an answer");
         }
 
@@ -190,7 +197,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         if (feedback == null) {
 
             // Go through all choices, keeping track of the best match we've seen so far. A symbolic match terminates
-            // this loop immediately. A numeric match may later be replaced with a symbolic match, but otherwise will suffice.
+            // this loop immediately.
 
             ChemicalFormula closestMatch = null;
             HashMap<String, Object> closestResponse = null;
@@ -204,7 +211,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
             Collections.sort(orderedChoices, new Comparator<Choice>() {
                 @Override
-                public int compare(Choice o1, Choice o2) {
+                public int compare(final Choice o1, final Choice o2) {
                     int o1Val = o1.isCorrect() ? 0 : 1;
                     int o2Val = o2.isCorrect() ? 0 : 1;
                     return o1Val - o2Val;
@@ -238,8 +245,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     // Pass some JSON to a REST endpoint and get some JSON back.
 
                     ObjectMapper mapper = new ObjectMapper();
-                    String responseString = JsonPostAndGet(submittedFormula.getMhchemExpression(), formulaChoice.getMhchemExpression());
-                    response = mapper.readValue(responseString, HashMap.class);//new HashMap<>();
+                    String responseString = jsonPostAndGet(submittedFormula.getMhchemExpression(),
+                            formulaChoice.getMhchemExpression());
+                    response = mapper.readValue(responseString, HashMap.class); //new HashMap<>();
 
                     if (response.containsKey("error")) {
 
@@ -317,12 +325,18 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Measure the 'weakness' level. (0 is the weakest)
                         int counter = 0;
 
-                        if (response.get("sameState").equals(true)) counter++;
-
-                        if (response.get("sameCoefficient").equals(true)) counter++;
-
-                        if (response.get("sameArrow").equals(true))
+                        if (response.get("sameState").equals(true)) {
                             counter++;
+                        }
+
+                        if (response.get("sameCoefficient").equals(true)) {
+                            counter++;
+                        }
+
+                        if (response.get("sameArrow").equals(true)) {
+                            counter++;
+                        }
+
 
                         matchType = MatchType.valueOf("WEAK" + counter);
 
@@ -339,9 +353,13 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Measure the 'weakness' level. (0 is the weakest)
                         int counter = 0;
 
-                        if (response.get("sameState").equals(true)) counter++;
+                        if (response.get("sameState").equals(true)) {
+                            counter++;
+                        }
 
-                        if (response.get("sameCoefficient").equals(true)) counter++;
+                        if (response.get("sameCoefficient").equals(true)) {
+                            counter++;
+                        }
 
                         matchType = MatchType.valueOf("WEAK" + counter);
 
@@ -357,17 +375,21 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                         // Measure the 'weakness' level. (0 is the weakest)
                         int counter = 0;
 
-                        if (response.get("sameCoefficient").equals(true)) counter++;
+                        if (response.get("sameCoefficient").equals(true)) {
+                            counter++;
+                        }
 
                         matchType = MatchType.valueOf("WEAK" + counter);
 
                     }
 
                 } catch (IOException e) {
-                    log.error("Failed to check formula with symbolic chemistry checker. Is the server running? Not trying again.");
+                    log.error("Failed to check formula with symbolic chemistry checker. "
+                            + "Is the server running? Not trying again.");
 
                     // warn the user it's not working rather than just say Incorrect
-                    feedback = new Content("Server for checking chemistry equations is not working. Please try again later.");
+                    feedback = new Content("Server for checking chemistry equations is not working. "
+                            + "Please try again later.");
                     break;
                 }
 
@@ -414,61 +436,52 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                 feedback = (Content) closestMatch.getExplanation();
                 responseCorrect = closestMatch.isCorrect();
 
-            }
-            else if (isNuclear && allChemistry) {
+            } else if (isNuclear && allChemistry) {
 
                 // Nuclear/Chemistry mismatch in all correct answers.
                 feedback = new Content("This question is about Chemistry.");
 
-            }
-            else if (!isNuclear && allNuclear) {
+            } else if (!isNuclear && allNuclear) {
 
                 // Nuclear/Chemistry mismatch in all correct answers.
                 feedback = new Content("This question is about Nuclear Physics.");
 
-            }
-            else if (!isEquation && allEquation) {
+            } else if (!isEquation && allEquation) {
 
                 // Equation/Expression mismatch in all correct answers.
                 feedback = new Content("Your answer is an expression but we expected an equation.");
 
-            }
-            else if (isEquation && allExpression) {
+            } else if (isEquation && allExpression) {
 
                 // Equation/Expression mismatch in all correct answers.
                 feedback = new Content("Your answer is an equation but we expected an expression.");
 
-            }
-            else if (isEquation && balancedKnownFlag && !isBalanced) {
+            } else if (isEquation && balancedKnownFlag && !isBalanced) {
 
                 // Input is an unbalanced equation.
                 feedback = new Content("Your equation is unbalanced.");
 
-            }
-            else if (isNuclear && validityKnownFlag && !isValid) {
+            } else if (isNuclear && validityKnownFlag && !isValid) {
 
                 // Input is nuclear, but atomic/mass numbers are invalid.
                 feedback = new Content("Check your atomic/mass numbers!");
 
-            }
-            else if (closestMatch != null && closestMatch.isCorrect()) {
+            } else if (closestMatch != null && closestMatch.isCorrect()) {
 
                 // Weak match to a correct answer.
 
-                if (!((String) closestResponse.get("expectedType")).contains("nuclear") &&
-                        closestResponse.get("sameState").equals(false)) {
+                if (!((String) closestResponse.get("expectedType")).contains("nuclear")
+                        && closestResponse.get("sameState").equals(false)) {
 
                     // Wrong state symbols
                     feedback = new Content("Check your state symbols!");
 
-                }
-                else if (closestResponse.get("sameCoefficient").equals(false)) {
+                } else if (closestResponse.get("sameCoefficient").equals(false)) {
 
                     // Wrong coefficients
                     feedback = new Content("Check your coefficients!");
 
-                }
-                else {
+                } else {
 
                     // Wrong arrow
                     feedback = new Content("What type of reaction is this?");
