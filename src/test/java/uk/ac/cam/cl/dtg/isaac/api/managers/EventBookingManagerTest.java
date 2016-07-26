@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.junit.Before;
@@ -21,6 +22,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
@@ -34,6 +36,7 @@ public class EventBookingManagerTest {
 	private EmailManager dummyEmailManager;
 	private UserAccountManager dummyUserManager;
 	private UserAssociationManager userAssociationManager;
+	private Map<String, String> someAdditionalInformation;
 
 	/**
 	 * Initial configuration of tests.
@@ -48,6 +51,7 @@ public class EventBookingManagerTest {
 		this.dummyUserManager = createMock(UserAccountManager.class);
 		this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
+		this.someAdditionalInformation = Maps.newHashMap();
 	}
 
 	@Test
@@ -78,14 +82,14 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
 		replay(dummyEventBookingPersistenceManager);
 
-		ebm.requestBooking(testEvent, someUser);
+		ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 	}
 
 	@Test
@@ -114,14 +118,14 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
 		replay(dummyEventBookingPersistenceManager);
 		try {
-			ebm.requestBooking(testEvent, someUser);
+			ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 			fail("Expected an EventFullException and one didn't happen.");
 		} catch (EventIsFullException e) {
 			// success !
@@ -154,14 +158,14 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
 		replay(dummyEventBookingPersistenceManager);
 		try {
-			ebm.requestBooking(testEvent, someUser);
+			ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 			fail("Expected an EventFullException and one didn't happen.");
 		} catch (EventIsFullException e) {
 			// success !
@@ -185,7 +189,7 @@ public class EventBookingManagerTest {
 
 		replay(dummyEventBookingPersistenceManager);
 		try {
-			ebm.requestBooking(testEvent, someUser);
+			ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 			fail("Expected an EventFullException and one didn't happen.");
 		} catch (EmailMustBeVerifiedException e) {
 			// success !
@@ -215,7 +219,7 @@ public class EventBookingManagerTest {
 
 		replay(dummyEventBookingPersistenceManager);
 		try {
-			ebm.requestBooking(testEvent, someUser);
+			ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 			fail("Expected an Event Expiry Exception and one didn't happen.");
 		} catch (EventDeadlineException e) {
 			// success !
@@ -255,14 +259,14 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
 		replay(dummyEventBookingPersistenceManager);
 		try {
-			ebm.requestBooking(testEvent, someUser);
+			ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 			fail("Expected an EventFullException and one didn't happen.");
 		} catch (EventIsFullException e) {
 			// success !
@@ -299,7 +303,7 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
@@ -307,7 +311,7 @@ public class EventBookingManagerTest {
 		replay(dummyEventBookingPersistenceManager);
 
 		try {
-			ebm.requestBooking(testEvent, someUser);
+			ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
 			// success
 		} catch (EventIsFullException e) {
 			fail("Expected successful booking as no waiting list bookings.");
@@ -351,7 +355,7 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), firstUserFull.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), firstUserFull.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
@@ -359,7 +363,7 @@ public class EventBookingManagerTest {
 		replay(dummyEventBookingPersistenceManager);
 
 		try {
-			ebm.requestBooking(testEvent, firstUserFull);
+			ebm.requestBooking(testEvent, firstUserFull, someAdditionalInformation);
 			// success
 		} catch (EventIsFullException e) {
 			fail("Expected successful booking as no waiting list bookings.");
@@ -405,7 +409,7 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.updateBookingStatus(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.updateBookingStatus(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
@@ -413,7 +417,7 @@ public class EventBookingManagerTest {
 		replay(dummyEventBookingPersistenceManager);
 
 		try {
-			ebm.promoteFromWaitingList(testEvent, someUser);
+			ebm.promoteFromWaitingList(testEvent, someUser, someAdditionalInformation);
 			// success
 		} catch (EventIsFullException e) {
 			fail("Expected successful booking as no waiting list bookings.");
@@ -460,7 +464,7 @@ public class EventBookingManagerTest {
 		dummyEventBookingPersistenceManager.acquireDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
 
-		expect(dummyEventBookingPersistenceManager.updateBookingStatus(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED)).andReturn(new EventBookingDTO()).atLeastOnce();
+		expect(dummyEventBookingPersistenceManager.updateBookingStatus(testEvent.getId(), someUser.getId(), BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
 
 		dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
 		expectLastCall().atLeastOnce();
@@ -468,7 +472,7 @@ public class EventBookingManagerTest {
 		replay(dummyEventBookingPersistenceManager);
 
 		try {
-			ebm.promoteFromWaitingList(testEvent, someUser);
+			ebm.promoteFromWaitingList(testEvent, someUser, someAdditionalInformation);
 			fail("Expected failure booking as no space for this event.");
 		} catch (EventIsFullException e) {
 			// success

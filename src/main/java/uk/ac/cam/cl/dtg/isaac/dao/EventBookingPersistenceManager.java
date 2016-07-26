@@ -1,7 +1,10 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +45,18 @@ public class EventBookingPersistenceManager {
      *            - for retrieving event content.
      * @param userManager
      *            - Instance of User Manager
+     * @param objectMapper
+     *            - Instance of objectmapper so we can deal with jsonb
+     * @param dtoMapper
+     *            - Instance of dtoMapper so we can deal with jsonb
      */
     @Inject
     public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
-            final ContentVersionController versionManager) {
+                                          final ContentVersionController versionManager, final ObjectMapper objectMapper, final MapperFacade dtoMapper) {
         this.database = database;
         this.userManager = userManager;
         this.versionManager = versionManager;
-        this.dao = new PgEventBookings(database);
+        this.dao = new PgEventBookings(database, objectMapper);
     }
 
     /**
@@ -97,8 +104,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus) throws SegueDatabaseException {
-        dao.updateStatus(eventId, userId, bookingStatus);
+    public EventBookingDTO updateBookingStatus(final String eventId, final Long userId, final BookingStatus bookingStatus, final Map additionalEventInformation) throws SegueDatabaseException {
+        dao.updateStatus(eventId, userId, bookingStatus, additionalEventInformation);
 
         return this.getBookingByEventIdAndUserId(eventId, userId);
     }
@@ -149,8 +156,8 @@ public class EventBookingPersistenceManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status) throws SegueDatabaseException {
-        return this.convertToDTO(dao.add(eventId, userId, status));
+    public EventBookingDTO createBooking(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException {
+        return this.convertToDTO(dao.add(eventId, userId, status, additionalInformation));
     }
 
     /**
@@ -230,6 +237,7 @@ public class EventBookingPersistenceManager {
             result.setUpdated(eb.getUpdateDate());
             result.setBookingStatus(eb.getBookingStatus());
             result.setUserBooked(user);
+            result.setAdditionalInformation(eb.getAdditionalInformation());
 
             return result;
         } catch (NoUserException e) {

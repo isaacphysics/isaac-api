@@ -230,7 +230,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * getAllEventBookings.
      * 
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param countOnly
      *            - If we only want to return a count
      * @return a list of booking objects
@@ -300,7 +300,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * Allow a staff user to promote a user from the waiting list.
      *
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event booking containing updates, must contain primary id.
      * @param userId
@@ -312,7 +312,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response promoteUserFromWaitingList(@Context final HttpServletRequest request,
-                                                     @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+                                                     @PathParam("event_id") final String eventId,
+                                                     @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
             if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
@@ -323,7 +324,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
-            return Response.ok(this.bookingManager.promoteFromWaitingList(event, userOfInterest)).build();
+            return Response.ok(this.bookingManager.promoteFromWaitingList(event, userOfInterest, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -365,7 +366,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * gets a list of event bookings based on a given event id.
      * 
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - the event of interest.
      * @return list of bookings.
@@ -397,7 +398,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * Must be a Staff user.
      * 
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event id
      * @param userId
@@ -409,7 +410,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response createBookingForGivenUser(@Context final HttpServletRequest request,
-            @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+            @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId, final Map<String, String> additionalInformation) {
         try {
             if (!isUserStaff(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
@@ -425,7 +426,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
-            return Response.ok(bookingManager.createBooking(event, bookedUser)).build();
+            return Response.ok(bookingManager.createBooking(event, bookedUser, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -453,7 +454,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * createBooking for the current user.
      *
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event id
      * @return the new booking if allowed to book.
@@ -463,7 +464,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response createBookingForMe(@Context final HttpServletRequest request,
-                                        @PathParam("event_id") final String eventId) {
+                                             @PathParam("event_id") final String eventId, final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
@@ -474,7 +475,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
-            return Response.ok(bookingManager.requestBooking(event, user)).build();
+            return Response.ok(bookingManager.requestBooking(event, user, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -512,7 +513,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * Add current user to waiting list for the given event.
      *
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event id
      * @return the new booking
@@ -522,7 +523,7 @@ public class EventsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response addMeToWaitingList(@Context final HttpServletRequest request,
-                                             @PathParam("event_id") final String eventId) {
+                                             @PathParam("event_id") final String eventId, final Map<String, String> additionalInformation) {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
@@ -533,12 +534,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
-            if (event.getPlacesAvailable() > 0 && new Date().after(event.getBookingDeadline())) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "There are spaces available on this event. Unable to add to waiting list.")
-                    .toResponse();
-            }
-
-            return Response.ok(bookingManager.requestWaitingListBooking(event, user)).build();
+            return Response.ok(bookingManager.requestWaitingListBooking(event, user, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -567,17 +563,16 @@ public class EventsFacade extends AbstractIsaacFacade {
                 .toResponse();
         } catch (EventIsNotFullException e) {
             return new SegueErrorResponse(Status.CONFLICT,
-                "There are spaces on this event. Please use the request booking endpoint to book you on to it.")
+                "There are spaces on this event and the deadline has not passed. Please use the request booking endpoint to book you on to it.")
                 .toResponse();
         }
     }
-
 
     /**
      * This function allows a user who has booked onto an event to cancel their booking.
      *
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event id
      * @return the new booking
@@ -595,7 +590,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * This function allows cancellation of a booking.
      *
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event id
      * @param userId
@@ -654,7 +649,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      * This is an admin function to allow staff to delete a booking permanently.
      *
      * @param request
-     *            - for authentication
+     *            - so we can determine if the user is logged in
      * @param eventId
      *            - event id
      * @param userId

@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 /**
  * Representation of a collection of event bookings.
@@ -37,11 +38,12 @@ public interface EventBookings {
      *            - the user id
      * @param status
      *            - the initial status of the booking.
+     * @param additionalInformation - additional information required for the event.
      * @return the newly created booking
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    EventBooking add(final String eventId, final Long userId, final BookingStatus status) throws SegueDatabaseException;
+    EventBooking add(final String eventId, final Long userId, final BookingStatus status, final Map<String,String> additionalInformation) throws SegueDatabaseException;
 
 	/**
      * updateStatus.
@@ -49,10 +51,11 @@ public interface EventBookings {
      * @param eventId - the id of the event
      * @param userId - the id of the user booked on to the event
      * @param status - the new status to change the booking to
+     * @param additionalEventInformation - additional information required for the event if null it will be unmodified.
      * @return the newly updated event booking.
      * @throws SegueDatabaseException - if the database goes wrong.
      */
-    void updateStatus(final String eventId, final Long userId, final BookingStatus status) throws SegueDatabaseException;
+    void updateStatus(final String eventId, final Long userId, final BookingStatus status, Map<String, String> additionalEventInformation) throws SegueDatabaseException;
 
     /**
      * Remove booking from the database.

@@ -15,12 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Maps;
+import org.postgresql.util.PGobject;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -38,6 +47,7 @@ public class PgEventBooking implements EventBooking {
     private BookingStatus bookingStatus;
     private Date created;
     private Date updated;
+    private Map<String, String> additionalInformation;
 
     /**
      * Partial Constructor - the remaining fields will be populated.
@@ -70,7 +80,7 @@ public class PgEventBooking implements EventBooking {
      *            - the date the booking was made.
      */
     public PgEventBooking(final PostgresSqlDb ds, final Long bookingId, final Long userId, final String eventId,
-            final BookingStatus bookingStatus, final Date created, final Date updated) {
+            final BookingStatus bookingStatus, final Date created, final Date updated, final Object additionalInformation) throws SegueDatabaseException {
         this.ds = ds;
         this.bookingId = bookingId;
         this.userId = userId;
@@ -78,6 +88,15 @@ public class PgEventBooking implements EventBooking {
         this.bookingStatus = bookingStatus;
         this.updated = updated;
         this.created = created;
+        if (additionalInformation != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                this.additionalInformation = this.convertFromJsonbToMap(additionalInformation);
+            } catch (IOException e) {
+                throw new SegueDatabaseException("Unable to convert object additionalInformation to Map.", e);
+            }
+        }
+
     }
 
     @Override
@@ -108,6 +127,15 @@ public class PgEventBooking implements EventBooking {
         return updated;
     }
 
+    @Override
+    public Map<String, String> getAdditionalInformation() {
+        return additionalInformation;
+    }
+
+    @Override
+    public void setAdditionalInformation(Map<String, String> additionalInformation) {
+        this.additionalInformation = additionalInformation;
+    }
 
     /**
      * populateBookingDetails - will attempt to populate missing details.
@@ -149,14 +177,18 @@ public class PgEventBooking implements EventBooking {
                 this.bookingStatus = BookingStatus.valueOf(results.getString("booking_status"));
                 this.created = results.getDate("created");
                 this.updated = results.getDate("updated");
+
+                Map<String, String> additionalInfoObject = this.convertFromJsonbToMap(results.getObject("additionalEventInformation"));
+
+                this.additionalInformation = additionalInfoObject;
             }
 
             if (count == 0) {
                 throw new ResourceNotFoundException("Unable to locate the Event booking you requested");
             }
 
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Unable to fully populate the Booking Details object.");
+        } catch (SQLException | IOException e) {
+            throw new SegueDatabaseException("Unable to fully populate the Booking Details object.", e);
         }
     }
 
@@ -173,4 +205,11 @@ public class PgEventBooking implements EventBooking {
         return false;
     }
 
+    private Map<String, String> convertFromJsonbToMap(Object objectToConvert) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        final String stringVersion = mapper.writeValueAsString(objectToConvert);
+        Map<String, String> iterimResult = mapper.readValue(stringVersion, HashMap.class);
+        Map<String, String> result = mapper.readValue(iterimResult.get("value"), HashMap.class);
+        return result;
+    }
 }

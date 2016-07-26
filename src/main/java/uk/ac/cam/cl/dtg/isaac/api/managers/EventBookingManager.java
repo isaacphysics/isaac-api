@@ -15,12 +15,12 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * AssignmentManager.
@@ -131,7 +132,7 @@ public class EventBookingManager {
      * @throws SegueDatabaseException
      *             - if an error occurs.
      */
-    public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
+    public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final Map<String, String> additionalEventInformation) throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already booked on to it.", event.getId(), user.getEmail()));
@@ -143,7 +144,7 @@ public class EventBookingManager {
 
             this.ensureCapacity(event, user);
 
-            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED);
+            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED, additionalEventInformation);
         } finally {
             // release lock.
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
@@ -157,6 +158,7 @@ public class EventBookingManager {
      *            - of interest
      * @param user
      *            - user to book on to the event.
+     * @param additionalEventInformation - any additional information for the event organisers (nullable)
      * @return the newly created booking.
      * @throws SegueDatabaseException - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
@@ -165,7 +167,7 @@ public class EventBookingManager {
      * @throws EventIsFullException - No space on the event
      * @throws EventDeadlineException - The deadline for booking has passed.
 	 */
-    public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
+    public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, Map<String, String> additionalEventInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
         final boolean isStudentEvent = event.getTags().contains("student");
         final boolean isTeacherEvent = event.getTags().contains("teacher");
 
@@ -175,7 +177,7 @@ public class EventBookingManager {
         if (event.getBookingDeadline() != null && now.after(event.getBookingDeadline())
             || event.getEndDate() != null && now.after(event.getEndDate())
             || event.getDate() != null && now.after(event.getDate())) {
-            throw new EventDeadlineException("The event deadline () has passed.");
+            throw new EventDeadlineException("The event deadline has passed.");
         }
 
         // check if already booked
@@ -207,9 +209,9 @@ public class EventBookingManager {
             // attempt to book them on the event
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CONFIRMED);
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED);
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED, additionalEventInformation);
             }
 
             try {
@@ -249,17 +251,16 @@ public class EventBookingManager {
      * @throws EventIsFullException - No space on the event
      * @throws EventDeadlineException - The deadline for booking has passed.
      */
-    public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventDeadlineException, EventIsNotFullException {
+    public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final Map<String, String> additionalInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventDeadlineException, EventIsNotFullException {
         final boolean isStudentEvent = event.getTags().contains("student");
         final boolean isTeacherEvent = event.getTags().contains("teacher");
 
         final Date now = new Date();
 
-        // check if the deadline has expired or not - if the end date has passed
-        if (event.getBookingDeadline() != null && now.after(event.getBookingDeadline())
-            || event.getEndDate() != null && now.after(event.getEndDate())
+        // check if if the end date has passed. Allowed to add to wait list after deadline.
+        if (event.getEndDate() != null && now.after(event.getEndDate())
             || event.getDate() != null && now.after(event.getDate())) {
-            throw new EventDeadlineException("The event deadline () has passed.");
+            throw new EventDeadlineException("The event deadline has passed.");
         }
 
         // check if already booked
@@ -285,7 +286,8 @@ public class EventBookingManager {
 
             Integer numberOfPlaces = getPlacesAvailable(event);
             if (numberOfPlaces != null) {
-                if (numberOfPlaces > 0) {
+                // check the number of places - if some available then check if the event deadline has passed. If not throw error.
+                if (numberOfPlaces > 0 && !(event.getBookingDeadline() != null && now.after(event.getBookingDeadline()))) {
                     throw new EventIsNotFullException("There are still spaces on this event. Please attempt to book on it.");
                 }
             }
@@ -295,9 +297,9 @@ public class EventBookingManager {
             // attempt to book them on the event
             if (this.hasBookingWithStatus(event.getId(),user.getId(),BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST);
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST, additionalInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.WAITING_LIST);
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.WAITING_LIST, additionalInformation);
             }
 
             try {
@@ -327,7 +329,7 @@ public class EventBookingManager {
      * @throws EventIsNotFullException
      * @throws EventBookingUpdateException
 	 */
-    public EventBookingDTO promoteFromWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
+    public EventBookingDTO promoteFromWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO, final Map<String, String> additionalInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
         this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
         final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), userDTO.getId());
@@ -348,7 +350,7 @@ public class EventBookingManager {
         // probably want to send a waiting list promotion email.
         try {
             this.emailManager.sendEventWelcomeEmailForWaitingListPromotion(userDTO, event);
-            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO.getId(), BookingStatus.CONFIRMED);
+            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO.getId(), BookingStatus.CONFIRMED, additionalInformation);
         } catch (ContentManagerException e) {
             log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), userDTO.getEmail()), e);
             throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
@@ -491,7 +493,7 @@ public class EventBookingManager {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CANCELLED);
+            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CANCELLED, null);
             this.emailManager.sendEventCancellationEmail(user, event);
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
