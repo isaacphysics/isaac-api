@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import io.swagger.annotations.Api;
 
+import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -176,8 +177,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
                 assignments = newList;
             }
-
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_MY_ASSIGNMENTS, null);
 
             return Response.ok(assignments).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false))
                     .build();
@@ -389,7 +388,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     currentlyLoggedInUser.getFamilyName()));
             
             headerBuilder.append("\n");
-            headerBuilder.append(",,");            
+            headerBuilder.append(",,");
+
+            DecimalFormat percentageFormat = new DecimalFormat("###");
             
             for (GameboardItem questionPage : gameboard.getQuestions()) {
                 int index = 0;
@@ -398,9 +399,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
                     if (question.getTitle() != null) {
-                        headerBuilder.append(questionPage.getTitle() + " - " + question.getTitle() + ",");
+                        headerBuilder.append("\"" + questionPage.getTitle() + " - " + question.getTitle() + "\",");
                     } else {
-                        headerBuilder.append(questionPage.getTitle() + " - Q" + newCharIndex + ",");
+                        headerBuilder.append("\"" + questionPage.getTitle() + " - Q" + newCharIndex + "\",");
                     }
 
                     questionIds.add(question.getId());
@@ -442,7 +443,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     }
                     
                     Double percentageCorrect = (new Double(totalCorrect) / questionIds.size()) * 100F;
-                    resultBuilder.append(percentageCorrect + ",");
+                    resultBuilder.append(percentageFormat.format(percentageCorrect) + ",");
                     
                 } else {
                     resultBuilder.append(userSummary.getFamilyName() + "," + userSummary.getGivenName() + ",");
@@ -460,7 +461,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             for (int i = 0; i < questionIds.size(); i++) {
                 Double percentageCorrect = (new Double(columnTotals[i]) / groupMembers.size()) * 100F;
-                headerBuilder.append(percentageCorrect + ",");
+                headerBuilder.append(percentageFormat.format(percentageCorrect) + ",");
             }
             headerBuilder.append("\n");
             

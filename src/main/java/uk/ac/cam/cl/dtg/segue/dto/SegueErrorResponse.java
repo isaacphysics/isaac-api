@@ -224,4 +224,13 @@ public class SegueErrorResponse implements Serializable {
     public static Response getResourceNotFoundResponse(final String message) {
         return new SegueErrorResponse(Status.NOT_FOUND, message).toResponse();
     }
+
+    /**
+     * @param message
+     *            - the message for the user.
+     * @return a helper function to get a service unavailable response
+     */
+    public static Response getServiceUnavailableResponse(final String message) {
+        return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE, message).toResponse();
+    }
 }

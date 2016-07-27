@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 /**
  * Validator that only provides functionality to validate symbolic questions.
@@ -60,7 +61,8 @@ public class IsaacSymbolicValidator implements IValidator {
     }
 
     @Override
-    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer)
+            throws ValidatorUnavailableException {
         Validate.notNull(question);
         Validate.notNull(answer);
 
@@ -127,9 +129,9 @@ public class IsaacSymbolicValidator implements IValidator {
                     continue;
                 }
 
-                // ... look for an exact match to the submitted answer.
+                // ... look for an exact string match to the submitted answer.
                 if (formulaChoice.getPythonExpression().equals(submittedFormula.getPythonExpression())) {
-                    feedback = (Content)formulaChoice.getExplanation();
+                    feedback = (Content) formulaChoice.getExplanation();
                     responseMatchType = MatchType.EXACT;
                     responseCorrect = formulaChoice.isCorrect();
                 }
@@ -189,6 +191,7 @@ public class IsaacSymbolicValidator implements IValidator {
                     HashMap<String, String> req = Maps.newHashMap();
                     req.put("target", formulaChoice.getPythonExpression());
                     req.put("test", submittedFormula.getPythonExpression());
+                    req.put("description", symbolicQuestion.getId());
 
                     StringWriter sw = new StringWriter();
                     JsonGenerator g = new JsonFactory().createGenerator(sw);
@@ -209,16 +212,26 @@ public class IsaacSymbolicValidator implements IValidator {
                     HashMap<String, Object> response = mapper.readValue(responseString, HashMap.class);
 
                     if (response.containsKey("error")) {
-                        log.error("Failed to check formula with symbolic checker: " + response.get("error"));
+                        if (response.containsKey("code")) {
+                            log.error("Failed to check formula \"" + submittedFormula.getPythonExpression()
+                                    + "\" against \"" + formulaChoice.getPythonExpression() + "\": "
+                                    + response.get("error"));
+                        } else {
+                            // If it doesn't contain a code, it wasn't a fatal error in the checker; probably only a
+                            // problem with the submitted answer.
+                            log.warn("Problem checking formula \"" + submittedFormula.getPythonExpression()
+                                    + "\" for (" + symbolicQuestion.getId() + ") with symbolic checker: " + response.get("error"));
+                        }
                     } else {
                         if (response.get("equal").equals("true")) {
-                            matchType = MatchType.valueOf(((String)response.get("equality_type")).toUpperCase());
+                            matchType = MatchType.valueOf(((String) response.get("equality_type")).toUpperCase());
                         }
                     }
 
                 } catch (IOException e) {
                     log.error("Failed to check formula with symbolic checker. Is the server running? Not trying again.");
-                    break;
+                    throw new ValidatorUnavailableException("We are having problems marking Symbolic Questions."
+                            + " Please try again later!");
                 }
 
                 if (matchType == MatchType.EXACT) {
@@ -245,15 +258,18 @@ public class IsaacSymbolicValidator implements IValidator {
                 // We found a decent match. Of course, it still might be wrong.
 
                 if (closestMatchType != MatchType.EXACT && closestMatch.getRequiresExactMatch()) {
-                    // We know that closestMatch is correct, or it wouldn't be the closest match. See above.
-                    feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
-                    responseCorrect = false;
-                    responseMatchType = closestMatchType;
+                    if (closestMatch.isCorrect()) {
+                        feedback = new Content("Your answer is not in the form we expected. Can you rearrange or simplify it?");
+                        responseCorrect = false;
+                        responseMatchType = closestMatchType;
 
-                    log.info("User submitted an answer that was close to an exact match, but not exact "
-                            + "for question " + symbolicQuestion.getId() + ". Choice: "
-                            + closestMatch.getPythonExpression() + ", submitted: "
-                            + submittedFormula.getPythonExpression());
+                        log.info("User submitted an answer that was close to an exact match, but not exact "
+                                + "for question " + symbolicQuestion.getId() + ". Choice: "
+                                + closestMatch.getPythonExpression() + ", submitted: "
+                                + submittedFormula.getPythonExpression());
+                    } else {
+                        // This is weak match to a wrong answer; we can't use the feedback for the choice.
+                    }
                 } else {
                     feedback = (Content) closestMatch.getExplanation();
                     responseCorrect = closestMatch.isCorrect();

@@ -41,7 +41,12 @@ public interface IValidator {
      *            - question to check against.
      * @param answer
      *            - answer from the user.
+     *
+     * @throws ValidatorUnavailableException
+     *            - If the checking server/code is not working.
+     *
      * @return a QuestionValidationResponseDTO
      */
-    QuestionValidationResponse validateQuestionResponse(Question question, Choice answer);
+    QuestionValidationResponse validateQuestionResponse(Question question, Choice answer)
+            throws ValidatorUnavailableException;
 }

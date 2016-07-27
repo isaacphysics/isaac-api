@@ -15,9 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
+import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
+import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
@@ -50,6 +52,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, QuantityDTO.class);
         } else if (source instanceof Formula) {
             return super.mapperFacade.map(source, FormulaDTO.class);
+        } else if (source instanceof ChemicalFormula) {
+            return super.mapperFacade.map(source, ChemicalFormulaDTO.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.
@@ -69,6 +73,8 @@ public class ChoiceOrikaConverter extends BidirectionalConverter<Choice, ChoiceD
             return super.mapperFacade.map(source, Quantity.class);
         } else if (source instanceof FormulaDTO) {
             return super.mapperFacade.map(source, Formula.class);
+        } else if (source instanceof ChemicalFormulaDTO) {
+            return super.mapperFacade.map(source, ChemicalFormula.class);
         } else {
             // I would have expected this to cause an infinite loop / stack
             // overflow but apparently it doesn't.

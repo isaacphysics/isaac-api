@@ -15,30 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.io.IOException;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -49,11 +40,21 @@ import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
+import java.util.List;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
 
 /**
  * Question Facade
@@ -71,6 +72,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final ContentVersionController contentVersionController;
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
+    private IMisuseMonitor misuseMonitor;
 
     /**
      * 
@@ -93,13 +95,14 @@ public class QuestionFacade extends AbstractSegueFacade {
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
             final ContentVersionController contentVersionController, final UserAccountManager userManager,
             final QuestionManager questionManager, 
-            final ILogManager logManager) {
+            final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
         this.mapper = mapper;
         this.contentVersionController = contentVersionController;
         this.userManager = userManager;
+        this.misuseMonitor = misuseMonitor;
     }
 
     /**
@@ -124,6 +127,8 @@ public class QuestionFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "No answer received.").toResponse();
         }
 
+        AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+
         Content contentBasedOnId;
         try {
             contentBasedOnId = contentVersionController.getContentManager().getContentDOById(
@@ -135,7 +140,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        Question question = null;
+        Question question;
         if (contentBasedOnId instanceof Question) {
             question = (Question) contentBasedOnId;
         } else {
@@ -172,7 +177,31 @@ public class QuestionFacade extends AbstractSegueFacade {
         try {
             response = this.questionManager.validateAnswer(question, Lists.newArrayList(answersFromClient));
 
-            AbstractSegueUserDTO currentUser = this.userManager.getCurrentUser(request);
+            // After validating the answer, work out whether this is abuse of the endpoint. If so, record the attempt in
+            // the log, but don't save it for the user. Also, return an error.
+
+            // We store response.getEntity() in either case so that we can treat them the same in later analysis.
+            if (currentUser instanceof RegisteredUserDTO) {
+                try {
+                    misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
+                            QuestionAttemptMisuseHandler.class.toString());
+                } catch (SegueResourceMisuseException e) {
+                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    String message = "You have made too many attempts at this question part. Please try again later.";
+                    return SegueErrorResponse.getRateThrottledResponse(message);
+                }
+            } else {
+                try {
+                    misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
+                            AnonQuestionAttemptMisuseHandler.class.toString());
+                } catch (SegueResourceMisuseException e) {
+                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    String message = "You have made too many attempts at this question part. Please log in or try again later.";
+                    return SegueErrorResponse.getRateThrottledResponse(message);
+                }
+            }
+
+            // If we get to this point, this is a valid question attempt. Record it.
 
             if (response.getEntity() instanceof QuestionValidationResponseDTO) {
                 questionManager.recordQuestionAttempt(currentUser,

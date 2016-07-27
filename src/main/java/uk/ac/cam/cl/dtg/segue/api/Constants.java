@@ -308,6 +308,7 @@ public final class Constants {
     public static final Integer MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES = 1000000;
     public static final String LOG_TABLE_NAME = "loggedEvents";
     public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
+    public static final String QUESTION_ATTEMPT_RATE_LIMITED = "QUESTION_ATTEMPT_RATE_LIMITED";
     public static final String MERGE_USER = "MERGE_USER";
     public static final String USER_REGISTRATION = "USER_REGISTRATION";
     public static final String LOG_OUT = "LOG_OUT";
@@ -377,6 +378,7 @@ public final class Constants {
     public static final int NUMBER_SECONDS_IN_MINUTE = 60;
     public static final int NUMBER_SECONDS_IN_FIVE_MINUTES = NUMBER_SECONDS_IN_MINUTE * 5;
     public static final int NUMBER_SECONDS_IN_TEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 10;
+    public static final int NUMBER_SECONDS_IN_FIFTEEN_MINUTES = NUMBER_SECONDS_IN_MINUTE * 15;
     public static final int NUMBER_SECONDS_IN_ONE_HOUR = NUMBER_SECONDS_IN_MINUTE * 60;
     public static final int NUMBER_SECONDS_IN_ONE_DAY = NUMBER_SECONDS_IN_ONE_HOUR * 24;
     public static final int NUMBER_SECONDS_IN_ONE_WEEK = NUMBER_SECONDS_IN_ONE_DAY * 7;

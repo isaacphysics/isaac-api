@@ -46,6 +46,8 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
@@ -423,9 +425,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the e-mail manager class.
-     * 
+     *
      * Note: This has to be a singleton because it manages all emails sent using this JVM.
-     * 
+     *
      * @param database
      * 			- the database to access preferences
      * @param properties
@@ -446,12 +448,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
-            final PropertiesLoader properties, final EmailCommunicator emailCommunicator, 
+            final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
             final AbstractEmailPreferenceManager emailPreferenceManager,
-            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator, 
+            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
         if (null == emailCommunicationQueue) {
-            emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties, 
+            emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
             				contentVersionController, logManager);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
@@ -460,9 +462,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the UserManager for various facades.
-     * 
+     *
      * Note: This has to be a a singleton as the User Manager keeps a temporary cache of anonymous users.
-     * 
+     *
      * @param database
      *            - the user persistence manager.
      * @param questionManager
@@ -497,11 +499,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return userManager;
     }
-    
+
     /**
      * QuestionManager.
      * Note: This has to be a singleton as the question manager keeps anonymous question attempts in memory.
-     * 
+     *
      * @param ds - postgres data source
      * @param objectMapper - mapper
      * @return a singleton for question persistence.
@@ -521,9 +523,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * This provides a singleton of the GroupManager.
-     * 
+     *
      * Note: This needs to be a singleton as we register observers for groups.
-     * 
+     *
      * @param userGroupDataManager
      *            - user group data manager
      * @param userManager
@@ -548,9 +550,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Get singleton of misuseMonitor.
-     * 
+     *
      * Note: this has to be a singleton as it tracks (in memory) the number of misuses.
-     * 
+     *
      * @param emailManager
      *            - so that the monitors can send e-mails.
      * @param properties
@@ -564,26 +566,32 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == misuseMonitor) {
             misuseMonitor = new InMemoryMisuseMonitor();
             log.info("Creating singleton of MisuseMonitor");
-            
+
             // TODO: We should automatically register all handlers that implement this interface using reflection?
             // register handlers segue specific handlers
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
-            
-            misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(), 
+
+            misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(),
                     new EmailVerificationMisusehandler());
-            
-            misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(), 
+
+            misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(),
                     new EmailVerificationRequestMisusehandler());
-            
-            misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(), 
+
+            misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(),
                     new PasswordResetRequestMisusehandler());
-            
-            misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(), 
+
+            misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(),
                     new SegueLoginMisuseHandler(emailManager, properties));
-            
-            misuseMonitor.registerHandler(LogEventMisuseHandler.class.toString(), 
+
+            misuseMonitor.registerHandler(LogEventMisuseHandler.class.toString(),
                     new LogEventMisuseHandler(emailManager, properties));
+
+            misuseMonitor.registerHandler(QuestionAttemptMisuseHandler.class.toString(),
+                    new QuestionAttemptMisuseHandler(emailManager, properties));
+
+            misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.toString(),
+                    new AnonQuestionAttemptMisuseHandler());
         }
 
         return misuseMonitor;
@@ -711,20 +719,20 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
     /**
      * Utility method to get a pre-generated reflections class for the uk.ac.cam.cl.dtg.segue package.
-     * 
+     *
      * @return reflections.
      */
     public static Reflections getReflectionsClass() {
         if (null == reflections) {
             log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
-            reflections = new Reflections("uk.ac.cam.cl.dtg.segue");            
+            reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
         }
         return reflections;
     }
-    
+
     /**
      * Gets the segue classes that should be registered as context listeners.
-     * 
+     *
      * @return the list of context listener classes (these should all be singletons).
      */
     public static Collection<Class<? extends ServletContextListener>> getRegisteredContextListenerClasses() {
@@ -754,7 +762,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         log.info("Segue Config Module notified of shutdown. Releasing resources");
         elasticSearchClient.close();
         elasticSearchClient = null;
-        
+
         try {
             postgresDB.close();
             postgresDB = null;

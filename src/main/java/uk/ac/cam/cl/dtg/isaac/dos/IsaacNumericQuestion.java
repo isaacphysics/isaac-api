@@ -21,6 +21,9 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * DO for isaacNumericQuestions.
  *
@@ -31,6 +34,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 public class IsaacNumericQuestion extends IsaacQuestionBase {
     private Boolean requireUnits;
     private Integer significantFigures;
+    private List<String> availableUnits;
 
     /**
      * Gets the requireUnits.
@@ -75,5 +79,16 @@ public class IsaacNumericQuestion extends IsaacQuestionBase {
      */
     public void setSignificantFigures(final Integer significantFigures) {
         this.significantFigures = significantFigures;
+    }
+
+    public final void setAvailableUnits(final List<String> availableUnits) {
+        this.availableUnits = availableUnits;
+    }
+
+    public List<String> getAvailableUnits() {
+        if (null == availableUnits) {
+            return new ArrayList<String>();
+        }
+        return availableUnits;
     }
 }

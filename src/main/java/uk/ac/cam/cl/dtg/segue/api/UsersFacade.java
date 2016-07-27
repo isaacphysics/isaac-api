@@ -262,6 +262,10 @@ public class UsersFacade extends AbstractSegueFacade {
                             ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userObject.getEmail()));
 
             return Response.ok().build();
+        } catch (NoUserException e) {
+            log.warn("Password reset requested for account that does not exist: (" + userObject.getEmail() + ")");
+            // Return OK so we don't leak account existence.
+            return Response.ok().build();
         } catch (CommunicationException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error sending reset message.", e);
@@ -275,7 +279,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error(message, e);
+            log.error(message, e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }

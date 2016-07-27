@@ -21,11 +21,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -74,6 +70,7 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
+import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -393,7 +390,7 @@ public class AdminFacade extends AbstractSegueFacade {
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
             if (emails.equals(requestingUser.getEmail())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "Abored - you cannot modify yourself.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
                         .toResponse();
             }
 
@@ -404,7 +401,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     RegisteredUserDTO user = this.userManager.getUserDTOByEmail(email);
 
                     if (null == user) {
-                        log.error(String.format("No user could be found with email (%s)"), email);
+                        log.error(String.format("No user could be found with email (%s)", email));
                         throw new NoUserException();
                     }
                 }
@@ -878,10 +875,20 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             if (null != email && !email.isEmpty()) {
+                if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                            .toResponse();
+                }
                 userPrototype.setEmail(email);
             }
 
             if (null != familyName && !familyName.isEmpty()) {
+                // Event managers aren't allowed to do short wildcard searches, but need surnames less than 4 chars too.
+                if (currentUser.getRole().equals(Role.EVENT_MANAGER) && (familyName.replaceAll("[^A-z]", "").length() < 4)
+                        && (familyName.length() != familyName.replaceAll("[^A-z]", "").length())) {
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                            .toResponse();
+                }
                 userPrototype.setFamilyName(familyName);
             }
 
@@ -901,9 +908,9 @@ public class AdminFacade extends AbstractSegueFacade {
             
             if (null != email && !email.isEmpty()) {
                 try {
-                    findUsers = Arrays.asList(this.userManager.getUserDTOByEmail(email));
+                    findUsers = Collections.singletonList(this.userManager.getUserDTOByEmail(email));
                 } catch (NoUserException e) {
-                    findUsers = Lists.newArrayList();
+                    findUsers = Collections.emptyList();
                 }
             } else {
                 findUsers = this.userManager.findUsers(userPrototype);
@@ -936,13 +943,14 @@ public class AdminFacade extends AbstractSegueFacade {
                             postCodeAndUserIds, postcode, radius);
 
                     // Make sure the list returned is users who have schools in our postcode radius
-                    findUsers.clear();
+                    List<RegisteredUserDTO> nearbyUsers = new ArrayList<>();
                     for (Long id : userIdsWithinRadius) {
                         RegisteredUserDTO user = this.userManager.getUserDTOById(id);
                         if (user != null) {
-                            findUsers.add(user);
+                            nearbyUsers.add(user);
                         }
                     }
+                    findUsers = nearbyUsers;
 
                 } catch (LocationServerException e) {
                     return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,

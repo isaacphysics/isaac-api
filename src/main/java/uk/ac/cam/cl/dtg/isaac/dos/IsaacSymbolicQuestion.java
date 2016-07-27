@@ -21,6 +21,9 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Isaac Symbolic Question DO.
  *
@@ -29,5 +32,27 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @JsonContentType("isaacSymbolicQuestion")
 @ValidatesWith(IsaacSymbolicValidator.class)
 public class IsaacSymbolicQuestion extends IsaacQuestionBase {
+    private String formulaSeed;
+    private List<String> availableSymbols;
+
+    public final String getFormulaSeed() {
+        return formulaSeed;
+    }
+
+    public void setFormulaSeed(String formulaSeed) {
+        this.formulaSeed = formulaSeed;
+    }
+
+    public final List<String> getAvailableSymbols() {
+        if (null == availableSymbols) {
+            return new ArrayList<>();
+        }
+
+        return availableSymbols;
+    }
+
+    public void setAvailableSymbols(List<String> availableSymbols) {
+        this.availableSymbols = availableSymbols;
+    }
 
 }

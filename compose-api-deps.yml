@@ -8,6 +8,10 @@ services:
       options:
         tag: equality-checker
     restart: always
+  chemistry-checker:
+    container_name: chemistry-checker
+    image: ucamcldtg/chemistry-checker
+    restart: always
   es-tracking:
     container_name: es-tracking
     image: elasticsearch:1.4

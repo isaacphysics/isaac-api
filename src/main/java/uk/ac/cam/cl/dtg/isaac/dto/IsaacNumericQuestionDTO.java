@@ -36,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
     private Boolean requireUnits;
     private Integer significantFigures;
+    private List<String> availableUnits;
 
     /**
      * Gets the requireUnits.
@@ -90,6 +91,14 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
         }
 
         return unitsToReturn;
+    }
+
+    public List<String> getAvailableUnits() {
+        return this.availableUnits;
+    }
+
+    public void setAvailableUnits(List<String> availableUnits) {
+        this.availableUnits = availableUnits;
     }
 
     /**
