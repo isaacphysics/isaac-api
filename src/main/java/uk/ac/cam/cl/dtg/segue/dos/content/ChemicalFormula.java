@@ -17,6 +17,9 @@ package uk.ac.cam.cl.dtg.segue.dos.content;
 
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 
+/**
+ * A class instance of choice, where chemical expressions are supposed to be input.
+ */
 @DTOMapping(ChemicalFormulaDTO.class)
 @JsonContentType("chemicalFormula")
 public class ChemicalFormula extends Choice {

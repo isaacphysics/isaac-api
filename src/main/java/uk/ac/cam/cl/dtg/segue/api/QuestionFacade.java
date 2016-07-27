@@ -15,29 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
-
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.io.IOException;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.elasticsearch.common.collect.Lists;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
@@ -51,7 +36,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
@@ -60,9 +44,17 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
+import java.util.List;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.QUESTION_ATTEMPT_RATE_LIMITED;
 
 /**
  * Question Facade
