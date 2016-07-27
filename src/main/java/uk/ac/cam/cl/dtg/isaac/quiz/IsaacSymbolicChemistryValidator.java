@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -58,7 +59,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
     }
 
     @Override
-    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
+    public QuestionValidationResponse validateQuestionResponse(final Question question, final Choice answer) throws ValidatorUnavailableException {
         Validate.notNull(question);
         Validate.notNull(answer);
 
@@ -332,11 +333,9 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
                     }
 
                 } catch (IOException e) {
-                    log.error("Failed to check formula with symbolic chemistry checker. Is the server running? Not trying again.");
-
-                    // warn the user it's not working rather than just say Incorrect
-                    feedback = new Content("Server for checking chemistry equations is not working. Please try again later.");
-                    break;
+                    log.error("Failed to check formula with chemistry checker. Is the server running? Not trying again.");
+                    throw new ValidatorUnavailableException("We are having problems marking Chemistry Questions."
+                            + " Please try again later!");
                 }
 
                 if (matchType == IsaacSymbolicChemistryValidator.MatchType.EXACT) {

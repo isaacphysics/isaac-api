@@ -62,17 +62,11 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.ChoiceQuestion;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.segue.dos.content.EmailTemplate;
-import uk.ac.cam.cl.dtg.segue.dos.content.Media;
-import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
-import uk.ac.cam.cl.dtg.segue.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
@@ -951,10 +945,11 @@ public class GitContentManager implements IContentManager {
 
         // Build up a set of all content (and content fragments for validation)
         for (Content c : gitCache.values()) {
-            if (c instanceof IsaacSymbolicQuestion) {
-                // do not validate these questions for now.
-                continue;
-            }
+// TODO work out why this was here and why removing it didn't seem to do anything!
+//            if (c instanceof IsaacSymbolicQuestion) {
+//                // do not validate these questions for now.
+//                continue;
+//            }
             allObjectsSeen.addAll(this.flattenContentObjects(c));
         }
 
@@ -1012,13 +1007,12 @@ public class GitContentManager implements IContentManager {
             }
             // TODO: remove reference to isaac specific types from here.
             if (c instanceof ChoiceQuestion
-                    && !(c.getType().equals("isaacQuestion") || c.getType().equals("isaacSymbolicQuestion"))) {
+                    && !(c.getType().equals("isaacQuestion"))) {
                 ChoiceQuestion question = (ChoiceQuestion) c;
 
                 if (question.getChoices() == null || question.getChoices().isEmpty()) {
                     this.registerContentProblem(sha, question,
-                            "Question: " + question.getId() + " in " + question.getCanonicalSourceFile()
-                                    + " found without any choice metadata. "
+                            "Question: " + question.getId() + " found without any choice metadata. "
                                     + "This question will always be automatically " + "marked as incorrect");
                 } else {
                     boolean correctOptionFound = false;
@@ -1030,9 +1024,8 @@ public class GitContentManager implements IContentManager {
 
                     if (!correctOptionFound) {
                         this.registerContentProblem(sha, question,
-                                "Question: " + question.getId() + " in " + question.getCanonicalSourceFile()
-                                        + " found without a correct answer. "
-                                        + "This question will always be automatically marked " + "as incorrect");
+                                "Question: " + question.getId() + " found without a correct answer. "
+                                        + "This question will always be automatically marked as incorrect");
                     }
                 }
             }
@@ -1057,6 +1050,7 @@ public class GitContentManager implements IContentManager {
                 }
             }
 
+            // TODO: the following things are all highly Isaac specific. I guess they should be elsewhere . . .
             // Find quantities with values that cannot be parsed as numbers.
             if (c instanceof IsaacNumericQuestion) {
                 IsaacNumericQuestion q = (IsaacNumericQuestion) c;
@@ -1068,17 +1062,58 @@ public class GitContentManager implements IContentManager {
                             Double.parseDouble(quantity.getValue());
                         } catch (NumberFormatException e) {
                             this.registerContentProblem(sha, c,
-                                    "Quantity (" + quantity.getValue() + ") found with value that"
-                                            + " cannot be interpreted as a number in " + c.getCanonicalSourceFile()
-                                            + ". Users will never be able to give a correct answer.");
+                                    "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
+                                            + ")  with value that cannot be interpreted as a number. "
+                                            + "Users will never be able to match this answer.");
                         }
                     } else if (q.getRequireUnits()) {
-                        this.registerContentProblem(sha, c, "Choice found (" + choice.getValue()
-                                + ") in a numeric question. This should be a quantity as required units is selected. "
-                                + c.getCanonicalSourceFile());
+                        this.registerContentProblem(sha, c, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
+                                + choice.getValue() + "). It must be deleted and a new Quantity Choice created.");
                     }
                 }
 
+            }
+
+            // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
+            if (c instanceof IsaacSymbolicQuestion) {
+                if (c.getClass().equals(IsaacSymbolicQuestion.class)) {
+                    IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) c;
+                    for (String sym : q.getAvailableSymbols()) {
+                        if (sym.contains("\\")) {
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
+                                    + sym + ") which contains a '\\' character.");
+                        }
+                    }
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof Formula) {
+                            Formula f = (Formula) choice;
+                            if (f.getPythonExpression().contains("\\")) {
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with pythonExpression which contains a '\\' character.");
+                            } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with empty pythonExpression!");
+                            }
+                        } else {
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new Formula Choice created.");
+                        }
+                    }
+                } else if (c.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
+                    IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) c;
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof ChemicalFormula) {
+                            ChemicalFormula f = (ChemicalFormula) choice;
+                            if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
+                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
+                                        + " with empty mhchemExpression!");
+                            }
+                        } else {
+                            this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.");
+                        }
+                    }
+                }
             }
         }
 
@@ -1222,7 +1257,7 @@ public class GitContentManager implements IContentManager {
             indexProblemCache.get(version).put(c, new ArrayList<String>());
         }
 
-        indexProblemCache.get(version).get(c).add(message.replace("_", "\\_"));
+        indexProblemCache.get(version).get(c).add(message);//.replace("_", "\\_"));
     }
 
     @Override
