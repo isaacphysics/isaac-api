@@ -3,10 +3,18 @@ services:
   equality-checker:
     container_name: equality-checker
     image: ucamcldtg/equality-checker
+    logging:
+      driver: journald
+      options:
+        tag: equality-checker
     restart: always
   es-tracking:
     container_name: es-tracking
     image: elasticsearch:1.4
+    environment:
+      ES_HEAP_SIZE: 2g
+      ES_MIN_MEM: 3g
+      ES_MAX_MEM: 3g
     volumes:
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     restart: always
