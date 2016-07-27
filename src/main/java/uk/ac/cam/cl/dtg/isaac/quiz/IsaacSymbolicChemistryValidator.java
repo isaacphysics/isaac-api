@@ -96,7 +96,8 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
         // Do some real checking through HTTP
         HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost("http://localhost:5000/check");
+        //TODO: factor this out into a constant along with the symbolic URL.
+        HttpPost httpPost = new HttpPost("http://chemistry-checker:5000/check");
 
         // Send JSON object across ChemistryChecker server.
         httpPost.setEntity(new StringEntity(requestString));
