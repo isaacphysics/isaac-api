@@ -63,12 +63,12 @@ public class IsaacSymbolicChemistryValidatorTest {
      */
     private IsaacSymbolicChemistryValidator prepareTest(ChemicalFormula answer, List<Choice> choices, List<String> mockJsonStrings) throws Exception {
 
-        // Mock the method JsonPostAndGet in symbolic chemistry validator.
+        // Mock the method jsonPostAndGet in symbolic chemistry validator.
         IsaacSymbolicChemistryValidator toReturn = PowerMock.createPartialMock(IsaacSymbolicChemistryValidator.class,
-                                                                                "JsonPostAndGet");
+                                                                                "jsonPostAndGet");
 
         for (int i = 0; i < choices.size(); i++)
-            PowerMock.expectPrivate(toReturn, "JsonPostAndGet", answer.getMhchemExpression(),
+            PowerMock.expectPrivate(toReturn, "jsonPostAndGet", answer.getMhchemExpression(),
                     ((ChemicalFormula) choices.get(i)).getMhchemExpression()).andReturn(mockJsonStrings.get(i));
 
         // Mock all objects now.
