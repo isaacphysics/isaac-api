@@ -279,6 +279,8 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @param level
      *            - a string value to be converted into an integer which represents the levels that must match the
      *            questions returned.
+     * @param fasttrack
+     *            - a flag to indicate whether to search isaacFasttrackQuestions or not.
      * @param startIndex
      *            - a string value to be converted into an integer which represents the start index of the results
      * @param limit
@@ -291,14 +293,20 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     public final Response getQuestionList(@Context final Request request, @QueryParam("ids") final String ids,
             @QueryParam("searchString") final String searchString, @QueryParam("tags") final String tags,
-            @QueryParam("levels") final String level,
+            @QueryParam("levels") final String level, @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         StringBuilder etagCodeBuilder = new StringBuilder();
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
-        etagCodeBuilder.append(QUESTION_TYPE);
+        if (fasttrack) {
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
+            etagCodeBuilder.append(FAST_TRACK_QUESTION_TYPE);
+        } else {
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(QUESTION_TYPE));
+            etagCodeBuilder.append(QUESTION_TYPE);
+        }
+
 
         // defaults
         int newLimit = DEFAULT_RESULTS_LIMIT;
