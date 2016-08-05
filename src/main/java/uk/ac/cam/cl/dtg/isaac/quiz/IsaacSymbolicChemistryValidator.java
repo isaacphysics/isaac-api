@@ -76,17 +76,18 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
      *
      * @param submittedFormula Formula submitted by user.
      * @param formulaChoice Formula of one of the choice in content editor.
+     * @param description A text description to show in the checker logs.
      * @return The JSON string returned from the ChemicalChecker server.
      * @throws IOException Trouble connecting to the ChemicalChecker server.
      */
-    private String jsonPostAndGet(final String submittedFormula, final String formulaChoice) throws IOException {
+    private String jsonPostAndGet(final String submittedFormula, final String formulaChoice, final String description) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
         // Complicated: Put formulae into a JSON object
         HashMap<String, String> req = Maps.newHashMap();
         req.put("target", formulaChoice);
         req.put("test", submittedFormula);
-//      req.put("description", symbolicQuestion.getId());
+        req.put("description", description);
 
         StringWriter sw = new StringWriter();
         JsonGenerator g = new JsonFactory().createGenerator(sw);
@@ -248,7 +249,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
 
                     ObjectMapper mapper = new ObjectMapper();
                     String responseString = jsonPostAndGet(submittedFormula.getMhchemExpression(),
-                            formulaChoice.getMhchemExpression());
+                            formulaChoice.getMhchemExpression(), symbolicQuestion.getId());
                     response = mapper.readValue(responseString, HashMap.class); //new HashMap<>();
 
                     if (response.containsKey("error")) {
