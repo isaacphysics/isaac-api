@@ -1,13 +1,13 @@
 package uk.ac.cam.cl.dtg.segue.dos.content;
 
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacGraphSketcherQuestionDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.GraphChoiceDTO;
 
 /**
  * A class instance of choice, where JSON strings of graphs are supposed to be input.
  *
  * Created by hhrl2 on 01/08/2016.
  */
-@DTOMapping(IsaacGraphSketcherQuestionDTO.class)
+@DTOMapping(GraphChoiceDTO.class)
 @JsonContentType("graphChoice")
 public class GraphChoice extends Choice {
 
