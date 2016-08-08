@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.HttpEntity;
@@ -25,8 +26,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Validator that only provides functionality to validate graph questions.
@@ -127,7 +127,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
         boolean responseCorrect = false;
 
 
-        /*// STEP 0: Do we even have any answers for this question? Always do this check, because we know we
+        // STEP 0: Do we even have any answers for this question? Always do this check, because we know we
         //         won't have feedback yet.
         if (null == graphQuestion.getChoices() || graphQuestion.getChoices().isEmpty()) {
             log.error("Question does not have any answers. " + question.getId() + " src: "
@@ -201,7 +201,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
 
                 }
             }
-        }*/
+        }
 
         return new QuestionValidationResponse(graphQuestion.getId(), answer, false,
                 new Content("GraphChoice cannot yet be marked"), new Date());
