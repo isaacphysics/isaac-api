@@ -18,7 +18,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacGraphSketcherQuestion;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.Graph;
+import uk.ac.cam.cl.dtg.segue.dos.content.GraphChoice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
@@ -45,7 +45,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
      * this method generates a JSON object of them, and sends it to a back end chemistry checker
      * for comparison. Comparison results are sent back from server as a JSON string and returned here.
      *
-     * @param submittedGraph Graph submitted by user.
+     * @param submittedGraph GraphChoice submitted by user.
      * @param graphChoice Formula of one of the choice in content editor.
      * @return The JSON string returned from the ChemicalChecker server.
      * @throws IOException Trouble connecting to the ChemicalChecker server.
@@ -93,28 +93,28 @@ public class IsaacGraphSketcherValidator implements IValidator {
         // If it is not, throw exceptions.
         if (!(question instanceof IsaacGraphSketcherQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with Isaac Graph Sketcher Questions... "
+                    "This validator only works with Isaac GraphChoice Sketcher Questions... "
                             + "(%s is not graph)",
                     question.getId()));
         }
 
         // Checks if answer is indeed related to graph.
         // If it is not, throw exceptions.
-        if (!(answer instanceof Graph)) {
+        if (!(answer instanceof GraphChoice)) {
             throw new IllegalArgumentException(String.format(
-                    "Expected Graph for IsaacGraphSketcherQuestion: %s. Received (%s) ", question.getId(),
+                    "Expected GraphChoice for IsaacGraphSketcherQuestion: %s. Received (%s) ", question.getId(),
                     answer.getClass()));
         }
 
         /**
-         * Graph question, in better type.
+         * GraphChoice question, in better type.
          */
         IsaacGraphSketcherQuestion graphQuestion = (IsaacGraphSketcherQuestion) question;
 
         /**
-         * Graph answer, in better type.
+         * GraphChoice answer, in better type.
          */
-        Graph submittedGraph = (Graph) answer;
+        GraphChoice submittedGraphChoice = (GraphChoice) answer;
 
         /**
          * The feedback we send the user.
@@ -137,8 +137,8 @@ public class IsaacGraphSketcherValidator implements IValidator {
         }
 
         // STEP 1: Did they provide an answer?
-        if (null == feedback && (null == submittedGraph.getGraphData()
-                || submittedGraph.getGraphData().isEmpty())) {
+        if (null == feedback && (null == submittedGraphChoice.getGraphData()
+                || submittedGraphChoice.getGraphData().isEmpty())) {
             feedback = new Content("You did not provide an answer");
         }
 
@@ -160,12 +160,12 @@ public class IsaacGraphSketcherValidator implements IValidator {
             // For all choices in this question...
             for (Choice c : orderedChoices) {
                 // ... that are of the ChemicalFormula type, ...
-                if (!(c instanceof Graph)) {
+                if (!(c instanceof GraphChoice)) {
                     // Don't need to log this - it will have been logged above.
                     continue;
                 }
 
-                Graph graphChoice = (Graph) c;
+                GraphChoice graphChoice = (GraphChoice) c;
 
                 // ... and that have graph data ...
                 if (null == graphChoice.getGraphData() || graphChoice.getGraphData().isEmpty()) {
@@ -180,7 +180,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
                 try {
 
                     ObjectMapper mapper = new ObjectMapper();
-                    String responseString = jsonPostAndGet(submittedGraph.getGraphData(),
+                    String responseString = jsonPostAndGet(submittedGraphChoice.getGraphData(),
                             graphChoice.getGraphData());
                     response = mapper.readValue(responseString, HashMap.class);
 
@@ -204,6 +204,6 @@ public class IsaacGraphSketcherValidator implements IValidator {
         }*/
 
         return new QuestionValidationResponse(graphQuestion.getId(), answer, false,
-                new Content("Graph cannot yet be marked"), new Date());
+                new Content("GraphChoice cannot yet be marked"), new Date());
     }
 }

@@ -8,11 +8,11 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacGraphSketcherQuestionDTO;
  * Created by hhrl2 on 01/08/2016.
  */
 @DTOMapping(IsaacGraphSketcherQuestionDTO.class)
-@JsonContentType("graph")
-public class Graph extends Choice {
+@JsonContentType("graphChoice")
+public class GraphChoice extends Choice {
 
     /**
-     * Graph data, in JSON string format.
+     * GraphChoice data, in JSON string format.
      */
     private String graphData;
 
