@@ -54,10 +54,10 @@ public class IsaacGraphSketcherValidator implements IValidator {
         ObjectMapper mapper = new ObjectMapper();
 
         // Complicated: Put formulae into a JSON object
-        HashMap<String, String> req = Maps.newHashMap();
+        HashMap < String, String > req = Maps.newHashMap();
         req.put("target", submittedGraph);
         req.put("test", graphChoice);
-//      req.put("description", symbolicQuestion.getId());
+        //      req.put("description", symbolicQuestion.getId());
 
         StringWriter sw = new StringWriter();
         JsonGenerator g = new JsonFactory().createGenerator(sw);
@@ -93,8 +93,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
         // If it is not, throw exceptions.
         if (!(question instanceof IsaacGraphSketcherQuestion)) {
             throw new IllegalArgumentException(String.format(
-                    "This validator only works with Isaac GraphChoice Sketcher Questions... "
-                            + "(%s is not graph)",
+                    "This validator only works with Isaac GraphChoice Sketcher Questions... " + "(%s is not graph)",
                     question.getId()));
         }
 
@@ -127,18 +126,16 @@ public class IsaacGraphSketcherValidator implements IValidator {
         boolean responseCorrect = false;
 
 
-        // STEP 0: Do we even have any answers for this question? Always do this check, because we know we
+        // STEP 0: Do we even have any answers created by the content editor for this question? Always do this check, because we know we
         //         won't have feedback yet.
         if (null == graphQuestion.getChoices() || graphQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question does not have any answers. " + question.getId() + " src: " + question.getCanonicalSourceFile());
 
             feedback = new Content("This question does not have any correct answers");
         }
 
-        // STEP 1: Did they provide an answer?
-        if (null == feedback && (null == submittedGraphChoice.getGraphData()
-                || submittedGraphChoice.getGraphData().isEmpty())) {
+        // STEP 1: Did the user provide an answer?
+        if (null == feedback && (null == submittedGraphChoice.getGraphData() || submittedGraphChoice.getGraphData().isEmpty())) {
             feedback = new Content("You did not provide an answer");
         }
 
@@ -146,9 +143,9 @@ public class IsaacGraphSketcherValidator implements IValidator {
         if (null == feedback) {
 
             // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
-            List<Choice> orderedChoices = Lists.newArrayList(graphQuestion.getChoices());
+            List < Choice > orderedChoices = Lists.newArrayList(graphQuestion.getChoices());
 
-            Collections.sort(orderedChoices, new Comparator<Choice>() {
+            Collections.sort(orderedChoices, new Comparator < Choice > () {
                 @Override
                 public int compare(final Choice o1, final Choice o2) {
                     int o1Val = o1.isCorrect() ? 0 : 1;
@@ -158,8 +155,8 @@ public class IsaacGraphSketcherValidator implements IValidator {
             });
 
             // For all choices in this question...
-            for (Choice c : orderedChoices) {
-                // ... that are of the ChemicalFormula type, ...
+            for (Choice c: orderedChoices) {
+                // ... that are of the GraphData type, ...
                 if (!(c instanceof GraphChoice)) {
                     // Don't need to log this - it will have been logged above.
                     continue;
@@ -174,7 +171,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
                 }
 
                 // ... test their answer against this choice with the graph checker.
-                HashMap<String, Object> response;
+                HashMap < String, Object > response;
 
                 // Pass some JSON to a REST endpoint and get some JSON back.
                 try {
@@ -183,27 +180,34 @@ public class IsaacGraphSketcherValidator implements IValidator {
                     String responseString = jsonPostAndGet(submittedGraphChoice.getGraphData(),
                             graphChoice.getGraphData());
                     response = mapper.readValue(responseString, HashMap.class);
-
-                    // Checks if student answer exactly matches one of the choices.
-                    if (response.get("isCorrect").equals(true)) {
-                        // Feedback <- choice's explanation.
+                    System.out.println("Response: " + response.get("errCause"));
+                    // Checks if student answer exactly matches one of the choices
+                    if (response.get("equal").equals(true)) {
+                        // If it does exactly match one of the choices (even possibly an incorrect choice),
+                        // we check if that choice is given as a correct choice by the content editor.
                         responseCorrect = graphChoice.isCorrect();
-                        feedback = (Content) graphChoice.getExplanation();
+                        feedback = (graphChoice.getExplanation() != null) ? ((Content) graphChoice.getExplanation()) : new Content(response.get("errCause").toString());
+                        System.out.println("feedback equal" + feedback);
                         break;
                     }
-
+                    else {
+                        responseCorrect = false;
+                        System.out.println(graphChoice.getExplanation());
+                        System.out.println(response.get("errCause").toString());
+                        feedback = (graphChoice.getExplanation() != null) ? (new Content(response.get("errCause").toString())) : new Content(response.get("errCause").toString());
+                        System.out.println("feedback no match " + feedback);
+                        break;
+                    }
                 } catch (IOException e) {
 
-                    log.error("Failed to check formula with chemistry checker. "
-                            + "Is the server running? Not trying again.");
-                    throw new ValidatorUnavailableException("We are having problems marking Chemistry Questions."
-                            + " Please try again later!");
+                    log.error("Failed to check formula with chemistry checker. " + "Is the server running? Not trying again.");
+                    throw new ValidatorUnavailableException("We are having problems marking Chemistry Questions." + " Please try again later!");
 
                 }
             }
         }
 
-        return new QuestionValidationResponse(graphQuestion.getId(), answer, false,
-                new Content("GraphChoice cannot yet be marked"), new Date());
+        return new QuestionValidationResponse(graphQuestion.getId(), answer, responseCorrect,
+                feedback, new Date());
     }
 }
