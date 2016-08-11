@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
+import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
 import uk.ac.cam.cl.dtg.segue.api.SegueDefaultFacade;
@@ -57,6 +58,7 @@ public class GameboardsFacadeTest {
 	private UserAccountManager userManager;
 	private UserAssociationManager userAssociationManager;
     private QuestionManager questionManager;
+	private AssignmentManager assignmentManager;
 
 	/**
 	 * Initial configuration of tests.
@@ -73,6 +75,7 @@ public class GameboardsFacadeTest {
 		this.userManager = createMock(UserAccountManager.class);
 	    this.questionManager = createMock(QuestionManager.class);
 		this.userAssociationManager = createMock(UserAssociationManager.class);
+		this.assignmentManager = createMock(AssignmentManager.class);
 	}
 
 	/**
@@ -87,7 +90,7 @@ public class GameboardsFacadeTest {
 			throws NoWildcardException, SegueDatabaseException, NoUserLoggedInException,
 			ContentManagerException {
 		GameboardsFacade gameboardFacade = new GameboardsFacade(dummyPropertiesLoader, dummyLogManager,
-				dummyGameManager, questionManager, userManager, userAssociationManager);
+				dummyGameManager, questionManager, userManager, userAssociationManager, assignmentManager);
 
 		HttpServletRequest dummyRequest = createMock(HttpServletRequest.class);
 		String subjects = "physics";

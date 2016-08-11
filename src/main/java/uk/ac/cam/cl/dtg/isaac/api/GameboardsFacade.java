@@ -20,11 +20,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import io.swagger.annotations.Api;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,10 +48,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardState;
-import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateGameboardException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidGameboardException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.NoWildcardException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.*;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
@@ -72,6 +65,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -85,36 +79,37 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     private GameManager gameManager;
     private UserAccountManager userManager;
     private UserAssociationManager associationManager;
+    private AssignmentManager assignmentManager;
 
     private static final Logger log = LoggerFactory.getLogger(GameboardsFacade.class);
     private final QuestionManager questionManager;
 
     /**
      * GamesFacade. For management of gameboards etc.
-     * 
-     * @param properties
+     *  @param properties
      *            - global properties map
      * @param logManager
      *            - for managing logs.
      * @param gameManager
-     *            - for games interaction
+ *            - for games interaction
      * @param questionManager
-     *            - for question content
+*            - for question content
      * @param userManager
-     *            - to get user details
+*            - to get user details
      * @param associationManager
-     *            - to enforce privacy policies.
+     * @param assignmentManager
      */
     @Inject
     public GameboardsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager) {
+                            final GameManager gameManager, final QuestionManager questionManager, final UserAccountManager userManager,
+                            final UserAssociationManager associationManager, final AssignmentManager assignmentManager) {
         super(properties, logManager);
 
         this.gameManager = gameManager;
         this.questionManager = questionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
+        this.assignmentManager = assignmentManager;
     }
 
     /**
@@ -667,7 +662,78 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         return Response.ok().build();
     }
+    /**
+     * Rest Endpoint that allows a user to remove multiple gameboards from their my boards page.
+     *
+     * This does not delete the gameboards from the system just removes them.
+     *
+     * @param request
+     *            - So that we can find the user information.
+     * @param gameboardIds
+     *            -
+     * @return noContent response if successful a SegueErrorResponse if not.
+     */
+    @DELETE
+    @Path("users/current_user/gameboards/delete_multiple/{gameboard_ids}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response unlinkUserFromGameboards(@Context final HttpServletRequest request,
+                                            @PathParam("gameboard_ids") final String gameboardIds) {
+        // TODO: change endpoint path to be more consistent with the gameboards facade
 
+        try {
+            RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+            Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts = questionManager
+                    .getQuestionAttemptsByUser(user);
+            List<String> gameboardIdsList = new ArrayList<>(Arrays.asList(gameboardIds.split(",")));
+            List<String> idsToDelete = new ArrayList<>();
+
+                for(String s : gameboardIdsList) {
+                    List<UserGroupDTO> groups = assignmentManager.findGroupsByGameboard(user, s);
+                    try {
+                        if(groups.size() == 0) {
+                            idsToDelete.add(s);
+                        }
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+                for(String s : idsToDelete) {
+
+                    String gameboardId = s;
+
+                    GameboardDTO gameboardDTO = this.gameManager.getGameboard(gameboardId, user, userQuestionAttempts);
+
+                    if (null == gameboardDTO) {
+                        return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the gameboard specified.")
+                                .toResponse();
+                    }
+
+                    this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
+                    getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
+                }
+
+            if(idsToDelete.size() != gameboardIdsList.size()) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "Boards assigned to groups have not been deleted.").toResponse();
+            }
+
+
+        } catch (SegueDatabaseException e) {
+            String message = "Error whilst trying to delete a gameboard.";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+                    e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        }
+        return Response.noContent().build();
+    }
     /**
      * Rest Endpoint that allows a user to remove a gameboard from their my boards page.
      * 
@@ -697,6 +763,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the gameboard specified.")
                         .toResponse();
             }
+
 
             this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
             getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
