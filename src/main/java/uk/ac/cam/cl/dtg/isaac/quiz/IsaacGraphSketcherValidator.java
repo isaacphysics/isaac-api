@@ -200,8 +200,8 @@ public class IsaacGraphSketcherValidator implements IValidator {
                     }
                 } catch (IOException e) {
 
-                    log.error("Failed to check formula with chemistry checker. " + "Is the server running? Not trying again.");
-                    throw new ValidatorUnavailableException("We are having problems marking Chemistry Questions." + " Please try again later!");
+                    log.error("Failed to check formula with graph checker. " + "Is the server running? Not trying again.");
+                    throw new ValidatorUnavailableException("We are having problems marking Graph Questions." + " Please try again later!");
 
                 }
             }
