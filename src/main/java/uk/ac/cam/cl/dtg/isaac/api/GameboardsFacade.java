@@ -713,10 +713,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
                     this.gameManager.unlinkUserToGameboard(gameboardDTO, user);
                     getLogManager().logEvent(user, request, DELETE_BOARD_FROM_PROFILE, gameboardDTO.getId());
+
                 }
 
             if(idsToDelete.size() != gameboardIdsList.size()) {
-                return new SegueErrorResponse(Status.NOT_FOUND, "Boards assigned to groups have not been deleted.").toResponse();
+                return new SegueErrorResponse(Status.NOT_FOUND, "Boards assigned to groups have not been deleted. If you wish to delete assigned boards, delete them individually.").toResponse();
             }
 
 
