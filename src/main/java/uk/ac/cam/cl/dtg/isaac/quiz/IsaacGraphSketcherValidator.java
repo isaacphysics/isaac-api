@@ -125,6 +125,8 @@ public class IsaacGraphSketcherValidator implements IValidator {
          */
         boolean responseCorrect = false;
 
+        QuestionValidationResponse bestResponse = null;
+
 
         // STEP 0: Do we even have any answers created by the content editor for this question? Always do this check, because we know we
         //         won't have feedback yet.
@@ -142,7 +144,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
         // STEP 2: Any exact match with a choice?
         if (null == feedback) {
 
-            // Sort the choices so that we match incorrect choices last, taking precedence over correct ones.
+            // Sort so that correct answers are matched first.
             List < Choice > orderedChoices = Lists.newArrayList(graphQuestion.getChoices());
 
             Collections.sort(orderedChoices, new Comparator < Choice > () {
@@ -154,23 +156,22 @@ public class IsaacGraphSketcherValidator implements IValidator {
                 }
             });
 
-            // For all choices in this question...
+            // For all possible choices in the question
             for (Choice c: orderedChoices) {
-                // ... that are of the GraphData type, ...
+
+                // of type GraphChoice
                 if (!(c instanceof GraphChoice)) {
-                    // Don't need to log this - it will have been logged above.
                     continue;
                 }
 
                 GraphChoice graphChoice = (GraphChoice) c;
 
-                // ... and that have graph data ...
+                // and that have graph data
                 if (null == graphChoice.getGraphData() || graphChoice.getGraphData().isEmpty()) {
-                    // Don't need to log this - it will have been logged above.
                     continue;
                 }
 
-                // ... test their answer against this choice with the graph checker.
+                // test the user's answer against the current choice with the graph checker.
                 HashMap < String, Object > response;
 
                 // Pass some JSON to a REST endpoint and get some JSON back.
@@ -180,34 +181,47 @@ public class IsaacGraphSketcherValidator implements IValidator {
                     String responseString = jsonPostAndGet(submittedGraphChoice.getGraphData(),
                             graphChoice.getGraphData());
                     response = mapper.readValue(responseString, HashMap.class);
-                    System.out.println("Response: " + response.get("errCause"));
-                    // Checks if student answer exactly matches one of the choices
+
+                    // Checks if student answer equals current choice
                     if (response.get("equal").equals(true)) {
                         // If it does exactly match one of the choices (even possibly an incorrect choice),
                         // we check if that choice is given as a correct choice by the content editor.
+
                         responseCorrect = graphChoice.isCorrect();
                         feedback = (graphChoice.getExplanation() != null) ? ((Content) graphChoice.getExplanation()) : new Content(response.get("errCause").toString());
-                        System.out.println("feedback equal" + feedback);
+
+                        // if the student's answer matches a choice AND is correct:
+                        if (responseCorrect) {
+                            return new QuestionValidationResponse(graphQuestion.getId(), answer, responseCorrect,
+                                    feedback, new Date());
+                        } else {
+                            bestResponse = new QuestionValidationResponse(graphQuestion.getId(), answer, responseCorrect,
+                                    feedback, new Date());
+                        }
                         break;
-                    }
-                    else {
-                        responseCorrect = false;
-                        System.out.println(graphChoice.getExplanation());
-                        System.out.println(response.get("errCause").toString());
-                        feedback = (graphChoice.getExplanation() != null) ? (new Content(response.get("errCause").toString())) : new Content(response.get("errCause").toString());
-                        System.out.println("feedback no match " + feedback);
+                    } else {
+
+                        // Since the student answer does not match a given choice, give back the checker feedback.
+                        feedback = new Content(response.get("errCause").toString());
+                        
+                        bestResponse = new QuestionValidationResponse(graphQuestion.getId(), answer, false,
+                                feedback, new Date());
                         break;
                     }
                 } catch (IOException e) {
-
                     log.error("Failed to check formula with graph checker. " + "Is the server running? Not trying again.");
                     throw new ValidatorUnavailableException("We are having problems marking Graph Questions." + " Please try again later!");
-
                 }
             }
         }
 
-        return new QuestionValidationResponse(graphQuestion.getId(), answer, responseCorrect,
-                feedback, new Date());
+        if (null == bestResponse) {
+            return new QuestionValidationResponse(graphQuestion.getId(), answer, false,
+                    null, new Date());
+
+        } else {
+            return bestResponse;
+        }
+
     }
 }
