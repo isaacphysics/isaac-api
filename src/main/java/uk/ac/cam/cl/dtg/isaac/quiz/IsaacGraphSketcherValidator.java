@@ -38,17 +38,17 @@ public class IsaacGraphSketcherValidator implements IValidator {
     /**
      * Private logger for printing error messages on console.
      */
-    private static final Logger log = LoggerFactory.getLogger(IsaacSymbolicChemistryValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(IsaacGraphSketcherValidator.class);
 
     /**
-     * Given two formulae, where one is student answer, and another is the target mhchem string,
+     * Given two graphs, where one is a student-drawn graph and another is submitted by the content editor.
      * this method generates a JSON object of them, and sends it to a back end chemistry checker
      * for comparison. Comparison results are sent back from server as a JSON string and returned here.
      *
      * @param submittedGraph GraphChoice submitted by user.
      * @param graphChoice Formula of one of the choice in content editor.
-     * @return The JSON string returned from the ChemicalChecker server.
-     * @throws IOException Trouble connecting to the ChemicalChecker server.
+     * @return The JSON string returned from the GraphChecker server.
+     * @throws IOException Trouble connecting to the GraphChecker server.
      */
     private String jsonPostAndGet(final String submittedGraph, final String graphChoice) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -70,7 +70,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
         //TODO: factor this out into a constant along with the symbolic URL.
         HttpPost httpPost = new HttpPost("http://localhost:5000/test");
 
-        // Send JSON object across ChemistryChecker server.
+        // Send JSON object across GraphChecker server.
         httpPost.setEntity(new StringEntity(requestString));
         httpPost.addHeader("Content-Type", "application/json");
 
@@ -203,7 +203,7 @@ public class IsaacGraphSketcherValidator implements IValidator {
 
                         // Since the student answer does not match a given choice, give back the checker feedback.
                         feedback = new Content(response.get("errCause").toString());
-                        
+
                         bestResponse = new QuestionValidationResponse(graphQuestion.getId(), answer, false,
                                 feedback, new Date());
                         break;
