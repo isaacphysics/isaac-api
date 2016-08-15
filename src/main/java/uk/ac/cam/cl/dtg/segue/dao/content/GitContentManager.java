@@ -15,30 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.content;
 
-import static com.google.common.collect.Maps.immutableEntry;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.annotation.Nullable;
-import javax.ws.rs.NotFoundException;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.MapMaker;
-
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
@@ -52,14 +36,6 @@ import org.elasticsearch.common.collect.ImmutableSet.Builder;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Sets;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
@@ -70,10 +46,21 @@ import uk.ac.cam.cl.dtg.segue.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
+
+import javax.annotation.Nullable;
+import javax.ws.rs.NotFoundException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.google.common.collect.Maps.immutableEntry;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -83,6 +70,7 @@ public class GitContentManager implements IContentManager {
     private static final Logger log = LoggerFactory.getLogger(GitContentManager.class);
 
     private static final String CONTENT_TYPE = "content";
+    private static final int MAX_NUMERIC_QUESTION_UNIT_COUNT = 6;
 
     private final Map<String, Map<Content, List<String>>> indexProblemCache;
     private final Map<String, Set<String>> tagsList;
@@ -114,9 +102,9 @@ public class GitContentManager implements IContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
        
-        this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
-        this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-        this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
+        this.indexProblemCache = new ConcurrentHashMap<>();
+        this.tagsList = new ConcurrentHashMap<>();
+        this.allUnits = new ConcurrentHashMap<>();
 
         this.cache = CacheBuilder.newBuilder().softValues().build();
 
@@ -143,8 +131,8 @@ public class GitContentManager implements IContentManager {
         this.searchProvider = searchProvider;
         
         this.indexProblemCache = indexProblemCache;
-        this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-        this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
+        this.tagsList = new ConcurrentHashMap<>();
+        this.allUnits = new ConcurrentHashMap<>();
 
         searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME));
     }
@@ -180,7 +168,7 @@ public class GitContentManager implements IContentManager {
             this.ensureCache(version);
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
-                    CONTENT_TYPE, Arrays.asList(id),
+                    CONTENT_TYPE, Collections.singletonList(id),
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1).getResults());
 
             if (null == searchResults || searchResults.isEmpty()) {
@@ -195,6 +183,7 @@ public class GitContentManager implements IContentManager {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public ResultsWrapper<ContentDTO> getByIdPrefix(final String version, final String idPrefix, final int startIndex,
             final int limit) throws ContentManagerException {
@@ -204,16 +193,18 @@ public class GitContentManager implements IContentManager {
             this.ensureCache(version);
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
-                    Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix, startIndex, limit);
+                    Constants.ID_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix, startIndex, limit);
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-            cache.put(k, new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
         }
 
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
-    
+
+    @SuppressWarnings("unchecked")
     @Override
     public ResultsWrapper<ContentDTO> getAllByTypeRegEx(final String version, final String regex, final int startIndex,
             final int limit) throws ContentManagerException {
@@ -225,11 +216,12 @@ public class GitContentManager implements IContentManager {
             this.ensureCache(version);
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByRegEx(version, CONTENT_TYPE,
-                    Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, regex, startIndex, limit);
+                    Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    regex, startIndex, limit);
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-            cache.put(k, new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
         }
 
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
@@ -248,7 +240,7 @@ public class GitContentManager implements IContentManager {
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-        return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
     @Override
@@ -273,7 +265,7 @@ public class GitContentManager implements IContentManager {
             final Integer startIndex, final Integer limit,
             @Nullable final Map<String, Constants.SortOrder> sortInstructions,
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
+        ResultsWrapper<ContentDTO> finalResults;
 
         this.ensureCache(version);
 
@@ -295,7 +287,7 @@ public class GitContentManager implements IContentManager {
 
         List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-        finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
 
         return finalResults;
     }
@@ -311,7 +303,7 @@ public class GitContentManager implements IContentManager {
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
             final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
             final Integer startIndex, final Integer limit, final Long randomSeed) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
+        ResultsWrapper<ContentDTO> finalResults;
 
         this.ensureCache(version);
 
@@ -329,7 +321,7 @@ public class GitContentManager implements IContentManager {
 
         List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-        finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
 
         return finalResults;
     }
@@ -342,7 +334,7 @@ public class GitContentManager implements IContentManager {
     @Override
     public final List<String> listAvailableVersions() {
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (RevCommit rc : database.listCommits()) {
             result.add(rc.getName());
         }
@@ -352,11 +344,8 @@ public class GitContentManager implements IContentManager {
     
     @Override
     public final boolean isValidVersion(final String version) {
-        if (null == version || version.isEmpty()) {
-            return false;
-        }
+        return !(null == version || version.isEmpty()) && this.database.verifyCommitExists(version);
 
-        return this.database.verifyCommitExists(version);
     }
 
     @Override
@@ -559,8 +548,7 @@ public class GitContentManager implements IContentManager {
         }
 
         // build query the db to get full content information
-        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap
-            = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+        Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = new HashMap<>();
 
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
@@ -592,9 +580,7 @@ public class GitContentManager implements IContentManager {
         }
 
         // try auto-mapping
-        ContentSummaryDTO contentInfo = mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
-
-        return contentInfo;
+        return mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
     }
     
     /**
@@ -650,7 +636,7 @@ public class GitContentManager implements IContentManager {
         // This set of code only needs to happen if we have to read from git
         // again.
         if (null == sha) {
-            throw new ContentManagerException(String.format("SHA: %s is null. Cannot index.", sha));
+            throw new ContentManagerException("SHA: sha is null. Cannot index.");
         }
 
         if (this.indexProblemCache.containsKey(sha)) {
@@ -668,7 +654,7 @@ public class GitContentManager implements IContentManager {
                         + sha);
             }
 
-            Map<String, Content> shaCache = new HashMap<String, Content>();
+            Map<String, Content> shaCache = new HashMap<>();
 
             TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
             log.info("Populating git content cache based on sha " + sha + " ...");
@@ -683,7 +669,7 @@ public class GitContentManager implements IContentManager {
                 // module. Required to deal with type polymorphism
                 ObjectMapper objectMapper = mapper.getSharedContentObjectMapper();
 
-                Content content = null;
+                Content content;
                 try {
                     content = (Content) objectMapper.readValue(out.toString(), ContentBase.class);
 
@@ -814,7 +800,7 @@ public class GitContentManager implements IContentManager {
         }
 
         // Try to figure out the parent ids.
-        String newParentId = null;
+        String newParentId;
         if (null == parentId && content.getId() != null) {
             newParentId = content.getId();
         } else {
@@ -877,10 +863,10 @@ public class GitContentManager implements IContentManager {
 
         // try to determine if we have media as fields to deal with in this class
         Method[] methods = content.getClass().getDeclaredMethods();
-        for (int i = 0; i < methods.length; i++) {
-            if (Media.class.isAssignableFrom(methods[i].getReturnType())) {
+        for (Method method: methods) {
+            if (Media.class.isAssignableFrom(method.getReturnType())) {
                 try {
-                    Media media = (Media) methods[i].invoke(content);
+                    Media media = (Media) method.invoke(content);
                     if (media != null) {
                         media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
                     }
@@ -897,8 +883,8 @@ public class GitContentManager implements IContentManager {
 
             // for tracking purposes we want to generate an id for all image content objects.
             if (media.getId() == null && media.getSrc() != null) {
-                media.setId(new String(parentId + Constants.ID_SEPARATOR
-                        + Base64.encodeBase64(media.getSrc().getBytes())));
+                media.setId(parentId + Constants.ID_SEPARATOR
+                        + Base64.encodeBase64(media.getSrc().getBytes()).toString());
             }
         }
 
@@ -920,8 +906,7 @@ public class GitContentManager implements IContentManager {
      */
     private String fixMediaSrc(final String canonicalSourceFile, final String originalSrc) {
         if (originalSrc != null && !(originalSrc.startsWith("http://") || originalSrc.startsWith("https://"))) {
-            String newPath = FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + originalSrc, true);
-            return newPath;
+            return FilenameUtils.normalize(FilenameUtils.getPath(canonicalSourceFile) + originalSrc, true);
         }
         return originalSrc;
     }
@@ -937,11 +922,11 @@ public class GitContentManager implements IContentManager {
      */
     private boolean checkForContentErrors(final String sha, final Map<String, Content> gitCache) {
         log.info(String.format("Starting content Validation (%s).", sha));
-        Set<Content> allObjectsSeen = new HashSet<Content>();
-        Set<String> expectedIds = new HashSet<String>();
-        Set<String> definedIds = new HashSet<String>();
-        Set<String> missingContent = new HashSet<String>();
-        Map<String, Content> whoAmI = new HashMap<String, Content>();
+        Set<Content> allObjectsSeen = new HashSet<>();
+        Set<String> expectedIds = new HashSet<>();
+        Set<String> definedIds = new HashSet<>();
+        Set<String> missingContent = new HashSet<>();
+        Map<String, Content> whoAmI = new HashMap<>();
 
         // Build up a set of all content (and content fragments for validation)
         for (Content c : gitCache.values()) {
@@ -1051,27 +1036,46 @@ public class GitContentManager implements IContentManager {
             }
 
             // TODO: the following things are all highly Isaac specific. I guess they should be elsewhere . . .
-            // Find quantities with values that cannot be parsed as numbers.
+
             if (c instanceof IsaacNumericQuestion) {
                 IsaacNumericQuestion q = (IsaacNumericQuestion) c;
+
+                String regExp = "[\\x00-\\x20]*[+-]?(((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
+                        + "([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|"
+                        + "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?"
+                        + "(\\.)(\\p{XDigit}+)))[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*";
+
+                // Check for at most 6 available symbols
+                if (q.getAvailableUnits().size() > MAX_NUMERIC_QUESTION_UNIT_COUNT) {
+                    this.registerContentProblem(sha, c, "Numeric Question: " + q.getId() + " has "
+                            + q.getAvailableUnits().size() + " available units. Expected at most "
+                            + MAX_NUMERIC_QUESTION_UNIT_COUNT + ".");
+                }
+
+                // Check if available units are specified when units are required.
+                if (q.getAvailableUnits().size() > 0 && !q.getRequireUnits()) {
+                    this.registerContentProblem(sha, c, "Numeric Question: " + q.getId()
+                            + " has custom units specified but does not require units.");
+                }
+
                 for (Choice choice : q.getChoices()) {
                     if (choice instanceof Quantity) {
                         Quantity quantity = (Quantity) choice;
 
-                        try {
-                            Double.parseDouble(quantity.getValue());
-                        } catch (NumberFormatException e) {
+                        // Find quantities with values that cannot be parsed as numbers.
+                        if (!quantity.getValue().matches(regExp)) {
                             this.registerContentProblem(sha, c,
                                     "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
                                             + ")  with value that cannot be interpreted as a number. "
                                             + "Users will never be able to match this answer.");
                         }
+
                     } else if (q.getRequireUnits()) {
-                        this.registerContentProblem(sha, c, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
-                                + choice.getValue() + "). It must be deleted and a new Quantity Choice created.");
+                        this.registerContentProblem(sha, c, "Numeric Question: " + q.getId()
+                                + " has non-Quantity Choice (" + choice.getValue()
+                                + "). It must be deleted and a new Quantity Choice created.");
                     }
                 }
-
             }
 
             // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
@@ -1080,23 +1084,25 @@ public class GitContentManager implements IContentManager {
                     IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) c;
                     for (String sym : q.getAvailableSymbols()) {
                         if (sym.contains("\\")) {
-                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
-                                    + sym + ") which contains a '\\' character.");
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId()
+                                    + " has availableSymbol (" + sym + ") which contains a '\\' character.");
                         }
                     }
                     for (Choice choice : q.getChoices()) {
                         if (choice instanceof Formula) {
                             Formula f = (Formula) choice;
                             if (f.getPythonExpression().contains("\\")) {
-                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
-                                        + choice.getValue() + ") with pythonExpression which contains a '\\' character.");
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId()
+                                        + " has Formula (" + choice.getValue()
+                                        + ") with pythonExpression which contains a '\\' character.");
                             } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
                                 this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
                                         + choice.getValue() + ") with empty pythonExpression!");
                             }
                         } else {
-                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
-                                    + choice.getValue() + "). It must be deleted and a new Formula Choice created.");
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId()
+                                    + " has non-Formula Choice (" + choice.getValue()
+                                    + "). It must be deleted and a new Formula Choice created.");
                         }
                     }
                 } else if (c.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
@@ -1105,12 +1111,13 @@ public class GitContentManager implements IContentManager {
                         if (choice instanceof ChemicalFormula) {
                             ChemicalFormula f = (ChemicalFormula) choice;
                             if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
-                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
-                                        + " with empty mhchemExpression!");
+                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId()
+                                        + " has ChemicalFormula with empty mhchemExpression!");
                             }
                         } else {
-                            this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
-                                    + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.");
+                            this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId()
+                                    + " has non-ChemicalFormula Choice (" + choice.getValue()
+                                    + "). It must be deleted and a new ChemicalFormula Choice created.");
                         }
                     }
                 }
@@ -1147,7 +1154,7 @@ public class GitContentManager implements IContentManager {
      * @return Set of content objects comprised of all children and the parent.
      */
     private Set<Content> flattenContentObjects(final Content content) {
-        Set<Content> setOfContentObjects = new HashSet<Content>();
+        Set<Content> setOfContentObjects = new HashSet<>();
         if (!content.getChildren().isEmpty()) {
 
             List<ContentBase> children = content.getChildren();
@@ -1257,7 +1264,7 @@ public class GitContentManager implements IContentManager {
             indexProblemCache.get(version).put(c, new ArrayList<String>());
         }
 
-        indexProblemCache.get(version).get(c).add(message);//.replace("_", "\\_"));
+        indexProblemCache.get(version).get(c).add(message); //.replace("_", "\\_"));
     }
 
     @Override
