@@ -202,7 +202,8 @@ public class IsaacGraphSketcherValidator implements IValidator {
                     } else {
 
                         // Since the student answer does not match a given choice, give back the checker feedback.
-                        feedback = new Content(response.get("errCause").toString());
+                        String errCause = (response.get("errCause") != null) ? response.get("errCause").toString() : "";
+                        feedback = new Content(errCause);
 
                         bestResponse = new QuestionValidationResponse(graphQuestion.getId(), answer, false,
                                 feedback, new Date());
