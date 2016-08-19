@@ -663,8 +663,8 @@ public class EventsFacade extends AbstractIsaacFacade {
     public final Response deleteBooking(@Context final HttpServletRequest request,
             @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
         try {
-            if (!isUserStaff(userManager, request)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+            if (!isUserAnAdmin(userManager, request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an Admin user to access this endpoint.")
                         .toResponse();
             }
 
