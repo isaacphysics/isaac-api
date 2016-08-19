@@ -428,7 +428,7 @@ public class EventBookingManager {
         }
 
         // capacity of the event
-        if (isStudentEvent && studentCount >= numberOfPlaces) {
+        if (isStudentEvent) {
             return numberOfPlaces - studentCount;
         }
 
