@@ -470,6 +470,11 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
+            if (EventStatus.CLOSED.equals(event.getEventStatus())){
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry booking for this event is closed. Please try again later.")
+                    .toResponse();
+            }
+
             if (bookingManager.isUserBooked(eventId, user.getId())) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
                     .toResponse();
