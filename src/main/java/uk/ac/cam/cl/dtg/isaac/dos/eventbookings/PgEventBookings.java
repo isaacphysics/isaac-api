@@ -180,8 +180,9 @@ public class PgEventBookings implements EventBookings {
         // acquire lock
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select pg_advisory_lock(?)");
+            pst = conn.prepareStatement("SELECT pg_advisory_lock(?)");
             pst.setLong(1, crc.getValue());
+            log.debug(String.format("Acquiring advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
             pst.executeQuery();
         } catch (SQLException e) {
             String msg = String.format(
@@ -189,6 +190,7 @@ public class PgEventBookings implements EventBookings {
             log.error(msg);
             throw new SegueDatabaseException(msg);
         }
+        log.debug(String.format("Acquired advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
     }
 
     /**
@@ -199,6 +201,7 @@ public class PgEventBookings implements EventBookings {
      */
     @Override
     public void releaseDistributedLock(final String resourceId) throws SegueDatabaseException {
+
         // generate 32 bit CRC based on table id and resource id so that is is more likely to be unique globally.
         CRC32 crc = new CRC32();
         crc.update((TABLE_NAME + resourceId).getBytes());
@@ -206,8 +209,9 @@ public class PgEventBookings implements EventBookings {
         // acquire lock
         try (Connection conn = ds.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("Select pg_advisory_unlock(?)");
+            pst = conn.prepareStatement("SELECT pg_advisory_unlock(?)");
             pst.setLong(1, crc.getValue());
+            log.debug(String.format("Releasing advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
             pst.executeQuery();
         } catch (SQLException e) {
             String msg = String.format(
@@ -215,6 +219,7 @@ public class PgEventBookings implements EventBookings {
             log.error(msg);
             throw new SegueDatabaseException(msg);
         }
+        log.debug(String.format("Released advisory lock on %s (%s)", TABLE_NAME + resourceId, crc.getValue()));
     }
 
     /*
