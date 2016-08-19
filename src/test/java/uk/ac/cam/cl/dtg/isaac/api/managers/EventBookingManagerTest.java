@@ -2,7 +2,6 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
@@ -417,7 +416,7 @@ public class EventBookingManagerTest {
 		replay(dummyEventBookingPersistenceManager);
 
 		try {
-			ebm.promoteFromWaitingList(testEvent, someUser, someAdditionalInformation);
+			ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
 			// success
 		} catch (EventIsFullException e) {
 			fail("Expected successful booking as no waiting list bookings.");
@@ -472,7 +471,7 @@ public class EventBookingManagerTest {
 		replay(dummyEventBookingPersistenceManager);
 
 		try {
-			ebm.promoteFromWaitingList(testEvent, someUser, someAdditionalInformation);
+			ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
 			fail("Expected failure booking as no space for this event.");
 		} catch (EventIsFullException e) {
 			// success

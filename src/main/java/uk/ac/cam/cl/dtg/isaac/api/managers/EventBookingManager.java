@@ -123,7 +123,7 @@ public class EventBookingManager {
 
     /**
      * Create booking on behalf of a user.
-     * This method will allow users to 'force' book a user onto an event.
+     * This method will allow users to be booked onto an event providing there is space.
      * @param event
      *            - of interest
      * @param user
@@ -316,7 +316,7 @@ public class EventBookingManager {
     }
 
     /**
-     * Allows an admin user to promote someone from the waiting list to a confirmed booking.
+     * Allows an admin user to promote someone from the waiting list or cancelled booking to a confirmed booking.
      *
      * @param event - The event in question.
      * @param userDTO - The user whose booking should be updated
@@ -329,7 +329,7 @@ public class EventBookingManager {
      * @throws EventIsNotFullException
      * @throws EventBookingUpdateException
 	 */
-    public EventBookingDTO promoteFromWaitingList(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO, final Map<String, String> additionalInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
+    public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO, final Map<String, String> additionalInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
         this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
         final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), userDTO.getId());
@@ -337,8 +337,8 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
         }
 
-        if (!BookingStatus.WAITING_LIST.equals(eventBooking.getBookingStatus())) {
-            throw new EventBookingUpdateException("Unable to promote a booking that isn't on the waiting list.");
+        if (BookingStatus.CONFIRMED.equals(eventBooking.getBookingStatus())) {
+            throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
         }
 
         if (this.getPlacesAvailable(event, true) <=  0) {
