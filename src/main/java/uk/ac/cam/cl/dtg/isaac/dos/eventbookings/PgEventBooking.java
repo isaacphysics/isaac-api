@@ -209,7 +209,13 @@ public class PgEventBooking implements EventBooking {
         ObjectMapper mapper = new ObjectMapper();
         final String stringVersion = mapper.writeValueAsString(objectToConvert);
         Map<String, String> iterimResult = mapper.readValue(stringVersion, HashMap.class);
-        Map<String, String> result = mapper.readValue(iterimResult.get("value"), HashMap.class);
-        return result;
+
+        // this check is here to see if the map coming in is actually a jsonb map, if not assume it doesn't need to be
+        // unpacked
+        if (iterimResult.containsKey("type") && iterimResult.get("type").equals("jsonb")) {
+            return mapper.readValue(iterimResult.get("value"), HashMap.class);
+        }
+
+        return iterimResult;
     }
 }
