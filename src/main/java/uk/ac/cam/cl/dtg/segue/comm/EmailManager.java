@@ -355,6 +355,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         p.put("joiningInstructions", myAssignmentsURL == null ? "" : event.getEmailJoiningInstructions());
+
+        String authorisationURL = String.format("https://%s/account?authToken=%s",
+            globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
+        p.put("authorizationLink", authorisationURL);
+
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
