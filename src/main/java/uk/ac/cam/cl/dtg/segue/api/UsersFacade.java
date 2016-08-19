@@ -18,6 +18,10 @@ package uk.ac.cam.cl.dtg.segue.api;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.api.client.util.Maps;
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
@@ -73,6 +77,8 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
@@ -105,6 +111,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
+    private final SchoolListReader schoolListReader;
 
     /**
      * Construct an instance of the UsersFacade.
@@ -128,13 +135,14 @@ public class UsersFacade extends AbstractSegueFacade {
     public UsersFacade(final PropertiesLoader properties, final UserAccountManager userManager,
             final ILogManager logManager, final StatisticsManager statsManager,
             final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
-            final AbstractEmailPreferenceManager emailPreferenceManager) {
+            final AbstractEmailPreferenceManager emailPreferenceManager, final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;
         this.statsManager = statsManager;
         this.userAssociationManager = userAssociationManager;
         this.misuseMonitor = misuseMonitor;
         this.emailPreferenceManager = emailPreferenceManager;
+        this.schoolListReader = schoolListReader;
     }
     
     /**
@@ -431,7 +439,71 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
 
+    /**
+     * This method allows the requester to provide a list of user ids and get back a mapping of the user
+     * id to the school information. This is useful for building up tables of users school information.
+     *
+     * @param httpServletRequest
+     *            Authentication and authorisation
+     * @param userIdsQueryParam
+     *            The comma seperated list of user ids to try and find schools for.
+     * @return A map mapping the userId to a school if we found one for it.
+     */
+    @GET
+    @Path("users/school_lookup")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUserIdToSchoolMap(@Context final HttpServletRequest httpServletRequest,
+                                         @QueryParam("user_ids") final String userIdsQueryParam) {
+        try {
+            if (!isUserStaff(this.userManager, httpServletRequest)) {
+				return new SegueErrorResponse(Status.FORBIDDEN, "You must be a staff member to access this endpoint.")
+					.toResponse();
+			}
 
+            if (null == userIdsQueryParam || userIdsQueryParam.isEmpty() ) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a comma separated list of user_ids in the query param")
+                    .toResponse();
+            }
+
+            String[] userIdsAsList = userIdsQueryParam.split(",");
+            List<Long> userLongIds = Lists.newArrayList();
+
+            for(int i = 0; i < userIdsAsList.length; i++) {
+                userLongIds.add(Long.parseLong(userIdsAsList[i]));
+            }
+
+            final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
+            final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
+            for(RegisteredUserDTO user : users) {
+                if (user.getSchoolId() != null) {
+                    builder.put(user.getId().toString(), schoolListReader.findSchoolById(user.getSchoolId()));
+                }
+
+                if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {
+                    Map<String, String> schoolOtherResult = Maps.newHashMap();
+                    schoolOtherResult.put("name", user.getSchoolOther());
+                    builder.put(user.getId().toString(), schoolOtherResult);
+                }
+            }
+
+            return Response.ok(builder.build()).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to parse all parameters as integers.")
+                .toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up users", e)
+                .toResponse();
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                .toResponse();
+        } catch (UnableToIndexSchoolsException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
+                .toResponse();
+        }
+    }
 
 
     /**
