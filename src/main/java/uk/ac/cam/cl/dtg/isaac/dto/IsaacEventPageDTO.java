@@ -45,7 +45,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private List<ExternalReference> preResources;
     private List<ContentDTO> preResourceContent;
-    private String emailJoiningInstructions;
+    private String emailEventDetails;
 
     private List<ExternalReference> postResources;
     private List<ContentDTO> postResourceContent;
@@ -401,11 +401,11 @@ public class IsaacEventPageDTO extends ContentDTO {
     }
 
     @JsonIgnore
-    public String getEmailJoiningInstructions() {
-        return emailJoiningInstructions;
+    public String getEmailEventDetails() {
+        return emailEventDetails;
     }
 
-    public void setEmailJoiningInstructions(final String emailJoiningInstructions) {
-        this.emailJoiningInstructions = emailJoiningInstructions;
+    public void setEmailEventDetails(final String emailEventDetails) {
+        this.emailEventDetails = emailEventDetails;
     }
 }

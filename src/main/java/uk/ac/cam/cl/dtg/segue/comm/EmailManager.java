@@ -354,7 +354,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("preResources", "");
         }
 
-        p.put("joiningInstructions", myAssignmentsURL == null ? "" : event.getEmailJoiningInstructions());
+        p.put("emailEventDetails", myAssignmentsURL == null ? "" : event.getEmailEventDetails());
 
         String authorisationURL = String.format("https://%s/account?authToken=%s",
             globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
@@ -450,7 +450,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("preResources", "");
         }
 
-        p.put("joiningInstructions", myAssignmentsURL == null ? "" : event.getEmailJoiningInstructions());
+        p.put("emailEventDetails", myAssignmentsURL == null ? "" : event.getEmailEventDetails());
 
         p.put("sig", SIGNATURE);
 

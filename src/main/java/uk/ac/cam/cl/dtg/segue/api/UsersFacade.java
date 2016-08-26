@@ -631,7 +631,7 @@ public class UsersFacade extends AbstractSegueFacade {
             
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
             
-            //Now update the email preferences
+            // Now update the email preferences
 			emailPreferenceManager.saveEmailPreferences(userObjectFromClient.getId(), emailPreferences);
 
             return Response.ok(updatedUser).build();
