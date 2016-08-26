@@ -621,6 +621,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                 userOwningBooking = this.userManager.getUserDTOById(userId);
             }
 
+            if (event.getDate() != null && new Date().after(event.getDate())) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot cancel a booking on an event that has already started.")
+                    .toResponse();
+            }
+
             // if the user id is null then it means they are changing their own booking.
             if (userId != null && !isUserStaff(userManager, request) ) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to change another user's booking.")
