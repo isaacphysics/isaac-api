@@ -19,8 +19,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Maps;
 import io.swagger.annotations.Api;
 
@@ -475,12 +473,10 @@ public class UsersFacade extends AbstractSegueFacade {
 
             final List<RegisteredUserDTO> users = this.userManager.findUsers(userLongIds);
             final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
-            for(RegisteredUserDTO user : users) {
+            for (RegisteredUserDTO user : users) {
                 if (user.getSchoolId() != null) {
                     builder.put(user.getId().toString(), schoolListReader.findSchoolById(user.getSchoolId()));
-                }
-
-                if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {
+                } else if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {
                     Map<String, String> schoolOtherResult = Maps.newHashMap();
                     schoolOtherResult.put("name", user.getSchoolOther());
                     builder.put(user.getId().toString(), schoolOtherResult);

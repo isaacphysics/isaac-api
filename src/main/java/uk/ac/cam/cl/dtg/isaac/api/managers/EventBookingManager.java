@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
