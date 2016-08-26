@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
-import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -38,7 +37,6 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
-import java.awt.print.Book;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -140,6 +138,23 @@ public class EventBookingManager {
      */
     public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingByEventId(eventId);
+    }
+
+	/**
+	 * Utility method to provide a count of the number of bookings on a given event with a given status.
+     * @param eventId the event id to look up
+     * @param status - the status of bookings we are interested in
+     * @return the total bookings matching the criteria provided.
+     * @throws SegueDatabaseException
+     */
+    public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status) throws SegueDatabaseException {
+        Long v = 0L;
+        for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingByEventId(eventId)) {
+            if (status.equals(eb.getBookingStatus())) {
+                v++;
+            }
+        }
+        return v;
     }
 
     /**
