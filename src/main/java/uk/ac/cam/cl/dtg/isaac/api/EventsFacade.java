@@ -15,12 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.api.client.util.Lists;
+import com.google.common.collect.Sets;
 import io.swagger.annotations.Api;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -48,6 +47,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.*;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
@@ -136,7 +136,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
             @QueryParam("sort_by") final String sortOrder,
             @QueryParam("show_active_only") final Boolean showActiveOnly,
-            @QueryParam("show_inactive_only") final Boolean showInactiveOnly) {
+            @QueryParam("show_inactive_only") final Boolean showInactiveOnly,
+            @QueryParam("show_booked_only") final Boolean showMyBookingsOnly) {
         // TODO: filter by location
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
 
@@ -172,7 +173,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
         }
 
-        if (showInactiveOnly != null && showInactiveOnly) {
+        if (null != showInactiveOnly && showInactiveOnly) {
             if (showActiveOnly) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,
                         "You cannot request both show active and inactive only.").toResponse();
@@ -184,17 +185,78 @@ public class EventsFacade extends AbstractIsaacFacade {
             sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
         }
 
+        RegisteredUserDTO currentUser = null;
+        if(this.userManager.isRegisteredUserLoggedIn(request)) {
+            try {
+                currentUser = this.userManager.getCurrentRegisteredUser(request);
+            } catch (NoUserLoggedInException e) {
+                if (showMyBookingsOnly) {
+                    return SegueErrorResponse.getNotLoggedInResponse();
+                }
+            }
+        }
+
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
+            ResultsWrapper<ContentDTO> findByFieldNames = null;
+
+            if (null != showMyBookingsOnly && showMyBookingsOnly) {
+                findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
+            } else {
+                findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
                     versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
+
+                // augment (maybe slow for large numbers of bookings)
+                for (ContentDTO c : findByFieldNames.getResults()) {
+                    this.augmentEventWithBookingInformation(request, c);
+                }
+            }
 
             return Response.ok(findByFieldNames).build();
         } catch (ContentManagerException e) {
             log.error("Error during event request", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
                     .toResponse();
+        } catch (SegueDatabaseException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error accessing your bookings.")
+                .toResponse();
         }
+    }
+
+	/**
+     * Get Events Booked by user.
+     *
+     * @param request - the http request so we can resolve booking information
+     * @param tags - the tags we want to filter on
+     * @param currentUser - the currently logged on user.
+     * @return a list of event pages that the user has been booked
+     * @throws SegueDatabaseException
+     * @throws ContentManagerException
+     */
+    private ResultsWrapper<ContentDTO> getEventsBookedByUser(final HttpServletRequest request, final List<String> tags, final RegisteredUserDTO currentUser) throws SegueDatabaseException, ContentManagerException {
+        List<ContentDTO> filteredResults = Lists.newArrayList();
+
+        Map<String, BookingStatus> userBookingMap = this.bookingManager.getAllEventStatesForUser(currentUser.getId());
+
+        for (String eventId : userBookingMap.keySet()) {
+			if (BookingStatus.CANCELLED.equals(userBookingMap.get(eventId))) {
+				continue;
+			}
+
+			final IsaacEventPageDTO eventDTOById = this.getEventDTOById(request, eventId);
+
+			if (tags != null) {
+				Set<String> tagsList = Sets.newHashSet(tags);
+				tagsList.retainAll(eventDTOById.getTags()); // get intersection
+				if (tagsList.size() == 0) {
+					// if the intersection is empty then we can continue
+					continue;
+				}
+			}
+
+			filteredResults.add(eventDTOById);
+		}
+        return new ResultsWrapper<ContentDTO>(filteredResults, new Long(filteredResults.size()));
     }
 
     /**
@@ -732,5 +794,35 @@ public class EventsFacade extends AbstractIsaacFacade {
             page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
         }
         return page;
+    }
+
+	/**
+     * Augment a single event with booking information before we send it out.
+     *
+     * @param request - for user look up
+     * @param possibleEvent - a ContentDTO that should hopefully be an IsaacEventPageDTO.
+     * @return an augmented IsaacEventPageDTO.
+     * @throws SegueDatabaseException
+     */
+    private IsaacEventPageDTO augmentEventWithBookingInformation(final HttpServletRequest request, final ContentDTO possibleEvent) throws SegueDatabaseException {
+        if (possibleEvent instanceof IsaacEventPageDTO) {
+            IsaacEventPageDTO page = (IsaacEventPageDTO) possibleEvent;
+
+            try {
+                RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
+
+                Boolean userBooked = this.bookingManager.isUserBooked(page.getId(), user.getId());
+                page.setUserBooked(userBooked);
+                page.setUserOnWaitList(this.bookingManager.hasBookingWithStatus(page.getId(), user.getId(), BookingStatus.WAITING_LIST));
+            } catch (NoUserLoggedInException e) {
+                // no action as we don't require the user to be logged in.
+                page.setUserBooked(null);
+            }
+
+            page.setPlacesAvailable(this.bookingManager.getPlacesAvailable(page));
+            return page;
+        } else {
+            throw new ClassCastException("The object provided was not an event.");
+        }
     }
 }

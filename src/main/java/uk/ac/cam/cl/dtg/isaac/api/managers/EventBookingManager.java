@@ -15,11 +15,13 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
+import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.EventBooking;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -36,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
+import java.awt.print.Book;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +82,7 @@ public class EventBookingManager {
     }
 
     /**
+     * This will get all bookings for a given user.
      * @param userId
      *            - user of interest.
      * @return events
@@ -87,6 +91,24 @@ public class EventBookingManager {
      */
     public List<EventBookingDTO> getEventsByUserId(final Long userId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getEventsByUserId(userId);
+    }
+
+    /**
+     * This will get all bookings for a given user.
+     * @param userId
+     *            - user of interest.
+     * @return events
+     * @throws SegueDatabaseException
+     *             - if an error occurs.
+     */
+    public Map<String, BookingStatus> getAllEventStatesForUser(final Long userId) throws SegueDatabaseException {
+        final ImmutableMap.Builder<String, BookingStatus> bookingStatusBuilder = new ImmutableMap.Builder<>();
+
+        for (EventBookingDTO booking : this.bookingPersistenceManager.getEventsByUserId(userId)) {
+            bookingStatusBuilder.put(booking.getEventId(), booking.getBookingStatus());
+        }
+
+        return bookingStatusBuilder.build();
     }
 
     /**
@@ -122,7 +144,8 @@ public class EventBookingManager {
 
     /**
      * Create booking on behalf of a user.
-     * This method will allow users to be booked onto an event providing there is space.
+     * This method will allow users to be booked onto an event providing there is space. No other rules are applied.
+     * This is likely to be only for admin users.
      * @param event
      *            - of interest
      * @param user
@@ -152,7 +175,7 @@ public class EventBookingManager {
 
     /**
      * Attempt to book onto an event.
-     * This method will allow users to 'force' book a user onto an event.
+     * This method will allow attempt to book a onto an event if the rules are not broken.
      * @param event
      *            - of interest
      * @param user
@@ -236,8 +259,8 @@ public class EventBookingManager {
     }
 
     /**
-     * Attempt to book onto an event.
-     * This method will allow users to 'force' book a user onto an event.
+     * Attempt to book onto the waiting list for an event.
+     *
      * @param event
      *            - of interest
      * @param user
@@ -530,7 +553,7 @@ public class EventBookingManager {
      * @throws SegueDatabaseException - if an error occurs
      * @throws EventIsFullException - if the event is full according to the event rules established.
      */
-    private void ensureCapacity(IsaacEventPageDTO event, RegisteredUserDTO user) throws SegueDatabaseException, EventIsFullException {
+    private void ensureCapacity(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EventIsFullException {
         final boolean isStudentEvent = event.getTags().contains("student");
         Integer numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
