@@ -73,6 +73,7 @@ public class GameManager {
     private static final Logger log = LoggerFactory.getLogger(GameManager.class);
 
     private static final int MAX_QUESTIONS_TO_SEARCH = 20;
+    private static final String HIDE_FROM_FILTER_TAG = "nofilter";
 
     private final GameboardPersistenceManager gameboardPersistenceManager;
     private final Random randomGenerator;
@@ -833,6 +834,13 @@ public class GameManager {
         // choose the gameboard questions to include.
         while (gameboardReadyQuestions.size() < GAME_BOARD_TARGET_SIZE && !selectionOfGameboardQuestions.isEmpty()) {
             for (GameboardItem gameboardItem : selectionOfGameboardQuestions) {
+
+                // Questions tagged with HIDE_FROM_FILTER_TAG should not appear in gameboards generated here at all:
+                if (gameboardItem.getTags() != null && gameboardItem.getTags().contains(HIDE_FROM_FILTER_TAG)) {
+                    log.debug("Skipping ignored question: " + gameboardItem.getId());
+                    continue;
+                }
+
                 GameboardItemState questionState;
                 try {
                     questionState = this.calculateQuestionState(gameboardItem.getId(),
