@@ -27,7 +27,6 @@ import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 public class QuestionDTO extends ContentDTO {
     protected ContentBaseDTO answer;
     protected List<ContentBaseDTO> hints;
-    protected Integer suggestedDuration;
 
     // Set if the user is logged in and we have information.
     protected QuestionValidationResponseDTO bestAttempt;
@@ -94,25 +93,6 @@ public class QuestionDTO extends ContentDTO {
      */
     public void setBestAttempt(final QuestionValidationResponseDTO bestAttempt) {
         this.bestAttempt = bestAttempt;
-    }
-
-    /**
-     * Gets the suggested duration.
-     * 
-     * @return the duration
-     */
-    public Integer getSuggestedDuration() {
-        return suggestedDuration;
-    }
-
-    /**
-     * sets the suggested duration.
-     * 
-     * @param suggestedDuration
-     *            the duration to set
-     */
-    public void setSuggestedDuration(final Integer suggestedDuration) {
-        this.suggestedDuration = suggestedDuration;
     }
 
 }

@@ -29,7 +29,6 @@ public class Question extends Content {
 
     protected ContentBase answer;
     protected List<ContentBase> hints;
-    protected Integer suggestedDuration;
 
 
     public Question() {
@@ -74,22 +73,4 @@ public class Question extends Content {
         this.hints = hints;
     }
 
-    /**
-     * Gets the suggested duration.
-     * 
-     * @return the duration
-     */
-    public Integer getSuggestedDuration() {
-        return suggestedDuration;
-    }
-
-    /**
-     * sets the suggested duration.
-     * 
-     * @param suggestedDuration
-     *            the duration to set
-     */
-    public void setSuggestedDuration(final Integer suggestedDuration) {
-        this.suggestedDuration = suggestedDuration;
-    }
 }
