@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestion extends Question {
     protected List<Choice> choices;
+    protected Boolean randomlyOrderChoices;
 
     /**
      * Default constructors for auto mappers.
@@ -55,5 +56,24 @@ public class ChoiceQuestion extends Question {
      */
     public final void setChoices(final List<Choice> choices) {
         this.choices = choices;
+    }
+
+    /**
+     * Gets the whether to randomlyOrderUnits.
+     *
+     * @return randomlyOrderChoices
+     */
+    public Boolean getRandomlyOrderChoices() {
+        return randomlyOrderChoices;
+    }
+
+    /**
+     * Sets the randomlyOrderChoices.
+     *
+     * @param randomlyOrderChoices
+     *            the randomlyOrderChoices to set
+     */
+    public void setRandomlyOrderChoices(final Boolean randomlyOrderChoices) {
+        this.randomlyOrderChoices = randomlyOrderChoices;
     }
 }

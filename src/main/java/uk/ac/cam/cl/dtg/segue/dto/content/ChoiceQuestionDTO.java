@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(ChoiceQuestionValidator.class)
 public class ChoiceQuestionDTO extends QuestionDTO {
     protected List<ChoiceDTO> choices;
+    protected Boolean randomlyOrderChoices;
 
     /**
      * Default Constructor for mappers.
@@ -52,6 +53,25 @@ public class ChoiceQuestionDTO extends QuestionDTO {
      */
     public final void setChoices(final List<ChoiceDTO> choices) {
         this.choices = choices;
+    }
+
+    /**
+     * Gets the whether to randomlyOrderUnits.
+     *
+     * @return randomlyOrderChoices
+     */
+    public Boolean getRandomlyOrderChoices() {
+        return randomlyOrderChoices;
+    }
+
+    /**
+     * Sets the randomlyOrderChoices.
+     *
+     * @param randomlyOrderChoices
+     *            the randomlyOrderChoices to set
+     */
+    public void setRandomlyOrderChoices(final Boolean randomlyOrderChoices) {
+        this.randomlyOrderChoices = randomlyOrderChoices;
     }
 
 }
