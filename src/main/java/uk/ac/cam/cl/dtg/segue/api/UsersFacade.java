@@ -405,6 +405,9 @@ public class UsersFacade extends AbstractSegueFacade {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
+            if (userOfInterest == null) {
+                throw new NoUserException();
+            }
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
