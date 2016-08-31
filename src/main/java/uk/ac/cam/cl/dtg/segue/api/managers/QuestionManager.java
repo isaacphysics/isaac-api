@@ -436,8 +436,8 @@ public class QuestionManager {
         // shuffle all choices based on the seed provided, augmented by individual question ID.
         for (QuestionDTO question : questions) {
             if (question instanceof ChoiceQuestionDTO) {
-                Boolean randomlyOrderChoices = ((ChoiceQuestionDTO) question).getRandomlyOrderChoices();
-                if (randomlyOrderChoices == null || randomlyOrderChoices) {
+                Boolean randomiseChoices = ((ChoiceQuestionDTO) question).getRandomiseChoices();
+                if (randomiseChoices == null || randomiseChoices) {  // Default to randomised if not set.
                     ChoiceQuestionDTO choiceQuestion = (ChoiceQuestionDTO) question;
                     String qSeed = seed + choiceQuestion.getId();
                     if (choiceQuestion.getChoices() != null) {
