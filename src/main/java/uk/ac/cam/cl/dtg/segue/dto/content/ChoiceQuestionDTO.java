@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.quiz.ChoiceQuestionValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
@@ -60,6 +62,7 @@ public class ChoiceQuestionDTO extends QuestionDTO {
      *
      * @return randomiseChoices
      */
+    @JsonIgnore
     public Boolean getRandomiseChoices() {
         return randomiseChoices;
     }

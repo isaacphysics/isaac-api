@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.dto.content;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.mongojack.ObjectId;
 
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceDeserializer;
@@ -134,6 +135,7 @@ public abstract class ContentBaseDTO {
      * 
      * @return the canonicalSourceFile
      */
+    @JsonIgnore
     public String getCanonicalSourceFile() {
         return canonicalSourceFile;
     }

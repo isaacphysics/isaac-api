@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
@@ -128,6 +129,7 @@ public class ContentDTO extends ContentBaseDTO {
         this.subtitle = subtitle;
     }
 
+    @JsonIgnore
     public String getAuthor() {
         return author;
     }

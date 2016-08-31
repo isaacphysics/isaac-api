@@ -106,6 +106,7 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
      * 
      * @return the significantFigures
      */
+    @JsonIgnore
     public Integer getSignificantFigures() {
         return significantFigures;
     }
