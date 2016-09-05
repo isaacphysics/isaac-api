@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.dto.users;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 
 /**
  * User Summary object.
@@ -26,6 +27,7 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     private String givenName;
     private String familyName;
     private String email;
+    private Role role;
     private boolean authorisedFullAccess;
 
     /**
@@ -129,6 +131,25 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
      */
     public void setEmail(final String email) {
         this.email = email;
+    }
+
+    /**
+     * Gets the role.
+     *
+     * @return the role
+     */
+    public Role getRole() {
+        return role;
+    }
+
+    /**
+     * Sets the role.
+     *
+     * @param role
+     *            the role to set
+     */
+    public void setRole(final Role role) {
+        this.role = role;
     }
 
     /**

@@ -24,7 +24,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
@@ -132,9 +131,6 @@ public class UserAssociationManagerTest {
 
 		try {
 			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (UserAssociationException e) {
-			e.printStackTrace();
-			fail("UserAssociationException is unexpected");
 		} catch (InvalidUserAssociationTokenException e) {
 			e.printStackTrace();
 			fail("InvalidUserAssociationTokenException is unexpected");
@@ -179,9 +175,6 @@ public class UserAssociationManagerTest {
 
 		try {
 			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (UserAssociationException e) {
-			e.printStackTrace();
-			fail("UserAssociationException is unexpected");
 		} catch (InvalidUserAssociationTokenException e) {
 			e.printStackTrace();
 			fail("InvalidUserAssociationTokenException is unexpected");
@@ -223,9 +216,6 @@ public class UserAssociationManagerTest {
 
 		try {
 			managerUnderTest.createAssociationWithToken(someToken.getToken(), someRegisteredUserGrantingAccess);
-		} catch (UserAssociationException e) {
-			e.printStackTrace();
-			fail("UserAssociationException is unexpected");
 		} catch (InvalidUserAssociationTokenException e) {
 			e.printStackTrace();
 			fail("InvalidUserAssociationTokenException is unexpected");
@@ -260,9 +250,6 @@ public class UserAssociationManagerTest {
 		try {
 			managerUnderTest.createAssociationWithToken(someBadToken, someRegisteredUserGrantingAccess);
 			fail("An exception was expected");
-		} catch (UserAssociationException e) {
-			e.printStackTrace();
-			fail("UserAssociationException is unexpected");
 		} catch (InvalidUserAssociationTokenException e) {
 			// this is a success as the exception was expected.
 		}

@@ -23,6 +23,7 @@ import org.elasticsearch.common.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
@@ -35,6 +36,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
+import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -62,6 +64,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final String SIGNATURE = "Isaac Physics Project";
     private static final int MINIMUM_TAG_LENGTH = 4;
     private static final int TRUNCATED_TOKEN_LENGTH = 5;
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
 
     /**
      * @param communicator
@@ -85,8 +88,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.contentVersionController = contentVersionController;
         this.logManager = logManager;
     }
-
-    
 
     /**
      * @param userDTO
@@ -120,7 +121,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
-
 
     /**
      * Sends email registration confirmation using email registration template. Assumes that a verification code has
@@ -312,6 +312,188 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
+     * Sends notification that a user is booked onto an event.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventWelcomeEmail(final RegisteredUserDTO user,
+                                      final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-confirmed");
+
+        String myAssignmentsURL = String.format("https://%s/assignments",
+            globalProperties.getProperty(HOST_NAME));
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("myAssignmentsURL", myAssignmentsURL == null ? "" : myAssignmentsURL);
+
+        StringBuilder sb = new StringBuilder();
+        if (event.getPreResources() != null && event.getPreResources().size() > 0) {
+            for (ExternalReference er : event.getPreResources()){
+                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
+                sb.append("\n");
+            }
+            p.put("preResources", sb.toString());
+        } else {
+            p.put("preResources", "");
+        }
+
+        p.put("emailEventDetails", myAssignmentsURL == null ? "" : event.getEmailEventDetails());
+
+        String authorisationURL = String.format("https://%s/account?authToken=%s",
+            globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
+        p.put("authorizationLink", authorisationURL);
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.EVENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+
+    }
+
+    /**
+     * Sends notification that a user is on the waiting list.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventWaitingListEmail(final RegisteredUserDTO user,
+                                      final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-waiting-list-addition-notification");
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.EVENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+
+    }
+    /**
+     * Sends notification that a user has been promoted from the waiting list and been booked onto an event.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventWelcomeEmailForWaitingListPromotion(final RegisteredUserDTO user,
+                                      final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed");
+
+        String myAssignmentsURL = String.format("https://%s/assignments",
+            globalProperties.getProperty(HOST_NAME));
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        String authorisationURL = String.format("https://%s/account?authToken=%s",
+            globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("contactUsURL", contactUsURL);
+        p.put("myAssignmentsURL", myAssignmentsURL);
+        p.put("authorizationLink", event.getIsaacGroupToken() == null ? "" : authorisationURL);
+
+        StringBuilder sb = new StringBuilder();
+        if (event.getPreResources() != null && event.getPreResources().size() > 0) {
+            for (ExternalReference er : event.getPreResources()){
+                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
+                sb.append("\n");
+            }
+            p.put("preResources", sb.toString());
+        } else {
+            p.put("preResources", "");
+        }
+
+        p.put("emailEventDetails", myAssignmentsURL == null ? "" : event.getEmailEventDetails());
+
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.EVENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+    }
+
+    /**
+     * Sends notification that an event booking has been cancelled.
+     * @param user
+     *            - the user to send the welcome email to
+     * @param event
+     *            - event that the user has been booked on to.
+     * @throws ContentManagerException
+     *             - some content may not have been accessible
+     * @throws SegueDatabaseException
+     *             - the content was of incorrect type
+     */
+    public void sendEventCancellationEmail(final RegisteredUserDTO user,
+                                                             final IsaacEventPageDTO event)
+        throws ContentManagerException, SegueDatabaseException {
+        Validate.notNull(user);
+
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-cancellation-confirmed");
+
+        String contactUsURL = String.format("https://%s/contact",
+            globalProperties.getProperty(HOST_NAME));
+
+        Properties p = new Properties();
+        // givenname should be camel case but I have left it to be in line with the others.
+        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
+        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("contactUsURL", contactUsURL);
+        p.put("sig", SIGNATURE);
+
+        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
+            emailContent, p, EmailType.EVENTS);
+        this.filterByPreferencesAndAddToQueue(user, e);
+    }
+
+    /**
      * Sends notification for groups being given an assignment.
      * 
      * @param userDTO
@@ -367,7 +549,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             htmlSB.append("Your teacher has assigned the following assignments:<br>");
             plainTextSB.append("Your teacher has assigned the following assignments:\n");
             for (int i = 0; i < existingAssignments.size(); i++) {
-                DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm");
+
                 GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
 
                 String gameboardName = existingAssignments.get(i).getGameboardId();
@@ -380,10 +562,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 								existingAssignments.get(i).getGameboardId());
 
                 htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s)<br>", i + 1, gameboardUrl,
-                        gameboardName, df.format(existingAssignments.get(i).getCreationDate())));
+                        gameboardName, DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
 
                 plainTextSB.append(String.format("%d. %s (set on %s)\n", i + 1, gameboardName,
-                        df.format(existingAssignments.get(i).getCreationDate())));
+                    DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
             }
         } else if (existingAssignments != null && existingAssignments.size() == 0) {
             htmlSB.append("No assignments have been set yet.<br>");
@@ -686,9 +868,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     
     /**
      * This method allows the front end to preview simple email in the browser.
-     * 
-     * @param segueContent
-     * 			- the email template 
+     *
      * @param user
      * 			- the user requesting a preview
      * @return serialised HTML
@@ -727,9 +907,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     
     /**
      * This method allows the front end to preview simple email in the browser.
-     * 
-     * @param segueContent
-     * 			- the email template 
+     *
      * @param user
      * 			- the user requesting a preview
      * @return serialised HTML
@@ -772,9 +950,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
     /**
      * Method to parse and replace template elements with the form {{TAG}}.
-     * 
-     * @param page
-     *            SeguePage that contains SeguePage child with template value
+     *
      * @param templateProperties
      *            list of properties from which we can fill in the template
      * @return template with completed fields

@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.dos.eventbookings;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * EventBooking.
@@ -46,10 +47,28 @@ public interface EventBooking {
      */
     String getEventId();
 
+	/**
+     * Gets the current status of the booking.
+     *
+     * @return booking status
+     */
+    BookingStatus getBookingStatus();
+
+	/**
+     * Get the date that this booking was last updated.
+     *
+     * @return the date that an update or booking creation was made.
+     */
+    Date getUpdateDate();
+
     /**
      * Getter for Creation date.
      * 
      * @return creation date
      */
     Date getCreationDate();
+
+    Map<String, String> getAdditionalInformation();
+
+    void setAdditionalInformation(Map<String, String> additionalInformation);
 }

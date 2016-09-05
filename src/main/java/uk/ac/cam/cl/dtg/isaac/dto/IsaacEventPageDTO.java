@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
@@ -32,17 +33,22 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.locations.Address;
 
 /**
- * DO for isaac Event.
+ * DTO for isaac Event.
  *
  */
 @JsonContentType("isaacEventPage")
 public class IsaacEventPageDTO extends ContentDTO {
     private Date date;
     private Date end_date;
+    private Date bookingDeadline;
     private Address location;
 
     private List<ExternalReference> preResources;
+    private List<ContentDTO> preResourceContent;
+    private String emailEventDetails;
+
     private List<ExternalReference> postResources;
+    private List<ContentDTO> postResourceContent;
 
     private ImageDTO eventThumbnail;
 
@@ -50,6 +56,37 @@ public class IsaacEventPageDTO extends ContentDTO {
 
     private EventStatus eventStatus;
 
+    private String isaacGroupToken;
+
+    private Boolean isUserBooked;
+    private Boolean isUserOnWaitList;
+
+    private Integer placesAvailable;
+
+	/**
+     *
+     * @param _id
+     * @param id
+     * @param title
+     * @param subtitle
+     * @param type
+     * @param author
+     * @param encoding
+     * @param canonicalSourceFile
+     * @param layout
+     * @param children
+     * @param relatedContent
+     * @param published
+     * @param tags
+     * @param date
+     * @param end_date
+     * @param location
+     * @param preResources
+     * @param postResources
+     * @param eventThumbnail
+     * @param numberOfPlaces
+	 * @param eventStatus
+	 */
     @JsonCreator
     public IsaacEventPageDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
@@ -59,6 +96,7 @@ public class IsaacEventPageDTO extends ContentDTO {
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
             @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
+            @JsonProperty("bookingDeadline") Date bookingDeadline,
             @JsonProperty("location") Address location,
             @JsonProperty("preResources") List<ExternalReference> preResources,
             @JsonProperty("postResources") List<ExternalReference> postResources,
@@ -68,7 +106,8 @@ public class IsaacEventPageDTO extends ContentDTO {
                 relatedContent, published, tags, null);
 
         this.date = date;
-        this.setEndDate(end_date);
+        this.end_date = end_date;
+        this.bookingDeadline = bookingDeadline;
         this.location = location;
         this.preResources = preResources;
         this.postResources = postResources;
@@ -124,6 +163,25 @@ public class IsaacEventPageDTO extends ContentDTO {
             this.end_date = this.date;
         }
     }
+
+    /**
+     * getBookingDeadline.
+     *
+     * @return bookingDeadline.
+     */
+    public Date getBookingDeadline() {
+        return bookingDeadline;
+    }
+
+    /**
+     * setBookingDeadline.
+     *
+     * @param bookingDeadline the booking deadline.
+     */
+    public void setBookingDeadline(final Date bookingDeadline) {
+        this.bookingDeadline = bookingDeadline;
+    }
+
     /**
      * Gets the location.
      * 
@@ -236,5 +294,118 @@ public class IsaacEventPageDTO extends ContentDTO {
      */
     public void setEventStatus(final EventStatus eventStatus) {
         this.eventStatus = eventStatus;
+    }
+
+
+    /**
+     * Gets the isaacGroupToken.
+     *
+     * @return the group token.
+     */
+    public String getIsaacGroupToken() {
+        return isaacGroupToken;
+    }
+
+    /**
+     * Sets the isaac group token.
+     *
+     * @param isaacGroupToken the group token for the event.
+     */
+    public void setIsaacGroupToken(final String isaacGroupToken) {
+        this.isaacGroupToken = isaacGroupToken;
+    }
+
+    /**
+     * setEnd_date.
+     *
+     * @param end_date the end date of the event.
+     */
+    public void setEnd_date(final Date end_date) {
+        this.end_date = end_date;
+    }
+
+    /**
+     * getPreResourceContent.
+     *
+     * @return the preresource content.
+     */
+    public List<ContentDTO> getPreResourceContent() {
+        return preResourceContent;
+    }
+
+    /**
+     * setPreResourceContent.
+     *
+     * @param preResourceContent - the preresource content.
+     */
+    public void setPreResourceContent(final List<ContentDTO> preResourceContent) {
+        this.preResourceContent = preResourceContent;
+    }
+
+    /**
+     * getPostResourceContent.
+     *
+     * @return the resource content.
+     */
+    public List<ContentDTO> getPostResourceContent() {
+        return postResourceContent;
+    }
+
+    /**
+     * setPostResourceContent.
+     *
+     * @param postResourceContent the content list.
+     */
+    public void setPostResourceContent(final List<ContentDTO> postResourceContent) {
+        this.postResourceContent = postResourceContent;
+    }
+
+	/**
+     * Gets whether the currently logged in user is booked onto this event or not.
+     * @return true is yes, false is no, null is not logged in
+     */
+    public Boolean isUserBooked() {
+        return isUserBooked;
+    }
+
+	/**
+     * Sets whether or not the current user is booked on an event.
+     * @param loggedInUserBooked - true is yes, false is no, null is not logged in
+     */
+    public void setUserBooked(final Boolean loggedInUserBooked) {
+        isUserBooked = loggedInUserBooked;
+    }
+
+	/**
+	 * getPlacesAvailable based on current bookings..
+     * @return the get the places available.
+     */
+    public Integer getPlacesAvailable() {
+        return placesAvailable;
+    }
+
+	/**
+	 * Set the places available based on current bookings.
+     * @param placesAvailable - the number of places available.
+     */
+    public void setPlacesAvailable(final Integer placesAvailable) {
+        this.placesAvailable = placesAvailable;
+    }
+
+    public Boolean isUserOnWaitList() {
+        return isUserOnWaitList;
+    }
+
+    public void setUserOnWaitList(Boolean userOnWaitList) {
+        isUserOnWaitList = userOnWaitList;
+    }
+
+    @JsonIgnore
+    public String getEmailEventDetails() {
+        return emailEventDetails;
+    }
+
+    public void setEmailEventDetails(final String emailEventDetails) {
+        this.emailEventDetails = emailEventDetails;
     }
 }

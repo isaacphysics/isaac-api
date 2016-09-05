@@ -27,7 +27,6 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -179,13 +178,11 @@ public class UserAssociationManager {
      *            - the user who wishes to grant permissions to another.
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
-     * @throws UserAssociationException
-     *             - if we cannot create the association because it is invalid.
      * @throws InvalidUserAssociationTokenException
      *             - If the token provided is invalid.
      */
     public void createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
-            throws SegueDatabaseException, UserAssociationException, InvalidUserAssociationTokenException {
+            throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
         Validate.notNull(userGrantingPermission);
 

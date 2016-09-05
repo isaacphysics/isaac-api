@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.UserGroupNotFoundException;
-import uk.ac.cam.cl.dtg.segue.dao.associations.UserAssociationException;
 import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.UserAssociation;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
@@ -318,8 +317,6 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (UserAssociationException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Unable to create association", e).toResponse();
         } catch (InvalidUserAssociationTokenException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is Invalid or no longer exists.")
                     .toResponse();

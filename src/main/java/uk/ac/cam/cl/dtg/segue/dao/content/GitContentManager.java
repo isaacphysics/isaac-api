@@ -1045,7 +1045,7 @@ public class GitContentManager implements IContentManager {
 
             if (c instanceof IsaacEventPage) {
                 IsaacEventPage e = (IsaacEventPage) c;
-                if (e.getEndDate().before(e.getDate())) {
+                if (e.getEndDate() != null && e.getEndDate().before(e.getDate())) {
                     this.registerContentProblem(sha, c, "Event has end date before start date");
                 }
             }
