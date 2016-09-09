@@ -285,7 +285,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error(message, e.toString());
+            log.error("User (" + userObject.getId() + ") made too many password reset requests.", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
@@ -652,7 +652,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")
                     .toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn("Missing field during update operation. ", e);
+            log.warn("Missing field during update operation. ", e.getMessage());
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (AuthenticationProviderMappingException e) {

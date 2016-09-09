@@ -331,7 +331,7 @@ public class UserAuthenticationManager {
         try {
             currentSessionInformation = this.getSegueSessionFromRequest(request);
         } catch (IOException e1) {
-            log.error("Error parsing session information ");
+            log.error("Error parsing session information to retrieve user.");
             return null;
         } catch (InvalidSessionException e) {
             log.debug("We cannot read the session information. It probably doesn't exist");

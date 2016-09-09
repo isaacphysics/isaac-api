@@ -236,7 +236,7 @@ public class GroupManager {
         UserGroup group = groupDatabase.findById(groupId);
 
         if (null == group) {
-            throw new ResourceNotFoundException("The group id specified does not exist.");
+            throw new ResourceNotFoundException("The group id specified (" + groupId.toString() + ") does not exist.");
         }
 
         return convertGroupToDTO(group);
