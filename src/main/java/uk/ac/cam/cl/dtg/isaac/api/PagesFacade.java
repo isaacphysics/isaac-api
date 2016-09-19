@@ -611,11 +611,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(PAGE_FRAGMENT_TYPE));
+        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
 
-        // options
-        if (null != fragmentId) {
-            fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(fragmentId));
-        }
         Response result = this.findSingleResult(fieldsToMatch);
 
         Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
@@ -632,14 +629,15 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return A Response object containing a page fragment object or containing a SegueErrorResponse.
      */
     @GET
-    @Path("/pods")
+    @Path("/pods/{subject}")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
-    public final Response getPodList(@Context final Request request) {
+    public final Response getPodList(@Context final Request request,
+                                     @PathParam("subject") final String subject) {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + "");
+        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + subject.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
@@ -647,6 +645,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
+        fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
         ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
                 SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
