@@ -108,6 +108,7 @@ public class IPInfoDBLocationResolver implements IPLocationResolver {
     private String resolveFromServer(final URL url) throws LocationServerException {
         try {
             URLConnection ipInfoDBService = url.openConnection();
+            ipInfoDBService.setRequestProperty("User-Agent", "IsaacPhysicsAPI");
             BufferedReader in = new BufferedReader(new InputStreamReader(ipInfoDBService.getInputStream()));
             String inputLine;
             StringBuilder jsonResponseBuilder = new StringBuilder();
