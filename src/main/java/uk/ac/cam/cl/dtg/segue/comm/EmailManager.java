@@ -701,6 +701,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            - email address this email is being sent to
      * @param replyToAddress
      *            - the email address we want to be replied to
+     * @param replyToName
+     *            - the name to use for Reply-To
+     * @param userId
+     *            - the user ID (if known) of the user
      * @throws ContentManagerException
      *             - if some content is not found
      * @throws SegueDatabaseException
@@ -708,10 +712,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendContactUsFormEmail(final String givenName, final String familyName,
             final String emailAddress, final String subject, final String message,
-            final String recipientEmailAddress, final String replyToAddress, final String replyToName)
+            final String recipientEmailAddress, final String replyToAddress, final String replyToName,
+                                       @Nullable final String userId)
             throws ContentManagerException, SegueDatabaseException {
 
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-form");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-us-form");
         emailContent.setReplyToEmailAddress(replyToAddress);
         emailContent.setReplyToName(replyToName);
         emailContent.setSubject("(Contact Form) " + subject);
@@ -719,6 +724,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Properties contentProperties = new Properties();
         contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
         contentProperties.put("contactFamilyName", familyName == null ? "" : familyName);
+        contentProperties.put("contactUserId", userId == null ? "" : userId);
         contentProperties.put("contactEmail", emailAddress == null ? "" : emailAddress);
         contentProperties.put("contactSubject", subject == null ? "" : subject);
         contentProperties.put("contactMessage", message == null ? "" : message);
