@@ -1,0 +1,56 @@
+version: '2'
+services:
+  equality-checker:
+    network_mode: bridge
+    container_name: equality-checker
+    image: ucamcldtg/equality-checker
+  chemistry-checker:
+    network_mode: bridge
+    container_name: chemistry-checker
+    image: ucamcldtg/chemistry-checker
+  elasticsearch:
+    network_mode: bridge
+    container_name: elasticsearch
+    image: elasticsearch:1.4
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    ports:
+      - "9300:9300"
+      - "9200:9200"
+  postgres:
+    network_mode: bridge
+    container_name: postgres
+    image: isaac-pg
+    ports:
+      - "5432:5432"
+  app-physics:
+    network_mode: bridge
+    container_name: app-physics
+    image: nginx:1.9.11
+    volumes:
+      - "../isaac-app/app:/usr/share/nginx/html:ro"
+      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
+    ports:
+      - "8000:80"
+  app-chemistry:
+    network_mode: bridge
+    container_name: app-chemistry
+    image: nginx:1.9.11
+    volumes:
+      - "../isaac-app/app:/usr/share/nginx/html:ro"
+      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
+    ports:
+      - "8001:80"
+  app-biology:
+    network_mode: bridge
+    container_name: app-biology
+    image: nginx:1.9.11
+    volumes:
+      - "../isaac-app/app:/usr/share/nginx/html:ro"
+      - "../isaac-app/nginx.conf:/etc/nginx/nginx.conf:ro"
+    ports:
+      - "8002:80"
+networks:
+  default:
+    external:
+      name: bridge
