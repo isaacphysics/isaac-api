@@ -905,8 +905,9 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             List<RegisteredUserDTO> findUsers;
-            
-            if (null != email && !email.isEmpty()) {
+
+            // If a unique email address (without wildcards) provided, look up using this email immediately:
+            if (null != email && !email.isEmpty() && !(email.contains("%") || email.contains("_"))) {
                 try {
                     findUsers = Collections.singletonList(this.userManager.getUserDTOByEmail(email));
                 } catch (NoUserException e) {
