@@ -38,7 +38,7 @@ public class IsaacQuestionPage extends SeguePage {
     protected String supersededBy;
 
     @JsonCreator
-    public IsaacQuestionPage(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public IsaacQuestionPage(@JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -47,7 +47,7 @@ public class IsaacQuestionPage extends SeguePage {
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") boolean published,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level,
             @JsonProperty("passMark") Float passMark, @JsonProperty("supersededBy") String supersededBy) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.passMark = passMark;

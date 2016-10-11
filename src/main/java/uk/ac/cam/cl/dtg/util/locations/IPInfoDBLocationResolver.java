@@ -22,7 +22,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 
-import org.elasticsearch.common.lang3.Validate;
+import org.apache.commons.lang3.Validate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;

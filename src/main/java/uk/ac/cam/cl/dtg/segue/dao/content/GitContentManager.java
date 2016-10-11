@@ -37,6 +37,8 @@ import javax.ws.rs.NotFoundException;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 
 import org.apache.commons.codec.binary.Base64;
@@ -47,9 +49,6 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.elasticsearch.common.collect.ImmutableSet;
-import org.elasticsearch.common.collect.ImmutableSet.Builder;
-import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -388,7 +387,7 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Set<String> getCachedVersionList() {
-        Builder<String> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<String> builder = ImmutableSet.builder();
         for (String index : this.searchProvider.getAllIndices()) {
             // check to see if index looks like a content sha otherwise we will get loads of other search indexes come
             // back.

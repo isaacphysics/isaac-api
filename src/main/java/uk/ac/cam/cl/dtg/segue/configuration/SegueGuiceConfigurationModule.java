@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
@@ -298,9 +299,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
             @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
         if (null == elasticSearchClient) {
-            elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
-            log.info("Creating singleton of ElasticSearchProvider");
-        } 
+            try {
+                elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
+                log.info("Creating singleton of ElasticSearchProvider");
+            } catch (UnknownHostException e) {
+                log.error("Could not create ElasticSearchProvider");
+                return null;
+            }
+        }
         // eventually we want to do something like the below to make sure we get updated clients        
 //        if (elasticSearchClient instanceof TransportClient) {
 //            TransportClient tc = (TransportClient) elasticSearchClient;

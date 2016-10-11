@@ -39,7 +39,7 @@ public class IsaacPod extends Content {
 	private String url;
 
 	@JsonCreator
-	public IsaacPod(@JsonProperty("_id") String _id,
+	public IsaacPod(
 			@JsonProperty("id") String id, @JsonProperty("title") String title,
 			@JsonProperty("subtitle") String subtitle,
 			@JsonProperty("type") String type,
@@ -57,7 +57,7 @@ public class IsaacPod extends Content {
 			@JsonProperty("emailAddress") String emailAddress,
 			@JsonProperty("image") Image image,
 			@JsonProperty("url") String url) {
-		super(_id, id, title, subtitle, type, author, encoding,
+		super(id, title, subtitle, type, author, encoding,
 				canonicalSourceFile, layout, children, value, attribution,
 				relatedContent, published, tags, level);
 

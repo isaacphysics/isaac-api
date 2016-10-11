@@ -65,7 +65,6 @@ public class IsaacEventPageDTO extends ContentDTO {
 
 	/**
      *
-     * @param _id
      * @param id
      * @param title
      * @param subtitle
@@ -88,7 +87,7 @@ public class IsaacEventPageDTO extends ContentDTO {
 	 * @param eventStatus
 	 */
     @JsonCreator
-    public IsaacEventPageDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public IsaacEventPageDTO(@JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -102,7 +101,7 @@ public class IsaacEventPageDTO extends ContentDTO {
             @JsonProperty("postResources") List<ExternalReference> postResources,
             @JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
             @JsonProperty("numberOfPlaces") Integer numberOfPlaces, @JsonProperty("EventStatus") EventStatus eventStatus) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null, null,
                 relatedContent, published, tags, null);
 
         this.date = date;

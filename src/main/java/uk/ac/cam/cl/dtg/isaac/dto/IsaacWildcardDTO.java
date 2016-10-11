@@ -38,7 +38,7 @@ public class IsaacWildcardDTO extends ContentDTO {
     protected String url;
 
     @JsonCreator
-    public IsaacWildcardDTO(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public IsaacWildcardDTO(@JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -50,7 +50,7 @@ public class IsaacWildcardDTO extends ContentDTO {
             @JsonProperty("altText") String altText, @JsonProperty("emailAddress") String emailAddress,
             @JsonProperty("image") Image image, @JsonProperty("description") String description,
             @JsonProperty("url") String url) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.description = description;

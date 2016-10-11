@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.search;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,7 +34,6 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -42,22 +43,11 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.AndFilterBuilder;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.index.query.PrefixQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeFilterBuilder;
-import org.elasticsearch.index.query.RegexpQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -248,15 +238,12 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).boost(2.0f);
         query.should(multiMatchQuery);
 
-        QueryBuilder fuzzyQuery = QueryBuilders.fuzzyLikeThisQuery(fields).likeText(searchString)
-                .fuzziness(Fuzziness.AUTO);
+        QueryBuilder fuzzyQuery = QueryBuilders.moreLikeThisQuery(fields).addLikeText(searchString);
         query.should(fuzzyQuery);
 
         masterQuery.must(query);
 
-        ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, masterQuery, startIndex, limit);
-
-        return resultList;
+        return this.executeBasicQuery(index, indexType, masterQuery, startIndex, limit);
     }
 
     @Override
@@ -279,9 +266,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 MultiMatchQueryBuilder.Type.PHRASE_PREFIX);
         query.must(multiMatchQuery);
 
-        ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
-
-        return resultList;
+        return this.executeBasicQuery(index, indexType, query, startIndex, limit);
     }
 
     @Override
@@ -292,9 +277,8 @@ public class ElasticSearchProvider implements ISearchProvider {
             return null;
         }
 
-        QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumMatch(searchTerms.size());
-        ResultsWrapper<String> resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
-        return resultList;
+        QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumShouldMatch(Integer.toString(searchTerms.size()));
+        return this.executeBasicQuery(index, indexType, query, startIndex, limit);
     }
 
     @Override
@@ -317,18 +301,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         return true;
     }
 
-    @Override
-    public boolean expungeIndexTypeFromSearchCache(final String index, final String indexType) {
-        try {
-            DeleteMappingRequest deleteMapping = new DeleteMappingRequest(index).types(indexType);
-            client.admin().indices().deleteMapping(deleteMapping).actionGet();
-        } catch (ElasticsearchException e) {
-            log.error("ElasticSearch exception while trying to delete index " + index + " type " + indexType);
-            return false;
-        }
-        return true;
-    }
-
     /**
      * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
      * 
@@ -340,11 +312,11 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - port that the cluster is running on.
      * @return Defaults to http client creation.
      */
-    public static Client getTransportClient(final String clusterName, final String address, final int port) {
-        Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", clusterName)
+    public static Client getTransportClient(final String clusterName, final String address, final int port) throws UnknownHostException {
+        Settings settings = Settings.settingsBuilder().put("cluster.name", clusterName)
                 .put("client.transport.ping_timeout", "10s").build();
-        TransportClient transportClient = new TransportClient(settings);
-        InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(address, port);
+        TransportClient transportClient = TransportClient.builder().settings(settings).build();
+        InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(InetAddress.getByName(address), port);
         transportClient = transportClient.addTransportAddress(transportAddress);
 		log.info("Elastic Search Transport client created with settings: " + settings.toDelimitedString(' '));
         return transportClient;
@@ -424,15 +396,16 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - in the form "fieldName --> instruction key --> instruction value"
      * @return filterbuilder
      */
-    private FilterBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
-        AndFilterBuilder filter = FilterBuilders.andFilter();
+    private QueryBuilder generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
+        BoolQueryBuilder filter = QueryBuilders.boolQuery();
+
 
         for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
             // date filter logic
             if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction) {
                 DateRangeFilterInstruction dateRangeInstruction = (DateRangeFilterInstruction) fieldToFilterInstruction
                         .getValue();
-                RangeFilterBuilder rangeFilter = FilterBuilders.rangeFilter(fieldToFilterInstruction.getKey());
+                RangeQueryBuilder rangeFilter = QueryBuilders.rangeQuery(fieldToFilterInstruction.getKey());
                 // Note: assumption that dates are stored in long format.
                 if (dateRangeInstruction.getFromDate() != null) {
                     rangeFilter.from(dateRangeInstruction.getFromDate().getTime());
@@ -442,7 +415,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                     rangeFilter.to(dateRangeInstruction.getToDate().getTime());
                 }
 
-                filter.add(rangeFilter);
+                filter.must(rangeFilter);
             }
         }
 

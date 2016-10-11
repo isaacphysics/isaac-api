@@ -60,8 +60,7 @@ public class IsaacEventPage extends Content {
 	private String isaacGroupToken;
 
 	@JsonCreator
-	public IsaacEventPage(@JsonProperty("_id") String _id,
-						  @JsonProperty("id") String id,
+	public IsaacEventPage(@JsonProperty("id") String id,
 						  @JsonProperty("title") String title,
 						  @JsonProperty("subtitle") String subtitle,
 						  @JsonProperty("type") String type,
@@ -80,7 +79,7 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("eventThumbnail") Image eventThumbnail,
 						  @JsonProperty("numberOfPlaces") Integer numberOfPlaces,
 						  @JsonProperty("EventStatus") EventStatus eventStatus) {
-		super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
+		super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, null,
 			null, relatedContent, published, tags, null);
 
 		this.date = date;

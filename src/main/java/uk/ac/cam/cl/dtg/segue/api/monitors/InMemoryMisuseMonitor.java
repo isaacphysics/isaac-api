@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.common.collect.Maps;
-import org.elasticsearch.common.lang3.Validate;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
