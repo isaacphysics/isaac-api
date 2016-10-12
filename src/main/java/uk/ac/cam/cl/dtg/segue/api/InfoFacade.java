@@ -264,4 +264,28 @@ public class InfoFacade extends AbstractSegueFacade {
 
     }
 
+    @GET
+    @Path("chemistry_checker/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pingChemistryChecker(@Context final HttpServletRequest request) {
+
+        // TODO: Factor this URL out into a property
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet("http://chemistry-checker:5000/");
+
+        HttpResponse httpResponse = null;
+        try {
+            httpResponse = httpClient.execute(httpGet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
+
+    }
+
 }
