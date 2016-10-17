@@ -91,7 +91,7 @@ public class NotificationPicker {
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
-        	IUserNotification record = listOfRecordedNotifications.get(c.get_id());
+        	IUserNotification record = listOfRecordedNotifications.get(c.getId());
             if (!(c instanceof NotificationDTO)) {
                 // skip if not a notification somehow.
                 continue;

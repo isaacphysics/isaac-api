@@ -273,7 +273,7 @@ public class GitContentManagerTest {
 	 */
 	private Content createEmptyContentElement(final List<ContentBase> children,
 			final String id) {
-		return new Content("", id, "", "", "", "", "", "", "", children, "",
+		return new Content(id, "", "", "", "", "", "", "", children, "",
 				"", new LinkedList<String>(), false, new HashSet<String>(), 1);
 	}
 

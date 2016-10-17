@@ -57,7 +57,7 @@ public class EmailTemplate extends Content {
             final String type, final String author, final String encoding, final String canonicalSourceFile,
             final String layout, final List<ContentBase> children, final String value, final String attribution,
             final List<String> relatedContent, final Boolean published, final Set<String> tags, final Integer level) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
     }

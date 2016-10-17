@@ -72,8 +72,7 @@ import com.google.inject.Inject;
 public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
 
-    private final Client client;
-    private final List<String> rawFieldsList;
+    protected final Client client;
 
     private final Random randomNumberGenerator;
 
@@ -89,7 +88,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Inject
     public ElasticSearchProvider(final Client searchClient) {
         this.client = searchClient;
-        rawFieldsList = Lists.newArrayList();
         this.randomNumberGenerator = new Random();
     }
 
@@ -452,43 +450,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         return new ResultsWrapper<String>(resultList, response.getHits().getTotalHits());
     }
 
-    /**
-     * This function will allow top level fields to have their contents cloned into an unanalysed field with the name
-     * {FieldName}.{raw}
-     * 
-     * This is useful if we want to query the original data without ElasticSearch having messed with it.
-     * 
-     * @param index
-     *            - index to send the mapping corrections to.
-     * @param indexType
-     *            - type to send the mapping corrections to.
-     */
-    private void sendMappingCorrections(final String index, final String indexType) {
-        try {
-            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
 
-            final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
-                    .startObject("properties");
-
-            for (String fieldName : this.rawFieldsList) {
-                log.debug("Sending raw mapping correction for " + fieldName + "."
-                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
-
-                mappingBuilder.startObject(fieldName).field("type", "string").field("index", "analyzed")
-                        .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                        .field("type", "string").field("index", "not_analyzed").endObject().endObject().endObject();
-            }
-            // close off json structure
-            mappingBuilder.endObject().endObject().endObject();
-            indexBuilder.addMapping(indexType, mappingBuilder);
-
-            // Send Mapping information
-            indexBuilder.execute().actionGet();
-
-        } catch (IOException e) {
-            log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
-        }
-    }
 
     /**
      * Utility function to support conversion between simple field maps and bool maps.
