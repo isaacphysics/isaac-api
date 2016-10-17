@@ -65,9 +65,6 @@ public class SchoolLookupServiceFacade {
     @Inject
     public SchoolLookupServiceFacade(final SchoolListReader schoolListReader) {
         this.schoolListReader = schoolListReader;
-
-        // initialise schools list asynchronously.
-        this.schoolListReader.prepareSchoolList();
     }
 
     /**

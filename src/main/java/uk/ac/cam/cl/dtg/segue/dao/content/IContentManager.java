@@ -48,7 +48,7 @@ public interface IContentManager {
      *            - True if you only wish to index content where the top level content object is marked as published.
      *            False if all valid content should be indexed.
      */
-    void setIndexRestriction(boolean loadOnlyPublishedContent);
+    //void setIndexRestriction(boolean loadOnlyPublishedContent);
 
     /**
      * Save an object to the content manager.
@@ -59,7 +59,7 @@ public interface IContentManager {
      *            - the object to save to the content Manager.
      * @return the objects id.
      */
-    <T extends Content> String save(T objectToSave);
+    //<T extends Content> String save(T objectToSave);
 
     /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
@@ -276,7 +276,7 @@ public interface IContentManager {
      * WARNING: this is a nuclear method. Re-indexing will definitely have to occur if you do this.
      * 
      */
-    void clearCache();
+    //void clearCache();
 
     /**
      * A utility method to instruct a content manager to evict a particular version of the content from its caches. This
@@ -285,7 +285,7 @@ public interface IContentManager {
      * @param version
      *            - version to dump the cache of.
      */
-    void clearCache(String version);
+    //void clearCache(String version);
 
     /**
      * A method that will return an unordered set of tags registered for a particular version of the content.

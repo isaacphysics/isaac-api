@@ -158,7 +158,7 @@ public class GitContentManagerTest {
 	/**
 	 * Test that the ensureCache method returns an exception if a null version hash is
 	 * provided.
-	 */
+	 *//*
 	@Test
 	public void ensureCache_nullVersion_checkExceptionReturned() {
 		try {
@@ -167,14 +167,14 @@ public class GitContentManagerTest {
 		} catch (ContentManagerException e) {
 			// pass
 		}
-	}
+	}*/
 
 	/**
 	 * Test that the buildSearchIndexFromLocalGitIndex sends each Content object
 	 * to the searchProvider.
 	 * 
 	 * @throws Exception
-	 */
+	 *//*
 	@SuppressWarnings("unchecked")
 	@Test
 	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
@@ -213,7 +213,7 @@ public class GitContentManagerTest {
 
 		verify(searchProvider, contentMapper, objectMapper);
 	}
-
+*/
 	/**
 	 * Test the flattenContentObjects method and ensure the expected output is
 	 * generated.

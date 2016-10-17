@@ -111,18 +111,6 @@ public class SegueContentFacade extends AbstractSegueFacade {
         this.contentVersionController = contentVersionController;
         this.userManager = userManager;
 
-        if (Boolean.parseBoolean(properties.getProperty(Constants.FOLLOW_GIT_VERSION))) {
-            try {
-                // We need to do this to make sure we have an up to date content repo.
-                log.info("Segue just initialized - Sending content index request "
-                        + "so that we can service some content requests.");
-
-                this.contentVersionController.triggerSyncJob().get();
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("Initial segue initialisation failure.");
-            }
-        }
-
     }
     
 

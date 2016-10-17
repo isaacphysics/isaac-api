@@ -93,58 +93,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         this.randomNumberGenerator = new Random();
     }
 
-    @Override
-    public void indexObject(final String index, final String indexType, final String content)
-            throws SegueSearchOperationException {
-        indexObject(index, indexType, content, null);
-    }
-
-    @Override
-    public void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
-            throws SegueSearchOperationException {
-        // check index already exists if not execute any initialisation steps.
-        if (!this.hasIndex(index)) {
-            this.sendMappingCorrections(index, indexType);
-        }
-
-        // build bulk request
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        for (Map.Entry<String, String> itemToIndex : dataToIndex) {
-            bulkRequest.add(client.prepareIndex(index, indexType, itemToIndex.getKey()).setSource(
-                    itemToIndex.getValue()));
-        }
-
-        try {
-            // execute bulk request
-            BulkResponse bulkResponse = bulkRequest.setRefresh(true).execute().actionGet();
-            if (bulkResponse.hasFailures()) {
-                // process failures by iterating through each bulk response item
-                for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
-                    log.error("Unable to index the following item: " + itemResponse.getFailureMessage());
-                }
-            }
-        } catch (ElasticsearchException e) {
-            throw new SegueSearchOperationException("Error during bulk index operation.", e);
-        }
-    }
-
-    @Override
-    public void indexObject(final String index, final String indexType, final String content, final String uniqueId)
-            throws SegueSearchOperationException {
-        // check index already exists if not execute any initialisation steps.
-        if (!this.hasIndex(index)) {
-            this.sendMappingCorrections(index, indexType);
-        }
-
-        try {
-            IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content).execute()
-                    .actionGet();
-            log.debug("Document: " + indexResponse.getId() + " indexed.");
-
-        } catch (ElasticsearchException e) {
-            throw new SegueSearchOperationException("Error during index operation.", e);
-        }
-    }
 
     @Override
     public ResultsWrapper<String> matchSearch(final String index, final String indexType,
@@ -281,26 +229,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         return this.executeBasicQuery(index, indexType, query, startIndex, limit);
     }
 
-    @Override
-    public boolean expungeEntireSearchCache() {
-        return this.expungeIndexFromSearchCache("_all");
-    }
-
-    @Override
-    public boolean expungeIndexFromSearchCache(final String index) {
-        Validate.notBlank(index);
-
-        try {
-            log.info("Sending delete request to ElasticSearch for search index: " + index);
-            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
-        } catch (ElasticsearchException e) {
-            log.error("ElasticSearch exception while trying to delete index " + index, e);
-            return false;
-        }
-
-        return true;
-    }
-
     /**
      * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
      * 
@@ -331,11 +259,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public Collection<String> getAllIndices() {       
         return client.admin().indices().stats(new IndicesStatsRequest()).actionGet().getIndices().keySet();
-    }
-    
-    @Override
-    public void registerRawStringFields(final List<String> fieldNames) {
-        this.rawFieldsList.addAll(fieldNames);
     }
 
     @Override

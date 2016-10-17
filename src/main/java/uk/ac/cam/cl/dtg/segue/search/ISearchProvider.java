@@ -45,8 +45,8 @@ public interface ISearchProvider {
      * @throws SegueSearchOperationException
      *             - if there is an error whilst trying to index the document.
      */
-    void indexObject(final String index, final String indexType, final String content)
-            throws SegueSearchOperationException;
+    //void indexObject(final String index, final String indexType, final String content)
+    //        throws SegueSearchOperationException;
 
     /**
      * Indexes an object with the search provider.
@@ -62,8 +62,8 @@ public interface ISearchProvider {
      * @throws SegueSearchOperationException
      *             - if there is an error whilst trying to index the document.
      */
-    void indexObject(final String index, final String indexType, final String content, final String uniqueId)
-            throws SegueSearchOperationException;
+    //void indexObject(final String index, final String indexType, final String content, final String uniqueId)
+    //        throws SegueSearchOperationException;
 
     /**
      * Bulk Index operations are useful for indexing large numbers of documents with one request to the search provider.
@@ -77,8 +77,8 @@ public interface ISearchProvider {
      * @throws SegueSearchOperationException
      *             - if there is an error whilst trying to index the document.
      */
-    void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
-            throws SegueSearchOperationException;
+    //void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
+     //       throws SegueSearchOperationException;
 
     /**
      * Verifies the existence of a given index.
@@ -305,7 +305,7 @@ public interface ISearchProvider {
      *            the index to delete from the search providers cache.
      * @return true if successful false if not.
      */
-    boolean expungeIndexFromSearchCache(final String index);
+    //boolean expungeIndexFromSearchCache(final String index);
 
     /**
      * Instruct the search provider to delete all data from all indices.
@@ -314,8 +314,8 @@ public interface ISearchProvider {
      * 
      * @return true if successful false if not.
      */
-    boolean expungeEntireSearchCache();
-
+    //boolean expungeEntireSearchCache();
+    
     /**
      * Register the names of fields that should have clones created (which are not affected by the search processor e.g.
      * stemming and ignoring punctuation)
@@ -323,5 +323,5 @@ public interface ISearchProvider {
      * @param fieldNames
      *            to create raw fields of
      */
-    void registerRawStringFields(List<String> fieldNames);
+    //void registerRawStringFields(List<String> fieldNames);
 }
