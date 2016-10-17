@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections4.map.HashedMap;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
@@ -54,7 +55,7 @@ public class ContentIndexer {
     }
 
     private void loadAndIndexContent(String version, boolean includeUnpublished, boolean setLive) throws Exception {
-        final Map<String, Content> gitCache;
+        final Map<String, Map<String, Content>> typesToIndex;
 
         // now we have acquired the lock check if someone else has indexed this.
         boolean searchIndexed = es.hasIndex(version);
@@ -66,8 +67,12 @@ public class ContentIndexer {
                 "Rebuilding content index as sha (%s) does not exist in search provider.",
                 version));
 
-        // anytime we build the git index we have to empty the problem cache
-        gitCache = buildGitContentIndex(version, includeUnpublished);
+        Map<String, Content> contentCache = new HashMap<>();
+        Map<String, Set<String>> tagsList = new HashMap<>();
+        Map<String, Map<String, String>> allUnits = new HashMap<>();
+        Map<String, Map<Content, List<String>>> indexProblemCache = new HashMap<>();
+
+        buildGitContentIndex(version, includeUnpublished, contentCache, tagsList, allUnits, indexProblemCache);
 
         // TODO: Check for content errors
 //        Thread validationJob = new Thread() {
@@ -103,7 +108,13 @@ public class ContentIndexer {
      * @return the map representing all indexed content.
      * @throws ContentManagerException
      */
-    private synchronized Map<String, Content> buildGitContentIndex(final String sha, final boolean includeUnpublished) throws ContentManagerException {
+    private synchronized void buildGitContentIndex(final String sha,
+                                                   final boolean includeUnpublished,
+                                                   Map<String, Content> contentCache,
+                                                   Map<String, Set<String>> tagsList,
+                                                   Map<String, Map<String, String>> allUnits,
+                                                   Map<String, Map<Content, List<String>>> indexProblemCache)
+            throws ContentManagerException {
 
         if (null == sha) {
             throw new ContentManagerException("SHA is null. Cannot index.");
@@ -118,8 +129,6 @@ public class ContentIndexer {
                 throw new ContentManagerException("Failed to buildGitIndex - Unable to locate resource with SHA: "
                         + sha);
             }
-
-            Map<String, Content> shaCache = new HashMap<String, Content>();
 
             TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
             log.info("Populating git content cache based on sha " + sha + " ...");

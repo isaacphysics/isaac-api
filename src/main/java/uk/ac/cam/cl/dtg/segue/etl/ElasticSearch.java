@@ -46,6 +46,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 //
     void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
             throws SegueSearchOperationException {
+
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(index)) {
             this.sendMappingCorrections(index, indexType);
