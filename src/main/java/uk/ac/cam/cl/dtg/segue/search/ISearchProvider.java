@@ -315,7 +315,7 @@ public interface ISearchProvider {
      * @return true if successful false if not.
      */
     //boolean expungeEntireSearchCache();
-    
+
     /**
      * Register the names of fields that should have clones created (which are not affected by the search processor e.g.
      * stemming and ignoring punctuation)
