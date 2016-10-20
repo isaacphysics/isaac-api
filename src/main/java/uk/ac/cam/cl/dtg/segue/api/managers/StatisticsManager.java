@@ -303,6 +303,8 @@ public class StatisticsManager {
         Map<String, Object> result = ib.build();
         this.longStatsCache.put(GENERAL_STATS, result);
 
+        log.info("Finished calculating General Statistics");
+
         return result;
     }
 
