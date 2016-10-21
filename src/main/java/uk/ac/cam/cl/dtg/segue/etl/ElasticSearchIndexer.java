@@ -1,14 +1,21 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
@@ -18,6 +25,7 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +41,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      *
      * @param searchClient - the client that the provider should be using.
      */
+    @Inject
     public ElasticSearchIndexer(Client searchClient) {
         super(searchClient);
     }
@@ -96,7 +105,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 //    }
 //
 //
-    public boolean expungeIndexFromSearchCache(final String index) {
+    boolean expungeIndexFromSearchCache(final String index) {
         Validate.notBlank(index);
 
         try {
@@ -107,6 +116,21 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             return false;
         }
 
+        return true;
+    }
+
+    boolean addOrMoveIndexAlias(final String alias, final String index) {
+
+        ImmutableOpenMap<String, List<AliasMetaData>> aliases = client.admin().indices().getAliases(new GetAliasesRequest("live")).actionGet().getAliases();
+
+        IndicesAliasesRequestBuilder reqBuilder = client.admin().indices().prepareAliases();
+
+        Iterator<String> i = aliases.keysIt();
+        while (i.hasNext()) {
+            reqBuilder.removeAlias(index, i.next());
+        }
+
+        reqBuilder.addAlias(index, alias).execute().actionGet();
         return true;
     }
 

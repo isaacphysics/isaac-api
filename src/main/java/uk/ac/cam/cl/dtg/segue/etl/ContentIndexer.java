@@ -3,10 +3,14 @@ package uk.ac.cam.cl.dtg.segue.etl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections4.map.HashedMap;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.lib.ObjectId;
@@ -15,8 +19,14 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.configuration.SchoolLookupConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
@@ -54,12 +64,35 @@ public class ContentIndexer {
         }
     }
 
+    public static void main(String[] args) {
+
+
+        Injector injector = Guice.createInjector(new EtlConfigurationModule());
+
+        ContentIndexer indexer = injector.getInstance(ContentIndexer.class);
+
+        try {
+            indexer.loadAndIndexContent("d5e89976d7235142231fbdedc47739f96f9b5c25", true, true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Inject
+    public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapper mapper) {
+        this.database = database;
+        this.es = es;
+        this.mapper = mapper;
+    }
+
     private void loadAndIndexContent(String version, boolean includeUnpublished, boolean setLive) throws Exception {
         final Map<String, Map<String, Content>> typesToIndex;
 
         // now we have acquired the lock check if someone else has indexed this.
         boolean searchIndexed = es.hasIndex(version);
         if (searchIndexed) {
+            log.info("Content already indexed: " + version);
             return;
         }
 
@@ -68,27 +101,15 @@ public class ContentIndexer {
                 version));
 
         Map<String, Content> contentCache = new HashMap<>();
-        Map<String, Set<String>> tagsList = new HashMap<>();
-        Map<String, Map<String, String>> allUnits = new HashMap<>();
-        Map<String, Map<Content, List<String>>> indexProblemCache = new HashMap<>();
+        Set<String> tagsList = new HashSet<>();
+        Map<String, String> allUnits = new HashMap<>();
+        Map<Content, List<String>> indexProblemCache = new HashMap<>();
 
         buildGitContentIndex(version, includeUnpublished, contentCache, tagsList, allUnits, indexProblemCache);
 
-        // TODO: Check for content errors
-//        Thread validationJob = new Thread() {
-//            @Override
-//            public void run() {
-//                checkForContentErrors(version, gitCache);
-//            }
-//        };
-//
-//        validationJob.setDaemon(true);
-//        validationJob.start();
+        checkForContentErrors(version, contentCache, indexProblemCache);
 
-        buildSearchIndexFromLocalGitIndex(version, gitCache);
-
-        // TODO: Sort out tags and units
-
+        buildElasticSearchIndex(version, contentCache, tagsList, allUnits, indexProblemCache);
 
         // Verify the version requested is now available
         if (!es.hasIndex(version)) {
@@ -96,6 +117,10 @@ public class ContentIndexer {
         }
 
         // TODO: At the end of all this, if this is the new live version, set the index alias to point here
+        es.addOrMoveIndexAlias("latest", version);
+        if(setLive) {
+            es.addOrMoveIndexAlias("live", version);
+        }
     }
 
     /**
@@ -111,9 +136,9 @@ public class ContentIndexer {
     private synchronized void buildGitContentIndex(final String sha,
                                                    final boolean includeUnpublished,
                                                    Map<String, Content> contentCache,
-                                                   Map<String, Set<String>> tagsList,
-                                                   Map<String, Map<String, String>> allUnits,
-                                                   Map<String, Map<Content, List<String>>> indexProblemCache)
+                                                   Set<String> tagsList,
+                                                   Map<String, String> allUnits,
+                                                   Map<Content, List<String>> indexProblemCache)
             throws ContentManagerException {
 
         if (null == sha) {
@@ -171,25 +196,25 @@ public class ContentIndexer {
 
                                 this.registerContentProblem(sha, flattenedContent, "Index failure - Invalid ID "
                                         + flattenedContent.getId() + " found in file " + treeWalk.getPathString()
-                                        + ". Must not contain restricted characters.");
+                                        + ". Must not contain restricted characters.", indexProblemCache);
                                 continue;
                             }
 
                             // check if we have seen this key before if
                             // we have then we don't want to add it
                             // again
-                            if (!shaCache.containsKey(flattenedContent.getId())) {
+                            if (!contentCache.containsKey(flattenedContent.getId())) {
                                 // It must be new so we can add it
                                 log.debug("Loading into cache: " + flattenedContent.getId() + "("
                                         + flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
-                                shaCache.put(flattenedContent.getId(), flattenedContent);
-                                registerTagsWithVersion(sha, flattenedContent.getTags());
+                                contentCache.put(flattenedContent.getId(), flattenedContent);
+                                registerTagsWithVersion(sha, flattenedContent.getTags(), tagsList);
 
                                 // If this is a numeric question, extract any
                                 // units from its answers.
 
                                 if (flattenedContent instanceof IsaacNumericQuestion) {
-                                    registerUnitsWithVersion(sha, (IsaacNumericQuestion) flattenedContent);
+                                    registerUnitsWithVersion(sha, (IsaacNumericQuestion) flattenedContent, allUnits);
                                 }
 
                                 continue; // our work here is done
@@ -197,7 +222,7 @@ public class ContentIndexer {
 
                             // shaCache contains key already, compare the
                             // content
-                            if (shaCache.get(flattenedContent.getId()).equals(flattenedContent)) {
+                            if (contentCache.get(flattenedContent.getId()).equals(flattenedContent)) {
                                 // content is the same therefore it is just
                                 // reuse of a content object so that is
                                 // fine.
@@ -212,8 +237,8 @@ public class ContentIndexer {
                                     + ") detected in cache. Skipping " + treeWalk.getPathString());
                             this.registerContentProblem(sha, flattenedContent,
                                     "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and "
-                                            + shaCache.get(flattenedContent.getId()).getCanonicalSourceFile()
-                                            + " only one will be available");
+                                            + contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()
+                                            + " only one will be available", indexProblemCache);
                         }
                     }
                 } catch (JsonMappingException e) {
@@ -222,24 +247,22 @@ public class ContentIndexer {
                     Content dummyContent = new Content();
                     dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
                     this.registerContentProblem(sha, dummyContent, "Index failure - Unable to parse json file found - "
-                            + treeWalk.getPathString() + ". The following error occurred: " + e.getMessage());
+                            + treeWalk.getPathString() + ". The following error occurred: " + e.getMessage(), indexProblemCache);
                 } catch (IOException e) {
                     log.error("IOException while trying to parse " + treeWalk.getPathString(), e);
                     Content dummyContent = new Content();
                     dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
                     this.registerContentProblem(sha, dummyContent,
                             "Index failure - Unable to read the json file found - " + treeWalk.getPathString()
-                                    + ". The following error occurred: " + e.getMessage());
+                                    + ". The following error occurred: " + e.getMessage(), indexProblemCache);
                 }
             }
 
             repository.close();
-            //log.debug("Tags available " + tagsList);
-            //log.debug("All units: " + allUnits);
-            // TODO: Report registered tags and units
+            log.debug("Tags available " + tagsList);
+            log.debug("All units: " + allUnits);
             log.info("Git content cache population for " + sha + " completed!");
 
-            return shaCache;
         } catch (IOException e) {
             log.error("IOException while trying to access git repository. ", e);
             throw new ContentManagerException("Unable to index content, due to an IOException.");
@@ -394,7 +417,7 @@ public class ContentIndexer {
      * @return Set of content objects comprised of all children and the parent.
      */
     private Set<Content> flattenContentObjects(final Content content) {
-        Set<Content> setOfContentObjects = new HashSet<Content>();
+        Set<Content> setOfContentObjects = new HashSet<>();
         if (!content.getChildren().isEmpty()) {
 
             List<ContentBase> children = content.getChildren();
@@ -421,7 +444,7 @@ public class ContentIndexer {
      * @param message
      *            - Error message to associate with the problem file / content.
      */
-    private synchronized void registerContentProblem(final String version, final Content c, final String message) {
+    private synchronized void registerContentProblem(final String version, final Content c, final String message, Map<Content, List<String>> indexProblemCache) {
         Validate.notNull(c);
 
         // try and make sure each dummy content object has a title
@@ -429,17 +452,11 @@ public class ContentIndexer {
             c.setTitle(Paths.get(c.getCanonicalSourceFile()).getFileName().toString());
         }
 
-        // TODO: Work out how to report problems now.
+        if (!indexProblemCache.containsKey(c)) {
+            indexProblemCache.put(c, new ArrayList<String>());
+        }
 
-//        if (!indexProblemCache.containsKey(version)) {
-//            indexProblemCache.put(version, new HashMap<Content, List<String>>());
-//        }
-//
-//        if (!indexProblemCache.get(version).containsKey(c)) {
-//            indexProblemCache.get(version).put(c, new ArrayList<String>());
-//        }
-//
-//        indexProblemCache.get(version).get(c).add(message);//.replace("_", "\\_"));
+        indexProblemCache.get(c).add(message);//.replace("_", "\\_"));
     }
 
     /**
@@ -450,7 +467,7 @@ public class ContentIndexer {
      * @param tags
      *            - set of tags to register.
      */
-    private synchronized void registerTagsWithVersion(final String version, final Set<String> tags) {
+    private synchronized void registerTagsWithVersion(final String version, final Set<String> tags, Set<String> tagsList) {
         Validate.notBlank(version);
 
         if (null == tags || tags.isEmpty()) {
@@ -458,19 +475,14 @@ public class ContentIndexer {
             return;
         }
 
-        // TODO: Work out how to register tags now.
+        Set<String> newTagSet = Sets.newHashSet();
 
-//        if (!tagsList.containsKey(version)) {
-//            tagsList.put(version, new HashSet<String>());
-//        }
-//        Set<String> newTagSet = Sets.newHashSet();
-//
-//        // sanity check that tags are trimmed.
-//        for (String tag : tags) {
-//            newTagSet.add(tag.trim());
-//        }
-//
-//        tagsList.get(version).addAll(newTagSet);
+        // sanity check that tags are trimmed.
+        for (String tag : tags) {
+            newTagSet.add(tag.trim());
+        }
+
+        tagsList.addAll(newTagSet);
     }
 
     /**
@@ -481,7 +493,7 @@ public class ContentIndexer {
      * @param q
      *            - numeric question from which to extract units.
      */
-    private synchronized void registerUnitsWithVersion(final String version, final IsaacNumericQuestion q) {
+    private synchronized void registerUnitsWithVersion(final String version, final IsaacNumericQuestion q, Map<String, String> allUnits) {
 
         HashMap<String, String> newUnits = Maps.newHashMap();
 
@@ -505,13 +517,7 @@ public class ContentIndexer {
             return;
         }
 
-        // TODO: Work out how to register units now.
-
-//        if (!allUnits.containsKey(version)) {
-//            allUnits.put(version, new HashMap<String, String>());
-//        }
-//
-//        allUnits.get(version).putAll(newUnits);
+        allUnits.putAll(newUnits);
     }
 
 
@@ -525,31 +531,49 @@ public class ContentIndexer {
      * @param gitCache
      *            a map that represents indexed content for a given sha.
      */
-    private synchronized void buildSearchIndexFromLocalGitIndex(final String sha, final Map<String, Content> gitCache) {
+    private synchronized void buildElasticSearchIndex(final String sha,
+                                                      final Map<String, Content> gitCache,
+                                                      Set<String> tagsList,
+                                                      Map<String, String> allUnits,
+                                                      Map<Content, List<String>> indexProblemCache) {
         if (es.hasIndex(sha)) {
-            log.info("Search index has already been updated by another thread. No need to reindex. Aborting...");
-            return;
+            log.info("Deleting existing index for version " + sha);
+            es.expungeIndexFromSearchCache(sha);
         }
 
         log.info("Building search index for: " + sha);
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
-        List<Map.Entry<String, String>> thingsToIndex = Lists.newArrayList();
+        List<Map.Entry<String, String>> contentToIndex = Lists.newArrayList();
         ObjectMapper objectMapper = mapper.generateNewPreconfiguredContentMapper();
         for (Content content : gitCache.values()) {
             try {
-                thingsToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
+                contentToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
             } catch (JsonProcessingException e) {
                 log.error("Unable to serialize content object: " + content.getId()
                         + " for indexing with the search provider.", e);
                 this.registerContentProblem(sha, content, "Search Index Error: " + content.getId()
-                        + content.getCanonicalSourceFile() + " Exception: " + e.toString());
+                        + content.getCanonicalSourceFile() + " Exception: " + e.toString(), indexProblemCache);
             }
         }
 
+        List<Map.Entry<String, String>> metadataToIndex = Lists.newArrayList();
+        metadataToIndex.add(immutableEntry("version", sha));
+
         try {
-            es.bulkIndex(sha, "content", thingsToIndex);
+            metadataToIndex.add(immutableEntry("tags", objectMapper.writeValueAsString(tagsList)));
+            metadataToIndex.add(immutableEntry("units", objectMapper.writeValueAsString(allUnits)));
+            metadataToIndex.add(immutableEntry("content_errors", objectMapper.writeValueAsString(indexProblemCache)));
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialise tags, units or content errors.");
+        }
+
+
+        try {
+            es.bulkIndex(sha, "content", contentToIndex);
+            es.bulkIndex(sha, "metadata", metadataToIndex);
+
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchOperationException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
@@ -557,218 +581,220 @@ public class ContentIndexer {
     }
 
 
-//    /*
-//     * This method will attempt to traverse the cache to ensure that all content references are valid.
-//     *
-//     * @param sha
-//     *            version to validate integrity of.
-//     * @param gitCache
-//     *            Data structure containing all content for a given sha.
-//     * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
-//     *//*
-//    private boolean checkForContentErrors(final String sha, final Map<String, Content> gitCache) {
-//        log.info(String.format("Starting content Validation (%s).", sha));
-//        Set<Content> allObjectsSeen = new HashSet<Content>();
-//        Set<String> expectedIds = new HashSet<String>();
-//        Set<String> definedIds = new HashSet<String>();
-//        Set<String> missingContent = new HashSet<String>();
-//        Map<String, Content> whoAmI = new HashMap<String, Content>();
-//
-//        // Build up a set of all content (and content fragments for validation)
-//        for (Content c : gitCache.values()) {
-//// TODO work out why this was here and why removing it didn't seem to do anything!
-////            if (c instanceof IsaacSymbolicQuestion) {
-////                // do not validate these questions for now.
-////                continue;
-////            }
-//            allObjectsSeen.addAll(this.flattenContentObjects(c));
-//        }
-//
-//        // Start looking for issues in the flattened content data
-//        for (Content c : allObjectsSeen) {
-//            // add the id to the list of defined ids
-//            if (c.getId() != null) {
-//                definedIds.add(c.getId());
-//            }
-//
-//            // add the ids to the list of expected ids
-//            if (c.getRelatedContent() != null) {
-//                expectedIds.addAll(c.getRelatedContent());
-//                // record which content object was referencing which ID
-//                for (String id : c.getRelatedContent()) {
-//                    whoAmI.put(id, c);
-//                }
-//            }
-//
-//            // ensure content does not have children and a value
-//            if (c.getValue() != null && !c.getChildren().isEmpty()) {
-//                String id = c.getId();
-//                String firstLine = "Content";
-//                if (id != null) {
-//                    firstLine += ": " + id;
-//                }
-//
-//                this.registerContentProblem(sha, c, firstLine + " in " + c.getCanonicalSourceFile()
-//                        + " found with both children and a value. "
-//                        + "Content objects are only allowed to have one or the other.");
-//
-//                log.error("Invalid content item detected: The object with ID (" + id
-//                        + ") has both children and a value.");
-//            }
-//
-//            // content type specific checks
-//            if (c instanceof Media) {
-//                Media f = (Media) c;
-//
-//                if (f.getSrc() != null
-//                        && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())) {
-//                    this.registerContentProblem(sha, c, "Unable to find Image: " + f.getSrc()
-//                            + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile());
-//                }
-//
-//                // check that there is some alt text.
-//                if (f.getAltText() == null || f.getAltText().isEmpty()) {
-//                    this.registerContentProblem(sha, c, "No altText attribute set for media element: " + f.getSrc()
-//                            + " in Git source file " + c.getCanonicalSourceFile());
-//                }
-//            }
-//            if (c instanceof Question && c.getId() == null) {
-//                this.registerContentProblem(sha, c, "Question: " + c.getTitle() + " in " + c.getCanonicalSourceFile()
-//                        + " found without a unqiue id. " + "This question cannot be logged correctly.");
-//            }
-//            // TODO: remove reference to isaac specific types from here.
-//            if (c instanceof ChoiceQuestion
-//                    && !(c.getType().equals("isaacQuestion"))) {
-//                ChoiceQuestion question = (ChoiceQuestion) c;
-//
-//                if (question.getChoices() == null || question.getChoices().isEmpty()) {
-//                    this.registerContentProblem(sha, question,
-//                            "Question: " + question.getId() + " found without any choice metadata. "
-//                                    + "This question will always be automatically " + "marked as incorrect");
-//                } else {
-//                    boolean correctOptionFound = false;
-//                    for (Choice choice : question.getChoices()) {
-//                        if (choice.isCorrect()) {
-//                            correctOptionFound = true;
-//                        }
-//                    }
-//
-//                    if (!correctOptionFound) {
-//                        this.registerContentProblem(sha, question,
-//                                "Question: " + question.getId() + " found without a correct answer. "
-//                                        + "This question will always be automatically marked as incorrect");
-//                    }
-//                }
-//            }
-//
-//            if (c instanceof EmailTemplate) {
-//                EmailTemplate e = (EmailTemplate) c;
-//                if (e.getPlainTextContent() == null) {
-//                    this.registerContentProblem(sha, c,
-//                            "Email template should always have plain text content field");
-//                }
-//
-//                if (e.getReplyToEmailAddress() != null && null == e.getReplyToName()) {
-//                    this.registerContentProblem(sha, c,
-//                            "Email template contains replyToEmailAddress but not replyToName");
-//                }
-//            }
-//
-//            if (c instanceof IsaacEventPage) {
-//                IsaacEventPage e = (IsaacEventPage) c;
-//                if (e.getEndDate() != null && e.getEndDate().before(e.getDate())) {
-//                    this.registerContentProblem(sha, c, "Event has end date before start date");
-//                }
-//            }
-//
-//            // TODO: the following things are all highly Isaac specific. I guess they should be elsewhere . . .
-//            // Find quantities with values that cannot be parsed as numbers.
-//            if (c instanceof IsaacNumericQuestion) {
-//                IsaacNumericQuestion q = (IsaacNumericQuestion) c;
-//                for (Choice choice : q.getChoices()) {
-//                    if (choice instanceof Quantity) {
-//                        Quantity quantity = (Quantity) choice;
-//
-//                        try {
-//                            Double.parseDouble(quantity.getValue());
-//                        } catch (NumberFormatException e) {
-//                            this.registerContentProblem(sha, c,
-//                                    "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
-//                                            + ")  with value that cannot be interpreted as a number. "
-//                                            + "Users will never be able to match this answer.");
-//                        }
-//                    } else if (q.getRequireUnits()) {
-//                        this.registerContentProblem(sha, c, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
-//                                + choice.getValue() + "). It must be deleted and a new Quantity Choice created.");
-//                    }
-//                }
-//
-//            }
-//
-//            // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
+    /*
+     * This method will attempt to traverse the cache to ensure that all content references are valid.
+     *
+     * @param sha
+     *            version to validate integrity of.
+     * @param gitCache
+     *            Data structure containing all content for a given sha.
+     * @return True if we are happy with the integrity of the git repository, False if there is something wrong.
+     */
+    private boolean checkForContentErrors(final String sha, final Map<String, Content> gitCache,
+                                          Map<Content, List<String>> indexProblemCache) {
+        log.info(String.format("Starting content Validation (%s).", sha));
+        Set<Content> allObjectsSeen = new HashSet<>();
+        Set<String> expectedIds = new HashSet<>();
+        Set<String> definedIds = new HashSet<>();
+        Set<String> missingContent = new HashSet<>();
+        Map<String, Content> whoAmI = new HashMap<>();
+
+        // Build up a set of all content (and content fragments for validation)
+        for (Content c : gitCache.values()) {
+// TODO work out why this was here and why removing it didn't seem to do anything!
 //            if (c instanceof IsaacSymbolicQuestion) {
-//                if (c.getClass().equals(IsaacSymbolicQuestion.class)) {
-//                    IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) c;
-//                    for (String sym : q.getAvailableSymbols()) {
-//                        if (sym.contains("\\")) {
-//                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
-//                                    + sym + ") which contains a '\\' character.");
-//                        }
-//                    }
-//                    for (Choice choice : q.getChoices()) {
-//                        if (choice instanceof Formula) {
-//                            Formula f = (Formula) choice;
-//                            if (f.getPythonExpression().contains("\\")) {
-//                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
-//                                        + choice.getValue() + ") with pythonExpression which contains a '\\' character.");
-//                            } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
-//                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
-//                                        + choice.getValue() + ") with empty pythonExpression!");
-//                            }
-//                        } else {
-//                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
-//                                    + choice.getValue() + "). It must be deleted and a new Formula Choice created.");
-//                        }
-//                    }
-//                } else if (c.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
-//                    IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) c;
-//                    for (Choice choice : q.getChoices()) {
-//                        if (choice instanceof ChemicalFormula) {
-//                            ChemicalFormula f = (ChemicalFormula) choice;
-//                            if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
-//                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
-//                                        + " with empty mhchemExpression!");
-//                            }
-//                        } else {
-//                            this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
-//                                    + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.");
-//                        }
-//                    }
-//                }
+//                // do not validate these questions for now.
+//                continue;
 //            }
-//        }
-//
-//        if (expectedIds.equals(definedIds) && missingContent.isEmpty()) {
-//            return true;
-//        } else {
-//            expectedIds.removeAll(definedIds);
-//            missingContent.addAll(expectedIds);
-//
-//            for (String id : missingContent) {
-//                this.registerContentProblem(sha, whoAmI.get(id), "This id (" + id + ") was referenced by "
-//                        + whoAmI.get(id).getCanonicalSourceFile() + " but the content with that "
-//                        + "ID cannot be found.");
-//            }
-//            if (missingContent.size() > 0) {
-//                log.warn("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
-//                        + "The following ids are referenced but do not exist: " + expectedIds.toString());
-//            }
-//        }
-//        log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
-//                this.indexProblemCache.get(sha).size()));
-//
-//        return false;
-//    }*/
+            allObjectsSeen.addAll(this.flattenContentObjects(c));
+        }
+
+        // Start looking for issues in the flattened content data
+        for (Content c : allObjectsSeen) {
+            // add the id to the list of defined ids
+            if (c.getId() != null) {
+                definedIds.add(c.getId());
+            }
+
+            // add the ids to the list of expected ids
+            if (c.getRelatedContent() != null) {
+                expectedIds.addAll(c.getRelatedContent());
+                // record which content object was referencing which ID
+                for (String id : c.getRelatedContent()) {
+                    whoAmI.put(id, c);
+                }
+            }
+
+            // ensure content does not have children and a value
+            if (c.getValue() != null && !c.getChildren().isEmpty()) {
+                String id = c.getId();
+                String firstLine = "Content";
+                if (id != null) {
+                    firstLine += ": " + id;
+                }
+
+                this.registerContentProblem(sha, c, firstLine + " in " + c.getCanonicalSourceFile()
+                        + " found with both children and a value. "
+                        + "Content objects are only allowed to have one or the other.", indexProblemCache);
+
+                log.error("Invalid content item detected: The object with ID (" + id
+                        + ") has both children and a value.");
+            }
+
+            // content type specific checks
+            if (c instanceof Media) {
+                Media f = (Media) c;
+
+                if (f.getSrc() != null
+                        && !f.getSrc().startsWith("http") && !database.verifyGitObject(sha, f.getSrc())) {
+                    this.registerContentProblem(sha, c, "Unable to find Image: " + f.getSrc()
+                            + " in Git. Could the reference be incorrect? SourceFile is " + c.getCanonicalSourceFile(), indexProblemCache);
+                }
+
+                // check that there is some alt text.
+                if (f.getAltText() == null || f.getAltText().isEmpty()) {
+                    this.registerContentProblem(sha, c, "No altText attribute set for media element: " + f.getSrc()
+                            + " in Git source file " + c.getCanonicalSourceFile(), indexProblemCache);
+                }
+            }
+            if (c instanceof Question && c.getId() == null) {
+                this.registerContentProblem(sha, c, "Question: " + c.getTitle() + " in " + c.getCanonicalSourceFile()
+                        + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
+            }
+            // TODO: remove reference to isaac specific types from here.
+            if (c instanceof ChoiceQuestion
+                    && !(c.getType().equals("isaacQuestion"))) {
+                ChoiceQuestion question = (ChoiceQuestion) c;
+
+                if (question.getChoices() == null || question.getChoices().isEmpty()) {
+                    this.registerContentProblem(sha, question,
+                            "Question: " + question.getId() + " found without any choice metadata. "
+                                    + "This question will always be automatically " + "marked as incorrect", indexProblemCache);
+                } else {
+                    boolean correctOptionFound = false;
+                    for (Choice choice : question.getChoices()) {
+                        if (choice.isCorrect()) {
+                            correctOptionFound = true;
+                        }
+                    }
+
+                    if (!correctOptionFound) {
+                        this.registerContentProblem(sha, question,
+                                "Question: " + question.getId() + " found without a correct answer. "
+                                        + "This question will always be automatically marked as incorrect", indexProblemCache);
+                    }
+                }
+            }
+
+            if (c instanceof EmailTemplate) {
+                EmailTemplate e = (EmailTemplate) c;
+                if (e.getPlainTextContent() == null) {
+                    this.registerContentProblem(sha, c,
+                            "Email template should always have plain text content field", indexProblemCache);
+                }
+
+                if (e.getReplyToEmailAddress() != null && null == e.getReplyToName()) {
+                    this.registerContentProblem(sha, c,
+                            "Email template contains replyToEmailAddress but not replyToName", indexProblemCache);
+                }
+            }
+
+            if (c instanceof IsaacEventPage) {
+                IsaacEventPage e = (IsaacEventPage) c;
+                if (e.getEndDate() != null && e.getEndDate().before(e.getDate())) {
+                    this.registerContentProblem(sha, c, "Event has end date before start date", indexProblemCache);
+                }
+            }
+
+            // TODO: the following things are all highly Isaac specific. I guess they should be elsewhere . . .
+            // Find quantities with values that cannot be parsed as numbers.
+            if (c instanceof IsaacNumericQuestion) {
+                IsaacNumericQuestion q = (IsaacNumericQuestion) c;
+                for (Choice choice : q.getChoices()) {
+                    if (choice instanceof Quantity) {
+                        Quantity quantity = (Quantity) choice;
+
+                        try {
+                            //noinspection ResultOfMethodCallIgnored
+                            Double.parseDouble(quantity.getValue());
+                        } catch (NumberFormatException e) {
+                            this.registerContentProblem(sha, c,
+                                    "Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
+                                            + ")  with value that cannot be interpreted as a number. "
+                                            + "Users will never be able to match this answer.", indexProblemCache);
+                        }
+                    } else if (q.getRequireUnits()) {
+                        this.registerContentProblem(sha, c, "Numeric Question: " + q.getId() + " has non-Quantity Choice ("
+                                + choice.getValue() + "). It must be deleted and a new Quantity Choice created.", indexProblemCache);
+                    }
+                }
+
+            }
+
+            // Find Symbolic Questions with broken properties. Need to exclude Chemistry questions!
+            if (c instanceof IsaacSymbolicQuestion) {
+                if (c.getClass().equals(IsaacSymbolicQuestion.class)) {
+                    IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) c;
+                    for (String sym : q.getAvailableSymbols()) {
+                        if (sym.contains("\\")) {
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has availableSymbol ("
+                                    + sym + ") which contains a '\\' character.", indexProblemCache);
+                        }
+                    }
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof Formula) {
+                            Formula f = (Formula) choice;
+                            if (f.getPythonExpression().contains("\\")) {
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
+                            } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
+                                this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has Formula ("
+                                        + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
+                            }
+                        } else {
+                            this.registerContentProblem(sha, c, "Symbolic Question: " + q.getId() + " has non-Formula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new Formula Choice created.", indexProblemCache);
+                        }
+                    }
+                } else if (c.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
+                    IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) c;
+                    for (Choice choice : q.getChoices()) {
+                        if (choice instanceof ChemicalFormula) {
+                            ChemicalFormula f = (ChemicalFormula) choice;
+                            if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
+                                this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
+                                        + " with empty mhchemExpression!", indexProblemCache);
+                            }
+                        } else {
+                            this.registerContentProblem(sha, c, "Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
+                                    + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (expectedIds.equals(definedIds) && missingContent.isEmpty()) {
+            return true;
+        } else {
+            expectedIds.removeAll(definedIds);
+            missingContent.addAll(expectedIds);
+
+            for (String id : missingContent) {
+                this.registerContentProblem(sha, whoAmI.get(id), "This id (" + id + ") was referenced by "
+                        + whoAmI.get(id).getCanonicalSourceFile() + " but the content with that "
+                        + "ID cannot be found.", indexProblemCache);
+            }
+            if (missingContent.size() > 0) {
+                log.warn("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
+                        + "The following ids are referenced but do not exist: " + expectedIds.toString());
+            }
+        }
+        log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
+                indexProblemCache.size()));
+
+        return false;
+    }
 //
 //
 //
