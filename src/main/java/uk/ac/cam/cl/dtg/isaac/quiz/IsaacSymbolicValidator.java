@@ -203,7 +203,7 @@ public class IsaacSymbolicValidator implements IValidator {
                     HttpClient httpClient = new DefaultHttpClient();
                     HttpPost httpPost = new HttpPost("http://equality-checker:5000/check");
 
-                    httpPost.setEntity(new StringEntity(requestString));
+                    httpPost.setEntity(new StringEntity(requestString, "UTF-8"));
                     httpPost.addHeader("Content-Type", "application/json");
 
                     HttpResponse httpResponse = httpClient.execute(httpPost);
