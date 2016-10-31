@@ -5,13 +5,13 @@ services:
     container_name: equality-checker
     image: ucamcldtg/equality-checker
     ports:
-      - "8880:80"
+      - "5000:5000"
   chemistry-checker:
     network_mode: bridge
     container_name: chemistry-checker
     image: ucamcldtg/chemistry-checker
     ports:
-      - "8881:80"
+      - "5001:5000"
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch

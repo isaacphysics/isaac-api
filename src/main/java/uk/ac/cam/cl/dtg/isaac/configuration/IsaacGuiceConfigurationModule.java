@@ -37,12 +37,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.sql.SQLException;
-
-import static uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule.globalProperties;
 
 /**
  * This class is responsible for injecting configuration values using GUICE.
