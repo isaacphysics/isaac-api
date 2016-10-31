@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.isaac.configuration;
 
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import ma.glasnost.orika.MapperFacade;
 
 import org.slf4j.Logger;
@@ -24,6 +26,9 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
@@ -32,6 +37,12 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.sql.SQLException;
+
+import static uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule.globalProperties;
 
 /**
  * This class is responsible for injecting configuration values using GUICE.
@@ -58,6 +69,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         bind(ISegueDTOConfigurationModule.class).toInstance(new SegueConfigurationModule());
         
         bind(IAssignmentPersistenceManager.class).to(PgAssignmentPersistenceManager.class);
+
     }
 
     /**
@@ -90,5 +102,33 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
         }
 
         return gameboardPersistenceManager;
+    }
+
+    /**
+     * Gets an instance of the symbolic question validator.
+     *
+     * @return IsaacSymbolicValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacSymbolicValidator getSymbolicValidator(PropertiesLoader properties) {
+
+        return new IsaacSymbolicValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
+                properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+    }
+
+    /**
+     * Gets an instance of the chemistry question validator.
+     *
+     * @return IsaacSymbolicChemistryValidator preconfigured to work with the specified checker.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(PropertiesLoader properties) {
+
+        return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
+                properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
     }
 }

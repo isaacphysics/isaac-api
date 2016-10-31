@@ -247,7 +247,8 @@ public class InfoFacade extends AbstractSegueFacade {
 
         // TODO: Factor this URL out into a property
         HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://equality-checker:5000/");
+        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
+                                      + ":" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT) +  "/");
 
         HttpResponse httpResponse = null;
         try {
@@ -271,7 +272,8 @@ public class InfoFacade extends AbstractSegueFacade {
 
         // TODO: Factor this URL out into a property
         HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://chemistry-checker:5000/");
+        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_HOST)
+                                      + ":" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_PORT) +  "/");
 
         HttpResponse httpResponse = null;
         try {

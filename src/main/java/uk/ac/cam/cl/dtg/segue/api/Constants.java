@@ -404,6 +404,12 @@ public final class Constants {
 
     public static final String GROUP_FK = "groupId";
 
+    public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
+    public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
+
+    public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
+    public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
+
     /**
      * Private constructor to prevent this class being created.
      */

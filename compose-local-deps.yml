@@ -4,10 +4,14 @@ services:
     network_mode: bridge
     container_name: equality-checker
     image: ucamcldtg/equality-checker
+    ports:
+      - "8880:80"
   chemistry-checker:
     network_mode: bridge
     container_name: chemistry-checker
     image: ucamcldtg/chemistry-checker
+    ports:
+      - "8881:80"
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch
