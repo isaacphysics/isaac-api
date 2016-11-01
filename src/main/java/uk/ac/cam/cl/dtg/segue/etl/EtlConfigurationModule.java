@@ -14,8 +14,6 @@ import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.io.IOException;
@@ -24,14 +22,14 @@ import java.net.UnknownHostException;
 /**
  * Created by Ian on 21/10/2016.
  */
-class EtlConfigurationModule extends AbstractModule {
-    private static final Logger log = LoggerFactory.getLogger(EtlConfigurationModule.class);
+class ETLConfigurationModule extends AbstractModule {
+    private static final Logger log = LoggerFactory.getLogger(ETLConfigurationModule.class);
     private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
     private static ContentMapper mapper = null;
     private static Client elasticSearchClient = null;
 
-    EtlConfigurationModule() {
+    ETLConfigurationModule() {
         if (globalProperties == null || configLocationProperties == null) {
             try {
                 if (null == configLocationProperties) {

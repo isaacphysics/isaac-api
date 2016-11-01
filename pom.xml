@@ -16,6 +16,8 @@
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1102-jdbc41</postgresql.version>
 		<swagger-ui-version>2.1.0</swagger-ui-version>
+        <jetty.port.api>8080</jetty.port.api>
+        <jetty.port.etl>8090</jetty.port.etl>
 	</properties>
 	<repositories>
 		<repository>
@@ -335,6 +337,12 @@
 						<contextPath>/isaac-api</contextPath>
 						<overrideDescriptor>jetty-local-cors-filters.xml</overrideDescriptor>
 					</webApp>
+                    <systemProperties>
+                        <systemProperty>
+                            <name>jetty.port</name>
+                            <value>${jetty.port.api}</value>
+                        </systemProperty>
+                    </systemProperties>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -396,6 +404,31 @@
 						<directory>src/main/resources</directory>
 					</resource>
 				</resources>
+			</build>
+		</profile>
+		<profile>
+			<id>etl</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.jetty</groupId>
+						<artifactId>jetty-maven-plugin</artifactId>
+						<version>9.3.12.v20160915</version>
+						<configuration>
+							<scanIntervalSeconds>10</scanIntervalSeconds>
+							<webApp>
+								<contextPath>/isaac-api</contextPath>
+								<overrideDescriptor>etl-override.xml</overrideDescriptor>
+							</webApp>
+							<systemProperties>
+								<systemProperty>
+									<name>jetty.port</name>
+									<value>${jetty.port.etl}</value>
+								</systemProperty>
+							</systemProperties>
+						</configuration>
+					</plugin>
+				</plugins>
 			</build>
 		</profile>
 	</profiles>

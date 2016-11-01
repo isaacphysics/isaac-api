@@ -1,9 +1,62 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
+import com.google.inject.Inject;
+import io.swagger.annotations.Api;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.AbstractSegueFacade;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 /**
+ *
  * Created by Ian on 17/10/2016.
  */
-public class Facade {
+@Path("/etl")
+@Api(value = "/etl")
+public class ETLFacade extends AbstractSegueFacade {
+    private static final Logger log = LoggerFactory.getLogger(ETLFacade.class);
+
+    private final ETLManager etlManager;
+
+    /**
+     * Constructor that provides a properties loader.
+     *
+     * @param properties the propertiesLoader.
+     */
+    @Inject
+    public ETLFacade(PropertiesLoader properties, ETLManager manager) {
+        super(properties, null);
+        this.etlManager = manager;
+    }
+
+    @POST
+    @Path("/set_live_version/{version}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setLiveVersion(@PathParam("version") final String version) {
+
+        etlManager.setLiveVersion(version);
+
+        return Response.ok().build();
+    }
+
+    @POST
+    @Path("/new_version_alert")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response newVersionAlert(GithubPushEventPayload payload) {
+        // We are only interested in the master branch
+        if(payload.getRef().equals("refs/heads/master")) {
+            String newVersion = payload.getAfter();
+            etlManager.notifyNewVersion(newVersion);
+        }
+        return Response.ok().build();
+    }
+
+
 
     //***************************
     // ADMIN FACADE
