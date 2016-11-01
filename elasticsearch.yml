@@ -29,7 +29,7 @@
 # Cluster name identifies your cluster for auto-discovery. If you're running
 # multiple clusters on the same network, make sure you're using unique names.
 #
-#cluster.name: elasticsearch
+cluster.name: isaac
 
 
 #################################### Node #####################################
@@ -104,11 +104,11 @@
 
 # Set the number of shards (splits) of an index (5 by default):
 #
-#index.number_of_shards: 5
+index.number_of_shards: 1
 
 # Set the number of replicas (additional copies) of an index (1 by default):
 #
-#index.number_of_replicas: 1
+index.number_of_replicas: 1
 
 # Note, that for development on a local machine, with small indices, it usually
 # makes sense to "disable" the distributed features:

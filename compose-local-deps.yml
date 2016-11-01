@@ -8,15 +8,15 @@ services:
     network_mode: bridge
     container_name: chemistry-checker
     image: ucamcldtg/chemistry-checker
-#  elasticsearch:
-#    network_mode: bridge
-#    container_name: elasticsearch
-#    image: elasticsearch:2.4.1
-#    volumes:
-#      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-#    ports:
-#      - "9300:9300"
-#      - "9200:9200"
+  elasticsearch:
+    network_mode: bridge
+    container_name: elasticsearch
+    image: elasticsearch:2.4.1
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    ports:
+      - "9300:9300"
+      - "9200:9200"
   postgres:
     network_mode: bridge
     container_name: postgres

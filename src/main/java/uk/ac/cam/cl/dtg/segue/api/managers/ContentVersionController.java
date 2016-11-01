@@ -53,8 +53,6 @@ public class ContentVersionController implements ServletContextListener {
 
     private static volatile String liveVersion;
 
-    private final PropertiesManager versionPropertiesManager;
-
     private final PropertiesLoader properties;
     private final IContentManager contentManager;
 
@@ -66,25 +64,20 @@ public class ContentVersionController implements ServletContextListener {
      * 
      * @param generalProperties
      *            - properties loader for segue.
-     * @param versionPropertiesManager
-     *            - allows the CVM to read and write the current initial version.
      * @param contentManager
      *            - content manager that knows how to retrieve content.
      */
     @Inject
-    public ContentVersionController(final PropertiesLoader generalProperties,
-            final PropertiesManager versionPropertiesManager, final IContentManager contentManager) {
+    public ContentVersionController(final PropertiesLoader generalProperties, final IContentManager contentManager) {
         this.properties = generalProperties;
         this.contentManager = contentManager;
         this.indexer = Executors.newSingleThreadExecutor();
         this.indexQueue = Queues.newConcurrentLinkedQueue();
 
-        this.versionPropertiesManager = versionPropertiesManager;
-
         // we want to make sure we have set a default liveVersion number
         if (null == liveVersion) {
-            liveVersion = versionPropertiesManager.getProperty(Constants.INITIAL_LIVE_VERSION);
-            log.info("Setting live version of the site from properties file to " + liveVersion);
+            liveVersion = generalProperties.getProperty(Constants.CONTENT_VERSION);
+            log.info("Setting content version of the site from properties file to " + liveVersion);
         }
 
     }
@@ -102,7 +95,6 @@ public class ContentVersionController implements ServletContextListener {
         }
     }
 
-
     /**
      * Utility method to allow classes to query the content Manager directly.
      * 
@@ -111,24 +103,6 @@ public class ContentVersionController implements ServletContextListener {
     public IContentManager getContentManager() {
         return contentManager;
     }
-
-    /**
-     * Check to see if the the version specified is in use by the controller for some reason.
-     * 
-     * @param version
-     *            - find out if the version is in use.
-     * @return true if it is being used, false if not.
-     */
-    public boolean isVersionInUse(final String version) {
-        // This method will be used to indicate if a version is currently being
-        // used in A/B testing in the future. For now it is just checking if it
-        // is the live one.
-        // TODO The current live version should be stored in the database in the future not a conf file.
-        
-        return getLiveVersion().equals(version);
-    }
-
-
 
     @Override
     public void contextInitialized(final ServletContextEvent sce) {
