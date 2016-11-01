@@ -38,9 +38,14 @@ public class ETLFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public Response setLiveVersion(@PathParam("version") final String version) {
 
-        etlManager.setLiveVersion(version);
+        try {
+            etlManager.setLiveVersion(version);
+            return Response.ok().build();
+        } catch (Exception e) {
+            log.error("Failed to set live version: " + e.getMessage());
+            return Response.serverError().entity(e.getMessage()).build();
+        }
 
-        return Response.ok().build();
     }
 
     @POST

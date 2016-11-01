@@ -17,18 +17,13 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
 
+import com.google.common.base.Functions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
@@ -36,6 +31,7 @@ import com.google.common.collect.Lists;
 
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.elasticsearch.action.get.GetResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +63,6 @@ public class GitContentManager implements IContentManager {
     private final GitDb database;
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
-
-    private boolean indexOnlyPublishedParentContent = false;
 
     private Cache<Object, Object> cache;
 
@@ -372,24 +366,20 @@ public class GitContentManager implements IContentManager {
     public final Set<String> getTagsList(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        if (!tagsList.containsKey(version)) {
-            log.error("The version requested does not exist in the tag list.");
-            return null;
-        }
+        List<Object> tagObjects = searchProvider.getById(version, "metadata", "tags", Collections.singletonList("tags"))
+                .getField("tags").getValues();
 
-        return tagsList.get(version);
+        return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
     }
 
     @Override
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        if (!allUnits.containsKey(version)) {
-            log.error("The version requested does not exist in the set of all units.");
-            return null;
-        }
+        List<Object> unitObjects = searchProvider.getById(version, "metadata", "units", Collections.singletonList("units"))
+                .getField("units").getValues();
 
-        return allUnits.get(version).values();
+        return Lists.transform(unitObjects, Functions.toStringFunction());
     }
 
     @Override
@@ -408,12 +398,11 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
-        if (indexProblemCache.get(version) == null) {
-            log.error("Cannot request a problem map for a version that is not currently "
-                        + "indexed by the search provider.");
-                return null;
-        }
-        return indexProblemCache.get(version);
+
+        //Object o = searchProvider.getById(version, "metadata", "content_errors", Collections.singletonList("content_errors"))
+        //        .getField("content_errors").getValue();
+
+        return null;
     }
 
     /**
@@ -473,4 +462,11 @@ public class GitContentManager implements IContentManager {
 
         return contentInfo;
     }
+
+    @Override
+    public String getCurrentContentSHA() {
+        GetResponse r = searchProvider.getById("latest", "metadata", "version", Collections.singletonList("version"));
+        return (String)r.getField("version").getValue();
+    }
+
 }

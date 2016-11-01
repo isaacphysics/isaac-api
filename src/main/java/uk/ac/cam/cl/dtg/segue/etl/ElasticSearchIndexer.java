@@ -121,13 +121,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
     boolean addOrMoveIndexAlias(final String alias, final String index) {
 
-        ImmutableOpenMap<String, List<AliasMetaData>> aliases = client.admin().indices().getAliases(new GetAliasesRequest("live")).actionGet().getAliases();
+        ImmutableOpenMap<String, List<AliasMetaData>> aliases = client.admin().indices().getAliases(new GetAliasesRequest(alias)).actionGet().getAliases();
 
         IndicesAliasesRequestBuilder reqBuilder = client.admin().indices().prepareAliases();
 
         Iterator<String> i = aliases.keysIt();
         while (i.hasNext()) {
-            reqBuilder.removeAlias(index, i.next());
+            reqBuilder.removeAlias(i.next(), alias);
         }
 
         reqBuilder.addAlias(index, alias).execute().actionGet();

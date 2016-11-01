@@ -23,6 +23,7 @@ class ETLManager {
         this.indexer = indexer;
 
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
+        this.newVersionQueue.offer("da13589aa1f8da7f607335bc3523667b57084060");
 
         Thread t = new Thread(new NewVersionIndexer());
         t.setDaemon(true);
@@ -32,24 +33,16 @@ class ETLManager {
     void notifyNewVersion(String version) {
         log.info("Notified of new version: " + version);
 
-        synchronized (newVersionQueue) {
-            // This is the only place we write to newVersionQueue, so the offer should always succeed.
-            this.newVersionQueue.clear();
-            this.newVersionQueue.offer(version);
-        }
+        // This is the only place we write to newVersionQueue, so the offer should always succeed.
+        this.newVersionQueue.clear();
+        this.newVersionQueue.offer(version);
     }
 
-    void setLiveVersion(String version) {
+    void setLiveVersion(String version) throws Exception {
         log.info("Requested new live version: " + version);
 
-        try {
-            indexer.loadAndIndexContent(version);
-        } catch (VersionLockedException e) {
-            log.info("Failed to index " + version + ": Could not acquire lock");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        indexer.loadAndIndexContent(version);
+        log.info("Indexed version " + version + ". Setting live.");
         indexer.setLiveVersion(version);
     }
 

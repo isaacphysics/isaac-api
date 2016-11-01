@@ -332,10 +332,9 @@
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>9.3.12.v20160915</version>
 				<configuration>
-					<scanIntervalSeconds>10</scanIntervalSeconds>
 					<webApp>
 						<contextPath>/isaac-api</contextPath>
-						<overrideDescriptor>jetty-local-cors-filters.xml</overrideDescriptor>
+						<overrideDescriptor>override-api-web.xml</overrideDescriptor>
 					</webApp>
                     <systemProperties>
                         <systemProperty>
@@ -415,10 +414,9 @@
 						<artifactId>jetty-maven-plugin</artifactId>
 						<version>9.3.12.v20160915</version>
 						<configuration>
-							<scanIntervalSeconds>10</scanIntervalSeconds>
 							<webApp>
 								<contextPath>/isaac-api</contextPath>
-								<overrideDescriptor>etl-override.xml</overrideDescriptor>
+								<overrideDescriptor>override-etl-web.xml</overrideDescriptor>
 							</webApp>
 							<systemProperties>
 								<systemProperty>

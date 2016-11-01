@@ -588,16 +588,20 @@ public class SegueContentFacade extends AbstractSegueFacade {
             log.debug(error.getErrorMessage());
             return error.toResponse();
         }
+        // 'version' now points to an ElasticSearch index name (live or latest, probably)
+        // Go there and look up the git sha.
+
+
+        IContentManager gcm = contentVersionController.getContentManager();
+        String sha = gcm.getCurrentContentSHA();
 
         // determine if we can use the cache if so return cached response.
-        EntityTag etag = new EntityTag(version.hashCode() + path.hashCode() + "");
+        EntityTag etag = new EntityTag(sha.hashCode() + path.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_ONE_DAY);
 
         if (cachedResponse != null) {
             return cachedResponse;
         }
-
-        IContentManager gcm = contentVersionController.getContentManager();
 
         ByteArrayOutputStream fileContent = null;
         String mimeType = MediaType.WILDCARD;
@@ -625,7 +629,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
         }
 
         try {
-            fileContent = gcm.getFileBytes(version, path);
+            fileContent = gcm.getFileBytes(sha, path);
         } catch (IOException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error reading from file repository", e);

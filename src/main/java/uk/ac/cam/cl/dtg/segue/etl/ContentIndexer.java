@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.segue.etl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -105,8 +106,10 @@ public class ContentIndexer {
             // now we have acquired the lock check if someone else has indexed this.
             boolean searchIndexed = es.hasIndex(version);
             if (searchIndexed) {
-                log.info("Content already indexed: " + version);
-                return;
+                log.info("Index already exists. Deleting.");
+                es.expungeIndexFromSearchCache(version);
+                //log.info("Content already indexed: " + version);
+                //return;
             }
 
             log.info(String.format(
@@ -128,6 +131,8 @@ public class ContentIndexer {
             if (!es.hasIndex(version)) {
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
+
+            log.info("Finished indexing version " + version);
 
         } finally {
             versionLocks.remove(version);
@@ -571,14 +576,14 @@ public class ContentIndexer {
         }
 
         List<Map.Entry<String, String>> metadataToIndex = Lists.newArrayList();
-        metadataToIndex.add(immutableEntry("version", sha));
 
         try {
-            metadataToIndex.add(immutableEntry("tags", objectMapper.writeValueAsString(tagsList)));
-            metadataToIndex.add(immutableEntry("units", objectMapper.writeValueAsString(allUnits)));
-            metadataToIndex.add(immutableEntry("content_errors", objectMapper.writeValueAsString(indexProblemCache)));
+            metadataToIndex.add(immutableEntry("version", objectMapper.writeValueAsString(ImmutableMap.of("version", sha))));
+            metadataToIndex.add(immutableEntry("tags", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList))));
+            metadataToIndex.add(immutableEntry("units", objectMapper.writeValueAsString(ImmutableMap.of("units", allUnits))));
+            metadataToIndex.add(immutableEntry("content_errors", objectMapper.writeValueAsString(ImmutableMap.of("content_errors", indexProblemCache))));
         } catch (JsonProcessingException e) {
-            log.error("Unable to serialise tags, units or content errors.");
+            log.error("Unable to serialise sha, tags, units or content errors.");
         }
 
 

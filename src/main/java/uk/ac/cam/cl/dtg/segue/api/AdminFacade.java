@@ -18,10 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.Api;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -42,6 +39,14 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -54,6 +59,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
@@ -78,6 +84,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
@@ -1138,5 +1145,54 @@ public class AdminFacade extends AbstractSegueFacade {
      */
     private boolean isUserStaff(final HttpServletRequest request) throws NoUserLoggedInException {
         return isUserStaff(userManager, request);
+    }
+
+    /**
+     * This method will allow the live version served by the site to be changed.
+     *
+     * @param request
+     *            - to help determine access rights.
+     * @param version
+     *            - version to use as updated version of content store.
+     * @return Success shown by returning the new liveSHA or failed message "Invalid version selected".
+     */
+    @POST
+    @Path("/live_version/{version}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public synchronized Response changeLiveVersion(@Context final HttpServletRequest request,
+                                                   @PathParam("version") final String version) {
+
+        try {
+            if (isUserAnAdmin(request)) {
+
+                HttpClient httpClient = new DefaultHttpClient();
+
+                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
+                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_live_version/" + version);
+
+                httpPost.addHeader("Content-Type", "application/json");
+
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+
+                HttpEntity e = httpResponse.getEntity();
+
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    return Response.ok().build();
+                } else {
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    r.setBypassGenericSiteErrorPage(true);
+                    return r.toResponse();
+                }
+
+            } else {
+                return new SegueErrorResponse(Status.FORBIDDEN,
+                        "You must be logged in as an admin to access this function.").toResponse();
+            }
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (Exception e) {
+            log.error("Exception during version change.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
+        }
     }
 }

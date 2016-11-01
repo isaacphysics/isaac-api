@@ -70,11 +70,6 @@ public final class Constants {
     public static final String SERVER_ADMIN_ADDRESS = "SERVER_ADMIN_ADDRESS";
 
     /**
-     * Constant representing the key for the maximum number of versions to cache.
-     */
-    public static final String MAX_VERSIONS_TO_CACHE = "MAX_VERSIONS_TO_CACHE";
-
-    /**
      * The path for the csv file containing the list of schools.
      */
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
@@ -102,11 +97,6 @@ public final class Constants {
     public static final String SHOW_ONLY_PUBLISHED_CONTENT = "SHOW_ONLY_PUBLISHED_CONTENT";
 
     /**
-     * Constant representing the key for the version id of the content that should be served initially.
-     */
-    public static final String INITIAL_LIVE_VERSION = "INITIAL_LIVE_VERSION";
-
-    /**
      * Constant representing the key for the location for the version config file..
      */
     public static final String LIVE_VERSION_CONFIG_LOCATION = "LIVE_VERSION_CONFIG_LOCATION";
@@ -115,18 +105,6 @@ public final class Constants {
      * Constant representing the key for the location for the sesgue config file..
      */
     public static final String GENERAL_CONFIG_LOCATION = "GENERAL_CONFIG_LOCATION";
-
-    /**
-     * Constant representing the key for the property id that represents whether segue should track and load all git
-     * changes as they arrive on the repository.
-     */
-    public static final String FOLLOW_GIT_VERSION = "FOLLOW_GIT_VERSION";
-
-    /**
-     * Constant representing the key for the property id that represents whether segue should track and load all git
-     * changes as they arrive on the repository.
-     */
-    public static final String CLEAR_CACHES_ON_APP_START = "CLEAR_CACHES_ON_APP_START";
 
     /**
      * Constant representing the segue application version.

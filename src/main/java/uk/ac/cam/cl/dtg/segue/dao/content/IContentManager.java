@@ -402,4 +402,6 @@ public interface IContentManager {
      * @return summary of content
      */
     ContentSummaryDTO extractContentSummary(ContentDTO content);
+
+    String getCurrentContentSHA();
 }

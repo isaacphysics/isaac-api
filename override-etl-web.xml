@@ -26,5 +26,10 @@
             <param-value>/api</param-value>
         </init-param>
     </servlet>
+    <servlet-mapping>
+        <servlet-name>Isaac</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
 
 </web-app>

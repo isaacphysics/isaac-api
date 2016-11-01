@@ -14,18 +14,25 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!--
     <servlet>
         <servlet-name>Isaac</servlet-name>
-        <servlet-class>uk.ac.cam.cl.dtg.isaac.configuration.IsaacHttpServletDispatcher</servlet-class>
+        <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
-            <param-value>uk.ac.cam.cl.dtg.segue.etl.SegueETLApplicationRegister</param-value>
+            <param-value>uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister</param-value>
         </init-param>
         <init-param>
             <param-name>resteasy.servlet.mapping.prefix</param-name>
             <param-value>/api</param-value>
         </init-param>
-    </servlet>-->
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Isaac</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
+    <listener>
+        <listener-class>uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier</listener-class>
+    </listener>
 
 </web-app>

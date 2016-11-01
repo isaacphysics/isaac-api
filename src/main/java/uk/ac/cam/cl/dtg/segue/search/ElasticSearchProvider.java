@@ -26,10 +26,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.Validate;
+import org.easymock.internal.Results;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -38,6 +40,8 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetRequestBuilder;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -475,5 +479,10 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         return result;
+    }
+
+    public GetResponse getById(String index, String type, String id, List<String> fieldsToReturn) {
+        GetRequestBuilder grb = client.prepareGet(index, type, id).setFields(fieldsToReturn.toArray(new String[0]));
+        return grb.execute().actionGet();
     }
 }

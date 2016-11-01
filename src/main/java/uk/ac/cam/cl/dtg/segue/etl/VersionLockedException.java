@@ -5,14 +5,7 @@ package uk.ac.cam.cl.dtg.segue.etl;
  */
 public class VersionLockedException extends Exception {
 
-    private String version;
-
     VersionLockedException(String version) {
-        this.version = version;
-    }
-
-    @Override
-    public String toString() {
-        return "Cannot index version " + version + ": Lock unavailable.";
+        super("Failed to acquire lock for version " + version);
     }
 }

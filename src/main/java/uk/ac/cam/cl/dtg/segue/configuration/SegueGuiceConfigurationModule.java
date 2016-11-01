@@ -342,8 +342,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                 configLocationProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
 
         if (null == contentVersionController) {
-            contentVersionController = new ContentVersionController(generalProperties, versionPropertiesLoader,
-                    contentManager);
+            contentVersionController = new ContentVersionController(generalProperties, contentManager);
             log.info("Creating singleton of ContentVersionController");
         }
         return contentVersionController;

@@ -200,7 +200,7 @@ index.number_of_replicas: 1
 
 # Set the bind address specifically (IPv4 or IPv6):
 #
-#network.bind_host: 192.168.0.1
+network.bind_host: 0.0.0.0
 
 # Set the address other nodes will use to communicate with this node. If not
 # set, it is automatically derived. It must point to an actual IP address.
@@ -318,7 +318,7 @@ index.number_of_replicas: 1
 #
 # 1. Disable multicast discovery (enabled by default):
 #
-discovery.zen.ping.multicast.enabled: false
+#discovery.zen.ping.multicast.enabled: false
 #
 # 2. Configure an initial list of master nodes in the cluster
 #    to perform discovery when new nodes (master or data) are started:
