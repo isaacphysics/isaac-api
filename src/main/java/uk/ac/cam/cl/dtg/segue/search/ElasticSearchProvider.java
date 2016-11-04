@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Function;
 
 import javax.annotation.Nullable;
 
@@ -221,13 +220,13 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> termSearch(final String index, final String indexType,
-            final Collection<String> searchTerms, final String field, final int startIndex, final int limit) {
-        if (null == index || null == indexType || null == searchTerms || null == field) {
+            final String searchTerm, final String field, final int startIndex, final int limit) {
+        if (null == index || null == indexType || null == searchTerm || null == field) {
             log.warn("A required field is missing. Unable to execute search.");
             return null;
         }
 
-        QueryBuilder query = QueryBuilders.termsQuery(field, searchTerms).minimumShouldMatch(Integer.toString(searchTerms.size()));
+        QueryBuilder query = QueryBuilders.termQuery(field, searchTerm);
         return this.executeBasicQuery(index, indexType, query, startIndex, limit);
     }
 

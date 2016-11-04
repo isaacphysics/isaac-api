@@ -210,7 +210,7 @@ public interface ISearchProvider {
      *            - the maximum number of results to return -1 will attempt to return all results.
      * @return results
      */
-    ResultsWrapper<String> termSearch(final String index, final String indexType, final Collection<String> searchTerms,
+    ResultsWrapper<String> termSearch(final String index, final String indexType, final String searchterms,
             final String field, final int startIndex, final int limit);
 
     /**

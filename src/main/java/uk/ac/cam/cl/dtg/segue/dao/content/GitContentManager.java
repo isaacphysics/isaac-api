@@ -146,7 +146,7 @@ public class GitContentManager implements IContentManager {
             //this.ensureCache(version);
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
-                    CONTENT_TYPE, Arrays.asList(id),
+                    CONTENT_TYPE, id,
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1).getResults());
 
             if (null == searchResults || searchResults.isEmpty()) {

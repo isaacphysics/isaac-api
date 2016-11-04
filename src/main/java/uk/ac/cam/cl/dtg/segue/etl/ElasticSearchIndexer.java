@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ import java.util.Map;
  */
 class ElasticSearchIndexer extends ElasticSearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchIndexer.class);
-    private final List<String> rawFieldsList = Lists.newArrayList("id", "title");
+    private final Map<String,List<String>> rawFieldsListByType = new HashMap<>();
 
     /**
      * Constructor for creating an instance of the ElasticSearchProvider Object.
@@ -45,6 +46,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     @Inject
     public ElasticSearchIndexer(Client searchClient) {
         super(searchClient);
+        rawFieldsListByType.put("content", Lists.newArrayList("id", "title"));
     }
 
 
@@ -59,7 +61,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(index)) {
-            this.sendMappingCorrections(index, indexType);
+            this.sendMappingCorrections(index);
         }
 
         // build bulk request
@@ -88,7 +90,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             throws SegueSearchOperationException {
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(index)) {
-            this.sendMappingCorrections(index, indexType);
+            this.sendMappingCorrections(index);
         }
 
         try {
@@ -161,30 +163,33 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
      *
      * @param index
      *            - index to send the mapping corrections to.
-     * @param indexType
-     *            - type to send the mapping corrections to.
      */
-    private void sendMappingCorrections(final String index, final String indexType) {
+    private void sendMappingCorrections(final String index) {
         try {
-            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
 
-            final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
-                    .startObject("properties");
+            for (String indexType : this.rawFieldsListByType.keySet()) {
 
-            for (String fieldName : this.rawFieldsList) {
-                log.debug("Sending raw mapping correction for " + fieldName + "."
-                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+                CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
 
-                mappingBuilder.startObject(fieldName).field("type", "string").field("index", "analyzed")
-                        .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                        .field("type", "string").field("index", "not_analyzed").endObject().endObject().endObject();
+                final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
+                        .startObject("properties");
+
+                for (String fieldName : this.rawFieldsListByType.get(indexType)) {
+                    log.debug("Sending raw mapping correction for " + fieldName + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
+
+                    mappingBuilder.startObject(fieldName).field("type", "string").field("index", "analyzed")
+                            .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
+                            .field("type", "string").field("index", "not_analyzed").endObject().endObject().endObject();
+                }
+                // close off json structure
+                mappingBuilder.endObject().endObject().endObject();
+                indexBuilder.addMapping(indexType, mappingBuilder);
+
+
+                // Send Mapping information
+                indexBuilder.execute().actionGet();
             }
-            // close off json structure
-            mappingBuilder.endObject().endObject().endObject();
-            indexBuilder.addMapping(indexType, mappingBuilder);
-
-            // Send Mapping information
-            indexBuilder.execute().actionGet();
 
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
