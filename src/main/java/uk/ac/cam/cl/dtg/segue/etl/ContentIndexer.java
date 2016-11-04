@@ -576,13 +576,10 @@ public class ContentIndexer {
             }
         }
 
-        List<Map.Entry<String, String>> metadataToIndex = Lists.newArrayList();
 
         try {
-            metadataToIndex.add(immutableEntry("version", objectMapper.writeValueAsString(ImmutableMap.of("version", sha))));
-            metadataToIndex.add(immutableEntry("tags", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList))));
-            //metadataToIndex.add(immutableEntry("units", objectMapper.writeValueAsString(ImmutableMap.of("units", allUnits))));
-            //metadataToIndex.add(immutableEntry("content_errors", objectMapper.writeValueAsString(ImmutableMap.of("content_errors", indexProblemCache))));
+            es.indexObject(sha, "metadata", "version", objectMapper.writeValueAsString(ImmutableMap.of("version", sha)));
+            es.indexObject(sha, "metadata", "tags", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)));
 
             // TODO: Should probably bulk index these
             for (String k : allUnits.keySet()) {
@@ -607,7 +604,6 @@ public class ContentIndexer {
 
         try {
             es.bulkIndex(sha, "content", contentToIndex);
-            es.bulkIndex(sha, "metadata", metadataToIndex);
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchOperationException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
