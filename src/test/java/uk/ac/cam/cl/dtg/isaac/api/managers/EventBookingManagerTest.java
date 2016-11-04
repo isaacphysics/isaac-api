@@ -55,7 +55,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_checkTeacherAllowedOnStudentEventDespiteCapacityFull_noExceptionThrown() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -93,7 +93,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_checkStudentNotAllowedOnStudentEventAsCapacityFull_eventFullExceptionThrown() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -133,7 +133,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_checkTeacherNotAllowedOnTeacherEventAsCapacityFull_eventFullExceptionThrown() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -173,7 +173,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_addressNotVerified_addressNotVerifiedExceptionThrown() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -197,7 +197,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_expiredBooking_EventExpiredExceptionThrown() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -227,7 +227,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_cancelledSpaceAndWaitingList_SpaceRemainsFull() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -274,7 +274,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_cancelledSpaceAndNoWaitingList_Success() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -319,7 +319,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void requestBooking_cancelledSpaceAndSomeWaitingList_Success() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(2);
@@ -371,7 +371,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void promoteBooking_spaceDueToCancellation_Success() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);
@@ -426,7 +426,7 @@ public class EventBookingManagerTest {
 
 	@Test
 	public void promoteBooking_NoSpace_Failure() throws Exception {
-		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyGroupManager,dummyEmailManager,dummyUserManager,userAssociationManager);
+		EventBookingManager ebm = new EventBookingManager(dummyEventBookingPersistenceManager,dummyEmailManager,userAssociationManager);
 		IsaacEventPageDTO testEvent = new IsaacEventPageDTO();
 		testEvent.setId("someEventId");
 		testEvent.setNumberOfPlaces(1);

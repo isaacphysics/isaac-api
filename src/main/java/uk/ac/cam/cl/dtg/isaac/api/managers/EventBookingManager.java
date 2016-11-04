@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Stephen Cummins
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- *
+ * <p>
  * You may obtain a copy of the License at
- * 		http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,7 +40,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * AssignmentManager.
+ * EventBookingManager.
+ * This class is responsible for controlling event bookings throughout the platform.
  */
 public class EventBookingManager {
     private static final Logger log = LoggerFactory.getLogger(EventBookingManager.class);
@@ -50,14 +51,11 @@ public class EventBookingManager {
     private final UserAssociationManager userAssociationManager;
 
     /**
-     * AssignmentManager.
+     * EventBookingManager.
      *
-     * @param bookingPersistenceManager
-     *            - to allow bookings to be persisted in the database
-     * @param emailManager
-     *            - email manager
-     * @param userAssociationManager
-     *            - the userAssociationManager manager object
+     * @param bookingPersistenceManager - to allow bookings to be persisted in the database
+     * @param emailManager              - email manager
+     * @param userAssociationManager    - the userAssociationManager manager object
      */
     @Inject
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
@@ -70,23 +68,10 @@ public class EventBookingManager {
 
     /**
      * This will get all bookings for a given user.
-     * @param userId
-     *            - user of interest.
+     *
+     * @param userId - user of interest.
      * @return events
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
-     */
-    public List<EventBookingDTO> getEventsByUserId(final Long userId) throws SegueDatabaseException {
-        return this.bookingPersistenceManager.getEventsByUserId(userId);
-    }
-
-    /**
-     * This will get all bookings for a given user.
-     * @param userId
-     *            - user of interest.
-     * @return events
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public Map<String, BookingStatus> getAllEventStatesForUser(final Long userId) throws SegueDatabaseException {
         final ImmutableMap.Builder<String, BookingStatus> bookingStatusBuilder = new ImmutableMap.Builder<>();
@@ -99,11 +84,9 @@ public class EventBookingManager {
     }
 
     /**
-     * @param bookingId
-     *            - of interest
+     * @param bookingId - of interest
      * @return event booking
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public EventBookingDTO getBookingById(final Long bookingId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingById(bookingId);
@@ -111,32 +94,31 @@ public class EventBookingManager {
 
     /**
      * @return event bookings
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public List<EventBookingDTO> getAllBookings() throws SegueDatabaseException {
         return this.bookingPersistenceManager.getAllBookings();
     }
 
     /**
-     * @param eventId
-     *            - of interest
+     * @param eventId - of interest
      * @return event bookings
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.getBookingByEventId(eventId);
     }
 
-	/**
-	 * Utility method to provide a count of the number of bookings on a given event with a given status.
+    /**
+     * Utility method to provide a count of the number of bookings on a given event with a given status.
+     *
      * @param eventId the event id to look up
-     * @param status - the status of bookings we are interested in
+     * @param status  - the status of bookings we are interested in
      * @return the total bookings matching the criteria provided.
-     * @throws SegueDatabaseException
+     * @throws SegueDatabaseException if we cannot get the booking.
      */
-    public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status) throws SegueDatabaseException {
+    public Long countNumberOfBookingsWithStatus(final String eventId, final BookingStatus status)
+            throws SegueDatabaseException {
         Long v = 0L;
         for (EventBookingDTO eb : this.bookingPersistenceManager.getBookingByEventId(eventId)) {
             if (status.equals(eb.getBookingStatus())) {
@@ -150,18 +132,22 @@ public class EventBookingManager {
      * Create booking on behalf of a user.
      * This method will allow users to be booked onto an event providing there is space. No other rules are applied.
      * This is likely to be only for admin users.
-     * @param event
-     *            - of interest
-     * @param user
-     *            - user to book on to the event.
+     *
+     * @param event - of interest
+     * @param user  - user to book on to the event.
+     * @param additionalEventInformation - any additional information for the event organisers (nullable)
      * @return the newly created booking.
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException    - if an error occurs.
+     * @throws EventIsFullException      - No space on the event
+     * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
      */
-    public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final Map<String, String> additionalEventInformation) throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
+    public EventBookingDTO createBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
+                                         final Map<String, String> additionalEventInformation)
+            throws SegueDatabaseException, DuplicateBookingException, EventIsFullException {
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
-            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already booked on to it.", event.getId(), user.getEmail()));
+            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
+                    + " booked on to it.", event.getId(), user.getEmail()));
         }
 
         try {
@@ -170,7 +156,8 @@ public class EventBookingManager {
 
             this.ensureCapacity(event, user);
 
-            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED, additionalEventInformation);
+            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
+                    additionalEventInformation);
         } finally {
             // release lock.
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
@@ -180,45 +167,50 @@ public class EventBookingManager {
     /**
      * Attempt to book onto an event.
      * This method will allow attempt to book a onto an event if the rules are not broken.
-     * @param event
-     *            - of interest
-     * @param user
-     *            - user to book on to the event.
+     *
+     * @param event                      - of interest
+     * @param user                       - user to book on to the event.
      * @param additionalEventInformation - any additional information for the event organisers (nullable)
      * @return the newly created booking.
-     * @throws SegueDatabaseException - if there is a database error
+     * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-     * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException - You have to be a particular role
-     * @throws EventIsFullException - No space on the event
-     * @throws EventDeadlineException - The deadline for booking has passed.
-	 */
-    public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, Map<String, String> additionalEventInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
+     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
+     * @throws RoleNotAuthorisedException   - You have to be a particular role
+     * @throws EventIsFullException         - No space on the event
+     * @throws EventDeadlineException       - The deadline for booking has passed.
+     */
+    public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
+                                          final Map<String, String> additionalEventInformation)
+            throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
+            RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
         this.ensureValidBooking(event, user, true);
 
-        // is there space on the event? Teachers don't count for student events.
-        // work out capacity information for the event at this moment in time.
         try {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
+            // is there space on the event? Teachers don't count for student events.
+            // work out capacity information for the event at this moment in time.
             this.ensureCapacity(event, user);
 
             // attempt to book them on the event
-            EventBookingDTO booking = null;
+            EventBookingDTO booking;
 
             // attempt to book them on the event
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CONFIRMED, additionalEventInformation);
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                        BookingStatus.CONFIRMED, additionalEventInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED, additionalEventInformation);
+                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus
+                        .CONFIRMED, additionalEventInformation);
             }
 
             try {
                 this.emailManager.sendEventWelcomeEmail(user, event);
             } catch (ContentManagerException e) {
-                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user.getEmail()), e);
+                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
+                        .getEmail()), e);
             }
 
             // auto add them to the group and grant the owner permission
@@ -226,7 +218,8 @@ public class EventBookingManager {
                 try {
                     this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user);
                 } catch (InvalidUserAssociationTokenException e) {
-                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.", user.getEmail(), event.getIsaacGroupToken()));
+                    log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
+                            user.getEmail(), event.getIsaacGroupToken()));
                 }
             }
 
@@ -240,55 +233,66 @@ public class EventBookingManager {
     /**
      * Attempt to book onto the waiting list for an event.
      *
-     * @param event
-     *            - of interest
-     * @param user
-     *            - user to book on to the event.
+     * @param event                 - of interest
+     * @param user                  - user to book on to the event.
+     * @param additionalInformation additional information to be stored with this booking e.g. dietary requirements.
      * @return the newly created booking.
-     * @throws SegueDatabaseException - if there is a database error
+     * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-     * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException - You have to be a particular role
-     * @throws EventIsFullException - No space on the event
-     * @throws EventDeadlineException - The deadline for booking has passed.
+     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
+     * @throws RoleNotAuthorisedException   - You have to be a particular role
+     * @throws EventIsNotFullException      - There is space on the event
+     * @throws EventDeadlineException       - The deadline for booking has passed.
      */
-    public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final Map<String, String> additionalInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventDeadlineException, EventIsNotFullException {
+    public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
+                                                     final Map<String, String> additionalInformation) throws
+            SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
+            RoleNotAuthorisedException, EventDeadlineException, EventIsNotFullException {
         final Date now = new Date();
 
         this.ensureValidBooking(event, user, false);
 
         if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST)) {
-            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already booked on to it.", event.getId(), user.getEmail()));
+            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
+                    + " booked on to it.", event.getId(), user.getEmail()));
         }
 
-        // is there space on the event? Teachers don't count for student events.
-        // work out capacity information for the event at this moment in time.
         try {
             // Obtain an exclusive database lock to lock the event
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
             Integer numberOfPlaces = getPlacesAvailable(event);
             if (numberOfPlaces != null) {
-                // check the number of places - if some available then check if the event deadline has passed. If not throw error.
-                if (numberOfPlaces > 0 && !(event.getBookingDeadline() != null && now.after(event.getBookingDeadline()))) {
-                    throw new EventIsNotFullException("There are still spaces on this event. Please attempt to book on it.");
+                // check the number of places - if some available then check if the event deadline has passed. If not
+                // throw error.
+                if (numberOfPlaces > 0 && !(event.getBookingDeadline() != null
+                        && now.after(event.getBookingDeadline()))) {
+                    throw new EventIsNotFullException("There are still spaces on this event. Please attempt to book "
+                            + "on it.");
                 }
             }
 
-            EventBookingDTO booking = null;
+            EventBookingDTO booking;
 
-            // attempt to book them on the event
+            // attempt to book them on the waiting list of the event.
             if (this.hasBookingWithStatus(event.getId(), user.getId(), BookingStatus.CANCELLED)) {
                 // if the user has previously cancelled we should let them book again.
-                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.WAITING_LIST, additionalInformation);
+                booking = this.bookingPersistenceManager.updateBookingStatus(event.getId(),
+                        user.getId(),
+                        BookingStatus.WAITING_LIST,
+                        additionalInformation);
             } else {
-                booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.WAITING_LIST, additionalInformation);
+                booking = this.bookingPersistenceManager.createBooking(event.getId(),
+                        user.getId(),
+                        BookingStatus.WAITING_LIST,
+                        additionalInformation);
             }
 
             try {
                 this.emailManager.sendEventWaitingListEmail(user, event);
             } catch (ContentManagerException e) {
-                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user.getEmail()), e);
+                log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
+                        .getEmail()), e);
             }
 
             return booking;
@@ -301,21 +305,26 @@ public class EventBookingManager {
     /**
      * Allows an admin user to promote someone from the waiting list or cancelled booking to a confirmed booking.
      *
-     * @param event - The event in question.
-     * @param userDTO - The user whose booking should be updated
+     * @param event                 - The event in question.
+     * @param userDTO               - The user whose booking should be updated
+     * @param additionalInformation additional information to be stored with this booking e.g. dietary requirements.
      * @return the updated booking.
-     * @throws SegueDatabaseException
-     * @throws EmailMustBeVerifiedException
-     * @throws DuplicateBookingException
-     * @throws RoleNotAuthorisedException
-     * @throws EventDeadlineException
-     * @throws EventIsNotFullException
-     * @throws EventBookingUpdateException
-	 */
-    public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO userDTO, final Map<String, String> additionalInformation) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
+     * @throws SegueDatabaseException       - if there is a database error
+     * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
+     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
+     * @throws RoleNotAuthorisedException   - You have to be a particular role,
+     * @throws EventIsFullException         - No space on the event
+     * @throws EventBookingUpdateException  - Unable to update the event booking.
+     */
+    public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO
+            userDTO, final Map<String, String> additionalInformation)
+            throws SegueDatabaseException, EmailMustBeVerifiedException,
+            DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
+
         this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
-        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), userDTO.getId());
+        final EventBookingDTO eventBooking = this.bookingPersistenceManager.getBookingByEventIdAndUserId(
+                event.getId(), userDTO.getId());
         if (null == eventBooking) {
             throw new EventBookingUpdateException("Unable to promote a booking that doesn't exist.");
         }
@@ -324,8 +333,10 @@ public class EventBookingManager {
             throw new EventBookingUpdateException("Unable to promote a booking that is CONFIRMED already.");
         }
 
-        if (this.getPlacesAvailable(event, true) <=  0) {
-            throw new EventIsFullException("The event you are attempting promote a booking for is at or over capacity.");
+        final Integer placesAvailable = this.getPlacesAvailable(event, true);
+        if (placesAvailable != null && placesAvailable <= 0) {
+            throw new EventIsFullException("The event you are attempting promote a booking for is at or "
+                    + "over capacity.");
         }
 
         EventBookingDTO updatedStatus = null;
@@ -333,9 +344,11 @@ public class EventBookingManager {
         // probably want to send a waiting list promotion email.
         try {
             this.emailManager.sendEventWelcomeEmailForWaitingListPromotion(userDTO, event);
-            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO.getId(), BookingStatus.CONFIRMED, additionalInformation);
+            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
+                    .getId(), BookingStatus.CONFIRMED, additionalInformation);
         } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), userDTO.getEmail()), e);
+            log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
+                    userDTO.getEmail()), e);
             throw new EventBookingUpdateException("Unable to send welcome email, failed to update event booking");
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
@@ -348,15 +361,16 @@ public class EventBookingManager {
      * getPlacesAvailable.
      * This method is not threadsafe and will not acquire a lock.
      * It assumes that both WAITING_LIST and CONFIRMED bookings count towards capacity.
-     *
+     * <p>
      * This assumption allows waiting list bookings to be manually changed into CONFIRMED by event
      * managers without the possibility of someone creating a new booking to occupy the space.
-     *
+     * <p>
      * It also assumes teachers don't count on student events.
      *
      * @param event - the event we care about
      * @return the number of places available or Null if there is no limit. If a negative number would be returned
      * the method will only return 0. This allows for manual overbooking.
+     * @throws SegueDatabaseException - if we cannot contact the database.
      */
     public Integer getPlacesAvailable(final IsaacEventPageDTO event) throws SegueDatabaseException {
         return this.getPlacesAvailable(event, false);
@@ -365,18 +379,18 @@ public class EventBookingManager {
     /**
      * getPlacesAvailable.
      * This method is not threadsafe and will not acquire a lock.
-     *
+     * <p>
      * It also assumes teachers don't count on student events.
      *
-     * @param event - the event we care about
+     * @param event              - the event we care about
      * @param countOnlyConfirmed - if true only count confirmed bookings (i.e. ignore waiting list ones.
      * @return the number of places available or Null if there is no limit. If a negative number would be returned
      * the method will only return 0. This allows for manual overbooking.
+     * @throws SegueDatabaseException - if we cannot contact the database.
      */
-    public Integer getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed) throws SegueDatabaseException {
+    private Integer getPlacesAvailable(final IsaacEventPageDTO event, final boolean countOnlyConfirmed)
+            throws SegueDatabaseException {
         boolean isStudentEvent = event.getTags().contains("student");
-
-        // or use stored procedure that can fail?
         Integer numberOfPlaces = event.getNumberOfPlaces();
         if (null == numberOfPlaces) {
             return null;
@@ -386,12 +400,7 @@ public class EventBookingManager {
 
         int studentCount = 0;
         int totalBooked = 0;
-
         for (EventBookingDTO booking : getCurrentBookings) {
-            // TODO: In the future we may want to automatically promote users from the wait list?
-            // This was not done initially as it was unclear whether event managers wanted to hand pick
-            // wait list candidates to promote.
-
             // don't count cancelled bookings
             if (BookingStatus.CANCELLED.equals(booking.getBookingStatus())) {
                 continue;
@@ -424,13 +433,11 @@ public class EventBookingManager {
 
     /**
      * Find out if a user is already booked on an event.
-     * @param eventId
-     *            - of interest
-     * @param userId
-     *            - of interest.
+     *
+     * @param eventId - of interest
+     * @param userId  - of interest.
      * @return true if a booking exists false if not
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public boolean isUserBooked(final String eventId, final Long userId) throws SegueDatabaseException {
         return this.bookingPersistenceManager.isUserBooked(eventId, userId);
@@ -439,22 +446,17 @@ public class EventBookingManager {
     /**
      * Find out if a user has a booking with a given status.
      *
-     * @param eventId
-     *            - of interest
-     * @param userId
-     *            - of interest.
+     * @param eventId       - of interest
+     * @param userId        - of interest.
      * @param bookingStatus - the status of the booking.
-     * @return true if a waitinglist booking exists false if not
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @return true if a waiting list booking exists false if not
+     * @throws SegueDatabaseException - if an error occurs.
      */
-    public boolean hasBookingWithStatus(final String eventId, final Long userId, final BookingStatus bookingStatus) throws SegueDatabaseException {
+    public boolean hasBookingWithStatus(final String eventId, final Long userId, final BookingStatus bookingStatus)
+            throws SegueDatabaseException {
         try {
             EventBookingDTO eb = this.bookingPersistenceManager.getBookingByEventIdAndUserId(eventId, userId);
-            if (null == eb) {
-                return false;
-            }
-            return bookingStatus.equals(eb.getBookingStatus());
+            return null != eb && bookingStatus.equals(eb.getBookingStatus());
         } catch (ResourceNotFoundException e) {
             return false;
         }
@@ -462,21 +464,22 @@ public class EventBookingManager {
 
     /**
      * Cancel a booking.
-     *
+     * <p>
      * Note: cancelled bookings no longer occupy space on an events capacity calculations.
      *
-     * @param event
-     *            - event
-     * @param user
-     *            - user to unbook
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @param event - event
+     * @param user  - user to unbook
+     * @throws SegueDatabaseException  - if a database error occurs.
+     * @throws ContentManagerException - if a content error occurs.
      */
-    public void cancelBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, ContentManagerException {
+    public void cancelBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
-            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(), BookingStatus.CANCELLED, null);
+            this.bookingPersistenceManager.updateBookingStatus(event.getId(), user.getId(),
+                    BookingStatus.CANCELLED,
+                    null);
             this.emailManager.sendEventCancellationEmail(user, event);
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
@@ -486,64 +489,65 @@ public class EventBookingManager {
     /**
      * Delete a booking permanently.
      *
-     * @param eventId
-     *            - event id
-     * @param userId
-     *            - user id to unbook
-     * @throws SegueDatabaseException
-     *             - if an error occurs.
+     * @param eventId - event id
+     * @param userId  - user id to unbook
+     * @throws SegueDatabaseException - if an error occurs.
      */
     public void deleteBooking(final String eventId, final Long userId) throws SegueDatabaseException {
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(eventId);
             this.bookingPersistenceManager.deleteBooking(eventId, userId);
-            // TODO: what do we do about people cancelling and those on a waiting list?
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(eventId);
         }
     }
 
-	/**
-	 * Helper method to ensure that that the booking would not violate space restrictions on the event.
-     *
+    /**
+     * Helper method to ensure that that the booking would not violate space restrictions on the event.
+     * <p>
      * If it does an exception will be thrown if a new booking wouldn't no exception will be thrown.
      *
      * @param event the event the user wants to book on to
-     * @param user the user who is trying to be booked onto the event.
+     * @param user  the user who is trying to be booked onto the event.
      * @throws SegueDatabaseException - if an error occurs
-     * @throws EventIsFullException - if the event is full according to the event rules established.
+     * @throws EventIsFullException   - if the event is full according to the event rules established.
      */
-    private void ensureCapacity(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException, EventIsFullException {
+    private void ensureCapacity(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws
+            SegueDatabaseException, EventIsFullException {
         final boolean isStudentEvent = event.getTags().contains("student");
         Integer numberOfPlaces = getPlacesAvailable(event);
         if (numberOfPlaces != null) {
             // teachers can book on student events and do not count towards capacity
             if ((isStudentEvent && !Role.TEACHER.equals(user.getRole()) && numberOfPlaces <= 0)
-                || (!isStudentEvent && numberOfPlaces <= 0)) {
-                throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full.", user.getEmail(), event.getId()));
+                    || (!isStudentEvent && numberOfPlaces <= 0)) {
+                throw new EventIsFullException(String.format("Unable to book user (%s) onto event (%s) as it is full"
+                        + ".", user.getEmail(), event.getId()));
             }
         }
     }
 
-	/**
+    /**
      * Enforce business logic that is common to all event bookings / waiting list entries.
-     * @param event of interest
-     * @param user user to book on to the event.
+     *
+     * @param event                  of interest
+     * @param user                   user to book on to the event.
      * @param enforceBookingDeadline - whether or not to enforce the booking deadline of the event
-     * @throws SegueDatabaseException - if there is a database error
+     * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
-     * @throws DuplicateBookingException - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException - You have to be a particular role
-     * @throws EventDeadlineException - The deadline for booking has passed.
-	 */
-    private void ensureValidBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean enforceBookingDeadline) throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException, RoleNotAuthorisedException, EventDeadlineException {
+     * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
+     * @throws RoleNotAuthorisedException   - You have to be a particular role
+     * @throws EventDeadlineException       - The deadline for booking has passed.
+     */
+    private void ensureValidBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
+            enforceBookingDeadline) throws SegueDatabaseException, EmailMustBeVerifiedException,
+            DuplicateBookingException, RoleNotAuthorisedException, EventDeadlineException {
         Date now = new Date();
         final boolean isTeacherEvent = event.getTags().contains("teacher");
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.
         if (event.getEndDate() != null && now.after(event.getEndDate())
-            || event.getDate() != null && now.after(event.getDate())) {
+                || event.getDate() != null && now.after(event.getDate())) {
             throw new EventDeadlineException("The event is in the past.");
         }
 
@@ -554,17 +558,21 @@ public class EventBookingManager {
 
         // check if already booked
         if (this.isUserBooked(event.getId(), user.getId())) {
-            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already booked on to it.", event.getId(), user.getEmail()));
+            throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
+                    + " booked on to it.", event.getId(), user.getEmail()));
         }
 
         if (isTeacherEvent && !Role.TEACHER.equals(user.getRole())) {
-            throw new RoleNotAuthorisedException(String.format("Unable to book onto event (%s) as user (%s) must be a teacher.", event.getId(), user.getEmail()));
+            throw new RoleNotAuthorisedException(String.format("Unable to book onto event (%s) "
+                    + "as user (%s) must be a teacher.", event.getId(), user.getEmail()));
         }
 
         // must have verified email
         if (!EmailVerificationStatus.VERIFIED.equals(user.getEmailVerificationStatus())) {
-            throw new EmailMustBeVerifiedException(String.format("Unable to book onto event (%s) without a verified email address for user (%s).",
-                event.getId(), user.getEmail()));
+            throw new EmailMustBeVerifiedException(String.format("Unable to book onto event (%s) without a "
+                            + "verified email address for user (%s).",
+                    event.getId(),
+                    user.getEmail()));
         }
     }
 }
