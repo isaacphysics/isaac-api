@@ -32,6 +32,9 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -376,10 +379,14 @@ public class GitContentManager implements IContentManager {
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        List<Object> unitObjects = searchProvider.getById(version, "metadata", "units", Collections.singletonList("units"))
-                .getField("units").getValues();
+        SearchResponse r =  searchProvider.getAllByType("latest", "unit", new String[] {"cleanKey", "unit"});
+        SearchHits hits = r.getHits();
+        ArrayList<String> units = new ArrayList<String>((int)hits.getTotalHits());
+        for(SearchHit hit : hits) {
+            units.add((String)hit.field("unit").getValue());
+        }
 
-        return Lists.transform(unitObjects, Functions.toStringFunction());
+        return units;
     }
 
     @Override
@@ -399,10 +406,32 @@ public class GitContentManager implements IContentManager {
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
 
+        SearchResponse r = searchProvider.getAllByType("latest", "contentError", new String[] {"canonicalSourceFile", "id", "title", "published", "tags", "errors"});
+
+        SearchHits hits = r.getHits();
+        Map<Content, List<String>> map = new HashMap<>();
+        for(SearchHit hit : hits) {
+
+            Content partialContentWithErrors = new Content();
+            partialContentWithErrors.setId((String)hit.field("id").getValue());
+            partialContentWithErrors.setTitle((String)hit.field("title").getValue());
+            //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
+            partialContentWithErrors.setPublished((Boolean)hit.field("published").getValue());
+            partialContentWithErrors.setCanonicalSourceFile((String)hit.field("canonicalSourceFile").getValue());
+
+            ArrayList<String> errors = new ArrayList<>();
+            for (Object v : hit.field("errors").getValues() ) {
+                errors.add((String)v);
+            }
+
+            map.put(partialContentWithErrors, errors);
+        }
+
+
         //Object o = searchProvider.getById(version, "metadata", "content_errors", Collections.singletonList("content_errors"))
         //        .getField("content_errors").getValue();
 
-        return null;
+        return map;
     }
 
     /**
@@ -468,5 +497,6 @@ public class GitContentManager implements IContentManager {
         GetResponse r = searchProvider.getById("latest", "metadata", "version", Collections.singletonList("version"));
         return (String)r.getField("version").getValue();
     }
+
 
 }

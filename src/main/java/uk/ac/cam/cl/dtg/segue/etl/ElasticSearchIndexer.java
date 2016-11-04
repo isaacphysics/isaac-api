@@ -12,6 +12,7 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
@@ -47,12 +48,12 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     }
 
 
-//    public void indexObject(final String index, final String indexType, final String content)
-//            throws SegueSearchOperationException {
-//        indexObject(index, indexType, content, null);
-//    }
-//
-//
+    public void indexObject(final String index, final String indexType, final String content)
+            throws SegueSearchOperationException {
+        indexObject(index, indexType, content, null);
+    }
+
+
     void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
             throws SegueSearchOperationException {
 
@@ -81,30 +82,30 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             throw new SegueSearchOperationException("Error during bulk index operation.", e);
         }
     }
-//
-//
-//    public void indexObject(final String index, final String indexType, final String content, final String uniqueId)
-//            throws SegueSearchOperationException {
-//        // check index already exists if not execute any initialisation steps.
-//        if (!this.hasIndex(index)) {
-//            this.sendMappingCorrections(index, indexType);
-//        }
-//
-//        try {
-//            IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content).execute()
-//                    .actionGet();
-//            log.debug("Document: " + indexResponse.getId() + " indexed.");
-//
-//        } catch (ElasticsearchException e) {
-//            throw new SegueSearchOperationException("Error during index operation.", e);
-//        }
-//    }
-//
-//    public boolean expungeEntireSearchCache() {
-//        return this.expungeIndexFromSearchCache("_all");
-//    }
-//
-//
+
+
+    public void indexObject(final String index, final String indexType, final String content, final String uniqueId)
+            throws SegueSearchOperationException {
+        // check index already exists if not execute any initialisation steps.
+        if (!this.hasIndex(index)) {
+            this.sendMappingCorrections(index, indexType);
+        }
+
+        try {
+            IndexResponse indexResponse = client.prepareIndex(index, indexType, uniqueId).setSource(content).execute()
+                    .actionGet();
+            log.debug("Document: " + indexResponse.getId() + " indexed.");
+
+        } catch (ElasticsearchException e) {
+            throw new SegueSearchOperationException("Error during index operation.", e);
+        }
+    }
+
+    public boolean expungeEntireSearchCache() {
+        return this.expungeIndexFromSearchCache("_all");
+    }
+
+
     boolean expungeIndexFromSearchCache(final String index) {
         Validate.notBlank(index);
 

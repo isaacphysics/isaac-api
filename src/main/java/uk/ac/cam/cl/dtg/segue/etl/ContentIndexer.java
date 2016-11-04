@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import ma.glasnost.orika.MapEntry;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
@@ -580,17 +581,33 @@ public class ContentIndexer {
         try {
             metadataToIndex.add(immutableEntry("version", objectMapper.writeValueAsString(ImmutableMap.of("version", sha))));
             metadataToIndex.add(immutableEntry("tags", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList))));
-            metadataToIndex.add(immutableEntry("units", objectMapper.writeValueAsString(ImmutableMap.of("units", allUnits))));
-            metadataToIndex.add(immutableEntry("content_errors", objectMapper.writeValueAsString(ImmutableMap.of("content_errors", indexProblemCache))));
+            //metadataToIndex.add(immutableEntry("units", objectMapper.writeValueAsString(ImmutableMap.of("units", allUnits))));
+            //metadataToIndex.add(immutableEntry("content_errors", objectMapper.writeValueAsString(ImmutableMap.of("content_errors", indexProblemCache))));
+
+            // TODO: Should probably bulk index these
+            for (String k : allUnits.keySet()) {
+                es.indexObject(sha, "unit", objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", k, "unit", allUnits.get(k))));
+            }
+
+            for (Content c: indexProblemCache.keySet()) {
+                es.indexObject(sha, "contentError", objectMapper.writeValueAsString(ImmutableMap.of(
+                        "canonicalSourceFile", c.getCanonicalSourceFile(),
+                        "id", c.getId() == null ? "" : c.getId(),
+                        "title", c.getTitle() == null ? "" : c.getTitle(),
+                       // "tags", c.getTags(), // TODO: Add tags
+                        "published", c.getPublished() == null ? "" : c.getPublished(),
+                        "errors", indexProblemCache.get(c).toArray())));
+            }
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha, tags, units or content errors.");
+        } catch (SegueSearchOperationException e) {
+            log.error("Unable to index sha, tags, units or content errors.");
         }
 
 
         try {
             es.bulkIndex(sha, "content", contentToIndex);
             es.bulkIndex(sha, "metadata", metadataToIndex);
-
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchOperationException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);

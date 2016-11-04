@@ -524,13 +524,8 @@ public class AdminFacade extends AbstractSegueFacade {
         // go through each errored content and list of errors
         for (Map.Entry<Content, List<String>> pair : problemMap.entrySet()) {
             Map<String, Object> errorRecord = Maps.newHashMap();
-            
-            Content partialContentWithErrors = new Content();
-            partialContentWithErrors.setId(pair.getKey().getId());
-            partialContentWithErrors.setTitle(pair.getKey().getTitle());
-            partialContentWithErrors.setTags(pair.getKey().getTags());
-            partialContentWithErrors.setPublished(pair.getKey().getPublished());
-            partialContentWithErrors.setCanonicalSourceFile(pair.getKey().getCanonicalSourceFile());
+
+            Content partialContentWithErrors =  pair.getKey();
 
             errorRecord.put("partialContent", partialContentWithErrors);
             

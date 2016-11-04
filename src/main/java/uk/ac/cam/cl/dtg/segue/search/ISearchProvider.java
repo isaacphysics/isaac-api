@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import javax.annotation.Nullable;
 
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -327,4 +328,6 @@ public interface ISearchProvider {
     //void registerRawStringFields(List<String> fieldNames);
 
     GetResponse getById(String index, String type, String id, List<String> fieldsToReturn);
+
+    SearchResponse getAllByType(String index, String type, String[] fields);
 }

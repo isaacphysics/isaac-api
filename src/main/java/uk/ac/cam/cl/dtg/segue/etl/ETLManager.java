@@ -23,7 +23,7 @@ class ETLManager {
         this.indexer = indexer;
 
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
-        this.newVersionQueue.offer("da13589aa1f8da7f607335bc3523667b57084060");
+        //this.newVersionQueue.offer("da13589aa1f8da7f607335bc3523667b57084060");
 
         Thread t = new Thread(new NewVersionIndexer());
         t.setDaemon(true);

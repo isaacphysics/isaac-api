@@ -90,11 +90,11 @@ public class SegueETLApplicationRegister extends Application {
 
         if (!proxyPath.equals("")) {
             beanConfig.setBasePath(proxyPath + "/api");
-            beanConfig.setHost(propertiesLoader.getProperty(HOST_NAME).substring(0,
-                    propertiesLoader.getProperty(HOST_NAME).indexOf('/')));
+            beanConfig.setHost("localhost:8090");//propertiesLoader.getProperty(HOST_NAME).substring(0,
+                    //propertiesLoader.getProperty(HOST_NAME).indexOf('/')));
         } else {
             beanConfig.setBasePath("/api");
-            beanConfig.setHost(propertiesLoader.getProperty(HOST_NAME));
+            beanConfig.setHost("http://localhost:8090"/*propertiesLoader.getProperty(HOST_NAME)*/);
         }
 
         beanConfig.setResourcePackage("uk.ac.cam.cl.dtg.segue.etl");

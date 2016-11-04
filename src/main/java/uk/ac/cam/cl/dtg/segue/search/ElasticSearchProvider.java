@@ -485,4 +485,8 @@ public class ElasticSearchProvider implements ISearchProvider {
         GetRequestBuilder grb = client.prepareGet(index, type, id).setFields(fieldsToReturn.toArray(new String[0]));
         return grb.execute().actionGet();
     }
+
+    public SearchResponse getAllByType(String index, String type, String[] fields) {
+        return client.prepareSearch(index).setTypes(type).setSize(10000).addFields(fields).execute().actionGet();
+    }
 }
