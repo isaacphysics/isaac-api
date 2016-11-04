@@ -23,8 +23,6 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -48,11 +46,7 @@ public class EventBookingManager {
     private static final Logger log = LoggerFactory.getLogger(EventBookingManager.class);
 
     private final EventBookingPersistenceManager bookingPersistenceManager;
-
-    private final GroupManager groupManager;
     private final EmailManager emailManager;
-    private final UserAccountManager userManager;
-
     private final UserAssociationManager userAssociationManager;
 
     /**
@@ -60,22 +54,17 @@ public class EventBookingManager {
      *
      * @param bookingPersistenceManager
      *            - to allow bookings to be persisted in the database
-     * @param groupManager
-     *            - to allow communication with the group manager.
      * @param emailManager
      *            - email manager
-     * @param userManager
-     *            - the user manager object
      * @param userAssociationManager
      *            - the userAssociationManager manager object
      */
     @Inject
-    public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager, final GroupManager groupManager, final EmailManager emailManager, final UserAccountManager userManager,
+    public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
+                               final EmailManager emailManager,
                                final UserAssociationManager userAssociationManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
-        this.groupManager = groupManager;
         this.emailManager = emailManager;
-        this.userManager = userManager;
         this.userAssociationManager = userAssociationManager;
     }
 
