@@ -16,45 +16,24 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
-import java.util.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Maps;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.api.managers.*;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -67,6 +46,15 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.*;
+
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -409,10 +397,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "This event is already full. Unable to book the user on to it.")
                 .toResponse();
-        } catch (RoleNotAuthorisedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN,
-                "The user does not have the correct type of account to book on to this event.")
-                .toResponse();
         } catch (EventBookingUpdateException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "Unable to modify the booking", e)
@@ -565,10 +549,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "This event is already full. Unable to book you on to it.")
                 .toResponse();
-        } catch (RoleNotAuthorisedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN,
-                "You do not have the correct type of account to book on to this event.")
-                .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The booking deadline for this event has passed. No more bookings are being accepted.")
@@ -619,10 +599,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "You have already been booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
-        } catch (RoleNotAuthorisedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN,
-                "You do not have the correct type of account to book on to this event.")
                 .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,

@@ -24,7 +24,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -175,14 +174,13 @@ public class EventBookingManager {
      * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
      * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException   - You have to be a particular role
      * @throws EventIsFullException         - No space on the event
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     public EventBookingDTO requestBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                           final Map<String, String> additionalEventInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
-            RoleNotAuthorisedException, EventIsFullException, EventDeadlineException {
+            EventIsFullException, EventDeadlineException {
         this.ensureValidBooking(event, user, true);
 
         try {
@@ -240,14 +238,13 @@ public class EventBookingManager {
      * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
      * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException   - You have to be a particular role
      * @throws EventIsNotFullException      - There is space on the event
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     public EventBookingDTO requestWaitingListBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user,
                                                      final Map<String, String> additionalInformation) throws
             SegueDatabaseException, EmailMustBeVerifiedException, DuplicateBookingException,
-            RoleNotAuthorisedException, EventDeadlineException, EventIsNotFullException {
+            EventDeadlineException, EventIsNotFullException {
         final Date now = new Date();
 
         this.ensureValidBooking(event, user, false);
@@ -312,14 +309,13 @@ public class EventBookingManager {
      * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
      * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException   - You have to be a particular role,
      * @throws EventIsFullException         - No space on the event
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
     public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO
             userDTO, final Map<String, String> additionalInformation)
             throws SegueDatabaseException, EmailMustBeVerifiedException,
-            DuplicateBookingException, RoleNotAuthorisedException, EventBookingUpdateException, EventIsFullException {
+            DuplicateBookingException, EventBookingUpdateException, EventIsFullException {
 
         this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
@@ -536,14 +532,12 @@ public class EventBookingManager {
      * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
      * @throws DuplicateBookingException    - Duplicate booking, only unique bookings.
-     * @throws RoleNotAuthorisedException   - You have to be a particular role
      * @throws EventDeadlineException       - The deadline for booking has passed.
      */
     private void ensureValidBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user, final boolean
             enforceBookingDeadline) throws SegueDatabaseException, EmailMustBeVerifiedException,
-            DuplicateBookingException, RoleNotAuthorisedException, EventDeadlineException {
+            DuplicateBookingException, EventDeadlineException {
         Date now = new Date();
-        final boolean isTeacherEvent = event.getTags().contains("teacher");
 
         // check if if the end date has passed. Allowed to add to wait list after deadline.
         if (event.getEndDate() != null && now.after(event.getEndDate())
@@ -560,11 +554,6 @@ public class EventBookingManager {
         if (this.isUserBooked(event.getId(), user.getId())) {
             throw new DuplicateBookingException(String.format("Unable to book onto event (%s) as user (%s) is already"
                     + " booked on to it.", event.getId(), user.getEmail()));
-        }
-
-        if (isTeacherEvent && !Role.TEACHER.equals(user.getRole())) {
-            throw new RoleNotAuthorisedException(String.format("Unable to book onto event (%s) "
-                    + "as user (%s) must be a teacher.", event.getId(), user.getEmail()));
         }
 
         // must have verified email
