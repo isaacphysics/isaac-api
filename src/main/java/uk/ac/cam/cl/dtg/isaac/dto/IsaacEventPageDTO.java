@@ -41,6 +41,7 @@ public class IsaacEventPageDTO extends ContentDTO {
     private Date date;
     private Date end_date;
     private Date bookingDeadline;
+    private Date prepWorkDeadline;
     private Address location;
 
     private List<ExternalReference> preResources;
@@ -96,7 +97,7 @@ public class IsaacEventPageDTO extends ContentDTO {
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
             @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
-            @JsonProperty("bookingDeadline") Date bookingDeadline,
+            @JsonProperty("bookingDeadline") Date bookingDeadline, @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
             @JsonProperty("location") Address location,
             @JsonProperty("preResources") List<ExternalReference> preResources,
             @JsonProperty("postResources") List<ExternalReference> postResources,
@@ -108,6 +109,7 @@ public class IsaacEventPageDTO extends ContentDTO {
         this.date = date;
         this.end_date = end_date;
         this.bookingDeadline = bookingDeadline;
+        this.prepWorkDeadline = prepWorkDeadline;
         this.location = location;
         this.preResources = preResources;
         this.postResources = postResources;
@@ -322,6 +324,24 @@ public class IsaacEventPageDTO extends ContentDTO {
      */
     public void setEnd_date(final Date end_date) {
         this.end_date = end_date;
+    }
+
+    /**
+     * getPrepWorkDeadline.
+     *
+     * @return bookingDeadline.
+     */
+    public Date getPrepWorkDeadline() {
+        return prepWorkDeadline;
+    }
+
+    /**
+     * setPrepWorkDeadline.
+     *
+     * @param prepWorkDeadline the booking deadline.
+     */
+    public void setPrepWorkDeadline(final Date prepWorkDeadline) {
+        this.prepWorkDeadline = prepWorkDeadline;
     }
 
     /**
