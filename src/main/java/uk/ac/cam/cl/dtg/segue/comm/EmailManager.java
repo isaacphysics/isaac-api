@@ -65,6 +65,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final int MINIMUM_TAG_LENGTH = 4;
     private static final int TRUNCATED_TOKEN_LENGTH = 5;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
+    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy HH:mm a");
 
     /**
      * @param communicator
@@ -340,7 +341,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
         p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
-        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
+        p.put("prepWorkDeadline", event.getPrepWorkDeadline() == null ? "" : FULL_DATE_FORMAT.format(event.getPrepWorkDeadline()));
         p.put("myAssignmentsURL", myAssignmentsURL == null ? "" : myAssignmentsURL);
 
         StringBuilder sb = new StringBuilder();
@@ -394,7 +396,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
         p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
-        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
 
         p.put("sig", SIGNATURE);
 
@@ -434,7 +436,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // givenname should be camel case but I have left it to be in line with the others.
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
+        p.put("prepWorkDeadline", event.getPrepWorkDeadline() == null ? "" : FULL_DATE_FORMAT.format(event.getPrepWorkDeadline()));
         p.put("contactUsURL", contactUsURL);
         p.put("myAssignmentsURL", myAssignmentsURL);
         p.put("authorizationLink", event.getIsaacGroupToken() == null ? "" : authorisationURL);
@@ -484,7 +487,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // givenname should be camel case but I have left it to be in line with the others.
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("eventDate", event.getDate() == null ? "" : DATE_FORMAT.format(event.getDate()));
+        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
         p.put("contactUsURL", contactUsURL);
         p.put("sig", SIGNATURE);
 
@@ -541,7 +544,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
             });
         }
-
         
         StringBuilder htmlSB = new StringBuilder();
         StringBuilder plainTextSB = new StringBuilder();
