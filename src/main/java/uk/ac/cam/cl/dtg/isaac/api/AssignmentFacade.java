@@ -161,10 +161,13 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 if (assignment.getOwnerUserId() != null) {
                     try {
                         RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
+                        if (user == null) {
+                            throw new NoUserException();
+                        }
                         UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
                         assignment.setAssignerSummary(userSummary);
                     } catch (NoUserException e) {
-                        log.error("Assignment (" + assignment.getId() + ") exists with owner user ID (" +
+                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID (" +
                                 assignment.getOwnerUserId() + ") that does not exist!");
                     }
                 }
