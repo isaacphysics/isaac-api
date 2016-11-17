@@ -56,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -156,6 +157,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (AssignmentDTO assignment : assignments) {
                 assignment.setGameboard(this.gameManager.getGameboard(assignment.getGameboardId(),
                         currentlyLoggedInUser, questionAttemptsByUser));
+
+                if (assignment.getOwnerUserId() != null) {
+                    try {
+                        RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
+                        UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
+                        assignment.setAssignerSummary(userSummary);
+                    } catch (NoUserException e) {
+                        log.error("Assignment (" + assignment.getId() + ") exists with owner user ID (" +
+                                assignment.getOwnerUserId() + ") that does not exist!");
+                    }
+                }
             }
 
             // if they have filtered the list we should only send out the things they wanted.
