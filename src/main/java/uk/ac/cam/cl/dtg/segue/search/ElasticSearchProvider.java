@@ -55,6 +55,7 @@ import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +114,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
 
         if (filterInstructions != null) {
-            query = QueryBuilders.filteredQuery(query, generateFilterQuery(filterInstructions));
+            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
         }
 
         log.debug("Query to be sent to elasticsearch is : " + query);
@@ -187,7 +188,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).boost(2.0f);
         query.should(multiMatchQuery);
 
-        QueryBuilder fuzzyQuery = QueryBuilders.moreLikeThisQuery(fields).addLikeText(searchString);
+        QueryBuilder fuzzyQuery = QueryBuilders.moreLikeThisQuery(fields, new String[] {searchString}, new MoreLikeThisQueryBuilder.Item[] { });
         query.should(fuzzyQuery);
 
         masterQuery.must(query);
@@ -242,13 +243,12 @@ public class ElasticSearchProvider implements ISearchProvider {
      * @return Defaults to http client creation.
      */
     public static Client getTransportClient(final String clusterName, final String address, final int port) throws UnknownHostException {
-        Settings settings = Settings.settingsBuilder().put("cluster.name", clusterName)
-                .put("client.transport.ping_timeout", "10s").build();
-        TransportClient transportClient = TransportClient.builder().settings(settings).build();
-        InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(InetAddress.getByName(address), port);
-        transportClient = transportClient.addTransportAddress(transportAddress);
-		log.info("Elastic Search Transport client created with settings: " + settings.toDelimitedString(' '));
-        return transportClient;
+        TransportClient client = new PreBuiltTransportClient(Settings.builder().put("cluster.name", clusterName)
+                                                                               .put("client.transport.ping_timeout", "180s").build())
+                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(address), port));
+
+		log.info("Elastic Search Transport client created: " + address + ":" + port);
+        return client;
     }
 
     @Override
@@ -480,12 +480,12 @@ public class ElasticSearchProvider implements ISearchProvider {
         return result;
     }
 
-    public GetResponse getById(String index, String type, String id, List<String> fieldsToReturn) {
-        GetRequestBuilder grb = client.prepareGet(index, type, id).setFields(fieldsToReturn.toArray(new String[0]));
+    public GetResponse getById(String index, String type, String id) {
+        GetRequestBuilder grb = client.prepareGet(index, type, id).setFetchSource(true);
         return grb.execute().actionGet();
     }
 
-    public SearchResponse getAllByType(String index, String type, String[] fields) {
-        return client.prepareSearch(index).setTypes(type).setSize(10000).addFields(fields).execute().actionGet();
+    public SearchResponse getAllByType(String index, String type) {
+        return client.prepareSearch(index).setTypes(type).setSize(10000).setFetchSource(true).execute().actionGet();
     }
 }

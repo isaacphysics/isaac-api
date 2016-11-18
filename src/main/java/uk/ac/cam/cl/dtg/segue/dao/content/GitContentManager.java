@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Implementation that specifically works with Content objects.
@@ -66,6 +67,7 @@ public class GitContentManager implements IContentManager {
     private final GitDb database;
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
+    private final PropertiesLoader globalProperties;
 
     private Cache<Object, Object> cache;
 
@@ -82,10 +84,11 @@ public class GitContentManager implements IContentManager {
      */
     @Inject
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper) {
+                             final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
+        this.globalProperties = globalProperties;
        
         this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
         this.tagsList = new ConcurrentHashMap<String, Set<String>>();
@@ -114,6 +117,7 @@ public class GitContentManager implements IContentManager {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
+        this.globalProperties = null;
         
         this.indexProblemCache = indexProblemCache;
         this.tagsList = new ConcurrentHashMap<String, Set<String>>();
@@ -137,7 +141,7 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Content getContentDOById(final String version, final String id) throws ContentManagerException {
-        if (null == id) {
+        if (null == id || id.equals("")) {
             return null;
         }
 
@@ -369,8 +373,7 @@ public class GitContentManager implements IContentManager {
     public final Set<String> getTagsList(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        List<Object> tagObjects = searchProvider.getById(version, "metadata", "tags", Collections.singletonList("tags"))
-                .getField("tags").getValues();
+        List<Object> tagObjects = (List<Object>)searchProvider.getById(version, "metadata", "tags").getSource().get("tags");
 
         return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
     }
@@ -379,11 +382,11 @@ public class GitContentManager implements IContentManager {
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        SearchResponse r =  searchProvider.getAllByType("latest", "unit", new String[] {"cleanKey", "unit"});
+        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_VERSION), "unit");
         SearchHits hits = r.getHits();
         ArrayList<String> units = new ArrayList<String>((int)hits.getTotalHits());
         for(SearchHit hit : hits) {
-            units.add((String)hit.field("unit").getValue());
+            units.add((String)hit.getSource().get("unit"));
         }
 
         return units;
@@ -406,21 +409,22 @@ public class GitContentManager implements IContentManager {
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
 
-        SearchResponse r = searchProvider.getAllByType("latest", "contentError", new String[] {"canonicalSourceFile", "id", "title", "published", "tags", "errors"});
+        SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_VERSION), "contentError");
 
         SearchHits hits = r.getHits();
         Map<Content, List<String>> map = new HashMap<>();
         for(SearchHit hit : hits) {
 
             Content partialContentWithErrors = new Content();
-            partialContentWithErrors.setId((String)hit.field("id").getValue());
-            partialContentWithErrors.setTitle((String)hit.field("title").getValue());
+            Map src = hit.getSource();
+            partialContentWithErrors.setId((String)src.get("id"));
+            partialContentWithErrors.setTitle((String)src.get("title"));
             //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
-            partialContentWithErrors.setPublished((Boolean)hit.field("published").getValue());
-            partialContentWithErrors.setCanonicalSourceFile((String)hit.field("canonicalSourceFile").getValue());
+            partialContentWithErrors.setPublished((Boolean)src.get("published"));
+            partialContentWithErrors.setCanonicalSourceFile((String)src.get("canonicalSourceFile"));
 
             ArrayList<String> errors = new ArrayList<>();
-            for (Object v : hit.field("errors").getValues() ) {
+            for (Object v : (List)hit.getSource().get("errors") ) {
                 errors.add((String)v);
             }
 
@@ -494,8 +498,8 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public String getCurrentContentSHA() {
-        GetResponse r = searchProvider.getById("latest", "metadata", "version", Collections.singletonList("version"));
-        return (String)r.getField("version").getValue();
+        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_VERSION), "metadata", "version");
+        return (String)r.getSource().get("version");
     }
 
 

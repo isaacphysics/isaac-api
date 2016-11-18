@@ -11,7 +11,7 @@ services:
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch
-    image: elasticsearch:2.4.1
+    image: elasticsearch:5.0.1
     volumes:
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     ports:

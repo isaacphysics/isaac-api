@@ -327,7 +327,7 @@ public interface ISearchProvider {
      */
     //void registerRawStringFields(List<String> fieldNames);
 
-    GetResponse getById(String index, String type, String id, List<String> fieldsToReturn);
+    GetResponse getById(String index, String type, String id);
 
-    SearchResponse getAllByType(String index, String type, String[] fields);
+    SearchResponse getAllByType(String index, String type);
 }

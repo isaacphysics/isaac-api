@@ -13,10 +13,12 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
@@ -73,11 +75,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
         try {
             // execute bulk request
-            BulkResponse bulkResponse = bulkRequest.setRefresh(true).execute().actionGet();
+            BulkResponse bulkResponse = bulkRequest.setTimeout("180s").setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).execute().actionGet();
             if (bulkResponse.hasFailures()) {
                 // process failures by iterating through each bulk response item
                 for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
-                    log.error("Unable to index the following item: " + itemResponse.getFailureMessage());
+                    if (itemResponse.isFailed()) {
+                        log.error("Unable to index the following item: " + itemResponse.getFailureMessage());
+                    }
                 }
             }
         } catch (ElasticsearchException e) {
@@ -86,7 +90,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     }
 
 
-    public void indexObject(final String index, final String indexType, final String content, final String uniqueId)
+    void indexObject(final String index, final String indexType, final String content, final String uniqueId)
             throws SegueSearchOperationException {
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(index)) {
@@ -169,7 +173,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
             for (String indexType : this.rawFieldsListByType.keySet()) {
 
-                CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index);
+                CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index).setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
 
                 final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
                         .startObject("properties");
@@ -178,9 +182,9 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                     log.debug("Sending raw mapping correction for " + fieldName + "."
                             + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX);
 
-                    mappingBuilder.startObject(fieldName).field("type", "string").field("index", "analyzed")
+                    mappingBuilder.startObject(fieldName).field("type", "keyword").field("index", "analyzed")
                             .startObject("fields").startObject(Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX)
-                            .field("type", "string").field("index", "not_analyzed").endObject().endObject().endObject();
+                            .field("type", "keyword").field("index", "not_analyzed").endObject().endObject().endObject();
                 }
                 // close off json structure
                 mappingBuilder.endObject().endObject().endObject();

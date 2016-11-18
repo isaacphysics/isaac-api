@@ -16,6 +16,7 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.elasticsearch.action.ActionRequestValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
@@ -213,6 +214,12 @@ public class ContentIndexer {
                                 continue;
                             }
 
+                            if (flattenedContent.getId().length() > 512) {
+                                log.warn("Content ID too long: " + flattenedContent.getId());
+                                this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(), indexProblemCache);
+                                continue;
+                            }
+
                             if (flattenedContent.getId().contains(".")) {
                                 // Otherwise, duplicate IDs with different content,
                                 // therefore log an error
@@ -407,7 +414,7 @@ public class ContentIndexer {
             // for tracking purposes we want to generate an id for all image content objects.
             if (media.getId() == null && media.getSrc() != null) {
                 media.setId(parentId + Constants.ID_SEPARATOR
-                        + Arrays.toString(Base64.encodeBase64(media.getSrc().getBytes())));
+                        + Base64.encodeBase64String(media.getSrc().getBytes()));
             }
         }
 
@@ -578,8 +585,7 @@ public class ContentIndexer {
 
 
         try {
-            es.indexObject(sha, "metadata", "version", objectMapper.writeValueAsString(ImmutableMap.of("version", sha)));
-            es.indexObject(sha, "metadata", "tags", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)));
+           es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("version", sha)), "version");es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
 
             // TODO: Should probably bulk index these
             for (String k : allUnits.keySet()) {
@@ -591,7 +597,7 @@ public class ContentIndexer {
                         "canonicalSourceFile", c.getCanonicalSourceFile(),
                         "id", c.getId() == null ? "" : c.getId(),
                         "title", c.getTitle() == null ? "" : c.getTitle(),
-                       // "tags", c.getTags(), // TODO: Add tags
+                        // "tags", c.getTags(), // TODO: Add tags
                         "published", c.getPublished() == null ? "" : c.getPublished(),
                         "errors", indexProblemCache.get(c).toArray())));
             }
@@ -607,6 +613,8 @@ public class ContentIndexer {
             log.info("Search index request sent for: " + sha);
         } catch (SegueSearchOperationException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
+        } catch (ActionRequestValidationException e) {
+            log.error("Error validating content during index",e);
         }
     }
 

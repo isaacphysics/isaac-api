@@ -104,11 +104,11 @@ cluster.name: isaac
 
 # Set the number of shards (splits) of an index (5 by default):
 #
-index.number_of_shards: 1
+#index.number_of_shards: 1
 
 # Set the number of replicas (additional copies) of an index (1 by default):
 #
-index.number_of_replicas: 1
+#index.number_of_replicas: 1
 
 # Note, that for development on a local machine, with small indices, it usually
 # makes sense to "disable" the distributed features:
@@ -200,7 +200,7 @@ index.number_of_replicas: 1
 
 # Set the bind address specifically (IPv4 or IPv6):
 #
-network.bind_host: 0.0.0.0
+#network.bind_host: 0.0.0.0
 
 # Set the address other nodes will use to communicate with this node. If not
 # set, it is automatically derived. It must point to an actual IP address.
@@ -209,7 +209,7 @@ network.bind_host: 0.0.0.0
 
 # Set both 'bind_host' and 'publish_host':
 #
-#network.host: 192.168.0.1
+network.host: 0.0.0.0
 
 # Set a custom port for the node to node communication (9300 by default):
 #
