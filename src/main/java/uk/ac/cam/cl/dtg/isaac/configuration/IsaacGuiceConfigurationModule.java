@@ -124,7 +124,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Inject
     private static IsaacSymbolicChemistryValidator getSymbolicChemistryValidator(PropertiesLoader properties) {
 
-        return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.EQUALITY_CHECKER_HOST),
-                properties.getProperty(Constants.EQUALITY_CHECKER_PORT));
+        return new IsaacSymbolicChemistryValidator(properties.getProperty(Constants.CHEMISTRY_CHECKER_HOST),
+                properties.getProperty(Constants.CHEMISTRY_CHECKER_PORT));
     }
 }
