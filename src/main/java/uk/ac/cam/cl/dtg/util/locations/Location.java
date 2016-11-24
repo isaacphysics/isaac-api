@@ -54,6 +54,15 @@ public class Location {
     }
 
     /**
+     * Sets the address.
+     *
+     * @param address the location to set
+     */
+    public void setAddress(final Address address) {
+        this.address = address;
+    }
+
+    /**
      * Gets the latitude.
      * 
      * @return the latitude
