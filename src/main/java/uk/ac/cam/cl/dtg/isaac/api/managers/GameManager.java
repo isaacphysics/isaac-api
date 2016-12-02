@@ -1079,8 +1079,9 @@ public class GameManager {
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
+        // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
         ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager().findByFieldNamesRandomOrder(
-                versionManager.getLiveVersion(), fieldsToMap, 0, 1);
+                versionManager.getLiveVersion(), fieldsToMap, 0, 999);
 
         // try to increase randomness of wildcard results.
         Collections.shuffle(wildcardResults.getResults());
