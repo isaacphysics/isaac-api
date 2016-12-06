@@ -365,6 +365,7 @@ public final class Constants {
     public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME = "EstablishmentNumber";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
     public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
+    public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "DataSource";
 
     // School List loading POJO fields
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";

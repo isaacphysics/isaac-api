@@ -157,7 +157,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     for (RegisteredUserDTO user : users) {
                         if (user.getSchoolOther() != null) {
                             School pseudoSchool = new School();
-                            pseudoSchool.setUrn(user.getSchoolOther().hashCode() * -1L);
+                            pseudoSchool.setUrn(Integer.toString(user.getSchoolOther().hashCode()));
                             pseudoSchool.setName(user.getSchoolOther());
                             pseudoSchool.setDataSource(School.SchoolDataSource.USER_ENTERED);
                             schoolOthers.add(pseudoSchool);

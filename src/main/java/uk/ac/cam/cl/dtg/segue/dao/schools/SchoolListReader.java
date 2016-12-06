@@ -21,17 +21,14 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_TYPE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.opencsv.CSVReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +130,7 @@ public class SchoolListReader {
      * @throws JsonParseException
      *             - if the school data is malformed
      */
-    public School findSchoolById(final Long schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
+    public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
             JsonMappingException, IOException {
 
         if (!this.ensureSchoolList()) {
@@ -145,7 +142,7 @@ public class SchoolListReader {
         
         matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
                 SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolURN.toString(), 0, DEFAULT_RESULTS_LIMIT).getResults();
+                schoolURN, 0, DEFAULT_RESULTS_LIMIT).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;
@@ -241,11 +238,10 @@ public class SchoolListReader {
         List<School> schools = Lists.newArrayList();
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(fileToLoad));
-            String line = null;
+            CSVReader reader = new CSVReader(new InputStreamReader(new FileInputStream(fileToLoad), "UTF-8"));
 
             // use first line to determine field names.
-            String[] columns = reader.readLine().split(",");
+            String[] columns = reader.readNext();
 
             Map<String, Integer> fieldNameMapping = new TreeMap<String, Integer>();
 
@@ -253,36 +249,29 @@ public class SchoolListReader {
                 fieldNameMapping.put(columns[i].trim().replace("\"", ""), i);
             }
 
-            // we expect the columns to have the followings:
-            // SCHOOL URN | EstablishmentNumber | EstablishmentName | Town
-            // Postcode
-            line = reader.readLine();
-            while (line != null && !line.isEmpty()) {
-                // we have to remove the quotes from the string as the source
-                // file is ugly.
-                line = line.replace("\"", "");
-                String[] schoolArray = line.split(",");
+            // We expect the columns to have the following names/structure and be UTF-8 encoded:
+            // URN | EstablishmentName | Postcode | DataSource
+            String[] schoolArray;
+            while ((schoolArray = reader.readNext()) != null) {
                 try {
-                    School schoolToSave = new School(Long.parseLong(schoolArray[fieldNameMapping
-                            .get(Constants.SCHOOL_URN_FIELDNAME)]),
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME)],
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)], null,
-                            School.SchoolDataSource.GOVERNMENT);
+                    School.SchoolDataSource source = School.SchoolDataSource
+                            .valueOf(schoolArray[fieldNameMapping.get(Constants.SCHOOL_DATA_SOURCE_FIELDNAME)]);
 
-                    // check if school has a post code as some of them do not.
-                    if (schoolArray.length - 1 == fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)) {
-                        schoolToSave
-                                .setPostcode(schoolArray[fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)]);
+                    School schoolToSave = new School(schoolArray[fieldNameMapping.get(Constants.SCHOOL_URN_FIELDNAME)],
+                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)],
+                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)],
+                            source);
+
+                    if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
+                        log.warn("School with missing postcode! URN:" + schoolToSave.getUrn());
                     }
 
                     schools.add(schoolToSave);
                 } catch (IndexOutOfBoundsException e) {
-                    // this happens when the school does not have the required
-                    // data
+                    // This happens when the school does not have the required data
                     log.warn("Unable to load the following school into the school list due to missing required fields. "
-                            + line);
+                            + Arrays.toString(schoolArray));
                 }
-                line = reader.readLine();
             }
             reader.close();
         } catch (FileNotFoundException e) {

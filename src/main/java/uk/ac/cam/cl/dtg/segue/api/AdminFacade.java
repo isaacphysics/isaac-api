@@ -849,7 +849,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final Long schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -1104,12 +1104,11 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
-            
-            Long schoolURN = Long.parseLong(schoolId);
-            School school = schoolReader.findSchoolById(schoolURN);
+
+            School school = schoolReader.findSchoolById(schoolId);
             
             Map<String, Object> result = ImmutableMap.of("school", school, "users",
-                    statsManager.getUsersBySchoolId(schoolURN));
+                    statsManager.getUsersBySchoolId(schoolId));
             
             return Response.ok(result).build();
         } catch (UnableToIndexSchoolsException e) {

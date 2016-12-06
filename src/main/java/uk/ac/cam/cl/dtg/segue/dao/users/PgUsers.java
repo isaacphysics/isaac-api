@@ -595,7 +595,7 @@ public class PgUsers implements IUserDataManager {
         u.setGender(results.getString("gender") != null ? Gender.valueOf(results.getString("gender")) : null);
         u.setRegistrationDate(results.getTimestamp("registration_date"));
         
-        u.setSchoolId(results.getLong("school_id"));
+        u.setSchoolId(results.getString("school_id"));
         if (results.wasNull()) {
             u.setSchoolId(null);
         }

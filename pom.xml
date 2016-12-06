@@ -240,6 +240,11 @@
 			<artifactId>elasticsearch</artifactId>
 			<version>1.4.4</version>
 		</dependency>
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>3.8</version>
+		</dependency>
 	</dependencies>
 
 	<build>
