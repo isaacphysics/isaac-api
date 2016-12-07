@@ -662,6 +662,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 resultBuilder.append("\n");
             }
 
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_GROUP_PROGRESS_CSV,
+                    ImmutableMap.of("groupId", groupId));
+
             headerBuilder.append(resultBuilder);
             return Response.ok(headerBuilder.toString())
                     .header("Content-Disposition", "attachment; filename=group_progress.csv")
