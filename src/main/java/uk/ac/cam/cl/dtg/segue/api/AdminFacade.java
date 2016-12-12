@@ -15,13 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.StringWriter;
 import java.io.IOException;
-import java.util.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -1273,10 +1281,34 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
 
-        Map<String, Map<LocalDate, Long>> eventLogsByDate;
         try {
+            Map<String, Map<LocalDate, Long>> eventLogsByDate;
             eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
                     toDate, events, bin);
+
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            List<String[]> rows = Lists.newArrayList();
+            rows.add("event_type,timestamp,value".split(","));
+            for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
+                String eventTypeKey = eventType.getKey();
+                for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
+                    String[] row = {eventTypeKey, record.getKey().toString(), record.getValue().toString()};
+                    rows.add(row);
+                }
+            }
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(stringWriter.toString()).tag(etag)
+                    .header("Content-Disposition", "attachment; filename=admin_stats.csv")
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (BadRequestException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (ForbiddenException e) {
@@ -1286,27 +1318,10 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             log.error("Database error while getting event details for a user.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        } catch (IOException e) {
+            log.error("IO error while creating the CSV file.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
         }
-
-        StringBuilder resultsBuilder = new StringBuilder();
-        resultsBuilder.append("event_type,timestamp,value\n");
-        for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
-            String eventTypeKey = eventType.getKey();
-            for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
-                resultsBuilder.append(String.format("%s,%s,%s\n", eventTypeKey, record.getKey().toString(), record.getValue().toString()));
-            }
-        }
-
-        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(resultsBuilder.toString()).tag(etag)
-                .header("Content-Disposition", "attachment; filename=admin_stats.csv")
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
     }
 
     /**
