@@ -20,7 +20,6 @@ import io.swagger.annotations.Api;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Array;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
@@ -174,8 +172,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
                         assignment.setAssignerSummary(userSummary);
                     } catch (NoUserException e) {
-                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID (" +
-                                assignment.getOwnerUserId() + ") that does not exist!");
+                        log.warn("Assignment (" + assignment.getId() + ") exists with owner user ID ("
+                                + assignment.getOwnerUserId() + ") that does not exist!");
                     }
                 }
             }
@@ -289,7 +287,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             if (!assignment.getOwnerUserId().equals(currentlyLoggedInUser.getId()) 
-                    && !super.isUserAnAdmin(userManager, request)) {
+                    && !isUserAnAdmin(userManager, request)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You can only view the results of assignments that you own.").toResponse();
             }
@@ -316,22 +314,19 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             // quick fix to sort list by user last name
-            Collections.sort(result, new Comparator<ImmutableMap<String, Object>>() {
-                @Override
-                public int compare(final ImmutableMap<String, Object> o1, final ImmutableMap<String, Object> o2) {
-                    UserSummaryDTO user1 = (UserSummaryDTO) o1.get(userString);
-                    UserSummaryDTO user2 = (UserSummaryDTO) o2.get(userString);
+            result.sort((result1, result2) -> {
+                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
+                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
 
-                    if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                        return -1;
-                    } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                        return 1;
-                    } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                        return 0;
-                    }
-                    
-                    return user1.getFamilyName().compareTo(user2.getFamilyName());
+                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                    return -1;
+                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                    return 1;
+                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                    return 0;
                 }
+
+                return user1.getFamilyName().compareTo(user2.getFamilyName());
             });
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS, Maps.newHashMap());
@@ -387,20 +382,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<String> questionIds = Lists.newArrayList();
             
             // quick hack to sort list by user last name
-            Collections.sort(groupMembers, new Comparator<RegisteredUserDTO>() {
-                @Override
-                public int compare(final RegisteredUserDTO user1, final RegisteredUserDTO user2) {
-                    
-                    if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
-                        return -1;
-                    } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
-                        return 1;
-                    } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
-                        return 0;
-                    }
-
-                    return user1.getFamilyName().compareTo(user2.getFamilyName());
+            groupMembers.sort((user1, user2) -> {
+                if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
+                    return -1;
+                } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
+                    return 1;
+                } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
+                    return 0;
                 }
+                return user1.getFamilyName().compareTo(user2.getFamilyName());
             });
 
             List<String[]> rows = Lists.newArrayList();
@@ -469,7 +459,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         columnNumber++;
                     }
                     
-                    Double percentageCorrect = (new Double(totalCorrect) / questionIds.size()) * 100F;
+                    double percentageCorrect = ((double) totalCorrect / questionIds.size()) * 100F;
                     resultRow.add(percentageFormat.format(percentageCorrect));
                     
                 } else {
@@ -488,7 +478,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             // ignore name columns
 
             for (int i = 0; i < questionIds.size(); i++) {
-                Double percentageCorrect = (new Double(columnTotals[i]) / groupMembers.size()) * 100F;
+                double percentageCorrect = ((double) columnTotals[i] / groupMembers.size()) * 100F;
                 totalsRow.add(percentageFormat.format(percentageCorrect));
             }
 
@@ -556,7 +546,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers;
             groupMembers = this.groupManager.getUsersInGroup(group);
             // quick hack to sort list by user last name
-            groupMembers.sort((final RegisteredUserDTO user1, final RegisteredUserDTO user2) -> {
+            groupMembers.sort((user1, user2) -> {
                 if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
                     return -1;
                 } else if (user1.getFamilyName() != null && user2.getFamilyName() == null) {
@@ -618,15 +608,15 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                         StringBuilder s = new StringBuilder();
                         if (gameboard.getTitle() != null) {
-                            s.append(gameboard.getTitle() + " - ");
+                            s.append(gameboard.getTitle()).append(" - ");
                         } else {
-                            s.append(gameboard.getId() + " - ");
+                            s.append(gameboard.getId()).append(" - ");
                         }
-                        s.append(questionPage.getTitle() + " - ");
+                        s.append(questionPage.getTitle()).append(" - ");
                         if (question.getTitle() != null) {
-                            s.append(questionPage.getTitle() + " - ");
+                            s.append(questionPage.getTitle()).append(" - ");
                         } else {
-                            s.append("Q" + b);
+                            s.append("Q").append(b);
                         }
                         b++;
                         headerRow.add(s.toString());
@@ -657,7 +647,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     }
                     totals.add(total);
                 }
-                Integer overallTotal = totals.stream().reduce((a, b) -> a + b).get();
+                Integer overallTotal = totals.stream().reduce((a, b) -> a + b).orElse(0);
 
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(groupMember.getFamilyName());
@@ -681,12 +671,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             csvWriter.writeAll(rows);
             csvWriter.close();
 
-            StringBuilder headerBuilder = new StringBuilder();
-            headerBuilder.append(String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
-                    group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(), currentlyLoggedInUser.getFamilyName()));
-            headerBuilder.append(stringWriter.toString());
+            String headerBuilder = String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
+                    group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
+                    currentlyLoggedInUser.getFamilyName()) + stringWriter.toString();
 
-            return Response.ok(headerBuilder.toString())
+            return Response.ok(headerBuilder)
                     .header("Content-Disposition", "attachment; filename=group_progress.csv")
                     .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
 

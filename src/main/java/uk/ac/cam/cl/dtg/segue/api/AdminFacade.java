@@ -398,7 +398,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     .valueOf(emailVerificationStatus);
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (emails.equals(requestingUser.getEmail())) {
+            if (emails.contains(requestingUser.getEmail())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
                         .toResponse();
             }
@@ -868,7 +868,8 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (familyName.isEmpty() && null == schoolOther && email.isEmpty() && null == schoolURN && null == postcode)) {
+                    && (null != familyName) && familyName.isEmpty() && (null == schoolOther) && (null != email)
+                    && email.isEmpty() && (null == schoolURN) && (null == postcode)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -885,7 +886,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
             if (null != email && !email.isEmpty()) {
                 if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You do not have permission to do wildcard searches with less than 4 characters.")
                             .toResponse();
                 }
                 userPrototype.setEmail(email);
@@ -935,7 +937,7 @@ public class AdminFacade extends AbstractSegueFacade {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
                                 String schoolPostCode = school.getPostcode();
-                                List<Long> ids = null;
+                                List<Long> ids;
                                 if (postCodeAndUserIds.containsKey(schoolPostCode)) {
                                     ids = postCodeAndUserIds.get(schoolPostCode);
                                 } else {
@@ -1174,12 +1176,7 @@ public class AdminFacade extends AbstractSegueFacade {
              @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin)
             throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
 
-        final boolean binData;
-        if (null == bin || !bin) {
-            binData = false;
-        } else {
-            binData = true;
-        }
+        final boolean binData = null != bin && bin;
 
         if (null == events || events.isEmpty()) {
             throw new BadRequestException("You must specify the events you are interested in.");
@@ -1289,12 +1286,12 @@ public class AdminFacade extends AbstractSegueFacade {
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);
             List<String[]> rows = Lists.newArrayList();
-            rows.add("event_type,timestamp,value".split(","));
+            rows.add(new String[]{"event_type", "timestamp", "value"});
+
             for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
                 String eventTypeKey = eventType.getKey();
                 for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
-                    String[] row = {eventTypeKey, record.getKey().toString(), record.getValue().toString()};
-                    rows.add(row);
+                    rows.add(new String[]{eventTypeKey, record.getKey().toString(), record.getValue().toString()});
                 }
             }
             csvWriter.writeAll(rows);
@@ -1379,7 +1376,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
-                + File.separator + "logs" + File.separator + "perf.log"));) {
+                + File.separator + "logs" + File.separator + "perf.log"))) {
             if (!isUserAnAdmin(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
@@ -1436,7 +1433,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 results.add(contentVersionController.getContentManager().extractContentSummary(c));
             }
 
-            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<ContentSummaryDTO>(results,
+            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,
                     allByType.getTotalResults());
             return Response.ok(toReturn).build();
         } catch (NoUserLoggedInException e) {
