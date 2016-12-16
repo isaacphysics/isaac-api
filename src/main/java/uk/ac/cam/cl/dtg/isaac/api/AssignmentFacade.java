@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -579,7 +580,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             }
 
             ArrayList<String> headerRow = Lists.newArrayList();
-            Collections.addAll(headerRow, "Last Name,First Name,Overall Total".split(","));
+            Collections.addAll(headerRow, "Last Name,First Name,% Correct Overall".split(","));
             List<String> gameboardTitles = Lists.newArrayList();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
@@ -591,8 +592,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
             for (String gameboardTitle : gameboardTitles) {
-                headerRow.add("Total for '" + gameboardTitle + "'");
+                headerRow.add("% Correct for '" + gameboardTitle + "'");
             }
+            headerRow.add("");
             Map<GameboardDTO, List<String>> gameboardQuestionIds = Maps.newHashMap();
             for (AssignmentDTO assignment : assignments) {
                 GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
@@ -631,31 +633,48 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             for (RegisteredUserDTO groupMember : groupMembers) {
                 ArrayList<String> row = Lists.newArrayList();
                 Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
-                List<Integer> totals = Lists.newArrayList();
+                List<Double> totals = Lists.newArrayList();
                 List<Integer> marks = Lists.newArrayList();
+                Integer overallTotal = 0;
+                Integer overallOutOf = 0;
                 for (AssignmentDTO assignment : assignments) {
                     GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
                     Integer total = 0;
-                    for (String s : gameboardQuestionIds.get(gameboard)) {
+                    List<String> questionIds = gameboardQuestionIds.get(gameboard);
+                    List<GameboardItem> questions = gameboard.getQuestions();
+                    Map<String, Integer> gameboardPartials = Maps.newHashMap();
+                    for (GameboardItem question : questions) {
+                        gameboardPartials.put(question.getId(), 0);
+                    }
+                    HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
+                    Integer outOf = questions.size();
+                    overallOutOf += outOf;
+                    for (String s : questionIds) {
                         Integer mark = userAssignments.get(gameboard).get(s);
+                        String[] tokens = s.split("\\|");
+                        questionParts.put(tokens[0], questionParts.get(tokens[0]) + 1);
                         marks.add(mark);
                         if (null != mark) {
-                            total += mark;
-                        } else {
-                            total += 0;
+                            gameboardPartials.put(tokens[0], gameboardPartials.get(tokens[0]) + mark);
                         }
                     }
-                    totals.add(total);
+                    for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
+                        entry.setValue(entry.getValue() / questionParts.get(entry.getKey()));
+                        total += entry.getValue();
+                    }
+
+                    totals.add(new Double(total) / new Double(outOf));
+                    overallTotal = overallTotal + total;
                 }
-                Integer overallTotal = totals.stream().reduce((a, b) -> a + b).orElse(0);
 
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(groupMember.getFamilyName());
                 row.add(groupMember.getGivenName());
-                row.add(String.format("%d", overallTotal));
-                for (Integer total : totals) {
-                    row.add(String.format("%d", total));
+                row.add(String.format("%.0f", (100.0 * overallTotal) / new Double(overallOutOf)));
+                for (Double total : totals) {
+                    row.add(String.format("%.0f", 100.0 * total));
                 }
+                row.add("");
                 for (Integer mark : marks) {
                     if (null != mark) {
                         row.add(String.format("%d", mark));
@@ -673,7 +692,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             String headerBuilder = String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
                     group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
-                    currentlyLoggedInUser.getFamilyName()) + stringWriter.toString();
+                    currentlyLoggedInUser.getFamilyName()) + stringWriter.toString()
+                    + "\n\nN.B.\n\"The percentages are for question pages, not individual question parts.\"\n";
 
             return Response.ok(headerBuilder)
                     .header("Content-Disposition", "attachment; filename=group_progress.csv")
