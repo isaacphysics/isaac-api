@@ -322,6 +322,7 @@ public final class Constants {
     public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
     public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
+    public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
