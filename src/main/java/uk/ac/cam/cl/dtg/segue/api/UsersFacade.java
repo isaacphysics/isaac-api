@@ -76,6 +76,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
@@ -723,6 +724,9 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (AuthenticationProviderMappingException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
+        } catch (EmailMustBeVerifiedException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "You cannot register with an Isaac email address.").toResponse();
         }
     }
 }

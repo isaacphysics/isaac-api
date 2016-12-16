@@ -56,6 +56,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -589,15 +590,25 @@ public class UserAccountManager {
      * @throws AuthenticationProviderMappingException
      *             - if there is a problem locating the authentication provider. This only applies for changing a
      *             password.
+     * @throws EmailMustBeVerifiedException
+     *             - if a user attempts to sign up with an email that must be verified before it can be used
+     *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
             final HttpServletResponse response, final RegisteredUser user) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
+            MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException,
+            EmailMustBeVerifiedException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
         if (this.findUserByEmail(user.getEmail()) != null) {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
+
+        // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
+        if (user.getEmail().matches(".*@isaac(physics|chemistry|biology|science)\\.org")) {
+            log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
+            throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
 
         RegisteredUser userToSave = null;
