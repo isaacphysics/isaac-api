@@ -21,10 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -764,6 +761,10 @@ public class UserAccountManager {
         if (user.getSchoolId() == null && existingUser.getSchoolId() != null) {
             userToSave.setSchoolId(null);
         }
+        // Correctly remove school_other when it is set to be the empty string:
+        if (user.getSchoolOther() == null || user.getSchoolOther().isEmpty()) {
+            userToSave.setSchoolOther(null);
+        }
         
         this.userAuthenticationManager.checkForSeguePasswordChange(user, userToSave);
 
@@ -787,6 +788,19 @@ public class UserAccountManager {
                 log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
 			}
             userToSave.setEmail(existingUser.getEmail());
+        }
+
+        // If the school has changed, update it. Check this using Objects.equals() to be null safe!
+        if (!Objects.equals(userToSave.getSchoolId(), existingUser.getSchoolId())
+                || !Objects.equals(userToSave.getSchoolOther(), existingUser.getSchoolOther())) {
+            LinkedHashMap<String, String> eventDetails = new LinkedHashMap<>();
+            eventDetails.put("oldSchoolId", existingUser.getSchoolId());
+            eventDetails.put("newSchoolId", userToSave.getSchoolId());
+            eventDetails.put("oldSchoolOther", existingUser.getSchoolOther());
+            eventDetails.put("newSchoolOther", userToSave.getSchoolOther());
+
+            logManager.logInternalEvent(this.convertUserDOToUserDTO(userToSave), Constants.USER_SCHOOL_CHANGE,
+                    eventDetails);
         }
 
         // save the user

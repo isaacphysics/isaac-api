@@ -15,13 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.StringWriter;
 import java.io.IOException;
-import java.util.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -390,7 +398,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     .valueOf(emailVerificationStatus);
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (emails.equals(requestingUser.getEmail())) {
+            if (emails.contains(requestingUser.getEmail())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
                         .toResponse();
             }
@@ -849,7 +857,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final Long schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -860,7 +868,8 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (familyName.isEmpty() && null == schoolOther && email.isEmpty() && null == schoolURN && null == postcode)) {
+                    && (null != familyName) && familyName.isEmpty() && (null == schoolOther) && (null != email)
+                    && email.isEmpty() && (null == schoolURN) && (null == postcode)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -877,7 +886,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
             if (null != email && !email.isEmpty()) {
                 if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You do not have permission to do wildcard searches with less than 4 characters.")
                             .toResponse();
                 }
                 userPrototype.setEmail(email);
@@ -927,7 +937,7 @@ public class AdminFacade extends AbstractSegueFacade {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
                                 String schoolPostCode = school.getPostcode();
-                                List<Long> ids = null;
+                                List<Long> ids;
                                 if (postCodeAndUserIds.containsKey(schoolPostCode)) {
                                     ids = postCodeAndUserIds.get(schoolPostCode);
                                 } else {
@@ -1104,12 +1114,11 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
-            
-            Long schoolURN = Long.parseLong(schoolId);
-            School school = schoolReader.findSchoolById(schoolURN);
+
+            School school = schoolReader.findSchoolById(schoolId);
             
             Map<String, Object> result = ImmutableMap.of("school", school, "users",
-                    statsManager.getUsersBySchoolId(schoolURN));
+                    statsManager.getUsersBySchoolId(schoolId));
             
             return Response.ok(result).build();
         } catch (UnableToIndexSchoolsException e) {
@@ -1167,12 +1176,7 @@ public class AdminFacade extends AbstractSegueFacade {
              @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin)
             throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
 
-        final boolean binData;
-        if (null == bin || !bin) {
-            binData = false;
-        } else {
-            binData = true;
-        }
+        final boolean binData = null != bin && bin;
 
         if (null == events || events.isEmpty()) {
             throw new BadRequestException("You must specify the events you are interested in.");
@@ -1274,10 +1278,34 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
 
-        Map<String, Map<LocalDate, Long>> eventLogsByDate;
         try {
+            Map<String, Map<LocalDate, Long>> eventLogsByDate;
             eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
                     toDate, events, bin);
+
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            List<String[]> rows = Lists.newArrayList();
+            rows.add(new String[]{"event_type", "timestamp", "value"});
+
+            for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
+                String eventTypeKey = eventType.getKey();
+                for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
+                    rows.add(new String[]{eventTypeKey, record.getKey().toString(), record.getValue().toString()});
+                }
+            }
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(stringWriter.toString()).tag(etag)
+                    .header("Content-Disposition", "attachment; filename=admin_stats.csv")
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (BadRequestException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (ForbiddenException e) {
@@ -1287,27 +1315,10 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             log.error("Database error while getting event details for a user.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        } catch (IOException e) {
+            log.error("IO error while creating the CSV file.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
         }
-
-        StringBuilder resultsBuilder = new StringBuilder();
-        resultsBuilder.append("event_type,timestamp,value\n");
-        for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
-            String eventTypeKey = eventType.getKey();
-            for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
-                resultsBuilder.append(String.format("%s,%s,%s\n", eventTypeKey, record.getKey().toString(), record.getValue().toString()));
-            }
-        }
-
-        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-
-        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
-        return Response.ok(resultsBuilder.toString()).tag(etag)
-                .header("Content-Disposition", "attachment; filename=admin_stats.csv")
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
     }
 
     /**
@@ -1365,7 +1376,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
-                + File.separator + "logs" + File.separator + "perf.log"));) {
+                + File.separator + "logs" + File.separator + "perf.log"))) {
             if (!isUserAnAdmin(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
@@ -1422,7 +1433,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 results.add(contentVersionController.getContentManager().extractContentSummary(c));
             }
 
-            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<ContentSummaryDTO>(results,
+            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,
                     allByType.getTotalResults());
             return Response.ok(toReturn).build();
         } catch (NoUserLoggedInException e) {

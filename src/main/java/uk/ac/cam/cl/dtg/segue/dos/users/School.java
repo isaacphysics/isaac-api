@@ -22,9 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  */
 public class School {
-    private Long urn;
-    @JsonIgnore
-    private String establishmentNumber;
+    private String urn;
     private String name;
     private String postcode;
 
@@ -32,7 +30,7 @@ public class School {
      * Enum to represent where this school object was created.
      */
     public enum SchoolDataSource {
-        GOVERNMENT, USER_ENTERED;
+        GOVERNMENT_UK, GOVERNMENT_IE, GOVERNMENT_SCO, GOVERNMENT_WAL, USER_ENTERED;
 
         @Override
         public String toString() {
@@ -54,8 +52,6 @@ public class School {
      * 
      * @param urn
      *            - unique id
-     * @param establishmentNumber
-     *            - unique id for the establishment.
      * @param name
      *            - name of the school.
      * @param postcode
@@ -63,10 +59,8 @@ public class School {
      * @param dataSource
      *            -dataSource of this information
      */
-    public School(final Long urn, final String establishmentNumber, final String name, final String postcode,
-            final SchoolDataSource dataSource) {
+    public School(final String urn, final String name, final String postcode, final SchoolDataSource dataSource) {
         this.urn = urn;
-        this.establishmentNumber = establishmentNumber;
         this.name = name;
         this.postcode = postcode;
         this.dataSource = dataSource;
@@ -77,7 +71,7 @@ public class School {
      * 
      * @return the urn
      */
-    public Long getUrn() {
+    public String getUrn() {
         return urn;
     }
 
@@ -87,28 +81,8 @@ public class School {
      * @param urn
      *            the urn to set
      */
-    public void setUrn(final Long urn) {
+    public void setUrn(final String urn) {
         this.urn = urn;
-    }
-
-    /**
-     * Gets the establishmentNumber.
-     * 
-     * @return the establishmentNumber
-     */
-    @JsonIgnore
-    public String getEstablishmentNumber() {
-        return establishmentNumber;
-    }
-
-    /**
-     * Sets the establishmentNumber.
-     * 
-     * @param establishmentNumber
-     *            the establishmentNumber to set
-     */
-    public void setEstablishmentNumber(final String establishmentNumber) {
-        this.establishmentNumber = establishmentNumber;
     }
 
     /**
