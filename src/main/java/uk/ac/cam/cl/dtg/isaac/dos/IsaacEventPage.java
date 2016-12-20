@@ -30,6 +30,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.content.Image;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.util.locations.Address;
+import uk.ac.cam.cl.dtg.util.locations.Location;
 
 /**
  * DO for isaac Event.
@@ -42,7 +43,7 @@ public class IsaacEventPage extends Content {
 	private Date bookingDeadline;
 	private Date prepWorkDeadline;
 
-	private Address location;
+	private Location location;
 
 	private List<ExternalReference> preResources;
 	private List<Content> preResourceContent;
@@ -76,7 +77,7 @@ public class IsaacEventPage extends Content {
 						  @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
 						  @JsonProperty("bookingDeadline") Date bookingDeadline,
 						  @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
-						  @JsonProperty("location") Address location,
+						  @JsonProperty("location") Location location,
 						  @JsonProperty("preResources") List<ExternalReference> preResources,
 						  @JsonProperty("postResources") List<ExternalReference> postResources,
 						  @JsonProperty("eventThumbnail") Image eventThumbnail,
@@ -182,22 +183,48 @@ public class IsaacEventPage extends Content {
 	}
 
 	/**
-	 * Gets the location.
+	 * Gets the address.
 	 *
-	 * @return the location
+	 * @return the address
 	 */
-	public Address getLocation() {
-		return location;
+	public Address getAddress() {
+		if (location != null) {
+			return location.getAddress();
+		} else {
+			return null;
+		}
 	}
 
 	/**
-	 * Sets the location.
+	 * Sets the address.
 	 *
-	 * @param location the location to set
+	 * @param address the location to set
 	 */
-	public void setLocation(final Address location) {
-		this.location = location;
+	public void setAddress(final Address address) {
+		if (location != null) {
+			this.location.setAddress(address);
+		} else {
+			this.location = new Location(address, null, null);
+		}
 	}
+
+    /**
+     * Gets the location.
+     *
+     * @return the location
+     */
+    public Location getLocation() {
+        return location;
+    }
+
+    /**
+     * Sets the location.
+     *
+     * @param location the location to set
+     */
+    public void setLocation(final Location location) {
+        this.location = location;
+    }
 
 	/**
 	 * Gets the preResources.

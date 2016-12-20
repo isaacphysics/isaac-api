@@ -832,6 +832,109 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * REST end point to provide a summary of events suitable for mapping.
+     *
+     * @param request
+     *            - this allows us to check to see if a user is currently logged in.
+     * @param startIndex
+     *            - the initial index for the first result.
+     * @param limit
+     *            - the maximums number of results to return
+     * @param showActiveOnly
+     *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @return a Response containing a list of event map summaries or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/map_data")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEventMapData(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
+                                            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+                                            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                            @QueryParam("show_active_only") final Boolean showActiveOnly) {
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+
+        Integer newLimit = null;
+        Integer newStartIndex = null;
+        if (limit != null) {
+            newLimit = limit;
+        }
+
+        if (startIndex != null) {
+            newStartIndex = startIndex;
+        }
+
+        if (tags != null) {
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+        }
+
+        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+
+        Map<String, AbstractFilterInstruction> filterInstructions = null;
+        if (null == showActiveOnly || showActiveOnly) {
+            filterInstructions = Maps.newHashMap();
+            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
+            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsFromNow);
+            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+        }
+
+        try {
+            ResultsWrapper<ContentDTO> findByFieldNames = null;
+
+            findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
+                    versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
+                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+
+            List<Map<String, Object>> resultList = Lists.newArrayList();
+
+            for (ContentDTO c : findByFieldNames.getResults()) {
+                if (!(c instanceof  IsaacEventPageDTO)) {
+                    continue;
+                }
+
+                IsaacEventPageDTO e = (IsaacEventPageDTO) c;
+                if (null == e.getLocation() || (null == e.getLocation().getLatitude() && null == e.getLocation().getLongitude())) {
+                    // Ignore events without locations.
+                    continue;
+                }
+                if (e.getLocation().getLatitude().equals(0.0) && e.getLocation().getLongitude().equals(0.0)) {
+                    // Ignore events with locations that haven't been set properly.
+                    log.info("Event with 0.0 lat/long:  " + e.getId());
+                    continue;
+                }
+
+                ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
+                eventOverviewBuilder.put("id", e.getId());
+                eventOverviewBuilder.put("title", e.getTitle());
+                eventOverviewBuilder.put("date", e.getDate());
+                eventOverviewBuilder.put("subtitle", e.getSubtitle());
+                if (e.getEventStatus() != null) {
+                    eventOverviewBuilder.put("status", e.getEventStatus());
+                }
+                // The schema required needs lat and long at top-level, so add address at top-level too.
+                eventOverviewBuilder.put("address", e.getLocation().getAddress());
+                eventOverviewBuilder.put("latitude", e.getLocation().getLatitude());
+                eventOverviewBuilder.put("longitude", e.getLocation().getLongitude());
+
+                if (null != e.getBookingDeadline()) {
+                    eventOverviewBuilder.put("deadline", e.getBookingDeadline());
+                }
+
+                resultList.add(eventOverviewBuilder.build());
+            }
+
+            return Response.ok(new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults())).build();
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
+        }
+    }
+
+    /**
      * A helper method for retrieving an event and the number of places available and if the user is booked or not.
      *
      *
