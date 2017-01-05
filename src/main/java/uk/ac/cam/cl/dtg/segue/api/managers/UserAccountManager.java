@@ -855,7 +855,7 @@ public class UserAccountManager {
         Validate.notNull(requestedEmailVerificationStatus);
         RegisteredUser userToSave = this.findUserByEmail(email);
         if (null == userToSave) {
-            log.error(String.format(
+            log.warn(String.format(
                     "Could not update email verification status of email address (%s) - does not exist",
                     email));
             return;
