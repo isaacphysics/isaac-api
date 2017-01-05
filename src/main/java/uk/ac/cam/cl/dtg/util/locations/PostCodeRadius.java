@@ -22,7 +22,7 @@ package uk.ac.cam.cl.dtg.util.locations;
  *
  */
 public enum PostCodeRadius {
-    TEN_MILES, TWENTY_FIVE_MILES, FIFTY_MILES;
+    TEN_MILES, FIFTEEN_MILES, TWENTY_MILES, TWENTY_FIVE_MILES, FIFTY_MILES;
 
     /**
      * @return distance in miles of radius search
@@ -31,6 +31,10 @@ public enum PostCodeRadius {
         switch (this) {
             case TEN_MILES:
                 return 10.0;
+            case FIFTEEN_MILES:
+                return 15.0;
+            case TWENTY_MILES:
+                return 20.0;
             case TWENTY_FIVE_MILES:
                 return 25.0;
             case FIFTY_MILES:
