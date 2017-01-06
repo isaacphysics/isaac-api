@@ -103,7 +103,7 @@ public class GameManager {
     /**
      * Generate a random gameboard without any filter conditions specified.
      * 
-     * @see generateRandomGambeoard
+     * @see #generateRandomGameboard(List, List, List, List, List, AbstractSegueUserDTO)
      * @return gameboard containing random problems.
      * @throws NoWildcardException
      *             - when we are unable to provide you with a wildcard object.
@@ -1087,17 +1087,23 @@ public class GameManager {
         Collections.shuffle(wildcardResults.getResults());
 
         List<ContentDTO> wildcards = new ArrayList<>();
-        for (ContentDTO c : wildcardResults.getResults()) {
-            boolean match = false;
-            for (String s : subjectsList) {
-                if (c.getTags().contains(s)) {
-                    match = true;
-                    break;
-                }
-            }
 
-            if (match) {
-                wildcards.add(c);
+        if (null == subjectsList) {
+            // If we have no subject info, just use any wildcard; to match behavior of questions.
+            wildcards.addAll(wildcardResults.getResults());
+        } else {
+            for (ContentDTO c : wildcardResults.getResults()) {
+                boolean match = false;
+                for (String s : subjectsList) {
+                    if (c.getTags().contains(s)) {
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (match) {
+                    wildcards.add(c);
+                }
             }
         }
 
