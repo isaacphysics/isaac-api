@@ -15,10 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.UUID;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +41,9 @@ import com.google.inject.Inject;
  */
 public class UserAssociationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
+    private static final SecureRandom secureRandom = new SecureRandom();
     
     private final IAssociationDataManager associationDatabase;
-    private final int tokenLength = 6;
     private final GroupManager userGroupManager;
 
     /**
@@ -64,7 +63,7 @@ public class UserAssociationManager {
     }
 
     /**
-     * generate token that other users can use to grant access to their data.
+     * generate and save a token that other users can use to grant access to their data.
      * 
      * @param registeredUser
      *            - the user who will ultimately receive access to someone else's data.
@@ -92,13 +91,38 @@ public class UserAssociationManager {
         }
 
         // create some kind of random token and remove ambiguous characters.
-        String token = new String(Base64.encodeBase64(UUID.randomUUID().toString().getBytes())).replace("=", "")
-                .substring(0, tokenLength).toUpperCase().replace("0", "ZR").replace("O", "QR");
+        String token = newToken();
 
         AssociationToken associationToken = new AssociationToken(token, registeredUser.getId(),
                 associatedGroupId);
 
         return associationDatabase.saveAssociationToken(associationToken);
+    }
+
+    /**
+     * Generate a new string value for a token.
+     *
+     * There are 32 non-ambiguous uppercase alphanumeric characters, so use a 5 bit encoding system to generate the
+     * 6 characters from the 30 least-significant bits of a random 32 bit integer.
+     *
+     */
+    private static String newToken() {
+        // There are 2^5 characters to choose from, having removed ambiguous characters; so use 5 bit integers to index.
+        String tokenCharMap = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+        int randomBits = secureRandom.nextInt();
+
+        // TOKENS CAN ONLY BE 6 CHARACTERS LONG without changing the way randomBits is generated,
+        // since nextInt() only provides 32 bits of randomness and we're using 5 bit blocks to map to a character in
+        // the tokenCharMap (5x6 = 30, leaving only 2 bits spare).
+        char[] authToken = new char[6];
+        authToken[0] = tokenCharMap.charAt(randomBits & 0x1f);
+        authToken[1] = tokenCharMap.charAt(randomBits >> 5 & 0x1f);
+        authToken[2] = tokenCharMap.charAt(randomBits >> 10 & 0x1f);
+        authToken[3] = tokenCharMap.charAt(randomBits >> 15 & 0x1f);
+        authToken[4] = tokenCharMap.charAt(randomBits >> 20 & 0x1f);
+        authToken[5] = tokenCharMap.charAt(randomBits >> 25 & 0x1f);
+        return String.valueOf(authToken);
     }
 
     /**
