@@ -42,6 +42,7 @@ import com.google.inject.Inject;
 public class UserAssociationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAssociationManager.class);
     private static final SecureRandom secureRandom = new SecureRandom();
+    private static final int tokenLength = 6;
     
     private final IAssociationDataManager associationDatabase;
     private final GroupManager userGroupManager;
@@ -102,26 +103,37 @@ public class UserAssociationManager {
     /**
      * Generate a new string value for a token.
      *
-     * There are 32 non-ambiguous uppercase alphanumeric characters, so use a 5 bit encoding system to generate the
-     * 6 characters from the 30 least-significant bits of a random 32 bit integer.
+     * There are 30 non-ambiguous uppercase alphanumeric characters. We use a 5 bit encoding system to generate the
+     * number for which character to choose, skipping in the 1/16 chance it is outside the allowed range. Loop until we
+     * generate all tokenLength required characters.
+     *
+     * @return String - the authentication token in string form.
      *
      */
     private static String newToken() {
-        // There are 2^5 characters to choose from, having removed ambiguous characters; so use 5 bit integers to index.
-        String tokenCharMap = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        // Allow the following character to appear in tokens, removing ambiguous ones:
+        String tokenCharMap = "ABCDEFGHJKLMNPQRTUVWXYZ2346789";
 
+        char[] authToken = new char[tokenLength];
+
+        int index = 0;  // Where we are in the token.
+        int shift = 0;  // Where we are in the random 32 bit integer.
         int randomBits = secureRandom.nextInt();
 
-        // TOKENS CAN ONLY BE 6 CHARACTERS LONG without changing the way randomBits is generated,
-        // since nextInt() only provides 32 bits of randomness and we're using 5 bit blocks to map to a character in
-        // the tokenCharMap (5x6 = 30, leaving only 2 bits spare).
-        char[] authToken = new char[6];
-        authToken[0] = tokenCharMap.charAt(randomBits & 0x1f);
-        authToken[1] = tokenCharMap.charAt(randomBits >> 5 & 0x1f);
-        authToken[2] = tokenCharMap.charAt(randomBits >> 10 & 0x1f);
-        authToken[3] = tokenCharMap.charAt(randomBits >> 15 & 0x1f);
-        authToken[4] = tokenCharMap.charAt(randomBits >> 20 & 0x1f);
-        authToken[5] = tokenCharMap.charAt(randomBits >> 25 & 0x1f);
+        // Use 5 bit ints extracted from randomBits, to generate tokenLength random characters from sample space.
+        while (index < tokenLength) {
+            if (shift >= 32/5) {  // If we've expired the 32/5 values in this random int, get a new one, reset shift.
+                randomBits = secureRandom.nextInt();
+                shift = 0;
+            }
+            int chr = (randomBits >> (5*shift)) & 0x1f;  // Extract next 5 bit int from randomBits.
+            shift++;  // Ensure we don't reuse any of randomBits.
+            if (chr < tokenCharMap.length()) {
+                // If we're in the valid range, use that character and advance in authToken, else try again.
+                authToken[index] = tokenCharMap.charAt(chr);
+                index++;
+            }
+        }
         return String.valueOf(authToken);
     }
 

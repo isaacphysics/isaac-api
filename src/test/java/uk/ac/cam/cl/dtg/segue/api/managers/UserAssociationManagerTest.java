@@ -410,12 +410,14 @@ public class UserAssociationManagerTest {
 			}
 		}
 		// If any letters appear too frequently, there's a problem. Before we were 500+% out!
-		int expectedAvg = (iterations / 32);  // There are 32 allowed characters after 0,O,1,I are removed.
+		int expectedAvg = (iterations / 30);  // There are 30 allowed characters after 0,O,1,I,5,S are removed.
 		int allowedDelta = expectedAvg / 5;  // Allow 20% leeway.
 		for (int x = 0; x < tokenLength; x++) {
 			for (int y = 0; y < charSpace.length(); y++) {
-				if (y == 8 || y == 14 || y == 26 || y == 27) {
-					continue;  // These characters are allowed to be blank!
+				if (y == 8 || y == 14 || y == 18 || y == 26 || y == 27|| y == 31 ) {
+					// I=8, O=14, S=18, 0=26, 1=27, 5=31
+					// These characters are allowed to be blank!
+					continue;
 				}
 				assertFalse("Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!",
 					(occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
