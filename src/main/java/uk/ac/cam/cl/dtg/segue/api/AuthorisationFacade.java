@@ -268,7 +268,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (InvalidUserAssociationTokenException e) {
             log.info(String.format("User (%s) attempted to use token (%s) but it is invalid or no longer exists.",
-                    currentRegisteredUser, token));
+                    currentRegisteredUser.getId(), token));
 
             return new SegueErrorResponse(Status.BAD_REQUEST, "The token provided is invalid or no longer exists.")
                     .toResponse();
