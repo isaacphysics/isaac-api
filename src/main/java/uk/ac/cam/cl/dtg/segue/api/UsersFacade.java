@@ -314,7 +314,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueResourceMisuseException e) {
             String message = "You have exceeded the number of requests allowed for this endpoint. "
                     + "Please try again later.";
-            log.error("User (" + userObject.getId() + ") made too many password reset requests.", e.toString());
+            log.error("Too many password resets requested by: (" + userObject.getEmail() + ")", e.toString());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
     }
