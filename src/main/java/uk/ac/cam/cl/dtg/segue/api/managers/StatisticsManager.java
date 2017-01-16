@@ -35,6 +35,7 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -48,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import static com.google.common.collect.Maps.immutableEntry;
@@ -74,6 +76,7 @@ public class StatisticsManager {
     //private IContentManager contentManager;
     private GroupManager groupManager;
     private QuestionManager questionManager;
+    private GameManager gameManager;
     
     private Cache<String, Object> longStatsCache;
     private LocationManager locationHistoryManager;
@@ -107,8 +110,8 @@ public class StatisticsManager {
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
             final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final LocationManager locationHistoryManager,
-            final GroupManager groupManager, final QuestionManager questionManager) {
+            final LocationManager locationHistoryManager, final GroupManager groupManager,
+            final QuestionManager questionManager, final GameManager gameManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
@@ -118,6 +121,7 @@ public class StatisticsManager {
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
         this.questionManager = questionManager;
+        this.gameManager = gameManager;
 
         this.longStatsCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
@@ -523,75 +527,119 @@ public class StatisticsManager {
             throws SegueDatabaseException, ContentManagerException {
         Validate.notNull(userOfInterest);
 
-        // get questions answered correctly.
+        // FIXME: there was a TODO here about tidying this up and moving it elsewhere.
+        // It has been improved and tidied, but may still better belong elsewhere . . .
+
         int questionsAnsweredCorrectly = 0;
-
-        // get total questions attempted
+        int questionPartsAnsweredCorrectly = 0;
         int totalQuestionsAttempted = 0;
+        int totalQuestionPartsAttempted = 0;
+        Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
+        Map<String, Integer> questionsCorrectByTagStats = Maps.newHashMap();
+        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
+        Map<String, Integer> questionsCorrectByLevelStats = Maps.newHashMap();
+        Map<String, Integer> questionAttemptsByTypeStats = Maps.newHashMap();
+        Map<String, Integer> questionsCorrectByTypeStats = Maps.newHashMap();
 
-        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager
-                .getQuestionAttemptsByUser(userOfInterest);
-
-        // all relevant question page info
-        for (Entry<String, Map<String, List<QuestionValidationResponse>>> questionPage : questionAttemptsByUser
-                .entrySet()) {
-
-            for (Entry<String, List<QuestionValidationResponse>> question : questionPage.getValue().entrySet()) {
-                totalQuestionsAttempted++;
-
-                for (int i = 0; question.getValue().size() > i; i++) {
-
-                    QuestionValidationResponse validationResponse = question.getValue().get(i);
-                    if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
-                        questionsAnsweredCorrectly++;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // TODO this stuff should be tidied up and put somewhere else
+        Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsByUser = questionManager.getQuestionAttemptsByUser(userOfInterest);
         Map<String, ContentDTO> questionMap = this.getQuestionMap(questionAttemptsByUser.keySet());
 
-        Map<String, Integer> questionAttemptsByTagStats = Maps.newHashMap();
-        Map<String, Integer> questionAttemptsByLevelStats = Maps.newHashMap();
+        // Loop through each Question attempted:
+        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question : questionAttemptsByUser.entrySet()) {
+            totalQuestionsAttempted++;
 
-        for (Entry<String, Map<String, List<QuestionValidationResponse>>> question 
-                : questionAttemptsByUser.entrySet()) {
-            // add the tags
-            if (questionMap.get(question.getKey()) != null) {
-                for (String tag : questionMap.get(question.getKey()).getTags()) {
-                    if (questionAttemptsByTagStats.containsKey(tag)) {
-                        questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
-                    } else {
-                        questionAttemptsByTagStats.put(tag, 1);
+            boolean questionCorrect = true;  // Are all Parts of the Question correct?
+            // Loop through each Part of the Question:
+            // TODO - We might be able to avoid using a GameManager here!
+            // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
+            for (QuestionDTO questionPart : gameManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
+                totalQuestionPartsAttempted++;
+
+                boolean questionPartCorrect = false;  // Is this Part of the Question correct?
+                // Has the user attempted this part of the question at all?
+                if (question.getValue().containsKey(questionPart.getId())) {
+                    // Loop through each attempt at the Question Part if they have attempted it:
+                    for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
+
+                        if (validationResponse.isCorrect() != null && validationResponse.isCorrect()) {
+                            questionPartsAnsweredCorrectly++;
+                            questionPartCorrect = true;
+                            break;
+                        }
                     }
                 }
+                // Type Stats - Count the attempt at the Question Part:
+                String questionPartType = questionPart.getType();
+                if (questionAttemptsByTypeStats.containsKey(questionPartType)) {
+                    questionAttemptsByTypeStats.put(questionPartType, questionAttemptsByTypeStats.get(questionPartType) + 1);
+                } else {
+                    questionAttemptsByTypeStats.put(questionPartType, 1);
+                }
+                // If this Question Part is correct, count this too:
+                if (questionPartCorrect) {
+                    if (questionsCorrectByTypeStats.containsKey(questionPartType)) {
+                        questionsCorrectByTypeStats.put(questionPartType, questionsCorrectByTypeStats.get(questionPartType) + 1);
+                    } else {
+                        questionsCorrectByTypeStats.put(questionPartType, 1);
+                    }
+                }
+
+                // Correctness of whole Question: is the Question correct so far, and is this Question Part also correct?
+                questionCorrect = questionCorrect && questionPartCorrect;
             }
 
             ContentDTO questionContentDTO = questionMap.get(question.getKey());
-
             if (null == questionContentDTO) {
+                // We no longer have any information on this question!
                 continue;
             }
 
-            String questionLevel = questionContentDTO.getLevel().toString();
+            // Tag Stats - Loop through the Question's tags:
+            for (String tag : questionContentDTO.getTags()) {
+                // Count the attempt at the Question:
+                if (questionAttemptsByTagStats.containsKey(tag)) {
+                    questionAttemptsByTagStats.put(tag, questionAttemptsByTagStats.get(tag) + 1);
+                } else {
+                    questionAttemptsByTagStats.put(tag, 1);
+                }
+                // If it's correct, count this too:
+                if (questionCorrect) {
+                    if (questionsCorrectByTagStats.containsKey(tag)) {
+                        questionsCorrectByTagStats.put(tag, questionsCorrectByTagStats.get(tag) + 1);
+                    } else {
+                        questionsCorrectByTagStats.put(tag, 1);
+                    }
+                }
+            }
 
+            // Level Stats:
+            String questionLevel = questionContentDTO.getLevel().toString();
             if (questionAttemptsByLevelStats.containsKey(questionLevel)) {
-                questionAttemptsByLevelStats.put(questionLevel,
-                        questionAttemptsByLevelStats.get(questionLevel) + 1);
+                questionAttemptsByLevelStats.put(questionLevel, questionAttemptsByLevelStats.get(questionLevel) + 1);
             } else {
                 questionAttemptsByLevelStats.put(questionLevel, 1);
             }
+            // If it's correct, count this globally and for the Question's level too:
+            if (questionCorrect) {
+                questionsAnsweredCorrectly++;
+                if (questionsCorrectByLevelStats.containsKey(questionLevel)) {
+                    questionsCorrectByLevelStats.put(questionLevel, questionsCorrectByLevelStats.get(questionLevel) + 1);
+                } else {
+                    questionsCorrectByLevelStats.put(questionLevel, 1);
+                }
+            }
         }
 
-        ImmutableMap<String, Object> immutableMap = new ImmutableMap.Builder<String, Object>()
+        return new ImmutableMap.Builder<String, Object>()
                 .put("totalQuestionsAttempted", totalQuestionsAttempted)
-                .put("totalCorrect", questionsAnsweredCorrectly)
-                .put("attemptsByTag", questionAttemptsByTagStats).put("attemptsByLevel", questionAttemptsByLevelStats)
-                .put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest)).build();
-
-        return immutableMap;
+                .put("totalQuestionsCorrect", questionsAnsweredCorrectly)
+                .put("totalQuestionPartsAttempted", totalQuestionPartsAttempted)
+                .put("totalQuestionPartsCorrect", questionPartsAnsweredCorrectly)
+                .put("attemptsByTag", questionAttemptsByTagStats).put("correctByTag", questionsCorrectByTagStats)
+                .put("attemptsByLevel", questionAttemptsByLevelStats).put("correctByLevel", questionsCorrectByLevelStats)
+                .put("attemptsByType", questionAttemptsByTypeStats).put("correctByType", questionsCorrectByTypeStats)
+                .put("userDetails", this.userManager.convertToUserSummaryObject(userOfInterest))
+                .build();
     }
 
     /**
