@@ -753,7 +753,7 @@ public class GameManager {
      * @return a list of questions ordered by DFS.
      */
     private List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
-        if (c.getChildren() == null || c.getChildren().size() == 0) {
+        if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
             return result;
         }
         
