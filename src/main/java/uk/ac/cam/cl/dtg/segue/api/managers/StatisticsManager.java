@@ -553,11 +553,12 @@ public class StatisticsManager {
             // TODO - We might be able to avoid using a GameManager here!
             // The question page content object is questionMap.get(question.getKey()) and we could search this instead!
             for (QuestionDTO questionPart : gameManager.getAllMarkableQuestionPartsDFSOrder(question.getKey())) {
-                totalQuestionPartsAttempted++;
 
                 boolean questionPartCorrect = false;  // Is this Part of the Question correct?
                 // Has the user attempted this part of the question at all?
                 if (question.getValue().containsKey(questionPart.getId())) {
+                    totalQuestionPartsAttempted++;
+
                     // Loop through each attempt at the Question Part if they have attempted it:
                     for (QuestionValidationResponse validationResponse : question.getValue().get(questionPart.getId())) {
 
@@ -567,20 +568,20 @@ public class StatisticsManager {
                             break;
                         }
                     }
-                }
-                // Type Stats - Count the attempt at the Question Part:
-                String questionPartType = questionPart.getType();
-                if (questionAttemptsByTypeStats.containsKey(questionPartType)) {
-                    questionAttemptsByTypeStats.put(questionPartType, questionAttemptsByTypeStats.get(questionPartType) + 1);
-                } else {
-                    questionAttemptsByTypeStats.put(questionPartType, 1);
-                }
-                // If this Question Part is correct, count this too:
-                if (questionPartCorrect) {
-                    if (questionsCorrectByTypeStats.containsKey(questionPartType)) {
-                        questionsCorrectByTypeStats.put(questionPartType, questionsCorrectByTypeStats.get(questionPartType) + 1);
+                    // Type Stats - Count the attempt at the Question Part:
+                    String questionPartType = questionPart.getType();
+                    if (questionAttemptsByTypeStats.containsKey(questionPartType)) {
+                        questionAttemptsByTypeStats.put(questionPartType, questionAttemptsByTypeStats.get(questionPartType) + 1);
                     } else {
-                        questionsCorrectByTypeStats.put(questionPartType, 1);
+                        questionAttemptsByTypeStats.put(questionPartType, 1);
+                    }
+                    // If this Question Part is correct, count this too:
+                    if (questionPartCorrect) {
+                        if (questionsCorrectByTypeStats.containsKey(questionPartType)) {
+                            questionsCorrectByTypeStats.put(questionPartType, questionsCorrectByTypeStats.get(questionPartType) + 1);
+                        } else {
+                            questionsCorrectByTypeStats.put(questionPartType, 1);
+                        }
                     }
                 }
 
