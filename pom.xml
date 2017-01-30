@@ -415,6 +415,9 @@
 		</profile>
 		<profile>
 			<id>etl</id>
+            <properties>
+                <build.profile.id>etl</build.profile.id>
+            </properties>
 			<build>
 				<plugins>
 					<plugin>
