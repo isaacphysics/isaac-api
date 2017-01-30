@@ -21,10 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -589,15 +587,25 @@ public class UserAccountManager {
      * @throws AuthenticationProviderMappingException
      *             - if there is a problem locating the authentication provider. This only applies for changing a
      *             password.
+     * @throws EmailMustBeVerifiedException
+     *             - if a user attempts to sign up with an email that must be verified before it can be used
+     *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
             final HttpServletResponse response, final RegisteredUser user) throws InvalidPasswordException,
-            MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
+            MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException,
+            EmailMustBeVerifiedException {
         Validate.isTrue(user.getId() == null,
                 "When creating a new user the user id must not be set.");
 
         if (this.findUserByEmail(user.getEmail()) != null) {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
+        }
+
+        // Ensure nobody registers with Isaac email addresses. Users can change emails by verifying them however.
+        if (user.getEmail().matches(".*@isaac(physics|chemistry|biology|science)\\.org")) {
+            log.warn("User attempted to register with Isaac email address '" + user.getEmail() + "'!");
+            throw new EmailMustBeVerifiedException("You cannot register with an Isaac email address.");
         }
 
         RegisteredUser userToSave = null;
@@ -753,6 +761,10 @@ public class UserAccountManager {
         if (user.getSchoolId() == null && existingUser.getSchoolId() != null) {
             userToSave.setSchoolId(null);
         }
+        // Correctly remove school_other when it is set to be the empty string:
+        if (user.getSchoolOther() == null || user.getSchoolOther().isEmpty()) {
+            userToSave.setSchoolOther(null);
+        }
         
         this.userAuthenticationManager.checkForSeguePasswordChange(user, userToSave);
 
@@ -776,6 +788,19 @@ public class UserAccountManager {
                 log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
 			}
             userToSave.setEmail(existingUser.getEmail());
+        }
+
+        // If the school has changed, update it. Check this using Objects.equals() to be null safe!
+        if (!Objects.equals(userToSave.getSchoolId(), existingUser.getSchoolId())
+                || !Objects.equals(userToSave.getSchoolOther(), existingUser.getSchoolOther())) {
+            LinkedHashMap<String, String> eventDetails = new LinkedHashMap<>();
+            eventDetails.put("oldSchoolId", existingUser.getSchoolId());
+            eventDetails.put("newSchoolId", userToSave.getSchoolId());
+            eventDetails.put("oldSchoolOther", existingUser.getSchoolOther());
+            eventDetails.put("newSchoolOther", userToSave.getSchoolOther());
+
+            logManager.logInternalEvent(this.convertUserDOToUserDTO(userToSave), Constants.USER_SCHOOL_CHANGE,
+                    eventDetails);
         }
 
         // save the user
@@ -830,7 +855,7 @@ public class UserAccountManager {
         Validate.notNull(requestedEmailVerificationStatus);
         RegisteredUser userToSave = this.findUserByEmail(email);
         if (null == userToSave) {
-            log.error(String.format(
+            log.warn(String.format(
                     "Could not update email verification status of email address (%s) - does not exist",
                     email));
             return;

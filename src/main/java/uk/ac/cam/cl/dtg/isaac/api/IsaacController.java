@@ -292,6 +292,9 @@ public class IsaacController extends AbstractIsaacFacade {
         try {
             user = userManager.getCurrentRegisteredUser(request);
             userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
+            if (null == userOfInterestFull) {
+                throw new NoUserException();
+            }
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 
             if (associationManager.hasPermission(user, userOfInterestSummary)) {

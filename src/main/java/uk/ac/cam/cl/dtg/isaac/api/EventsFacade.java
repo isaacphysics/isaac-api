@@ -17,7 +17,9 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 
 import java.util.*;
@@ -39,22 +41,16 @@ import javax.ws.rs.core.Response.Status;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Maps;
-import com.google.inject.Inject;
-
 import uk.ac.cam.cl.dtg.isaac.api.managers.*;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.RoleNotAuthorisedException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -67,6 +63,15 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.*;
+
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -409,10 +414,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "This event is already full. Unable to book the user on to it.")
                 .toResponse();
-        } catch (RoleNotAuthorisedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN,
-                "The user does not have the correct type of account to book on to this event.")
-                .toResponse();
         } catch (EventBookingUpdateException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "Unable to modify the booking", e)
@@ -565,10 +566,6 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.CONFLICT,
                 "This event is already full. Unable to book you on to it.")
                 .toResponse();
-        } catch (RoleNotAuthorisedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN,
-                "You do not have the correct type of account to book on to this event.")
-                .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "The booking deadline for this event has passed. No more bookings are being accepted.")
@@ -619,10 +616,6 @@ public class EventsFacade extends AbstractIsaacFacade {
         } catch (DuplicateBookingException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                 "You have already been booked on this event. Unable to create a duplicate booking.")
-                .toResponse();
-        } catch (RoleNotAuthorisedException e) {
-            return new SegueErrorResponse(Status.FORBIDDEN,
-                "You do not have the correct type of account to book on to this event.")
                 .toResponse();
         } catch (EventDeadlineException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST,
@@ -852,6 +845,109 @@ public class EventsFacade extends AbstractIsaacFacade {
             log.error("Error occurred during event overview look up", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the database content you requested.")
                 .toResponse();
+        }
+    }
+
+    /**
+     * REST end point to provide a summary of events suitable for mapping.
+     *
+     * @param request
+     *            - this allows us to check to see if a user is currently logged in.
+     * @param startIndex
+     *            - the initial index for the first result.
+     * @param limit
+     *            - the maximums number of results to return
+     * @param showActiveOnly
+     *            - true will impose filtering on the results. False will not. Defaults to false.
+     * @return a Response containing a list of event map summaries or containing a SegueErrorResponse.
+     */
+    @GET
+    @Path("/map_data")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getEventMapData(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
+                                            @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
+                                            @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
+                                            @QueryParam("show_active_only") final Boolean showActiveOnly) {
+        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+
+        Integer newLimit = null;
+        Integer newStartIndex = null;
+        if (limit != null) {
+            newLimit = limit;
+        }
+
+        if (startIndex != null) {
+            newStartIndex = startIndex;
+        }
+
+        if (tags != null) {
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+        }
+
+        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
+        sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.DESC);
+
+        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(EVENT_TYPE));
+
+        Map<String, AbstractFilterInstruction> filterInstructions = null;
+        if (null == showActiveOnly || showActiveOnly) {
+            filterInstructions = Maps.newHashMap();
+            DateRangeFilterInstruction anyEventsFromNow = new DateRangeFilterInstruction(new Date(), null);
+            filterInstructions.put(EVENT_ENDDATE_FIELDNAME, anyEventsFromNow);
+            sortInstructions.put(EVENT_DATE_FIELDNAME, SortOrder.ASC);
+        }
+
+        try {
+            ResultsWrapper<ContentDTO> findByFieldNames = null;
+
+            findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
+                    versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
+                    newStartIndex, newLimit, sortInstructions, filterInstructions);
+
+            List<Map<String, Object>> resultList = Lists.newArrayList();
+
+            for (ContentDTO c : findByFieldNames.getResults()) {
+                if (!(c instanceof  IsaacEventPageDTO)) {
+                    continue;
+                }
+
+                IsaacEventPageDTO e = (IsaacEventPageDTO) c;
+                if (null == e.getLocation() || (null == e.getLocation().getLatitude() && null == e.getLocation().getLongitude())) {
+                    // Ignore events without locations.
+                    continue;
+                }
+                if (e.getLocation().getLatitude().equals(0.0) && e.getLocation().getLongitude().equals(0.0)) {
+                    // Ignore events with locations that haven't been set properly.
+                    log.info("Event with 0.0 lat/long:  " + e.getId());
+                    continue;
+                }
+
+                ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
+                eventOverviewBuilder.put("id", e.getId());
+                eventOverviewBuilder.put("title", e.getTitle());
+                eventOverviewBuilder.put("date", e.getDate());
+                eventOverviewBuilder.put("subtitle", e.getSubtitle());
+                if (e.getEventStatus() != null) {
+                    eventOverviewBuilder.put("status", e.getEventStatus());
+                }
+                // The schema required needs lat and long at top-level, so add address at top-level too.
+                eventOverviewBuilder.put("address", e.getLocation().getAddress());
+                eventOverviewBuilder.put("latitude", e.getLocation().getLatitude());
+                eventOverviewBuilder.put("longitude", e.getLocation().getLongitude());
+
+                if (null != e.getBookingDeadline()) {
+                    eventOverviewBuilder.put("deadline", e.getBookingDeadline());
+                }
+
+                resultList.add(eventOverviewBuilder.build());
+            }
+
+            return Response.ok(new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults())).build();
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
         }
     }
 

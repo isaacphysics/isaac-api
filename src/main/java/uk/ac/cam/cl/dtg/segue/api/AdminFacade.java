@@ -20,6 +20,21 @@ import io.swagger.annotations.Api;
 
 import java.io.*;
 import java.util.*;
+import com.opencsv.CSVWriter;
+import io.swagger.annotations.Api;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.StringWriter;
+import java.io.IOException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
@@ -32,6 +47,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
@@ -76,7 +93,6 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -396,7 +412,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     .valueOf(emailVerificationStatus);
             RegisteredUserDTO requestingUser = userManager.getCurrentRegisteredUser(request);
 
-            if (emails.equals(requestingUser.getEmail())) {
+            if (emails.contains(requestingUser.getEmail())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "Aborted - you cannot modify yourself.")
                         .toResponse();
             }
@@ -622,7 +638,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final Long schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -633,7 +649,8 @@ public class AdminFacade extends AbstractSegueFacade {
             }
             
             if (!currentUser.getRole().equals(Role.ADMIN)
-                    && (familyName.isEmpty() && null == schoolOther && email.isEmpty() && null == schoolURN && null == postcode)) {
+                    && (null != familyName) && familyName.isEmpty() && (null == schoolOther) && (null != email)
+                    && email.isEmpty() && (null == schoolURN) && (null == postcode)) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -650,7 +667,8 @@ public class AdminFacade extends AbstractSegueFacade {
 
             if (null != email && !email.isEmpty()) {
                 if (currentUser.getRole().equals(Role.EVENT_MANAGER) && email.replaceAll("[^A-z]", "").length() < 4) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches with less than 4 characters.")
+                    return new SegueErrorResponse(Status.FORBIDDEN,
+                            "You do not have permission to do wildcard searches with less than 4 characters.")
                             .toResponse();
                 }
                 userPrototype.setEmail(email);
@@ -700,7 +718,7 @@ public class AdminFacade extends AbstractSegueFacade {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
                                 String schoolPostCode = school.getPostcode();
-                                List<Long> ids = null;
+                                List<Long> ids;
                                 if (postCodeAndUserIds.containsKey(schoolPostCode)) {
                                     ids = postCodeAndUserIds.get(schoolPostCode);
                                 } else {
@@ -877,12 +895,11 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
                         .toResponse();
             }
-            
-            Long schoolURN = Long.parseLong(schoolId);
-            School school = schoolReader.findSchoolById(schoolURN);
+
+            School school = schoolReader.findSchoolById(schoolId);
             
             Map<String, Object> result = ImmutableMap.of("school", school, "users",
-                    statsManager.getUsersBySchoolId(schoolURN));
+                    statsManager.getUsersBySchoolId(schoolId));
             
             return Response.ok(result).build();
         } catch (UnableToIndexSchoolsException e) {
@@ -905,6 +922,59 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "IOException while trying to communicate with the school service.").toResponse();
         }
+    }
+
+    /**
+     * Service method to fetch the event data for a specified user.
+     *
+     * @param request
+     *            - request information used authentication
+     * @param requestForCaching
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
+     * @param events
+     *            - comma separated list of events of interest.,
+     * @param bin
+     *            - Should we group data into the first day of the month? true or false.
+     * @return Returns a map of eventType to Map of dates to total number of events.
+     * @throws BadRequestException
+     *            - because the request is missing various essential parameters
+     * @throws ForbiddenException
+     *            - because the user is not an admin
+     * @throws NoUserLoggedInException
+     *            - because the user is not logged in
+     * @throws SegueDatabaseException
+     *            - because there has been some problem with database access
+     */
+    private Map<String, Map<LocalDate, Long>> fetchEventDataForAllUsers(@Context final Request request,
+             @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
+             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin)
+            throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
+
+        final boolean binData = null != bin && bin;
+
+        if (null == events || events.isEmpty()) {
+            throw new BadRequestException("You must specify the events you are interested in.");
+        }
+
+        if (null == fromDate || null == toDate) {
+            throw new BadRequestException("You must specify the from_date and to_date you are interested in.");
+        }
+
+        if (!isUserStaff(httpServletRequest)) {
+            throw new ForbiddenException("You must be logged in as an admin to access this function.");
+        }
+
+        Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDate(
+                Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
+
+        return eventLogsByDate;
     }
 
     /**
@@ -935,47 +1005,100 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
 
-        final boolean binData;
-        if (null == bin || !bin) {
-            binData = false;
-        } else {
-            binData = true;
-        }
-
-        if (null == events || events.isEmpty()) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must specify the events you are interested in.")
-                    .toResponse();
-        }
-
-        if (null == fromDate || null == toDate) {
-            return new SegueErrorResponse(Status.BAD_REQUEST,
-                    "You must specify the from_date and to_date you are interested in.").toResponse();
-        }
-
+        Map<String, Map<LocalDate, Long>> eventLogsByDate;
         try {
-            if (!isUserStaff(httpServletRequest)) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
-                        "You must be logged in as an admin to access this function.").toResponse();
-            }
-
-            Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDate(
-                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-
-            // Calculate the ETag
-            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
-
-            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
-            if (cachedResponse != null) {
-                return cachedResponse;
-            }
-
-            return Response.ok(eventLogsByDate).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
+                    toDate, events, bin);
+        } catch (BadRequestException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (ForbiddenException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
             log.error("Database error while getting event details for a user.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        }
+
+        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        return Response.ok(eventLogsByDate).tag(etag)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+    }
+
+    /**
+     * Get the event data for a specified user, in CSV format.
+     *
+     * @param request
+     *            - request information used authentication
+     * @param requestForCaching
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
+     * @param events
+     *            - comma separated list of events of interest.,
+     * @param bin
+     *            - Should we group data into the first day of the month? true or false.
+     * @return Returns a map of eventType to Map of dates to total number of events.
+     */
+    @GET
+    @Path("/users/event_data/over_time/download")
+    @Produces("text/csv")
+    @GZIP
+    public Response getEventDataForAllUsersDownloadCSV(@Context final Request request,
+            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
+            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+
+        try {
+            Map<String, Map<LocalDate, Long>> eventLogsByDate;
+            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
+                    toDate, events, bin);
+
+            StringWriter stringWriter = new StringWriter();
+            CSVWriter csvWriter = new CSVWriter(stringWriter);
+            List<String[]> rows = Lists.newArrayList();
+            rows.add(new String[]{"event_type", "timestamp", "value"});
+
+            for(Map.Entry<String, Map<LocalDate, Long>> eventType : eventLogsByDate.entrySet()) {
+                String eventTypeKey = eventType.getKey();
+                for(Map.Entry<LocalDate, Long> record : eventType.getValue().entrySet()) {
+                    rows.add(new String[]{eventTypeKey, record.getKey().toString(), record.getValue().toString()});
+                }
+            }
+            csvWriter.writeAll(rows);
+            csvWriter.close();
+
+            EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+            Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(stringWriter.toString()).tag(etag)
+                    .header("Content-Disposition", "attachment; filename=admin_stats.csv")
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+        } catch (BadRequestException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (ForbiddenException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while getting event details for a user.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        } catch (IOException e) {
+            log.error("IO error while creating the CSV file.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while creating the CSV file").toResponse();
         }
     }
 
@@ -1034,7 +1157,7 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response viewPerfLog(@Context final Request request, @Context final HttpServletRequest httpServletRequest) {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(System.getProperty("catalina.base")
-                + File.separator + "logs" + File.separator + "perf.log"));) {
+                + File.separator + "logs" + File.separator + "perf.log"))) {
             if (!isUserAnAdmin(httpServletRequest)) {
                 return new SegueErrorResponse(Status.FORBIDDEN,
                         "You must be logged in as staff to access this function.").toResponse();
@@ -1091,7 +1214,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 results.add(contentVersionController.getContentManager().extractContentSummary(c));
             }
 
-            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<ContentSummaryDTO>(results,
+            ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,
                     allByType.getTotalResults());
             return Response.ok(toReturn).build();
         } catch (NoUserLoggedInException e) {

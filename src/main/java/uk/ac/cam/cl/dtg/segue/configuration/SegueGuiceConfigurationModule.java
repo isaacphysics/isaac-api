@@ -32,6 +32,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -677,6 +678,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param questionManager
      *            - dependency
+     * @param gameManager
+     *            - dependency
      * @return stats manager
      */
     @Provides
@@ -685,11 +688,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
             final ILogManager logManager, final SchoolListReader schoolManager,
             final ContentVersionController versionManager, final LocationManager locationHistoryManager,
-            final GroupManager groupManager, final QuestionManager questionManager) {
+            final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager) {
 
         if (null == statsManager) {
             statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
-                    locationHistoryManager, groupManager, questionManager);
+                    locationHistoryManager, groupManager, questionManager, gameManager);
             log.info("Created Singleton of Statistics Manager");
 
         }

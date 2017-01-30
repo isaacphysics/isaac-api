@@ -535,7 +535,7 @@ CREATE TABLE users (
     date_of_birth date,
     gender character varying(255),
     registration_date timestamp without time zone,
-    school_id bigint,
+    school_id text,
     school_other text,
     last_updated timestamp without time zone,
     email_verification_status character varying(255),

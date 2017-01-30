@@ -300,6 +300,7 @@ public final class Constants {
     public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
     public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
+    public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
@@ -343,6 +344,7 @@ public final class Constants {
     public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME = "EstablishmentNumber";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
     public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
+    public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "DataSource";
 
     // School List loading POJO fields
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
@@ -381,6 +383,12 @@ public final class Constants {
     public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";
 
     public static final String GROUP_FK = "groupId";
+
+    public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
+    public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
+
+    public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
+    public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
 
     /**
      * Private constructor to prevent this class being created.

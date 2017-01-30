@@ -69,6 +69,14 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         EXACT
     }
 
+    private final String hostname;
+    private final String port;
+
+    public IsaacSymbolicChemistryValidator(final String hostname, final String port) {
+        this.hostname = hostname;
+        this.port = port;
+    }
+
     /**
      * Given two formulae, where one is student answer, and another is the target mhchem string,
      * this method generates a JSON object of them, and sends it to a back end chemistry checker
@@ -98,7 +106,7 @@ public class IsaacSymbolicChemistryValidator implements IValidator {
         // Do some real checking through HTTP
         HttpClient httpClient = new DefaultHttpClient();
         //TODO: factor this out into a constant along with the symbolic URL.
-        HttpPost httpPost = new HttpPost("http://chemistry-checker:5000/check");
+        HttpPost httpPost = new HttpPost("http://" + hostname + ":" + port + "/check");
 
         // Send JSON object across ChemistryChecker server.
         httpPost.setEntity(new StringEntity(requestString));

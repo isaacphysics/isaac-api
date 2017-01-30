@@ -312,11 +312,7 @@ public class PgLogManager implements ILogManager {
         Validate.notNull(toDate);
 
         StringBuilder queryToBuild = new StringBuilder();
-        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(1)"
-                + " FROM generate_series(?, ?, INTERVAL '1' MONTH) m(gen_month)" + " LEFT OUTER JOIN logged_events"
-                + " ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )"
-                + " WHERE event_type=?");
-
+        queryToBuild.append("WITH filtered_logs AS (SELECT * FROM logged_events WHERE event_type=?");
         if (userIds != null && !userIds.isEmpty()) {
             StringBuilder inParams = new StringBuilder();
             inParams.append("?");
@@ -327,22 +323,29 @@ public class PgLogManager implements ILogManager {
             queryToBuild.append(String.format(" AND user_id IN (%s)", inParams.toString()));
 
         }
+        queryToBuild.append(") ");
+        // The following LEFT JOIN gives us months with no events in as required, but need count(id) not count(1) to
+        // count actual logged events (where id strictly NOT NULL) in those months, and not count an extra '1' for
+        // empty months where id is NULL by definition of the JOIN.
+        queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(id)");
+        queryToBuild.append(" FROM generate_series(?, ?, INTERVAL '1' MONTH) m(gen_month) LEFT OUTER JOIN filtered_logs");
+        queryToBuild.append(" ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
         queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
             pst = conn.prepareStatement(queryToBuild.toString());
-            pst.setTimestamp(1, new java.sql.Timestamp(fromDate.getTime()));
-            pst.setTimestamp(2, new java.sql.Timestamp(toDate.getTime()));
 
-            pst.setString(3, type);
+            pst.setString(1, type);
 
-            int index = 4;
+            int index = 2;
             if (userIds != null) {
                 for (String userId : userIds) {
                     pst.setString(index++, userId);
                 }
             }
+            pst.setTimestamp(index++, new java.sql.Timestamp(fromDate.getTime()));
+            pst.setTimestamp(index++, new java.sql.Timestamp(toDate.getTime()));
 
             ResultSet results = pst.executeQuery();
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");

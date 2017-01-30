@@ -247,7 +247,33 @@ public class InfoFacade extends AbstractSegueFacade {
 
         // TODO: Factor this URL out into a property
         HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet("http://equality-checker:5000/");
+        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
+                                      + ":" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT) +  "/");
+
+        HttpResponse httpResponse = null;
+        try {
+            httpResponse = httpClient.execute(httpGet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
+
+    }
+
+    @GET
+    @Path("chemistry_checker/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pingChemistryChecker(@Context final HttpServletRequest request) {
+
+        // TODO: Factor this URL out into a property
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_HOST)
+                                      + ":" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_PORT) +  "/");
 
         HttpResponse httpResponse = null;
         try {

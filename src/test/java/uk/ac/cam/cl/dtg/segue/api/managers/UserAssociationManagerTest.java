@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import static org.junit.Assert.*;
 import static org.easymock.EasyMock.*;
 
+import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -368,5 +369,59 @@ public class UserAssociationManagerTest {
 		}
 
 		verify(someUserRequestingAccess, someRegisteredUserGrantingAccessSummary, dummyAssociationDataManager);
+	}
+
+	@Test
+	public final void userAssociationManager_TokenMustBeSixCharactersAndRandom()
+			throws SegueDatabaseException, UserGroupNotFoundException {
+		UserAssociationManager managerUnderTest = new UserAssociationManager(dummyAssociationDataManager,
+				dummyGroupDataManager);
+		Long someAssociatedGroupId = 5654811L;
+
+		RegisteredUserDTO someUserRequestingAccess = createMock(RegisteredUserDTO.class);
+
+		expect(someUserRequestingAccess.getId()).andReturn(0L).anyTimes();
+		expect(dummyGroupDataManager.isValidGroup(someAssociatedGroupId)).andReturn(true).anyTimes();
+		// This line means we'll get a new token each time we run generateAssociationToken:
+		expect(dummyAssociationDataManager.getAssociationTokenByGroupId(someAssociatedGroupId)).andReturn(null).anyTimes();
+		final Capture<AssociationToken> associationTokenCapture = new Capture<>();
+		// This was a lambda that overrode saveAssociationToken using andAnswer to return its only argument. IntelliJ
+		// simplified this to associationTokenCapture::getValue which apparently does the same thing . . .
+		expect(dummyAssociationDataManager.saveAssociationToken(capture(associationTokenCapture))).andAnswer(
+				associationTokenCapture::getValue).anyTimes();
+		replay(someUserRequestingAccess, dummyGroupDataManager, dummyAssociationDataManager);
+
+		// We want to test the randomness of tokens, which means sampling them lots:
+		int iterations = 100000;
+		int tokenLength = 6;
+		String charSpace = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+		int[][] occurrences = new int[tokenLength][charSpace.length()];
+
+		for (int i = 0; i < iterations; i++) {
+
+			AssociationToken token = managerUnderTest.generateAssociationToken(someUserRequestingAccess, someAssociatedGroupId);
+			assertTrue(token.getToken().length() == tokenLength);
+			String t = token.getToken();
+			for (int j = 0; j < t.length(); j++) {
+				char c = t.charAt(j);
+				int chr = charSpace.indexOf(c);
+				occurrences[j][chr] += 1;
+			}
+		}
+		// If any letters appear too frequently, there's a problem. Before we were 500+% out!
+		int expectedAvg = (iterations / 30);  // There are 30 allowed characters after 0,O,1,I,5,S are removed.
+		int allowedDelta = expectedAvg / 5;  // Allow 20% leeway.
+		for (int x = 0; x < tokenLength; x++) {
+			for (int y = 0; y < charSpace.length(); y++) {
+				if (y == 8 || y == 14 || y == 18 || y == 26 || y == 27|| y == 31 ) {
+					// I=8, O=14, S=18, 0=26, 1=27, 5=31
+					// These characters are allowed to be blank!
+					continue;
+				}
+				assertFalse("Token letter distribution not random; expected " + expectedAvg + " occurrences, found " + occurrences[x][y] + "!",
+					(occurrences[x][y] > expectedAvg + allowedDelta) || (occurrences[x][y] < expectedAvg - allowedDelta));
+			}
+		}
 	}
 }

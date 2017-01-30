@@ -42,7 +42,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
     private Gender gender;
     private Date registrationDate;
 
-    private Long schoolId;
+    private String schoolId;
     private String schoolOther;
 
     private Integer defaultLevel;
@@ -82,7 +82,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
             @JsonProperty("verificationStatus") final EmailVerificationStatus emailVerificationStatus,
             @JsonProperty("dateOfBirth") final Date dateOfBirth,
             @JsonProperty("gender") final Gender gender, @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("schoolId") final Long schoolId) {
+            @JsonProperty("schoolId") final String schoolId) {
         this.familyName = familyName;
         this.givenName = givenName;
         this.email = email;
@@ -272,7 +272,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * 
      * @return the schoolId
      */
-    public Long getSchoolId() {
+    public String getSchoolId() {
         return schoolId;
     }
 
@@ -282,7 +282,7 @@ public class RegisteredUserDTO extends AbstractSegueUserDTO {
      * @param schoolId
      *            the schoolId to set
      */
-    public void setSchoolId(final Long schoolId) {
+    public void setSchoolId(final String schoolId) {
         this.schoolId = schoolId;
     }
 

@@ -37,8 +37,8 @@ import com.google.inject.Inject;
 public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
     private static final Logger log = LoggerFactory.getLogger(TokenOwnerLookupMisuseHandler.class);
 
-    public static final Integer SOFT_THRESHOLD = 50;
-    public static final Integer HARD_THRESHOLD = 200;
+    public static final Integer SOFT_THRESHOLD = 20;
+    public static final Integer HARD_THRESHOLD = 50;
     public static final Integer ACCOUNTING_INTERVAL = 86400;
 
     private PropertiesLoader properties;

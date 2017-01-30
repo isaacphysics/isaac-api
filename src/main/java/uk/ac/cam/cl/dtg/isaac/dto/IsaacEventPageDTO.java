@@ -31,6 +31,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.locations.Address;
+import uk.ac.cam.cl.dtg.util.locations.Location;
 
 /**
  * DTO for isaac Event.
@@ -41,7 +42,8 @@ public class IsaacEventPageDTO extends ContentDTO {
     private Date date;
     private Date end_date;
     private Date bookingDeadline;
-    private Address location;
+    private Date prepWorkDeadline;
+    private Location location;
 
     private List<ExternalReference> preResources;
     private List<ContentDTO> preResourceContent;
@@ -95,8 +97,8 @@ public class IsaacEventPageDTO extends ContentDTO {
             @JsonProperty("relatedContent") List<ContentSummaryDTO> relatedContent,
             @JsonProperty("version") boolean published, @JsonProperty("tags") Set<String> tags,
             @JsonProperty("date") Date date, @JsonProperty("end_date") Date end_date,
-            @JsonProperty("bookingDeadline") Date bookingDeadline,
-            @JsonProperty("location") Address location,
+            @JsonProperty("bookingDeadline") Date bookingDeadline, @JsonProperty("prepWorkDeadline") Date prepWorkDeadline,
+            @JsonProperty("location") Location location,
             @JsonProperty("preResources") List<ExternalReference> preResources,
             @JsonProperty("postResources") List<ExternalReference> postResources,
             @JsonProperty("eventThumbnail") ImageDTO eventThumbnail,
@@ -107,6 +109,7 @@ public class IsaacEventPageDTO extends ContentDTO {
         this.date = date;
         this.end_date = end_date;
         this.bookingDeadline = bookingDeadline;
+        this.prepWorkDeadline = prepWorkDeadline;
         this.location = location;
         this.preResources = preResources;
         this.postResources = postResources;
@@ -182,21 +185,48 @@ public class IsaacEventPageDTO extends ContentDTO {
     }
 
     /**
+     * Gets the address.
+     *
+     * @return the address
+     */
+    @JsonIgnore
+    public Address getAddress() {
+        if (location != null) {
+            return location.getAddress();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Sets the address.
+     *
+     * @param address the location to set
+     */
+    @JsonIgnore
+    public void setAddress(final Address address) {
+        if (location != null) {
+            this.location.setAddress(address);
+        } else {
+            this.location = new Location(address, null, null);
+        }
+    }
+
+    /**
      * Gets the location.
-     * 
+     *
      * @return the location
      */
-    public Address getLocation() {
+    public Location getLocation() {
         return location;
     }
 
     /**
      * Sets the location.
-     * 
-     * @param location
-     *            the location to set
+     *
+     * @param location the location to set
      */
-    public void setLocation(final Address location) {
+    public void setLocation(final Location location) {
         this.location = location;
     }
 
@@ -321,6 +351,24 @@ public class IsaacEventPageDTO extends ContentDTO {
      */
     public void setEnd_date(final Date end_date) {
         this.end_date = end_date;
+    }
+
+    /**
+     * getPrepWorkDeadline.
+     *
+     * @return bookingDeadline.
+     */
+    public Date getPrepWorkDeadline() {
+        return prepWorkDeadline;
+    }
+
+    /**
+     * setPrepWorkDeadline.
+     *
+     * @param prepWorkDeadline the booking deadline.
+     */
+    public void setPrepWorkDeadline(final Date prepWorkDeadline) {
+        this.prepWorkDeadline = prepWorkDeadline;
     }
 
     /**

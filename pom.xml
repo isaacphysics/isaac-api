@@ -9,7 +9,7 @@
 	<url>http://isaacphysics.org/</url>
 
 	<properties>
-		<segue.version>1.8.4-SNAPSHOT</segue.version>
+		<segue.version>1.9.3-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
 		<postgresql.version>9.3-1102-jdbc41</postgresql.version>
@@ -251,6 +251,11 @@
 			<artifactId>transport</artifactId>
 			<version>5.0.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>3.8</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -288,8 +293,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.3.2</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 			<plugin>

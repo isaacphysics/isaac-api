@@ -109,8 +109,7 @@ public class SchoolLookupServiceFacade {
         try {
 
             if (schoolURN != null && !schoolURN.isEmpty()) {
-                Long schoolURNLong = Long.parseLong(schoolURN);
-                list = Arrays.asList(schoolListReader.findSchoolById(schoolURNLong));
+                list = Arrays.asList(schoolListReader.findSchoolById(schoolURN));
             } else {
                 list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);    
             }

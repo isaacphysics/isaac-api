@@ -67,7 +67,7 @@ public class IsaacApplicationRegister extends Application {
     private static final Logger log = LoggerFactory.getLogger(IsaacApplicationRegister.class);
     private Set<Object> singletons;
     
-    private final Injector injector;
+    public static Injector injector;
     
     /**
      * Default constructor.

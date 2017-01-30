@@ -15,15 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
@@ -111,7 +103,7 @@ public class GameManager {
     /**
      * Generate a random gameboard without any filter conditions specified.
      * 
-     * @see generateRandomGambeoard
+     * @see #generateRandomGameboard(List, List, List, List, List, AbstractSegueUserDTO)
      * @return gameboard containing random problems.
      * @throws NoWildcardException
      *             - when we are unable to provide you with a wildcard object.
@@ -178,7 +170,7 @@ public class GameManager {
             log.debug("Created gameboard " + uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, null, selectionOfGameboardQuestions,
-                    getRandomWildcard(mapper), generateRandomWildCardPosition(), new Date(), gameFilter, boardOwnerId,
+                    getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter, boardOwnerId,
                     GameboardCreationMethod.FILTER);
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
@@ -505,7 +497,7 @@ public class GameManager {
         }
 
         if (gameboardDTO.getWildCard() == null) {
-            gameboardDTO.setWildCard(this.getRandomWildcard(mapper));
+            gameboardDTO.setWildCard(getRandomWildcard(mapper, gameboardDTO.getGameFilter().getSubjects()));
         } 
         
         if (gameboardDTO.getWildCardPosition() == null) {
@@ -665,7 +657,7 @@ public class GameManager {
     public List<IsaacWildcard> getWildcards() throws NoWildcardException, ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
@@ -761,7 +753,7 @@ public class GameManager {
      * @return a list of questions ordered by DFS.
      */
     private List<ContentDTO> depthFirstQuestionSearch(final ContentDTO c, final List<ContentDTO> result) {
-        if (c.getChildren() == null || c.getChildren().size() == 0) {
+        if (c == null || c.getChildren() == null || c.getChildren().size() == 0) {
             return result;
         }
         
@@ -1081,23 +1073,45 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we cannot access the content requested.
      */
-    private IsaacWildcard getRandomWildcard(final MapperFacade mapper) throws NoWildcardException,
+    private IsaacWildcard getRandomWildcard(final MapperFacade mapper, final List<String> subjectsList) throws NoWildcardException,
             ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
-        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
+        fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
+        // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
         ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager().findByFieldNamesRandomOrder(
-                versionManager.getLiveVersion(), fieldsToMap, 0, 1);
+                versionManager.getLiveVersion(), fieldsToMap, 0, 999);
 
         // try to increase randomness of wildcard results.
         Collections.shuffle(wildcardResults.getResults());
 
-        if (wildcardResults.getTotalResults() == 0) {
+        List<ContentDTO> wildcards = new ArrayList<>();
+
+        if (null == subjectsList) {
+            // If we have no subject info, just use any wildcard; to match behavior of questions.
+            wildcards.addAll(wildcardResults.getResults());
+        } else {
+            for (ContentDTO c : wildcardResults.getResults()) {
+                boolean match = false;
+                for (String s : subjectsList) {
+                    if (c.getTags().contains(s)) {
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (match) {
+                    wildcards.add(c);
+                }
+            }
+        }
+
+        if (wildcards.size() == 0) {
             throw new NoWildcardException();
         }
 
-        return mapper.map(wildcardResults.getResults().get(0), IsaacWildcard.class);
+        return mapper.map(wildcards.get(0), IsaacWildcard.class);
     }
 
     /**

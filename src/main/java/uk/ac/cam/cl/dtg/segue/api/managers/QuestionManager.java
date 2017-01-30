@@ -25,6 +25,8 @@ import java.util.Random;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,8 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
+import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -134,7 +138,7 @@ public class QuestionManager {
      * @return a Validator
      */
     @SuppressWarnings("unchecked")
-    public static IValidator locateValidator(final Class<? extends Question> questionType) {
+    private static IValidator locateValidator(final Class<? extends Question> questionType) {
         // check we haven't gone too high up the superclass tree
         if (!Question.class.isAssignableFrom(questionType)) {
             return null;
@@ -142,14 +146,12 @@ public class QuestionManager {
 
         // Does this class have the correct annotation?
         if (questionType.isAnnotationPresent(ValidatesWith.class)) {
-            try {
-                log.debug("Validator for question validation found. Using : "
-                        + questionType.getAnnotation(ValidatesWith.class).value());
-                return questionType.getAnnotation(ValidatesWith.class).value().newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                log.error("Error while trying to find annotations in the class provided.", e);
-                return null;
-            }
+
+            log.debug("Validator for question validation found. Using : "
+                    + questionType.getAnnotation(ValidatesWith.class).value());
+            Injector injector = IsaacApplicationRegister.injector;
+            return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
+
         } else if (questionType.equals(Question.class)) {
             // so if we get here then we haven't found a ValidatesWith class, so
             // we should just give up and return null.
