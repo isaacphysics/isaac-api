@@ -1,0 +1,14 @@
+version: '2'
+services:
+  etl:
+    network_mode: bridge
+    container_name: etl
+    image: docker.isaacscience.org/etl
+    build:
+      context: ./
+      dockerfile: Dockerfile-ETL
+
+networks:
+  default:
+    external:
+      name: isaac
