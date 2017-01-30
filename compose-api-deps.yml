@@ -12,40 +12,7 @@ services:
     container_name: chemistry-checker
     image: ucamcldtg/chemistry-checker
     restart: always
-  es-tracking:
-    container_name: es-tracking
-    image: elasticsearch:1.4
-    environment:
-      ES_HEAP_SIZE: 2g
-      ES_MIN_MEM: 3g
-      ES_MAX_MEM: 3g
-    volumes:
-      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-    restart: always
-  es-live:
-    container_name: es-live
-    image: elasticsearch:1.4
-    volumes:
-      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-    restart: always
-  pg-live:
-    container_name: pg-live
-    image: isaac-pg
-    volumes:
-      - pg-live:/pgdata
-    restart: always
-  pg-staging:
-    container_name: pg-staging
-    image: isaac-pg
-    volumes:
-      - pg-staging:/pgdata
-    restart: always
-  pg-dev:
-    container_name: pg-dev
-    image: isaac-pg
-    volumes:
-      - pg-dev:/pgdata
-    restart: always
+
 networks:
   default:
     external:
