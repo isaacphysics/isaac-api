@@ -1,3 +1,6 @@
+# Note: When running locally in ubuntu in order for ElasticSearch to wrok 
+# you will need to run 
+# sysctl -w vm.max_map_count=262144
 version: '2'
 services:
   equality-checker:
