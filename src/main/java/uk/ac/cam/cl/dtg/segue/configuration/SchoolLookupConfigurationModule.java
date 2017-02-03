@@ -64,7 +64,7 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
      */
     private void configureProperties() {
         // School look up config
-        this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
+
     }
 
     /**
