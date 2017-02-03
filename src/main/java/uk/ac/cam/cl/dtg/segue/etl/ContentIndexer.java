@@ -149,6 +149,9 @@ public class ContentIndexer {
 
     void setLatestVersion(String version) {
         es.addOrMoveIndexAlias("latest", version);
+        if (!es.hasIndex("live")) {
+            setLiveVersion(version);
+        }
     }
     /**
      * This method will populate the internal gitCache based on the content object files found for a given SHA.
