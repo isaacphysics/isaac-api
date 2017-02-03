@@ -344,6 +344,8 @@
 					<webApp>
 						<contextPath>/isaac-api</contextPath>
 						<overrideDescriptor>override-api-web.xml</overrideDescriptor>
+						<webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
+						<containerIncludeJarPattern>^$</containerIncludeJarPattern>
 					</webApp>
                     <systemProperties>
                         <systemProperty>
@@ -429,6 +431,8 @@
 							<webApp>
 								<contextPath>/isaac-api</contextPath>
 								<overrideDescriptor>override-etl-web.xml</overrideDescriptor>
+                                <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
+                                <containerIncludeJarPattern>^$</containerIncludeJarPattern>
 							</webApp>
 							<systemProperties>
 								<systemProperty>
