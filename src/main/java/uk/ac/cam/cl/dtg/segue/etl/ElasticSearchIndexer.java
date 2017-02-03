@@ -172,9 +172,10 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     private void sendMappingCorrections(final String index) {
         try {
 
+            CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index).setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
+
             for (String indexType : this.rawFieldsListByType.keySet()) {
 
-                CreateIndexRequestBuilder indexBuilder = client.admin().indices().prepareCreate(index).setSettings(Settings.builder().put("index.mapping.total_fields.limit", "9999").build());
 
                 final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder().startObject().startObject(indexType)
                         .startObject("properties");
@@ -191,10 +192,10 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 mappingBuilder.endObject().endObject().endObject();
                 indexBuilder.addMapping(indexType, mappingBuilder);
 
-
-                // Send Mapping information
-                indexBuilder.execute().actionGet();
             }
+
+            // Send Mapping information
+            indexBuilder.execute().actionGet();
 
         } catch (IOException e) {
             log.error("Error while sending mapping correction " + "instructions to the ElasticSearch Server", e);
