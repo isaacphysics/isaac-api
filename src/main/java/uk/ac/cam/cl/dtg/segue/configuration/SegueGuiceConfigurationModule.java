@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -124,7 +125,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	private static GroupManager groupManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
-    private static Reflections reflections = null;
+    private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
     
     /**
      * Create a SegueGuiceConfigurationModule.
@@ -422,7 +423,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static ContentMapper getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapper(getReflectionsClass());
+            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg.segue"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
@@ -730,12 +731,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * @return reflections.
      */
-    public static Reflections getReflectionsClass() {
-        if (null == reflections) {
+    public static Reflections getReflectionsClass(String pkg) {
+        if (!reflections.containsKey(pkg)) {
             log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
-            reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
+            reflections.put(pkg, new Reflections(pkg));
         }
-        return reflections;
+        return reflections.get(pkg);
     }
 
     /**
@@ -748,10 +749,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == contextListeners) {
             contextListeners = Lists.newArrayList();
 
-            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass()
+            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue")
                     .getSubTypesOf(ServletContextListener.class);
 
+            Set<Class<? extends ServletContextListener>> etlSubTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue.etl")
+                    .getSubTypesOf(ServletContextListener.class);
+
+            subTypes.removeAll(etlSubTypes);
+
             for (Class<? extends ServletContextListener> contextListener : subTypes) {
+
                 contextListeners.add(contextListener);
             }
         }
