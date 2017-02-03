@@ -31,7 +31,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-
+// TODO: Get rid of this file altogether!
 /**
  * This class is responsible for injecting configuration values for the school look up service and related classes.
  * 
@@ -47,8 +47,7 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
      */
     public SchoolLookupConfigurationModule() {
         try {
-            globalProperties = new PropertiesLoader("/config/segue-config.properties");
-
+            globalProperties = new PropertiesLoader(System.getProperty("config.location"));
         } catch (IOException e) {
             log.error("Error loading properties file.", e);
         }

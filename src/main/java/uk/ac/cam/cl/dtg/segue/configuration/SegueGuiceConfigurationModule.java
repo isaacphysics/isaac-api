@@ -133,14 +133,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     public SegueGuiceConfigurationModule() {
         if (globalProperties == null || configLocationProperties == null) {
             try {
-                if (null == configLocationProperties) {
-                    configLocationProperties = new PropertiesLoader("/config/segue-config-location.properties");
-
-                }
-
                 if (null == globalProperties) {
-                    globalProperties = new PropertiesLoader(
-                            configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+                    globalProperties = new PropertiesLoader(System.getProperty("config.location"));
                 }
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
@@ -339,10 +333,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static ContentVersionController getContentVersionController(final PropertiesLoader generalProperties,
             final IContentManager contentManager) throws IOException {
-
-        PropertiesManager versionPropertiesLoader = new PropertiesManager(
-                configLocationProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
-
+        
         if (null == contentVersionController) {
             contentVersionController = new ContentVersionController(generalProperties, contentManager);
             log.info("Creating singleton of ContentVersionController");

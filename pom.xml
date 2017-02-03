@@ -352,6 +352,10 @@
                             <name>jetty.port</name>
                             <value>${jetty.port.api}</value>
                         </systemProperty>
+                        <systemProperty>
+                            <name>config.location</name>
+                            <value>${config.location}</value>
+                        </systemProperty>
                     </systemProperties>
 				</configuration>
 			</plugin>
