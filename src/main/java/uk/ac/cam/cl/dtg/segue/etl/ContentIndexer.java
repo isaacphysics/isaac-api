@@ -88,6 +88,7 @@ public class ContentIndexer {
         this.mapper = mapper;
     }
 
+
     void loadAndIndexContent(String version) throws Exception, VersionLockedException {
 
         // TODO: Work out what to do about includeUnpublished!
@@ -585,7 +586,8 @@ public class ContentIndexer {
 
 
         try {
-           es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("version", sha)), "version");es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
+            es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("version", sha)), "version");
+            es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
 
             // TODO: Should probably bulk index these
             for (String k : allUnits.keySet()) {

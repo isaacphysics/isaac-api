@@ -90,7 +90,7 @@ public class SchoolLookupServiceFacade {
                     .toResponse();
         }
         
-        EntityTag etag = new EntityTag(schoolListReader.getDataLastModifiedDate().hashCode() + "");
+        EntityTag etag = new EntityTag(schoolListReader.getDataLastModifiedDate());
         ResponseBuilder rb = request.evaluatePreconditions(etag);
 
         CacheControl cc = new CacheControl();

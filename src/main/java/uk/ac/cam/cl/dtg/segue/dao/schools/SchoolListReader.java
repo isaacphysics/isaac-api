@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.opencsv.CSVReader;
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,30 +56,23 @@ import com.google.inject.name.Named;
 public class SchoolListReader {
     private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
 
-    private final String fileToLoad;
     private final ISearchProvider searchProvider;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final Date dataSourceModificationDate;
-    
+    private final String dataSourceModificationDate;
+
     /**
      * SchoolListReader constructor.
      * 
-     * @param filename
-     *            - csv file containing the list of schools.
      * @param searchProvider
      *            - search provider that can be used to put and retrieve school data.
      */
     @Inject
-    public SchoolListReader(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String filename,
-            final ISearchProvider searchProvider) {
-        this.fileToLoad = filename;
+    public SchoolListReader(final ISearchProvider searchProvider) {
         this.searchProvider = searchProvider;
-        
 
-        File dataSource = new File(fileToLoad);
-        dataSourceModificationDate = new Date(dataSource.lastModified());
+        dataSourceModificationDate = searchProvider.getById(Constants.SCHOOLS_SEARCH_INDEX, "metadata", "sourceFile").getSource().get("lastModified").toString();
     }
 
     /**
@@ -168,69 +162,12 @@ public class SchoolListReader {
     }
 
 
-    /**
-     * Loads the school list from the preconfigured filename.
-     * 
-     * @return the list of schools.
-     * @throws UnableToIndexSchoolsException
-     *             - when there is a problem indexing.
-     */
-    private synchronized List<School> loadAndBuildSchoolList() throws UnableToIndexSchoolsException {
-        // otherwise we need to generate it.
-        List<School> schools = Lists.newArrayList();
 
-        try {
-            CSVReader reader = new CSVReader(new InputStreamReader(new FileInputStream(fileToLoad), "UTF-8"));
-
-            // use first line to determine field names.
-            String[] columns = reader.readNext();
-
-            Map<String, Integer> fieldNameMapping = new TreeMap<String, Integer>();
-
-            for (int i = 0; i < columns.length; i++) {
-                fieldNameMapping.put(columns[i].trim().replace("\"", ""), i);
-            }
-
-            // We expect the columns to have the following names/structure and be UTF-8 encoded:
-            // URN | EstablishmentName | Postcode | DataSource
-            String[] schoolArray;
-            while ((schoolArray = reader.readNext()) != null) {
-                try {
-                    School.SchoolDataSource source = School.SchoolDataSource
-                            .valueOf(schoolArray[fieldNameMapping.get(Constants.SCHOOL_DATA_SOURCE_FIELDNAME)]);
-
-                    School schoolToSave = new School(schoolArray[fieldNameMapping.get(Constants.SCHOOL_URN_FIELDNAME)],
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)],
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)],
-                            source);
-
-                    if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
-                        log.warn("School with missing postcode! URN:" + schoolToSave.getUrn());
-                    }
-
-                    schools.add(schoolToSave);
-                } catch (IndexOutOfBoundsException e) {
-                    // This happens when the school does not have the required data
-                    log.warn("Unable to load the following school into the school list due to missing required fields. "
-                            + Arrays.toString(schoolArray));
-                }
-            }
-            reader.close();
-        } catch (FileNotFoundException e) {
-            log.error("Unable to locate the file requested", e);
-            throw new UnableToIndexSchoolsException("Unable to locate the file requested", e);
-        } catch (IOException e) {
-            throw new UnableToIndexSchoolsException("Unable to load the file requested", e);
-        }
-
-        return schools;
-    }
-    
     /**
      * Method to help determine freshness of data.
      * @return date when the data source was last modified.
      */
-    public Date getDataLastModifiedDate() {
+    public String getDataLastModifiedDate() {
         
         return this.dataSourceModificationDate;
     }

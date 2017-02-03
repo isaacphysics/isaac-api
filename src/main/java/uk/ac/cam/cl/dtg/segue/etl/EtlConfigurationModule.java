@@ -13,9 +13,13 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
@@ -28,23 +32,19 @@ class ETLConfigurationModule extends AbstractModule {
     private static PropertiesLoader globalProperties = null;
     private static ContentMapper mapper = null;
     private static Client elasticSearchClient = null;
+    private static SchoolIndexer schoolIndexer = null;
+    private static ETLManager etlManager = null;
 
     ETLConfigurationModule() {
         if (globalProperties == null || configLocationProperties == null) {
             try {
-                if (null == configLocationProperties) {
-                    configLocationProperties = new PropertiesLoader("config/segue-config-location.properties");
-                }
-
                 if (null == globalProperties) {
-                    globalProperties = new PropertiesLoader(
-                            configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
+                    globalProperties = new PropertiesLoader(System.getProperty("config.location"));
                 }
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
         }
-
     }
     /**
      * Utility method to make the syntax of property bindings clearer.
@@ -67,6 +67,7 @@ class ETLConfigurationModule extends AbstractModule {
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_NAME, globalProperties);
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_ADDRESS, globalProperties);
             this.bindConstantToProperty(Constants.SEARCH_CLUSTER_PORT, globalProperties);
+            this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
 
             // GitDb
             bind(GitDb.class).toInstance(
@@ -103,6 +104,16 @@ class ETLConfigurationModule extends AbstractModule {
         return mapper;
     }
 
+    @Inject
+    @Provides
+    @Singleton
+    private static ETLManager getETLManager(ContentIndexer contentIndexer, SchoolIndexer schoolIndexer, GitDb db) {
+        if (null == etlManager) {
+            etlManager = new ETLManager(contentIndexer, schoolIndexer, db);
+        }
+        return etlManager;
+    }
+
     /**
      * This provides a singleton of the elasticSearch client that can be used by Guice.
      *
@@ -137,4 +148,17 @@ class ETLConfigurationModule extends AbstractModule {
         return elasticSearchClient;
     }
 
+    @Inject
+    @Provides
+    @Singleton
+    private SchoolIndexer getSchoolListIndexer(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String schoolListPath,
+                                                 final ElasticSearchIndexer es,
+                                                 final ContentMapper mapper) throws IOException {
+        if (null == schoolIndexer) {
+            schoolIndexer = new SchoolIndexer(es, mapper, schoolListPath);
+            log.info("Creating singleton of SchoolListReader");
+        }
+
+        return schoolIndexer;
+    }
 }

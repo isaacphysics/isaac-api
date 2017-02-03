@@ -31,5 +31,9 @@
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
 
+    <listener>
+        <listener-class>uk.ac.cam.cl.dtg.segue.etl.SegueETLContextNotifier</listener-class>
+    </listener>
+
 
 </web-app>

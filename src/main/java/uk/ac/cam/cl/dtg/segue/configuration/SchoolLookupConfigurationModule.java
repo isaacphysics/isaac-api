@@ -72,8 +72,6 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
      *
      * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
      * 
-     * @param schoolListPath
-     *            - The location of the school data.
      * @param provider
      *            - The search provider.
      * @return schoolList reader
@@ -83,10 +81,9 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private SchoolListReader getSchoolListReader(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String schoolListPath,
-            final ISearchProvider provider) throws IOException {
+    private SchoolListReader getSchoolListReader(final ISearchProvider provider) throws IOException {
         if (null == schoolListReader) {
-            schoolListReader = new SchoolListReader(schoolListPath, provider);
+            schoolListReader = new SchoolListReader(provider);
             log.info("Creating singleton of SchoolListReader");
         }
 

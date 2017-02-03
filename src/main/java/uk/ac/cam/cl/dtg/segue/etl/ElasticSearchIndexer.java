@@ -49,6 +49,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
     public ElasticSearchIndexer(Client searchClient) {
         super(searchClient);
         rawFieldsListByType.put("content", Lists.newArrayList("id", "title"));
+        rawFieldsListByType.put("school", Lists.newArrayList("urn"));
     }
 
 

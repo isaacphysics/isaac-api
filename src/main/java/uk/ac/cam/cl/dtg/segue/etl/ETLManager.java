@@ -1,11 +1,10 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.google.inject.Inject;
-import org.eclipse.jetty.util.ConcurrentArrayQueue;
-import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
+import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -19,11 +18,19 @@ class ETLManager {
     private final ArrayBlockingQueue<String> newVersionQueue;
 
     @Inject
-    ETLManager(final ContentIndexer indexer) {
+    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database) {
         this.indexer = indexer;
-
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
-        //this.newVersionQueue.offer("da13589aa1f8da7f607335bc3523667b57084060");
+
+        // On startup, always load the latest content and the school list.
+        String latestSha = database.fetchLatestFromRemote();
+        this.newVersionQueue.offer(latestSha);
+
+        try {
+            schoolIndexer.indexSchoolsWithSearchProvider();
+        } catch (UnableToIndexSchoolsException e) {
+            log.error("Unable to index schools", e);
+        }
 
         Thread t = new Thread(new NewVersionIndexer());
         t.setDaemon(true);

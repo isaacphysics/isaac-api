@@ -267,7 +267,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     .build();
         } catch (UnableToIndexSchoolsException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index Schools Exception in admin facade", e).toResponse();
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e1) {
@@ -904,7 +904,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return Response.ok(result).build();
         } catch (UnableToIndexSchoolsException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Unable To Index Schools Exception in admin facade", e).toResponse();
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (ResourceNotFoundException e) {

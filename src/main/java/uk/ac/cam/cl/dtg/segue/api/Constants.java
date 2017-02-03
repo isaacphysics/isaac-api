@@ -191,8 +191,8 @@ public final class Constants {
         AND, OR
     };
 
-    public static final String SCHOOLS_SEARCH_INDEX = "autocomplete_data";
-    public static final String SCHOOLS_SEARCH_TYPE = "schools";
+    public static final String SCHOOLS_SEARCH_INDEX = "schools";
+    public static final String SCHOOLS_SEARCH_TYPE = "school";
 
     // Federated Authentication Stuff
     public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
