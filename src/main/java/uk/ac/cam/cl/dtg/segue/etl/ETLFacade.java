@@ -49,15 +49,11 @@ public class ETLFacade extends AbstractSegueFacade {
     }
 
     @POST
-    @Path("/new_version_alert")
+    @Path("/new_version_alert/{version}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response newVersionAlert(GithubPushEventPayload payload) {
-        // We are only interested in the master branch
-        if(payload.getRef().equals("refs/heads/master")) {
-            String newVersion = payload.getAfter();
-            etlManager.notifyNewVersion(newVersion);
-        }
+    public Response newVersionAlert(@PathParam("version") final String newVersion) {
+        etlManager.notifyNewVersion(newVersion);
         return Response.ok().build();
     }
 

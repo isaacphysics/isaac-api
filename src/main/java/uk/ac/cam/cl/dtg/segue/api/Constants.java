@@ -390,6 +390,7 @@ public final class Constants {
     public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
     public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
 
+    public static final String GITHUB_WEBHOOK_SECRET = "GITHUB_WEBHOOK_SECRET";
     /**
      * Private constructor to prevent this class being created.
      */

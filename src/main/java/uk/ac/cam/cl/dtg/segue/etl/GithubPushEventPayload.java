@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * Created by Ian on 01/11/2016.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-class GithubPushEventPayload {
+public class GithubPushEventPayload {
     private String ref, after;
 
     public GithubPushEventPayload() {

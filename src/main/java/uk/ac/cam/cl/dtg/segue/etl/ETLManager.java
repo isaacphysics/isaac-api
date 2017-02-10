@@ -22,16 +22,23 @@ class ETLManager {
         this.indexer = indexer;
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
 
-        // On startup, always load the latest content and the school list.
+        // ON STARTUP
+
+        // Load the current live version from file and set it.
+
+
+        // Make sure we have indexed the latest content.
         String latestSha = database.fetchLatestFromRemote();
         this.newVersionQueue.offer(latestSha);
 
+        // Load the school list.
         try {
             schoolIndexer.indexSchoolsWithSearchProvider();
         } catch (UnableToIndexSchoolsException e) {
             log.error("Unable to index schools", e);
         }
 
+        // Start the indexer that will deal with new version alerts in a thread-safe way.
         Thread t = new Thread(new NewVersionIndexer());
         t.setDaemon(true);
         t.start();

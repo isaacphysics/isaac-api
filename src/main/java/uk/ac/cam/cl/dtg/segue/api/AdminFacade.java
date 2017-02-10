@@ -100,6 +100,7 @@ import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
@@ -1313,4 +1314,38 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error during verison change.", e).toResponse();
         }
     }
+
+    @POST
+    @Path("/new_version_alert")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response versionChangeNotification(GithubPushEventPayload payload) {
+
+        // TODO: Verify webhook secret.
+        try {
+            // We are only interested in the master branch
+            if(payload.getRef().equals("refs/heads/master")) {
+                String newVersion = payload.getAfter();
+
+                HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
+                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/new_version_alert/" + newVersion);
+
+                HttpResponse httpResponse = null;
+                httpResponse = new DefaultHttpClient().execute(httpPost);
+                HttpEntity e = httpResponse.getEntity();
+
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    return Response.ok().build();
+                } else {
+                    SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
+                    r.setBypassGenericSiteErrorPage(true);
+                    return r.toResponse();
+                }
+            }
+        } catch (IOException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    e.getMessage()).toResponse();
+        }
+        return Response.ok().build();
+    }
+
 }

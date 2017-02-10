@@ -109,10 +109,10 @@ public class ContentIndexer {
             // now we have acquired the lock check if someone else has indexed this.
             boolean searchIndexed = es.hasIndex(version);
             if (searchIndexed) {
-                log.info("Index already exists. Deleting.");
-                es.expungeIndexFromSearchCache(version);
-                //log.info("Content already indexed: " + version);
-                //return;
+                //log.info("Index already exists. Deleting.");
+                //es.expungeIndexFromSearchCache(version);
+                log.info("Content already indexed: " + version);
+                return;
             }
 
             log.info(String.format(
@@ -149,9 +149,6 @@ public class ContentIndexer {
 
     void setLatestVersion(String version) {
         es.addOrMoveIndexAlias("latest", version);
-        if (!es.hasIndex("live")) {
-            setLiveVersion(version);
-        }
     }
     /**
      * This method will populate the internal gitCache based on the content object files found for a given SHA.
