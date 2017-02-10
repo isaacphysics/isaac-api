@@ -51,6 +51,8 @@ class ETLManager {
         Thread t = new Thread(new NewVersionIndexer());
         t.setDaemon(true);
         t.start();
+
+        log.info("ETL startup complete.");
     }
 
     void notifyNewVersion(String version) {
@@ -81,8 +83,9 @@ class ETLManager {
             try {
                 while(true) {
                     // Block here until there is something to index.
+                    log.info("Indexer going to sleep, waiting for new version alert.");
                     String newVersion = newVersionQueue.take();
-                    log.info("Got new version " + newVersion + ". Attempting to index.");
+                    log.info("Indexer got new version: " + newVersion + ". Attempting to index.");
 
                     try {
                         indexer.loadAndIndexContent(newVersion);

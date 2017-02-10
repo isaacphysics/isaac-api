@@ -40,9 +40,11 @@ public class ETLFacade extends AbstractSegueFacade {
 
         try {
             etlManager.setLiveVersion(version);
+            log.info("Finished processing ETL request");
             return Response.ok().build();
         } catch (Exception e) {
             log.error("Failed to set live version: " + e.getMessage());
+            log.info("Finished processing ETL request");
             return Response.serverError().entity(e.getMessage()).build();
         }
 
@@ -54,6 +56,7 @@ public class ETLFacade extends AbstractSegueFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response newVersionAlert(@PathParam("version") final String newVersion) {
         etlManager.notifyNewVersion(newVersion);
+        log.info("Finished processing ETL request");
         return Response.ok().build();
     }
 
