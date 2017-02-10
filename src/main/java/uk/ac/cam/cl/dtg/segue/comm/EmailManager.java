@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 import java.text.DateFormat;
@@ -16,6 +17,7 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import com.google.inject.name.Named;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
@@ -28,12 +30,12 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
@@ -57,7 +59,8 @@ import com.google.inject.Inject;
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
 	private final AbstractEmailPreferenceManager emailPreferenceManager;
     private final PropertiesLoader globalProperties;
-    private final ContentVersionController contentVersionController;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     private final ILogManager logManager;
     
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
@@ -74,19 +77,20 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            email preference manager used to check if users want email.
      * @param globalProperties
      *            global properties used to get host name
-     * @param contentVersionController
+     * @param contentManager
      *            content for email templates
      * @param logManager
      *            so we can log e-mail events.
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
-		    		emailPreferenceManager, final PropertiesLoader globalProperties, 
-		    		final ContentVersionController contentVersionController, final ILogManager logManager) {
+		    		emailPreferenceManager, final PropertiesLoader globalProperties,
+                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager) {
         super(communicator);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
-        this.contentVersionController = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.logManager = logManager;
     }
 
@@ -804,7 +808,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put("userIds", ids)
                 .put("contentObjectId", contentObjectId)
-                .put("contentVersionId", this.contentVersionController.getLiveVersion()).build();
+                .put("contentVersionId", this.contentManager.getCurrentContentSHA()).build();
         this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
         log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(),
                 numberOfUnfilteredUsers - allSelectedUsers.size()));
@@ -1098,14 +1102,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private ContentDTO getContentDTO(final String id)
             throws ContentManagerException, ResourceNotFoundException {
     	
-        ContentDTO c = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), id);
+        ContentDTO c = this.contentManager.getContentById(
+                this.contentIndex, id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
         }
         
-        ContentDTO contentDTO = null;
+        ContentDTO contentDTO;
 
         if (c instanceof ContentDTO) {
             contentDTO = c;
@@ -1130,8 +1134,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
             ResourceNotFoundException {
 
-        ContentDTO c = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), id);
+        ContentDTO c = this.contentManager.getContentById(
+                this.contentIndex, id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));

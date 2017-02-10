@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
@@ -100,6 +99,8 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
  * 
@@ -107,13 +108,11 @@ import com.google.inject.name.Names;
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
-    private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
     
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
     private static ContentMapper mapper = null;
-    private static ContentVersionController contentVersionController = null;
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
@@ -131,11 +130,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Create a SegueGuiceConfigurationModule.
      */
     public SegueGuiceConfigurationModule() {
-        if (globalProperties == null || configLocationProperties == null) {
+        if (globalProperties == null) {
             try {
-                if (null == globalProperties) {
-                    globalProperties = new PropertiesLoader(System.getProperty("config.location"));
-                }
+                globalProperties = new PropertiesLoader(System.getProperty("config.location"));
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
@@ -180,7 +177,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
         
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
-        
+
+        this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
     }
 
     /**
@@ -316,30 +314,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         return elasticSearchClient;
     }
-    
-    /**
-     * This provides a singleton of the contentVersionController for the segue facade.
-     * 
-     * @param generalProperties
-     *            - properties loader
-     * @param contentManager
-     *            - content manager (with associated persistence links).
-     * @return Content version controller with associated dependencies.
-     * @throws IOException
-     *             - if we can't load the properties file for live version.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static ContentVersionController getContentVersionController(final PropertiesLoader generalProperties,
-            final IContentManager contentManager) throws IOException {
-        
-        if (null == contentVersionController) {
-            contentVersionController = new ContentVersionController(generalProperties, contentManager);
-            log.info("Creating singleton of ContentVersionController");
-        }
-        return contentVersionController;
-    }
 
     /**
      * This provides a singleton of the git content manager for the segue facade.
@@ -434,7 +408,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            the class the queue will send messages with
      * @param emailPreferenceManager
      * 			- the class providing email preferences
-     * @param contentVersionController
+     * @param contentManager
      * 			- the content so we can access email templates
      * @param authenticator
      * 			- the authenticator
@@ -448,11 +422,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
             final AbstractEmailPreferenceManager emailPreferenceManager,
-            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator,
+            final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
-            				contentVersionController, logManager);
+            				contentManager, contentIndex, logManager);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
@@ -611,11 +585,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @return segue version currently running.
      */
     public static String getSegueVersion() {
-        if (configLocationProperties != null) {
-            return configLocationProperties.getProperty(Constants.SEGUE_APP_VERSION);
-        }
-        log.warn("Unable to read segue version property");
-        return "UNKNOWN";
+        return System.getProperty("segue.version");
     }
 
     /**
@@ -662,7 +632,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param schoolManager
      *            - dependency
-     * @param versionManager
+     * @param contentManager
      *            - dependency
      * @param locationHistoryManager
      *            - dependency
@@ -679,11 +649,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
             final ILogManager logManager, final SchoolListReader schoolManager,
-            final ContentVersionController versionManager, final LocationManager locationHistoryManager,
+            final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
+            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
                     locationHistoryManager, groupManager, questionManager, gameManager);
             log.info("Created Singleton of Statistics Manager");
 

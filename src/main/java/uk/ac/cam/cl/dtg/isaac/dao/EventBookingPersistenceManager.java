@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +15,17 @@ import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.*;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
  * EventBookingPersistenceManager.
@@ -34,14 +37,15 @@ public class EventBookingPersistenceManager {
     private final PostgresSqlDb database;
     private final EventBookings dao;
     private final UserAccountManager userManager;
-    private final ContentVersionController versionManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     /**
      * EventBookingPersistenceManager.
      * 
      * @param database
      *            - live connection
-     * @param versionManager
+     * @param contentManager
      *            - for retrieving event content.
      * @param userManager
      *            - Instance of User Manager
@@ -52,10 +56,11 @@ public class EventBookingPersistenceManager {
      */
     @Inject
     public EventBookingPersistenceManager(final PostgresSqlDb database, final UserAccountManager userManager,
-                                          final ContentVersionController versionManager, final ObjectMapper objectMapper, final MapperFacade dtoMapper) {
+                                          final IContentManager contentManager, final ObjectMapper objectMapper, final MapperFacade dtoMapper, @Named(CONTENT_INDEX) final String contentIndex) {
         this.database = database;
         this.userManager = userManager;
-        this.versionManager = versionManager;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.dao = new PgEventBookings(database, objectMapper);
     }
 
@@ -132,7 +137,7 @@ public class EventBookingPersistenceManager {
      */
     public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
         try {
-            ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(), eventId);
+            ContentDTO c = this.contentManager.getContentById(this.contentIndex, eventId);
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(Lists.newArrayList(dao.findAllByEventId(eventId)), (IsaacEventPageDTO) c);
             } else {
@@ -255,7 +260,7 @@ public class EventBookingPersistenceManager {
      */
     private EventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
-            ContentDTO c = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+            ContentDTO c = this.contentManager.getContentById(this.contentIndex,
                     eb.getEventId());
 
             if (null == c) {

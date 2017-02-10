@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.FAST_TRACK_QUESTION_TYPE;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.QUESTION_TYPE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 import java.io.IOException;
 import java.sql.Array;
@@ -35,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Maps;
+import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.lang3.Validate;
@@ -49,9 +51,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -81,7 +83,8 @@ public class GameboardPersistenceManager {
 	private final MapperFacade mapper; // used for content object mapping.
 	private final ObjectMapper objectMapper; // used for json serialisation
 	
-	private final ContentVersionController versionManager;
+	private final IContentManager contentManager;
+    private final String contentIndex;
 
     private final URIManager uriManager;
 
@@ -90,7 +93,7 @@ public class GameboardPersistenceManager {
      * 
      * @param database
      *            - the database reference used for persistence.
-     * @param versionManager
+     * @param contentManager
      *            - allows us to lookup gameboard content.
      * @param mapper
      *            - An instance of an automapper that can be used for mapping to and from GameboardDOs and DTOs.
@@ -101,11 +104,12 @@ public class GameboardPersistenceManager {
      *            - so we can generate appropriate content URIs.
      */
 	@Inject
-    public GameboardPersistenceManager(final PostgresSqlDb database, final ContentVersionController versionManager,
-            final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager) {
+    public GameboardPersistenceManager(final PostgresSqlDb database, final IContentManager contentManager,
+                                       final MapperFacade mapper, final ObjectMapper objectMapper, final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
 		this.database = database;
 		this.mapper = mapper;
-		this.versionManager = versionManager;
+		this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.objectMapper = objectMapper;
         this.uriManager = uriManager;		
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
@@ -403,7 +407,7 @@ public class GameboardPersistenceManager {
         // Search for questions that match the ids.       
         ResultsWrapper<ContentDTO> results;
         try {
-            results = this.versionManager.getContentManager().findByFieldNames(versionManager.getLiveVersion(),
+            results = this.contentManager.findByFieldNames(this.contentIndex,
                     fieldsToMap, 0, gameboardDO.getQuestions().size());
         } catch (ContentManagerException e) {
             results = new ResultsWrapper<ContentDTO>();
@@ -696,7 +700,7 @@ public class GameboardPersistenceManager {
 		// Search for questions that match the ids.
 		ResultsWrapper<ContentDTO> results;
         try {
-            results = this.versionManager.getContentManager().findByFieldNames(this.versionManager.getLiveVersion(),
+            results = this.contentManager.findByFieldNames(this.contentIndex,
                     fieldsToMap, 0, questionIds.size());
         } catch (ContentManagerException e) {
             results = new ResultsWrapper<ContentDTO>();

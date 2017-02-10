@@ -20,6 +20,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import io.swagger.annotations.Api;
 
 import java.util.*;
@@ -47,7 +49,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -56,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -63,14 +65,6 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.util.*;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -83,11 +77,12 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class EventsFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(EventsFacade.class);
 
-    private final ContentVersionController versionManager;
-
     private final EventBookingManager bookingManager;
 
     private final UserAccountManager userManager;
+
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     /**
      * EventsFacade.
@@ -96,7 +91,7 @@ public class EventsFacade extends AbstractIsaacFacade {
      *            - global properties map
      * @param logManager
      *            - for managing logs.
-     * @param versionManager
+     * @param contentManager
      *            - for retrieving event content.
      * @param bookingManager
      *            - Instance of Booking Manager
@@ -105,12 +100,13 @@ public class EventsFacade extends AbstractIsaacFacade {
      */
     @Inject
     public EventsFacade(final PropertiesLoader properties, final ILogManager logManager,
-            final ContentVersionController versionManager, final EventBookingManager bookingManager,
-            final UserAccountManager userManager) {
+                        final EventBookingManager bookingManager,
+                        final UserAccountManager userManager, final IContentManager contentManager, @Named(Constants.CONTENT_INDEX) final String contentIndex) {
         super(properties, logManager);
-        this.versionManager = versionManager;
         this.bookingManager = bookingManager;
         this.userManager = userManager;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
     }
 
     /**
@@ -206,8 +202,8 @@ public class EventsFacade extends AbstractIsaacFacade {
             if (null != showMyBookingsOnly && showMyBookingsOnly) {
                 findByFieldNames = getEventsBookedByUser(request, fieldsToMatch.get(TAGS_FIELDNAME), currentUser);
             } else {
-                findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
-                    versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
+                findByFieldNames = this.contentManager.findByFieldNames(
+                    this.contentIndex, SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
                 // augment (maybe slow for large numbers of bookings)
@@ -803,8 +799,8 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
-                versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
+            findByFieldNames = this.contentManager.findByFieldNames(
+                this.contentIndex, SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
                 newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
@@ -901,8 +897,8 @@ public class EventsFacade extends AbstractIsaacFacade {
         try {
             ResultsWrapper<ContentDTO> findByFieldNames = null;
 
-            findByFieldNames = this.versionManager.getContentManager().findByFieldNames(
-                    versionManager.getLiveVersion(), SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
+            findByFieldNames = this.contentManager.findByFieldNames(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch),
                     newStartIndex, newLimit, sortInstructions, filterInstructions);
 
             List<Map<String, Object>> resultList = Lists.newArrayList();
@@ -962,8 +958,8 @@ public class EventsFacade extends AbstractIsaacFacade {
      * @throws SegueDatabaseException if there is a database error.
 	 */
     private IsaacEventPageDTO getEventDTOById(final HttpServletRequest request, final String id) throws ContentManagerException, SegueDatabaseException {
-        ContentDTO c = this.versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
-            id);
+
+        ContentDTO c = this.contentManager.getContentById(this.contentIndex, id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", id));

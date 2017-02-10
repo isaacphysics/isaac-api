@@ -16,12 +16,10 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import com.google.common.collect.Lists;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 
-import java.io.*;
-import java.util.*;
 import com.opencsv.CSVWriter;
-import io.swagger.annotations.Api;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,7 +33,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
@@ -61,9 +58,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -76,9 +71,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -101,7 +94,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
-import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
@@ -120,7 +112,8 @@ public class AdminFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(AdminFacade.class);
 
     private final UserAccountManager userManager;
-    private final ContentVersionController contentVersionController;
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     private final StatisticsManager statsManager;
 
@@ -135,8 +128,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - the fully configured properties loader for the api.
      * @param userManager
      *            - The manager object responsible for users.
-     * @param contentVersionController
-     *            - The content version controller used by the api.
+     * @param contentManager
+     *            - The content manager used by the api.
      * @param logManager
      *            - So we can log events of interest.
      * @param statsManager
@@ -148,12 +141,13 @@ public class AdminFacade extends AbstractSegueFacade {
      */
     @Inject
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
-            final ContentVersionController contentVersionController, final ILogManager logManager,
-            final StatisticsManager statsManager, final LocationManager locationManager,
-            final SchoolListReader schoolReader) {
+                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
+                       final StatisticsManager statsManager, final LocationManager locationManager,
+                       final SchoolListReader schoolReader) {
         super(properties, logManager);
         this.userManager = userManager;
-        this.contentVersionController = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.statsManager = statsManager;
         this.locationManager = locationManager;
         this.schoolReader = schoolReader;
@@ -504,8 +498,8 @@ public class AdminFacade extends AbstractSegueFacade {
     @GZIP
     public Response getContentProblems(@Context final HttpServletRequest request,
             @Context final Request requestForCaching) {
-        Map<Content, List<String>> problemMap = contentVersionController.getContentManager().getProblemMap(
-                contentVersionController.getLiveVersion());
+        Map<Content, List<String>> problemMap = this.contentManager.getProblemMap(
+                this.contentIndex);
 
         if (this.getProperties().getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
             try {
@@ -519,7 +513,7 @@ public class AdminFacade extends AbstractSegueFacade {
         }
 
         // Calculate the ETag
-        EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(requestForCaching, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
         if (cachedResponse != null) {
@@ -552,8 +546,8 @@ public class AdminFacade extends AbstractSegueFacade {
             if (partialContentWithErrors.getId() != null) {
                 try {
                     
-                    boolean success = contentVersionController.getContentManager().getContentById(
-                            this.contentVersionController.getLiveVersion(),
+                    boolean success = this.contentManager.getContentById(
+                            this.contentIndex,
                             partialContentWithErrors.getId()) != null;
                     
                     errorRecord.put("successfulIngest", success);
@@ -599,7 +593,7 @@ public class AdminFacade extends AbstractSegueFacade {
         responseBuilder.put("totalErrors", errors);
         responseBuilder.put("errorsList", errorList);
         responseBuilder.put("failedFiles", failures);
-        responseBuilder.put("currentLiveVersion", this.contentVersionController.getLiveVersion());
+        responseBuilder.put("currentLiveVersion", this.contentManager.getCurrentContentSHA());
 
         return Response.ok(responseBuilder.build())
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_MINUTE, false)).tag(etag)
@@ -1207,12 +1201,12 @@ public class AdminFacade extends AbstractSegueFacade {
                         "You must be logged in as staff to access this function.").toResponse();
             }
 
-            ResultsWrapper<ContentDTO> allByType = contentVersionController.getContentManager().getAllByTypeRegEx(
-                    contentVersionController.getLiveVersion(), ".*", 0, -1);
+            ResultsWrapper<ContentDTO> allByType = this.contentManager.getAllByTypeRegEx(
+                    this.contentIndex, ".*", 0, -1);
             
             List<ContentSummaryDTO> results = Lists.newArrayList();
             for (ContentDTO c : allByType.getResults()) {
-                results.add(contentVersionController.getContentManager().extractContentSummary(c));
+                results.add(this.contentManager.extractContentSummary(c));
             }
 
             ResultsWrapper<ContentSummaryDTO> toReturn = new ResultsWrapper<>(results,

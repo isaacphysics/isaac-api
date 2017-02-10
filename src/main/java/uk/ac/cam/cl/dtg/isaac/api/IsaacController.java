@@ -19,17 +19,18 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.GLOBAL_SITE_SEARCH;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_USER_PROGRESS;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.cache.Cache;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 
 import java.util.ArrayList;
@@ -61,7 +62,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -70,6 +70,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -99,10 +100,11 @@ public class IsaacController extends AbstractIsaacFacade {
     private final SegueContentFacade api;
     private final MapperFacade mapper;
     private final StatisticsManager statsManager;
-    private final ContentVersionController versionManager;
     private final UserAccountManager userManager;
     private final UserAssociationManager associationManager;
     private final URIManager uriManager;
+    private final String contentIndex;
+    private final IContentManager contentManager;
 
     private static long lastQuestionCount = 0L;
 
@@ -140,7 +142,7 @@ public class IsaacController extends AbstractIsaacFacade {
      *            - Instance of Mapper facade.
      * @param statsManager
      *            - Instance of the Statistics Manager.
-     * @param versionManager
+     * @param contentManager
      *            - so we can find out the latest content version.
      * @param userManager
      *            - So we can interrogate the user Manager.
@@ -151,17 +153,19 @@ public class IsaacController extends AbstractIsaacFacade {
      */
     @Inject
     public IsaacController(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
-            final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
-            final ContentVersionController versionManager, final UserAccountManager userManager,
-            final UserAssociationManager associationManager, final URIManager uriManager) {
+                           final ILogManager logManager, final MapperFacade mapper, final StatisticsManager statsManager,
+                           final UserAccountManager userManager, final IContentManager contentManager,
+                           final UserAssociationManager associationManager, final URIManager uriManager,
+                           @Named(CONTENT_INDEX) final String contentIndex) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
         this.statsManager = statsManager;
-        this.versionManager = versionManager;
         this.userManager = userManager;
         this.associationManager = associationManager;
         this.uriManager = uriManager;
+        this.contentIndex = contentIndex;
+        this.contentManager = contentManager;
     }
 
     /**
@@ -192,7 +196,7 @@ public class IsaacController extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + searchString.hashCode()
+        EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
                 + types.hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
@@ -209,15 +213,16 @@ public class IsaacController extends AbstractIsaacFacade {
                 typesThatMustMatch.put(TYPE_FIELDNAME, Arrays.asList(types.split(",")));
             }
 
-            searchResults = versionManager.getContentManager().searchForContent(versionManager.getLiveVersion(),
+            searchResults = this.contentManager.searchForContent(this.contentIndex,
                     searchString, typesThatMustMatch, startIndex, limit);
         } catch (ContentManagerException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to retrieve content requested", e)
                     .toResponse();
         }
 
+        // TODO: Log content sha, not "live"/"latest"
         ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>().put(TYPE_FIELDNAME, types)
-                .put("searchString", searchString).put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
+                .put("searchString", searchString).put(CONTENT_INDEX, this.contentIndex).build();
 
         getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                 GLOBAL_SITE_SEARCH, logMap);
@@ -244,7 +249,7 @@ public class IsaacController extends AbstractIsaacFacade {
     @GZIP
     public final Response getImageByPath(@Context final Request request, @PathParam("path") final String path) {
         // entity tags etc are already added by segue
-        return api.getImageFileContent(request, versionManager.getLiveVersion(), path);
+        return api.getImageFileContent(request, this.contentIndex, path);
     }
 
     /**

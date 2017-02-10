@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +44,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
@@ -72,6 +72,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+
 /**
  * An email facade front end.
  *
@@ -85,7 +87,8 @@ public class EmailFacade extends AbstractSegueFacade {
     
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
-    private final ContentVersionController versionManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
 
@@ -102,7 +105,7 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - so we can provide email preferences
      * @param userManager
      *            - so we can look up users and verify permissions..
-     * @param contentVersionController
+     * @param contentManager
      *            - so we can look up email to send.
      * @param misuseMonitor
      *            - misuse monitor.
@@ -110,10 +113,11 @@ public class EmailFacade extends AbstractSegueFacade {
     @Inject
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
             final EmailManager emailManager, final UserAccountManager userManager,
-            final ContentVersionController contentVersionController,
-            final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
+                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                       final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
-		this.versionManager = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
         this.emailPreferenceManager = emailPreferenceManager;
@@ -180,17 +184,13 @@ public class EmailFacade extends AbstractSegueFacade {
 		} catch (NoUserLoggedInException e2) {
     		return SegueErrorResponse.getNotLoggedInResponse();
 		}
-    	
-        String newVersion = versionManager.getLiveVersion();
 
-
-        ContentDTO c = null;
+        ContentDTO c;
 
         // Deserialize object into POJO of specified type, provided one exists.
         try {
 
-            IContentManager contentPersistenceManager = versionManager.getContentManager();
-            c = contentPersistenceManager.getContentById(newVersion, id);
+            c = this.contentManager.getContentById(this.contentIndex, id);
 
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No content found with id: " + id);

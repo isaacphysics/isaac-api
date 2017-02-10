@@ -87,7 +87,7 @@ public class General {
 //
 //                boolean newer;
 //                try {
-//                    newer = contentManager.compareTo(version, this.getLiveVersion()) > 0;
+//                    newer = contentManager.compareTo(version, this.getCurrentIndex()) > 0;
 //                } catch (NotFoundException e) {
 //                    // The current live version was not found. A rebase probably happened underneath us.
 //                    log.info("Failed to find current live version, someone probably rebased and force-pushed. Tut tut.");
@@ -98,7 +98,7 @@ public class General {
 //                    this.setLiveVersion(version);
 //                } else {
 //                    log.info("Not changing live version as part of sync job as the " + "version (" + version
-//                            + ") just indexed is older than (or the same as) the current one (" + this.getLiveVersion()
+//                            + ") just indexed is older than (or the same as) the current one (" + this.getCurrentIndex()
 //                            + ").");
 //                }
 //            }
@@ -139,7 +139,7 @@ public class General {
 //        }
 //
 //        synchronized (liveVersion) {
-//            log.info("Changing live version from " + this.getLiveVersion() + " to " + newLiveVersion);
+//            log.info("Changing live version from " + this.getCurrentIndex() + " to " + newLiveVersion);
 //
 //            // assume we always want to modify the initial version too.
 //            try {

@@ -34,14 +34,13 @@ import org.slf4j.LoggerFactory;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
@@ -64,7 +63,6 @@ public class EmailManagerTest {
     private static final Logger log = LoggerFactory.getLogger(EmailManagerTest.class);
     private EmailCommunicationMessage email = null;
     private PropertiesLoader mockPropertiesLoader;
-    private ContentVersionController mockContentVersionController;
     private IContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
@@ -128,14 +126,9 @@ public class EmailManagerTest {
 
         EasyMock.replay(mockPropertiesLoader);
 
-        mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
-        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion").anyTimes();
 
         // Create content manager
         mockContentManager = EasyMock.createMock(IContentManager.class);
-
-        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
-        EasyMock.replay(mockContentVersionController);
 
         // Create log manager
         logManager = EasyMock.createMock(ILogManager.class);
@@ -244,7 +237,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live", logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -317,7 +310,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live",  logManager);
         try {
             manager.sendFederatedPasswordReset(userDTO, "testString", "testWord");
         } catch (ContentManagerException e) {
@@ -388,7 +381,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live", logManager);
         try {
             manager.sendPasswordReset(userDTO, user.getResetToken());
         } catch (ContentManagerException e) {
@@ -453,7 +446,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live", logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -475,9 +468,6 @@ public class EmailManagerTest {
     public final void sendRegistrationConfirmation_checkTemplatesWithNoTagsWorks_emailIsGeneratedWithoutTemplateContent() {
         EmailTemplateDTO template = createDummyEmailTemplate("this is a template with no tags");
 
-        ContentVersionController mockContentVersionController = EasyMock.createMock(ContentVersionController.class);
-        EasyMock.expect(mockContentVersionController.getLiveVersion()).andReturn("liveversion").anyTimes();
-
         // Create content manager
         IContentManager mockContentManager = EasyMock.createMock(IContentManager.class);
 
@@ -498,12 +488,9 @@ public class EmailManagerTest {
             e.printStackTrace();
             Assert.fail();
         }
-        EasyMock.expect(mockContentVersionController.getContentManager()).andReturn(mockContentManager).anyTimes();
-
-        EasyMock.replay(mockContentVersionController);
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live", logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -555,7 +542,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live", logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -591,7 +578,7 @@ public class EmailManagerTest {
     public void sendCustomEmail_checkNullProperties_replacedWithEmptyString() {
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentVersionController, logManager);
+                mockContentManager, "live", logManager);
 
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
         allSelectedUsers.add(userDTOWithNulls);

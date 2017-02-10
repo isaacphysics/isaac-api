@@ -15,10 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_THIRTY_DAYS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_APP_ENVIRONMENT;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 
 import java.io.IOException;
@@ -45,7 +42,6 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -55,6 +51,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Info Facade
@@ -67,21 +65,23 @@ import com.google.inject.Inject;
 public class InfoFacade extends AbstractSegueFacade {
     private static final Logger log = LoggerFactory.getLogger(InfoFacade.class);
 
-    private final ContentVersionController contentVersionController;
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     /**
      * @param properties
      *            - to allow access to system properties.
-     * @param contentVersionController
+     * @param contentManager
      *            - So that metadata about content can be accessed.
      * @param logManager
      *            - for logging events using the logging api.
      */
     @Inject
-    public InfoFacade(final PropertiesLoader properties, final ContentVersionController contentVersionController,
-            final ILogManager logManager) {
+    public InfoFacade(final PropertiesLoader properties, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                      final ILogManager logManager) {
         super(properties, logManager);
-        this.contentVersionController = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
     }
 
     /**
@@ -114,10 +114,8 @@ public class InfoFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
-        IContentManager contentPersistenceManager = contentVersionController.getContentManager();
-
-        List<String> allVersions = contentPersistenceManager.listAvailableVersions();
-        List<String> limitedVersions = null;
+        List<String> allVersions = this.contentManager.listAvailableVersions();
+        List<String> limitedVersions;
         try {
             limitedVersions = new ArrayList<String>(allVersions.subList(0, limitAsInt));
         } catch (IndexOutOfBoundsException e) {
@@ -195,7 +193,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response getSegueEnvironment(@Context final Request request) {
-        EntityTag etag = new EntityTag(this.contentVersionController.getLiveVersion().hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag, NUMBER_SECONDS_IN_THIRTY_DAYS);
         if (cachedResponse != null) {
             return cachedResponse;
@@ -218,7 +216,7 @@ public class InfoFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public final Response getLiveVersionInfo() {
         ImmutableMap<String, String> result = new ImmutableMap.Builder<String, String>().put("liveVersion",
-                contentVersionController.getLiveVersion()).build();
+                this.contentManager.getCurrentContentSHA()).build();
 
         return Response.ok(result).build();
     }
@@ -232,10 +230,9 @@ public class InfoFacade extends AbstractSegueFacade {
     @Path("content_versions/cached")
     @Produces(MediaType.APPLICATION_JSON)
     public final Response getCachedVersions() {
-        IContentManager contentPersistenceManager = contentVersionController.getContentManager();
 
         ImmutableMap<String, Collection<String>> result = new ImmutableMap.Builder<String, Collection<String>>().put(
-                "cachedVersions", contentPersistenceManager.getCachedVersionList()).build();
+                "cachedVersions", this.contentManager.getCachedVersionList()).build();
 
         return Response.ok(result).build();
     }

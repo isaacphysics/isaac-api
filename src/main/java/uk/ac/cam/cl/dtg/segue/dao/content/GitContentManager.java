@@ -382,7 +382,7 @@ public class GitContentManager implements IContentManager {
     public final Collection<String> getAllUnits(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_VERSION), "unit");
+        SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "unit");
         SearchHits hits = r.getHits();
         ArrayList<String> units = new ArrayList<String>((int)hits.getTotalHits());
         for(SearchHit hit : hits) {
@@ -409,7 +409,7 @@ public class GitContentManager implements IContentManager {
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
 
-        SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_VERSION), "contentError");
+        SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "contentError");
 
         SearchHits hits = r.getHits();
         Map<Content, List<String>> map = new HashMap<>();
@@ -498,7 +498,7 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public String getCurrentContentSHA() {
-        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_VERSION), "metadata", "version");
+        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX), "metadata", "version");
         return (String)r.getSource().get("version");
     }
 

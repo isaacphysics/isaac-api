@@ -9,6 +9,7 @@
 	<url>http://isaacphysics.org/</url>
 
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<segue.version>1.9.4-SNAPSHOT</segue.version>
 		<resteasy.version>3.0.11.Final</resteasy.version>
 		<powermock.version>1.5.2</powermock.version>
@@ -352,10 +353,14 @@
                             <name>jetty.port</name>
                             <value>${jetty.port.api}</value>
                         </systemProperty>
-                        <systemProperty>
-                            <name>config.location</name>
-                            <value>${config.location}</value>
-                        </systemProperty>
+						<systemProperty>
+							<name>config.location</name>
+							<value>${config.location}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>segue.version</name>
+							<value>${segue.version}</value>
+						</systemProperty>
                     </systemProperties>
 				</configuration>
 			</plugin>
@@ -443,10 +448,14 @@
 									<name>jetty.port</name>
 									<value>${jetty.port.etl}</value>
 								</systemProperty>
-                                <systemProperty>
-                                    <name>config.location</name>
-                                    <value>${config.location}</value>
-                                </systemProperty>
+								<systemProperty>
+									<name>config.location</name>
+									<value>${config.location}</value>
+								</systemProperty>
+								<systemProperty>
+									<name>segue.version</name>
+									<value>${segue.version}</value>
+								</systemProperty>
 							</systemProperties>
 						</configuration>
 					</plugin>
