@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
+import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -17,6 +18,7 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -127,19 +129,63 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
         return true;
     }
 
-    boolean addOrMoveIndexAlias(final String alias, final String index) {
+    boolean addOrMoveIndexAlias(final String alias, final String targetIndex) {
 
-        ImmutableOpenMap<String, List<AliasMetaData>> aliases = client.admin().indices().getAliases(new GetAliasesRequest(alias)).actionGet().getAliases();
 
-        IndicesAliasesRequestBuilder reqBuilder = client.admin().indices().prepareAliases();
+        String indexWithPrevious = null; // This is the index that has the <alias>-previous alias
+        String indexWithCurrent = null; // This is the index that has the <alias> alias.
 
-        Iterator<String> i = aliases.keysIt();
-        while (i.hasNext()) {
-            reqBuilder.removeAlias(i.next(), alias);
+        // First, find where <alias>-previous points.
+        ImmutableOpenMap<String, List<AliasMetaData>> aliasesPrev = client.admin().indices().getAliases(new GetAliasesRequest(alias + "-previous")).actionGet().getAliases();
+        Iterator<String> i = aliasesPrev.keysIt();
+        if (i.hasNext()) {
+            indexWithPrevious = i.next();
         }
 
-        reqBuilder.addAlias(index, alias).execute().actionGet();
+        // Now find where <alias> points
+        ImmutableOpenMap<String, List<AliasMetaData>> aliases = client.admin().indices().getAliases(new GetAliasesRequest(alias)).actionGet().getAliases();
+        i = aliases.keysIt();
+        if (i.hasNext()) {
+            indexWithCurrent = i.next();
+        }
+
+
+        if (indexWithCurrent != null && indexWithCurrent.equals(targetIndex)) {
+            log.info("Not moving alias '" + alias + "' - it already points to the right index.");
+        } else {
+            IndicesAliasesRequestBuilder reqBuilder = client.admin().indices().prepareAliases();
+
+            if (indexWithCurrent != null) {
+                // Remove the alias from the place it's currently pointing
+                reqBuilder.removeAlias(indexWithCurrent, alias);
+                if (indexWithPrevious != null) {
+                    // Remove <alias>-previous from wherever it's currently pointing.
+                    reqBuilder.removeAlias(indexWithPrevious, alias + "-previous");
+                }
+                // Move <alias>-previous to wherever <alias> was pointing.
+                reqBuilder.addAlias(indexWithCurrent, alias + "-previous");
+            }
+
+            // Point <alias> to the right place.
+            reqBuilder.addAlias(targetIndex, alias);
+            reqBuilder.execute().actionGet();
+        }
+
+        this.expungeOldIndices();
         return true;
+    }
+
+    private void expungeOldIndices() {
+        // This deletes any indices that don't have aliases pointing to them.
+        // If you want an index kept, make sure it has an alias!
+        ImmutableOpenMap<String, IndexMetaData> indices = client.admin().cluster().prepareState().execute().actionGet().getState().getMetaData().indices();
+
+        for(ObjectObjectCursor<String, IndexMetaData> c: indices) {
+            if (c.value.getAliases().size() == 0) {
+                log.info("Index " + c.key + " has no aliases. Removing.");
+                this.expungeIndexFromSearchCache(c.key);
+            }
+        }
     }
 
 //

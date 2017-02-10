@@ -78,6 +78,9 @@ class SchoolIndexer {
         } catch (SegueSearchOperationException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);
         }
+
+        // Create an alias (could be anything) to prevent this schools index from being garbage-collected by ElasticSearchIndexer.expungeOldIndices
+        es.addOrMoveIndexAlias("schools-latest", SCHOOLS_SEARCH_INDEX);
     }
 
     /**

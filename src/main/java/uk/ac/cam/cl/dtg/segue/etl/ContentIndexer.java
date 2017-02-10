@@ -586,7 +586,7 @@ public class ContentIndexer {
 
 
         try {
-            es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("version", sha)), "version");
+            es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("version", sha, "created", new Date().toString())), "general");
             es.indexObject(sha, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("tags", tagsList)), "tags");
 
             // TODO: Should probably bulk index these
