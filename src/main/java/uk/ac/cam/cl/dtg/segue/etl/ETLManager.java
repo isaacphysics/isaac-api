@@ -3,8 +3,10 @@ package uk.ac.cam.cl.dtg.segue.etl;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.util.PropertiesManager;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -16,15 +18,22 @@ class ETLManager {
     private final ContentIndexer indexer;
 
     private final ArrayBlockingQueue<String> newVersionQueue;
+    private final PropertiesManager liveVersionStore;
 
     @Inject
-    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database) {
+    ETLManager(final ContentIndexer indexer, final SchoolIndexer schoolIndexer, final GitDb database, final PropertiesManager liveVersionStore) {
         this.indexer = indexer;
         this.newVersionQueue = new ArrayBlockingQueue<>(1);
+        this.liveVersionStore = liveVersionStore;
 
         // ON STARTUP
 
         // Load the current live version from file and set it.
+        try {
+            this.setLiveVersion(liveVersionStore.getProperty(Constants.CURRENT_LIVE_VERSION));
+        } catch (Exception e) {
+            log.error("Could not set live version on startup.", e);
+        }
 
 
         // Make sure we have indexed the latest content.
@@ -58,6 +67,9 @@ class ETLManager {
         indexer.loadAndIndexContent(version);
         log.info("Indexed version " + version + ". Setting live.");
         indexer.setLiveVersion(version);
+
+        // Store the live version to file so that we can recover after wiping ElasticSearch.
+        this.liveVersionStore.saveProperty(Constants.CURRENT_LIVE_VERSION, version);
     }
 
     private class NewVersionIndexer implements Runnable {

@@ -99,7 +99,7 @@ public final class Constants {
     /**
      * Constant representing the key for the location for the version config file..
      */
-    public static final String LIVE_VERSION_CONFIG_LOCATION = "LIVE_VERSION_CONFIG_LOCATION";
+    public static final String LIVE_VERSION_LOCATION = "LIVE_VERSION_LOCATION";
 
     /**
      * Constant representing the key for the location for the sesgue config file..
@@ -391,6 +391,7 @@ public final class Constants {
     public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
 
     public static final String GITHUB_WEBHOOK_SECRET = "GITHUB_WEBHOOK_SECRET";
+    public static final String CURRENT_LIVE_VERSION = "CURRENT_LIVE_VERSION";
     /**
      * Private constructor to prevent this class being created.
      */

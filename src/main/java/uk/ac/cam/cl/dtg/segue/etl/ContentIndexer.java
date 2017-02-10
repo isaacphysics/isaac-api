@@ -216,7 +216,7 @@ public class ContentIndexer {
                             }
 
                             if (flattenedContent.getId().length() > 512) {
-                                log.warn("Content ID too long: " + flattenedContent.getId());
+                                log.debug("Content ID too long: " + flattenedContent.getId());
                                 this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(), indexProblemCache);
                                 continue;
                             }
@@ -224,7 +224,7 @@ public class ContentIndexer {
                             if (flattenedContent.getId().contains(".")) {
                                 // Otherwise, duplicate IDs with different content,
                                 // therefore log an error
-                                log.warn("Resource with invalid ID (" + content.getId()
+                                log.debug("Resource with invalid ID (" + content.getId()
                                         + ") detected in cache. Skipping " + treeWalk.getPathString());
 
                                 this.registerContentProblem(flattenedContent, "Index failure - Invalid ID "
@@ -266,7 +266,7 @@ public class ContentIndexer {
 
                             // Otherwise, duplicate IDs with different content,
                             // therefore log an error
-                            log.warn("Resource with duplicate ID (" + content.getId()
+                            log.debug("Resource with duplicate ID (" + content.getId()
                                     + ") detected in cache. Skipping " + treeWalk.getPathString());
                             this.registerContentProblem(flattenedContent,
                                     "Index failure - Duplicate ID found in file " + treeWalk.getPathString() + " and "
@@ -275,7 +275,7 @@ public class ContentIndexer {
                         }
                     }
                 } catch (JsonMappingException e) {
-                    log.warn(String.format("Unable to parse the json file found %s as a content object. "
+                    log.debug(String.format("Unable to parse the json file found %s as a content object. "
                             + "Skipping file due to error: \n %s", treeWalk.getPathString(), e.getMessage()));
                     Content dummyContent = new Content();
                     dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
@@ -327,7 +327,7 @@ public class ContentIndexer {
         // If this object is of type question then we need to give it a random
         // id if it doesn't have one.
         if (content instanceof Question && content.getId() == null) {
-            log.warn("Found question without id " + content.getTitle() + " " + canonicalSourceFile);
+            log.debug("Found question without id " + content.getTitle() + " " + canonicalSourceFile);
         }
 
         // Try to figure out the parent ids.
@@ -821,7 +821,7 @@ public class ContentIndexer {
                         + "ID cannot be found.", indexProblemCache);
             }
             if (missingContent.size() > 0) {
-                log.warn("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
+                log.debug("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
                         + "The following ids are referenced but do not exist: " + expectedIds.toString());
             }
         }

@@ -6,6 +6,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import org.elasticsearch.client.Client;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.PropertiesManager;
 
 import javax.ws.rs.Produces;
 import java.io.IOException;
@@ -28,7 +30,6 @@ import java.net.UnknownHostException;
  */
 class ETLConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(ETLConfigurationModule.class);
-    private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
     private static ContentMapper mapper = null;
     private static Client elasticSearchClient = null;
@@ -36,11 +37,9 @@ class ETLConfigurationModule extends AbstractModule {
     private static ETLManager etlManager = null;
 
     ETLConfigurationModule() {
-        if (globalProperties == null || configLocationProperties == null) {
+        if (globalProperties == null) {
             try {
-                if (null == globalProperties) {
-                    globalProperties = new PropertiesLoader(System.getProperty("config.location"));
-                }
+                globalProperties = new PropertiesLoader(System.getProperty("config.location"));
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
@@ -104,12 +103,17 @@ class ETLConfigurationModule extends AbstractModule {
         return mapper;
     }
 
+    private static PropertiesManager getLiveVersionStore() throws IOException {
+        return new PropertiesManager(globalProperties.getProperty(Constants.LIVE_VERSION_LOCATION));
+    }
+
     @Inject
     @Provides
     @Singleton
-    private static ETLManager getETLManager(ContentIndexer contentIndexer, SchoolIndexer schoolIndexer, GitDb db) {
+    private static ETLManager getETLManager(ContentIndexer contentIndexer, SchoolIndexer schoolIndexer, GitDb db) throws IOException {
         if (null == etlManager) {
-            etlManager = new ETLManager(contentIndexer, schoolIndexer, db);
+            PropertiesManager liveVersionStore = getLiveVersionStore();
+            etlManager = new ETLManager(contentIndexer, schoolIndexer, db, liveVersionStore);
         }
         return etlManager;
     }
