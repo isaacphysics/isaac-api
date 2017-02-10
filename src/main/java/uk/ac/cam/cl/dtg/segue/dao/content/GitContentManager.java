@@ -154,7 +154,7 @@ public class GitContentManager implements IContentManager {
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1).getResults());
 
             if (null == searchResults || searchResults.isEmpty()) {
-                log.error("Failed to locate the content (" + id + ") in the cache for version " + version);
+                log.error("Failed to locate the content (" + id + ") in the cache for version " + getCurrentContentSHA() + " (" + version + ")");
                 return null;
             }
 

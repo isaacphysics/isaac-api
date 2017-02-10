@@ -34,16 +34,16 @@ public class ETLFacade extends AbstractSegueFacade {
     }
 
     @POST
-    @Path("/set_live_version/{version}")
+    @Path("/set_version_alias/{alias}/{version}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setLiveVersion(@PathParam("version") final String version) {
+    public Response setLiveVersion(@PathParam("alias") final String alias, @PathParam("version") final String version) {
 
         try {
-            etlManager.setLiveVersion(version);
+            etlManager.setNamedVersion(alias, version);
             log.info("Finished processing ETL request");
             return Response.ok().build();
         } catch (Exception e) {
-            log.error("Failed to set live version: " + e.getMessage());
+            log.error("Failed to set alias version:" + e.getMessage());
             log.info("Finished processing ETL request");
             return Response.serverError().entity(e.getMessage()).build();
         }

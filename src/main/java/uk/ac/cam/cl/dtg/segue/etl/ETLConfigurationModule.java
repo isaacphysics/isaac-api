@@ -6,7 +6,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import org.elasticsearch.client.Client;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -14,14 +13,10 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.configuration.SegueConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
-import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
 
-import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
@@ -103,8 +98,8 @@ class ETLConfigurationModule extends AbstractModule {
         return mapper;
     }
 
-    private static PropertiesManager getLiveVersionStore() throws IOException {
-        return new PropertiesManager(globalProperties.getProperty(Constants.LIVE_VERSION_LOCATION));
+    private static PropertiesManager getContentIndicesStore() throws IOException {
+        return new PropertiesManager(globalProperties.getProperty(Constants.CONTENT_INDICES_LOCATION));
     }
 
     @Inject
@@ -112,8 +107,8 @@ class ETLConfigurationModule extends AbstractModule {
     @Singleton
     private static ETLManager getETLManager(ContentIndexer contentIndexer, SchoolIndexer schoolIndexer, GitDb db) throws IOException {
         if (null == etlManager) {
-            PropertiesManager liveVersionStore = getLiveVersionStore();
-            etlManager = new ETLManager(contentIndexer, schoolIndexer, db, liveVersionStore);
+            PropertiesManager contentIndicesStore = getContentIndicesStore();
+            etlManager = new ETLManager(contentIndexer, schoolIndexer, db, contentIndicesStore);
         }
         return etlManager;
     }

@@ -99,7 +99,7 @@ public final class Constants {
     /**
      * Constant representing the key for the location for the version config file..
      */
-    public static final String LIVE_VERSION_LOCATION = "LIVE_VERSION_LOCATION";
+    public static final String CONTENT_INDICES_LOCATION = "CONTENT_INDICES_LOCATION";
 
     /**
      * Constant representing the key for the location for the sesgue config file..

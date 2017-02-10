@@ -1281,7 +1281,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 HttpClient httpClient = new DefaultHttpClient();
 
                 HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
-                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_live_version/" + version);
+                        getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/set_version_alias/" + this.contentIndex + "/" + version);
 
                 httpPost.addHeader("Content-Type", "application/json");
 
