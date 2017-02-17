@@ -84,7 +84,7 @@ public interface IContentManager {
      * @param id
      *            id to search for in preconfigured data source.
      * @param version
-     *            - the version to attempt to retrieve.
+     *            - the SHA (not alias due to caching) to attempt to retrieve.
      * 
      * @return Will return a Content object (or subclass of Content) or Null if no content object is found.
      * @throws ContentManagerException
@@ -96,7 +96,7 @@ public interface IContentManager {
      * GetByIdPrefix Returns results that match a given id prefix for a specified version number.
      * 
      * @param version
-     *            - version of the content to search against.
+     *            - SHA (not alias due to caching) of the content version to search against.
      * @param idPrefix
      *            - id prefix to search for.
      * @param startIndex

@@ -137,7 +137,7 @@ public class EventBookingPersistenceManager {
      */
     public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
         try {
-            ContentDTO c = this.contentManager.getContentById(this.contentIndex, eventId);
+            ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(Lists.newArrayList(dao.findAllByEventId(eventId)), (IsaacEventPageDTO) c);
             } else {
@@ -260,7 +260,7 @@ public class EventBookingPersistenceManager {
      */
     private EventBookingDTO convertToDTO(final EventBooking eb) throws SegueDatabaseException {
         try {
-            ContentDTO c = this.contentManager.getContentById(this.contentIndex,
+            ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                     eb.getEventId());
 
             if (null == c) {

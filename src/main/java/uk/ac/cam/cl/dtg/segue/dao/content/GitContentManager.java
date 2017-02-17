@@ -128,7 +128,6 @@ public class GitContentManager implements IContentManager {
 
         String k = "getContentDOById~" + version + "~" + id;
         if (!cache.asMap().containsKey(k)) {
-            //this.ensureCache(version);
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(this.searchProvider.termSearch(version,
                     CONTENT_TYPE, id,
@@ -152,7 +151,6 @@ public class GitContentManager implements IContentManager {
 
         String k = "getByIdPrefix~" + version + "~" + idPrefix + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
-            //this.ensureCache(version);
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByPrefix(version, CONTENT_TYPE,
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, idPrefix, startIndex, limit);
@@ -172,8 +170,6 @@ public class GitContentManager implements IContentManager {
         String k = "getAllByTypeRegEx~" + version + "~" + regex + "~" + startIndex + "~" + limit;
 
         if (!cache.asMap().containsKey(k)) {
-
-            //this.ensureCache(version);
 
             ResultsWrapper<String> searchHits = this.searchProvider.findByRegEx(version, CONTENT_TYPE,
                     Constants.TYPE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, regex, startIndex, limit);

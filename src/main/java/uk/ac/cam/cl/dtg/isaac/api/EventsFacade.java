@@ -959,7 +959,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 	 */
     private IsaacEventPageDTO getEventDTOById(final HttpServletRequest request, final String id) throws ContentManagerException, SegueDatabaseException {
 
-        ContentDTO c = this.contentManager.getContentById(this.contentIndex, id);
+        ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", id));

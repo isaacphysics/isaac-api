@@ -136,7 +136,7 @@ public class QuestionFacade extends AbstractSegueFacade {
         Content contentBasedOnId;
         try {
             contentBasedOnId = this.contentManager.getContentDOById(
-                    this.contentIndex, questionId);
+                    this.contentManager.getCurrentContentSHA(), questionId);
         } catch (ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
                     e1);

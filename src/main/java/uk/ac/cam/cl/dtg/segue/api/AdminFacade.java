@@ -547,7 +547,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 try {
                     
                     boolean success = this.contentManager.getContentById(
-                            this.contentIndex,
+                            this.contentManager.getCurrentContentSHA(),
                             partialContentWithErrors.getId()) != null;
                     
                     errorRecord.put("successfulIngest", success);

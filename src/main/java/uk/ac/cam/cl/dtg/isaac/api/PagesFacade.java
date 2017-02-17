@@ -489,7 +489,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         
         try {
             Content contentDOById = this.contentManager.getContentDOById(
-                    this.contentIndex, pageId);
+                    this.contentManager.getCurrentContentSHA(), pageId);
 
             if (!(contentDOById instanceof IsaacQuestionSummaryPage) || null == contentDOById) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
@@ -521,7 +521,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             // augment featuredQuestions
             for (GameboardItem id : summaryPageDO.getFeaturedQuestions()) {
                 ContentDTO question = this.contentManager.getContentById(
-                        this.contentIndex, id.getId());
+                        this.contentManager.getCurrentContentSHA(), id.getId());
                 if (!(question instanceof IsaacQuestionPageDTO) || question == null) {
                     log.error(String.format(
                             "Unable to locate question id: %s. Removing from the question summary page. ", id.getId()));

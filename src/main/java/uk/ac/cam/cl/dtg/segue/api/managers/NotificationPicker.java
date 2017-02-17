@@ -164,7 +164,7 @@ public class NotificationPicker {
     public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId,
             final NotificationStatus status) throws SegueDatabaseException, ContentManagerException {
         ContentDTO notification = this.contentManager.getContentById(
-                this.contentIndex, notificationId);
+                this.contentManager.getCurrentContentSHA(), notificationId);
 
         if (null == notification) {
             throw new ResourceNotFoundException(String.format(
@@ -188,7 +188,7 @@ public class NotificationPicker {
             ResourceNotFoundException {
         // get available notifications that still can be displayed
         ContentDTO notification = this.contentManager.getContentById(
-                this.contentIndex, notificationId);
+                this.contentManager.getCurrentContentSHA(), notificationId);
 
         if (notification instanceof NotificationDTO && notification != null) {
             return notification;

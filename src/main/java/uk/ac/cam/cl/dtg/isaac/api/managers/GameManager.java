@@ -719,7 +719,7 @@ public class GameManager {
         Validate.notBlank(questionPageId);
 
         // do a depth first traversal of the question page to get the correct order of questions
-        ContentDTO questionPage = this.contentManager.getContentById(this.contentIndex,
+        ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                 questionPageId);
         List<ContentDTO> dfs = Lists.newArrayList();
         dfs = depthFirstQuestionSearch(questionPage, dfs);
@@ -963,7 +963,7 @@ public class GameManager {
 
             // Get the pass mark for the question page
             IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(
-                    this.contentIndex, questionPageId);
+                    this.contentManager.getCurrentContentSHA(), questionPageId);
             
             if (null == questionPage) {
                 throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
@@ -1134,7 +1134,7 @@ public class GameManager {
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
         fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
-        Content wildcardResults = this.contentManager.getContentDOById(this.contentIndex, id);
+        Content wildcardResults = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), id);
 
         return mapper.map(wildcardResults, IsaacWildcard.class);
     }

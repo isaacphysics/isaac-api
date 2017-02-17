@@ -190,7 +190,7 @@ public class EmailFacade extends AbstractSegueFacade {
         // Deserialize object into POJO of specified type, provided one exists.
         try {
 
-            c = this.contentManager.getContentById(this.contentIndex, id);
+            c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), id);
 
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No content found with id: " + id);

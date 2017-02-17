@@ -297,7 +297,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      * @param request
      *            - so that we can allow only staff users to use this generic endpoint.
      * @param version
-     *            - the version of the datastore to query
+     *            - the version of the datastore to query - must be cached already
      * @param id
      *            - our id not the dbid
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
@@ -309,7 +309,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     public final Response getContentById(@Context final HttpServletRequest request,
             @PathParam("version") final String version, @PathParam("id") final String id) {
 
-        String newVersion = this.contentIndex;
+        String newVersion = version;
 
         if (version != null) {
             newVersion = version;
@@ -577,8 +577,6 @@ public class SegueContentFacade extends AbstractSegueFacade {
         }
         // 'version' now points to an ElasticSearch index name (live or latest, probably)
         // Go there and look up the git sha.
-
-
         String sha = this.contentManager.getCurrentContentSHA();
 
         // determine if we can use the cache if so return cached response.

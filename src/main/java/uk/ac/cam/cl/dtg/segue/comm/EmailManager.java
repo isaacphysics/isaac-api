@@ -1103,7 +1103,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             throws ContentManagerException, ResourceNotFoundException {
     	
         ContentDTO c = this.contentManager.getContentById(
-                this.contentIndex, id);
+                this.contentManager.getCurrentContentSHA(), id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
@@ -1135,7 +1135,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             ResourceNotFoundException {
 
         ContentDTO c = this.contentManager.getContentById(
-                this.contentIndex, id);
+                this.contentManager.getCurrentContentSHA(), id);
 
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
