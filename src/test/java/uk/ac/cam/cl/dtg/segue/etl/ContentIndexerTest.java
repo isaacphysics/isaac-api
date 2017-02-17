@@ -1,6 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +35,6 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
-import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the GitContentManager class.
@@ -50,7 +49,6 @@ public class ContentIndexerTest {
     private ContentIndexer defaultContentIndexer;
 
     private static final String INITIAL_VERSION = "0b72984c5eff4f53604fe9f1c724d3f387799db9";
-    private PropertiesLoader properties;
 
     /**
      * Initial configuration of tests.
@@ -63,8 +61,6 @@ public class ContentIndexerTest {
         this.database = createMock(GitDb.class);
         this.searchProvider = createMock(ElasticSearchIndexer.class);
         this.contentMapper = createMock(ContentMapper.class);
-        this.properties = createMock(PropertiesLoader.class);
-
         this.defaultContentIndexer = new ContentIndexer(database, searchProvider,
                 contentMapper);
     }
@@ -149,10 +145,10 @@ public class ContentIndexerTest {
         final int numChildLevels = 5;
         final int numNodes = numChildLevels + 1;
 
-        Set<Content> elements = new HashSet<Content>();
+        Set<Content> elements = new HashSet<>();
         Content rootNode = createContentHierarchy(numChildLevels, elements);
 
-        Set<Content> contents = Whitebox.<Set<Content>> invokeMethod(
+        Set<Content> contents = Whitebox.invokeMethod(
                 defaultContentIndexer, "flattenContentObjects", rootNode);
 
         assertTrue(contents.size() == numNodes);
