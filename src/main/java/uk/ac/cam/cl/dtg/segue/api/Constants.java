@@ -20,23 +20,20 @@ package uk.ac.cam.cl.dtg.segue.api;
  * 
  */
 public final class Constants {
+    // General Configuration stuff
+
     /**
      * Name to use to describe the application to external services, e.g. 3rd party authenticators.
      */
     public static final String APPLICATION_NAME = "Segue";
 
-    // General Configuration stuff
     /**
      * Constant representing the key for the HOST_NAME property - Used for establishing the Base URL for fully qualified
      * urls.
      */
     public static final String HOST_NAME = "HOST_NAME";
 
-    /**
-     * Constant representing the key for the DEFAULT_LANDING_URL_SUFFIX property - Used for a default location of where
-     * authentication provider callbacks should land..
-     */
-    public static final String DEFAULT_LANDING_URL_SUFFIX = "DEFAULT_LANDING_URL_SUFFIX";
+    // API Email settings
 
     /**
      * Constant representing the key for the MAILER_SMTP_SERVER property - Address of the SMTP server.
@@ -75,6 +72,7 @@ public final class Constants {
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
     // GIT stuff
+
     /**
      * Constant representing the key for the path to Local GIT instance.
      */
@@ -102,11 +100,6 @@ public final class Constants {
     public static final String CONTENT_INDICES_LOCATION = "CONTENT_INDICES_LOCATION";
 
     /**
-     * Constant representing the key for the location for the sesgue config file..
-     */
-    public static final String GENERAL_CONFIG_LOCATION = "GENERAL_CONFIG_LOCATION";
-
-    /**
      * Constant representing the segue application version.
      */
     public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
@@ -132,15 +125,13 @@ public final class Constants {
     public static final String DATE_SIGNED = "DATE_SIGNED";
 
     /**
-     * Constant representing the key for the Session id property - used in HMAC calculations.
-     */
-    public static final String SESSION_ID = "SESSION_ID";
-
-    /**
      * Constant representing the key for the HMAC property - used in HMAC calculations.
      */
     public static final String HMAC = "HMAC";
 
+    /**
+     * Constant representing the property name for the session expiry in seconds - used in HMAC calculations.
+     */
     public static final String SESSION_EXPIRY_SECONDS = "SESSION_EXPIRY_SECONDS";
 
     /**
@@ -390,8 +381,6 @@ public final class Constants {
     public static final String CHEMISTRY_CHECKER_HOST = "CHEMISTRY_CHECKER_HOST";
     public static final String CHEMISTRY_CHECKER_PORT = "CHEMISTRY_CHECKER_PORT";
 
-    public static final String GITHUB_WEBHOOK_SECRET = "GITHUB_WEBHOOK_SECRET";
-    public static final String CURRENT_LIVE_VERSION = "CURRENT_LIVE_VERSION";
     /**
      * Private constructor to prevent this class being created.
      */

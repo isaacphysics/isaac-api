@@ -19,6 +19,7 @@
         <jetty.port.etl>8090</jetty.port.etl>
         <config.location>/local/data/rutherford/conf/segue-config.properties</config.location>
 	</properties>
+
 	<repositories>
 		<repository>
 			<id>codedance on Github</id>
@@ -151,7 +152,8 @@
 			<artifactId>reflections</artifactId>
 			<version>0.9.10</version>
 		</dependency>
-		<dependency>
+
+        <dependency>
 			<groupId>io.swagger</groupId>
 			<artifactId>swagger-jaxrs</artifactId>
 			<version>1.5.0</version>
@@ -272,20 +274,6 @@
 						<goals>
 							<goal>run</goal>
 						</goals>
-						<configuration>
-							<tasks>
-								<delete
-									file="${project.build.directory}/generated-config/segue-config.properties" />
-								<delete
-									file="${project.build.directory}/generated-config/live_version.properties" />
-								<copy
-									file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/segue-config.properties"
-									tofile="${project.build.directory}/generated-config/segue-config.properties" />
-								<copy
-									file="${project.build.directory}/${project.build.finalName}/WEB-INF/classes/config/live_version.properties"
-									tofile="${project.build.directory}/generated-config/live_version.properties" />
-							</tasks>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
@@ -387,23 +375,6 @@
 	<!-- Profiles configuration -->
 	<profiles>
 		<profile>
-			<id>deploy</id>
-			<properties>
-				<build.profile.id>deploy</build.profile.id>
-			</properties>
-			<build>
-				<filters>
-					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
-				</filters>
-				<resources>
-					<resource>
-						<filtering>true</filtering>
-						<directory>src/main/resources</directory>
-					</resource>
-				</resources>
-			</build>
-		</profile>
-		<profile>
 			<id>local</id>
 			<!-- local profile is active by default to help eclipse know what is going 
 				on -->
@@ -414,9 +385,6 @@
 				<build.profile.id>local</build.profile.id>
 			</properties>
 			<build>
-				<filters>
-					<filter>profiles/${build.profile.id}/${build.profile.id}-config.properties</filter>
-				</filters>
 				<resources>
 					<resource>
 						<filtering>true</filtering>
