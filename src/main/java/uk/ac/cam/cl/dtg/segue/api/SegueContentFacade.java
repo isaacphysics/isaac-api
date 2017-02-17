@@ -309,7 +309,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
     public final Response getContentById(@Context final HttpServletRequest request,
             @PathParam("version") final String version, @PathParam("id") final String id) {
 
-        String newVersion = version;
+        String newVersion = this.contentIndex;
 
         if (version != null) {
             newVersion = version;
