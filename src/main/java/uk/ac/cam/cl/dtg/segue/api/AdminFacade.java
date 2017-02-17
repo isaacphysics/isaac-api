@@ -1278,6 +1278,8 @@ public class AdminFacade extends AbstractSegueFacade {
         try {
             if (isUserAnAdmin(request)) {
 
+                String oldLiveVersion = contentManager.getCurrentContentSHA();
+
                 HttpClient httpClient = new DefaultHttpClient();
 
                 HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
@@ -1290,6 +1292,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 HttpEntity e = httpResponse.getEntity();
 
                 if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    log.info(userManager.getCurrentRegisteredUser(request).getEmail() + " changed live version from " + oldLiveVersion + " to " + version + ".");
                     return Response.ok().build();
                 } else {
                     SegueErrorResponse r = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, IOUtils.toString(e.getContent()));
