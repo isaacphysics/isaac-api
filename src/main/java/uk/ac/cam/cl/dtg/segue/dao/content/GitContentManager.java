@@ -18,7 +18,6 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
@@ -60,10 +59,6 @@ public class GitContentManager implements IContentManager {
 
     private static final String CONTENT_TYPE = "content";
 
-    private final Map<String, Map<Content, List<String>>> indexProblemCache;
-    private final Map<String, Set<String>> tagsList;
-    private final Map<String, Map<String, String>> allUnits;
-
     private final GitDb database;
     private final ContentMapper mapper;
     private final ISearchProvider searchProvider;
@@ -89,15 +84,8 @@ public class GitContentManager implements IContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
-       
-        this.indexProblemCache = new ConcurrentHashMap<String, Map<Content, List<String>>>();
-        this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-        this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
 
         this.cache = CacheBuilder.newBuilder().softValues().build();
-
-        //searchProvider.registerRawStringFields(Lists.newArrayList(Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
-        //        Constants.TYPE_FIELDNAME));
     }
 
     /**
@@ -109,20 +97,13 @@ public class GitContentManager implements IContentManager {
      *            - search provider that the content manager manages and controls.
      * @param contentMapper
      *            - The utility class for mapping content objects.
-     * @param indexProblemCache
-     *            - A manually constructed indexProblemCache for testing purposes
      */
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper, final Map<String, Map<Content, List<String>>> indexProblemCache) {
+            final ContentMapper contentMapper) {
         this.database = database;
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = null;
-        
-        this.indexProblemCache = indexProblemCache;
-        this.tagsList = new ConcurrentHashMap<String, Set<String>>();
-        this.allUnits = new ConcurrentHashMap<String, Map<String, String>>();
-
     }
 
     @Override
@@ -178,7 +159,7 @@ public class GitContentManager implements IContentManager {
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-            cache.put(k, new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
         }
 
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
@@ -199,7 +180,7 @@ public class GitContentManager implements IContentManager {
 
             List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-            cache.put(k, new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
         }
 
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
@@ -210,15 +191,13 @@ public class GitContentManager implements IContentManager {
             @Nullable final Map<String, List<String>> fieldsThatMustMatch, 
             final Integer startIndex, final Integer limit) throws ContentManagerException {
 
-        //this.ensureCache(version);
-
         ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, startIndex,
                 limit, fieldsThatMustMatch, Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
                 Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
-        return new ResultsWrapper<ContentDTO>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
+        return new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
     @Override
@@ -243,9 +222,7 @@ public class GitContentManager implements IContentManager {
             final Integer startIndex, final Integer limit,
             @Nullable final Map<String, Constants.SortOrder> sortInstructions,
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
-
-        //this.ensureCache(version);
+        ResultsWrapper<ContentDTO> finalResults;
 
         final Map<String, Constants.SortOrder> newSortInstructions;
         if (null == sortInstructions || sortInstructions.isEmpty()) {
@@ -259,13 +236,13 @@ public class GitContentManager implements IContentManager {
         ResultsWrapper<String> searchHits = searchProvider.matchSearch(version, CONTENT_TYPE, fieldsToMatch,
                 startIndex, limit, newSortInstructions, filterInstructions);
 
-        // setup object mapper to use preconfigured deserializer module.
+        // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
         List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
 
         List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-        finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
 
         return finalResults;
     }
@@ -281,9 +258,7 @@ public class GitContentManager implements IContentManager {
     public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(final String version,
             final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch,
             final Integer startIndex, final Integer limit, final Long randomSeed) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults = new ResultsWrapper<ContentDTO>();
-
-        //this.ensureCache(version);
+        ResultsWrapper<ContentDTO> finalResults;
 
         ResultsWrapper<String> searchHits;
         if (null == randomSeed) {
@@ -293,13 +268,13 @@ public class GitContentManager implements IContentManager {
                     randomSeed);
         }
 
-        // setup object mapper to use preconfigured deserializer module.
+        // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
         List<Content> result = mapper.mapFromStringListToContentList(searchHits.getResults());
 
         List<ContentDTO> contentDTOResults = mapper.getDTOByDOList(result);
 
-        finalResults = new ResultsWrapper<ContentDTO>(contentDTOResults, searchHits.getTotalResults());
+        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
 
         return finalResults;
     }
@@ -312,7 +287,7 @@ public class GitContentManager implements IContentManager {
     @Override
     public final List<String> listAvailableVersions() {
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (RevCommit rc : database.listCommits()) {
             result.add(rc.getName());
         }
@@ -322,11 +297,7 @@ public class GitContentManager implements IContentManager {
     
     @Override
     public final boolean isValidVersion(final String version) {
-        if (null == version || version.isEmpty()) {
-            return false;
-        }
-
-        return this.database.verifyCommitExists(version);
+        return !(null == version || version.isEmpty()) && this.database.verifyCommitExists(version);
     }
 
     @Override
@@ -384,7 +355,7 @@ public class GitContentManager implements IContentManager {
 
         SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "unit");
         SearchHits hits = r.getHits();
-        ArrayList<String> units = new ArrayList<String>((int)hits.getTotalHits());
+        ArrayList<String> units = new ArrayList<>((int)hits.getTotalHits());
         for(SearchHit hit : hits) {
             units.add((String)hit.getSource().get("unit"));
         }
@@ -399,8 +370,6 @@ public class GitContentManager implements IContentManager {
                     "You must specify a non-null version to make sure it is cached.");
         }
 
-        // In order to serve all content requests we need to index both the search provider and problem cache.
-        boolean searchIndexed;
         if (!searchProvider.hasIndex(version)) {
             throw new ContentVersionUnavailableException(String.format("Version %s does not exist in the searchIndex.", version));
         }
@@ -431,10 +400,6 @@ public class GitContentManager implements IContentManager {
             map.put(partialContentWithErrors, errors);
         }
 
-
-        //Object o = searchProvider.getById(version, "metadata", "content_errors", Collections.singletonList("content_errors"))
-        //        .getField("content_errors").getValue();
-
         return map;
     }
 
@@ -459,7 +424,7 @@ public class GitContentManager implements IContentManager {
 
         // build query the db to get full content information
         Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap
-            = new HashMap<Map.Entry<Constants.BooleanOperator, String>, List<String>>();
+            = new HashMap<>();
 
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
@@ -491,9 +456,7 @@ public class GitContentManager implements IContentManager {
         }
 
         // try auto-mapping
-        ContentSummaryDTO contentInfo = mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
-
-        return contentInfo;
+        return mapper.getAutoMapper().map(content, ContentSummaryDTO.class);
     }
 
     @Override
@@ -501,6 +464,4 @@ public class GitContentManager implements IContentManager {
         GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX), "metadata", "general");
         return (String)r.getSource().get("version");
     }
-
-
 }

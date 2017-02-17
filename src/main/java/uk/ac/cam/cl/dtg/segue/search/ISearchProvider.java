@@ -327,6 +327,9 @@ public interface ISearchProvider {
      */
     //void registerRawStringFields(List<String> fieldNames);
 
+    /*
+     * TODO: We need to change the return type of these two methods to avoid having ES specific things
+     */
     GetResponse getById(String index, String type, String id);
 
     SearchResponse getAllByType(String index, String type);
