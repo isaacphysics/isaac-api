@@ -159,111 +159,6 @@ public class GitContentManagerTest {
 	}
 
 	/**
-	 * Test that the ensureCache method returns an exception if a null version hash is
-	 * provided.
-	 *//*
-	@Test
-	public void ensureCache_nullVersion_checkExceptionReturned() {
-		try {
-			defaultGCM.ensureCache(null);
-			fail("Expected exception");
-		} catch (ContentManagerException e) {
-			// pass
-		}
-	}*/
-
-	/**
-	 * Test that the buildSearchIndexFromLocalGitIndex sends each Content object
-	 * to the searchProvider.
-	 * 
-	 * @throws Exception
-	 *//*
-	@SuppressWarnings("unchecked")
-	@Test
-	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
-			throws Exception {
-		reset(database, searchProvider);
-		String uniqueObjectId = UUID.randomUUID().toString();
-		String uniqueObjectHash = UUID.randomUUID().toString();
-        
-		Map<String, Content> contents = new TreeMap<String, Content>();
-		Content content = new Content();
-		content.setId(uniqueObjectId);
-		contents.put(uniqueObjectId, content);
-
-		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-		
-		searchProvider.registerRawStringFields((List<String>) anyObject());
-		expectLastCall().once();
-		
-		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(false)
-				.once();
-		expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
-				.once();
-		expect(objectMapper.writeValueAsString(content)).andReturn(
-				uniqueObjectHash).once();
-	
-		searchProvider.bulkIndex(eq(INITIAL_VERSION), anyString(), (List<Map.Entry<String, String>>) anyObject());
-		expectLastCall().once();
-		
-		replay(searchProvider, contentMapper, objectMapper);
-
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, new ConcurrentHashMap<String, Map<Content, List<String>>>());
-		
-		Whitebox.invokeMethod(gitContentManager,
-				"buildSearchIndexFromLocalGitIndex", INITIAL_VERSION, contents);
-
-		verify(searchProvider, contentMapper, objectMapper);
-	}
-*/
-	/**
-	 * Test the flattenContentObjects method and ensure the expected output is
-	 * generated.
-	 * 
-	 * @throws Exception
-	 */
-	@Test
-	public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned()
-			throws Exception {
-		final int numChildLevels = 5;
-		final int numNodes = numChildLevels + 1;
-
-		Set<Content> elements = new HashSet<Content>();
-		Content rootNode = createContentHierarchy(numChildLevels, elements);
-
-		Set<Content> contents = Whitebox.<Set<Content>> invokeMethod(
-				defaultGCM, "flattenContentObjects", rootNode);
-
-		assertTrue(contents.size() == numNodes);
-
-		for (Content c : contents) {
-			boolean containsElement = elements.contains(c);
-			assertTrue(containsElement);
-			if (containsElement) {
-				elements.remove(c);
-			}
-		}
-
-		assertTrue(elements.size() == 0);
-	}
-
-	private Content createContentHierarchy(final int numLevels,
-			final Set<Content> flatSet) {
-		List<ContentBase> children = new LinkedList<ContentBase>();
-
-		if (numLevels > 0) {
-			Content child = createContentHierarchy(numLevels - 1, flatSet);
-			children.add(child);
-		}
-
-		Content content = createEmptyContentElement(children,
-				String.format("%d", numLevels));
-		flatSet.add(content);
-		return content;
-	}
-
-	/**
 	 * Helper method for the
 	 * flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned
 	 * test, generates a Content object with the given children.
@@ -299,7 +194,6 @@ public class GitContentManagerTest {
 		Map<String, Content> contents = new TreeMap<String, Content>();
 		contents.put(INITIAL_VERSION, content);
 
-		return new GitContentManager(database, searchProvider, contentMapper,
-				indexProblemCache);
+		return new GitContentManager(database, searchProvider, contentMapper);
 	}
 }
