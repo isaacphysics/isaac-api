@@ -260,12 +260,6 @@ public final class Constants {
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
 
     // Database properties
-    public static final String MONGO_DB_HOSTNAME = "MONGO_DB_HOSTNAME";
-    public static final String MONGO_DB_PORT = "MONGO_DB_PORT";
-    public static final String MONGO_CONNECTIONS_PER_HOST = "MONGO_CONNECTIONS_PER_HOST";
-    public static final String MONGO_CONNECTION_TIMEOUT = "MONGO_CONNECTION_TIMEOUT";
-    public static final String MONGO_SOCKET_TIMEOUT = "MONGO_SOCKET_TIMEOUT";
-
     public static final String SEGUE_DB_NAME = "SEGUE_DB_NAME";
 
     public static final String POSTGRES_DB_URL = "POSTGRES_DB_URL";

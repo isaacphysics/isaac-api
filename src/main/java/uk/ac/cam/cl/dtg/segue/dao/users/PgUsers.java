@@ -42,7 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
  *
  */
 public class PgUsers implements IUserDataManager {
-    private static final String MASTER_ID = "_id"; // MONGO DB ID
+    private static final String MASTER_ID = "_id";
     //private static final Logger log = LoggerFactory.getLogger(PgUsers.class);
             
     private final PostgresSqlDb database;

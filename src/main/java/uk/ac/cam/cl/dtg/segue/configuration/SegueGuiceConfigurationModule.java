@@ -188,14 +188,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *             - when we cannot load the database.
      */
     private void configureDataPersistence() throws IOException {
-        // Setup different persistence bindings
-        // MongoDb - currently not used.
-        this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_CONNECTION_TIMEOUT, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_SOCKET_TIMEOUT, globalProperties);
-
         this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
         // postgres
