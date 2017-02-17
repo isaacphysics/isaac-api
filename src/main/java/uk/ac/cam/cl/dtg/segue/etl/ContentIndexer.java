@@ -54,33 +54,6 @@ public class ContentIndexer {
     private GitDb database;
     private ContentMapper mapper;
 
-/*
-    public final void clearCache(final String version) {
-        Validate.notBlank(version);
-
-        if (es.hasIndex(version)) {
-            es.expungeIndexFromSearchCache(version);
-            // TODO: Sort out tags and units
-            //tagsList.remove(version);
-            //allUnits.remove(version);
-        }
-    }*/
-/*
-    public static void main(String[] args) {
-
-
-        Injector injector = Guice.createInjector(new ETLConfigurationModule());
-
-        ContentIndexer indexer = injector.getInstance(ContentIndexer.class);
-
-        try {
-            indexer.loadAndIndexContent("d5e89976d7235142231fbdedc47739f96f9b5c25", true, true);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-*/
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentMapper mapper) {
         this.database = database;
