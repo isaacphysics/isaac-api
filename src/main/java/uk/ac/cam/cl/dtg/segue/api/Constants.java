@@ -72,20 +72,8 @@ public final class Constants {
     public static final String SCHOOL_CSV_LIST_PATH = "SCHOOL_CSV_LIST_PATH";
 
     // GIT stuff
-
-    /**
-     * Constant representing the key for the path to Local GIT instance.
-     */
     public static final String LOCAL_GIT_DB = "LOCAL_GIT_DB";
-
-    /**
-     * Constant representing the key for the path to the ssh private key for remote git repository.
-     */
     public static final String REMOTE_GIT_SSH_KEY_PATH = "REMOTE_GIT_SSH_KEY_PATH";
-
-    /**
-     * Constant representing the key for the URL to remote git repository for SSH traffic.
-     */
     public static final String REMOTE_GIT_SSH_URL = "REMOTE_GIT_SSH_URL";
 
     /**
@@ -104,6 +92,7 @@ public final class Constants {
      */
     public static final String SEGUE_APP_VERSION = "SEGUE_APP_VERSION";
 
+    // The alias / content index of the 'live' version we should be serving up
     public static final String CONTENT_INDEX = "CONTENT_INDEX";
 
     /**
@@ -145,19 +134,8 @@ public final class Constants {
     public static final String HMAC_SALT = "HMAC_SALT";
 
     // Search stuff
-    /**
-     * Constant representing the key for the ClusterName - used for Search providers.
-     */
     public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_NAME";
-
-    /**
-     * Constant representing the key for the address of the Search Cluster - used for Search providers.
-     */
     public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
-
-    /**
-     * Constant representing the key for the port of the Search Cluster - used for Search providers.
-     */
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
 
     /**
@@ -186,8 +164,6 @@ public final class Constants {
     public static final String SCHOOLS_SEARCH_TYPE = "school";
 
     // Federated Authentication Stuff
-    public static final String REDIRECT_URL_PARAM_NAME = "auth_redirect";
-
     /**
      * This constant will be used to determine if we are expecting a link account request or not.
      */
@@ -203,60 +179,25 @@ public final class Constants {
      */
     public static final String OAUTH_TOKEN_PARAM_NAME = "oauth_token";
 
-    /**
-     * Constant representing the key for the GOOGLE client secret location.
-     */
+    // Google properties
     public static final String GOOGLE_CLIENT_SECRET_LOCATION = "GOOGLE_CLIENT_SECRET_LOCATION";
-
-    /**
-     * Constant representing the key for the GOOGLE OAUTH callback uri.
-     */
     public static final String GOOGLE_CALLBACK_URI = "GOOGLE_CALLBACK_URI";
-
-    /**
-     * Constant representing the key for the GOOGLE OAUTH Scopes to be requested.
-     */
     public static final String GOOGLE_OAUTH_SCOPES = "GOOGLE_OAUTH_SCOPES";
 
-    /**
-     * Constant representing the key for the FACEBOOK OAUTH secret.
-     */
+    // Facebook properties
     public static final String FACEBOOK_SECRET = "FACEBOOK_SECRET";
-
-    /**
-     * Constant representing the key for the FACEBOOK OAUTH client id.
-     */
     public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
-
-    /**
-     * Constant representing the key for the FACEBOOK OAUTH callback uri.
-     */
     public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
-
-    /**
-     * Constant representing the key for the FACEBOOK OAUTH permissions to be requested.
-     */
     public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
 
-    /**
-     * Constant representing the key for the TWITTER OAUTH secret.
-     */
+    // Twitter properties
     public static final String TWITTER_SECRET = "TWITTER_SECRET";
-
-    /**
-     * Constant representing the key for the TWITTER OAUTH client id.
-     */
     public static final String TWITTER_CLIENT_ID = "TWITTER_CLIENT_ID";
-
-    /**
-     * Constant representing the key for the TWITTER OAUTH callback uri.
-     */
     public static final String TWITTER_CALLBACK_URI = "TWITTER_CALLBACK_URI";
 
     // Local authentication specific stuff
     public static final String LOCAL_AUTH_EMAIL_FIELDNAME = "email";
     public static final String LOCAL_AUTH_PASSWORD_FIELDNAME = "password";
-    public static final String LOCAL_AUTH_RESET_TOKEN_FIELDNAME = "resetToken";
     public static final String LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME = "emailVerificationToken";
 
     // Database properties
@@ -269,7 +210,6 @@ public final class Constants {
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
     public static final Integer MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES = 1000000;
-    public static final String LOG_TABLE_NAME = "loggedEvents";
     public static final String ANSWER_QUESTION = "ANSWER_QUESTION";
     public static final String QUESTION_ATTEMPT_RATE_LIMITED = "QUESTION_ATTEMPT_RATE_LIMITED";
     public static final String MERGE_USER = "MERGE_USER";
@@ -279,7 +219,6 @@ public final class Constants {
     public static final String CREATE_USER_ASSOCIATION = "CREATE_USER_ASSOCIATION";
     public static final String REVOKE_USER_ASSOCIATION = "REVOKE_USER_ASSOCIATION";
     public static final String EMAIL_VERIFICATION_REQUEST_RECEIVED = "EMAIL_VERIFICATION_REQUEST_RECEIVED";
-    public static final String EMAIL_VERIFICATION_REQUEST_SUCCESSFUL = "EMAIL_VERIFICATION_REQUEST_SUCCESSFUL";
     public static final String PASSWORD_RESET_REQUEST_RECEIVED = "PASSWORD_RESET_REQUEST_RECEIVED";
     public static final String PASSWORD_RESET_REQUEST_SUCCESSFUL = "PASSWORD_RESET_REQUEST_SUCCESSFUL";
     public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
@@ -311,29 +250,18 @@ public final class Constants {
     public static final String LEVEL_FIELDNAME = "level";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
-    public static final String OWNER_USER_ID_FKEY_FIELDNAME = "ownerId";
-    public static final String USER_LAST_SEEN_FIELDNAME = "lastSeen";
 
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
 
-    // User persistence model stuff
-    public static final String LINKED_ACCOUNT_USER_DTO_FIELDNAME = "linkedAccounts";
-    public static final String LINKED_ACCOUNT_PROVIDER_FIELDNAME = "provider";
-    public static final String LINKED_ACCOUNT_LOCAL_USER_ID_FIELDNAME = "localUserId";
-    public static final String LINKED_ACCOUNT_PROVIDER_USER_ID_FIELDNAME = "providerUserId";
-    public static final String QUESTION_ATTEMPTS_FIELDNAME = "questionAttempts";
-
     // School List loading - raw data
     public static final String SCHOOL_URN_FIELDNAME = "URN";
-    public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME = "EstablishmentNumber";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
     public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
     public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "DataSource";
 
     // School List loading POJO fields
     public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
-    public static final String SCHOOL_ESTABLISHMENT_NUMBER_FIELDNAME_POJO = "establishmentNumber";
     public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
     public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
 
@@ -364,8 +292,6 @@ public final class Constants {
     public static final String DEFAULT_DATE_FORMAT = "EEE MMM dd HH:mm:ss Z yyyy";
 
     public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
-    public static final String ASSOCIATION_USER_GRANTING_ACCESS = "userIdGrantingPermission";
-    public static final String ASSOCIATION_USER_RECEIVING_ACCESS = "userIdReceivingPermission";
 
     public static final String GROUP_FK = "groupId";
 

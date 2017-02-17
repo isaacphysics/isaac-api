@@ -33,12 +33,11 @@ public final class Constants {
     public static final String POD_FRAGMENT_TYPE = "isaacPod";
     public static final String PAGE_TYPE = "page";
     public static final String QUESTIONS_PAGE_TYPE = "questionsPage";
-    public static final String QUESTION_SUMMARY_PAGE_TYPE = "isaacQuestionSummaryPage";
     public static final String EVENT_TYPE = "isaacEventPage";
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
-    /**
+    /*
      * Game specific variables.
      */
     public static final int GAME_BOARD_TARGET_SIZE = 10;
@@ -79,7 +78,6 @@ public final class Constants {
     public static final String VIEW_CONCEPT = "VIEW_CONCEPT";
     public static final String CONCEPT_ID_LOG_FIELDNAME = "conceptId";
     public static final String VIEW_PAGE = "VIEW_PAGE";
-    public static final String PAGE_ID_FIELDNAME = "CONCEPT_ID";
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
 
     public static final String VIEW_MY_ASSIGNMENTS = "VIEW_MY_ASSIGNMENTS";
@@ -90,8 +88,6 @@ public final class Constants {
     public static final String SET_NEW_ASSIGNMENT = "SET_NEW_ASSIGNMENT";
     public static final String DELETE_ASSIGNMENT = "DELETE_ASSIGNMENT";
 
-    public static final String GENERATE_RANDOM_GAMEBOARD = "GENERATE_RANDOM_GAMEBOARD";
-    public static final String GAMEBOARD_LOG_FIELDNAME = "GAMEBOARD_LOG_FIELDNAME";
     public static final String VIEW_MY_BOARDS_PAGE = "VIEW_MY_BOARDS_PAGE";
 
     public static final String VIEW_USER_PROGRESS = "VIEW_USER_PROGRESS";
