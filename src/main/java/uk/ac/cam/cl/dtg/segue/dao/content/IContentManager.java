@@ -43,26 +43,6 @@ import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 public interface IContentManager {
 
     /**
-     * Sets Index Restrictions.
-     * 
-     * @param loadOnlyPublishedContent
-     *            - True if you only wish to index content where the top level content object is marked as published.
-     *            False if all valid content should be indexed.
-     */
-    //void setIndexRestriction(boolean loadOnlyPublishedContent);
-
-    /**
-     * Save an object to the content manager.
-     * 
-     * @param <T>
-     *            - the type of the object being saved.
-     * @param objectToSave
-     *            - the object to save to the content Manager.
-     * @return the objects id.
-     */
-    //<T extends Content> String save(T objectToSave);
-
-    /**
      * Goes to the configured Database and attempts to find a content item with the specified ID. This returns the
      * object in the raw DO form.
      * 

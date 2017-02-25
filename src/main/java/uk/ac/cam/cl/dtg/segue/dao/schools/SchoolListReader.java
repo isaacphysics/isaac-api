@@ -15,36 +15,21 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao.schools;
 
-import static com.google.common.collect.Maps.immutableEntry;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_SEARCH_TYPE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOL_URN_FIELDNAME;
-
-import java.io.*;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import com.opencsv.CSVReader;
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
-
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+
+import java.io.IOException;
+import java.util.List;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Class responsible for reading the local school list csv file.
@@ -72,7 +57,8 @@ public class SchoolListReader {
     public SchoolListReader(final ISearchProvider searchProvider) {
         this.searchProvider = searchProvider;
 
-        dataSourceModificationDate = searchProvider.getById(Constants.SCHOOLS_SEARCH_INDEX, "metadata", "sourceFile").getSource().get("lastModified").toString();
+        dataSourceModificationDate = searchProvider.getById(Constants.SCHOOLS_SEARCH_INDEX, "metadata", "sourceFile")
+                .getSource().get("lastModified").toString();
     }
 
     /**
@@ -91,7 +77,7 @@ public class SchoolListReader {
         }
 
         List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
-                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
+                searchQuery, 0, DEFAULT_RESULTS_LIMIT, null, null, Constants.SCHOOL_URN_FIELDNAME_POJO,
                 Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, Constants.SCHOOL_POSTCODE_FIELDNAME_POJO)
                 .getResults();
 
@@ -135,7 +121,7 @@ public class SchoolListReader {
         
         matchingSchoolList = searchProvider.findByPrefix(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE,
                 SCHOOL_URN_FIELDNAME.toLowerCase() + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolURN, 0, DEFAULT_RESULTS_LIMIT).getResults();
+                schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;

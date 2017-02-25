@@ -15,41 +15,20 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
+import com.google.api.client.util.Maps;
+import com.google.api.client.util.Sets;
+import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import org.easymock.internal.Results;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -58,14 +37,16 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-import com.google.api.client.util.Sets;
-import com.google.inject.Inject;
+import javax.annotation.Nullable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.google.common.collect.Maps.immutableEntry;
 
 /**
  * A class that works as an adapter for ElasticSearch.
@@ -77,8 +58,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchProvider.class);
 
     protected final Client client;
-
-    private final Random randomNumberGenerator;
 
     // to try and improve performance of searches with a -1 limit.
     private static final int LARGE_LIMIT = 100;
@@ -92,16 +71,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Inject
     public ElasticSearchProvider(final Client searchClient) {
         this.client = searchClient;
-        this.randomNumberGenerator = new Random();
-    }
-
-
-    @Override
-    public ResultsWrapper<String> matchSearch(final String index, final String indexType,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-            final int limit, final Map<String, Constants.SortOrder> sortInstructions) {
-
-        return this.matchSearch(index, indexType, fieldsToMatch, startIndex, limit, sortInstructions, null);
     }
 
     @Override
@@ -142,22 +111,18 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> randomisedMatchSearch(final String index, final String indexType,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-            final int limit) {
-        Long seed = this.randomNumberGenerator.nextLong();
-        return this.randomisedMatchSearch(index, indexType, fieldsToMatch, startIndex, limit, seed);
-    }
-
-    @Override
     public final ResultsWrapper<String> randomisedMatchSearch(final String index, final String indexType,
             final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-            final int limit, final Long randomSeed) {
+            final int limit, final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions) {
         // build up the query from the fieldsToMatch map
         QueryBuilder query = generateBoolMatchQuery(fieldsToMatch);
         Long seed = randomSeed;
 
         query = QueryBuilders.functionScoreQuery(query, ScoreFunctionBuilders.randomFunction(seed));
+
+        if (filterInstructions != null) {
+            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+        }
 
         log.debug("Randomised Query, with seed: " + seed + ", to be sent to elasticsearch is : " + query);
 
@@ -170,7 +135,9 @@ public class ElasticSearchProvider implements ISearchProvider {
     @Override
     public ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString,
             final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, final String... fields) {
+            @Nullable final Map<String, List<String>> fieldsThatMustMatch,
+                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
+                                              final String... fields) {
         if (null == index || null == indexType || null == searchString || null == fields) {
             log.warn("A required field is missing. Unable to execute search.");
             return null;
@@ -193,41 +160,28 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         masterQuery.must(query);
 
+        if (filterInstructions != null) {
+            masterQuery.filter(generateFilterQuery(filterInstructions));
+        }
+
         return this.executeBasicQuery(index, indexType, masterQuery, startIndex, limit);
     }
 
     @Override
-    public ResultsWrapper<String> basicFieldSearch(final String index, final String indexType,
-            final String searchString, final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, final String... fields) {
-        if (null == index || null == indexType || null == searchString || null == fields) {
-            log.warn("A required field is missing. Unable to execute search.");
-            return null;
-        }
-
-        BoolQueryBuilder query;
-        if (null != fieldsThatMustMatch) {
-            query = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
-        } else {
-            query = QueryBuilders.boolQuery();
-        }
-
-        QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields).type(
-                MultiMatchQueryBuilder.Type.PHRASE_PREFIX);
-        query.must(multiMatchQuery);
-
-        return this.executeBasicQuery(index, indexType, query, startIndex, limit);
-    }
-
-    @Override
     public ResultsWrapper<String> termSearch(final String index, final String indexType,
-            final String searchTerm, final String field, final int startIndex, final int limit) {
+            final String searchTerm, final String field, final int startIndex, final int limit,
+                                             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) {
         if (null == index || null == indexType || null == searchTerm || null == field) {
             log.warn("A required field is missing. Unable to execute search.");
             return null;
         }
 
         QueryBuilder query = QueryBuilders.termQuery(field, searchTerm);
+
+        if (filterInstructions != null) {
+            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+        }
+
         return this.executeBasicQuery(index, indexType, query, startIndex, limit);
     }
 
@@ -264,10 +218,15 @@ public class ElasticSearchProvider implements ISearchProvider {
 
     @Override
     public ResultsWrapper<String> findByPrefix(final String index, final String indexType, final String fieldname,
-            final String prefix, final int startIndex, final int limit) {
+            final String prefix, final int startIndex, final int limit,
+                                               final Map<String, AbstractFilterInstruction> filterInstructions) {
         ResultsWrapper<String> resultList;
 
-        PrefixQueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
+        QueryBuilder query = QueryBuilders.prefixQuery(fieldname, prefix);
+
+        if (filterInstructions != null) {
+            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+        }
 
         resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
 
@@ -276,10 +235,15 @@ public class ElasticSearchProvider implements ISearchProvider {
     
     @Override
     public ResultsWrapper<String> findByRegEx(final String index, final String indexType, final String fieldname,
-            final String regex, final int startIndex, final int limit) {
+            final String regex, final int startIndex, final int limit,
+                                              final Map<String, AbstractFilterInstruction> filterInstructions) {
         ResultsWrapper<String> resultList;
 
-        RegexpQueryBuilder query = QueryBuilders.regexpQuery(fieldname, regex);
+        QueryBuilder query = QueryBuilders.regexpQuery(fieldname, regex);
+
+        if (filterInstructions != null) {
+            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+        }
 
         resultList = this.executeBasicQuery(index, indexType, query, startIndex, limit);
 
@@ -341,6 +305,18 @@ public class ElasticSearchProvider implements ISearchProvider {
 
                 filter.must(rangeFilter);
             }
+
+            if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction) {
+                SimpleFilterInstruction sfi = (SimpleFilterInstruction) fieldToFilterInstruction.getValue();
+
+                Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch = Maps.newHashMap();
+
+                fieldsToMatch.put(immutableEntry(Constants.BooleanOperator.AND,fieldToFilterInstruction.getKey()),
+                        Arrays.asList(sfi.getMustMatchValue()));
+
+                filter.must(this.generateBoolMatchQuery(fieldsToMatch));
+            }
+
         }
 
         return filter;

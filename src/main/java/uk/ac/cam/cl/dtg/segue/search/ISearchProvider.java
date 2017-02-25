@@ -15,18 +15,17 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.annotation.Nullable;
-
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+
+import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Interface describing behaviour of search providers.
@@ -46,27 +45,6 @@ public interface ISearchProvider {
      * @return the list of all indices.
      */
     Collection<String> getAllIndices();
-    
-    /**
-     * Paginated Match search for one field.
-     * 
-     * @param index
-     *            - ElasticSearch index
-     * @param indexType
-     *            - Index type
-     * @param fieldsToMatch
-     *            - the field name to use - and the field name search term
-     * @param startIndex
-     *            - e.g. 0 for the first set of results
-     * @param limit
-     *            - e.g. 10 for 10 results per page
-     * @param sortInstructions
-     *            - the map of how to sort each field of interest.
-     * @return Results
-     */
-    ResultsWrapper<String> matchSearch(final String index, final String indexType,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
-            final int limit, final Map<String, Constants.SortOrder> sortInstructions);
 
     /**
      * Paginated Match search for one field.
@@ -93,31 +71,6 @@ public interface ISearchProvider {
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions);
 
     /**
-     * Executes a multi match search on an array of fields and will consider the fieldsThatMustMatchMap.
-     * 
-     * This method will only return exact prefix matches for any of the fields requested.
-     * 
-     * @param index
-     *            - the name of the index
-     * @param indexType
-     *            - the name of the type of document being searched for
-     * @param searchString
-     *            - the string to use for matching
-     * @param startIndex
-     *            - e.g. 0 for the first set of results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
-     * @param fieldsThatMustMatch
-     *            - Map of Must match field -> value
-     * @param fields
-     *            - array (var args) of fields to search using the searchString
-     * @return results
-     */
-    ResultsWrapper<String> basicFieldSearch(final String index, final String indexType, final String searchString,
-            final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, List<String>> fieldsThatMustMatch, final String... fields);
-
-    /**
      * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
      * 
      * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
@@ -134,24 +87,27 @@ public interface ISearchProvider {
      *            - the maximum number of results to return -1 will attempt to return all results.
      * @param fieldsThatMustMatch
      *            - Map of Must match field -> value
+     * @param filterInstructions
+     *            - post search filter instructions e.g. remove content of a certain type.
      * @param fields
      *            - array (var args) of fields to search using the searchString
      * @return results
      */
     ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString,
             final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
-            final String... fields);
+                                       @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
+                                       final String... fields);
 
     /**
      * Executes a terms search using an array of terms on a single field.
-     * 
+     *
      * Useful for tag searches - Current setting is that results will only be returned if they match all search terms.
-     * 
+     *
      * @param index
      *            - the name of the index
      * @param indexType
      *            - the name of the type of document being searched for
-     * @param searchTerms
+     * @param searchterms
      *            - e.g. tags
      * @param field
      *            - to match against
@@ -159,35 +115,16 @@ public interface ISearchProvider {
      *            - start index for results
      * @param limit
      *            - the maximum number of results to return -1 will attempt to return all results.
+     * @param filterInstructions - instructions for filtering the results
      * @return results
      */
     ResultsWrapper<String> termSearch(final String index, final String indexType, final String searchterms,
-            final String field, final int startIndex, final int limit);
+                                      final String field, final int startIndex, final int limit,
+                                      final Map<String, AbstractFilterInstruction> filterInstructions);
 
     /**
      * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
-     * 
-     * @see paginatedMatchSearch
-     * @param index
-     *            index that the content is stored in
-     * @param indexType
-     *            - type of index as registered with search provider.
-     * @param fieldsToMatch
-     *            - Map of Map<Map.Entry<Constants.BooleanOperator, String>, List<String>>
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return.
-     * @return results in a random order for a given match search.
-     */
-    ResultsWrapper<String> randomisedMatchSearch(final String index, final String indexType,
-            final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, int startIndex,
-            int limit);
-
-    /**
-     * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
-     * 
-     * @see paginatedMatchSearch
+     *
      * @param index
      *            index that the content is stored in
      * @param indexType
@@ -200,11 +137,13 @@ public interface ISearchProvider {
      *            - the maximum number of results to return.
      * @param randomSeed
      *            - random seed.
+     * @param filterInstructions
+     *            - post search filter instructions e.g. remove content of a certain type.
      * @return results in a random order for a given match search.
      */
     ResultsWrapper<String> randomisedMatchSearch(String index, String indexType,
             Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, 
-            int startIndex, int limit, Long randomSeed);
+            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions);
 
     /**
      * Query for a list of Results that match a given id prefix.
@@ -223,16 +162,15 @@ public interface ISearchProvider {
      *            - start index for results
      * @param limit
      *            - the maximum number of results to return -1 will attempt to return all results.
+     * @param filterInstructions
+     *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByPrefix(String index, String indexType, String fieldname, String prefix,
-            int startIndex, int limit);
+            int startIndex, int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions);
     
     /**
      * Find content by a regex.
-     * 
-     * Note: the fieldname specified must be be declared as a raw field (i.e. should be specified as unanalyzed). See
-     * {@link #registerRawStringFields(List)}
      * 
      * @param index
      *            index that the content is stored in
@@ -246,10 +184,12 @@ public interface ISearchProvider {
      *            - start index for results
      * @param limit
      *            - the maximum number of results to return -1 will attempt to return all results.
+     * @param filterInstructions
+     *            - post search filter instructions e.g. remove content of a certain type.
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByRegEx(String index, String indexType, String fieldname, String regex, int startIndex,
-            int limit);
+            int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions);
 
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things
