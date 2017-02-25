@@ -270,23 +270,6 @@ public interface IContentManager {
      */
     String getLatestVersionId();
 
-    /**
-     * A utility method to instruct the content manager to evict ALL of its cached data including data held within its
-     * search providers.
-     * 
-     * WARNING: this is a nuclear method. Re-indexing will definitely have to occur if you do this.
-     * 
-     */
-    //void clearCache();
-
-    /**
-     * A utility method to instruct a content manager to evict a particular version of the content from its caches. This
-     * includes data held within its search providers.
-     * 
-     * @param version
-     *            - version to dump the cache of.
-     */
-    //void clearCache(String version);
 
     /**
      * A method that will return an unordered set of tags registered for a particular version of the content.
@@ -404,5 +387,11 @@ public interface IContentManager {
      */
     ContentSummaryDTO extractContentSummary(ContentDTO content);
 
+    /**
+     * Get the SHA for the current content being presented.
+     * This will look up the underlying SHA that is returned for the alias used.
+     *
+     * @return a git content SHA.
+     */
     String getCurrentContentSHA();
 }

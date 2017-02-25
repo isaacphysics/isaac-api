@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,58 +29,9 @@ import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 
 /**
- * Abstract interface describing behaviour of search providers.
- * 
- * 
+ * Interface describing behaviour of search providers.
  */
 public interface ISearchProvider {
-
-    /**
-     * Indexes an object with the search provider.
-     * 
-     * @param index
-     *            - the name of the index
-     * @param indexType
-     *            - the name of the type of document being indexed
-     * @param content
-     *            - The json string representation of the entire document to be indexed.
-     * @throws SegueSearchOperationException
-     *             - if there is an error whilst trying to index the document.
-     */
-    //void indexObject(final String index, final String indexType, final String content)
-    //        throws SegueSearchOperationException;
-
-    /**
-     * Indexes an object with the search provider.
-     * 
-     * @param index
-     *            - the name of the index
-     * @param indexType
-     *            - the name of the type of document being indexed
-     * @param content
-     *            - The json string representation of the entire document to be indexed.
-     * @param uniqueId
-     *            - A unique id for the document being indexed if available.
-     * @throws SegueSearchOperationException
-     *             - if there is an error whilst trying to index the document.
-     */
-    //void indexObject(final String index, final String indexType, final String content, final String uniqueId)
-    //        throws SegueSearchOperationException;
-
-    /**
-     * Bulk Index operations are useful for indexing large numbers of documents with one request to the search provider.
-     * 
-     * @param index
-     *            - the name of the index
-     * @param indexType
-     *            - the name of the type of document being indexed
-     * @param dataToIndex
-     *            - A list of Entries <Key(id), ContentToIndex>
-     * @throws SegueSearchOperationException
-     *             - if there is an error whilst trying to index the document.
-     */
-    //void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
-     //       throws SegueSearchOperationException;
 
     /**
      * Verifies the existence of a given index.
@@ -298,34 +249,7 @@ public interface ISearchProvider {
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByRegEx(String index, String indexType, String fieldname, String regex, int startIndex,
-            int limit);    
-
-    /**
-     * Clear a specific index from the search providers cache.
-     * 
-     * @param index
-     *            the index to delete from the search providers cache.
-     * @return true if successful false if not.
-     */
-    //boolean expungeIndexFromSearchCache(final String index);
-
-    /**
-     * Instruct the search provider to delete all data from all indices.
-     * 
-     * This is a Nuclear option and will affect all indices in the cluster.
-     * 
-     * @return true if successful false if not.
-     */
-    //boolean expungeEntireSearchCache();
-
-    /**
-     * Register the names of fields that should have clones created (which are not affected by the search processor e.g.
-     * stemming and ignoring punctuation)
-     * 
-     * @param fieldNames
-     *            to create raw fields of
-     */
-    //void registerRawStringFields(List<String> fieldNames);
+            int limit);
 
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things

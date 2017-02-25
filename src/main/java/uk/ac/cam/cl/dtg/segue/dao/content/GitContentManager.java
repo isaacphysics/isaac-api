@@ -373,7 +373,6 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
-
         SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "contentError");
 
         SearchHits hits = r.getHits();
@@ -399,18 +398,6 @@ public class GitContentManager implements IContentManager {
         return map;
     }
 
-    /**
-     * Populate content summary object.
-     * 
-     * @param version
-     *            - the version of the content to use for the augmentation process.
-     * 
-     * @param contentDTO
-     *            - the destination contentDTO which should have content summaries created.
-     * @return fully populated contentDTO.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
     @Override
     public ContentDTO populateRelatedContent(final String version, final ContentDTO contentDTO)
             throws ContentManagerException {
