@@ -129,6 +129,9 @@ public class EventBookingPersistenceManager {
     }
 
     /**
+     * Get event bookings by an event id.
+     * TODO - if an event disappears (either by being unpublished or being deleted, then this method will not pull back the event.
+     *
      * @param eventId
      *            - of interest
      * @return event bookings
@@ -138,6 +141,11 @@ public class EventBookingPersistenceManager {
     public List<EventBookingDTO> getBookingByEventId(final String eventId) throws SegueDatabaseException {
         try {
             ContentDTO c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), eventId);
+
+            if (null == c) {
+                return Lists.newArrayList();
+            }
+
             if (c instanceof IsaacEventPageDTO) {
                 return this.convertToDTO(Lists.newArrayList(dao.findAllByEventId(eventId)), (IsaacEventPageDTO) c);
             } else {
