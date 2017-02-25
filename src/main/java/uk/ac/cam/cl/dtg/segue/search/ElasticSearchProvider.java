@@ -29,6 +29,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -144,19 +145,28 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder masterQuery;
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
+
         if (null != fieldsThatMustMatch) {
             masterQuery = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
         } else {
             masterQuery = QueryBuilders.boolQuery();
         }
 
-        QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields)
-                .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).boost(2.0f);
-        query.should(multiMatchQuery);
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-        QueryBuilder fuzzyQuery = QueryBuilders.moreLikeThisQuery(fields, new String[] {searchString}, new MoreLikeThisQueryBuilder.Item[] { });
-        query.should(fuzzyQuery);
+        QueryBuilder multiMatchPrefixQuery = QueryBuilders.multiMatchQuery(searchString, fields)
+                .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).prefixLength(2).boost(2.0f);
+        query.should(multiMatchPrefixQuery);
+
+        QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields)
+                .fuzziness(Fuzziness.ONE).prefixLength(2).boost(1.0f);
+        query.should(multiMatchQuery).minimumNumberShouldMatch(1);
+
+        // TODO: dirty hack to get search to behave more as you would expect.
+        for(String f : fields) {
+            QueryBuilder test = QueryBuilders.wildcardQuery(f, "*"+searchString+"*").boost(1.0f);
+            query.should(test);
+        }
 
         masterQuery.must(query);
 
@@ -394,6 +404,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .setQuery(query).setSize(newLimit).setFrom(startIndex);
 
         ResultsWrapper<String> results = executeQuery(configuredSearchRequestBuilder);
+
+        log.info("Building Query: " + configuredSearchRequestBuilder);
 
         // execute another query to get all results as this is an unlimited
         // query.
