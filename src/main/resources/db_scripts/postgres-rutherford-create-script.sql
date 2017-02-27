@@ -824,7 +824,7 @@ CREATE INDEX "fki_user_id fkey" ON user_notifications USING btree (user_id);
 --
 
 CREATE INDEX log_events_user_id ON logged_events USING btree (user_id);
-
+CREATE INDEX log_events_type ON logged_events USING btree (event_type);
 
 --
 -- TOC entry 1999 (class 1259 OID 16531)
@@ -832,6 +832,7 @@ CREATE INDEX log_events_user_id ON logged_events USING btree (user_id);
 --
 
 CREATE INDEX "question-attempts-by-user" ON question_attempts USING btree (user_id);
+CREATE INDEX "question-attempts-by-question" ON question_attempts USING btree (question_id);
 
 
 --
