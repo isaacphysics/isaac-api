@@ -26,7 +26,6 @@ import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
  */
 @DTOMapping(FormulaDTO.class)
 @JsonContentType("formula")
-@JsonIgnoreProperties({ "_id" })
 public class Formula extends Choice {
     private String pythonExpression;
     private boolean requiresExactMatch;

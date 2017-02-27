@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
@@ -35,6 +36,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 @DTOMapping(ContentDTO.class)
 @JsonContentType("content")
+@JsonIgnoreProperties({ "_id" })
 public class Content extends ContentBase {
     protected String title;
     protected String subtitle;
