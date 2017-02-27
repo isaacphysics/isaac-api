@@ -832,7 +832,7 @@ CREATE INDEX log_events_type ON logged_events USING btree (event_type);
 --
 
 CREATE INDEX "question-attempts-by-user" ON question_attempts USING btree (user_id);
-CREATE INDEX "question-attempts-by-question" ON question_attempts USING btree (question_id);
+CREATE INDEX "question_attempts_by_question" ON question_attempts USING btree (question_id);
 
 
 --
