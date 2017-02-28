@@ -67,6 +67,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.TeacherUserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -1078,6 +1079,17 @@ public class UserAccountManager {
      */
     public UserSummaryDTO convertToUserSummaryObject(final RegisteredUserDTO userToConvert) {
         return this.dtoMapper.map(userToConvert, UserSummaryDTO.class);
+    }
+
+    /**
+     * Helper method to convert a user object into a cutdown teacherUserSummary DTO.
+     *
+     * @param userToConvert
+     *            - full user object.
+     * @return a summarised object with reduced personal information
+     */
+    public TeacherUserSummaryDTO convertToTeacherUserSummaryObject(final RegisteredUserDTO userToConvert) {
+        return this.dtoMapper.map(userToConvert, TeacherUserSummaryDTO.class);
     }
 
     /**
