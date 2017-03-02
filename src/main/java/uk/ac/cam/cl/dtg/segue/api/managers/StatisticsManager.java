@@ -354,13 +354,12 @@ public class StatisticsManager {
         final String connections = "connections";
         final String teachers = "teachers";
         final String numberActive = "numberActiveLastThirtyDays";
+        final String teachersActive = "teachersActiveLastThirtyDays";
         final int thirtyDays = 30;
 
         Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
         List<Map<String, Object>> result = Lists.newArrayList();
         for (Entry<School, List<RegisteredUserDTO>> e : map.entrySet()) {
-            RegisteredUserDTO prototype = new RegisteredUserDTO();
-            prototype.setSchoolId(e.getKey().getUrn());
 
             List<RegisteredUserDTO> teachersConnected = Lists.newArrayList();
             for (RegisteredUserDTO user : e.getValue()) {
@@ -369,9 +368,13 @@ public class StatisticsManager {
                 }
             }
 
-            result.add(ImmutableMap.of(school, e.getKey(), connections, e.getValue().size(), teachers,
-                    teachersConnected.size(), numberActive,
-                    getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap, thirtyDays).size()));
+            result.add(ImmutableMap.of(
+                school, e.getKey(),
+                connections, e.getValue().size(),
+                teachers, teachersConnected.size(),
+                numberActive, getNumberOfUsersActiveForLastNDays(e.getValue(), lastSeenUserMap, thirtyDays).size(),
+                teachersActive, getNumberOfUsersActiveForLastNDays(teachersConnected, lastSeenUserMap, thirtyDays).size()
+            ));
         }
 
         Collections.sort(result, new Comparator<Map<String, Object>>() {
