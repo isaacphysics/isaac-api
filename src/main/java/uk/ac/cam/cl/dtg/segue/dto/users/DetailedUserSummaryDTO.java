@@ -18,13 +18,13 @@ package uk.ac.cam.cl.dtg.segue.dto.users;
 /**
  * Teacher User Summary object, which contains additional information (email).
  */
-public class TeacherUserSummaryDTO extends UserSummaryDTO {
+public class DetailedUserSummaryDTO extends UserSummaryDTO {
     private String email;
 
     /**
      * UserSummaryDTO.
      */
-    public TeacherUserSummaryDTO() {
+    public DetailedUserSummaryDTO() {
 
     }
 
