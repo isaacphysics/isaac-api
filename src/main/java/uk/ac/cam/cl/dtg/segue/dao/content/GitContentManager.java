@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
@@ -69,7 +70,7 @@ public class GitContentManager implements IContentManager {
 
     private final Random randomNumberGenerator = new Random();
 
-    private Cache<Object, Object> cache;
+    private final Cache<Object, Object> cache;
 
 
     /**
@@ -90,10 +91,12 @@ public class GitContentManager implements IContentManager {
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
         this.allowOnlyPublishedContent = Boolean.parseBoolean(globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
+
         if(this.allowOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
-        this.cache = CacheBuilder.newBuilder().softValues().build();
+
+        this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
     }
 
     /**
@@ -113,6 +116,7 @@ public class GitContentManager implements IContentManager {
         this.searchProvider = searchProvider;
         this.globalProperties = null;
         this.allowOnlyPublishedContent = false;
+        this.cache = CacheBuilder.newBuilder().softValues().expireAfterAccess(1, TimeUnit.DAYS).build();
     }
 
     @Override
