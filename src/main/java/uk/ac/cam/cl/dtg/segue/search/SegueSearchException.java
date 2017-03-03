@@ -15,20 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+
 /**
  * An exception that indicates a problem occurred whilst interacting with the third party search provider.
  * 
  * @author Stephen Cummins
  */
-public class SegueSearchOperationException extends Exception {
+public class SegueSearchException extends ContentManagerException {
     private static final long serialVersionUID = -2812103839917179690L;
-
-    /**
-     * Default constructor.
-     */
-    public SegueSearchOperationException() {
-
-    }
 
     /**
      * constructor with message.
@@ -36,7 +32,7 @@ public class SegueSearchOperationException extends Exception {
      * @param message
      *            - error message
      */
-    public SegueSearchOperationException(final String message) {
+    public SegueSearchException(final String message) {
         super(message);
     }
 
@@ -48,7 +44,7 @@ public class SegueSearchOperationException extends Exception {
      * @param e
      *            - wrapped exception
      */
-    public SegueSearchOperationException(final String message, final Exception e) {
+    public SegueSearchException(final String message, final Exception e) {
         super(message, e);
     }
 }

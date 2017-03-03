@@ -44,6 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 /**
  * Segue School Lookup service.
@@ -114,7 +115,7 @@ public class SchoolLookupServiceFacade {
                 list = schoolListReader.findSchoolByNameOrPostCode(searchQuery);    
             }
             
-        } catch (UnableToIndexSchoolsException | IOException e) {
+        } catch (UnableToIndexSchoolsException | SegueSearchException | IOException e) {
             String message = "Unable to create / access the index of schools for the schools service.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message, e).toResponse();

@@ -11,7 +11,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.*;
 import java.util.Arrays;
@@ -66,7 +66,7 @@ class SchoolIndexer {
         File f = new File(schoolsListPath);
         try {
             es.indexObject(SCHOOLS_SEARCH_INDEX, "metadata", objectMapper.writeValueAsString(ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
-        } catch (SegueSearchOperationException e) {
+        } catch (SegueSearchException e) {
             log.error("Unable to index school list metadata.", e);
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise school list last modified date to JSON.", e);
@@ -75,7 +75,7 @@ class SchoolIndexer {
         try {
             es.bulkIndex(SCHOOLS_SEARCH_INDEX, SCHOOLS_SEARCH_TYPE, indexList);
             log.info("School list index request complete.");
-        } catch (SegueSearchOperationException e) {
+        } catch (SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);
         }
 

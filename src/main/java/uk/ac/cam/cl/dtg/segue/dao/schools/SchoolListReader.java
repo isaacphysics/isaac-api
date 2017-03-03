@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
 import java.util.List;
@@ -70,7 +71,7 @@ public class SchoolListReader {
      * @throws UnableToIndexSchoolsException
      *             - if there is an error access the index of schools.
      */
-    public List<School> findSchoolByNameOrPostCode(final String searchQuery) throws UnableToIndexSchoolsException {
+    public List<School> findSchoolByNameOrPostCode(final String searchQuery) throws UnableToIndexSchoolsException, SegueSearchException {
         if (!this.ensureSchoolList()) {
             log.error("Unable to ensure school search cache.");
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
@@ -110,7 +111,7 @@ public class SchoolListReader {
      *             - if the school data is malformed
      */
     public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
-            JsonMappingException, IOException {
+            JsonMappingException, IOException, SegueSearchException {
 
         if (!this.ensureSchoolList()) {
             log.error("Unable to ensure school search cache.");

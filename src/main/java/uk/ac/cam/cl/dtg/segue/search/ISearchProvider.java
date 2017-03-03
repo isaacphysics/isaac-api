@@ -68,7 +68,7 @@ public interface ISearchProvider {
     ResultsWrapper<String> matchSearch(final String index, final String indexType,
             final Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMatch, final int startIndex,
             final int limit, final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions);
+            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
      * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
@@ -96,7 +96,7 @@ public interface ISearchProvider {
     ResultsWrapper<String> fuzzySearch(final String index, final String indexType, final String searchString,
             final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
                                        @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
-                                       final String... fields);
+                                       final String... fields) throws SegueSearchException;
 
     /**
      * Executes a terms search using an array of terms on a single field.
@@ -120,7 +120,7 @@ public interface ISearchProvider {
      */
     ResultsWrapper<String> termSearch(final String index, final String indexType, final String searchterms,
                                       final String field, final int startIndex, final int limit,
-                                      final Map<String, AbstractFilterInstruction> filterInstructions);
+                                      final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
      * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
@@ -143,7 +143,7 @@ public interface ISearchProvider {
      */
     ResultsWrapper<String> randomisedMatchSearch(String index, String indexType,
             Map<Entry<BooleanOperator, String>, List<String>> fieldsToMatch, 
-            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions);
+            int startIndex, int limit, Long randomSeed, Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /**
      * Query for a list of Results that match a given id prefix.
@@ -167,7 +167,7 @@ public interface ISearchProvider {
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByPrefix(String index, String indexType, String fieldname, String prefix,
-            int startIndex, int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions);
+            int startIndex, int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
     
     /**
      * Find content by a regex.
@@ -189,7 +189,7 @@ public interface ISearchProvider {
      * @return A list of results that match the id prefix.
      */
     ResultsWrapper<String> findByRegEx(String index, String indexType, String fieldname, String regex, int startIndex,
-            int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions);
+            int limit, @Nullable Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException;
 
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things

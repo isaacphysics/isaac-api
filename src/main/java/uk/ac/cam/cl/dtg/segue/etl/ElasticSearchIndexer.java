@@ -1,7 +1,6 @@
 package uk.ac.cam.cl.dtg.segue.etl;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
@@ -16,7 +15,6 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
@@ -27,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -56,13 +54,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
 
 
     public void indexObject(final String index, final String indexType, final String content)
-            throws SegueSearchOperationException {
+            throws SegueSearchException {
         indexObject(index, indexType, content, null);
     }
 
 
     void bulkIndex(final String index, final String indexType, final List<Map.Entry<String, String>> dataToIndex)
-            throws SegueSearchOperationException {
+            throws SegueSearchException {
 
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(index)) {
@@ -88,13 +86,13 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
                 }
             }
         } catch (ElasticsearchException e) {
-            throw new SegueSearchOperationException("Error during bulk index operation.", e);
+            throw new SegueSearchException("Error during bulk index operation.", e);
         }
     }
 
 
     void indexObject(final String index, final String indexType, final String content, final String uniqueId)
-            throws SegueSearchOperationException {
+            throws SegueSearchException {
         // check index already exists if not execute any initialisation steps.
         if (!this.hasIndex(index)) {
             this.sendMappingCorrections(index);
@@ -106,7 +104,7 @@ class ElasticSearchIndexer extends ElasticSearchProvider {
             log.debug("Document: " + indexResponse.getId() + " indexed.");
 
         } catch (ElasticsearchException e) {
-            throw new SegueSearchOperationException("Error during index operation.", e);
+            throw new SegueSearchException("Error during index operation.", e);
         }
     }
 

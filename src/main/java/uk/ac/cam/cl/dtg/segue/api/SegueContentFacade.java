@@ -161,6 +161,9 @@ public class SegueContentFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "Unable to convert one of the integer parameters provided into numbers. "
                             + "Params provided were: limit" + limit + " and startIndex " + startIndex, e).toResponse();
+        } catch (ContentManagerException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Content acquisition error.", e).toResponse();
         }
     }
 
@@ -180,7 +183,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
      */
     public final ResultsWrapper<ContentDTO> findMatchingContent(final String version,
             final Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMatch,
-            @Nullable final Integer startIndex, @Nullable final Integer limit) {
+            @Nullable final Integer startIndex, @Nullable final Integer limit) throws ContentManagerException {
 
         String newVersion = this.contentIndex;
         Integer newLimit = DEFAULT_RESULTS_LIMIT;
@@ -197,19 +200,7 @@ public class SegueContentFacade extends AbstractSegueFacade {
 
         ResultsWrapper<ContentDTO> c = null;
 
-        // Deserialize object into POJO of specified type, providing one exists.
-        try {
-            c = this.contentManager.findByFieldNames(newVersion, fieldsToMatch, newStartIndex, newLimit);
-        } catch (IllegalArgumentException e) {
-            log.error("Unable to map content object.", e);
-            throw e;
-        } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
-                    e1);
-            log.error(error.getErrorMessage(), e1);
-        }
-
-        return c;
+        return this.contentManager.findByFieldNames(newVersion, fieldsToMatch, newStartIndex, newLimit);
     }
 
     /**

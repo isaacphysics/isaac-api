@@ -53,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -340,7 +341,7 @@ public class StatisticsManager {
      *             - if there is a database exception.
      */
     public List<Map<String, Object>> getSchoolStatistics() 
-            throws UnableToIndexSchoolsException, SegueDatabaseException {
+            throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
                 .getIfPresent(SCHOOL_STATS);
@@ -407,7 +408,7 @@ public class StatisticsManager {
      * @return A map of schools to integers (representing the number of registered users)
      * @throws UnableToIndexSchoolsException as per the description
      */
-    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException {
+    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException, SegueSearchException {
         List<RegisteredUserDTO> users;
         Map<School, List<RegisteredUserDTO>> usersBySchool = Maps.newHashMap();
 
@@ -454,7 +455,7 @@ public class StatisticsManager {
      *             - if the school list has not been indexed.
      */
     public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
-            SegueDatabaseException, UnableToIndexSchoolsException {
+            SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
         Validate.notNull(schoolId);
 
         List<RegisteredUserDTO> users = Lists.newArrayList();

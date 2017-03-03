@@ -8,7 +8,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import ma.glasnost.orika.MapEntry;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
@@ -28,7 +27,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.*;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchOperationException;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -578,7 +577,7 @@ public class ContentIndexer {
             }
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha, tags, units or content errors.");
-        } catch (SegueSearchOperationException e) {
+        } catch (SegueSearchException e) {
             log.error("Unable to index sha, tags, units or content errors.");
         }
 
@@ -586,7 +585,7 @@ public class ContentIndexer {
         try {
             es.bulkIndex(sha, "content", contentToIndex);
             log.info("Search index request sent for: " + sha);
-        } catch (SegueSearchOperationException e) {
+        } catch (SegueSearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
         } catch (ActionRequestValidationException e) {
             log.error("Error validating content during index",e);

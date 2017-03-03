@@ -90,6 +90,7 @@ import uk.ac.cam.cl.dtg.segue.dos.users.UserSettings;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -527,7 +528,7 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (IOException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
                     .toResponse();
-        } catch (UnableToIndexSchoolsException e) {
+        } catch (UnableToIndexSchoolsException | SegueSearchException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up schools", e)
                     .toResponse();
         }

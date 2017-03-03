@@ -209,9 +209,16 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                .build();
+        try {
+            return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                    .build();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                    "Error locating the content requested", e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        }
     }
 
     /**
@@ -353,32 +360,32 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (cachedResponse != null) {
             return cachedResponse;
         }
+        try {
+            // Currently if you provide a search string we use a different
+            // library call. This is because the previous one does not allow fuzzy
+            // search.
+            if (searchString != null && !searchString.isEmpty()) {
+                ResultsWrapper<ContentDTO> c;
 
-        // Currently if you provide a search string we use a different
-        // library call. This is because the previous one does not allow fuzzy
-        // search.
-        if (searchString != null && !searchString.isEmpty()) {
-            ResultsWrapper<ContentDTO> c;
-            try {
                 c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex,
-                        newLimit);
-            } catch (ContentManagerException e1) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                        "Error locating the version requested", e1);
-                log.error(error.getErrorMessage(), e1);
-                return error.toResponse();
+                            newLimit);
+
+                ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+                        this.extractContentSummaryFromList(c.getResults()),
+                        c.getTotalResults());
+
+                return Response.ok(summarizedContent).tag(etag)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .build();
+            } else {
+                return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
             }
-
-            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-                    this.extractContentSummaryFromList(c.getResults()),
-                    c.getTotalResults());
-
-            return Response.ok(summarizedContent).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                    .build();
-        } else {
-            return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                    "Error locating the content requested", e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
         }
     }
 
@@ -621,10 +628,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         Response result = this.findSingleResult(fieldsToMatch);
 
-        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+        return Response.status(result.getStatus()).entity(result.getEntity())
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-
-        return cachableResult;
     }
 
     /**
@@ -640,7 +645,6 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     public final Response getPodList(@Context final Request request,
                                      @PathParam("subject") final String subject) {
-
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + subject.hashCode() + "");
@@ -649,18 +653,22 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
-        fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
+        try {
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
-        ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
-                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
-        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
-                .tag(etag)
-                .build();
-
-        return cachableResult;
+            return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
+                    .tag(etag)
+                    .build();
+        } catch (ContentManagerException e) {
+            log.error("Content manager exception while trying to request the pods.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable to retrieve Content requested due to an internal server error.", e).toResponse();
+        }
     }
 
     /**
@@ -676,7 +684,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @throws ContentManagerException
      *             - an exception when the content is not found
      */
-    public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
+    private ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
             throws ContentManagerException {
         return this.contentManager.populateRelatedContent(version, contentToAugment);
     }
@@ -734,26 +742,26 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
      */
     private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-        ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
-                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
-                                                                                        // type
-                                                                                        // checking.
-        ContentDTO c = null;
-        if (resultList.getResults().size() > 1) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
-                    + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
-                    .toResponse();
-        } else if (resultList.getResults().isEmpty()) {
-            return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: "
-                    + fieldsToMatch.values()).toResponse();
-        } else {
-            c = resultList.getResults().get(0);
-        }
-
         try {
+            ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+            // type
+            // checking.
+            ContentDTO c = null;
+            if (resultList.getResults().size() > 1) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
+                        + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
+                        .toResponse();
+            } else if (resultList.getResults().isEmpty()) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: "
+                        + fieldsToMatch.values()).toResponse();
+            } else {
+                c = resultList.getResults().get(0);
+            }
+
             return Response.ok(this.augmentContentWithRelatedContent(this.contentIndex, c)).build();
         } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested",
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
@@ -774,7 +782,7 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
      */
     private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) {
+            final Integer startIndex, final Integer limit) throws ContentManagerException{
         ResultsWrapper<ContentDTO> c;
 
         c = api.findMatchingContent(this.contentIndex,

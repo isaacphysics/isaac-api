@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,6 +94,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
@@ -220,6 +221,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return Response.ok(locationInformation).cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
                     .build();
         } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to get last locations", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -261,11 +263,13 @@ public class AdminFacade extends AbstractSegueFacade {
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
                     .build();
         } catch (UnableToIndexSchoolsException e) {
+            log.error("Unable to get school statistics", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e1) {
+        } catch (SegueDatabaseException | SegueSearchException e1) {
+            log.error("Unable to get school statistics", e1);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
                     .toResponse();
         }
@@ -368,6 +372,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "One or more users could not be found")
                     .toResponse();
         } catch (SegueDatabaseException e) {
+            log.error("Database error while trying to change user role", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Could not save new role to the database").toResponse();
         }
@@ -474,6 +479,7 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (IOException e) {
+            log.error("Unable to trigger property refresh", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to trigger properties refresh", e)
                     .toResponse();
         }
@@ -741,9 +747,11 @@ public class AdminFacade extends AbstractSegueFacade {
                     findUsers = nearbyUsers;
 
                 } catch (LocationServerException e) {
+                    log.error("Location service unavailable. ", e);
                     return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,
                             "Unable to process request using 3rd party location provider").toResponse();
-                } catch (UnableToIndexSchoolsException e) {
+                } catch (UnableToIndexSchoolsException | SegueSearchException e) {
+                    log.error("Unable to get school statistics", e);
                     return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                             "Unable to process schools information").toResponse();
                 } catch (JsonParseException | JsonMappingException e) {
@@ -904,7 +912,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (ResourceNotFoundException e) {
             return new SegueErrorResponse(Status.NOT_FOUND, "We cannot locate the school requested").toResponse();
-        } catch (SegueDatabaseException e) {
+        } catch (SegueDatabaseException | SegueSearchException e) {
             log.error("Error while trying to list users belonging to a school.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
         } catch (NumberFormatException e) {
@@ -966,10 +974,8 @@ public class AdminFacade extends AbstractSegueFacade {
             throw new ForbiddenException("You must be logged in as an admin to access this function.");
         }
 
-        Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDate(
+        return this.statsManager.getEventLogsByDate(
                 Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-
-        return eventLogsByDate;
     }
 
     /**
@@ -1326,7 +1332,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 HttpPost httpPost = new HttpPost("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":" +
                         getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/new_version_alert/" + newVersion);
 
-                HttpResponse httpResponse = null;
+                HttpResponse httpResponse;
                 httpResponse = new DefaultHttpClient().execute(httpPost);
                 HttpEntity e = httpResponse.getEntity();
 
