@@ -413,9 +413,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
                     if (question.getTitle() != null) {
-                        headerRow.add(questionPage.getTitle() + " - " + question.getTitle());
+                        headerRow.add(question.getTitle() + " - " + questionPage.getTitle());
                     } else {
-                        headerRow.add(questionPage.getTitle() + " - Q" + newCharIndex);
+                        headerRow.add("Q" + newCharIndex + " - " + questionPage.getTitle());
                     }
 
                     questionIds.add(question.getId());
