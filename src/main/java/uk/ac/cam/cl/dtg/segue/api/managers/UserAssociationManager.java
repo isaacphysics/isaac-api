@@ -278,7 +278,6 @@ public class UserAssociationManager {
             userRequested.setAuthorisedFullAccess(true);
         } else {
             userRequested.setAuthorisedFullAccess(false);
-            userRequested.setEmail(null);
         }
         return userRequested;
     }

@@ -262,7 +262,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
 
-            return Response.ok(userManager.convertToUserSummaryObject(userDTO))
+            return Response.ok(userManager.convertToDetailedUserSummaryObject(userDTO))
                     .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
