@@ -491,12 +491,13 @@ public class GameManager {
         Validate.notNull(gameboardDTO);
         Validate.notNull(owner);
 
-        if (gameboardDTO.getId() == null) {
+        String gameboardId = gameboardDTO.getId();
+        if (gameboardId == null) {
             gameboardDTO.setId(UUID.randomUUID().toString());
-        } else if (this.getGameboard(gameboardDTO.getId()) != null) {
+        } else if (this.getGameboard(gameboardId.toLowerCase()) != null) {
             throw new DuplicateGameboardException();
         } else {
-            gameboardDTO.setId(gameboardDTO.getId().toLowerCase());
+            gameboardDTO.setId(gameboardId.toLowerCase());
         }
 
         if (gameboardDTO.getWildCard() == null) {

@@ -1,1 +1,0 @@
-ALTER TABLE users ALTER COLUMN school_id TYPE text;

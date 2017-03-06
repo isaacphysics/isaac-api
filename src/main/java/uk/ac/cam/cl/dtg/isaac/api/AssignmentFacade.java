@@ -413,9 +413,9 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     //int newCharIndex = 'A' + index; // decided not to try and match the front end.
                     int newCharIndex = index + 1;
                     if (question.getTitle() != null) {
-                        headerRow.add(questionPage.getTitle() + " - " + question.getTitle());
+                        headerRow.add(question.getTitle() + " - " + questionPage.getTitle());
                     } else {
-                        headerRow.add(questionPage.getTitle() + " - Q" + newCharIndex);
+                        headerRow.add("Q" + newCharIndex + " - " + questionPage.getTitle());
                     }
 
                     questionIds.add(question.getId());
@@ -609,16 +609,16 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         gameboardQuestionIds.put(gameboard, questionIds);
 
                         StringBuilder s = new StringBuilder();
-                        if (gameboard.getTitle() != null) {
-                            s.append(gameboard.getTitle()).append(" - ");
-                        } else {
-                            s.append(gameboard.getId()).append(" - ");
-                        }
-                        s.append(questionPage.getTitle()).append(" - ");
                         if (question.getTitle() != null) {
-                            s.append(questionPage.getTitle()).append(" - ");
+                            s.append(question.getTitle());
                         } else {
                             s.append("Q").append(b);
+                        }
+                        s.append(" - ").append(questionPage.getTitle()).append(" - ");
+                        if (gameboard.getTitle() != null) {
+                            s.append(gameboard.getTitle());
+                        } else {
+                            s.append(gameboard.getId());
                         }
                         b++;
                         headerRow.add(s.toString());

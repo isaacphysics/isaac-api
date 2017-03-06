@@ -94,6 +94,8 @@ public final class Constants {
 
     public static final String CREATE_GAMEBOARD = "CREATE_GAMEBOARD";
 
+    public static final String SUBJECT_INTEREST = "SUBJECT_INTEREST";
+
     /**
      * Private constructor to prevent this class being created.
      */
