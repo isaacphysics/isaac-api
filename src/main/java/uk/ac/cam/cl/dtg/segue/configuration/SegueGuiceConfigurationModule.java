@@ -74,8 +74,10 @@ import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
@@ -276,6 +278,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(ICommunicator.class).to(EmailCommunicator.class);
         
         bind(AbstractEmailPreferenceManager.class).to(PgEmailPreferenceManager.class);
+
+        bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
     }
 
     /**

@@ -78,6 +78,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
@@ -91,6 +93,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.SUBJECT_INTEREST;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -112,6 +116,8 @@ public class AdminFacade extends AbstractSegueFacade {
     private final LocationManager locationManager;
 
     private final SchoolListReader schoolReader;
+
+    private final AbstractUserPreferenceManager userPreferenceManager;
 
     /**
      * Create an instance of the administrators facade.
@@ -135,13 +141,14 @@ public class AdminFacade extends AbstractSegueFacade {
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
             final ContentVersionController contentVersionController, final ILogManager logManager,
             final StatisticsManager statsManager, final LocationManager locationManager,
-            final SchoolListReader schoolReader) {
+            final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentVersionController = contentVersionController;
         this.statsManager = statsManager;
         this.locationManager = locationManager;
         this.schoolReader = schoolReader;
+        this.userPreferenceManager = userPreferenceManager;
     }
 
     /**
@@ -845,6 +852,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
+     * @param subjectOfInterest
+     *            - if searching by subject interest
      * @return a userDTO or a segue error response
      */
     @GET
@@ -857,7 +866,8 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final String schoolURN) {
+            @QueryParam("schoolURN") @Nullable final String schoolURN,
+            @QueryParam("subjectOfInterest") @Nullable final String subjectOfInterest) {
 
         RegisteredUserDTO currentUser;
         try {
@@ -982,6 +992,23 @@ public class AdminFacade extends AbstractSegueFacade {
                     log.error("User cannot be found from user Id", e);
                 }
                 
+            }
+
+            // FIXME - this shouldn't really be in a segue class!
+            if (subjectOfInterest != null && !subjectOfInterest.isEmpty()) {
+                List<RegisteredUserDTO> subjectFilteredUsers = new ArrayList<>();
+                Map<Long, List<UserPreference>> userPreferences = userPreferenceManager.getUserPreferences(SUBJECT_INTEREST, findUsers);
+
+                for (RegisteredUserDTO userToFilter: findUsers) {
+                    if (userPreferences.containsKey(userToFilter.getId())) {
+                        for (UserPreference pref : userPreferences.get(userToFilter.getId())) {
+                            if (pref.getPreferenceName().equals(subjectOfInterest)) {
+                                subjectFilteredUsers.add(userToFilter);
+                            }
+                        }
+                    }
+                }
+                findUsers = subjectFilteredUsers;
             }
 
             // Calculate the ETag
