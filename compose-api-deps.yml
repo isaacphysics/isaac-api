@@ -17,10 +17,3 @@ networks:
   default:
     external:
       name: isaac
-volumes:
-  pg-live:
-    external: true
-  pg-staging:
-    external: true
-  pg-dev:
-    external: true
