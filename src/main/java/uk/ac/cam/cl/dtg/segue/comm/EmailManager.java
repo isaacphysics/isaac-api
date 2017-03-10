@@ -386,7 +386,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.EVENTS);
+            emailContent, p, EmailType.SYSTEM);
 
         this.filterByPreferencesAndAddToQueue(user, e);
     }
@@ -422,7 +422,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.EVENTS);
+            emailContent, p, EmailType.SYSTEM);
         this.filterByPreferencesAndAddToQueue(user, e);
 
     }
@@ -513,7 +513,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.EVENTS);
+            emailContent, p, EmailType.SYSTEM);
         this.filterByPreferencesAndAddToQueue(user, e);
     }
 

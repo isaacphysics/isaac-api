@@ -705,6 +705,52 @@ public class EventsFacade extends AbstractIsaacFacade {
     }
 
     /**
+     * This function allows an administrator to attempt to resend the last confirmation email send for a given booking.
+     *
+     * @param request
+     *            - so we can determine if the user is logged in
+     * @param eventId
+     *            - event id
+     * @param userId
+     *            - user id
+     * @return the new booking
+     */
+    @POST
+    @Path("{event_id}/bookings/{user_id}/resend_confirmation")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response resendEventEmail(@Context final HttpServletRequest request,
+                                        @PathParam("event_id") final String eventId, @PathParam("user_id") final Long userId) {
+        try {
+            if (!isUserAnAdminOrEventManager(userManager,request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+            IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
+            RegisteredUserDTO user = this.userManager.getUserDTOById(userId);
+
+            this.bookingManager.resendEventEmail(event, user);
+
+            log.info(String.format("User (%s) has just resent an event email to user id (%s)",
+                    this.userManager.getCurrentRegisteredUser(request).getEmail(), user.getId()));
+
+            return Response.noContent().build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            String errorMsg = "Database error occurred while trying to resend an event email.";
+            log.error(errorMsg, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
+        } catch (ContentManagerException e) {
+            log.error("Error during event request", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
+                    .toResponse();
+        } catch (NoUserException e) {
+            return SegueErrorResponse.getResourceNotFoundResponse("Unable to locate user specified.");
+        }
+    }
+
+    /**
      * Delete a booking.
      *
      * This is an admin function to allow staff to delete a booking permanently.
