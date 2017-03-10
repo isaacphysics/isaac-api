@@ -32,6 +32,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.Math.min;
+
 /**
  *  A postgres specific User Preference Manager
  */
@@ -86,37 +88,48 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
         Validate.notBlank(preferenceName);
 
         Map<Long, UserPreference> usersPreferenceMap = Maps.newHashMap();
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            StringBuilder sb = new StringBuilder();
-            sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
 
-            for (int i = 0; i < users.size(); i++) {
-                sb.append("?").append(i < users.size() - 1 ? ", " : "");
+        int pageSize = 10000;
+        int fromIndex = 0;
+        int toIndex = min(pageSize, users.size());
+
+        while (fromIndex < toIndex) {
+
+            List<RegisteredUserDTO> pagedUsers = users.subList(fromIndex, toIndex);
+            try (Connection conn = database.getDatabaseConnection()) {
+                PreparedStatement pst;
+                StringBuilder sb = new StringBuilder();
+                sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
+
+                for (int i = 0; i < pagedUsers.size(); i++) {
+                    sb.append("?").append(i < pagedUsers.size() - 1 ? ", " : "");
+                }
+                sb.append(") AND preference_type=? AND preference_name=? ORDER BY user_id ASC;");
+
+                pst = conn.prepareStatement(sb.toString());
+                for (int i = 1; i <= pagedUsers.size(); i++) {
+                    pst.setLong(i, pagedUsers.get(i - 1).getId());
+                }
+                pst.setString(pagedUsers.size() + 1, preferenceType);
+                pst.setString(pagedUsers.size() + 2, preferenceName);
+
+                ResultSet results = pst.executeQuery();
+
+                while (results.next()) {
+                    Long userId = results.getLong("user_id");
+                    UserPreference pref = new UserPreference(userId, results.getString("preference_type"),
+                            results.getString("preference_name"), results.getBoolean("preference_value"));
+                    usersPreferenceMap.put(userId, pref);
+                }
+
+                fromIndex = toIndex;
+                toIndex = min(toIndex + pageSize, users.size());
+
+            } catch (SQLException e) {
+                throw new SegueDatabaseException("Postgres exception", e);
             }
-            sb.append(") AND preference_type=? AND preference_name=? ORDER BY user_id ASC;");
-
-            pst = conn.prepareStatement(sb.toString());
-            for (int i = 1; i <= users.size(); i++) {
-                pst.setLong(i, users.get(i - 1).getId());
-            }
-            pst.setString(users.size() + 1, preferenceType);
-            pst.setString(users.size() + 2, preferenceName);
-
-            ResultSet results = pst.executeQuery();
-
-            while (results.next()) {
-                Long userId = results.getLong("user_id");
-                UserPreference pref = new UserPreference(userId, results.getString("preference_type"),
-                        results.getString("preference_name"), results.getBoolean("preference_value"));
-                usersPreferenceMap.put(userId, pref);
-            }
-
-            return usersPreferenceMap;
-
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
         }
+        return usersPreferenceMap;
     }
 
     @Override
@@ -153,43 +166,54 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
         Validate.notBlank(preferenceType);
 
         Map<Long, List<UserPreference>> usersPreferencesMap = Maps.newHashMap();
-        try (Connection conn = database.getDatabaseConnection()) {
-            PreparedStatement pst;
-            StringBuilder sb = new StringBuilder();
-            sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
 
-            for (int i = 0; i < users.size(); i++) {
-                sb.append("?").append(i < users.size() - 1 ? ", " : "");
-            }
-            sb.append(") AND preference_type=? ORDER BY user_id ASC, preference_name ASC;");
+        int pageSize = 10000;
+        int fromIndex = 0;
+        int toIndex = min(pageSize, users.size());
 
-            pst = conn.prepareStatement(sb.toString());
-            for (int i = 1; i <= users.size(); i++) {
-                pst.setLong(i, users.get(i - 1).getId());
-            }
-            pst.setString(users.size() + 1, preferenceType);
+        while (fromIndex < toIndex) {
 
-            ResultSet results = pst.executeQuery();
+            List<RegisteredUserDTO> pagedUsers = users.subList(fromIndex, toIndex);
+            try (Connection conn = database.getDatabaseConnection()) {
+                PreparedStatement pst;
+                StringBuilder sb = new StringBuilder();
+                sb.append("SELECT * FROM user_preferences WHERE user_id IN (");
 
-            while (results.next()) {
-                Long userId = results.getLong("user_id");
-                UserPreference pref = new UserPreference(userId, results.getString("preference_type"),
-                        results.getString("preference_name"), results.getBoolean("preference_value"));
-                List<UserPreference> values;
-                if (usersPreferencesMap.containsKey(userId) && usersPreferencesMap.get(userId) != null) {
-                    values = usersPreferencesMap.get(userId);
-                } else {
-                    values = Lists.newArrayList();
-                    usersPreferencesMap.put(userId, values);
+                for (int i = 0; i < pagedUsers.size(); i++) {
+                    sb.append("?").append(i < pagedUsers.size() - 1 ? ", " : "");
                 }
-                values.add(pref);
+                sb.append(") AND preference_type=? ORDER BY user_id ASC, preference_name ASC;");
+
+                pst = conn.prepareStatement(sb.toString());
+                for (int i = 1; i <= pagedUsers.size(); i++) {
+                    pst.setLong(i, pagedUsers.get(i - 1).getId());
+                }
+                pst.setString(pagedUsers.size() + 1, preferenceType);
+
+                ResultSet results = pst.executeQuery();
+
+                while (results.next()) {
+                    Long userId = results.getLong("user_id");
+                    UserPreference pref = new UserPreference(userId, results.getString("preference_type"),
+                            results.getString("preference_name"), results.getBoolean("preference_value"));
+                    List<UserPreference> values;
+                    if (usersPreferencesMap.containsKey(userId) && usersPreferencesMap.get(userId) != null) {
+                        values = usersPreferencesMap.get(userId);
+                    } else {
+                        values = Lists.newArrayList();
+                        usersPreferencesMap.put(userId, values);
+                    }
+                    values.add(pref);
+                }
+
+                fromIndex = toIndex;
+                toIndex = min(toIndex + pageSize, users.size());
+
+            } catch (SQLException e) {
+                throw new SegueDatabaseException("Postgres exception", e);
             }
-
-            return usersPreferencesMap;
-
-        } catch (SQLException e) {
-            throw new SegueDatabaseException("Postgres exception", e);
         }
+        return usersPreferencesMap;
     }
 
     @Override
