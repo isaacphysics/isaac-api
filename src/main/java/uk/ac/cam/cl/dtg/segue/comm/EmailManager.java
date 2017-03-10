@@ -5,18 +5,13 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import com.google.api.client.util.Sets;
 import com.google.inject.name.Named;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -332,7 +327,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         throws ContentManagerException, SegueDatabaseException {
         Validate.notNull(user);
 
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-confirmed");
+        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-confirmed-new");
 
         String myAssignmentsURL = String.format("https://%s/assignments",
             globalProperties.getProperty(HOST_NAME));
@@ -340,14 +335,40 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         String contactUsURL = String.format("https://%s/contact",
             globalProperties.getProperty(HOST_NAME));
 
+        String myBookedEventsURL = String.format("https://%s/events?show_booked_only=true",
+                globalProperties.getProperty(HOST_NAME));
+
+        String authorisationURL = String.format("https://%s/account?authToken=%s",
+                globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
+
         Properties p = new Properties();
         // givenname should be camel case but I have left it to be in line with the others.
         p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
+
         p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
+        p.put("eventSubtitle", event.getSubtitle() == null ? "" : event.getSubtitle());
+
         p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
+        p.put("endDate", event.getEndDate() == null ? "" : FULL_DATE_FORMAT.format(event.getEndDate()));
         p.put("prepWorkDeadline", event.getPrepWorkDeadline() == null ? "" : FULL_DATE_FORMAT.format(event.getPrepWorkDeadline()));
+
         p.put("myAssignmentsURL", myAssignmentsURL == null ? "" : myAssignmentsURL);
+        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
+        p.put("authorizationLink", authorisationURL == null ? "" : authorisationURL);
+
+        p.put("addressLine1", event.getLocation().getAddress().getAddressLine1() == null
+                ? "" : event.getLocation().getAddress().getAddressLine1());
+
+        p.put("addressLine2", event.getLocation().getAddress().getAddressLine2() == null
+                ? "" : event.getLocation().getAddress().getAddressLine2());
+
+        p.put("town", event.getLocation().getAddress().getTown() == null
+                ? "" : event.getLocation().getAddress().getTown());
+
+        p.put("postalCode", event.getLocation().getAddress().getPostalCode() == null
+                ? "" : event.getLocation().getAddress().getPostalCode());
+
+        p.put("myBookedEventsURL", myBookedEventsURL);
 
         StringBuilder sb = new StringBuilder();
         if (event.getPreResources() != null && event.getPreResources().size() > 0) {
@@ -362,16 +383,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         p.put("emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails());
 
-        String authorisationURL = String.format("https://%s/account?authToken=%s",
-            globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
-        p.put("authorizationLink", authorisationURL);
-
         p.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
             emailContent, p, EmailType.EVENTS);
-        this.filterByPreferencesAndAddToQueue(user, e);
 
+        this.filterByPreferencesAndAddToQueue(user, e);
     }
 
     /**
@@ -966,11 +983,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param templateProperties
      *            list of properties from which we can fill in the template
      * @return template with completed fields
-     * @throws IllegalArgumentException
-     *             - exception when the provided page object is incorrect
      */
-    private String completeTemplateWithProperties(final String content, final Properties templateProperties, final boolean html)
-            throws IllegalArgumentException {
+    private String completeTemplateWithProperties(final String content, final Properties templateProperties, final boolean html) {
 
         // ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) content.getChildren();
         // if (!(children.size() == 1 && children.get(0) instanceof ContentDTO)) {
@@ -982,9 +996,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String template = content;
 
-        Pattern p = Pattern.compile("\\{\\{[A-Za-z]+\\}\\}");
+        Pattern p = Pattern.compile("\\{\\{[A-Za-z0-9]+\\}\\}");
         Matcher m = p.matcher(template);
         int offset = 0;
+        Set<String> unknownTags = Sets.newHashSet();
 
         while (m.find()) {
             if (m.start() + offset >= 0 && m.end() + offset <= template.length()) {
@@ -1022,9 +1037,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
                     offset += templateProperties.getProperty(strippedTag).length() - tag.length();
                 } else {
-                    throw new IllegalArgumentException("Email template contains tag that was not provided! - " + tag);
+                    unknownTags.add(tag);
                 }
             }
+        }
+
+        if (unknownTags.size() != 0) {
+            log.error("Email template contains tags that were not resolved! - " + unknownTags);
         }
 
         return template;
