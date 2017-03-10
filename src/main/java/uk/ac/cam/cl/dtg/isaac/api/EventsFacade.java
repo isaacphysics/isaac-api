@@ -862,14 +862,18 @@ public class EventsFacade extends AbstractIsaacFacade {
                 eventOverviewBuilder.put("title", e.getTitle());
                 eventOverviewBuilder.put("subtitle", e.getSubtitle());
                 eventOverviewBuilder.put("date", e.getDate());
+                eventOverviewBuilder.put("bookingDeadline",
+                        e.getBookingDeadline() == null ? e.getDate() : e.getBookingDeadline());
                 eventOverviewBuilder.put("eventStatus", e.getEventStatus());
 
                 if (null != e.getLocation()) {
                     eventOverviewBuilder.put("location", e.getLocation());
                 }
 
-                eventOverviewBuilder.put("numberOfConfirmedBookings", this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.CONFIRMED));
-                eventOverviewBuilder.put("numberOfWaitingListBookings", this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.WAITING_LIST));
+                eventOverviewBuilder.put("numberOfConfirmedBookings",
+                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.CONFIRMED));
+                eventOverviewBuilder.put("numberOfWaitingListBookings",
+                        this.bookingManager.countNumberOfBookingsWithStatus(e.getId(), BookingStatus.WAITING_LIST));
 
                 if (null != e.getNumberOfPlaces()) {
                     eventOverviewBuilder.put("numberOfPlaces", e.getNumberOfPlaces());
