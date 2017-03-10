@@ -860,6 +860,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
                 eventOverviewBuilder.put("id", e.getId());
                 eventOverviewBuilder.put("title", e.getTitle());
+                eventOverviewBuilder.put("subtitle", e.getSubtitle());
                 eventOverviewBuilder.put("date", e.getDate());
                 eventOverviewBuilder.put("eventStatus", e.getEventStatus());
 
