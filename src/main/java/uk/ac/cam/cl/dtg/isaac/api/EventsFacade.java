@@ -815,6 +815,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 eventOverviewBuilder.put("id", e.getId());
                 eventOverviewBuilder.put("title", e.getTitle());
                 eventOverviewBuilder.put("date", e.getDate());
+                eventOverviewBuilder.put("eventStatus", e.getEventStatus());
 
                 if (null != e.getLocation()) {
                     eventOverviewBuilder.put("location", e.getLocation());
