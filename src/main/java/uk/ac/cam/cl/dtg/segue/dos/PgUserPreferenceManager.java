@@ -51,6 +51,11 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
         this.database = database;
     }
 
+    private UserPreference userPreferenceFromResultSet(ResultSet results) throws SQLException {
+        return new UserPreference(results.getLong("user_id"), results.getString("preference_type"),
+                results.getString("preference_name"), results.getBoolean("preference_value"));
+    }
+
     @Override
     public UserPreference getUserPreference(String preferenceType, String preferenceName, long userId)
             throws SegueDatabaseException {
@@ -69,8 +74,7 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
             ResultSet results = pst.executeQuery();
 
             if (results.next()) {
-                return new UserPreference(results.getLong("user_id"), results.getString("preference_type"),
-                        results.getString("preference_name"), results.getBoolean("preference_value"));
+                return userPreferenceFromResultSet(results);
             }
 
             // We must not have found anything:
@@ -117,8 +121,7 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
 
                 while (results.next()) {
                     Long userId = results.getLong("user_id");
-                    UserPreference pref = new UserPreference(userId, results.getString("preference_type"),
-                            results.getString("preference_name"), results.getBoolean("preference_value"));
+                    UserPreference pref = userPreferenceFromResultSet(results);
                     usersPreferenceMap.put(userId, pref);
                 }
 
@@ -148,8 +151,7 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
             List<UserPreference> userPreferences = Lists.newArrayList();
 
             while (results.next()) {
-                UserPreference pref = new UserPreference(results.getLong("user_id"), results.getString("preference_type"),
-                        results.getString("preference_name"), results.getBoolean("preference_value"));
+                UserPreference pref = userPreferenceFromResultSet(results);
                 userPreferences.add(pref);
             }
 
@@ -194,8 +196,7 @@ public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
 
                 while (results.next()) {
                     Long userId = results.getLong("user_id");
-                    UserPreference pref = new UserPreference(userId, results.getString("preference_type"),
-                            results.getString("preference_name"), results.getBoolean("preference_value"));
+                    UserPreference pref = userPreferenceFromResultSet(results);
                     List<UserPreference> values;
                     if (usersPreferencesMap.containsKey(userId) && usersPreferencesMap.get(userId) != null) {
                         values = usersPreferencesMap.get(userId);
