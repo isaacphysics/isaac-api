@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Nick Rogers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,7 +76,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private final String callbackUri;
 	private final Collection<String> requestedScopes;
 	
-	private static final String FACEBOOK_API_VERSION = "2.3";
+	private static final String FACEBOOK_API_VERSION = "2.8";
 	
     private static final String AUTH_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION + "/oauth/authorize";
     private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
@@ -89,10 +89,10 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private static GoogleIdTokenVerifier tokenVerifier;
 
     /**
-     * @param clientId 
-     * @param clientSecret 
-     * @param callbackUri 
-     * @param requestedScopes 
+     * @param clientId The registered Facebook client ID
+     * @param clientSecret The client secret provided by the Facebook api (https://developers.facebook.com/apps/)
+     * @param callbackUri The callback url from the oauth process
+     * @param requestedScopes The facebook permissions requested by this application
      */
     @Inject
     public FacebookAuthenticator(@Named(Constants.FACEBOOK_CLIENT_ID) final String clientId,
@@ -108,7 +108,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
         this.requestedScopes = Arrays.asList(requestedScopes.split(","));
 
         if (null == credentialStore) {
-            credentialStore = new WeakHashMap<String, Credential>();
+            credentialStore = new WeakHashMap<>();
         }
 
         if (null == tokenVerifier) {
@@ -127,7 +127,9 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 
 		urlBuilder.set(Constants.STATE_PARAM_NAME, antiForgeryStateToken);
 		urlBuilder.set("redirect_uri", callbackUri);
-		urlBuilder.set("scope", mergeStrings(",", requestedScopes));
+
+		String scope = (null == requestedScopes || requestedScopes.size() == 0 ? null : String.join(",", requestedScopes));
+		urlBuilder.set("scope", scope);
 
 		return urlBuilder.build();
 	}
@@ -135,7 +137,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	@Override
 	public String extractAuthCode(final String url) throws IOException {
 		// Copied verbatim from GoogleAuthenticator.extractAuthCode
-        AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url.toString());
+        AuthorizationCodeResponseUrl authResponse = new AuthorizationCodeResponseUrl(url);
 
 		if (authResponse.getError() == null) {
 			log.debug("User granted access to our app.");
@@ -158,8 +160,8 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 			
 			TokenResponse response = request.execute();
 
-			String accessToken = null;
-			Long expires = null;
+			String accessToken;
+			Long expires;
 			if (response.get("error") != null) {
 				throw new CodeExchangeException("Server responded with the following error"
 						+ response.get("error") + " given the request" + request.toString());
@@ -203,10 +205,8 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	public String getAntiForgeryStateToken() {
 		final int numberOfBits = 130;
 		final int radix = 130;
-		
-        String antiForgerySalt = new BigInteger(numberOfBits, new SecureRandom()).toString(radix);
-        String antiForgeryStateToken = "facebook" + antiForgerySalt;
-        return antiForgeryStateToken;
+
+        return "facebook" + new BigInteger(numberOfBits, new SecureRandom()).toString(radix);
     }
 
 	@Override
@@ -224,7 +224,6 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		}
 
 		FacebookUser userInfo = null;
-		
 
 		try {
 			GenericUrl url = new GenericUrl(USER_INFO_URL);
@@ -273,39 +272,6 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
         return false;
     }
 
-    /**
-     * Helper method to merge a collection of strings into a single string.
-     * 
-     * @param delim
-     *            - The delimiter to be inserted between the merged strings
-     * @param strings
-     *            - A collection of strings to be merged
-     * @return the merged string
-     */
-    private String mergeStrings(final String delim, final Collection<String> strings) {
-		if (strings == null) {
-			return null;
-		}
-
-		int numStrings = strings.size();
-		if (numStrings == 0) {
-			return null;
-		}
-
-		StringBuffer sb = new StringBuffer();
-
-		int i = 0;
-		for (String s : strings) {
-			i++;
-			sb.append(s);
-			if (i != numStrings) {
-				sb.append(delim);
-			}
-		}
-
-		return sb.toString();
-	}
-
 	/**
 	 * Helper method to read an InputStream into a String.
 	 * 
@@ -315,7 +281,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	 * @throws IOException - if there is an error during reading the input stream.
 	 */
 	private String inputStreamToString(final InputStream is) throws IOException {
-		String line = "";
+		String line;
 		StringBuilder total = new StringBuilder();
 
 		// Wrap a BufferedReader around the InputStream
