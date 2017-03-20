@@ -697,7 +697,8 @@ public class UsersFacade extends AbstractSegueFacade {
             // Finally update the subject interests:
             try {
                 List<UserPreference> userPreferences = Lists.newArrayList();
-                List<String> acceptedSubjects = Arrays.asList("PHYSICS", "MATHEMATICS", "CHEMISTRY", "BIOLOGY");
+                List<String> acceptedSubjects = Arrays.asList("PHYSICS_UNI", "PHYSICS_ALEVEL", "PHYSICS_GCSE",
+                        "CHEMISTRY_UNI", "CHEMISTRY_ALEVEL", "CHEMISTRY_GCSE", "MATHS_UNI", "MATHS_ALEVEL", "MATHS_GCSE");
                 for (String subject : subjectInterests.keySet()) {
                     // Validate that what is being saved is in fact acceptable:
                     if (!acceptedSubjects.contains(subject)) {
