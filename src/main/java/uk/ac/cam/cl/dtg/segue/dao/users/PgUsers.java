@@ -181,6 +181,7 @@ public class PgUsers implements IUserDataManager {
         }
     }
 
+    // TODO: Remove getByLegacyId altogether? Don't think we have any legacy IDs any more.
     @Override
     public RegisteredUser getByLegacyId(final String id) throws SegueDatabaseException {
         // if the id is null then we won't find anyone so just return null.

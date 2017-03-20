@@ -95,6 +95,9 @@ public final class Constants {
     // The alias / content index of the 'live' version we should be serving up
     public static final String CONTENT_INDEX = "CONTENT_INDEX";
 
+    // The actual git commit SHA of the content we're using
+    public static final String CONTENT_SHA = "CONTENT_SHA";
+
     /**
      * Constant representing the segue application mode. e.g. either debug or production
      */

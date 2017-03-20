@@ -63,8 +63,6 @@ public class ContentIndexer {
 
     void loadAndIndexContent(String version) throws Exception, VersionLockedException {
 
-        // TODO: Work out what to do about includeUnpublished!
-
         // Take version lock or fail
         Boolean alreadyLocked = versionLocks.putIfAbsent(version, true);
 

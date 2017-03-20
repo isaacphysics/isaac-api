@@ -16,19 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -584,9 +572,11 @@ public class PagesFacade extends AbstractIsaacFacade {
         Response result = this.findSingleResult(fieldsToMatch);
 
         if (result.getEntity() instanceof SeguePageDTO) {
-            // TODO: Log content sha, not "live"/"latest"
+
+
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(PAGE_ID_LOG_FIELDNAME, pageId).put("contentVersion", this.contentManager.getCurrentContentSHA()).build();
+                    .put(PAGE_ID_LOG_FIELDNAME, pageId)
+                    .put(CONTENT_SHA, this.contentManager.getCurrentContentSHA()).build();
 
             // the request log
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,

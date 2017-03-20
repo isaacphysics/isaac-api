@@ -242,7 +242,6 @@ public class InfoFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public Response pingEqualityChecker(@Context final HttpServletRequest request) {
 
-        // TODO: Factor this URL out into a property
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_HOST)
                                       + ":" + this.getProperties().getProperty(Constants.EQUALITY_CHECKER_PORT) +  "/");
@@ -267,7 +266,6 @@ public class InfoFacade extends AbstractSegueFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public Response pingChemistryChecker(@Context final HttpServletRequest request) {
 
-        // TODO: Factor this URL out into a property
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet httpGet = new HttpGet("http://" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_HOST)
                                       + ":" + this.getProperties().getProperty(Constants.CHEMISTRY_CHECKER_PORT) +  "/");

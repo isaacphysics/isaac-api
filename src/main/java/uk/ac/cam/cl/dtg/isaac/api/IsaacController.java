@@ -18,15 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.GLOBAL_SITE_SEARCH;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_USER_PROGRESS;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_MINUTE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -220,9 +212,10 @@ public class IsaacController extends AbstractIsaacFacade {
                     .toResponse();
         }
 
-        // TODO: Log content sha, not "live"/"latest"
-        ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>().put(TYPE_FIELDNAME, types)
-                .put("searchString", searchString).put(CONTENT_INDEX, this.contentIndex).build();
+        ImmutableMap<String, String> logMap = new ImmutableMap.Builder<String, String>()
+                .put(TYPE_FIELDNAME, types)
+                .put("searchString", searchString)
+                .put(CONTENT_SHA, this.contentManager.getCurrentContentSHA()).build();
 
         getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
                 GLOBAL_SITE_SEARCH, logMap);
