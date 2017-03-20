@@ -26,7 +26,6 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     private Long id;
     private String givenName;
     private String familyName;
-    private String email;
     private Role role;
     private boolean authorisedFullAccess;
 
@@ -115,25 +114,6 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
     }
 
     /**
-     * Gets the email.
-     * 
-     * @return the email
-     */
-    public String getEmail() {
-        return email;
-    }
-
-    /**
-     * Sets the email.
-     * 
-     * @param email
-     *            the email to set
-     */
-    public void setEmail(final String email) {
-        this.email = email;
-    }
-
-    /**
      * Gets the role.
      *
      * @return the role
@@ -180,8 +160,6 @@ public class UserSummaryDTO extends AbstractSegueUserDTO {
         builder.append(givenName);
         builder.append(", familyName=");
         builder.append(familyName);
-        builder.append(", email=");
-        builder.append(email);
         builder.append(", authorisedFullAccess=");
         builder.append(authorisedFullAccess);
         builder.append("]");

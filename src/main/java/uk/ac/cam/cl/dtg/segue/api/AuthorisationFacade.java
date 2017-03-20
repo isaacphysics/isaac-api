@@ -117,7 +117,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
                 userIdsWithAccess.add(a.getUserIdReceivingPermission());
             }
 
-            return Response.ok(userManager.convertToUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
+            return Response.ok(userManager.convertToDetailedUserSummaryObjectList(userManager.findUsers(userIdsWithAccess)))
                     .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -263,7 +263,7 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             RegisteredUserDTO userDTO = userManager.getUserDTOById(associationManager.lookupTokenDetails(
                     currentRegisteredUser, token).getOwnerUserId());
 
-            return Response.ok(userManager.convertToUserSummaryObject(userDTO))
+            return Response.ok(userManager.convertToDetailedUserSummaryObject(userDTO))
                     .cacheControl(getCacheControl(Constants.NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

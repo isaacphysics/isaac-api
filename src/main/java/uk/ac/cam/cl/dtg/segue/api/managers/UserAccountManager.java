@@ -67,6 +67,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.api.client.util.Lists;
@@ -1081,7 +1082,18 @@ public class UserAccountManager {
     }
 
     /**
-     * Helper method to convert a user object into a cutdown userSummary DTO.
+     * Helper method to convert a user object into a cutdown detailedUserSummary DTO.
+     *
+     * @param userToConvert
+     *            - full user object.
+     * @return a summarised object with reduced personal information
+     */
+    public DetailedUserSummaryDTO convertToDetailedUserSummaryObject(final RegisteredUserDTO userToConvert) {
+        return this.dtoMapper.map(userToConvert, DetailedUserSummaryDTO.class);
+    }
+
+    /**
+     * Helper method to convert user objects into cutdown userSummary DTOs.
      * 
      * @param userListToConvert
      *            - full user objects.
@@ -1092,6 +1104,22 @@ public class UserAccountManager {
         List<UserSummaryDTO> resultList = Lists.newArrayList();
         for (RegisteredUserDTO user : userListToConvert) {
             resultList.add(this.convertToUserSummaryObject(user));
+        }
+        return resultList;
+    }
+
+    /**
+     * Helper method to convert user objects into cutdown DetailedUserSummary DTOs.
+     *
+     * @param userListToConvert
+     *            - full user objects.
+     * @return a list of summarised objects with reduced personal information
+     */
+    public List<DetailedUserSummaryDTO> convertToDetailedUserSummaryObjectList(final List<RegisteredUserDTO> userListToConvert) {
+        Validate.notNull(userListToConvert);
+        List<DetailedUserSummaryDTO> resultList = Lists.newArrayList();
+        for (RegisteredUserDTO user : userListToConvert) {
+            resultList.add(this.convertToDetailedUserSummaryObject(user));
         }
         return resultList;
     }

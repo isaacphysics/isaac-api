@@ -23,7 +23,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.DetailedUserSummaryDTO;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
@@ -239,7 +239,7 @@ public class EventBookingPersistenceManager {
         EventBookingDTO result = new EventBookingDTO();
 
         try {
-            UserSummaryDTO user = userManager.convertToUserSummaryObject(userManager.getUserDTOById(eb
+            DetailedUserSummaryDTO user = userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(eb
                     .getUserId()));
 
             result.setBookingId(eb.getId());
