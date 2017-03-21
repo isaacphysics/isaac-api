@@ -1002,7 +1002,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 for (RegisteredUserDTO userToFilter: findUsers) {
                     if (userPreferences.containsKey(userToFilter.getId())) {
                         for (UserPreference pref : userPreferences.get(userToFilter.getId())) {
-                            if (pref.getPreferenceName().equals(subjectOfInterest)) {
+                            if (pref.getPreferenceName().equals(subjectOfInterest) && pref.getPreferenceValue()) {
                                 subjectFilteredUsers.add(userToFilter);
                             }
                         }
