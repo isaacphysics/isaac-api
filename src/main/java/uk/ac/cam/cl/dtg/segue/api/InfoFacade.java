@@ -285,4 +285,28 @@ public class InfoFacade extends AbstractSegueFacade {
 
     }
 
+    @GET
+    @Path("etl/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pingETLServer(@Context final HttpServletRequest request) {
+
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet("http://" + getProperties().getProperty("ETL_HOSTNAME") + ":"
+                + getProperties().getProperty("ETL_PORT") + "/isaac-api/api/etl/ping");
+
+        HttpResponse httpResponse = null;
+        try {
+            httpResponse = httpClient.execute(httpGet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
+            return Response.ok(ImmutableMap.of("success", true)).build();
+        } else {
+            return Response.ok(ImmutableMap.of("success", false)).build();
+        }
+
+    }
+
 }

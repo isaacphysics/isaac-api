@@ -60,6 +60,13 @@ public class ETLFacade extends AbstractSegueFacade {
         return Response.ok().build();
     }
 
+    @GET
+    @Path("/ping")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response statusCheck() {
+        return Response.ok().entity("{\"code\" : 200}").build();
+    }
+
 
 
     //***************************
