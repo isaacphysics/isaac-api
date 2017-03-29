@@ -88,7 +88,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
 			log.error("Database access error when attempting to send hard threshold limit warnings: " 
 							+ e1.getMessage());
 		}
-        log.warn("Soft threshold limit reached" + message);
+        log.warn("Soft threshold limit: " + message);
 
     }
 
@@ -105,7 +105,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
 			log.error("Database access error when attempting to send hard threshold limit warnings: " 
 							+ e1.getMessage());
 		}
-        log.warn("Hard threshold limit reached" + message);
+        log.warn("Hard threshold limit: " + message);
 
     }
 }

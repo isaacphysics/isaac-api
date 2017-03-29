@@ -65,25 +65,12 @@ public class QuestionAttemptMisuseHandler implements IMisuseHandler {
     }
 
     @Override
-    public void executeSoftThresholdAction(String message) {
-        log.warn("Soft threshold limit reached for QuestionAttemptMisuseHandler " + message);
+    public void executeSoftThresholdAction(final String message) {
+        log.warn("Soft threshold limit: " + message);
     }
 
     @Override
-    public void executeHardThresholdAction(String message) {
-        final String subject = "HARD Threshold limit reached for QuestionAttemptMisuseHandler";
-
-        // No more emails. I think we don't need these any more!
-//        EmailCommunicationMessage e = new EmailCommunicationMessage(null,
-//                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-//                null, null);
-//
-//        try {
-//            emailManager.addSystemEmailToQueue(e);
-//        } catch (SegueDatabaseException e1) {
-//            log.error("Database access error when attempting to send hard threshold limit warnings: "
-//                    + e1.getMessage());
-//        }
-        log.warn("Hard threshold limit reached for QuestionAttemptMisuseHandler: " + message);
+    public void executeHardThresholdAction(final String message) {
+        log.warn("Hard threshold limit: " + message);
     }
 }

@@ -39,12 +39,12 @@ import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
@@ -533,14 +533,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(),
-                    new EmailVerificationMisusehandler());
+            misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.toString(),
+                    new EmailVerificationMisuseHandler());
 
-            misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(),
-                    new EmailVerificationRequestMisusehandler());
+            misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.toString(),
+                    new EmailVerificationRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(),
-                    new PasswordResetRequestMisusehandler());
+            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.toString(),
+                    new PasswordResetRequestMisuseHandler());
 
             misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(),
                     new SegueLoginMisuseHandler(emailManager, properties));

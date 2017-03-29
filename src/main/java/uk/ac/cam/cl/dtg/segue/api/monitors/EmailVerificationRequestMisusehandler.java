@@ -29,8 +29,8 @@ import com.google.inject.Inject;
  * @author Alistair Stead
  *
  */
-public class EmailVerificationRequestMisusehandler implements IMisuseHandler {
-    private static final Logger log = LoggerFactory.getLogger(EmailVerificationRequestMisusehandler.class);
+public class EmailVerificationRequestMisuseHandler implements IMisuseHandler {
+    private static final Logger log = LoggerFactory.getLogger(EmailVerificationRequestMisuseHandler.class);
 
     public static final Integer SOFT_THRESHOLD = 2;
     public static final Integer HARD_THRESHOLD = 4;
@@ -40,7 +40,7 @@ public class EmailVerificationRequestMisusehandler implements IMisuseHandler {
      * 
      */
     @Inject
-    public EmailVerificationRequestMisusehandler() {
+    public EmailVerificationRequestMisuseHandler() {
 
     }
     
@@ -62,12 +62,12 @@ public class EmailVerificationRequestMisusehandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit reached" + message);
+        log.warn("Soft threshold limit: " + message);
     }
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        log.error("Hard threshold limit reached" + message);
+        log.error("Hard threshold limit: " + message);
     }
 
 }

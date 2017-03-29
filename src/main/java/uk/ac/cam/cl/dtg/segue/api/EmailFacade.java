@@ -46,8 +46,8 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -338,7 +338,7 @@ public class EmailFacade extends AbstractSegueFacade {
             @PathParam("newemail") final String newemail, @PathParam("token") final String token) {
 
         try {
-            misuseMonitor.notifyEvent(newemail, EmailVerificationMisusehandler.class.toString());
+            misuseMonitor.notifyEvent(newemail, EmailVerificationMisuseHandler.class.toString());
             userManager.processEmailVerification(userid, newemail, token);
 
             // assume that if there are no exceptions that it worked.
@@ -376,7 +376,7 @@ public class EmailFacade extends AbstractSegueFacade {
             @Context final HttpServletRequest request) {
         try {
 
-            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisusehandler.class.toString());
+            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());
 
             userManager.emailVerificationRequest(request, email);
 
