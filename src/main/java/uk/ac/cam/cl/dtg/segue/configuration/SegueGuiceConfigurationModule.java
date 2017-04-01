@@ -418,7 +418,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             final ILogManager logManager) {
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
-            				contentManager, contentIndex, logManager);
+            				contentManager, logManager);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;

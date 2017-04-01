@@ -55,7 +55,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 	private final AbstractEmailPreferenceManager emailPreferenceManager;
     private final PropertiesLoader globalProperties;
     private final IContentManager contentManager;
-    private final String contentIndex;
+
     private final ILogManager logManager;
     
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
@@ -80,12 +80,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
 		    		emailPreferenceManager, final PropertiesLoader globalProperties,
-                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager) {
+                        final IContentManager contentManager, final ILogManager logManager) {
         super(communicator);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
         this.logManager = logManager;
     }
 
@@ -1085,15 +1084,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         ContentDTO htmlTemplate = getContentDTO("email-template-html");
         ContentDTO plainTextTemplate = getContentDTO("email-template-ascii");
-        
-        
+
         Properties htmlTemplateProperties = new Properties();
         htmlTemplateProperties.put("content", HTMLContent);
         htmlTemplateProperties.put("email", userEmail);
 
         String htmlMessage = completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties, true);
-        
-        
+
         Properties plainTextTemplateProperties = new Properties();
         plainTextTemplateProperties.put("content", plainTextContent);
         plainTextTemplateProperties.put("email", userEmail);
