@@ -175,7 +175,7 @@ public class ContentIndexer {
                         continue;
                     }
 
-                    content = this.augmentChildContent(content, treeWalk.getPathString(), null);
+                    content = this.augmentChildContent(content, treeWalk.getPathString(), null, content.getPublished());
 
                     if (null != content) {
                         // add children (and parent) from flattened Set to
@@ -289,7 +289,7 @@ public class ContentIndexer {
      * @return Content object with new reference
      */
     private Content augmentChildContent(final Content content, final String canonicalSourceFile,
-            @Nullable final String parentId) {
+            @Nullable final String parentId, final boolean parentPublished) {
         if (null == content) {
             return null;
         }
@@ -319,7 +319,7 @@ public class ContentIndexer {
                 if (cb instanceof Content) {
                     Content c = (Content) cb;
 
-                    this.augmentChildContent(c, canonicalSourceFile, newParentId);
+                    this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
         }
@@ -327,7 +327,7 @@ public class ContentIndexer {
         if (content instanceof Choice) {
             Choice choice = (Choice) content;
             this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile,
-                    newParentId);
+                    newParentId, parentPublished);
         }
 
         // TODO: hack to get hints to apply as children
@@ -336,7 +336,7 @@ public class ContentIndexer {
             if (question.getHints() != null) {
                 for (ContentBase cb : question.getHints()) {
                     Content c = (Content) cb;
-                    this.augmentChildContent(c, canonicalSourceFile, newParentId);
+                    this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
 
@@ -346,7 +346,7 @@ public class ContentIndexer {
                 if (answer.getChildren() != null) {
                     for (ContentBase cb : answer.getChildren()) {
                         Content c = (Content) cb;
-                        this.augmentChildContent(c, canonicalSourceFile, newParentId);
+                        this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                     }
                 }
             }
@@ -356,7 +356,7 @@ public class ContentIndexer {
                 if (choiceQuestion.getChoices() != null) {
                     for (ContentBase cb : choiceQuestion.getChoices()) {
                         Content c = (Content) cb;
-                        this.augmentChildContent(c, canonicalSourceFile, newParentId);
+                        this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                     }
                 }
             }
@@ -393,7 +393,7 @@ public class ContentIndexer {
         // identifier.
         if (content.getId() != null && parentId != null) {
             content.setId(parentId + Constants.ID_SEPARATOR + content.getId());
-            content.setPublished(true);
+            content.setPublished(parentPublished);
         }
 
         return content;
