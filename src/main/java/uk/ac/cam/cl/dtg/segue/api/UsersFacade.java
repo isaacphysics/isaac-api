@@ -59,7 +59,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -325,7 +325,7 @@ public class UsersFacade extends AbstractSegueFacade {
         }
 
         try {
-            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisusehandler.class.toString());
+            misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetRequestMisuseHandler.class.toString());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()

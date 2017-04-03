@@ -110,15 +110,14 @@ public class InMemoryMisuseMonitor implements IMisuseMonitor {
                 if (handler.getSoftThreshold() != null
                         && (previousValue < handler.getSoftThreshold() && entry.getValue() >= handler
                                 .getSoftThreshold())) {
-                    handler.executeSoftThresholdAction(String.format(
-                            "(%s) has exceeded the soft limit specified by (%s)", agentIdentifier, eventLabel));
+                    handler.executeSoftThresholdAction(String.format("(%s) has exceeded the soft limit!",
+                            agentIdentifier));
                 }
 
                 if (handler.getHardThreshold() != null
                         && (previousValue < handler.getHardThreshold() && entry.getValue() >= handler
                                 .getHardThreshold())) {
-                    String errMessage = String.format("(%s) has exceeded the hard limit specified by (%s)",
-                            agentIdentifier, eventLabel);
+                    String errMessage = String.format("(%s) has exceeded the hard limit!", agentIdentifier);
 
                     handler.executeHardThresholdAction(errMessage);
                 }
