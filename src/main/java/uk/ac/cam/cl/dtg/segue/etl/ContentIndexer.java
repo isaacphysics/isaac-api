@@ -393,6 +393,7 @@ public class ContentIndexer {
         // identifier.
         if (content.getId() != null && parentId != null) {
             content.setId(parentId + Constants.ID_SEPARATOR + content.getId());
+            content.setPublished(true);
         }
 
         return content;
