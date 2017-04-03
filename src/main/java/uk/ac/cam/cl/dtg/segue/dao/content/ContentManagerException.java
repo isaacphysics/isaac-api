@@ -31,4 +31,16 @@ public class ContentManagerException extends Exception {
     public ContentManagerException(final String message) {
         super(message);
     }
+
+    /**
+     * Create a new exception wrapping another.
+     *
+     * @param message
+     *            - message to add
+     * @param e
+     *            - exception to add.
+     */
+    public ContentManagerException(final String message, final Exception e) {
+        super(message, e);
+    }
 }

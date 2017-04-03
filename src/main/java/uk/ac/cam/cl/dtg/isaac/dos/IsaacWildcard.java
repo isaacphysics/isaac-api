@@ -37,7 +37,7 @@ public class IsaacWildcard extends Content {
     protected String url;
 
     @JsonCreator
-    public IsaacWildcard(@JsonProperty("_id") String _id, @JsonProperty("id") String id,
+    public IsaacWildcard(@JsonProperty("id") String id,
             @JsonProperty("title") String title, @JsonProperty("subtitle") String subtitle,
             @JsonProperty("type") String type, @JsonProperty("author") String author,
             @JsonProperty("encoding") String encoding, @JsonProperty("canonicalSourceFile") String canonicalSourceFile,
@@ -46,7 +46,7 @@ public class IsaacWildcard extends Content {
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") boolean published,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level,
             @JsonProperty("description") String description, @JsonProperty("url") String url) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
         this.description = description;
@@ -129,8 +129,6 @@ public class IsaacWildcard extends Content {
         builder.append(published);
         builder.append(", level=");
         builder.append(level);
-        builder.append(", _id=");
-        builder.append(_id);
         builder.append(", id=");
         builder.append(id);
         builder.append(", type=");

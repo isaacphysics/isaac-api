@@ -29,8 +29,8 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicChemistryValidator;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacSymbolicValidator;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
@@ -38,6 +38,8 @@ import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 
 /**
@@ -75,7 +77,7 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
      * 
      * @param database
      *            - the database that persists gameboards.
-     * @param versionManager
+     * @param contentManager
      *            - api that the game manager can use for content resolution.
      * @param mapper
      *            - an instance of an auto mapper for translating gameboard DOs and DTOs efficiently.
@@ -89,11 +91,11 @@ public class IsaacGuiceConfigurationModule extends AbstractModule {
     @Provides
     @Singleton
     private static GameboardPersistenceManager getGameboardPersistenceManager(final PostgresSqlDb database,
-            final ContentVersionController versionManager, final MapperFacade mapper, final ObjectMapper objectMapper,
-            final URIManager uriManager) {
+                  final IContentManager contentManager, final MapperFacade mapper, final ObjectMapper objectMapper,
+                  final URIManager uriManager, @Named(CONTENT_INDEX) final String contentIndex) {
         if (null == gameboardPersistenceManager) {
-            gameboardPersistenceManager = new GameboardPersistenceManager(database, versionManager, mapper,
-                    objectMapper, uriManager);
+            gameboardPersistenceManager = new GameboardPersistenceManager(database, contentManager, mapper,
+                    objectMapper, uriManager, contentIndex);
             log.info("Creating Singleton of GameboardPersistenceManager");
         }
 

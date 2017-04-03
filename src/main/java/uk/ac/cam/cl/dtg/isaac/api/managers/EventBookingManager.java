@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -335,7 +335,7 @@ public class EventBookingManager {
                     + "over capacity.");
         }
 
-        EventBookingDTO updatedStatus = null;
+        EventBookingDTO updatedStatus;
 
         // probably want to send a waiting list promotion email.
         try {
@@ -498,6 +498,30 @@ public class EventBookingManager {
             this.bookingPersistenceManager.releaseDistributedLock(eventId);
         }
     }
+
+    /**
+     * This method will attempt to resend the last email that a user booked on an event should have received.
+     * E.g. if their status is confirmed it would be a welcome email, if cancelled it would be a cancellation one.
+     *
+     * @param event - event that the user was booked on.
+     * @param user - user to be emailed.
+     */
+    public void resendEventEmail(final IsaacEventPageDTO event, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
+        EventBookingDTO booking
+                = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), user.getId());
+
+        if (booking.getBookingStatus().equals(BookingStatus.CONFIRMED)) {
+            this.emailManager.sendEventWelcomeEmail(user, event);
+        } else if (booking.getBookingStatus().equals(BookingStatus.CANCELLED)) {
+            this.emailManager.sendEventCancellationEmail(user, event);
+        } else if (booking.getBookingStatus().equals(BookingStatus.WAITING_LIST)) {
+            this.emailManager.sendEventWaitingListEmail(user, event);
+        } else {
+            log.error("Unknown event booking status. Unable to select correct email.");
+        }
+    }
+
 
     /**
      * Helper method to ensure that that the booking would not violate space restrictions on the event.

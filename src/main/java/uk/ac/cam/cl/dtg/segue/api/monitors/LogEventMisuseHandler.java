@@ -72,7 +72,7 @@ public class LogEventMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit reached for LogEventMisuseHandler" + message);
+        log.warn("Soft threshold limit: " + message);
     }
 
     @Override
@@ -89,6 +89,6 @@ public class LogEventMisuseHandler implements IMisuseHandler {
 			log.error("Database access error when attempting to send hard threshold limit warnings: " 
 								+ e1.getMessage());
 		}
-        log.warn("Hard threshold limit reached for LoginMisuseHandler: " + message);
+        log.warn("Hard threshold limit: " + message);
     }
 }

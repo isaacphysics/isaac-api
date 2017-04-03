@@ -24,7 +24,6 @@ import com.google.inject.Injector;
  * @author Stephen Cummins
  *
  */
-@WebListener
 public class SegueContextNotifier implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueContextNotifier.class);
 

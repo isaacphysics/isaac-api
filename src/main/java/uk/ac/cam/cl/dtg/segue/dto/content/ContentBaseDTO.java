@@ -34,8 +34,6 @@ import com.google.api.client.util.Sets;
  */
 public abstract class ContentBaseDTO {
 
-    // this is a field used for mongodb indexing
-    protected String _id;
     protected String id;
     protected String type;
     protected Set<String> tags;
@@ -49,28 +47,6 @@ public abstract class ContentBaseDTO {
         this.tags = Sets.newHashSet();
     }
 
-    /**
-     * Gets the _id.
-     * 
-     * @return the _id
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public String get_id() {
-        return _id;
-    }
-
-    /**
-     * Sets the _id.
-     * 
-     * @param _id
-     *            the _id to set
-     */
-    @JsonProperty("_id")
-    @ObjectId
-    public void set_id(final String _id) {
-        this._id = _id;
-    }
 
     /**
      * Gets the id.

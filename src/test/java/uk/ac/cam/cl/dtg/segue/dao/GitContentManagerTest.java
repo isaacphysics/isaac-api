@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Nick Rogers
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.dao;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
-
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.reflect.Whitebox;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -42,6 +25,13 @@ import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import java.util.*;
+
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test class for the GitContentManager class.
@@ -56,6 +46,7 @@ public class GitContentManagerTest {
 	private GitContentManager defaultGCM;
 
 	private static final String INITIAL_VERSION = "0b72984c5eff4f53604fe9f1c724d3f387799db9";
+	private PropertiesLoader properties;
 
 	/**
 	 * Initial configuration of tests.
@@ -68,9 +59,10 @@ public class GitContentManagerTest {
 		this.database = createMock(GitDb.class);
 		this.searchProvider = createMock(ISearchProvider.class);
 		this.contentMapper = createMock(ContentMapper.class);
+		this.properties = createMock(PropertiesLoader.class);
 
 		this.defaultGCM = new GitContentManager(database, searchProvider,
-				contentMapper);
+				contentMapper, properties);
 	}
 
 	/**
@@ -156,111 +148,6 @@ public class GitContentManagerTest {
 	}
 
 	/**
-	 * Test that the ensureCache method returns an exception if a null version hash is
-	 * provided.
-	 */
-	@Test
-	public void ensureCache_nullVersion_checkExceptionReturned() {
-		try {
-			defaultGCM.ensureCache(null);
-			fail("Expected exception");
-		} catch (ContentManagerException e) {
-			// pass
-		}
-	}
-
-	/**
-	 * Test that the buildSearchIndexFromLocalGitIndex sends each Content object
-	 * to the searchProvider.
-	 * 
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unchecked")
-	@Test
-	public void buildSearchIndexFromLocalGitIndex_sendContentToSearchProvider_checkSearchProviderReceivesObject()
-			throws Exception {
-		reset(database, searchProvider);
-		String uniqueObjectId = UUID.randomUUID().toString();
-		String uniqueObjectHash = UUID.randomUUID().toString();
-        
-		Map<String, Content> contents = new TreeMap<String, Content>();
-		Content content = new Content();
-		content.setId(uniqueObjectId);
-		contents.put(uniqueObjectId, content);
-
-		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-		
-		searchProvider.registerRawStringFields((List<String>) anyObject());
-		expectLastCall().once();
-		
-		expect(searchProvider.hasIndex(INITIAL_VERSION)).andReturn(false)
-				.once();
-		expect(contentMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
-				.once();
-		expect(objectMapper.writeValueAsString(content)).andReturn(
-				uniqueObjectHash).once();
-	
-		searchProvider.bulkIndex(eq(INITIAL_VERSION), anyString(), (List<Map.Entry<String, String>>) anyObject());
-		expectLastCall().once();
-		
-		replay(searchProvider, contentMapper, objectMapper);
-
-		GitContentManager gitContentManager = new GitContentManager(database,
-				searchProvider, contentMapper, new ConcurrentHashMap<String, Map<Content, List<String>>>());
-		
-		Whitebox.invokeMethod(gitContentManager,
-				"buildSearchIndexFromLocalGitIndex", INITIAL_VERSION, contents);
-
-		verify(searchProvider, contentMapper, objectMapper);
-	}
-
-	/**
-	 * Test the flattenContentObjects method and ensure the expected output is
-	 * generated.
-	 * 
-	 * @throws Exception
-	 */
-	@Test
-	public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned()
-			throws Exception {
-		final int numChildLevels = 5;
-		final int numNodes = numChildLevels + 1;
-
-		Set<Content> elements = new HashSet<Content>();
-		Content rootNode = createContentHierarchy(numChildLevels, elements);
-
-		Set<Content> contents = Whitebox.<Set<Content>> invokeMethod(
-				defaultGCM, "flattenContentObjects", rootNode);
-
-		assertTrue(contents.size() == numNodes);
-
-		for (Content c : contents) {
-			boolean containsElement = elements.contains(c);
-			assertTrue(containsElement);
-			if (containsElement) {
-				elements.remove(c);
-			}
-		}
-
-		assertTrue(elements.size() == 0);
-	}
-
-	private Content createContentHierarchy(final int numLevels,
-			final Set<Content> flatSet) {
-		List<ContentBase> children = new LinkedList<ContentBase>();
-
-		if (numLevels > 0) {
-			Content child = createContentHierarchy(numLevels - 1, flatSet);
-			children.add(child);
-		}
-
-		Content content = createEmptyContentElement(children,
-				String.format("%d", numLevels));
-		flatSet.add(content);
-		return content;
-	}
-
-	/**
 	 * Helper method for the
 	 * flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned
 	 * test, generates a Content object with the given children.
@@ -273,7 +160,7 @@ public class GitContentManagerTest {
 	 */
 	private Content createEmptyContentElement(final List<ContentBase> children,
 			final String id) {
-		return new Content("", id, "", "", "", "", "", "", "", children, "",
+		return new Content(id, "", "", "", "", "", "", "", children, "",
 				"", new LinkedList<String>(), false, new HashSet<String>(), 1);
 	}
 
@@ -296,7 +183,6 @@ public class GitContentManagerTest {
 		Map<String, Content> contents = new TreeMap<String, Content>();
 		contents.put(INITIAL_VERSION, content);
 
-		return new GitContentManager(database, searchProvider, contentMapper,
-				indexProblemCache);
+		return new GitContentManager(database, searchProvider, contentMapper);
 	}
 }

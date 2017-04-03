@@ -59,7 +59,7 @@ public class EmailTemplateDTO extends ContentDTO {
             final String layout, final List<ContentBaseDTO> children, final String value, final String attribution,
             final List<ContentSummaryDTO> relatedContent, final Boolean published, final Set<String> tags,
             final Integer level) {
-        super(_id, id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
+        super(id, title, subtitle, type, author, encoding, canonicalSourceFile, layout, children, value,
                 attribution, relatedContent, published, tags, level);
 
     }

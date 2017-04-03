@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -27,11 +28,13 @@ import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
+import com.google.inject.name.Named;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.PgUserNotifications;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification;
 import uk.ac.cam.cl.dtg.segue.dos.IUserNotification.NotificationStatus;
@@ -47,18 +50,20 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
  */
 public class NotificationPicker {
     private IUserNotifications notifications;
-    private ContentVersionController contentVersionController;
+    private final IContentManager contentManager;
+    private final String contentIndex;
 
     /**
-     * @param contentVersionController
+     * @param contentManager
      *            - so we can lookup notifications created in the segue content system.
      * @param notifications
      *            - the DAO allowing the recording of which notifications have been shown to whom.
      */
     @Inject
-    public NotificationPicker(final ContentVersionController contentVersionController,
-            final PgUserNotifications notifications) {
-        this.contentVersionController = contentVersionController;
+    public NotificationPicker(final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                              final PgUserNotifications notifications) {
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
         this.notifications = notifications;
     }
 
@@ -83,15 +88,15 @@ public class NotificationPicker {
 
         fieldsToMatch.put(immutableEntry(BooleanOperator.AND, Constants.TYPE_FIELDNAME), newArrayList);
 
-        ResultsWrapper<ContentDTO> allContentNotifications = contentVersionController.getContentManager()
-                .findByFieldNames(contentVersionController.getLiveVersion(), fieldsToMatch, 0, -1);
+        ResultsWrapper<ContentDTO> allContentNotifications = this.contentManager
+                .findByFieldNames(this.contentIndex, fieldsToMatch, 0, -1);
 
         Map<String, IUserNotification> listOfRecordedNotifications = getMapOfRecordedNotifications(user);
 
         List<ContentDTO> resultsToReturn = Lists.newArrayList();
 
         for (ContentDTO c : allContentNotifications.getResults()) {
-        	IUserNotification record = listOfRecordedNotifications.get(c.get_id());
+        	IUserNotification record = listOfRecordedNotifications.get(c.getId());
             if (!(c instanceof NotificationDTO)) {
                 // skip if not a notification somehow.
                 continue;
@@ -158,8 +163,8 @@ public class NotificationPicker {
      */
     public void recordNotificationAction(final RegisteredUserDTO user, final String notificationId,
             final NotificationStatus status) throws SegueDatabaseException, ContentManagerException {
-        ContentDTO notification = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), notificationId);
+        ContentDTO notification = this.contentManager.getContentById(
+                this.contentManager.getCurrentContentSHA(), notificationId);
 
         if (null == notification) {
             throw new ResourceNotFoundException(String.format(
@@ -182,8 +187,8 @@ public class NotificationPicker {
     public ContentDTO getNotificationById(final String notificationId) throws ContentManagerException,
             ResourceNotFoundException {
         // get available notifications that still can be displayed
-        ContentDTO notification = contentVersionController.getContentManager().getContentById(
-                contentVersionController.getLiveVersion(), notificationId);
+        ContentDTO notification = this.contentManager.getContentById(
+                this.contentManager.getCurrentContentSHA(), notificationId);
 
         if (notification instanceof NotificationDTO && notification != null) {
             return notification;
