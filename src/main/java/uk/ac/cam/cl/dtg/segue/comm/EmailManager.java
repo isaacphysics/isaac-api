@@ -1119,16 +1119,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         if (null == c) {
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
         }
-        
-        ContentDTO contentDTO;
 
-        if (c instanceof ContentDTO) {
-            contentDTO = c;
-        } else {
-            throw new ContentManagerException("Content is of incorrect type:" + c.getType());
-        }
-        
-        return contentDTO;
+        return c;
     }
 
     /**
