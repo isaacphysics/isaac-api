@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -241,7 +242,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live", logManager);
+                mockContentManager, logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -316,18 +317,18 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live",  logManager);
+                mockContentManager, logManager);
         try {
-            manager.sendFederatedPasswordReset(userDTO, "testString", "testWord");
+            Map<String, Object> emailTokens = ImmutableMap.of("providerString", "testString", "providerWord", "testWord");
+            manager.sendTemplatedEmailToUser(userDTO,
+                    manager.getEmailTemplateDTO("email-template-federated-password-reset"),
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
             log.debug(e.getMessage());
         } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            log.debug(e.getMessage());
-            Assert.fail();
-        } catch (NoUserException e) {
             e.printStackTrace();
             log.debug(e.getMessage());
             Assert.fail();
@@ -389,16 +390,19 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live", logManager);
+                mockContentManager, logManager);
         try {
-            manager.sendPasswordReset(userDTO, user.getResetToken());
+            Map<String, Object> emailValues = ImmutableMap.of("resetURL",
+                    "https://dev.isaacphysics.org/resetpassword/resetToken");
+
+            manager.sendTemplatedEmailToUser(userDTO,
+                    manager.getEmailTemplateDTO("email-template-password-reset"),
+                    emailValues, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (NoUserException e) {
             e.printStackTrace();
             Assert.fail();
         }
@@ -456,7 +460,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live", logManager);
+                mockContentManager, logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -502,7 +506,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live", logManager);
+                mockContentManager, logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -556,7 +560,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live", logManager);
+                mockContentManager, logManager);
         try {
             manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
         } catch (ContentManagerException e) {
@@ -592,7 +596,7 @@ public class EmailManagerTest {
     public void sendCustomEmail_checkNullProperties_replacedWithEmptyString() {
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, "live", logManager);
+                mockContentManager, logManager);
 
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
         allSelectedUsers.add(userDTOWithNulls);

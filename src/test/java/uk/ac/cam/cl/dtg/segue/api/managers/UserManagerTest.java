@@ -344,7 +344,7 @@ public class UserManagerTest {
 
         // User object back from provider
         UserFromAuthProvider providerUser = new UserFromAuthProvider(someProviderUniqueUserId, "TestFirstName",
-                "TestLastName", "", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE);
+                "TestLastName", "test@test.com", EmailVerificationStatus.VERIFIED, Role.STUDENT, new Date(), Gender.MALE);
 
         // Mock get User Information from provider call
         expect(((IFederatedAuthenticator) dummyAuth).getUserInfo(someProviderGeneratedLookupValue)).andReturn(
@@ -355,7 +355,7 @@ public class UserManagerTest {
         expect(dummyDatabase.getByLinkedAccount(AuthenticationProvider.TEST, someProviderUniqueUserId)).andReturn(null)
                 .atLeastOnce();
 
-        RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "", Role.STUDENT,
+        RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "test@test.com", Role.STUDENT,
  new Date(), Gender.MALE, new Date(), null, null, null, null, null, null, null);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(

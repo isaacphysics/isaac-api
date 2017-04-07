@@ -1,30 +1,20 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
-
+import com.google.api.client.util.Lists;
 import com.google.api.client.util.Sets;
-import com.google.inject.name.Named;
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
+import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -43,9 +33,15 @@ import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.api.client.util.Lists;
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import javax.annotation.Nullable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * @author Alistair Stead
@@ -88,37 +84,47 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.logManager = logManager;
     }
 
-    /**
-     * @param userDTO
-     *            - user object used to complete template
-     * @param resetToken
-     * 			  - the reset token
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException 
-     * 			   - when no matching user is found
-     */
-    public void sendPasswordReset(final RegisteredUserDTO userDTO, final String resetToken) 
-    				throws ContentManagerException, SegueDatabaseException, NoUserException {
-    	Validate.notNull(userDTO);
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-password-reset");
-        
-        String hostName = globalProperties.getProperty(HOST_NAME);
-        String verificationURL = String.format("https://%s/resetpassword/%s", hostName, resetToken);
+    public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
+                                                   final Map<String, Object> tokenToValueMapping, final EmailType emailType)
+            throws ContentManagerException, SegueDatabaseException {
 
-        Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("email", userDTO.getEmail());
-        p.put("resetURL", verificationURL);
-        p.put("sig", SIGNATURE);
-        
-        
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
-                EmailType.SYSTEM);
+        // generate properties from hashMap for token replacement process
+        Properties propertiesToReplace = new Properties();
+        for(Map.Entry<String, Object> mapEntry : tokenToValueMapping.entrySet()) {
+            if (mapEntry.getValue() == null) {
+                propertiesToReplace.setProperty(mapEntry.getKey(), "");
+            } else if (mapEntry.getValue() instanceof String) {
+                propertiesToReplace.setProperty(mapEntry.getKey(), (String) mapEntry.getValue());
+            } else if (mapEntry.getValue() instanceof Date) {
+                propertiesToReplace.setProperty(mapEntry.getKey(), FULL_DATE_FORMAT.format((Date) mapEntry.getValue()));
+            } else if (mapEntry.getValue() instanceof Number) {
+                propertiesToReplace.setProperty(mapEntry.getKey(), mapEntry.getValue().toString());
+            } else if (mapEntry.getValue() instanceof Collection) {
+                propertiesToReplace.setProperty(mapEntry.getKey(), (String)
+                        ((Collection) mapEntry.getValue())
+                                .stream().map(Object::toString)
+                                .collect(Collectors.joining(", ")));
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("Unable to convert key (%s) value (%s) to string",
+                                mapEntry.getKey(), mapEntry.getValue()));
+            }
+        }
 
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
+        // default properties
+        propertiesToReplace.putIfAbsent("email", userDTO.getEmail());
+        propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
+        propertiesToReplace.putIfAbsent("sig", SIGNATURE);
+
+        EmailCommunicationMessage emailCommunicationMessage
+                = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
+                emailType);
+
+        if (emailType.equals(EmailType.SYSTEM)) {
+                addSystemEmailToQueue(emailCommunicationMessage);
+        } else {
+            this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
+        }
     }
 
     /**
@@ -608,44 +614,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.filterByPreferencesAndAddToQueue(userDTO, e);
 
     }
-
-    /**
-     * Sends email verification using email verification template. Assumes that a verification code has been
-     * successfully generated.
-     * 
-     * @param userDTO
-     *            - user object used to complete template
-     * @param providerString
-     *            - the provider
-     * @param providerWord
-     *            - the provider
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException 
-     * 				- if no user DTO could be found
-     */
-    public void sendFederatedPasswordReset(final RegisteredUserDTO userDTO, final String providerString,
-            final String providerWord) throws ContentManagerException, SegueDatabaseException, NoUserException {
-    	Validate.notNull(userDTO);
-        Validate.notNull(providerString);
-        Validate.notNull(providerWord);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-federated-password-reset");
-
-        Properties contentProperties = new Properties();
-        contentProperties.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        contentProperties.put("providerString", providerString);
-        contentProperties.put("providerWord", providerWord);
-        contentProperties.put("sig", SIGNATURE);
-
-
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent,
-                contentProperties, EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
-        
-    }
     
     /**
      * Sends email notifying users that their account role has changed.
@@ -888,9 +856,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void addSystemEmailToQueue(final EmailCommunicationMessage email) 
-    		throws SegueDatabaseException {
-		addToQueue(email);
+    public void addSystemEmailToQueue(final EmailCommunicationMessage email)
+            throws SegueDatabaseException {
+
+        addToQueue(email);
 		log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
     }
     
@@ -1103,7 +1072,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 htmlMessage, emailType, replyToAddress, replyToName);
 
     }
-    
 
     /**
      * Returns the SegueDTO we will use as an email template.
@@ -1148,7 +1116,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws ResourceNotFoundException
      *             - error if the content is not of the right type
      */
-    private EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
+    public EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
             ResourceNotFoundException {
 
         ContentDTO c = this.contentManager.getContentById(
@@ -1168,6 +1136,4 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         return emailTemplateDTO;
     }
-
-	
 }

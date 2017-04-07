@@ -31,6 +31,9 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -92,6 +96,7 @@ public class UserAccountManager {
     private final Cache<String, AnonymousUser> temporaryUserCache;
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final UserAuthenticationManager userAuthenticationManager;
+    private final PropertiesLoader properties;
 
     /**
      * Create an instance of the user manager class.
@@ -153,6 +158,8 @@ public class UserAccountManager {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
         Validate.notNull(properties.getProperty(HOST_NAME));
+
+        this.properties = properties;
 
         this.database = database;
         this.questionAttemptDb = questionDb;
@@ -653,7 +660,14 @@ public class UserAccountManager {
         // send an email confirmation and set up verification
         try {
         	RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
-            emailManager.sendRegistrationConfirmation(userToReturnDTO, userToReturn.getEmailVerificationToken());
+
+            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL",
+                    generateEmailVerificationURL(userToReturnDTO, userToReturn.getEmailVerificationToken()));
+
+            emailManager.sendTemplatedEmailToUser(userToReturnDTO,
+                    emailManager.getEmailTemplateDTO("email-template-registration-confirmation"),
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         } catch (NoUserException e) {
@@ -1436,5 +1450,22 @@ public class UserAccountManager {
         }
     }
 
+    /**
+     * @param userDTO
+     * @param emailVerificationToken
+     * @return
+     */
+    private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
+        final int TRUNCATED_TOKEN_LENGTH = 5;
+
+        List<NameValuePair> urlParamPairs = Lists.newArrayList();
+        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
+        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
+        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
+                TRUNCATED_TOKEN_LENGTH)));
+        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
+
+        return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
+    }
 
 }
