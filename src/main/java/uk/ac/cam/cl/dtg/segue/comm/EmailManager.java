@@ -141,7 +141,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      * @throws NoUserException 
      * 			   - when no matching user is found 
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendRegistrationConfirmation(final RegisteredUserDTO userDTO, final String emailVerificationToken) 
     				throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
@@ -180,7 +182,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      * @throws NoUserException 
      * 			   - when no matching user is found 
-	 */
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
+     */
+    @Deprecated
     public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO, final String provider)
 					throws ContentManagerException, SegueDatabaseException {
     	Validate.notNull(userDTO);
@@ -213,7 +217,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      * @throws NoUserException 
      * 			   - when no matching user is found
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendEmailVerification(final RegisteredUserDTO userDTO, final String emailVerificationToken) 
     					throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
@@ -256,7 +262,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      * @throws NoUserException 
      * 				- when no matching user was found
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendEmailVerificationChange(final RegisteredUserDTO userDTO, final RegisteredUser newUser) 
             throws ContentManagerException, SegueDatabaseException, NoUserException {
     	Validate.notNull(userDTO);
@@ -283,7 +291,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendGroupAssignment(final List<RegisteredUserDTO> users, 
 		    		final GameboardDTO gameboard)
 		            throws ContentManagerException, SegueDatabaseException {
@@ -326,7 +336,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendEventWelcomeEmail(final RegisteredUserDTO user,
                                       final IsaacEventPageDTO event)
         throws ContentManagerException, SegueDatabaseException {
@@ -406,7 +418,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendEventWaitingListEmail(final RegisteredUserDTO user,
                                       final IsaacEventPageDTO event)
         throws ContentManagerException, SegueDatabaseException {
@@ -441,7 +455,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendEventWelcomeEmailForWaitingListPromotion(final RegisteredUserDTO user,
                                       final IsaacEventPageDTO event)
         throws ContentManagerException, SegueDatabaseException {
@@ -498,7 +514,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendEventCancellationEmail(final RegisteredUserDTO user,
                                                              final IsaacEventPageDTO event)
         throws ContentManagerException, SegueDatabaseException {
@@ -540,7 +558,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - some content may not have been accessible
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendGroupWelcome(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup,
 					    		final RegisteredUserDTO groupOwner,
 								final List<AssignmentDTO> existingAssignments,
@@ -628,10 +648,12 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      * @throws NoUserException
      *             - if no user DTO could be found
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendRoleChange(final RegisteredUserDTO oldUserDTO, final Role newRole)
             throws ContentManagerException,
-            SegueDatabaseException, NoUserException {
+            SegueDatabaseException, NoUserException{
         Validate.notNull(oldUserDTO);
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-default-role-change");
@@ -660,7 +682,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - the content was of incorrect type
      * @throws NoUserException
      *             - if no user DTO could be found
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendTeacherWelcome(final RegisteredUserDTO userDTO) throws ContentManagerException,
             SegueDatabaseException, NoUserException {
         Validate.notNull(userDTO);
@@ -699,7 +723,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *             - if some content is not found
      * @throws SegueDatabaseException
      *             - if the database cannot be accessed
+     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
+    @Deprecated
     public void sendContactUsFormEmail(final String givenName, final String familyName,
             final String emailAddress, final String subject, final String message,
             final String recipientEmailAddress, final String replyToAddress, final String replyToName,
