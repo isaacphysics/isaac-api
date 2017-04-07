@@ -1296,6 +1296,13 @@ public class UserAccountManager {
             throw new NoUserException();
         }
 
+        // since the federated providers didn't always provide email addresses - we have to check and update accordingly.
+        if (!localUserInformation.getEmail().contains("@") &&
+                !EmailVerificationStatus.DELIVERY_FAILED.equals(localUserInformation.getEmailVerificationStatus())) {
+           this.updateUserEmailVerificationStatus(localUserInformation.getEmail(),
+                   EmailVerificationStatus.DELIVERY_FAILED);
+        }
+
         logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), Constants.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", federatedAuthenticator.name())
                         .build());
