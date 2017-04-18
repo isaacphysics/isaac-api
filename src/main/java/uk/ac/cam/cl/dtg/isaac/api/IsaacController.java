@@ -186,6 +186,10 @@ public class IsaacController extends AbstractIsaacFacade {
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
 
+        if (null == types) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "No search types were provided.").toResponse();
+        }
+
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
         EntityTag etag = new EntityTag(this.contentIndex.hashCode() + searchString.hashCode()
