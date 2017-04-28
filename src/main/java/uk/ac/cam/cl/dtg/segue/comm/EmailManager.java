@@ -1,13 +1,12 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
@@ -15,7 +14,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -25,8 +23,6 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
@@ -57,7 +53,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
     private static final String SIGNATURE = "Isaac Physics Project";
     private static final int MINIMUM_TAG_LENGTH = 4;
-    private static final int TRUNCATED_TOKEN_LENGTH = 5;
+
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
     private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy HH:mm a");
 
@@ -84,35 +80,31 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.logManager = logManager;
     }
 
+    /**
+     * Send an email to a user based on a content template.
+     *
+     * @param userDTO - the user to email
+     * @param emailContentTemplate - the content template to send to the user.
+     * @param tokenToValueMapping - a Map of tokens to values that will be replaced in the email template.
+     * @param emailType - the type of email that this is so that it is filtered appropriately based on user email prefs.
+     * @throws ContentManagerException
+     * @throws SegueDatabaseException
+     */
     public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
                                                    final Map<String, Object> tokenToValueMapping, final EmailType emailType)
             throws ContentManagerException, SegueDatabaseException {
 
         // generate properties from hashMap for token replacement process
         Properties propertiesToReplace = new Properties();
-        for(Map.Entry<String, Object> mapEntry : tokenToValueMapping.entrySet()) {
-            if (mapEntry.getValue() == null) {
-                propertiesToReplace.setProperty(mapEntry.getKey(), "");
-            } else if (mapEntry.getValue() instanceof String) {
-                propertiesToReplace.setProperty(mapEntry.getKey(), (String) mapEntry.getValue());
-            } else if (mapEntry.getValue() instanceof Date) {
-                propertiesToReplace.setProperty(mapEntry.getKey(), FULL_DATE_FORMAT.format((Date) mapEntry.getValue()));
-            } else if (mapEntry.getValue() instanceof Number) {
-                propertiesToReplace.setProperty(mapEntry.getKey(), mapEntry.getValue().toString());
-            } else if (mapEntry.getValue() instanceof Collection) {
-                propertiesToReplace.setProperty(mapEntry.getKey(), (String)
-                        ((Collection) mapEntry.getValue())
-                                .stream().map(Object::toString)
-                                .collect(Collectors.joining(", ")));
-            } else {
-                throw new IllegalArgumentException(
-                        String.format("Unable to convert key (%s) value (%s) to string",
-                                mapEntry.getKey(), mapEntry.getValue()));
-            }
-        }
+        propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
+
+        // Add all properties in the user DTO so they are available to email templates.
+        ObjectMapper om = new ObjectMapper();
+        HashMap userPropertiesMap = om.convertValue(userDTO, HashMap.class);
+        propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
         // default properties
-        propertiesToReplace.putIfAbsent("email", userDTO.getEmail());
+        //TODO: We should find and replace this in templates as the case is wrong.
         propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
         propertiesToReplace.putIfAbsent("sig", SIGNATURE);
 
@@ -125,160 +117,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         } else {
             this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
         }
-    }
-
-    /**
-     * Sends email registration confirmation using email registration template. Assumes that a verification code has
-     * been successfully generated.
-     * 
-     * @param userDTO
-     *            - user object used to complete template
-     * @param emailVerificationToken
-     * 			  - the email verification token
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException 
-     * 			   - when no matching user is found 
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendRegistrationConfirmation(final RegisteredUserDTO userDTO, final String emailVerificationToken) 
-    				throws ContentManagerException, SegueDatabaseException, NoUserException {
-    	Validate.notNull(userDTO);
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation");
-
-        List<NameValuePair> urlParamPairs = Lists.newArrayList();
-        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
-        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
-        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
-                TRUNCATED_TOKEN_LENGTH)));
-        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
-
-        String verificationURL = String.format("https://%s/verifyemail?%s",
-                globalProperties.getProperty(HOST_NAME), urlParams);
-
-        Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("email", userDTO.getEmail());
-        p.put("verificationURL", verificationURL);
-        p.put("sig", SIGNATURE);
-        
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
-                        EmailType.SYSTEM);
-        
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
-    }
-    
-	/**
-     * Sends email registration confirmation using email registration template. 
-     * 
-     * @param userDTO
-     *            - user object used to complete template
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException 
-     * 			   - when no matching user is found 
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendFederatedRegistrationConfirmation(final RegisteredUserDTO userDTO, final String provider)
-					throws ContentManagerException, SegueDatabaseException {
-    	Validate.notNull(userDTO);
-        Validate.notNull(provider);
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-registration-confirmation-federated");
-        
-        Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("email", userDTO.getEmail());
-        p.put("provider", provider.toLowerCase());
-        p.put("sig", SIGNATURE);
-        
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
-                        EmailType.SYSTEM);
-        
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
-	}
-
-    /**
-     * Sends email verification using email verification template. Assumes that a verification code has been
-     * successfully generated.
-     * 
-     * @param userDTO
-     *            - user object used to complete template
-     * @param emailVerificationToken
-     *            - the user's verification token
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException 
-     * 			   - when no matching user is found
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendEmailVerification(final RegisteredUserDTO userDTO, final String emailVerificationToken) 
-    					throws ContentManagerException, SegueDatabaseException, NoUserException {
-    	Validate.notNull(userDTO);
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-email-verification");
-
-        List<NameValuePair> urlParamPairs = Lists.newArrayList();
-        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
-        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
-        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
-                TRUNCATED_TOKEN_LENGTH)));
-        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
-
-        String verificationURL = String.format("https://%s/verifyemail?%s",
-                globalProperties.getProperty(HOST_NAME), urlParams);
-
-        Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("email", userDTO.getEmail());
-        p.put("verificationURL", verificationURL);
-        p.put("sig", SIGNATURE);
-        
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
-                        EmailType.SYSTEM);
-
-        // This has to ignore email verification status, as when changing email address, it needs to be
-        // sent to the new address.
-        this.addSystemEmailToQueue(e);
-    }
-    
-    /**
-     * Sends notification for email change using email_verification_change template. 
-     * 
-     * @param userDTO
-     *            - user object used to complete template
-     * @param newUser
-     *            - new user object used to complete template          
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException 
-     * 				- when no matching user was found
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendEmailVerificationChange(final RegisteredUserDTO userDTO, final RegisteredUser newUser) 
-            throws ContentManagerException, SegueDatabaseException, NoUserException {
-    	Validate.notNull(userDTO);
-    	Validate.notNull(newUser);
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-verification-change");
-        
-        Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("requestedemail", newUser.getEmail());
-        p.put("sig", SIGNATURE);
-        
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
-                        EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
     }
 
     /**
@@ -634,71 +472,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.filterByPreferencesAndAddToQueue(userDTO, e);
 
     }
-    
-    /**
-     * Sends email notifying users that their account role has changed.
-     * 
-     * @param oldUserDTO
-     *            - user object used to complete template (with the new role)
-     * @param newRole
-     *            - the old role of the user
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException
-     *             - if no user DTO could be found
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendRoleChange(final RegisteredUserDTO oldUserDTO, final Role newRole)
-            throws ContentManagerException,
-            SegueDatabaseException, NoUserException{
-        Validate.notNull(oldUserDTO);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-default-role-change");
-
-        Properties contentProperties = new Properties();
-        contentProperties
-                .put("givenname", oldUserDTO.getGivenName() == null ? "" : oldUserDTO.getGivenName());
-        contentProperties
-                .put("oldrole", oldUserDTO.toString() == null ? "" : oldUserDTO.getRole().toString());
-        contentProperties.put("newrole", oldUserDTO.getRole() == null ? "" : newRole.toString());
-        contentProperties.put("sig", SIGNATURE);
-
-        EmailCommunicationMessage e = constructMultiPartEmail(oldUserDTO.getId(), oldUserDTO.getEmail(),
-                emailContent, contentProperties, EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(oldUserDTO, e);
-    }
-
-    /**
-     * Sends email notifying users that their account has been elevated from STUDENT to TEACHER.
-     * 
-     * @param userDTO
-     *            - user object used to complete template
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @throws NoUserException
-     *             - if no user DTO could be found
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendTeacherWelcome(final RegisteredUserDTO userDTO) throws ContentManagerException,
-            SegueDatabaseException, NoUserException {
-        Validate.notNull(userDTO);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-teacher-welcome");
-
-        Properties contentProperties = new Properties();
-        contentProperties.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        contentProperties.put("sig", SIGNATURE);
-
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(),
-                emailContent, contentProperties, EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
-    }
 
     /**
      * @param givenName
@@ -966,6 +739,62 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         
     }
 
+    /**
+     * Method to take a random (potentially nested map) and flatten it into something where values can be easily extracted
+     * for email templates.
+     *
+     * Nested fields are represented with the dot operator.
+     *
+     * @param inputMap
+     * @param outputMap
+     * @param keyPrefix
+     * @return a flattend map for use in email template replacement.
+     */
+    public Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
+        if (null == keyPrefix) {
+            keyPrefix = "";
+        }
+
+        for(Map.Entry<String, Object> mapEntry : inputMap.entrySet()){
+            String valueToStore = "";
+
+            if (mapEntry.getValue() == null) {
+                valueToStore = "";
+            } else if (mapEntry.getValue() instanceof String) {
+                valueToStore = (String) mapEntry.getValue();
+            } else if (mapEntry.getValue() instanceof Date) {
+                valueToStore = FULL_DATE_FORMAT.format((Date) mapEntry.getValue());
+            } else if (mapEntry.getValue() instanceof Number || mapEntry.getValue() instanceof Boolean) {
+                valueToStore = mapEntry.getValue().toString();
+            } else if (mapEntry.getValue() instanceof Enum){
+                valueToStore = ((Enum) mapEntry.getValue()).name();
+            } else if (mapEntry.getValue() instanceof Collection) {
+                valueToStore = (String)
+                        ((Collection) mapEntry.getValue())
+                                .stream().map(Object::toString)
+                                .collect(Collectors.joining(", "));
+            } else if (mapEntry.getValue() instanceof Map) {
+                this.flattenTokenMap((Map) mapEntry.getValue(), outputMap, keyPrefix + mapEntry.getKey() + ".");
+            } else if (mapEntry.getValue() instanceof ContentDTO) {
+                ObjectMapper om = new ObjectMapper();
+                this.flattenTokenMap(om.convertValue(mapEntry.getValue(), HashMap.class), outputMap, keyPrefix + mapEntry.getKey() + ".");
+            } else if (mapEntry.getValue() instanceof ExternalReference) {
+                ExternalReference er = (ExternalReference) mapEntry.getValue();
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
+                sb.append("\n");
+                valueToStore = sb.toString();
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("Unable to convert key (%s) value (%s) to string",
+                                mapEntry.getKey(), mapEntry.getValue()));
+            }
+
+            outputMap.put(keyPrefix + mapEntry.getKey(), valueToStore);
+        }
+        return outputMap;
+    }
+
     private String completeTemplateWithProperties(final String content, final Properties templateProperties)
             throws IllegalArgumentException {
         return completeTemplateWithProperties(content, templateProperties, false);
@@ -990,7 +819,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         String template = content;
 
-        Pattern p = Pattern.compile("\\{\\{[A-Za-z0-9]+\\}\\}");
+        Pattern p = Pattern.compile("\\{\\{[A-Za-z0-9.]+\\}\\}");
         Matcher m = p.matcher(template);
         int offset = 0;
         Set<String> unknownTags = Sets.newHashSet();

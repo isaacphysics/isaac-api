@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -211,7 +212,7 @@ public class EmailManagerTest {
      * @throws CommunicationException
      */
     @Test
-    public final void sendRegistrationConfirmation_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
+    public final void sendTemplatedEmailToUser_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
         EasyMock.replay(userManager);
 
         EmailTemplateDTO template = createDummyEmailTemplate("Hi, {{givenname}}."
@@ -244,14 +245,14 @@ public class EmailManagerTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager);
         try {
-            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
+            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
+            manager.sendTemplatedEmailToUser(userDTO,
+                    manager.getEmailTemplateDTO("email-template-registration-confirmation"),
+                    emailTokens, EmailType.SYSTEM);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (NoUserException e) {
             e.printStackTrace();
             Assert.fail();
         }
@@ -462,14 +463,16 @@ public class EmailManagerTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager);
         try {
-            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
+            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
+
+            manager.sendTemplatedEmailToUser(userDTO,
+                    template,
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (NoUserException e) {
             e.printStackTrace();
             Assert.fail();
         }
@@ -508,14 +511,15 @@ public class EmailManagerTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager);
         try {
-            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
+            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
+
+            manager.sendTemplatedEmailToUser(userDTO,
+                    template,
+                    emailTokens, EmailType.SYSTEM);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (NoUserException e) {
             e.printStackTrace();
             Assert.fail();
         }
@@ -562,14 +566,16 @@ public class EmailManagerTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
                 mockContentManager, logManager);
         try {
-            manager.sendRegistrationConfirmation(userDTO, user.getEmailVerificationToken());
+
+            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
+            manager.sendTemplatedEmailToUser(userDTO,
+                    manager.getEmailTemplateDTO("email-template-registration-confirmation"),
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
         } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            log.info(e.getMessage());
-        } catch (NoUserException e) {
             e.printStackTrace();
             log.info(e.getMessage());
         }
@@ -642,6 +648,24 @@ public class EmailManagerTest {
             Assert.fail();
         }
 
+    }
+
+    /**
+     * Make sure that when the templates are published:false, that the method reacts appropriately.
+     */
+    @Test
+    public void flattenTokenMap_checkTemplateReplacement_successfulReplacement() {
+        EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
+                mockContentManager, logManager);
+        Date someDate = new Date();
+
+        Map<String, Object> inputMap = Maps.newHashMap();
+        inputMap.put("test", "test2");
+        inputMap.put("address", ImmutableMap.of("line1", "Computer Laboratory"));
+        inputMap.put("date", someDate);
+        Map<String, String> mapUnderTest = manager.flattenTokenMap(inputMap, Maps.newHashMap(), "");
+
+        assert(mapUnderTest.get("address.line1").equals("Computer Laboratory"));
     }
 
 }
