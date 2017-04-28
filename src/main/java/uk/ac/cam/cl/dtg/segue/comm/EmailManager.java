@@ -334,148 +334,33 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
-     * Sends notification for groups being given an assignment.
-     * 
-     * @param userDTO
-     *            - the user who has joined the group
-     * @param userGroup
-     *            - the user group that the user is being assigned to
-     * @param gameManager
-     * 			  - the game manager we'll use to get the assignments
-     * 
-     * @param groupOwner
-     *            - the owner of the group
-     * @param existingAssignments
-     *            - the assignments that already exist in the group
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendGroupWelcome(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup,
-					    		final RegisteredUserDTO groupOwner,
-								final List<AssignmentDTO> existingAssignments,
-					            final GameManager gameManager)
-		            			throws ContentManagerException, SegueDatabaseException {
-        Validate.notNull(userDTO);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-welcome");
-
-        String groupOwnerName = "Unknown";
-
-        if (groupOwner != null && groupOwner.getFamilyName() != null) {
-            groupOwnerName = groupOwner.getFamilyName();
-        }
-
-        if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
-            groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
-        }
-
-        if (existingAssignments != null) {
-            Collections.sort(existingAssignments, new Comparator<AssignmentDTO>() {
-
-                @Override
-                public int compare(final AssignmentDTO o1, final AssignmentDTO o2) {
-                    return o1.getCreationDate().compareTo(o2.getCreationDate());
-                }
-
-            });
-        }
-        
-        StringBuilder htmlSB = new StringBuilder();
-        StringBuilder plainTextSB = new StringBuilder();
-        if (existingAssignments != null && existingAssignments.size() > 0) {
-            htmlSB.append("Your teacher has assigned the following assignments:<br>");
-            plainTextSB.append("Your teacher has assigned the following assignments:\n");
-            for (int i = 0; i < existingAssignments.size(); i++) {
-
-                GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
-
-                String gameboardName = existingAssignments.get(i).getGameboardId();
-                if (gameboard != null && gameboard.getTitle() != null && !gameboard.getTitle().isEmpty()) {
-                	gameboardName = gameboard.getTitle();
-                }
-                
-				String gameboardUrl = String.format("https://%s/#%s",
-								globalProperties.getProperty(HOST_NAME),
-								existingAssignments.get(i).getGameboardId());
-
-                htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s)<br>", i + 1, gameboardUrl,
-                        gameboardName, DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
-
-                plainTextSB.append(String.format("%d. %s (set on %s)\n", i + 1, gameboardName,
-                    DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
-            }
-        } else if (existingAssignments != null && existingAssignments.size() == 0) {
-            htmlSB.append("No assignments have been set yet.<br>");
-            plainTextSB.append("No assignments have been set yet.\n");
-        }
-
-        String accountURL = String.format("https://%s/account", globalProperties.getProperty(HOST_NAME));
-        Properties p = new Properties();
-        p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        p.put("teacherName", groupOwnerName == null ? "" : groupOwnerName);
-        p.put("accountURL", accountURL);
-        p.put("sig", SIGNATURE);
-        p.put("assignmentsInfo", plainTextSB.toString());
-        p.put("assignmentsInfo_HTML", htmlSB.toString());
-
-        EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContent, p,
-                        EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(userDTO, e);
-
-    }
-
-    /**
-     * @param givenName
-     *            - users given name
-     * @param familyName
-     *            - users family name
-     * @param emailAddress
-     *            - the email address of the user
-     * @param subject
-     *            - the subject of the email
-     * @param message
-     *            - message from user
+     * Function that enables contact us messages to be sent to a random email address (not to a known user).
+     *
      * @param recipientEmailAddress
-     *            - email address this email is being sent to
-     * @param replyToAddress
-     *            - the email address we want to be replied to
-     * @param replyToName
-     *            - the name to use for Reply-To
-     * @param userId
-     *            - the user ID (if known) of the user
+     *            - Email Address to send the contact us message to.
+     * @param emailValues
+     *            - users family name
      * @throws ContentManagerException
      *             - if some content is not found
      * @throws SegueDatabaseException
      *             - if the database cannot be accessed
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
      */
-    @Deprecated
-    public void sendContactUsFormEmail(final String givenName, final String familyName,
-            final String emailAddress, final String subject, final String message,
-            final String recipientEmailAddress, final String replyToAddress, final String replyToName,
-                                       @Nullable final String userId)
+    public void sendContactUsFormEmail(final String recipientEmailAddress, final Map<String, Object> emailValues)
             throws ContentManagerException, SegueDatabaseException {
 
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-us-form");
-        emailContent.setReplyToEmailAddress(replyToAddress);
-        emailContent.setReplyToName(replyToName);
-        emailContent.setSubject("(Contact Form) " + subject);
+        emailContent.setReplyToEmailAddress(recipientEmailAddress);
 
-        Properties contentProperties = new Properties();
-        contentProperties.put("contactGivenName", givenName == null ? "" : givenName);
-        contentProperties.put("contactFamilyName", familyName == null ? "" : familyName);
-        contentProperties.put("contactUserId", userId == null ? "" : userId);
-        contentProperties.put("contactEmail", emailAddress == null ? "" : emailAddress);
-        contentProperties.put("contactSubject", subject == null ? "" : subject);
-        contentProperties.put("contactMessage", message == null ? "" : message);
-        contentProperties.put("sig", SIGNATURE);
+        emailContent.setReplyToName(emailValues.get("replyToName").toString());
+        emailContent.setSubject("(Contact Form) " + emailValues.get("contactSubject").toString());
+
+        // generate properties from hashMap for token replacement process
+        Properties propertiesToReplace = new Properties();
+        propertiesToReplace.putAll(this.flattenTokenMap(emailValues, Maps.newHashMap(), ""));
+        propertiesToReplace.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
-                contentProperties,
+                propertiesToReplace,
                 EmailType.SYSTEM);
 
         this.addSystemEmailToQueue(e);
