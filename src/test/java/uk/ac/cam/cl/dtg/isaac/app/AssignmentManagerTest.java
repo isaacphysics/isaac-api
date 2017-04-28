@@ -37,6 +37,7 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
  * Test class for the user manager class.
@@ -49,6 +50,7 @@ public class AssignmentManagerTest {
     private UserAccountManager dummyUserManager;
     private GameManager dummyGameManager;
     private UserAssociationManager userAssociationManager;
+	private PropertiesLoader dummyPropertiesLoader;
 
 	/**
 	 * Initial configuration of tests.
@@ -64,6 +66,7 @@ public class AssignmentManagerTest {
         this.dummyUserManager = createMock(UserAccountManager.class);
         this.dummyGameManager = createMock(GameManager.class);
         this.userAssociationManager = createMock(UserAssociationManager.class);
+		this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
 	}
 
 	/**
@@ -78,7 +81,7 @@ public class AssignmentManagerTest {
 	public final void getAssignments_checkNoGroups_emptyListReturned() throws SegueDatabaseException {
 		
         AssignmentManager am = new AssignmentManager(dummyAssignmentPersistenceManager, dummyGroupManager,
-                dummyEmailManager, dummyUserManager, dummyGameManager, null);
+                dummyEmailManager, dummyUserManager, dummyGameManager, null, dummyPropertiesLoader);
 		RegisteredUserDTO dummyUser = createMock(RegisteredUserDTO.class);
 		
         expect(dummyGroupManager.getGroupMembershipList(dummyUser)).andReturn(new ArrayList<UserGroupDTO>());

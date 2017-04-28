@@ -120,51 +120,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
-     * Sends notification for groups being given an assignment.
-     * @param users
-     *            - the group the gameboard is being assigned to
-     * @param gameboard
-     *            - gameboard that is being assigned to the users    
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendGroupAssignment(final List<RegisteredUserDTO> users, 
-		    		final GameboardDTO gameboard)
-		            throws ContentManagerException, SegueDatabaseException {
-    	Validate.notNull(users);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-template-group-assignment");
-   
-		String gameboardName = gameboard.getId();
-		if (gameboard.getTitle() != null) {
-			gameboardName = gameboard.getTitle();
-		}
-
-        for (RegisteredUserDTO userDTO : users) {
-        	       	
-            String gameboardURL = String.format("https://%s/#%s", globalProperties.getProperty(HOST_NAME),
-                    gameboard.getId());
-            String myAssignmentsURL = String.format("https://%s/assignments",
-                    globalProperties.getProperty(HOST_NAME));
-            Properties p = new Properties();
-            p.put("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-            p.put("gameboardURL", gameboardURL);
-            p.put("gameboardName", gameboardName);
-            p.put("myAssignmentsURL", myAssignmentsURL);
-            p.put("sig", SIGNATURE);
-
-
-            EmailCommunicationMessage e = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(),
-                    emailContent, p, EmailType.ASSIGNMENTS);
-            this.filterByPreferencesAndAddToQueue(userDTO, e);
-        }
-    }
-
-    /**
      * Sends notification that a user is booked onto an event.
      * @param user
      *            - the user to send the welcome email to
