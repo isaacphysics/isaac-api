@@ -85,6 +85,7 @@ import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.api.client.util.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -353,7 +354,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
             
-            logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
             
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
