@@ -132,7 +132,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder masterQuery;
-
         if (null != fieldsThatMustMatch) {
             masterQuery = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
         } else {
@@ -140,12 +139,10 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = QueryBuilders.boolQuery();
+        Set boostFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
 
-        Set specialFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
-
-        // fuzzy match on certain fields
         for (String f : fields) {
-            float boost = specialFields.contains(f) ? 2f : 1f;
+            float boost = boostFields.contains(f) ? 2f : 1f;
 
             QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchString)
                     .fuzziness(Fuzziness.AUTO)
@@ -156,7 +153,8 @@ public class ElasticSearchProvider implements ISearchProvider {
             QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(boost);
             query.should(regexSearch);
         }
-        
+
+        // this query is just a bit smarter than the regex search above.
         QueryBuilder multiMatchPrefixQuery = QueryBuilders.multiMatchQuery(searchString, fields)
                 .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).prefixLength(2).boost(2.0f);
         query.should(multiMatchPrefixQuery);
