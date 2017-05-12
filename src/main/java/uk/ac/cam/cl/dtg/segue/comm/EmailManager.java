@@ -176,6 +176,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
             final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
             ContentManagerException {
+        //TODO: this needs refactoring.
         Validate.notNull(allSelectedUsers);
         Validate.notNull(contentObjectId);
 
@@ -294,83 +295,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         addToQueue(email);
 		log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
     }
-    
-    /**
-     * This method allows the front end to preview simple email in the browser.
-     *
-     * @param user
-     * 			- the user requesting a preview
-     * @return serialised HTML
-     * @throws SegueDatabaseException
-     * 			- on a database error
-     * @throws ContentManagerException
-     * 			- on a content error
-     * @throws ResourceNotFoundException
-     * 			- when the HTML template cannot be found
-     * @throws IllegalArgumentException
-     * 			- when the HTML template cannot be completed
-     */
-    public String getHTMLTemplatePreview(final EmailTemplateDTO emailTemplateDTO, final RegisteredUserDTO user)
-		    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, 
-		    		IllegalArgumentException {    	
-        Validate.notNull(emailTemplateDTO);
-    	Validate.notNull(user);
-        
-        ContentDTO htmlTemplate = getContentDTO("email-template-html");
-
-        Properties p = new Properties();
-        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-        p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
-        p.put("email", user.getEmail());
-        p.put("sig", SIGNATURE);
-        
-        String compltedHTMLTemplate = completeTemplateWithProperties(emailTemplateDTO.getHtmlContent(), p);
-
-        Properties htmlTemplateProperties = new Properties();
-        htmlTemplateProperties.put("content", compltedHTMLTemplate);
-        htmlTemplateProperties.put("email", user.getEmail());
-
-        return completeTemplateWithProperties(htmlTemplate.getValue(), htmlTemplateProperties);
-        
-    }
-    
-    /**
-     * This method allows the front end to preview simple email in the browser.
-     *
-     * @param user
-     * 			- the user requesting a preview
-     * @return serialised HTML
-     * @throws SegueDatabaseException
-     * 			- on a database error
-     * @throws ContentManagerException
-     * 			- on a content error
-     * @throws ResourceNotFoundException
-     * 			- when the HTML template cannot be found
-     * @throws IllegalArgumentException
-     * 			- when the HTML template cannot be completed
-     */
-    public String getPlainTextTemplatePreview(final EmailTemplateDTO emailTemplateDTO, final RegisteredUserDTO user)
-		    		throws SegueDatabaseException, ContentManagerException, ResourceNotFoundException, 
-		    		IllegalArgumentException {    	
-        Validate.notNull(emailTemplateDTO);
-    	Validate.notNull(user);
-        
-        ContentDTO plainTextTemplate = getContentDTO("email-template-ascii");
-
-        Properties p = new Properties();
-        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-        p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
-        p.put("email", user.getEmail());
-        p.put("sig", SIGNATURE);
-        String plainTextMessage = completeTemplateWithProperties(emailTemplateDTO.getPlainTextContent(), p);
-        
-        Properties plainTextTemplateProperties = new Properties();
-        plainTextTemplateProperties.put("content", plainTextMessage);
-        plainTextTemplateProperties.put("email", user.getEmail());
-
-        return completeTemplateWithProperties(plainTextTemplate.getValue(), plainTextTemplateProperties);
-
-    }
 
     /**
      * Method to take a random (potentially nested map) and flatten it into something where values can be easily extracted
@@ -383,7 +307,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param keyPrefix - the key prefix - used for recursively creating the map key.
      * @return a flattened map for containing strings that can be used in email template replacement.
      */
-     Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
+     public Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
         if (null == keyPrefix) {
             keyPrefix = "";
         }
@@ -549,12 +473,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- if the resource has not been found
      * 	
      */
-    private EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail, 
+    public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
             EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType)
 					throws ContentManagerException, ResourceNotFoundException {
     	Validate.notNull(userEmail);
     	Validate.notEmpty(userEmail);
-    	
+
+    	contentProperties.putIfAbsent("sig", SIGNATURE);
+
         String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
         String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties, true);
 
