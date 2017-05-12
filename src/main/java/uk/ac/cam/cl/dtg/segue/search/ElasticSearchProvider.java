@@ -20,6 +20,7 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
@@ -140,19 +141,25 @@ public class ElasticSearchProvider implements ISearchProvider {
 
         BoolQueryBuilder query = QueryBuilders.boolQuery();
 
+        Set specialFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
+
+        // fuzzy match on certain fields
+        for (String f : fields) {
+            float boost = specialFields.contains(f) ? 2f : 1f;
+
+            QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchString)
+                    .fuzziness(Fuzziness.AUTO)
+                    .prefixLength(0)
+                    .boost(boost);
+            query.should(initialFuzzySearch);
+
+            QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(boost);
+            query.should(regexSearch);
+        }
+        
         QueryBuilder multiMatchPrefixQuery = QueryBuilders.multiMatchQuery(searchString, fields)
                 .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).prefixLength(2).boost(2.0f);
         query.should(multiMatchPrefixQuery);
-
-        QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields)
-                .fuzziness(Fuzziness.ONE).prefixLength(2).boost(1.0f);
-        query.should(multiMatchQuery).minimumNumberShouldMatch(1);
-
-        // TODO: dirty hack to get search to behave more as you would expect.
-        for (String f : fields) {
-            QueryBuilder test = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(1.0f);
-            query.should(test);
-        }
 
         masterQuery.must(query);
 
