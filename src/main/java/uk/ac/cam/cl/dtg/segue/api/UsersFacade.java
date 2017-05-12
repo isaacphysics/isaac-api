@@ -695,20 +695,22 @@ public class UsersFacade extends AbstractSegueFacade {
             //----------------------------------------------------------------------------------------------------------
             // FIXME - the code between the dashed lines should be refactored out of this class; it does not belong here!
             // Finally update the subject interests:
-            try {
-                List<UserPreference> userPreferences = Lists.newArrayList();
-                List<String> acceptedSubjects = Arrays.asList("PHYSICS_UNI", "PHYSICS_ALEVEL", "PHYSICS_GCSE",
-                        "CHEMISTRY_UNI", "CHEMISTRY_ALEVEL", "CHEMISTRY_GCSE", "MATHS_UNI", "MATHS_ALEVEL", "MATHS_GCSE");
-                for (String subject : subjectInterests.keySet()) {
-                    // Validate that what is being saved is in fact acceptable:
-                    if (!acceptedSubjects.contains(subject)) {
-                        return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preferences provided.").toResponse();
+            if (subjectInterests != null){
+                try {
+                    List<UserPreference> userPreferences = Lists.newArrayList();
+                    List<String> acceptedSubjects = Arrays.asList("PHYSICS_UNI", "PHYSICS_ALEVEL", "PHYSICS_GCSE",
+                            "CHEMISTRY_UNI", "CHEMISTRY_ALEVEL", "CHEMISTRY_GCSE", "MATHS_UNI", "MATHS_ALEVEL", "MATHS_GCSE");
+                    for (String subject : subjectInterests.keySet()) {
+                        // Validate that what is being saved is in fact acceptable:
+                        if (!acceptedSubjects.contains(subject)) {
+                            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preferences provided.").toResponse();
+                        }
+                        userPreferences.add(new UserPreference(updatedUser.getId(), SUBJECT_INTEREST, subject, subjectInterests.get(subject)));
                     }
-                    userPreferences.add(new UserPreference(updatedUser.getId(), SUBJECT_INTEREST, subject, subjectInterests.get(subject)));
+                    userPreferenceManager.saveUserPreferences(userPreferences);
+                } catch (SegueDatabaseException e) {
+                    return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preferences provided.").toResponse();
                 }
-                userPreferenceManager.saveUserPreferences(userPreferences);
-            } catch (SegueDatabaseException e) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preferences provided.").toResponse();
             }
             //----------------------------------------------------------------------------------------------------------
 
