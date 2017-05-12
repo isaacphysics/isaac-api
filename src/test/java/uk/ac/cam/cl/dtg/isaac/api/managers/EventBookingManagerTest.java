@@ -407,6 +407,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setEmailEventDetails("some details");
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -446,7 +447,12 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        replay(dummyEventBookingPersistenceManager);
+        expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
+
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        expectLastCall().atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
             ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);

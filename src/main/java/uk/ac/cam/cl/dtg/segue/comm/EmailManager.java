@@ -10,7 +10,6 @@ import org.apache.commons.lang3.Validate;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
@@ -32,8 +31,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * @author Alistair Stead
@@ -112,138 +109,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         } else {
             this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
         }
-    }
-
-    /**
-     * Sends notification that a user is on the waiting list.
-     * @param user
-     *            - the user to send the welcome email to
-     * @param event
-     *            - event that the user has been booked on to.
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendEventWaitingListEmail(final RegisteredUserDTO user,
-                                      final IsaacEventPageDTO event)
-        throws ContentManagerException, SegueDatabaseException {
-        Validate.notNull(user);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-waiting-list-addition-notification");
-
-        String contactUsURL = String.format("https://%s/contact",
-            globalProperties.getProperty(HOST_NAME));
-
-        Properties p = new Properties();
-        // givenname should be camel case but I have left it to be in line with the others.
-        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
-        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
-
-        p.put("sig", SIGNATURE);
-
-        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(user, e);
-
-    }
-    /**
-     * Sends notification that a user has been promoted from the waiting list and been booked onto an event.
-     * @param user
-     *            - the user to send the welcome email to
-     * @param event
-     *            - event that the user has been booked on to.
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendEventWelcomeEmailForWaitingListPromotion(final RegisteredUserDTO user,
-                                      final IsaacEventPageDTO event)
-        throws ContentManagerException, SegueDatabaseException {
-        Validate.notNull(user);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed");
-
-        String myAssignmentsURL = String.format("https://%s/assignments",
-            globalProperties.getProperty(HOST_NAME));
-
-        String contactUsURL = String.format("https://%s/contact",
-            globalProperties.getProperty(HOST_NAME));
-
-        String authorisationURL = String.format("https://%s/account?authToken=%s",
-            globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
-
-        Properties p = new Properties();
-        // givenname should be camel case but I have left it to be in line with the others.
-        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
-        p.put("prepWorkDeadline", event.getPrepWorkDeadline() == null ? "" : FULL_DATE_FORMAT.format(event.getPrepWorkDeadline()));
-        p.put("contactUsURL", contactUsURL);
-        p.put("myAssignmentsURL", myAssignmentsURL);
-        p.put("authorizationLink", event.getIsaacGroupToken() == null ? "" : authorisationURL);
-
-        StringBuilder sb = new StringBuilder();
-        if (event.getPreResources() != null && event.getPreResources().size() > 0) {
-            for (ExternalReference er : event.getPreResources()){
-                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
-                sb.append("\n");
-            }
-            p.put("preResources", sb.toString());
-        } else {
-            p.put("preResources", "");
-        }
-
-        p.put("emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails());
-
-        p.put("sig", SIGNATURE);
-
-        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.EVENTS);
-        this.filterByPreferencesAndAddToQueue(user, e);
-    }
-
-    /**
-     * Sends notification that an event booking has been cancelled.
-     * @param user
-     *            - the user to send the welcome email to
-     * @param event
-     *            - event that the user has been booked on to.
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendEventCancellationEmail(final RegisteredUserDTO user,
-                                                             final IsaacEventPageDTO event)
-        throws ContentManagerException, SegueDatabaseException {
-        Validate.notNull(user);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-cancellation-confirmed");
-
-        String contactUsURL = String.format("https://%s/contact",
-            globalProperties.getProperty(HOST_NAME));
-
-        Properties p = new Properties();
-        // givenname should be camel case but I have left it to be in line with the others.
-        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
-        p.put("contactUsURL", contactUsURL);
-        p.put("sig", SIGNATURE);
-
-        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.SYSTEM);
-        this.filterByPreferencesAndAddToQueue(user, e);
     }
 
     /**
@@ -541,7 +406,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
             } else {
                 valueToStore = this.emailTokenValueMapper(mapEntry.getValue());
-
             }
 
             if (valueToStore != null && !"".equals(valueToStore)) {
