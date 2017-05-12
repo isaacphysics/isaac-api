@@ -7,11 +7,9 @@ import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
+import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.dto.AssignmentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -23,7 +21,6 @@ import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
-import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -35,7 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
@@ -99,8 +95,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
 
         // Add all properties in the user DTO so they are available to email templates.
-        ObjectMapper om = new ObjectMapper();
-        HashMap userPropertiesMap = om.convertValue(userDTO, HashMap.class);
+        Map userPropertiesMap = this.flattenObjectToMap(userDTO);
         propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
         // default properties
@@ -117,88 +112,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         } else {
             this.filterByPreferencesAndAddToQueue(userDTO, emailCommunicationMessage);
         }
-    }
-
-    /**
-     * Sends notification that a user is booked onto an event.
-     * @param user
-     *            - the user to send the welcome email to
-     * @param event
-     *            - event that the user has been booked on to.
-     * @throws ContentManagerException
-     *             - some content may not have been accessible
-     * @throws SegueDatabaseException
-     *             - the content was of incorrect type
-     * @deprecated use {@link #sendTemplatedEmailToUser(RegisteredUserDTO, EmailTemplateDTO, Map, EmailType)} instead
-     */
-    @Deprecated
-    public void sendEventWelcomeEmail(final RegisteredUserDTO user,
-                                      final IsaacEventPageDTO event)
-        throws ContentManagerException, SegueDatabaseException {
-        Validate.notNull(user);
-
-        EmailTemplateDTO emailContent = getEmailTemplateDTO("email-event-booking-confirmed-new");
-
-        String myAssignmentsURL = String.format("https://%s/assignments",
-            globalProperties.getProperty(HOST_NAME));
-
-        String contactUsURL = String.format("https://%s/contact",
-            globalProperties.getProperty(HOST_NAME));
-
-        String myBookedEventsURL = String.format("https://%s/events?show_booked_only=true",
-                globalProperties.getProperty(HOST_NAME));
-
-        String authorisationURL = String.format("https://%s/account?authToken=%s",
-                globalProperties.getProperty(HOST_NAME), event.getIsaacGroupToken());
-
-        Properties p = new Properties();
-        // givenname should be camel case but I have left it to be in line with the others.
-        p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
-
-        p.put("eventTitle", event.getTitle() == null ? "" : event.getTitle());
-        p.put("eventSubtitle", event.getSubtitle() == null ? "" : event.getSubtitle());
-
-        p.put("eventDate", event.getDate() == null ? "" : FULL_DATE_FORMAT.format(event.getDate()));
-        p.put("endDate", event.getEndDate() == null ? "" : FULL_DATE_FORMAT.format(event.getEndDate()));
-        p.put("prepWorkDeadline", event.getPrepWorkDeadline() == null ? "" : FULL_DATE_FORMAT.format(event.getPrepWorkDeadline()));
-
-        p.put("myAssignmentsURL", myAssignmentsURL == null ? "" : myAssignmentsURL);
-        p.put("contactUsURL", contactUsURL == null ? "" : contactUsURL);
-        p.put("authorizationLink", authorisationURL == null ? "" : authorisationURL);
-
-        p.put("addressLine1", event.getLocation().getAddress().getAddressLine1() == null
-                ? "" : event.getLocation().getAddress().getAddressLine1());
-
-        p.put("addressLine2", event.getLocation().getAddress().getAddressLine2() == null
-                ? "" : event.getLocation().getAddress().getAddressLine2());
-
-        p.put("town", event.getLocation().getAddress().getTown() == null
-                ? "" : event.getLocation().getAddress().getTown());
-
-        p.put("postalCode", event.getLocation().getAddress().getPostalCode() == null
-                ? "" : event.getLocation().getAddress().getPostalCode());
-
-        p.put("myBookedEventsURL", myBookedEventsURL);
-
-        StringBuilder sb = new StringBuilder();
-        if (event.getPreResources() != null && event.getPreResources().size() > 0) {
-            for (ExternalReference er : event.getPreResources()){
-                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
-                sb.append("\n");
-            }
-            p.put("preResources", sb.toString());
-        } else {
-            p.put("preResources", "");
-        }
-
-        p.put("emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails());
-
-        p.put("sig", SIGNATURE);
-
-        EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(),
-            emailContent, p, EmailType.SYSTEM);
-
-        this.filterByPreferencesAndAddToQueue(user, e);
     }
 
     /**
@@ -580,15 +493,26 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     }
 
     /**
+     * Helper to flatten an object to a map.
+     *
+     * @param o - object to flatten
+     * @return map of representation of the object (preserving java types)
+     */
+    private Map<String, Object> flattenObjectToMap(final Object o) {
+        Map introspected = new org.apache.commons.beanutils.BeanMap(o);
+        return introspected;
+    }
+
+    /**
      * Method to take a random (potentially nested map) and flatten it into something where values can be easily extracted
      * for email templates.
      *
      * Nested fields are represented with the dot operator.
      *
-     * @param inputMap
-     * @param outputMap
-     * @param keyPrefix
-     * @return a flattend map for use in email template replacement.
+     * @param inputMap - A map of string to random object
+     * @param outputMap - the flattened map which is also the returned object
+     * @param keyPrefix - the key prefix - used for recursively creating the map key.
+     * @return a flattened map for containing strings that can be used in email template replacement.
      */
     public Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
         if (null == keyPrefix) {
@@ -600,39 +524,74 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
             if (mapEntry.getValue() == null) {
                 valueToStore = "";
-            } else if (mapEntry.getValue() instanceof String) {
-                valueToStore = (String) mapEntry.getValue();
-            } else if (mapEntry.getValue() instanceof Date) {
-                valueToStore = FULL_DATE_FORMAT.format((Date) mapEntry.getValue());
-            } else if (mapEntry.getValue() instanceof Number || mapEntry.getValue() instanceof Boolean) {
-                valueToStore = mapEntry.getValue().toString();
-            } else if (mapEntry.getValue() instanceof Enum){
-                valueToStore = ((Enum) mapEntry.getValue()).name();
-            } else if (mapEntry.getValue() instanceof Collection) {
-                valueToStore = (String)
-                        ((Collection) mapEntry.getValue())
-                                .stream().map(Object::toString)
-                                .collect(Collectors.joining(", "));
+
             } else if (mapEntry.getValue() instanceof Map) {
+                // if we have a general map we should recurse until we get objects we can do something with.
                 this.flattenTokenMap((Map) mapEntry.getValue(), outputMap, keyPrefix + mapEntry.getKey() + ".");
+
             } else if (mapEntry.getValue() instanceof ContentDTO) {
+                // TODO: This logic is a bit wasteful as it has to recurse twice on the object
+                // go through and convert any known java types into our preferred string representation
+                Map<String, String> temp = this.flattenTokenMap(this.flattenObjectToMap(mapEntry.getValue()), Maps.newHashMap(), keyPrefix + mapEntry.getKey() + ".");
+                outputMap.putAll(temp);
+
+                // now convert any java types we haven't defined specific conversions for into the basic Jackson serialisations.
                 ObjectMapper om = new ObjectMapper();
                 this.flattenTokenMap(om.convertValue(mapEntry.getValue(), HashMap.class), outputMap, keyPrefix + mapEntry.getKey() + ".");
-            } else if (mapEntry.getValue() instanceof ExternalReference) {
-                ExternalReference er = (ExternalReference) mapEntry.getValue();
-                StringBuilder sb = new StringBuilder();
-                sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
-                sb.append("\n");
-                valueToStore = sb.toString();
+
             } else {
-                throw new IllegalArgumentException(
-                        String.format("Unable to convert key (%s) value (%s) to string",
-                                mapEntry.getKey(), mapEntry.getValue()));
+                valueToStore = this.emailTokenValueMapper(mapEntry.getValue());
+
             }
 
-            outputMap.put(keyPrefix + mapEntry.getKey(), valueToStore);
+            if (valueToStore != null && !"".equals(valueToStore)) {
+                // assume that the first entry into the output map is the correct one
+                outputMap.putIfAbsent(keyPrefix + mapEntry.getKey(), valueToStore);
+            }
         }
+
         return outputMap;
+    }
+
+    /**
+     * helper function to map a value to an email friendly string
+     *
+     * @param o - object to map
+     * @return more sensible string representation or null
+     */
+    private String emailTokenValueMapper(Object o) {
+        String valueToStore;
+        if (o == null) {
+            valueToStore = "";
+        } else if (o instanceof String) {
+            valueToStore = (String) o;
+        } else if (o instanceof Date) {
+            valueToStore = FULL_DATE_FORMAT.format((Date) o);
+        } else if (o instanceof Number || o instanceof Boolean) {
+            valueToStore = o.toString();
+        } else if (o instanceof Enum){
+            valueToStore = ((Enum) o).name();
+        } else if (o instanceof ExternalReference) {
+            ExternalReference er = (ExternalReference) o;
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
+            sb.append("\n");
+            valueToStore = sb.toString();
+        } else if (o instanceof Collection) {
+            List<String> sl = Lists.newArrayList();
+
+            for (Object i : (Collection) o) {
+                String s = this.emailTokenValueMapper(i);
+                if (s != null) {
+                    sl.add(s);
+                }
+            }
+
+            valueToStore = StringUtils.join(sl, ",");
+        } else {
+            return null;
+        }
+        return valueToStore;
     }
 
     private String completeTemplateWithProperties(final String content, final Properties templateProperties)

@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
@@ -33,10 +34,13 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * EventBookingManager.
@@ -48,6 +52,7 @@ public class EventBookingManager {
     private final EventBookingPersistenceManager bookingPersistenceManager;
     private final EmailManager emailManager;
     private final UserAssociationManager userAssociationManager;
+    private final PropertiesLoader propertiesLoader;
 
     /**
      * EventBookingManager.
@@ -59,10 +64,12 @@ public class EventBookingManager {
     @Inject
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
                                final EmailManager emailManager,
-                               final UserAssociationManager userAssociationManager) {
+                               final UserAssociationManager userAssociationManager,
+                               final PropertiesLoader propertiesLoader) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
         this.userAssociationManager = userAssociationManager;
+        this.propertiesLoader = propertiesLoader;
     }
 
     /**
@@ -205,7 +212,23 @@ public class EventBookingManager {
             }
 
             try {
-                this.emailManager.sendEventWelcomeEmail(user, event);
+                emailManager.sendTemplatedEmailToUser(user,
+
+                        emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                        new ImmutableMap.Builder<String, Object>()
+                                .put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                                        propertiesLoader.getProperty(HOST_NAME)))
+                                .put("myAssignmentsURL", String.format("https://%s/assignments",
+                                        propertiesLoader.getProperty(HOST_NAME)))
+                                .put("contactUsURL", String.format("https://%s/contact",
+                                        propertiesLoader.getProperty(HOST_NAME)))
+                                .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                        propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                                .put("event.emailEventDetails", event.getEmailEventDetails())
+                                .put("event", event)
+                                .build(),
+                        EmailType.SYSTEM);
+
             } catch (ContentManagerException e) {
                 log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
                         .getEmail()), e);
@@ -512,7 +535,23 @@ public class EventBookingManager {
                 = this.bookingPersistenceManager.getBookingByEventIdAndUserId(event.getId(), user.getId());
 
         if (booking.getBookingStatus().equals(BookingStatus.CONFIRMED)) {
-            this.emailManager.sendEventWelcomeEmail(user, event);
+            emailManager.sendTemplatedEmailToUser(user,
+
+                    emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("myAssignmentsURL", String.format("https://%s/assignments",
+                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", String.format("https://%s/contact",
+                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                            .put("event.emailEventDetails", event.getEmailEventDetails())
+                            .put("event", event)
+                            .build(),
+                    EmailType.SYSTEM);
+
         } else if (booking.getBookingStatus().equals(BookingStatus.CANCELLED)) {
             this.emailManager.sendEventCancellationEmail(user, event);
         } else if (booking.getBookingStatus().equals(BookingStatus.WAITING_LIST)) {
@@ -521,7 +560,6 @@ public class EventBookingManager {
             log.error("Unknown event booking status. Unable to select correct email.");
         }
     }
-
 
     /**
      * Helper method to ensure that that the booking would not violate space restrictions on the event.
