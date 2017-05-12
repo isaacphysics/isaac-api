@@ -1,3 +1,18 @@
+/*
+ * Copyright 2014 Alistair Stead and Stephen Cummins
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * 		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package uk.ac.cam.cl.dtg.segue.comm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +48,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Alistair Stead
+ * EmailManager
+ * Responsible for orchestration of email sending in Segue.
  *
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
@@ -47,7 +63,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final String SIGNATURE = "Isaac Physics Project";
     private static final int MINIMUM_TAG_LENGTH = 4;
 
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
     private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy HH:mm a");
 
     /**
@@ -80,8 +95,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param emailContentTemplate - the content template to send to the user.
      * @param tokenToValueMapping - a Map of tokens to values that will be replaced in the email template.
      * @param emailType - the type of email that this is so that it is filtered appropriately based on user email prefs.
-     * @throws ContentManagerException
-     * @throws SegueDatabaseException
+     * @throws ContentManagerException if we can't parse the content
+     * @throws SegueDatabaseException if we cannot contact the database for logging.
      */
     public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
                                                    final Map<String, Object> tokenToValueMapping, final EmailType emailType)
@@ -91,8 +106,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         Properties propertiesToReplace = new Properties();
         propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
 
-        // Add all properties in the user DTO so they are available to email templates.
-        Map userPropertiesMap = this.flattenObjectToMap(userDTO);
+        // Add all properties in the user DTO (preserving types) so they are available to email templates.
+        Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(userDTO);
         propertiesToReplace.putAll(this.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
 
         // default properties
@@ -227,7 +242,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
      */
-    public void filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO, 
+    private void filterByPreferencesAndAddToQueue(final RegisteredUserDTO userDTO,
     				final EmailCommunicationMessage email) throws SegueDatabaseException {
     	Validate.notNull(email);
     	Validate.notNull(userDTO);
@@ -354,32 +369,21 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         plainTextTemplateProperties.put("email", user.getEmail());
 
         return completeTemplateWithProperties(plainTextTemplate.getValue(), plainTextTemplateProperties);
-        
-    }
 
-    /**
-     * Helper to flatten an object to a map.
-     *
-     * @param o - object to flatten
-     * @return map of representation of the object (preserving java types)
-     */
-    private Map<String, Object> flattenObjectToMap(final Object o) {
-        Map introspected = new org.apache.commons.beanutils.BeanMap(o);
-        return introspected;
     }
 
     /**
      * Method to take a random (potentially nested map) and flatten it into something where values can be easily extracted
      * for email templates.
      *
-     * Nested fields are represented with the dot operator.
+     * Nested fields are addressed as per json objects and separated with the dot operator.
      *
      * @param inputMap - A map of string to random object
      * @param outputMap - the flattened map which is also the returned object
      * @param keyPrefix - the key prefix - used for recursively creating the map key.
      * @return a flattened map for containing strings that can be used in email template replacement.
      */
-    public Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
+     Map<String, String> flattenTokenMap(final Map <String, Object> inputMap, final Map <String, String> outputMap, String keyPrefix) {
         if (null == keyPrefix) {
             keyPrefix = "";
         }
@@ -395,14 +399,17 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 this.flattenTokenMap((Map) mapEntry.getValue(), outputMap, keyPrefix + mapEntry.getKey() + ".");
 
             } else if (mapEntry.getValue() instanceof ContentDTO) {
-                // TODO: This logic is a bit wasteful as it has to recurse twice on the object
+                Map objectWithJavaTypes = new org.apache.commons.beanutils.BeanMap(mapEntry.getValue());
+
                 // go through and convert any known java types into our preferred string representation
-                Map<String, String> temp = this.flattenTokenMap(this.flattenObjectToMap(mapEntry.getValue()), Maps.newHashMap(), keyPrefix + mapEntry.getKey() + ".");
+                Map<String, String> temp = this.flattenTokenMap(objectWithJavaTypes,
+                        Maps.newHashMap(), keyPrefix + mapEntry.getKey() + ".");
                 outputMap.putAll(temp);
 
                 // now convert any java types we haven't defined specific conversions for into the basic Jackson serialisations.
                 ObjectMapper om = new ObjectMapper();
-                this.flattenTokenMap(om.convertValue(mapEntry.getValue(), HashMap.class), outputMap, keyPrefix + mapEntry.getKey() + ".");
+                this.flattenTokenMap(om.convertValue(mapEntry.getValue(), HashMap.class),
+                        outputMap, keyPrefix + mapEntry.getKey() + ".");
 
             } else {
                 valueToStore = this.emailTokenValueMapper(mapEntry.getValue());
@@ -423,7 +430,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param o - object to map
      * @return more sensible string representation or null
      */
-    private String emailTokenValueMapper(Object o) {
+    private String emailTokenValueMapper(final Object o) {
         String valueToStore;
         if (o == null) {
             valueToStore = "";
@@ -437,10 +444,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             valueToStore = ((Enum) o).name();
         } else if (o instanceof ExternalReference) {
             ExternalReference er = (ExternalReference) o;
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()));
-            sb.append("\n");
-            valueToStore = sb.toString();
+            valueToStore = String.format("<a href='%s'>%s</a>", er.getTitle(), er.getUrl()) +
+                    "\n";
         } else if (o instanceof Collection) {
             List<String> sl = Lists.newArrayList();
 
@@ -471,15 +476,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @return template with completed fields
      */
     private String completeTemplateWithProperties(final String content, final Properties templateProperties, final boolean html) {
-
-        // ArrayList<ContentBaseDTO> children = (ArrayList<ContentBaseDTO>) content.getChildren();
-        // if (!(children.size() == 1 && children.get(0) instanceof ContentDTO)) {
-        // throw new IllegalArgumentException(
-        // "Content object does not contain child with which to complete template properties!");
-        // }
-        //
-        // String template = ((ContentDTO) children.get(0)).getValue();
-
         String template = content;
 
         Pattern p = Pattern.compile("\\{\\{[A-Za-z0-9.]+\\}\\}");
@@ -604,7 +600,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     private ContentDTO getContentDTO(final String id)
             throws ContentManagerException, ResourceNotFoundException {
-    	
         ContentDTO c = this.contentManager.getContentById(
                 this.contentManager.getCurrentContentSHA(), id);
 
@@ -628,7 +623,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public EmailTemplateDTO getEmailTemplateDTO(final String id) throws ContentManagerException,
             ResourceNotFoundException {
-
         ContentDTO c = this.contentManager.getContentById(
                 this.contentManager.getCurrentContentSHA(), id);
 
@@ -636,8 +630,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             throw new ResourceNotFoundException(String.format("E-mail template %s does not exist!", id));
         }
 
-        EmailTemplateDTO emailTemplateDTO = null;
-
+        EmailTemplateDTO emailTemplateDTO;
         if (c instanceof EmailTemplateDTO) {
             emailTemplateDTO = (EmailTemplateDTO) c;
         } else {
