@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgAchievementsManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -58,9 +59,7 @@ import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
-import uk.ac.cam.cl.dtg.segue.dao.PgLogManager;
+import uk.ac.cam.cl.dtg.segue.dao.*;
 import uk.ac.cam.cl.dtg.segue.dao.associations.IAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.associations.PgAssociationDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -72,17 +71,14 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
+import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.segue.dos.PgEmailPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserPreferenceManager;
-import uk.ac.cam.cl.dtg.segue.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.segue.dos.*;
 import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.util.AchievementNotificationCommunicator;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
@@ -112,13 +108,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
+    private static KafkaStreamsProducer kafkaProducer;
     private static ContentMapper mapper = null;
     private static ContentVersionController contentVersionController = null;
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
-    private static ILogManager logManager;
+    //private static ILogManager logManager;
+    private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static StatisticsManager statsManager = null;
@@ -211,6 +209,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.POSTGRES_DB_USER, globalProperties);
         this.bindConstantToProperty(Constants.POSTGRES_DB_PASSWORD, globalProperties);
 
+        // Kafka
+        this.bindConstantToProperty(Constants.KAFKA_HOSTNAME, globalProperties);
+        this.bindConstantToProperty(Constants.KAFKA_PORT, globalProperties);
+
         // GitDb
         bind(GitDb.class).toInstance(
                 new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties
@@ -280,13 +282,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(AbstractEmailPreferenceManager.class).to(PgEmailPreferenceManager.class);
 
         bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
+
+        bind(AbstractUserAchievementManager.class).to(PgUserAchievementManager.class);
     }
 
     /**
      * This provides a singleton of the elasticSearch client that can be used by Guice.
-     * 
+     *
      * The client is threadsafe so we don't need to keep creating new ones.
-     * 
+     *
      * @param clusterName
      *            - The name of the cluster to create.
      * @param address
@@ -305,12 +309,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == elasticSearchClient) {
             elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
             log.info("Creating singleton of ElasticSearchProvider");
-        } 
-        // eventually we want to do something like the below to make sure we get updated clients        
+        }
+        // eventually we want to do something like the below to make sure we get updated clients
 //        if (elasticSearchClient instanceof TransportClient) {
 //            TransportClient tc = (TransportClient) elasticSearchClient;
 //            if (tc.connectedNodes().isEmpty()) {
-//                tc.close();        
+//                tc.close();
 //                log.error("The elasticsearch client is not connected to any nodes. Trying to reconnect...");
 //                elasticSearchClient = null;
 //                return getSearchConnectionInformation(clusterName, address, port);
@@ -397,8 +401,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
             
-            logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
-            
+            //logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
+
+            logManager = new PgLogManagerEventListener(new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm));
+            logManager.addListener(new KafkaLoggingProducer(globalProperties.getProperty("KAFKA_HOSTNAME"), globalProperties.getProperty("KAFKA_PORT"), lhm, new ObjectMapper()));
+
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
                 log.info("Log manager configured to record logging.");
@@ -657,6 +664,30 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return postgresDB;
+    }
+
+    /**
+     * Gets the instance of the kafka connection wrapper.
+     *
+     * @param kafkaHost
+     *            - host to connect to.
+     * @param kafkaPort
+     *            - port that the kafka service is running on.
+     * @return KafkaProducer object.
+     */
+    @Provides
+    @Singleton
+    @Inject
+    private static KafkaStreamsProducer getKafkaProducer(@Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
+                                         @Named(Constants.KAFKA_PORT) final String kafkaPort) {
+
+        if (null == kafkaProducer) {
+            kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort);
+
+        }
+
+        return kafkaProducer;
+
     }
 
     /**
