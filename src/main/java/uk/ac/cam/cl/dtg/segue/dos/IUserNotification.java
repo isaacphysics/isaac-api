@@ -27,7 +27,7 @@ public interface IUserNotification {
      * Represents the status of a notification.
      */
     public enum NotificationStatus {
-        DISMISSED, POSTPONED, DISABLED
+        ACKNOWLEDGED, POSTPONED, DISABLED
     }
 
     /**
