@@ -110,8 +110,10 @@ public class NotificationPicker {
             
 
             if (null == record) {
+                // either the use hasn't responded to the notification before...
                 resultsToReturn.add(c);
             } else if (record.getStatus().equals(NotificationStatus.POSTPONED)) {
+                // or they have but they postponed it...
                 Calendar postPoneExpiry = Calendar.getInstance();
                 postPoneExpiry.setTime(record.getCreated());
                 postPoneExpiry.add(Calendar.SECOND, Constants.NUMBER_SECONDS_IN_ONE_DAY);
@@ -119,6 +121,9 @@ public class NotificationPicker {
                 if (new Date().after(postPoneExpiry.getTime())) {
                     resultsToReturn.add(c);
                 }
+            } else {
+                // or they have and they don't want to see it again
+                continue;
             }
         }
 
