@@ -1,3 +1,18 @@
+/**
+ * Copyright 2017 Dan Underwood
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * 		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
@@ -7,12 +22,15 @@ import java.util.concurrent.Future;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.sun.prism.impl.Disposer;
 import org.apache.commons.lang3.Validate;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.KafkaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 
@@ -28,28 +46,24 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Created by du220 on 27/04/2017.
+ * Kafka logging listener
+ *
+ * This class implements the logging event handler interface to listen to log events, and publishes them to a kafka topic
  */
 public class KafkaLoggingProducer extends LoggingEventHandler {
     private static final Logger log = LoggerFactory.getLogger(PgLogManager.class);
 
-    private KafkaProducer<String, String> producer;
+    private KafkaStreamsProducer kafkaProducer;
     private LocationManager locationManager;
     private final ObjectMapper objectMapper;
 
 
-    public KafkaLoggingProducer(final String kafkaHost, final String kafkaPort, final LocationManager locationManager, final ObjectMapper objectMapper) {
+    @Inject
+    public KafkaLoggingProducer(final KafkaStreamsProducer kafkaProducer, final LocationManager locationManager, final ObjectMapper objectMapper) {
 
+        this.kafkaProducer = kafkaProducer;
         this.locationManager = locationManager;
         this.objectMapper = objectMapper;
-
-        Properties props = new Properties();
-        props.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, kafkaHost + ":" + kafkaPort);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-
-        producer = new KafkaProducer<>(props);
-
     }
 
 
@@ -97,6 +111,7 @@ public class KafkaLoggingProducer extends LoggingEventHandler {
 
         LogEvent logEvent = this.buildLogEvent(userId, anonymousUserId, eventType, eventDetails, ipAddress);
 
+        // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
         ProducerRecord producerRecord = new ProducerRecord<String, String>("loggedeventsTest", logEvent.getUserId(),
                 String.format("{\"user_id\":\"%s\", \"anonymous_user\":\"%s\", \"event_type\":\"%s\", \"event_details_type\":\"%s\", \"event_details\":%s, \"ip_address\":\"%s\"}",
                         logEvent.getUserId(),
@@ -107,10 +122,10 @@ public class KafkaLoggingProducer extends LoggingEventHandler {
                         logEvent.getIpAddress()));
 
         try {
-            producer.send(producerRecord);
+            kafkaProducer.Send(producerRecord);
 
-        } catch (Throwable throwable) {
-            System.out.println(throwable.getStackTrace());
+        } catch (KafkaException kex) {
+
         }
     }
 

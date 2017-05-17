@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
-import uk.ac.cam.cl.dtg.isaac.dao.PgAchievementsManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -78,7 +77,6 @@ import uk.ac.cam.cl.dtg.segue.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
-import uk.ac.cam.cl.dtg.util.AchievementNotificationCommunicator;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import uk.ac.cam.cl.dtg.util.PropertiesManager;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
@@ -396,7 +394,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ILogManager getLogManager(final PostgresSqlDb database,
+    private static ILogManager getLogManager(final PostgresSqlDb database, final KafkaStreamsProducer kafkaProducer,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm) {
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
@@ -404,7 +402,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             //logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
 
             logManager = new PgLogManagerEventListener(new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingProducer(globalProperties.getProperty("KAFKA_HOSTNAME"), globalProperties.getProperty("KAFKA_PORT"), lhm, new ObjectMapper()));
+            logManager.addListener(new KafkaLoggingProducer(kafkaProducer, lhm, new ObjectMapper()));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -683,11 +681,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         if (null == kafkaProducer) {
             kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort);
-
+            log.info("Creating singleton of KafkaProducer.");
         }
-
         return kafkaProducer;
-
     }
 
     /**
