@@ -512,6 +512,116 @@ public class IsaacNumericValidatorTest {
 		assertTrue(!response.getExplanation().getValue().equals(someExplanation.getValue()));
 	}
 
+    /*
+        Test correct answers to questions allowing a range of significant figures.
+     */
+    @Test
+    public final void isaacNumericValidator_TestQuestionWithSigFigRange_CorrectAnswers() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
+        someNumericQuestion.setSignificantFiguresMin(2);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("1.6875");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up a user answer:
+        Quantity q_3sf = new Quantity();
+        q_3sf.setValue("1.69");
+        // Test response:
+        QuestionValidationResponse response_3sf = validator.validateQuestionResponse(someNumericQuestion, q_3sf);
+        assertTrue("expected 1.69 to match 1.6875 to 2 or 3 sf", response_3sf.isCorrect());
+
+        // Set up a user answer:
+        Quantity q_2sf = new Quantity();
+        q_2sf.setValue("1.7");
+        // Test response:
+        QuestionValidationResponse response_2sf = validator.validateQuestionResponse(someNumericQuestion, q_2sf);
+        assertTrue("expected 1.7 to match 1.6875 to 2 or 3 sf", response_2sf.isCorrect());
+    }
+
+    /*
+        Test incorrect answers to questions allowing a range of significant figures.
+     */
+    @Test
+    public final void isaacNumericValidator_TestQuestionWithSigFigRange_IncorrectAnswers() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
+        someNumericQuestion.setSignificantFiguresMin(2);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("1.6875");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up a user answer:
+        Quantity q_3sf = new Quantity();
+        q_3sf.setValue("1.66");
+        // Test response:
+        QuestionValidationResponse response_3sf = validator.validateQuestionResponse(someNumericQuestion, q_3sf);
+        assertFalse("expected 1.66 not to match 1.6875 to 2 or 3 sf", response_3sf.isCorrect());
+        assertFalse("expected default incorrect response",
+                response_3sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
+
+        // Set up a user answer:
+        Quantity q_2sf = new Quantity();
+        q_2sf.setValue("2.0");
+        // Test response:
+        QuestionValidationResponse response_2sf = validator.validateQuestionResponse(someNumericQuestion, q_2sf);
+        assertFalse("expected 2.0 to match 1.6875 to 2 or 3 sf", response_2sf.isCorrect());
+        assertFalse("expected default incorrect response",
+                response_2sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
+    }
+
+    /*
+        Test incorrect sig fig answers to questions allowing a range of significant figures.
+     */
+    @Test
+    public final void isaacNumericValidator_TestQuestionWithSigFigRange_IncorrectSigFigAnswers() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setRequireUnits(false);
+        someNumericQuestion.setSignificantFiguresMin(2);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity();
+        someCorrectAnswer.setValue("1.6875");
+        someCorrectAnswer.setCorrect(true);
+
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up a user answer:
+        Quantity q_5sf = new Quantity();
+        q_5sf.setValue("1.6875");
+        // Test response:
+        QuestionValidationResponse response_5sf = validator.validateQuestionResponse(someNumericQuestion, q_5sf);
+        assertFalse("expected 1.6875 not to match 1.6875 to 2 or 3 sf", response_5sf.isCorrect());
+        assertTrue("expected sig fig incorrect response",
+                response_5sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
+
+        // Set up a user answer:
+        Quantity q_1sf = new Quantity();
+        q_1sf.setValue("2");
+        // Test response:
+        QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
+        assertFalse("expected 2 not to match 1.6875 to 2 or 3 sf", response_1sf.isCorrect());
+        assertTrue("expected sig fig incorrect response",
+                response_1sf.getExplanation().getValue().toLowerCase().contains("significant figures"));
+    }
+
 	/*
 	    Test parsing common unambiguous representations as numbers.
 	 */
@@ -546,18 +656,18 @@ public class IsaacNumericValidatorTest {
 	    Test various numbers for significant figure rules.
 	 */
 	@Test
-	public final void isaacNumericValidator_CheckSignificantFiguresCalculationWorks_multipleTests() throws Exception {		
-		verifyCorrectNumberOfSigFigs(Arrays.asList("5000", "5000e3", "-5000", "-5000e3"), Arrays.asList(1,2,3,4), Arrays.asList(5));
+	public final void isaacNumericValidator_CheckSignificantFiguresNoRangeCalculationWorks_multipleTests() throws Exception {
+		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("5000", "5000e3", "-5000", "-5000e3"), Arrays.asList(1,2,3,4), Arrays.asList(5));
 		
-		verifyCorrectNumberOfSigFigs(Arrays.asList("5300", "5300e3", "-5300", "-5300e3"), Arrays.asList(2,3,4), Arrays.asList(1,5));
+		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("5300", "5300e3", "-5300", "-5300e3"), Arrays.asList(2,3,4), Arrays.asList(1,5));
 		
-		verifyCorrectNumberOfSigFigs(Arrays.asList("50300", "-50300"), Arrays.asList(3,4,5), Arrays.asList(1,2,6));
+		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("50300", "-50300"), Arrays.asList(3,4,5), Arrays.asList(1,2,6));
 		
-		verifyCorrectNumberOfSigFigs(Arrays.asList("0", "-0"), Arrays.asList(1), Arrays.asList(2));
+		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0", "-0"), Arrays.asList(1), Arrays.asList(2));
 		
-		verifyCorrectNumberOfSigFigs(Arrays.asList("0000100", "-0000100"), Arrays.asList(1,2,3), Arrays.asList(4,5,6,7));
+		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100", "-0000100"), Arrays.asList(1,2,3), Arrays.asList(4,5,6,7));
 		
-		verifyCorrectNumberOfSigFigs(Arrays.asList("0000100.00", "-0000100.00"), Arrays.asList(5), Arrays.asList(4,6,7));
+		verifyCorrectNumberOfSigFigsNoRange(Arrays.asList("0000100.00", "-0000100.00"), Arrays.asList(5), Arrays.asList(4,6,7));
 	}
 
 	/*
@@ -580,33 +690,61 @@ public class IsaacNumericValidatorTest {
 		this.testSigFigRoundingWorks(test, 0.0, 2, 0.0);
 	}
 
+    /*
+    Test the rounding to a specified number of significant figures works as expected.
+ */
+    @Test
+    public final void isaacNumericValidator_CheckSignificantFiguresExtractionWorks() throws Exception {
+        IsaacNumericValidator test = new IsaacNumericValidator();
+        // Unambiguous cases:
+        this.testSigFigExtractionWorks(test, "1", 1, 10, 1);
+        this.testSigFigExtractionWorks(test, "1.23", 2, 3, 3);
+        this.testSigFigExtractionWorks(test, "0.400", 2, 3, 3);
+        this.testSigFigExtractionWorks(test, "6.0e3", 2, 2, 2);
+        // Ambiguous cases:
+        this.testSigFigExtractionWorks(test, "30000", 3, 3,3);
+        this.testSigFigExtractionWorks(test, "10", 3, 3,3);
+        this.testSigFigExtractionWorks(test, "3333000", 2, 4,4);
+    }
+
 	private void testSigFigRoundingWorks(IsaacNumericValidator classUnderTest, double inputValue, int sigFigToRoundTo, double expectedResult) throws Exception {
 		double result = Whitebox.<Double> invokeMethod(classUnderTest, "roundToSigFigs", inputValue, sigFigToRoundTo);				
 		
 		assertTrue("sigfig rounding failed for value " + inputValue + " to " + sigFigToRoundTo
 				+ " expected: " + expectedResult + " got " + result, result == expectedResult);
 	}
+
+    private void testSigFigExtractionWorks(IsaacNumericValidator classUnderTest, String inputValue, int minAllowedSigFigs,
+										   int maxAllowedSigFigs, int expectedResult) throws Exception {
+        int result = Whitebox.<Integer> invokeMethod(classUnderTest, "numberOfSignificantFiguresToValidateWith",
+                inputValue, minAllowedSigFigs, maxAllowedSigFigs);
+
+        assertTrue("sigfig extraction out of range for value " + inputValue + " (min allowed: " + minAllowedSigFigs
+                + ", max allowed: " + maxAllowedSigFigs + ") got " + result, result <= maxAllowedSigFigs && result >= minAllowedSigFigs);
+        assertTrue("sigfig extraction failed for value " + inputValue + ", expected: " + expectedResult
+                + " got " + result, result == expectedResult);
+    }
 	
 	
 	/**
-	 * Helper to launch multiple sig fig tests on given numbers.
+	 * Helper to launch multiple sig fig tests on given numbers, when checking against a single allowed value for sig figs.
 	 * 
 	 * @param numbersToTest the numbers to feed into the validator
 	 * @param sigFigsToPass - the number of significant figures we expect the aforementioned numbers return a pass for
 	 * @param sigFigsToFail - the number of significant figures we expect the aforementioned numbers return a fail for
 	 * @throws Exception - if we can't execute the private method.
 	 */
-	private final void verifyCorrectNumberOfSigFigs(List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) throws Exception {
+	private void verifyCorrectNumberOfSigFigsNoRange(List<String> numbersToTest, List<Integer> sigFigsToPass, List<Integer> sigFigsToFail) throws Exception {
 		IsaacNumericValidator test = new IsaacNumericValidator();
 		for (String number : numbersToTest) {
 			
 			for(Integer sigFig : sigFigsToPass) {
-				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberofSignificantFigures", number, sigFig);				
+				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberOfSignificantFigures", number, sigFig, sigFig);
 				assertTrue("Verifying sigfig success failed " + number + " " + sigFig, validate);
 			}
 			
 			for(Integer sigFig : sigFigsToFail) {
-				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberofSignificantFigures", number, sigFig); 
+				boolean validate = Whitebox.<Boolean> invokeMethod(test, "verifyCorrectNumberOfSignificantFigures", number, sigFig, sigFig);
 				assertFalse("Verifying sigfig failures failed " + number + " " + sigFig, validate);
 			}
 		}
