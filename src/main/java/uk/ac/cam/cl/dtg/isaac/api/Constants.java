@@ -37,6 +37,8 @@ public final class Constants {
 
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
+    public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
+
     /*
      * Game specific variables.
      */
