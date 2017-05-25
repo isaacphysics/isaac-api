@@ -226,8 +226,10 @@ public final class Constants {
     public static final String PASSWORD_RESET_REQUEST_SUCCESSFUL = "PASSWORD_RESET_REQUEST_SUCCESSFUL";
     public static final String CONTACT_US_FORM_USED = "CONTACT_US_FORM_USED";
     public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
+    public static final String DELETE_USER_GROUP = "DELETE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
     public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
+    public static final String REMOVE_USER_FROM_GROUP = "REMOVE_USER_FROM_GROUP";
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";
@@ -298,6 +300,7 @@ public final class Constants {
     public static final String ASSOCIATION_TOKEN_FIELDNAME = "token";
 
     public static final String GROUP_FK = "groupId";
+    public static final String ASSIGNMENT_FK = "assignmentId";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";

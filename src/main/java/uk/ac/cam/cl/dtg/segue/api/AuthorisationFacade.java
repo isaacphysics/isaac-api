@@ -307,10 +307,12 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            associationManager.createAssociationWithToken(token, user);
+            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
 
             this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
-                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, token));
+                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, associationToken.getToken(),
+                                    GROUP_FK, associationToken.getGroupId(),
+                                    USER_ID_FKEY_FIELDNAME, associationToken.getOwnerUserId()));
 
             return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
         } catch (SegueDatabaseException e) {
