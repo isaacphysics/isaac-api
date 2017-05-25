@@ -746,6 +746,9 @@ public class UserAccountManager {
                         this.emailManager.sendRoleChange(existingUserDTO, user.getRole());
                         break;
                 }
+                logManager.logInternalEvent(existingUserDTO, Constants.USER_ROLE_CHANGE,
+                        ImmutableMap.of("oldRole", existingUser.getRole(),
+                                "newRole", user.getRole()));
             }
         } catch (ContentManagerException | NoUserException e) {
             log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());

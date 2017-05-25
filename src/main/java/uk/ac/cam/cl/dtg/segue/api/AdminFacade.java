@@ -94,6 +94,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -369,7 +370,12 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             for (Long userid : userIds) {
+                RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
+                Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
+                this.getLogManager().logInternalEvent(user, Constants.USER_ROLE_CHANGE,
+                        ImmutableMap.of("oldRole", oldRole,
+                                        "newRole", requestedRole));
             }
 
         } catch (NoUserLoggedInException e) {
