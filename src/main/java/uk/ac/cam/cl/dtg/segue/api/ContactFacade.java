@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTACT_US_FORM_USED;
+
+import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 
 import java.util.Map;
@@ -101,8 +103,8 @@ public class ContactFacade extends AbstractSegueFacade {
                     form.get("subject"), form.get("message"), this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
                     form.get("emailAddress"), replyToName, form.get("userId"));
             getLogManager().logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED,
-                    String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
-                            form.get("emailAddress"), form.get("message")));
+                    ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
+                            form.get("emailAddress"), form.get("message"))));
             return Response.ok().build();
         } catch (ContentManagerException e) {
             log.error("Content error has occurred", e);
