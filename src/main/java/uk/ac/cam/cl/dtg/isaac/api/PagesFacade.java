@@ -251,7 +251,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         if (result.getEntity() instanceof SeguePageDTO) {
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put("contentVersion", this.contentManager.getCurrentContentSHA())
+                    .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                     .build();
 
             // the request log
@@ -429,7 +429,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
             Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
-                    "contentVersion", this.contentManager.getCurrentContentSHA());
+                    CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
 
             String userIdForRandomisation;
             if (user instanceof AnonymousUserDTO) {
@@ -576,7 +576,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
                     .put(PAGE_ID_LOG_FIELDNAME, pageId)
-                    .put(CONTENT_SHA, this.contentManager.getCurrentContentSHA()).build();
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
 
             // the request log
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,

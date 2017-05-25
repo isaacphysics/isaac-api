@@ -253,6 +253,7 @@ public final class Constants {
     public static final String LEVEL_FIELDNAME = "level";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
