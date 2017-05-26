@@ -228,6 +228,12 @@ public final class Constants {
     public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
     public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
+    public static final String USER_REQUESTED_EVENT_BOOKING = "USER_REQUESTED_EVENT_BOOKING";
+    public static final String USER_REQUESTED_EVENT_WAITING_LIST_BOOKING = "USER_REQUESTED_EVENT_WAITING_LIST_BOOKING";
+    public static final String BOOKING_CANCELLED = "BOOKING_CANCELLED";
+    public static final String ADMIN_BOOKING_CONFIRMED = "ADMIN_BOOKING_CONFIRMED";
+    public static final String ADMIN_WAIT_LIST_PROMOTION = "ADMIN_WAIT_LIST_PROMOTION";
+    public static final String ADMIN_BOOKING_DELETED = "ADMIN_BOOKING_DELETED";
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";

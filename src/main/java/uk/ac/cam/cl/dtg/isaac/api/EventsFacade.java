@@ -21,7 +21,6 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import io.swagger.annotations.Api;
 
 import java.util.*;
@@ -47,6 +46,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.*;
 import uk.ac.cam.cl.dtg.isaac.dos.EventStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -256,7 +256,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
 			filteredResults.add(eventDTOById);
 		}
-        return new ResultsWrapper<ContentDTO>(filteredResults, new Long(filteredResults.size()));
+        return new ResultsWrapper<>(filteredResults, new Long(filteredResults.size()));
     }
 
     /**
@@ -387,6 +387,10 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
+            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                    Constants.ADMIN_WAIT_LIST_PROMOTION, ImmutableMap.of(ID_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME,
+                            userId));
+
             return Response.ok(this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -485,6 +489,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
+            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                    Constants.ADMIN_BOOKING_CONFIRMED, ImmutableMap.of(ID_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userId));
+
             return Response.ok(bookingManager.createBooking(event, bookedUser, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
@@ -539,7 +546,12 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
-            return Response.ok(bookingManager.requestBooking(event, user, additionalInformation)).build();
+            EventBookingDTO eventBookingDTO = bookingManager.requestBooking(event, user, additionalInformation);
+
+            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                    Constants.USER_REQUESTED_EVENT_BOOKING, ImmutableMap.of(ID_FIELDNAME, event.getId()));
+
+            return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -593,6 +605,9 @@ public class EventsFacade extends AbstractIsaacFacade {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "You are already booked on this event.")
                     .toResponse();
             }
+
+            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                    Constants.USER_REQUESTED_EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(ID_FIELDNAME, event.getId()));
 
             return Response.ok(bookingManager.requestWaitingListBooking(event, user, additionalInformation)).build();
         } catch (NoUserLoggedInException e) {
@@ -663,7 +678,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             RegisteredUserDTO userLoggedIn = this.userManager.getCurrentRegisteredUser(request);
-            RegisteredUserDTO userOwningBooking = null;
+            RegisteredUserDTO userOwningBooking;
 
             if (null == userId) {
                 userOwningBooking = userLoggedIn;
@@ -687,6 +702,14 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             bookingManager.cancelBooking(event, userOwningBooking);
+
+            if (!userOwningBooking.equals(userLoggedIn)) {
+                this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                        Constants.BOOKING_CANCELLED, ImmutableMap.of(ID_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking));
+            } else {
+                this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                        Constants.BOOKING_CANCELLED, ImmutableMap.of(ID_FIELDNAME, event.getId()));
+            }
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
@@ -781,6 +804,9 @@ public class EventsFacade extends AbstractIsaacFacade {
             }
 
             bookingManager.deleteBooking(eventId, userId);
+
+            this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
+                    Constants.ADMIN_BOOKING_DELETED, ImmutableMap.of(ID_FIELDNAME, eventId, USER_ID_FKEY_FIELDNAME, userId));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {
