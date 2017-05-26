@@ -132,7 +132,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param recipientEmailAddress
      *            - Email Address to send the contact us message to.
      * @param emailValues
-     *            - users family name
+     *            - must contain at least contactEmail, replyToName, contactSubject plus any other email tokens to replace.
      * @throws ContentManagerException
      *             - if some content is not found
      * @throws SegueDatabaseException
@@ -140,11 +140,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      */
     public void sendContactUsFormEmail(final String recipientEmailAddress, final Map<String, Object> emailValues)
             throws ContentManagerException, SegueDatabaseException {
-
         EmailTemplateDTO emailContent = getEmailTemplateDTO("email-contact-us-form");
-        emailContent.setReplyToEmailAddress(recipientEmailAddress);
-
+        emailContent.setReplyToEmailAddress(emailValues.get("contactEmail").toString());
         emailContent.setReplyToName(emailValues.get("replyToName").toString());
+
         emailContent.setSubject("(Contact Form) " + emailValues.get("contactSubject").toString());
 
         // generate properties from hashMap for token replacement process
