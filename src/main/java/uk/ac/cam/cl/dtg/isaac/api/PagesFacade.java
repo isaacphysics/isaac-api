@@ -31,10 +31,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
@@ -76,6 +73,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
@@ -455,6 +453,66 @@ public class PagesFacade extends AbstractIsaacFacade {
             return SegueErrorResponse.getResourceNotFoundResponse(error);
         }
     }
+
+
+    /**
+     * Rest end point that get some additional details of a question page by its id
+     * useful for external processes that require question data for statistics
+     *
+     * @param questionPageId
+     *            to find as a string
+     * @param request
+     *            - so that we can do etag and cache resolution.
+     * @param httpServletRequest
+     *            - so that we can try and determine if the user is logged in. This will allow us to augment the
+     *            question objects with any recorded state.
+     * @return A Response object containing a question page object or a SegueErrorResponse.
+     */
+    @GET
+    @Path("/question_details/{question_page_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public final Response getUserQuestionDetails(@Context final Request request,
+                                      @Context final HttpServletRequest httpServletRequest,
+                                                 @PathParam("question_page_id") final String questionPageId) {
+
+        Collection<QuestionDTO> questionParts;
+
+        try {
+            questionParts = gameManager.getAllMarkableQuestionParts(questionPageId);
+
+        } catch (ContentManagerException e) {
+            String message = "ContentManagerException whilst trying to retrieve content data";
+            log.error(message, e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
+        }
+
+        // Make use of question page object endpoint to retrieve question details
+        Response questionDetails = getQuestion(request, httpServletRequest, questionPageId);
+
+        if (questionDetails.getEntity() instanceof IsaacQuestionPageDTO) {
+            SeguePageDTO questionContent = (SeguePageDTO) questionDetails.getEntity();
+
+            Map<String, Object> responseBody = new ImmutableMap.Builder<String, Object>()
+                    .put("questionId", questionPageId)
+                    .put("level", questionContent.getLevel())
+                    .put("tags", questionContent.getTags())
+                    .put("questionPartCount", questionParts.size())
+                    .build();
+
+            return Response.ok(responseBody)
+                    .build();
+
+        } else {
+            String error = "Unable to locate question data with the id specified: " + questionPageId;
+            log.warn(error);
+            return SegueErrorResponse.getResourceNotFoundResponse(error);
+        }
+
+    }
+
+
+
 
     /**
      * Rest end point that gets a question summary page with augmented gameboard and question content..
