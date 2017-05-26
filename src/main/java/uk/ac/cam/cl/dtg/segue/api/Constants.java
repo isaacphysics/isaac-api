@@ -229,7 +229,8 @@ public final class Constants {
     public static final String DELETE_USER_GROUP = "DELETE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
     public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
-    public static final String USER_ROLE_CHANGE = "USER_ROLE_CHANGE";
+    public static final String ADMIN_CHANGE_USER_SCHOOL = "ADMIN_CHANGE_USER_SCHOOL";
+    public static final String CHANGE_USER_ROLE = "CHANGE_USER_ROLE";
     public static final String REMOVE_USER_FROM_GROUP = "REMOVE_USER_FROM_GROUP";
 
     // IP Geocoding stuff

@@ -21,3 +21,8 @@ UPDATE logged_events SET event_details=replace(event_details::text, '"gameBoard'
 UPDATE logged_events SET event_details=replace(event_details::text, '"CONTENT_SHA"', '"contentVersion"')::jsonb WHERE event_type IN ('GLOBAL_SITE_SEARCH','VIEW_PAGE');
 UPDATE logged_events SET event_details=replace(event_details::text, '"CONTENT_VERSION"', '"contentVersion"')::jsonb WHERE event_type IN ('GENERATE_RANDOM_GAMEBOARD','GLOBAL_SITE_SEARCH','VIEW_CONCEPT','VIEW_PAGE');
 UPDATE logged_events SET event_details=replace(event_details::text, '"contentVersionId"', '"contentVersion"')::jsonb WHERE event_type IN ('SENT_MASS_EMAIL');
+
+/*
+  Use standard `userId` rather than custom `userIdDeleted` in DELETE_USER_ACCOUNT events:
+*/
+UPDATE logged_events SET event_details=replace(event_details::text, '"userIdDeleted"', '"userId"')::jsonb WHERE event_type IN ('DELETE_USER_ACCOUNT');

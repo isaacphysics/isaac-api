@@ -746,9 +746,6 @@ public class UserAccountManager {
                         this.emailManager.sendRoleChange(existingUserDTO, user.getRole());
                         break;
                 }
-                logManager.logInternalEvent(existingUserDTO, Constants.USER_ROLE_CHANGE,
-                        ImmutableMap.of("oldRole", existingUser.getRole(),
-                                "newRole", user.getRole()));
             }
         } catch (ContentManagerException | NoUserException e) {
             log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
@@ -786,25 +783,10 @@ public class UserAccountManager {
             try {
                 RegisteredUserDTO userToSaveDTO = mapper.map(userToSave, RegisteredUserDTO.class);
                 this.emailManager.sendEmailVerification(userToSaveDTO, userToSave.getEmailVerificationToken());
-            } catch (ContentManagerException e) {
+            } catch (ContentManagerException | NoUserException e) {
                 log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
-            } catch (NoUserException e) {
-                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
-			}
+            }
             userToSave.setEmail(existingUser.getEmail());
-        }
-
-        // If the school has changed, update it. Check this using Objects.equals() to be null safe!
-        if (!Objects.equals(userToSave.getSchoolId(), existingUser.getSchoolId())
-                || !Objects.equals(userToSave.getSchoolOther(), existingUser.getSchoolOther())) {
-            LinkedHashMap<String, String> eventDetails = new LinkedHashMap<>();
-            eventDetails.put("oldSchoolId", existingUser.getSchoolId());
-            eventDetails.put("newSchoolId", userToSave.getSchoolId());
-            eventDetails.put("oldSchoolOther", existingUser.getSchoolOther());
-            eventDetails.put("newSchoolOther", userToSave.getSchoolOther());
-
-            logManager.logInternalEvent(this.convertUserDOToUserDTO(userToSave), Constants.USER_SCHOOL_CHANGE,
-                    eventDetails);
         }
 
         // save the user
