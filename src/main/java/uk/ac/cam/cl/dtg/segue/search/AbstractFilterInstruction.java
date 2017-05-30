@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,7 @@ package uk.ac.cam.cl.dtg.segue.search;
 /**
  * FilterInstruction
  * 
- * Class to help abstract away the search filter data.
- * 
- * @author sac92
+ * Class to help abstract away the search filter format within Segue.
  *
  */
 public abstract class AbstractFilterInstruction {
