@@ -218,6 +218,14 @@ public class GameboardItem {
         return result;
     }
 
+    public final Float calculatePercentageOfQuestionParts(Integer questionParts) {
+        Float result = null;
+        if (this.statusInformationIsNotNull()) {
+            result = 100f * questionParts / this.getQuestionPartsTotal();
+        }
+        return result;
+    }
+
     /**
      * Gets the state.
      * 
@@ -227,8 +235,8 @@ public class GameboardItem {
         GameboardItemState state = null;
         if (this.statusInformationIsNotNull()) {
             Integer questionPartsTotal = this.getQuestionPartsTotal();
-            float percentCorrect = 100 * (float) this.questionPartsCorrect / questionPartsTotal;
-            float percentIncorrect = 100 * (float) this.questionPartsIncorrect / questionPartsTotal;
+            float percentCorrect = this.calculatePercentageOfQuestionParts(this.questionPartsCorrect);
+            float percentIncorrect = this.calculatePercentageOfQuestionParts(this.questionPartsIncorrect);
 
             if (this.questionPartsCorrect == questionPartsTotal) {
                 state = GameboardItemState.PERFECT;

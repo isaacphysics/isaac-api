@@ -424,33 +424,27 @@ public class GameManager {
         if (null == gameboardDTO || null == questionAttemptsFromUser || gameboardDTO.getQuestions().size() == 0) {
             return;
         }
-
-        int totalCompleted = 0;
-        int totalUnavailable = 0;
         
+        ArrayList<Float> questionPercentages = new ArrayList<Float>();
         for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
             try {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
-                GameboardItemState state = gameItem.getState();
-                if (state.equals(GameboardItemState.PASSED) || state.equals(GameboardItemState.PERFECT)) {
-                    totalCompleted++;
-                }
-                if (!state.equals(GameboardItemState.NOT_ATTEMPTED) && !gameboardDTO.isStartedQuestion()) {
+                questionPercentages.add(gameItem.calculatePercentageOfQuestionParts(gameItem.getQuestionPartsCorrect()));
+                if (!gameItem.getState().equals(GameboardItemState.NOT_ATTEMPTED) && !gameboardDTO.isStartedQuestion()) {
                     gameboardDTO.setStartedQuestion(true);
                 }
             } catch (ResourceNotFoundException e) {
                 log.info(String.format(
                         "A question is unavailable (%s) - treating it as if it never existed for marking.",
                         gameItem.getId()));
-                totalUnavailable++;
             }
         }
         
-        //., TODO MT - set this to calculate a better percentage which takes question parts into consideration
-        int totalQuestionInBoard = gameboardDTO.getQuestions().size() - totalUnavailable;
-        
-        double percentageCompleted = totalCompleted * 100 / totalQuestionInBoard;
-        gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
+        double boardPercentage = 0;
+        for (Float questionPercentage : questionPercentages) {
+            boardPercentage += questionPercentage / questionPercentages.size();
+        }
+        gameboardDTO.setPercentageCompleted((int) Math.round(boardPercentage));
         
         if (user instanceof RegisteredUserDTO) {
             gameboardDTO
