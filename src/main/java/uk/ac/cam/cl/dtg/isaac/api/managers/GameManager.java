@@ -936,7 +936,7 @@ public class GameManager {
      *             - if there is an error retrieving the content requested.
      * @throws ResourceNotFoundException
      *             - if we cannot find the question specified.
-     */ //., TODO MT update
+     */
     private void augmentGameItemWithAttemptInformation(final GameboardItem gameItem,
             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
             throws ContentManagerException, ResourceNotFoundException {

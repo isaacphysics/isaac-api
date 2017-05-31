@@ -186,17 +186,32 @@ public class GameboardItem {
 
     /**
      * Gets the passMark as a percentage.
+     *
      * @return the passMark as a percentage
      */
     public Float getPassMark() {
         return this.passMark;
     }
 
+    /**
+     * A method to check that all status fields are set to non-null values
+     *
+     * @return true if the status fields are all non-null
+     */
     private final boolean statusInformationIsNotNull() {
         return this.questionPartsCorrect != null && this.questionPartsIncorrect != null
                 && this.questionPartsNotAttempted != null && this.passMark != null;
     }
 
+    /**
+     * Sets status information for the object.
+     * Status results rely on all of these values being defined, hence why they are set together.
+     *
+     * @param questionPartsCorrect number of correct question parts
+     * @param questionPartsIncorrect number of incorrect question parts
+     * @param questionPartsNotAttempted number of question parts not attempted
+     * @param passMark pass mark as a percentage
+     */
     public final void setStatusInformation(final Integer questionPartsCorrect, final Integer questionPartsIncorrect,
                                            final Integer questionPartsNotAttempted, final Float passMark) {
         this.questionPartsCorrect = questionPartsCorrect;
@@ -218,7 +233,13 @@ public class GameboardItem {
         return result;
     }
 
-    public final Float calculatePercentageOfQuestionParts(Integer questionParts) {
+    /**
+     * Calculates the percentage ratio that the question parts argument represents for this question
+     *
+     * @param questionParts the number of question parts
+     * @return question part percentage
+     */
+    public final Float calculatePercentageOfQuestionParts(final Integer questionParts) {
         Float result = null;
         if (this.statusInformationIsNotNull()) {
             result = 100f * questionParts / this.getQuestionPartsTotal();
@@ -227,8 +248,8 @@ public class GameboardItem {
     }
 
     /**
-     * Gets the state.
-     * 
+     * Calculates and returns the state if the required fields have been set for the object.
+     *
      * @return the state
      */
     public final GameboardItemState getState() {
