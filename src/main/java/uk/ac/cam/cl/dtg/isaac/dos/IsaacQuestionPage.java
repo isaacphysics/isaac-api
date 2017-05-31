@@ -61,7 +61,7 @@ public class IsaacQuestionPage extends SeguePage {
     }
 
     public Float getPassMark() {
-        return passMark;
+        return this.passMark != null ? this.passMark : 100f;
     }
 
     public void setPassMark(Float passMark) {

@@ -34,8 +34,11 @@ public class GameboardItem {
     private List<String> tags;
 
     private Integer level;
-    private GameboardItemState state;
-    
+    private Integer questionPartsCorrect;
+    private Integer questionPartsIncorrect;
+    private Integer questionPartsNotAttempted;
+    private Float passMark;
+
     // optional field if we want to use the gameboard item outside of the context of a board.
     @Nullable
     private String boardId;
@@ -155,22 +158,91 @@ public class GameboardItem {
     }
 
     /**
+     * Gets the number of questionPartsCorrect.
+     * 
+     * @return the number of questionPartsCorrect
+     */
+    public final Integer getQuestionPartsCorrect() {
+        return questionPartsCorrect;
+    }
+
+    /**
+     * Gets the number of questionPartsIncorrect.
+     * 
+     * @return the number of questionPartsIncorrect
+     */
+    public final Integer getQuestionPartsIncorrect() {
+        return questionPartsIncorrect;
+    }
+
+    /**
+     * Gets the number of questionPartsNotAttempted.
+     * 
+     * @return the number of questionPartsNotAttempted
+     */
+    public final Integer getQuestionPartsNotAttempted() {
+        return questionPartsNotAttempted;
+    }
+
+    /**
+     * Gets the passMark as a percentage.
+     * @return the passMark as a percentage
+     */
+    public Float getPassMark() {
+        return this.passMark;
+    }
+
+    private final boolean statusInformationIsNotNull() {
+        return this.questionPartsCorrect != null && this.questionPartsIncorrect != null
+                && this.questionPartsNotAttempted != null && this.passMark != null;
+    }
+
+    public final void setStatusInformation(final Integer questionPartsCorrect, final Integer questionPartsIncorrect,
+                                           final Integer questionPartsNotAttempted, final Float passMark) {
+        this.questionPartsCorrect = questionPartsCorrect;
+        this.questionPartsIncorrect = questionPartsIncorrect;
+        this.questionPartsNotAttempted = questionPartsNotAttempted;
+        this.passMark = passMark;
+    } 
+
+    /**
+     * Gets the number of total number of question parts.
+     * 
+     * @return the number of questionPartsTotal
+     */
+    public final Integer getQuestionPartsTotal() {
+        Integer result = null;
+        if (this.statusInformationIsNotNull()) {
+            result = this.questionPartsCorrect + this.questionPartsIncorrect + this.questionPartsNotAttempted;
+        }
+        return result;
+    }
+
+    /**
      * Gets the state.
      * 
      * @return the state
      */
     public final GameboardItemState getState() {
-        return state;
-    }
+        GameboardItemState state = null;
+        if (this.statusInformationIsNotNull()) {
+            Integer questionPartsTotal = this.getQuestionPartsTotal();
+            float percentCorrect = 100 * (float) this.questionPartsCorrect / questionPartsTotal;
+            float percentIncorrect = 100 * (float) this.questionPartsIncorrect / questionPartsTotal;
 
-    /**
-     * Sets the state.
-     * 
-     * @param state
-     *            the state to set
-     */
-    public final void setState(final GameboardItemState state) {
-        this.state = state;
+            if (this.questionPartsCorrect == questionPartsTotal) {
+                state = GameboardItemState.PERFECT;
+            } else if (this.questionPartsNotAttempted == questionPartsTotal) {
+                state = GameboardItemState.NOT_ATTEMPTED;
+            } else if (percentCorrect >= this.passMark) {
+                state = GameboardItemState.PASSED;
+            } else if (percentIncorrect > (100 - this.passMark)) {
+                state = GameboardItemState.FAILED;
+            } else {
+                state = GameboardItemState.IN_PROGRESS;
+            }
+        }
+        return state;
     }
 
     /**
