@@ -412,7 +412,6 @@ public class GameManager {
      *            - the users question data.
      * @param user
      *            - the users data.
-     * @return Augmented Gameboard
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      * @throws SegueDatabaseException if we can't look up gameboard --> user information
@@ -429,8 +428,9 @@ public class GameManager {
         for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
             try {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
-                questionPercentages.add(gameItem.calculatePercentageOfQuestionParts(gameItem.getQuestionPartsCorrect()));
-                if (!gameItem.getState().equals(GameboardItemState.NOT_ATTEMPTED) && !gameboardDTO.isStartedQuestion()) {
+                questionPercentages.add(gameItem.calculateQuestionPartPercentage(gameItem.getQuestionPartsCorrect()));
+                if (!gameItem.getState().equals(GameboardItemState.NOT_ATTEMPTED)
+                        && !gameboardDTO.isStartedQuestion()) {
                     gameboardDTO.setStartedQuestion(true);
                 }
             } catch (ResourceNotFoundException e) {
@@ -931,7 +931,6 @@ public class GameManager {
      *            - the gameboard item.
      * @param questionAttemptsFromUser
      *            - the user that may or may not have attempted questions in the gameboard.
-     * @return The state of the gameboard item.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      * @throws ResourceNotFoundException
@@ -958,7 +957,8 @@ public class GameManager {
                     // there is a correct answer somewhere.
                     boolean foundCorrectForThisQuestion = false;
                     for (int i = questionPartAttempts.size() - 1; i >= 0; i--) {
-                        if (questionPartAttempts.get(i).isCorrect() != null && questionPartAttempts.get(i).isCorrect()) {
+                        if (questionPartAttempts.get(i).isCorrect() != null
+                                && questionPartAttempts.get(i).isCorrect()) {
                             foundCorrectForThisQuestion = true;
                             break;
                         }

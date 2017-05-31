@@ -194,11 +194,11 @@ public class GameboardItem {
     }
 
     /**
-     * A method to check that all status fields are set to non-null values
+     * Checks that all status fields are set to non-null values.
      *
      * @return true if the status fields are all non-null
      */
-    private final boolean statusInformationIsNotNull() {
+    private boolean statusInformationIsNotNull() {
         return this.questionPartsCorrect != null && this.questionPartsIncorrect != null
                 && this.questionPartsNotAttempted != null && this.passMark != null;
     }
@@ -234,12 +234,12 @@ public class GameboardItem {
     }
 
     /**
-     * Calculates the percentage ratio that the question parts argument represents for this question
+     * Calculates the percentage ratio that the question parts argument represents for this question.
      *
      * @param questionParts the number of question parts
      * @return question part percentage
      */
-    public final Float calculatePercentageOfQuestionParts(final Integer questionParts) {
+    public final Float calculateQuestionPartPercentage(final Integer questionParts) {
         Float result = null;
         if (this.statusInformationIsNotNull()) {
             result = 100f * questionParts / this.getQuestionPartsTotal();
@@ -256,12 +256,12 @@ public class GameboardItem {
         GameboardItemState state = null;
         if (this.statusInformationIsNotNull()) {
             Integer questionPartsTotal = this.getQuestionPartsTotal();
-            float percentCorrect = this.calculatePercentageOfQuestionParts(this.questionPartsCorrect);
-            float percentIncorrect = this.calculatePercentageOfQuestionParts(this.questionPartsIncorrect);
+            float percentCorrect = this.calculateQuestionPartPercentage(this.questionPartsCorrect);
+            float percentIncorrect = this.calculateQuestionPartPercentage(this.questionPartsIncorrect);
 
-            if (this.questionPartsCorrect == questionPartsTotal) {
+            if (this.questionPartsCorrect.equals(questionPartsTotal)) {
                 state = GameboardItemState.PERFECT;
-            } else if (this.questionPartsNotAttempted == questionPartsTotal) {
+            } else if (this.questionPartsNotAttempted.equals(questionPartsTotal)) {
                 state = GameboardItemState.NOT_ATTEMPTED;
             } else if (percentCorrect >= this.passMark) {
                 state = GameboardItemState.PASSED;

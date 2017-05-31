@@ -446,7 +446,6 @@ public class GameboardPersistenceManager {
 	 * gameboard items populated with meaningful titles.
 	 * 
 	 * @param gameboards - list of gameboards to fully augment.
-	 * @return augmented gameboards as per inputted list.
 	 */
 	public void augmentGameboardItems(final List<GameboardDTO> gameboards) {
 		Set<String> questionIds = Sets.newHashSet();
