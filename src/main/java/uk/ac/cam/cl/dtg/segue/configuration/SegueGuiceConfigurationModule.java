@@ -282,6 +282,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
 
         bind(AbstractUserAchievementManager.class).to(PgUserAchievementManager.class);
+
     }
 
     /**

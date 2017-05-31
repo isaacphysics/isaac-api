@@ -80,8 +80,10 @@ import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractEmailPreferenceManager;
 import uk.ac.cam.cl.dtg.segue.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.segue.dos.AbstractUserAchievementManager;
 import uk.ac.cam.cl.dtg.segue.dos.IEmailPreference;
 import uk.ac.cam.cl.dtg.segue.dos.UserPreference;
+import uk.ac.cam.cl.dtg.segue.dos.UserAchievement;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -113,6 +115,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
     private final AbstractUserPreferenceManager userPreferenceManager;
+    private final AbstractUserAchievementManager userAchievementManager;
     private final SchoolListReader schoolListReader;
     private final Supplier<Set<School>> schoolOtherSupplier;
 
@@ -139,6 +142,7 @@ public class UsersFacade extends AbstractSegueFacade {
                        final ILogManager logManager, final StatisticsManager statsManager,
                        final UserAssociationManager userAssociationManager, final IMisuseMonitor misuseMonitor,
                        final AbstractEmailPreferenceManager emailPreferenceManager, final AbstractUserPreferenceManager userPreferenceManager,
+                       final AbstractUserAchievementManager userAchievementManager,
                        final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;
@@ -147,6 +151,7 @@ public class UsersFacade extends AbstractSegueFacade {
         this.misuseMonitor = misuseMonitor;
         this.emailPreferenceManager = emailPreferenceManager;
         this.userPreferenceManager = userPreferenceManager;
+        this.userAchievementManager = userAchievementManager;
         this.schoolListReader = schoolListReader;
 
         this.schoolOtherSupplier = Suppliers.memoizeWithExpiration(new Supplier<Set<School>>() {
@@ -295,6 +300,55 @@ public class UsersFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Can't load user preferences!", e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
+    }
+
+
+    /**
+     * An endpoint to be refactored out of this class, which provides access to user achievements.
+     * @param httpServletRequest - the request, to work ou the current user
+     * @return subject interest map
+     */
+    @GET
+    @Path("users/achievements")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getUserAchievements(@Context final HttpServletRequest httpServletRequest) {
+        // FIXME - this endpoint does not belong here...
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+            List<UserAchievement> userAchievements = userAchievementManager.getUserAchievements(currentUser.getId());
+
+            Map<String, List<Integer>> achievements = Maps.newHashMap();
+
+            for (UserAchievement achievement: userAchievements
+                 ) {
+
+                if (!achievements.containsKey(achievement.getAchievementName())) {
+
+                    List<Integer> thresholds = new ArrayList<>();
+                    thresholds.add(achievement.getAchievementAmount());
+                    
+                    achievements.put(achievement.getAchievementName(), thresholds);
+                }
+                else {
+                    achievements.get(achievement.getAchievementName()).add(achievement.getAchievementAmount());
+                }
+            }
+
+            Map<String, Object> responseBody = new ImmutableMap.Builder<String, Object>()
+                    .put("userId", currentUser.getId())
+                    .put("achievements", achievements)
+                    .build();
+
+            return Response.ok(responseBody).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Can't load user achievements!", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }

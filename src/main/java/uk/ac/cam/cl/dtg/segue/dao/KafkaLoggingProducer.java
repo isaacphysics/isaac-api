@@ -112,7 +112,7 @@ public class KafkaLoggingProducer extends LoggingEventHandler {
         LogEvent logEvent = this.buildLogEvent(userId, anonymousUserId, eventType, eventDetails, ipAddress);
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("loggedeventsTest", logEvent.getUserId(),
+        ProducerRecord producerRecord = new ProducerRecord<String, String>("loggingTest", logEvent.getUserId(),
                 String.format("{\"user_id\":\"%s\", \"anonymous_user\":\"%s\", \"event_type\":\"%s\", \"event_details_type\":\"%s\", \"event_details\":%s, \"ip_address\":\"%s\"}",
                         logEvent.getUserId(),
                         objectMapper.writeValueAsString(logEvent.isAnonymousUser()),
@@ -125,7 +125,7 @@ public class KafkaLoggingProducer extends LoggingEventHandler {
             kafkaProducer.Send(producerRecord);
 
         } catch (KafkaException kex) {
-
+            kex.printStackTrace();
         }
     }
 
