@@ -16,9 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.SUBJECT_INTEREST;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LOCAL_AUTH_EMAIL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_RECEIVED;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.PASSWORD_RESET_REQUEST_SUCCESSFUL;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Supplier;
@@ -632,13 +630,12 @@ public class UsersFacade extends AbstractSegueFacade {
         // this is an update as the user has an id
         // security checks
         try {
-            // check that the current user has permissions to change this users
-            // details.
+            // check that the current user has permissions to change this users details.
             RegisteredUserDTO currentlyLoggedInUser = this.userManager.getCurrentRegisteredUser(request);
             if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                     && currentlyLoggedInUser.getRole() != Role.ADMIN
                     && currentlyLoggedInUser.getRole() != Role.EVENT_MANAGER) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' user settings.")
+                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone else's user settings.")
                         .toResponse();
             }
 
@@ -647,7 +644,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 // only admins and the account owner can change passwords 
                 if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                         && currentlyLoggedInUser.getRole() != Role.ADMIN) {
-                    return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone elses' password.")
+                    return new SegueErrorResponse(Status.FORBIDDEN, "You cannot change someone else's password.")
                             .toResponse();
                 }
 
@@ -659,8 +656,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 }
             }
 
-            // check that any changes to protected fields being made are
-            // allowed.
+            // check that any changes to protected fields being made are allowed.
             RegisteredUserDTO existingUserFromDb = this.userManager.getUserDTOById(userObjectFromClient
                     .getId());
 
@@ -678,16 +674,40 @@ public class UsersFacade extends AbstractSegueFacade {
                     && !userObjectFromClient.getRole().equals(existingUserFromDb.getRole())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to change a users role.")
                         .toResponse();
-            } else if ((userObjectFromClient.getRole() != null && !userObjectFromClient.getRole().equals(
-                    existingUserFromDb.getRole()))
-                    || existingUserFromDb.getRole() != null
-                    && !existingUserFromDb.getRole().equals(userObjectFromClient.getRole())) {
-                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
-                        + userObjectFromClient.getEmail() + "[" + userObjectFromClient.getId() + "]" + " to "
-                        + userObjectFromClient.getRole());
             }
 
             RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
+
+            // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
+            if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
+                log.info("ADMIN user " + currentlyLoggedInUser.getEmail() + " has modified the role of "
+                        + updatedUser.getEmail() + "[" + updatedUser.getId() + "]" + " to "
+                        + updatedUser.getRole());
+                this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.CHANGE_USER_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, updatedUser.getId(),
+                                        "oldRole", existingUserFromDb.getRole(),
+                                        "newRole", updatedUser.getRole()));
+            }
+
+            // If the user's school has changed, record it. Check this using Objects.equals() to be null safe!
+            if (!Objects.equals(updatedUser.getSchoolId(), existingUserFromDb.getSchoolId())
+                    || !Objects.equals(updatedUser.getSchoolOther(), existingUserFromDb.getSchoolOther())) {
+                LinkedHashMap<String, Object> eventDetails = new LinkedHashMap<>();
+                eventDetails.put("oldSchoolId", existingUserFromDb.getSchoolId());
+                eventDetails.put("newSchoolId", updatedUser.getSchoolId());
+                eventDetails.put("oldSchoolOther", existingUserFromDb.getSchoolOther());
+                eventDetails.put("newSchoolOther", updatedUser.getSchoolOther());
+
+                if (!Objects.equals(currentlyLoggedInUser.getId(), updatedUser.getId())) {
+                    // This is an ADMIN user changing another user's school:
+                    eventDetails.put(USER_ID_FKEY_FIELDNAME, updatedUser.getId());
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.ADMIN_CHANGE_USER_SCHOOL,
+                            eventDetails);
+                } else {
+                    this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.USER_SCHOOL_CHANGE,
+                            eventDetails);
+                }
+            }
 
             // Now update the email preferences
             emailPreferenceManager.saveEmailPreferences(userObjectFromClient.getId(), emailPreferences);

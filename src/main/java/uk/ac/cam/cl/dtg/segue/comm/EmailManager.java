@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 import java.text.DateFormat;
@@ -825,7 +826,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put("userIds", ids)
                 .put("contentObjectId", contentObjectId)
-                .put("contentVersionId", this.contentManager.getCurrentContentSHA()).build();
+                .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
         this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
         log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(),
                 numberOfUnfilteredUsers - allSelectedUsers.size()));
