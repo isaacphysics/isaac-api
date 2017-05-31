@@ -103,14 +103,16 @@ public interface ISearchProvider {
      *
      * Useful for tag searches - Current setting is that results will only be returned if they match all search terms.
      *
+     * note: null searches are allowed providing a filter is specified.
+     *
      * @param index
      *            - the name of the index
      * @param indexType
      *            - the name of the type of document being searched for
      * @param searchterms
-     *            - e.g. tags
+     *            - e.g. tags can be null
      * @param field
-     *            - to match against
+     *            - to match against - cannot be null if searchterm is not null.
      * @param startIndex
      *            - start index for results
      * @param limit
@@ -148,7 +150,7 @@ public interface ISearchProvider {
     /**
      * Query for a list of Results that match a given id prefix.
      * 
-     * This is useful if you use unanalysed fields for ids and use the dot separator as a way of nesting fields.
+     * This is useful if you use un-analysed fields for ids and use the dot separator as a way of nesting fields.
      * 
      * @param index
      *            index that the content is stored in
