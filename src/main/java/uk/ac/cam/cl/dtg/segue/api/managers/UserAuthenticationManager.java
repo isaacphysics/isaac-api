@@ -564,8 +564,13 @@ public class UserAuthenticationManager {
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
         // Ensure new password is valid
         if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
-            throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
+            throw new InvalidPasswordException("Invalid password. You cannot have an empty password.");
         }
+
+        if (userObject.getPassword().length() < 6) {
+            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
+        }
+
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);

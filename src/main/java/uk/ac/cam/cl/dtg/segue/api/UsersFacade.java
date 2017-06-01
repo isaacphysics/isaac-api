@@ -744,7 +744,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
                     .toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e.getMessage());
@@ -783,7 +783,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
                     .toResponse();
         } catch (FailedToHashPasswordException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to set a password.").toResponse();
