@@ -438,7 +438,7 @@ public class GameboardPersistenceManager {
 		
 		return errors;
 	}
-	
+
 	/**
 	 * Attempt to improve performance of getting gameboard items in a batch.
 	 * 
@@ -457,8 +457,8 @@ public class GameboardPersistenceManager {
 			questionIds.addAll(ids);
 			gameboardToQuestionsMap.put(game.getId(), ids);
 		}
-		
-		if (!questionIds.isEmpty()) {
+
+        if (!questionIds.isEmpty()) {
             Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(questionIds));
             for (GameboardDTO game : gameboards) {
                 ArrayList<GameboardItem> newItems = new ArrayList<GameboardItem>(); 
@@ -477,10 +477,10 @@ public class GameboardPersistenceManager {
                 game.setQuestions(newItems);
             }
         } else {
-			log.info("No question ids found; returning without augmenting.");
-		}
-	}
-	
+            log.info("No question ids found; returning without augmenting.");
+        }
+    }
+
     /**
      * Utility method to get a map of gameboard id to list of users who are connected to it.
      * 

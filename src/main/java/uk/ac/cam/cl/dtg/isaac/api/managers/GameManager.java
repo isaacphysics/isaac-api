@@ -442,7 +442,7 @@ public class GameManager {
         
         double boardPercentage = 0;
         for (Float questionPercentage : questionPercentages) {
-            boardPercentage += questionPercentage / questionPercentages.size();
+            boardPercentage += (double) questionPercentage / (double) questionPercentages.size();
         }
         gameboardDTO.setPercentageCompleted((int) Math.round(boardPercentage));
         
