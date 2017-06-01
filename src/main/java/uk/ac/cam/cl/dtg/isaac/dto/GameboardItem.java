@@ -37,7 +37,9 @@ public class GameboardItem {
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
+    private Integer questionPartsTotal;
     private Float passMark;
+    private GameboardItemState state;
 
     // optional field if we want to use the gameboard item outside of the context of a board.
     @Nullable
@@ -194,16 +196,6 @@ public class GameboardItem {
     }
 
     /**
-     * Checks that all status fields are set to non-null values.
-     *
-     * @return true if the status fields are all non-null
-     */
-    private boolean statusInformationIsNotNull() {
-        return this.questionPartsCorrect != null && this.questionPartsIncorrect != null
-                && this.questionPartsNotAttempted != null && this.passMark != null;
-    }
-
-    /**
      * Sets status information for the object.
      * Status results rely on all of these values being defined, hence why they are set together.
      *
@@ -217,7 +209,26 @@ public class GameboardItem {
         this.questionPartsCorrect = questionPartsCorrect;
         this.questionPartsIncorrect = questionPartsIncorrect;
         this.questionPartsNotAttempted = questionPartsNotAttempted;
-        this.passMark = passMark;
+        this.passMark = passMark != null ? passMark : 100f;
+        if (this.questionPartsCorrect != null && this.questionPartsIncorrect != null
+                && this.questionPartsNotAttempted != null) {
+
+            this.questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
+
+            float percentCorrect = this.calculateQuestionPartPercentage(this.questionPartsCorrect);
+            float percentIncorrect = this.calculateQuestionPartPercentage(this.questionPartsIncorrect);
+            if (this.questionPartsCorrect.equals(questionPartsTotal)) {
+                this.state = GameboardItemState.PERFECT;
+            } else if (this.questionPartsNotAttempted.equals(questionPartsTotal)) {
+                this.state = GameboardItemState.NOT_ATTEMPTED;
+            } else if (percentCorrect >= this.passMark) {
+                this.state = GameboardItemState.PASSED;
+            } else if (percentIncorrect > (100 - this.passMark)) {
+                this.state = GameboardItemState.FAILED;
+            } else {
+                this.state = GameboardItemState.IN_PROGRESS;
+            }
+        }
     } 
 
     /**
@@ -226,11 +237,7 @@ public class GameboardItem {
      * @return the number of questionPartsTotal
      */
     public final Integer getQuestionPartsTotal() {
-        Integer result = null;
-        if (this.statusInformationIsNotNull()) {
-            result = this.questionPartsCorrect + this.questionPartsIncorrect + this.questionPartsNotAttempted;
-        }
-        return result;
+        return this.questionPartsTotal;
     }
 
     /**
@@ -241,8 +248,9 @@ public class GameboardItem {
      */
     public final Float calculateQuestionPartPercentage(final Integer questionParts) {
         Float result = null;
-        if (this.statusInformationIsNotNull()) {
-            result = 100f * questionParts / this.getQuestionPartsTotal();
+        Integer total = this.getQuestionPartsTotal();
+        if (total != null) {
+            result = 100f * questionParts / total;
         }
         return result;
     }
@@ -253,25 +261,7 @@ public class GameboardItem {
      * @return the state
      */
     public final GameboardItemState getState() {
-        GameboardItemState state = null;
-        if (this.statusInformationIsNotNull()) {
-            Integer questionPartsTotal = this.getQuestionPartsTotal();
-            float percentCorrect = this.calculateQuestionPartPercentage(this.questionPartsCorrect);
-            float percentIncorrect = this.calculateQuestionPartPercentage(this.questionPartsIncorrect);
-
-            if (this.questionPartsCorrect.equals(questionPartsTotal)) {
-                state = GameboardItemState.PERFECT;
-            } else if (this.questionPartsNotAttempted.equals(questionPartsTotal)) {
-                state = GameboardItemState.NOT_ATTEMPTED;
-            } else if (percentCorrect >= this.passMark) {
-                state = GameboardItemState.PASSED;
-            } else if (percentIncorrect > (100 - this.passMark)) {
-                state = GameboardItemState.FAILED;
-            } else {
-                state = GameboardItemState.IN_PROGRESS;
-            }
-        }
-        return state;
+        return this.state;
     }
 
     /**
