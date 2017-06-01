@@ -709,7 +709,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             if (!userOwningBooking.equals(userLoggedIn)) {
                 this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
-                        Constants.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking));
+                        Constants.ADMIN_EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userOwningBooking.getId()));
             } else {
                 this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                         Constants.EVENT_BOOKING_CANCELLED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
