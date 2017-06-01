@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,6 +88,26 @@ public interface IContentManager {
      *             - if there is an error retrieving the content requested.
      */
     ResultsWrapper<ContentDTO> getByIdPrefix(String version, String idPrefix, int startIndex, int limit)
+            throws ContentManagerException;
+
+    /**
+     * getContentMatchingIds Returns results that match any of the listed ids for a specified version number.
+     *
+     * This method will retrieve all content that matches at least one of the given list of IDs.
+     *
+     * @param version
+     *            - SHA (not alias due to caching) of the content version to search against.
+     * @param ids
+     *            - ids to match.
+     * @param startIndex
+     *            - start index for results
+     * @param limit
+     *            - the maximum number of results to return -1 will attempt to return all results.
+     * @return ResultsWrapper of objects that match the id prefix.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
+     */
+    ResultsWrapper<ContentDTO> getContentMatchingIds(String version, Collection<String> ids, int startIndex, int limit)
             throws ContentManagerException;
 
     /**

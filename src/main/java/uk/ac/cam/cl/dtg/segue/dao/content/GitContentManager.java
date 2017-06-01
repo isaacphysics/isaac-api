@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 /**
@@ -176,7 +177,35 @@ public class GitContentManager implements IContentManager {
 
         return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
     }
-    
+
+    @Override
+    public ResultsWrapper<ContentDTO> getContentMatchingIds(String version, Collection<String> ids, int startIndex, int limit)
+            throws ContentManagerException{
+
+        String k = "getContentMatchingIds~" + version + "~" + ids.toString() + "~" + startIndex + "~" + limit;
+        if (!cache.asMap().containsKey(k)) {
+
+            Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
+            finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
+                                .put(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                                    new TermsFilterInstruction(ids))
+                                .build());
+
+            if (getUnpublishedFilter() != null) {
+                finalFilter.putAll(getUnpublishedFilter());
+            }
+
+            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(version,CONTENT_TYPE, null,
+                    null,
+                    startIndex, limit, finalFilter);
+
+            List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
+            cache.put(k, new ResultsWrapper<>(mapper.getDTOByDOList(searchResults), searchHits.getTotalResults()));
+        }
+
+        return (ResultsWrapper<ContentDTO>) cache.getIfPresent(k);
+    }
+
     @Override
     public ResultsWrapper<ContentDTO> getAllByTypeRegEx(final String version, final String regex, final int startIndex,
             final int limit) throws ContentManagerException {
@@ -473,6 +502,11 @@ public class GitContentManager implements IContentManager {
         return (String)r.getSource().get("version");
     }
 
+    /**
+     * Helper to decide whether the published filter should be set.
+     *
+     * @return either null or a map setup with the published filter config.
+     */
     private Map<String, AbstractFilterInstruction> getUnpublishedFilter() {
         if (this.allowOnlyPublishedContent) {
             return ImmutableMap.of("published", new SimpleFilterInstruction("true"));

@@ -20,6 +20,7 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.elasticsearch.ElasticsearchException;
@@ -131,7 +132,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder masterQuery;
-
         if (null != fieldsThatMustMatch) {
             masterQuery = this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch));
         } else {
@@ -139,20 +139,25 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         BoolQueryBuilder query = QueryBuilders.boolQuery();
+        Set boostFields = ImmutableSet.builder().add("id").add("title").add("tags").build();
 
+        for (String f : fields) {
+            float boost = boostFields.contains(f) ? 2f : 1f;
+
+            QueryBuilder initialFuzzySearch = QueryBuilders.matchQuery(f, searchString)
+                    .fuzziness(Fuzziness.AUTO)
+                    .prefixLength(0)
+                    .boost(boost);
+            query.should(initialFuzzySearch);
+
+            QueryBuilder regexSearch = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(boost);
+            query.should(regexSearch);
+        }
+
+        // this query is just a bit smarter than the regex search above.
         QueryBuilder multiMatchPrefixQuery = QueryBuilders.multiMatchQuery(searchString, fields)
                 .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX).prefixLength(2).boost(2.0f);
         query.should(multiMatchPrefixQuery);
-
-        QueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(searchString, fields)
-                .fuzziness(Fuzziness.ONE).prefixLength(2).boost(1.0f);
-        query.should(multiMatchQuery).minimumNumberShouldMatch(1);
-
-        // TODO: dirty hack to get search to behave more as you would expect.
-        for (String f : fields) {
-            QueryBuilder test = QueryBuilders.wildcardQuery(f, "*" + searchString + "*").boost(1.0f);
-            query.should(test);
-        }
 
         masterQuery.must(query);
 
@@ -168,15 +173,22 @@ public class ElasticSearchProvider implements ISearchProvider {
                                              final String searchTerm, final String field, final int startIndex, final int limit,
                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
-        if (null == index || null == indexType || null == searchTerm || null == field) {
-            log.warn("A required field is missing. Unable to execute search.");
+        if (null == index || null == indexType || (null == searchTerm && null != field)) {
+            log.error("A required field or field combination is missing. Unable to execute search.");
             return null;
         }
 
-        QueryBuilder query = QueryBuilders.termQuery(field, searchTerm);
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        if (searchTerm != null) {
+            query.must(QueryBuilders.termQuery(field, searchTerm));
+        }
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            query.filter(generateFilterQuery(filterInstructions));
+        }
+
+        if (null == searchTerm && null == filterInstructions) {
+            throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
         }
 
         return this.executeBasicQuery(index, indexType, query, startIndex, limit);
@@ -315,6 +327,10 @@ public class ElasticSearchProvider implements ISearchProvider {
                 filter.must(this.generateBoolMatchQuery(fieldsToMatch));
             }
 
+            if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
+                TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
+                filter.must(QueryBuilders.termsQuery(fieldToFilterInstruction.getKey(), sfi.getMatchValues()));
+            }
         }
 
         return filter;

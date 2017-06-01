@@ -94,6 +94,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
@@ -369,7 +370,13 @@ public class AdminFacade extends AbstractSegueFacade {
             }
 
             for (Long userid : userIds) {
+                RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
+                Role oldRole = user.getRole();
                 this.userManager.updateUserRole(userid, requestedRole);
+                this.getLogManager().logEvent(requestingUser, request, Constants.CHANGE_USER_ROLE,
+                        ImmutableMap.of(USER_ID_FKEY_FIELDNAME, user.getId(),
+                                        "oldRole", oldRole,
+                                        "newRole", requestedRole));
             }
 
         } catch (NoUserLoggedInException e) {
@@ -887,7 +894,7 @@ public class AdminFacade extends AbstractSegueFacade {
             this.userManager.deleteUserAccount(userToDelete);
             
             getLogManager().logEvent(currentlyLoggedInUser, httpServletRequest, DELETE_USER_ACCOUNT,
-                    ImmutableMap.of("userIdDeleted", userToDelete.getId()));
+                    ImmutableMap.of(USER_ID_FKEY_FIELDNAME, userToDelete.getId()));
             
             log.info("Admin User: " + currentlyLoggedInUser.getEmail() + " has just deleted the user account with id: "
                     + userId);

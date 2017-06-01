@@ -47,6 +47,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
+
 /**
  * EmailManager
  * Responsible for orchestration of email sending in Segue.
@@ -224,7 +226,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put("userIds", ids)
                 .put("contentObjectId", contentObjectId)
-                .put("contentVersionId", this.contentManager.getCurrentContentSHA()).build();
+                .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
         this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
         log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(),
                 numberOfUnfilteredUsers - allSelectedUsers.size()));

@@ -826,19 +826,6 @@ public class UserAccountManager {
             userToSave.setEmail(existingUser.getEmail());
         }
 
-        // If the school has changed, update it. Check this using Objects.equals() to be null safe!
-        if (!Objects.equals(userToSave.getSchoolId(), existingUser.getSchoolId())
-                || !Objects.equals(userToSave.getSchoolOther(), existingUser.getSchoolOther())) {
-            LinkedHashMap<String, String> eventDetails = new LinkedHashMap<>();
-            eventDetails.put("oldSchoolId", existingUser.getSchoolId());
-            eventDetails.put("newSchoolId", userToSave.getSchoolId());
-            eventDetails.put("oldSchoolOther", existingUser.getSchoolOther());
-            eventDetails.put("newSchoolOther", userToSave.getSchoolOther());
-
-            logManager.logInternalEvent(this.convertUserDOToUserDTO(userToSave), Constants.USER_SCHOOL_CHANGE,
-                    eventDetails);
-        }
-
         // save the user
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
         // return it to the caller

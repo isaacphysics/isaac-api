@@ -467,7 +467,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -657,7 +657,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to save gameboard to user link.", e);

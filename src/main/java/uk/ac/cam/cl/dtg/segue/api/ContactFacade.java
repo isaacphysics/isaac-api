@@ -110,8 +110,8 @@ public class ContactFacade extends AbstractSegueFacade {
                             .build());
 
             getLogManager().logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED,
-                    String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
-                            form.get("emailAddress"), form.get("message")));
+                    ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
+                            form.get("emailAddress"), form.get("message"))));
 
             return Response.ok().build();
         } catch (ContentManagerException e) {
