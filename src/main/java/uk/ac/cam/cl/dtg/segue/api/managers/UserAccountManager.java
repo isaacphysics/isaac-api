@@ -766,10 +766,6 @@ public class UserAccountManager {
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
             throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
-        } else if (!this.database.hasALinkedAccount(userToSave) && null == newPassword) {
-            // a user must have a way of logging on.
-            throw new MissingRequiredFieldException("This modification would mean that the user"
-                    + " no longer has a way of authenticating. Failing change.");
         }
 
         // Make sure the email address is preserved (can't be changed until new email is verified)
@@ -1315,7 +1311,7 @@ public class UserAccountManager {
 
     /**
      * Converts a list of userDOs into a List of userDTOs.
-     * 
+     *
      * @param listToConvert
      *            - list of DOs to convert
      * @return the list of user dtos.

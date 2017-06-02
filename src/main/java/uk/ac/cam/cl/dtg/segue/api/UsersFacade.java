@@ -239,7 +239,7 @@ public class UsersFacade extends AbstractSegueFacade {
             newPassword = (String) ((Map)mapRepresentation.get("registeredUser")).get("password");
             ((Map)mapRepresentation.get("registeredUser")).remove("password");
             userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
-
+            
             if (null == userSettingsObjectFromClient) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,  "No user settings provided.").toResponse();
             }
@@ -737,7 +737,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid password. You cannot have an empty password.")
                     .toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn("Missing field during update operation. ", e.getMessage());
+            log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (AuthenticationProviderMappingException e) {
