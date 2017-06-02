@@ -98,13 +98,21 @@ public class ContactFacade extends AbstractSegueFacade {
         }
 
         try {
-            String replyToName = String.format("%s %s", form.get("firstName"), form.get("lastName"));
-            emailManager.sendContactUsFormEmail(form.get("firstName"), form.get("lastName"), form.get("emailAddress"),
-                    form.get("subject"), form.get("message"), this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
-                    form.get("emailAddress"), replyToName, form.get("userId"));
+            emailManager.sendContactUsFormEmail(this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("contactGivenName", form.get("firstName") == null ? "" : form.get("firstName"))
+                            .put("contactFamilyName", form.get("lastName") == null ? "" : form.get("lastName"))
+                            .put("contactUserId", form.get("userId") == null ? "" : form.get("userId"))
+                            .put("contactEmail", form.get("emailAddress") == null ? "" : form.get("emailAddress"))
+                            .put("contactSubject", form.get("subject") == null ? "" : form.get("subject"))
+                            .put("contactMessage", form.get("message") == null ? "" : form.get("message"))
+                            .put("replyToName", String.format("%s %s", form.get("firstName"), form.get("lastName")))
+                            .build());
+
             getLogManager().logEvent(userManager.getCurrentUser(request), request, CONTACT_US_FORM_USED,
                     ImmutableMap.of("message", String.format("%s %s (%s) - %s", form.get("firstName"), form.get("lastName"),
                             form.get("emailAddress"), form.get("message"))));
+
             return Response.ok().build();
         } catch (ContentManagerException e) {
             log.error("Content error has occurred", e);

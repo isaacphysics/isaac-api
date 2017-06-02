@@ -229,6 +229,13 @@ public final class Constants {
     public static final String DELETE_USER_GROUP = "DELETE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
     public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
+    public static final String EVENT_BOOKING = "EVENT_BOOKING";
+    public static final String EVENT_WAITING_LIST_BOOKING = "EVENT_WAITING_LIST_BOOKING";
+    public static final String EVENT_BOOKING_CANCELLED = "EVENT_BOOKING_CANCELLED";
+    public static final String ADMIN_EVENT_BOOKING_CANCELLED = "ADMIN_EVENT_BOOKING_CANCELLED";
+    public static final String ADMIN_EVENT_BOOKING_CONFIRMED = "ADMIN_EVENT_BOOKING_CONFIRMED";
+    public static final String ADMIN_EVENT_WAITING_LIST_PROMOTION = "ADMIN_EVENT_WAITING_LIST_PROMOTION";
+    public static final String ADMIN_EVENT_BOOKING_DELETED = "ADMIN_EVENT_BOOKING_DELETED";
     public static final String ADMIN_CHANGE_USER_SCHOOL = "ADMIN_CHANGE_USER_SCHOOL";
     public static final String CHANGE_USER_ROLE = "CHANGE_USER_ROLE";
     public static final String REMOVE_USER_FROM_GROUP = "REMOVE_USER_FROM_GROUP";
@@ -257,6 +264,7 @@ public final class Constants {
     public static final String LEVEL_FIELDNAME = "level";
 
     public static final String USER_ID_FKEY_FIELDNAME = "userId";
+    public static final String EVENT_ID_FKEY_FIELDNAME = "eventId";
     public static final String CONTENT_VERSION_FIELDNAME = "contentVersion";
 
     public static final String ID_SEPARATOR = "|";

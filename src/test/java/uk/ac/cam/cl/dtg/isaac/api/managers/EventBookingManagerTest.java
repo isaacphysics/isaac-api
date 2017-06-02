@@ -11,10 +11,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -23,6 +26,7 @@ import java.util.Map;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.fail;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * EventBookingManagerTest.
@@ -32,6 +36,7 @@ public class EventBookingManagerTest {
     private EmailManager dummyEmailManager;
     private UserAssociationManager userAssociationManager;
     private Map<String, String> someAdditionalInformation;
+    private PropertiesLoader dummyPropertiesLoader;
 
     /**
      * Initial configuration of tests.
@@ -43,6 +48,8 @@ public class EventBookingManagerTest {
         this.dummyEmailManager = createMock(EmailManager.class);
         this.dummyEventBookingPersistenceManager = createMock(EventBookingPersistenceManager.class);
         this.userAssociationManager = createMock(UserAssociationManager.class);
+        this.dummyPropertiesLoader = createMock(PropertiesLoader.class);
+        expect(this.dummyPropertiesLoader.getProperty(HOST_NAME)).andReturn("hostname.com").anyTimes();
         this.someAdditionalInformation = Maps.newHashMap();
     }
 
@@ -54,6 +61,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("student", "physics"));
+        testEvent.setEmailEventDetails("Some Details");
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -82,7 +90,12 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        replay(dummyEventBookingPersistenceManager);
+        expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
+
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        expectLastCall().atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
     }
@@ -280,6 +293,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setEmailEventDetails("Some Details");
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -310,7 +324,12 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        replay(dummyEventBookingPersistenceManager);
+        expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
+
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        expectLastCall().atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
             ebm.requestBooking(testEvent, someUser, someAdditionalInformation);
@@ -327,6 +346,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(2);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setEmailEventDetails("Some Details");
 
         RegisteredUserDTO firstUserFull = new RegisteredUserDTO();
         firstUserFull.setId(6L);
@@ -365,7 +385,12 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        replay(dummyEventBookingPersistenceManager);
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        expectLastCall().atLeastOnce();
+
+        expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
             ebm.requestBooking(testEvent, firstUserFull, someAdditionalInformation);
@@ -382,6 +407,7 @@ public class EventBookingManagerTest {
         testEvent.setId("someEventId");
         testEvent.setNumberOfPlaces(1);
         testEvent.setTags(ImmutableSet.of("teacher", "physics"));
+        testEvent.setEmailEventDetails("some details");
 
         RegisteredUserDTO someUser = new RegisteredUserDTO();
         someUser.setId(6L);
@@ -421,7 +447,12 @@ public class EventBookingManagerTest {
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        replay(dummyEventBookingPersistenceManager);
+        expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
+
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        expectLastCall().atLeastOnce();
+
+        replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
             ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
@@ -486,6 +517,6 @@ public class EventBookingManagerTest {
     }
 
     private EventBookingManager buildEventBookingManager() {
-        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, userAssociationManager);
+        return new EventBookingManager(dummyEventBookingPersistenceManager, dummyEmailManager, userAssociationManager, dummyPropertiesLoader);
     }
 }

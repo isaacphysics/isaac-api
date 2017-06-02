@@ -66,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -522,6 +523,8 @@ public class UserAuthenticationManager {
                 && (userDO.getPassword() == null || userDO.getPassword().isEmpty())) {
             // User is not authenticated locally
             this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO);
+
+
             return;
         }
 
@@ -537,10 +540,16 @@ public class UserAuthenticationManager {
 
         log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
         try {
-            this.emailManager.sendPasswordReset(userAsDTO, updatedUser.getResetToken());
+            Map<String, Object> emailValues = ImmutableMap.of("resetURL",
+                    String.format("https://%s/resetpassword/%s",
+                            properties.getProperty(HOST_NAME), updatedUser.getResetToken()));
+
+            this.emailManager.sendTemplatedEmailToUser(userAsDTO,
+                    emailManager.getEmailTemplateDTO("email-template-password-reset"),
+                    emailValues, EmailType.SYSTEM);
+
+            //this.emailManager.sendPasswordReset(userAsDTO, updatedUser.getResetToken());
         } catch (ContentManagerException e) {
-            log.error("ContentManagerException " + e.getMessage());
-        } catch (NoUserException e) {
             log.error("ContentManagerException " + e.getMessage());
         }
     }
@@ -651,13 +660,17 @@ public class UserAuthenticationManager {
         }
 
         try {
-            emailManager.sendFederatedPasswordReset(userAsDTO, providersString, providerWord);
+            Map<String, Object> emailTokens = ImmutableMap.of("providerString", providersString,
+                    "providerWord", providerWord);
+
+            emailManager.sendTemplatedEmailToUser(userAsDTO,
+                    emailManager.getEmailTemplateDTO("email-template-federated-password-reset"),
+                    emailTokens, EmailType.SYSTEM);
+
+            //emailManager.sendFederatedPasswordReset(userAsDTO, providersString, providerWord);
         } catch (ContentManagerException contentException) {
             log.error(String.format("Error sending federated email verification message - %s", 
                             contentException.getMessage()));
-        } catch (NoUserException noUserException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-                            noUserException.getMessage()));
         }
     }
     
