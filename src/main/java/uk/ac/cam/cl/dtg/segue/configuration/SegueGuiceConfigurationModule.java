@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 
 import org.elasticsearch.client.Client;
@@ -49,12 +50,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.GoogleAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.TwitterAuthenticator;
+import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.ICommunicator;
@@ -67,10 +63,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.IUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUserGroupPersistenceManager;
-import uk.ac.cam.cl.dtg.segue.dao.users.PgUsers;
+import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.*;
@@ -254,6 +247,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
         bind(IUserDataManager.class).to(PgUsers.class);
+
+        bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
         
         bind(ICommunicator.class).to(EmailCommunicator.class);
         
@@ -385,6 +380,32 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return mapper;
+    }
+
+    /**
+     * This provides an instance of the SegueLocalAuthenticator.
+     *
+     *
+     * @param database
+     * 			- the database to access userInformation
+     * @param passwordDataManager
+     * 			- the database to access passwords
+     * @param properties
+     * 			- the global system properties
+     * @return an instance of the queue
+     */
+    @Inject
+    @Provides
+    private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
+                                                             final PropertiesLoader properties) {
+        ISegueHashingAlgorithm preferredAlgorithm = new SeguePBKDF2v2();
+        ISegueHashingAlgorithm oldAlgorithm = new SeguePBKDF2v1();
+
+        Map<String, ISegueHashingAlgorithm> possibleAlgorithms
+                = ImmutableMap.of(preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
+                oldAlgorithm.hashingAlgorithmName(), oldAlgorithm);
+
+        return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
     }
 
     /**

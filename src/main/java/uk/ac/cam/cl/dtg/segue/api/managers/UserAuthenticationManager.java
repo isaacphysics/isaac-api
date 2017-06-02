@@ -278,45 +278,24 @@ public class UserAuthenticationManager {
         if (authenticator instanceof IPasswordAuthenticator) {
             IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) authenticator;
             
-            RegisteredUser user = passwordAuthenticator.authenticate(email, plainTextPassword);
-            return user;
+            return passwordAuthenticator.authenticate(email, plainTextPassword);
         } else {
             throw new AuthenticationProviderMappingException("Unable to map to a known authenticator that accepts "
                  + "raw credentials for the given provider: " + provider);
         }
     }
-    
+
     /**
-     * Helper method to handle the setting of segue passwords when user objects are updated.
-     * 
-     * This method will mutate the password fields in both parameters.
-     * 
-     * @param userContainingPlainTextPassword
-     *            - the object to extract the plain text password from (and then nullify it)
-     * @param userToSave
-     *            - the object to store the hashed credentials prior to saving.
-     * 
-     * @throws AuthenticationProviderMappingException
-     *             - if we can't map to a valid authenticator.
-     * @throws InvalidPasswordException
-     *             - if the password is not valid.
+     * Checks to see if a user has valid way to authenticate with Segue.
+     *
+     * @param user - to check
+     * @return true means the user should have a means of authenticating with their account as far as we are concerned
      */
-    public void checkForSeguePasswordChange(final RegisteredUser userContainingPlainTextPassword,
-            final RegisteredUser userToSave) throws AuthenticationProviderMappingException, InvalidPasswordException {
-        // do we need to do local password storage using the segue
-        // authenticator? I.e. is the password changing?
-        if (null != userContainingPlainTextPassword.getPassword()
-                && !userContainingPlainTextPassword.getPassword().isEmpty()) {
-            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
-                    .mapToProvider(AuthenticationProvider.SEGUE.name());
-            String plainTextPassword = userContainingPlainTextPassword.getPassword();
+    public boolean hasLocalCredentials(RegisteredUser user) throws SegueDatabaseException {
+        IPasswordAuthenticator passwordAuthenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
 
-            // clear reference to plainTextPassword
-            userContainingPlainTextPassword.setPassword(null);
-
-            // set the new password on the object to be saved.
-            authenticator.setOrChangeUsersPassword(userToSave, plainTextPassword);
-        }
+        return passwordAuthenticator.hasPasswordRegistered(user);
     }
     
     /**
@@ -486,8 +465,11 @@ public class UserAuthenticationManager {
             return;
         }
 
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this
+                    .mapToProvider(AuthenticationProvider.SEGUE.name());
+
         // make sure that the change doesn't prevent the user from logging in again.
-        if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1) || userDO.getPassword() != null) {
+        if ((this.database.getAuthenticationProvidersByUser(userDO).size() > 1) || authenticator.hasPasswordRegistered(userDO)) {
             this.database.unlinkAuthProviderFromUser(userDO, this.mapToProvider(providerString)
                     .getAuthenticationProvider());
         } else {
@@ -517,31 +499,27 @@ public class UserAuthenticationManager {
     public final void resetPasswordRequest(final RegisteredUser userDO, final RegisteredUserDTO userAsDTO)
             throws InvalidKeySpecException,
             NoSuchAlgorithmException, CommunicationException, SegueDatabaseException {
-
-        if (this.database.hasALinkedAccount(userDO)
-                && (userDO.getPassword() == null || userDO.getPassword().isEmpty())) {
-            // User is not authenticated locally
-            this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO);
-            return;
-        }
-
-        // User is valid and authenticated locally, proceed with reset
-        // Generate token
-        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                .get(AuthenticationProvider.SEGUE);
-
-        RegisteredUser updatedUser = authenticator.createPasswordResetTokenForUser(userDO);
-
-        // Save user object
-        this.database.createOrUpdateUser(updatedUser);
-
-        log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
         try {
-            this.emailManager.sendPasswordReset(userAsDTO, updatedUser.getResetToken());
+            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                    .get(AuthenticationProvider.SEGUE);
+
+            if (this.database.hasALinkedAccount(userDO)
+                    && !authenticator.hasPasswordRegistered(userDO)) {
+                // User is not authenticated locally - tell them to use their provider(s)
+                this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO);
+                return;
+            }
+
+            // User is valid and authenticated locally, proceed with reset
+            // Generate token
+            String token = authenticator.createPasswordResetTokenForUser(userDO);
+            log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
+
+            this.emailManager.sendPasswordReset(userAsDTO, token);
         } catch (ContentManagerException e) {
             log.error("ContentManagerException " + e.getMessage());
-        } catch (NoUserException e) {
-            log.error("ContentManagerException " + e.getMessage());
+        } catch (NoUserException | NoCredentialsAvailableException e) {
+            log.error("Unable to find user or credentials " + e.getMessage());
         }
     }
     
@@ -550,8 +528,8 @@ public class UserAuthenticationManager {
      *
      * @param token
      *            - the password reset token
-     * @param userObject
-     *            - the supplied user DO
+     * @param newPassword
+     *            - New password to set in plain text
      * @return the user which has had the password reset.
      * @throws InvalidTokenException
      *             - If the token provided is invalid.
@@ -560,10 +538,10 @@ public class UserAuthenticationManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public RegisteredUser resetPassword(final String token, final RegisteredUser userObject)
+    public RegisteredUser resetPassword(final String token, final String newPassword)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
         // Ensure new password is valid
-        if (userObject.getPassword() == null || userObject.getPassword().isEmpty()) {
+        if (null == newPassword || newPassword.isEmpty()) {
             throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
         }
 
@@ -571,26 +549,14 @@ public class UserAuthenticationManager {
                 .get(AuthenticationProvider.SEGUE);
 
         // Ensure reset token is valid
-        RegisteredUser user = this.database.getByResetToken(token);
-        if (!authenticator.isValidResetToken(user)) {
+        RegisteredUser user = authenticator.getRegisteredUserByToken(token);
+        if (null == user) {
             throw new InvalidTokenException();
         }
 
         // Set user's password
-        authenticator.setOrChangeUsersPassword(user, userObject.getPassword());
-
-        // clear plainTextPassword
-        userObject.setPassword(null);
-
-        // Nullify reset token
-        user.setResetToken(null);
-        user.setResetExpiry(null);
-
-        // Save user
-        RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-        log.info(String.format("Password Reset for user (%s) has completed successfully.",
-                createOrUpdateUser.getId()));
-        return createOrUpdateUser;
+        authenticator.setOrChangeUsersPassword(user, newPassword);
+        return user;
     }
     
     /**

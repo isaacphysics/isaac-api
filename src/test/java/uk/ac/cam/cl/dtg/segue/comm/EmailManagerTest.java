@@ -87,7 +87,6 @@ public class EmailManagerTest {
         user.setEmail("test@test.com");
         user.setGivenName("tester");
         user.setFamilyName("McTest");
-        user.setResetToken("resetToken");
         user.setEmailVerificationToken("verificationToken");
 
         // Create dummy user with nulls
@@ -96,7 +95,6 @@ public class EmailManagerTest {
         userWithNulls.setEmail("test@test.com");
         userWithNulls.setGivenName(null);
         userWithNulls.setFamilyName(null);
-        userWithNulls.setResetToken(null);
         userWithNulls.setEmailVerificationToken(null);
 
         // Create dummy userDTO
@@ -391,7 +389,7 @@ public class EmailManagerTest {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
                 mockContentManager, "live", logManager);
         try {
-            manager.sendPasswordReset(userDTO, user.getResetToken());
+            manager.sendPasswordReset(userDTO, "resetToken");
         } catch (ContentManagerException e) {
             e.printStackTrace();
             Assert.fail();
@@ -421,6 +419,7 @@ public class EmailManagerTest {
         }
         email = capturedArgument.getValue();
         assertNotNull(email);
+
         assertEquals(expectedMessage, email.getPlainTextMessage());
     }
 

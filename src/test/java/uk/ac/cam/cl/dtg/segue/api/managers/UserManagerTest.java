@@ -15,11 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -47,11 +43,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
-import uk.ac.cam.cl.dtg.segue.auth.FacebookAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.IOAuth2Authenticator;
+import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
@@ -96,6 +88,7 @@ public class UserManagerTest {
 
     private Cache<String, AnonymousUser> dummyUserCache;
     private ILogManager dummyLogManager;
+    private SegueLocalAuthenticator dummyLocalAuth;
 
 
     /**
@@ -109,7 +102,11 @@ public class UserManagerTest {
         this.dummyQuestionDatabase = createMock(QuestionManager.class);
         this.dummyDatabase = createMock(IUserDataManager.class);
         this.dummyHMACSalt = "BOB";
-        this.dummyProvidersMap = new HashMap<AuthenticationProvider, IAuthenticator>();
+        this.dummyProvidersMap = new HashMap<>();
+
+        this.dummyLocalAuth = createMock(SegueLocalAuthenticator.class);
+        this.dummyProvidersMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
+
         this.dummyHostName = "bob";
         this.dummyMapper = createMock(MapperFacade.class);
         this.dummyQueue = createMock(EmailManager.class);
@@ -176,7 +173,7 @@ public class UserManagerTest {
         Cookie[] cookieWithSessionInfo = getCookieArray(sessionInformation);
 
         RegisteredUser returnUser = new RegisteredUser(validUserId, "TestFirstName", "TestLastName", "", Role.STUDENT,
- new Date(), Gender.MALE, new Date(), null, null, null, null, null, null,
+ new Date(), Gender.MALE, new Date(), null, null,
                 null);
         returnUser.setId(validUserId);
        
@@ -192,7 +189,10 @@ public class UserManagerTest {
         replay(dummyQuestionDatabase);
 
         expect(dummyMapper.map(returnUser, RegisteredUserDTO.class)).andReturn(new RegisteredUserDTO()).atLeastOnce();
-        replay(dummyMapper, dummyDatabase);
+        expect(dummyLocalAuth.hasPasswordRegistered(anyObject())).andReturn(false).anyTimes();
+
+        replay(dummyMapper, dummyDatabase, dummyLocalAuth);
+
         // Act
         RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
@@ -356,7 +356,7 @@ public class UserManagerTest {
                 .atLeastOnce();
 
         RegisteredUser mappedUser = new RegisteredUser(null, "TestFirstName", "testLastName", "", Role.STUDENT,
- new Date(), Gender.MALE, new Date(), null, null, null, null, null, null, null);
+ new Date(), Gender.MALE, new Date(), null, null, null);
 
         expect(dummyDatabase.getAuthenticationProvidersByUser(mappedUser)).andReturn(
                 Lists.newArrayList(AuthenticationProvider.GOOGLE)).atLeastOnce();
@@ -387,8 +387,10 @@ public class UserManagerTest {
 
         dummyQuestionDatabase.mergeAnonymousQuestionAttemptsIntoRegisteredUser(someAnonymousUserDTO, mappedUserDTO);
         expectLastCall().once();
-        
-        replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase);
+
+        expect(dummyLocalAuth.hasPasswordRegistered(anyObject())).andReturn(false).anyTimes();
+
+        replay(dummySession, request, dummyAuth, dummyQuestionDatabase, dummyMapper, dummyDatabase, dummyLocalAuth);
 
         // Act
         RegisteredUserDTO u = userManager.authenticateCallback(request, response, validOAuthProvider);
@@ -636,6 +638,7 @@ public class UserManagerTest {
     private UserAuthenticationManager buildTestAuthenticationManager(AuthenticationProvider provider, IAuthenticator authenticator) {
         HashMap<AuthenticationProvider, IAuthenticator> providerMap = new HashMap<AuthenticationProvider, IAuthenticator>();
         providerMap.put(provider, authenticator);
+        providerMap.put(AuthenticationProvider.SEGUE, dummyLocalAuth);
         return new UserAuthenticationManager(dummyDatabase, dummyPropertiesLoader, providerMap, dummyMapper,
                 dummyQueue);
     }

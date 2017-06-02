@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,9 @@ package uk.ac.cam.cl.dtg.segue.auth;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HMAC_SALT;
 
-import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
-
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import java.util.*;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.Validate;
@@ -40,7 +33,9 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IPasswordDataManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dos.users.LocalUserCredential;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -54,16 +49,15 @@ import com.google.inject.Inject;
  */
 public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     private static final Logger log = LoggerFactory.getLogger(SegueLocalAuthenticator.class);
+    private static final Integer SHORT_KEY_LENGTH = 128;
+
+    private final IPasswordDataManager passwordDataManager;
     private final IUserDataManager userDataManager;
-    
     private final PropertiesLoader properties;
 
-    private static final String CRYPTO_ALOGRITHM = "PBKDF2WithHmacSHA1";
-    private static final String SALTING_ALGORITHM = "SHA1PRNG";
-    private static final Integer ITERATIONS = 1000;
-    private static final Integer KEY_LENGTH = 512;
-    private static final Integer SHORT_KEY_LENGTH = 128;
-    private static final int SALT_SIZE = 16;
+    private final Map<String, ISegueHashingAlgorithm> possibleAlgorithms;
+    private final ISegueHashingAlgorithm preferredAlgorithm;
+
 
     /**
      * Creates a segue local authenticator object to validate and create passwords to be stored by the Segue CMS.
@@ -72,11 +66,19 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
      *            - the user data manager which allows us to store and query user information.
      * @param properties
      *            - so we can look up system properties.
+     * @param possibleAlgorithms
+     *            - Map of possibleAlgorithms
      */
     @Inject
-    public SegueLocalAuthenticator(final IUserDataManager userDataManager, final PropertiesLoader properties) {
+    public SegueLocalAuthenticator(final IUserDataManager userDataManager, final IPasswordDataManager passwordDataManager,
+                                   final PropertiesLoader properties,
+                                   final Map<String, ISegueHashingAlgorithm> possibleAlgorithms,
+                                   final ISegueHashingAlgorithm preferredAlgorithm) {
         this.userDataManager = userDataManager;
         this.properties = properties;
+        this.possibleAlgorithms = possibleAlgorithms;
+        this.preferredAlgorithm = preferredAlgorithm;
+        this.passwordDataManager = passwordDataManager;
     }
 
     @Override
@@ -86,25 +88,12 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
     @Override
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
-            throws InvalidPasswordException {
+            throws InvalidPasswordException, SegueDatabaseException {
         if (null == plainTextPassword || plainTextPassword.isEmpty()) {
             throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
         }
 
-        try {
-            String passwordSalt = generateSalt();
-            String hashedPassword = this.hashPassword(plainTextPassword, passwordSalt);
-
-            userToSetPasswordFor.setPassword(hashedPassword);
-            userToSetPasswordFor.setSecureSalt(passwordSalt);
-
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error detecting security algorithm", e);
-            throw new FailedToHashPasswordException("Security algorithrm configuration error.");
-        } catch (InvalidKeySpecException e) {
-            log.error("Error building secret key specification", e);
-            throw new FailedToHashPasswordException("Security algorithrm configuration error.");
-        }
+        this.updateUsersPasswordWithoutValidation(userToSetPasswordFor, plainTextPassword);
     }
 
     @Override
@@ -117,18 +106,31 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         }
 
         RegisteredUser localUserAccount = userDataManager.getByEmail(usersEmailAddress);
-
         if (null == localUserAccount) {
             throw new NoUserException();
         }
-        if (null == localUserAccount.getPassword() || null == localUserAccount.getSecureSalt()) {
-            log.debug("No credentials available for this account");
-            throw new NoCredentialsAvailableException("This user does not have any" + " local credentials setup.");
+
+        LocalUserCredential luc = passwordDataManager.getLocalUserCredential(localUserAccount.getId());
+        if (null == luc || null == luc.getPassword() || null == luc.getSecureSalt()) {
+            log.debug(String.format("No credentials available for this account id (%s)", localUserAccount.getId()));
+            throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
         }
 
         try {
-            if (this.hashPassword(plainTextPassword, localUserAccount.getSecureSalt()).equals(
-                    localUserAccount.getPassword())) {
+            // work out what algorithm is being used.
+            ISegueHashingAlgorithm hashingAlgorithmUsed = this.possibleAlgorithms.get(luc.getSecurityScheme());
+
+            if (hashingAlgorithmUsed.hashPassword(plainTextPassword, luc.getSecureSalt()).equals(
+                    luc.getPassword())) {
+
+                // success, now check if we should rehash the password or not.
+                if (!preferredAlgorithm.hashingAlgorithmName().equals(hashingAlgorithmUsed.hashingAlgorithmName())) {
+
+                    // update the password
+                    this.updateUsersPasswordWithoutValidation(localUserAccount, plainTextPassword);
+                    log.info(String.format("Account id (%s) password algorithm automatically upgraded.", localUserAccount.getId()));
+                }
+
                 return localUserAccount;
             } else {
                 throw new IncorrectCredentialsProvidedException("Incorrect credentials provided.");
@@ -140,6 +142,20 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
             log.error("Error building secret key specification", e);
             return null;
         }
+    }
+
+    @Override
+    public boolean hasPasswordRegistered(RegisteredUser userToCheck) throws SegueDatabaseException {
+        if (null == userToCheck) {
+            return false;
+        }
+
+        LocalUserCredential localUserCredential = this.passwordDataManager.getLocalUserCredential(userToCheck.getId());
+        if (null == localUserCredential || localUserCredential.getPassword() == null) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -176,96 +192,88 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     }
 
     @Override
-    public RegisteredUser createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public String createPasswordResetTokenForUser(final RegisteredUser userToAttachToken)
+            throws NoSuchAlgorithmException, InvalidKeySpecException, SegueDatabaseException, NoCredentialsAvailableException {
         Validate.notNull(userToAttachToken);
+
+        LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
+        if (null == luc || null == luc.getPassword() || null == luc.getSecureSalt()) {
+            log.debug(String.format("No credentials available for this account id (%s)", luc.getUserId()));
+            throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
+        }
+
         // Trim the "=" padding off the end of the base64 encoded token so that the URL that is
         // eventually generated is correctly parsed in email clients
-        String token = new String(Base64.encodeBase64(computeHash(UUID.randomUUID().toString(),
-                userToAttachToken.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "").replace("/", "")
+        String token = new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
+                luc.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "").replace("/", "")
                 .replace("+", "");
 
-        userToAttachToken.setResetToken(token);
+
+        luc.setResetToken(token);
 
         // Set expiry date
         // Java is useless at datetime maths
         Calendar c = Calendar.getInstance();
         c.setTime(new Date()); // Initialises the calendar to the current date/time
         c.add(Calendar.DATE, 1);
-        userToAttachToken.setResetExpiry(c.getTime());
+        luc.setResetExpiry(c.getTime());
 
-        return userToAttachToken;
+        this.passwordDataManager.createOrUpdateLocalUserCredential(luc);
+
+        return luc.getResetToken();
     }
 
     @Override
-    public boolean isValidResetToken(final RegisteredUser user) {
+    public boolean isValidResetToken(final String token) throws SegueDatabaseException {
+        LocalUserCredential luc = passwordDataManager.getLocalUserCredentialByResetToken(token);
+        if (null == luc || null == luc.getSecureSalt() || luc.getResetToken() == null || luc.getResetExpiry() == null) {
+            // if we cannot find it then it is not valid.
+            return false;
+        }
+
         // Get today's datetime; this is initialised to the time at which it was allocated,
         // measured to the nearest millisecond.
         Date now = new Date();
 
-        return user != null && user.getResetExpiry().after(now);
+        // check the token matches and hasn't expired (I know that we have just looked it up but that might change so checking anyway)
+        return luc.getResetToken().equals(token) && luc.getResetExpiry().after(now);
+    }
+
+    @Override
+    public RegisteredUser getRegisteredUserByToken(String token) throws SegueDatabaseException {
+        LocalUserCredential luc = passwordDataManager.getLocalUserCredentialByResetToken(token);
+        if (!this.isValidResetToken(token)) {
+            // if we cannot find it then it is not valid.
+            return null;
+        }
+
+        return this.userDataManager.getById(luc.getUserId());
     }
 
     /**
-     * Hash the password using the preconfigured hashing function.
-     *
-     * @param password
-     *            - password to hash
-     * @param salt
-     *            - random string to use as a salt.
-     * @return the Base64 encoded hashed password
-     * @throws NoSuchAlgorithmException
-     *             - if the configured algorithm is not valid.
-     * @throws InvalidKeySpecException
-     *             - if the preconfigured key spec is invalid.
+     * Private method for creating / updating a users password.
+     * @param userToSetPasswordFor - the user to affect
+     * @param plainTextPassword - the new password.
+     * @throws SegueDatabaseException
      */
-    private String hashPassword(final String password, final String salt) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
-        BigInteger hashedPassword = new BigInteger(computeHash(password, salt, KEY_LENGTH));
+    private void updateUsersPasswordWithoutValidation(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
+            throws SegueDatabaseException {
+        try {
+            String passwordSalt = preferredAlgorithm.generateSalt();
+            String hashedPassword = preferredAlgorithm.hashPassword(plainTextPassword, passwordSalt);
 
-        return new String(Base64.encodeBase64(hashedPassword.toByteArray()));
+            LocalUserCredential luc = new LocalUserCredential(
+                    userToSetPasswordFor.getId(),
+                    hashedPassword, passwordSalt, preferredAlgorithm.hashingAlgorithmName());
+
+            // now we want to update the database
+            passwordDataManager.createOrUpdateLocalUserCredential(luc);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Error detecting security algorithm", e);
+            throw new FailedToHashPasswordException("Security algorithm configuration error.");
+        } catch (InvalidKeySpecException e) {
+            log.error("Error building secret key specification", e);
+            throw new FailedToHashPasswordException("Security algorithm configuration error.");
+        }
     }
-
-    /**
-     * Compute the hash of a string using the preconfigured hashing function.
-     *
-     * @param str
-     *            - string to hash
-     * @param salt
-     *            - random string to use as a salt.
-     * @param keyLength
-     *            - the key length
-     * @return a byte array of the hash
-     * @throws NoSuchAlgorithmException
-     *             - if the configured algorithm is not valid.
-     * @throws InvalidKeySpecException
-     *             - if the preconfigured key spec is invalid.
-     */
-    private byte[] computeHash(final String str, final String salt, final int keyLength)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
-        char[] strChars = str.toCharArray();
-        byte[] saltBytes = salt.getBytes();
-
-        PBEKeySpec spec = new PBEKeySpec(strChars, saltBytes, ITERATIONS, keyLength);
-
-        SecretKeyFactory key = SecretKeyFactory.getInstance(CRYPTO_ALOGRITHM);
-        return key.generateSecret(spec).getEncoded();
-    }
-
-    /**
-     * Helper method to generate a base64 encoded salt.
-     * 
-     * @return generate a base64 encoded secure salt.
-     * @throws NoSuchAlgorithmException
-     *             - problem locating the algorithm.
-     */
-    private static String generateSalt() throws NoSuchAlgorithmException {
-        SecureRandom sr = SecureRandom.getInstance(SALTING_ALGORITHM);
-
-        byte[] salt = new byte[SALT_SIZE];
-        sr.nextBytes(salt);
-
-        return new String(Base64.encodeBase64(salt));
-    }
-
 }
