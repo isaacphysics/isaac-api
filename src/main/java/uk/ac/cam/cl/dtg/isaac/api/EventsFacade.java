@@ -389,11 +389,13 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
+            EventBookingDTO eventBookingDTO
+                    = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest, additionalInformation);
+
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
                                                                          USER_ID_FKEY_FIELDNAME, userId));
-
-            return Response.ok(this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest, additionalInformation)).build();
+            return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -493,10 +495,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                         .toResponse();
             }
 
+            EventBookingDTO booking = bookingManager.createBooking(event, bookedUser, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.ADMIN_EVENT_BOOKING_CONFIRMED, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(), USER_ID_FKEY_FIELDNAME, userId));
 
-            return Response.ok(bookingManager.createBooking(event, bookedUser, additionalInformation)).build();
+            return Response.ok(booking).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -610,10 +613,11 @@ public class EventsFacade extends AbstractIsaacFacade {
                     .toResponse();
             }
 
+            EventBookingDTO eventBookingDTO = bookingManager.requestWaitingListBooking(event, user, additionalInformation);
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.EVENT_WAITING_LIST_BOOKING, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId()));
 
-            return Response.ok(bookingManager.requestWaitingListBooking(event, user, additionalInformation)).build();
+            return Response.ok(eventBookingDTO).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
