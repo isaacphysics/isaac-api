@@ -814,7 +814,7 @@ public class UserAccountManager {
                 RegisteredUserDTO userToSaveDTO = mapper.map(userToSave, RegisteredUserDTO.class);
 
                 Map<String, Object> emailTokens = ImmutableMap.of("verificationURL",
-                        this.generateEmailVerificationURL(userToSaveDTO, updatedUser.getEmailVerificationToken()));
+                        this.generateEmailVerificationURL(userToSaveDTO, userToSave.getEmailVerificationToken()));
 
                 emailManager.sendTemplatedEmailToUser(userToSaveDTO,
                         emailManager.getEmailTemplateDTO("email-template-email-verification"),
