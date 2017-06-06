@@ -438,7 +438,7 @@ public class GameboardPersistenceManager {
 		
 		return errors;
 	}
-	
+
 	/**
 	 * Attempt to improve performance of getting gameboard items in a batch.
 	 * 
@@ -446,43 +446,41 @@ public class GameboardPersistenceManager {
 	 * gameboard items populated with meaningful titles.
 	 * 
 	 * @param gameboards - list of gameboards to fully augment.
-	 * @return augmented gameboards as per inputted list.
 	 */
-	public List<GameboardDTO> augmentGameboardItems(final List<GameboardDTO> gameboards) {
-		Set<String> qids = Sets.newHashSet();
+	public void augmentGameboardItems(final List<GameboardDTO> gameboards) {
+		Set<String> questionIds = Sets.newHashSet();
 		Map<String, List<String>> gameboardToQuestionsMap = Maps.newHashMap();
 
 		// go through all game boards working out the set of question ids.
 		for (GameboardDTO game : gameboards) {
 			List<String> ids = getQuestionIds(game);
-			qids.addAll(ids);
+			questionIds.addAll(ids);
 			gameboardToQuestionsMap.put(game.getId(), ids);
 		}
-		
-		if (qids.isEmpty()) {
-			log.info("No question ids found; returning original gameboard without augmenting.");
-			return gameboards;
-		}
-		
-		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(qids));
-		for (GameboardDTO game : gameboards) {
-			// empty and re-populate the gameboard dto with fully augmented gameboard items.
-			game.setQuestions(new ArrayList<GameboardItem>());
-			for (String questionid : gameboardToQuestionsMap.get(game.getId())) {
-				// There is a possibility that the question cannot be found any more for some reason
-				// In this case we will simply pretend it isn't there.
-				GameboardItem item = gameboardReadyQuestions.get(questionid);
-				if (item != null) {
-					game.getQuestions().add(item);	
-                } else {
-                    log.warn("The gameboard: " + game.getId() + " has a reference to a question (" + questionid
-                            + ") that we cannot find. Removing it from the DTO.");
+
+        if (!questionIds.isEmpty()) {
+            Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(questionIds));
+            for (GameboardDTO game : gameboards) {
+                ArrayList<GameboardItem> newItems = new ArrayList<GameboardItem>(); 
+                for (GameboardItem oldItem : game.getQuestions()) {
+                    GameboardItem newItem = gameboardReadyQuestions.get(oldItem.getId());
+                    if (newItem != null) {
+                        newItem.setStatusInformation(
+                                oldItem.getQuestionPartsCorrect(), oldItem.getQuestionPartsIncorrect(),
+                                oldItem.getQuestionPartsNotAttempted(), oldItem.getPassMark());
+                        newItems.add(newItem);
+                    } else {
+                        log.warn("The gameboard: " + game.getId() + " has a reference to a question (" + oldItem.getId()
+                                + ") that we cannot find. Removing it from the DTO.");
+                    }
                 }
-			}
-		}	
-		return gameboards;
-	}
-	
+                game.setQuestions(newItems);
+            }
+        } else {
+            log.info("No question ids found; returning without augmenting.");
+        }
+    }
+
     /**
      * Utility method to get a map of gameboard id to list of users who are connected to it.
      * 
