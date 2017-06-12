@@ -17,12 +17,8 @@ package uk.ac.cam.cl.dtg.segue.dao.content;
 
 import uk.ac.cam.cl.dtg.segue.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
-import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
-import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChemicalFormulaDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.FormulaDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 

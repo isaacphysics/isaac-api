@@ -32,7 +32,6 @@ import uk.ac.cam.cl.dtg.segue.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.Quantity;
 
 /**
  * Test class for the user manager class.

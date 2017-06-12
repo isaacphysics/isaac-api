@@ -39,7 +39,6 @@ import uk.ac.cam.cl.dtg.segue.dos.FormulaValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Choice;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
-import uk.ac.cam.cl.dtg.segue.dos.content.Formula;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.quiz.IValidator;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatorUnavailableException;
