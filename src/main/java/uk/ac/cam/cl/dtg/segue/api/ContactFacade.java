@@ -35,12 +35,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
@@ -98,11 +100,19 @@ public class ContactFacade extends AbstractSegueFacade {
         }
 
         try {
+            String currentUserId;
+            if (userManager.isRegisteredUserLoggedIn(request)) {
+                RegisteredUserDTO currentUser = this.userManager.getCurrentRegisteredUser(request);
+                currentUserId = currentUser.getId().toString();
+            } else {
+                currentUserId = "N/A";
+            }
+
             emailManager.sendContactUsFormEmail(this.getProperties().getProperty(Constants.MAIL_RECEIVERS),
                     new ImmutableMap.Builder<String, Object>()
                             .put("contactGivenName", form.get("firstName") == null ? "" : form.get("firstName"))
                             .put("contactFamilyName", form.get("lastName") == null ? "" : form.get("lastName"))
-                            .put("contactUserId", form.get("userId") == null ? "" : form.get("userId"))
+                            .put("contactUserId", currentUserId)
                             .put("contactEmail", form.get("emailAddress") == null ? "" : form.get("emailAddress"))
                             .put("contactSubject", form.get("subject") == null ? "" : form.get("subject"))
                             .put("contactMessage", form.get("message") == null ? "" : form.get("message"))
@@ -120,6 +130,9 @@ public class ContactFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e1) {
             log.error("Database error has occurred", e1);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "A database error has occurred.").toResponse();
+        } catch (NoUserLoggedInException e2) {
+            log.error("Unexpected NoUserLoggedInException!", e2);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "An error has occurred.").toResponse();
         }
     }
 }
