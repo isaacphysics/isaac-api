@@ -17,28 +17,20 @@ package uk.ac.cam.cl.dtg.segue.dao;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Properties;
-import java.util.concurrent.Future;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.sun.prism.impl.Disposer;
 import org.apache.commons.lang3.Validate;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.common.serialization.StringSerializer;
-
 
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -108,18 +100,20 @@ public class KafkaLoggingProducer extends LoggingEventHandler {
     private void publishLogEvent(final String userId, final String anonymousUserId, final String eventType,
                                  final Object eventDetails, final String ipAddress) throws JsonProcessingException, SegueDatabaseException {
 
-
         LogEvent logEvent = this.buildLogEvent(userId, anonymousUserId, eventType, eventDetails, ipAddress);
 
+        Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
+                .put("user_id", logEvent.getUserId())
+                .put("anonymous_user", logEvent.isAnonymousUser())
+                .put("event_type", logEvent.getEventType())
+                .put("event_details_type", logEvent.getEventDetailsType())
+                .put("event_details", logEvent.getEventDetails())
+                .put("ip_address", logEvent.getIpAddress())
+                .build();
+
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("loggingTest", logEvent.getUserId(),
-                String.format("{\"user_id\":\"%s\", \"anonymous_user\":\"%s\", \"event_type\":\"%s\", \"event_details_type\":\"%s\", \"event_details\":%s, \"ip_address\":\"%s\"}",
-                        logEvent.getUserId(),
-                        objectMapper.writeValueAsString(logEvent.isAnonymousUser()),
-                        logEvent.getEventType(),
-                        logEvent.getEventDetailsType(),
-                        objectMapper.writeValueAsString(logEvent.getEventDetails()),
-                        logEvent.getIpAddress()));
+        ProducerRecord producerRecord = new ProducerRecord<String, String>("loggedEvents", logEvent.getUserId(),
+                String.format(objectMapper.writeValueAsString(kafkaLogRecord)));
 
         try {
             kafkaProducer.Send(producerRecord);
