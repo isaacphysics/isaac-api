@@ -139,9 +139,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
-            @QueryParam("subjects") final String subjects, @QueryParam("fields") final String fields,
-            @QueryParam("topics") final String topics, @QueryParam("levels") final String levels,
-            @QueryParam("concepts") final String concepts) {
+            @QueryParam("title") String title, @QueryParam("subjects") final String subjects,
+            @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
+            @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts) {
         List<String> subjectsList = null;
         List<String> fieldsList = null;
         List<String> topicsList = null;
@@ -183,7 +183,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             GameboardDTO gameboard;
 
-            gameboard = gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList,
+            gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
                     conceptsList, boardOwner);
 
             if (null == gameboard) {
