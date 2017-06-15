@@ -16,8 +16,12 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,7 +197,15 @@ public class IsaacNumericValidator implements IValidator {
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                       isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
-        for (Choice c : isaacNumericQuestion.getChoices()) {
+        List<Choice> orderedChoices = Lists.newArrayList(isaacNumericQuestion.getChoices());
+
+        Collections.sort(orderedChoices, (o1, o2) -> {
+            int o1Val = o1.isCorrect() ? 0 : 1;
+            int o2Val = o2.isCorrect() ? 0 : 1;
+            return o1Val - o2Val;
+        });
+
+        for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
 
@@ -255,7 +267,15 @@ public class IsaacNumericValidator implements IValidator {
         int sigFigsToValidateWith = numberOfSignificantFiguresToValidateWith(answerFromUser.getValue(),
                 isaacNumericQuestion.getSignificantFiguresMin(), isaacNumericQuestion.getSignificantFiguresMax());
 
-        for (Choice c : isaacNumericQuestion.getChoices()) {
+        List<Choice> orderedChoices = Lists.newArrayList(isaacNumericQuestion.getChoices());
+
+        Collections.sort(orderedChoices, (o1, o2) -> {
+            int o1Val = o1.isCorrect() ? 0 : 1;
+            int o2Val = o2.isCorrect() ? 0 : 1;
+            return o1Val - o2Val;
+        });
+
+        for (Choice c : orderedChoices) {
             if (c instanceof Quantity) {
                 Quantity quantityFromQuestion = (Quantity) c;
 
