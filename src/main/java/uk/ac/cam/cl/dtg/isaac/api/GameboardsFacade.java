@@ -122,6 +122,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - this allows us to check to see if a user is currently loggedin.
+     * @param title
+     *            - the title of the generated board
      * @param subjects
      *            - a comma separated list of subjects
      * @param fields

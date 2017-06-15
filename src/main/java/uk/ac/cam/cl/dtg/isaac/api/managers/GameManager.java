@@ -117,13 +117,16 @@ public class GameManager {
      */
     public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException,
             ContentManagerException {
-        return this.generateRandomGameboard(null, null, null, null, null, null, null);
+        return this.generateRandomGameboard(null, null, null, null, null,
+                null, null);
     }
 
     /**
      * This method expects only one of its 3 subject tag filter parameters to have more than one element due to
      * restrictions on the question filter interface.
-     * 
+     *
+     * @param title
+     *            title of the board
      * @param subjectsList
      *            list of subjects to include in filtered results
      * @param fieldsList
@@ -145,10 +148,10 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    public GameboardDTO generateRandomGameboard(final String title, final List<String> subjectsList, final List<String> fieldsList,
-            final List<String> topicsList, final List<Integer> levelsList, final List<String> conceptsList,
-            final AbstractSegueUserDTO boardOwner) throws NoWildcardException, SegueDatabaseException,
-            ContentManagerException {
+    public GameboardDTO generateRandomGameboard(final String title, final List<String> subjectsList,
+            final List<String> fieldsList, final List<String> topicsList, final List<Integer> levelsList,
+            final List<String> conceptsList, final AbstractSegueUserDTO boardOwner) throws NoWildcardException,
+            SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
@@ -173,8 +176,8 @@ public class GameManager {
             log.debug("Created gameboard " + uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
-                    getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter, boardOwnerId,
-                    GameboardCreationMethod.FILTER);
+                    getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter,
+                    boardOwnerId, GameboardCreationMethod.FILTER);
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 
