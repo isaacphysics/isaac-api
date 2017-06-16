@@ -380,6 +380,18 @@ public class GameManager {
                             return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
                         }
                     }, reverseOrder);
+                }  else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
+                    comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
+                        public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+                            if (o1.getTitle() == null) {
+                                return 1;
+                            }
+                            if (o2.getTitle() == null) {
+                                return -1;
+                            }
+                            return o1.getTitle().compareTo(o2.getTitle());
+                        }
+                    }, reverseOrder);
                 }
             }
         }
