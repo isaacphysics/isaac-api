@@ -383,7 +383,7 @@ public class GameManager {
                             return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
                         }
                     }, reverseOrder);
-                }  else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
+                } else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
                     comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
                         public int compare(final GameboardDTO o1, final GameboardDTO o2) {
                             if (o1.getTitle() == null) {
@@ -405,7 +405,12 @@ public class GameManager {
 
         Collections.sort(resultToReturn, comparatorForSorting);
 
-        int toIndex = startIndex + limit > resultToReturn.size() ? resultToReturn.size() : startIndex + limit;
+        int toIndex;
+        if (limit == null || startIndex + limit > resultToReturn.size()) {
+            toIndex = resultToReturn.size();
+        } else {
+            toIndex = startIndex + limit;
+        }
 
         List<GameboardDTO> sublistOfGameboards = resultToReturn.subList(startIndex, toIndex);
 
