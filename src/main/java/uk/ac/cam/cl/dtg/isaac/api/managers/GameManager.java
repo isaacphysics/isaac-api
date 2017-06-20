@@ -386,6 +386,9 @@ public class GameManager {
                 }  else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
                     comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
                         public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+                            if (o1.getTitle() == null && o2.getTitle() == null) {
+                                return 0;
+                            }
                             if (o1.getTitle() == null) {
                                 return 1;
                             }
