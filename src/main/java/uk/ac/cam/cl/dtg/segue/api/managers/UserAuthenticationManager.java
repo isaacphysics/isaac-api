@@ -66,6 +66,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
@@ -515,10 +516,16 @@ public class UserAuthenticationManager {
             String token = authenticator.createPasswordResetTokenForUser(userDO);
             log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
 
-            this.emailManager.sendPasswordReset(userAsDTO, token);
+            Map<String, Object> emailValues = ImmutableMap.of("resetURL",
+                    String.format("https://%s/resetpassword/%s",
+                            properties.getProperty(HOST_NAME), token));
+
+            this.emailManager.sendTemplatedEmailToUser(userAsDTO,
+                    emailManager.getEmailTemplateDTO("email-template-password-reset"),
+                    emailValues, EmailType.SYSTEM);
         } catch (ContentManagerException e) {
             log.error("ContentManagerException " + e.getMessage());
-        } catch (NoUserException | NoCredentialsAvailableException e) {
+        } catch (NoCredentialsAvailableException e) {
             log.error("Unable to find user or credentials " + e.getMessage());
         }
     }
@@ -541,8 +548,13 @@ public class UserAuthenticationManager {
     public RegisteredUser resetPassword(final String token, final String newPassword)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
         // Ensure new password is valid
+
         if (null == newPassword || newPassword.isEmpty()) {
             throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
+        }
+
+        if (newPassword.length() < 6) {
+            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -612,13 +624,17 @@ public class UserAuthenticationManager {
         }
 
         try {
-            emailManager.sendFederatedPasswordReset(userAsDTO, providersString, providerWord);
+            Map<String, Object> emailTokens = ImmutableMap.of("providerString", providersString,
+                    "providerWord", providerWord);
+
+            emailManager.sendTemplatedEmailToUser(userAsDTO,
+                    emailManager.getEmailTemplateDTO("email-template-federated-password-reset"),
+                    emailTokens, EmailType.SYSTEM);
+
+            //emailManager.sendFederatedPasswordReset(userAsDTO, providersString, providerWord);
         } catch (ContentManagerException contentException) {
             log.error(String.format("Error sending federated email verification message - %s", 
                             contentException.getMessage()));
-        } catch (NoUserException noUserException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-                            noUserException.getMessage()));
         }
     }
     

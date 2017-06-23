@@ -122,6 +122,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - this allows us to check to see if a user is currently loggedin.
+     * @param title
+     *            - the title of the generated board
      * @param subjects
      *            - a comma separated list of subjects
      * @param fields
@@ -139,9 +141,9 @@ public class GameboardsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public final Response generateTemporaryGameboard(@Context final HttpServletRequest request,
-            @QueryParam("subjects") final String subjects, @QueryParam("fields") final String fields,
-            @QueryParam("topics") final String topics, @QueryParam("levels") final String levels,
-            @QueryParam("concepts") final String concepts) {
+            @QueryParam("title") String title, @QueryParam("subjects") final String subjects,
+            @QueryParam("fields") final String fields, @QueryParam("topics") final String topics,
+            @QueryParam("levels") final String levels, @QueryParam("concepts") final String concepts) {
         List<String> subjectsList = null;
         List<String> fieldsList = null;
         List<String> topicsList = null;
@@ -183,7 +185,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
         try {
             GameboardDTO gameboard;
 
-            gameboard = gameManager.generateRandomGameboard(subjectsList, fieldsList, topicsList, levelsList,
+            gameboard = gameManager.generateRandomGameboard(title, subjectsList, fieldsList, topicsList, levelsList,
                     conceptsList, boardOwner);
 
             if (null == gameboard) {
@@ -467,7 +469,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
@@ -580,6 +582,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                     parsedSortInstructions.add(immutableEntry(CREATED_DATE_FIELDNAME, s));
                 } else if (instruction.equals("visited")) {
                     parsedSortInstructions.add(immutableEntry(VISITED_DATE_FIELDNAME, s));
+                } else if (instruction.equals("title")) {
+                    parsedSortInstructions.add(immutableEntry(TITLE_FIELDNAME, s));
                 } else {
                     return new SegueErrorResponse(Status.BAD_REQUEST, "Sorry we do not recognise the sort instruction "
                             + instruction).toResponse();
@@ -657,7 +661,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             // go ahead and persist the gameboard (if it is only temporary) / link it to the users my boards account
             gameManager.linkUserToGameboard(existingGameboard, user);
-            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, existingGameboard.getId());
+            getLogManager().logEvent(user, request, ADD_BOARD_TO_PROFILE, ImmutableMap.of(GAMEBOARD_ID_FKEY, existingGameboard.getId()));
 
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to save gameboard to user link.", e);

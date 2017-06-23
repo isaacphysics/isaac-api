@@ -90,7 +90,11 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
             throws InvalidPasswordException, SegueDatabaseException {
         if (null == plainTextPassword || plainTextPassword.isEmpty()) {
-            throw new InvalidPasswordException("Empty passwords are not allowed if using local authentication.");
+            throw new InvalidPasswordException("Invalid password. You cannot have an empty password.");
+        }
+
+        if (plainTextPassword.length() < 6) {
+            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
         }
 
         this.updateUsersPasswordWithoutValidation(userToSetPasswordFor, plainTextPassword);

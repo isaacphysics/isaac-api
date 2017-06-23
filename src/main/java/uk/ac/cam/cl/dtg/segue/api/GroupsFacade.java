@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.USER_ID_FKEY_FIELDNAME;
+
 import io.swagger.annotations.Api;
 
 import java.util.Collections;
@@ -414,6 +416,10 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
 
+            this.getLogManager().logEvent(currentRegisteredUser, request, Constants.REMOVE_USER_FROM_GROUP,
+                    ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId(),
+                                    USER_ID_FKEY_FIELDNAME, userToRemove.getId()));
+
             return this.getUsersInGroup(request, cacheRequest, groupId);
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to add user to a group. ", e);
@@ -457,6 +463,10 @@ public class GroupsFacade extends AbstractSegueFacade {
             }
 
             groupManager.deleteGroup(groupBasedOnId);
+
+            this.getLogManager().logEvent(currentUser, request, Constants.DELETE_USER_GROUP,
+                    ImmutableMap.of(Constants.GROUP_FK, groupBasedOnId.getId()));
+
         } catch (SegueDatabaseException e) {
             log.error("Database error while trying to add user to a group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();

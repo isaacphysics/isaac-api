@@ -173,15 +173,22 @@ public class ElasticSearchProvider implements ISearchProvider {
                                              final String searchTerm, final String field, final int startIndex, final int limit,
                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
             throws SegueSearchException {
-        if (null == index || null == indexType || null == searchTerm || null == field) {
-            log.warn("A required field is missing. Unable to execute search.");
+        if (null == index || null == indexType || (null == searchTerm && null != field)) {
+            log.error("A required field or field combination is missing. Unable to execute search.");
             return null;
         }
 
-        QueryBuilder query = QueryBuilders.termQuery(field, searchTerm);
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        if (searchTerm != null) {
+            query.must(QueryBuilders.termQuery(field, searchTerm));
+        }
 
         if (filterInstructions != null) {
-            query = QueryBuilders.boolQuery().must(query).filter(generateFilterQuery(filterInstructions));
+            query.filter(generateFilterQuery(filterInstructions));
+        }
+
+        if (null == searchTerm && null == filterInstructions) {
+            throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
         }
 
         return this.executeBasicQuery(index, indexType, query, startIndex, limit);
@@ -320,6 +327,10 @@ public class ElasticSearchProvider implements ISearchProvider {
                 filter.must(this.generateBoolMatchQuery(fieldsToMatch));
             }
 
+            if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction) {
+                TermsFilterInstruction sfi = (TermsFilterInstruction) fieldToFilterInstruction.getValue();
+                filter.must(QueryBuilders.termsQuery(fieldToFilterInstruction.getKey(), sfi.getMatchValues()));
+            }
         }
 
         return filter;

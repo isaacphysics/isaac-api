@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -152,7 +152,7 @@ public class StatisticsManager {
 
         // get all the users
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
+        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
 
         List<RegisteredUserDTO> male = Lists.newArrayList();
         List<RegisteredUserDTO> female = Lists.newArrayList();
@@ -461,7 +461,7 @@ public class StatisticsManager {
             SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
         Validate.notNull(schoolId);
 
-        List<RegisteredUserDTO> users = Lists.newArrayList();
+        List<RegisteredUserDTO> users;
 
         School s;
         try {
@@ -768,16 +768,16 @@ public class StatisticsManager {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),
-                new ArrayList<String>(ids));
+                new ArrayList<>(ids));
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
                 Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
         // Search for questions that match the ids.
-        ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                this.contentIndex, fieldsToMap, 0, ids.size());
+        ResultsWrapper<ContentDTO> allMatchingIds =
+                this.contentManager.getContentMatchingIds(this.contentIndex, ids, 0, ids.size());
 
-        List<ContentDTO> questionsForGameboard = findByFieldNames.getResults();
+        List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();
 
         Map<String, ContentDTO> questionIdToQuestionMap = Maps.newHashMap();
         for (ContentDTO content : questionsForGameboard) {

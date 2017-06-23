@@ -212,12 +212,13 @@ public class UserAssociationManager {
      *            - The token which links to a user (receiving permission) and possibly a group.
      * @param userGrantingPermission
      *            - the user who wishes to grant permissions to another.
+     * @return The association token object
      * @throws SegueDatabaseException
      *             - If an error occurred while interacting with the database.
      * @throws InvalidUserAssociationTokenException
      *             - If the token provided is invalid.
      */
-    public void createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
+    public AssociationToken createAssociationWithToken(final String token, final RegisteredUserDTO userGrantingPermission)
             throws SegueDatabaseException, InvalidUserAssociationTokenException {
         Validate.notBlank(token);
         Validate.notNull(userGrantingPermission);
@@ -242,6 +243,7 @@ public class UserAssociationManager {
                     lookedupToken.getGroupId()));
 
         }
+        return lookedupToken;
     }
 
     /**

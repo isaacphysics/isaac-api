@@ -15,25 +15,22 @@
  */
 package uk.ac.cam.cl.dtg.segue.search;
 
+import java.util.Collection;
+
 /**
- * SimpleFilterInstruction
+ * TermsFilterInstruction.
  * A class to help encapsulate filter instructions.
  *
- * SimpleFilterInstructions expect a single value which must be matched in the results.
+ * This instruction will expect to match at least one of the terms in the list provided.
  */
-public class SimpleFilterInstruction extends AbstractFilterInstruction {
-    private final String mustMatchValue;
+public class TermsFilterInstruction extends AbstractFilterInstruction {
+    private final Collection<String> matchValues;
 
-    public SimpleFilterInstruction(String mustMatchValue) {
-
-        this.mustMatchValue = mustMatchValue;
+    public TermsFilterInstruction(Collection<String> matchValues) {
+        this.matchValues = matchValues;
     }
 
-    /**
-     * Get the value which must be matched.
-     * @return valueForFiltering.
-     */
-    public String getMustMatchValue() {
-        return mustMatchValue;
+    public Collection<String> getMatchValues() {
+        return matchValues;
     }
 }
