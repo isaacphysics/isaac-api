@@ -48,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
 
 /**
  * EmailManager
@@ -65,7 +66,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private static final String SIGNATURE = "Isaac Physics Project";
     private static final int MINIMUM_TAG_LENGTH = 4;
 
-    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy HH:mm a");
+    private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa z");
 
     /**
      * @param communicator
@@ -88,6 +89,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         this.globalProperties = globalProperties;
         this.contentManager = contentManager;
         this.logManager = logManager;
+        FULL_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY));
     }
 
     /**
