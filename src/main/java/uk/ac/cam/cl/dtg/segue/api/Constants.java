@@ -22,6 +22,8 @@ package uk.ac.cam.cl.dtg.segue.api;
 public final class Constants {
     // General Configuration stuff
 
+    public static final String DEFAULT_TIME_LOCALITY = "Europe/London";
+
     /**
      * Name to use to describe the application to external services, e.g. 3rd party authenticators.
      */
