@@ -342,8 +342,14 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 valueToStore = this.emailTokenValueMapper(mapEntry.getValue());
             }
 
-            if (valueToStore != null && !"".equals(valueToStore)) {
-                // assume that the first entry into the output map is the correct one
+            if (valueToStore != null) {
+                String existingValue = outputMap.get(keyPrefix + mapEntry.getKey());
+                if (existingValue != null && "".equals(existingValue) && !"".equals(valueToStore)) {
+                    // we can safely replace it with a better value
+                    outputMap.put(keyPrefix + mapEntry.getKey(), valueToStore);
+                }
+
+                // assume that the first entry into the output map is the correct one and only replace if something isn't already there
                 outputMap.putIfAbsent(keyPrefix + mapEntry.getKey(), valueToStore);
             }
         }
