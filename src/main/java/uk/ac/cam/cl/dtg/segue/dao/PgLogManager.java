@@ -508,38 +508,35 @@ public class PgLogManager implements ILogManager {
      */
     private static String getClientIpAddr(final HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
-        log.info("X-Forwarded-For: '" + ip + "'");
+        if (ip != null && ip.contains(",")) {
+            // If X-Forwarded-For contains multiple comma-separated IP addresses, we want only the last one.
+            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
+            ip = ip.substring(ip.lastIndexOf(',') + 1).trim();
+        }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             // Isaac adds this custom header which could be used:
             ip = request.getHeader("X-Real-IP");
-            log.info("X-Real-IP: '" + ip + "'");
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
-            log.info("Proxy-Client-IP: '" + ip + "'");
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("WL-Proxy-Client-IP");
-            log.info("WL-Proxy-Client-IP: '" + ip + "'");
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_CLIENT_IP");
-            log.info("HTTP_CLIENT_IP: '" + ip + "'");
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-            log.info("HTTP_X_FORWARDED_FOR: '" + ip + "'");
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             // In production, this will usually be the router address which may be unhelpful.
             ip = request.getRemoteAddr();
-            log.info("getRemoteAddr: '" + ip + "'");
         }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip) || ip.toLowerCase().contains("unknown")) {
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             // We *must* return a *valid* inet field for postgres! Null would be
             // acceptable, but is used for internal log events; 'unknown' is not allowed!
             // So if all else fails, use the impossible source address '0.0.0.0' to mark this.
-            log.info("Invalid IP address encountered: '" + ip + "'!");
             ip = "0.0.0.0";
         }
         return ip;
