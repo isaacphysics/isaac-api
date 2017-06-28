@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.kafka.customMappers;
+package uk.ac.cam.cl.dtg.segue.dao.streams.customMappers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.kafka.streams.kstream.ValueMapper;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Iterator;
 
 
 /**
  *  Concrete implementation of a JsonNode -> JsonNode ValueMapper for augmenting question part attempt details
  *  @author Dan Underwood
  */
-public class AugmentedQuestionDetailMapper extends AbstractJsonToJsonMapper {
+public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonNode> {
 
     private JsonNodeFactory nodeFactory;
     private ObjectMapper objectMapper;

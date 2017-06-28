@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.kafka.customProcessors;
+package uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
-import uk.ac.cam.cl.dtg.isaac.kafka.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Date;
 
 /**
  *  Custom processor to handle instances of threshold passing for data counters

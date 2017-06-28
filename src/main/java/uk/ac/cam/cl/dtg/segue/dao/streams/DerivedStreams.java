@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.isaac.kafka.utilities;
+package uk.ac.cam.cl.dtg.segue.dao.streams;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -28,9 +28,9 @@ import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import uk.ac.cam.cl.dtg.isaac.kafka.customMappers.AugmentedQuestionDetailMapper;
+import uk.ac.cam.cl.dtg.segue.dao.streams.customMappers.AugmentedQuestionDetailMapper;
 
-import java.util.*;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -135,7 +135,7 @@ public final class DerivedStreams {
                                 .asBoolean()
                 )
 
-                // first map the <string, json> key-value pair into a <string, json> of ({userId}-{questionPartId}, jsonDetails) [the derived value is irrelevant really]
+                // first map the <string, json> key-value pair into a <string, json> of ({userId}-{questionId}, jsonDetails)
                 .map(
                         (userId, loggedEvent) -> {
 
@@ -147,7 +147,7 @@ public final class DerivedStreams {
                             return new KeyValue<>(userId.toLowerCase() + "-" + qPartId.substring(0, qPartId.indexOf("|")), loggedEvent);
                         }
                 )
-                // group by the {userId}-{questionPartId} for all correct attempts at a question part by a user, then count
+                // group by the {userId}-{questionId} for all correct attempts at a question part by a user, then aggregate
                 // this maintains counts for unique user question part attempts
                 .groupByKey(stringSerde, jsonSerde)
                 .aggregate(
@@ -225,18 +225,8 @@ public final class DerivedStreams {
                         "userQuestionAttemptCount"
                 ).toStream()
 
-                /*.count("userQuestionPartCount")
-                .toStream()
-
-                // next need to map the {userId}-{questionPartId} in the previous aggregation into {userId}-{questionId}
-                // then group by the {userId}-{questionId}, and count to obtain question parts answered by user for given questionId, into a <string, long> key-value pair
-                .groupBy(
-                        (userIdQPartId, count) -> userIdQPartId.substring(0, userIdQPartId.indexOf("|")), stringSerde, longSerde
-                )
-                .count("userTotalQuestionCount")
-                .toStream()*/
-
-                // finally map  the ({userId}-{questionId}, count) key-value pair back to a <string, json> of (userId, questionAttemptDetails), where questionAttemptDetails holds info on the questionId and parts attempted by the user
+                // finally map  the ({userId}-{questionId}, questionAttemptDetails) key-value pair back to a <string, json> of (userId, questionAttemptDetails),
+                // where questionAttemptDetails holds the aggregated info on the questionId and parts attempted by the user
                 .map(
                         (userIdQId, jsonDoc) -> new KeyValue<>(userIdQId.substring(0, userIdQId.indexOf("-")), jsonDoc)
                 )
