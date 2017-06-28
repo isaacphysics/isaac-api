@@ -31,7 +31,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-
+// TODO: Get rid of this file altogether!
 /**
  * This class is responsible for injecting configuration values for the school look up service and related classes.
  * 
@@ -47,8 +47,7 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
      */
     public SchoolLookupConfigurationModule() {
         try {
-            globalProperties = new PropertiesLoader("/config/segue-config.properties");
-
+            globalProperties = new PropertiesLoader(System.getProperty("config.location"));
         } catch (IOException e) {
             log.error("Error loading properties file.", e);
         }
@@ -64,7 +63,7 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
      */
     private void configureProperties() {
         // School look up config
-        this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
+
     }
 
     /**
@@ -72,8 +71,6 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
      *
      * We want this to be a singleton as otherwise it may not be threadsafe for loading into same SearchProvider.
      * 
-     * @param schoolListPath
-     *            - The location of the school data.
      * @param provider
      *            - The search provider.
      * @return schoolList reader
@@ -83,10 +80,9 @@ public class SchoolLookupConfigurationModule extends AbstractModule {
     @Inject
     @Provides
     @Singleton
-    private SchoolListReader getSchoolListReader(@Named(Constants.SCHOOL_CSV_LIST_PATH) final String schoolListPath,
-            final ISearchProvider provider) throws IOException {
+    private SchoolListReader getSchoolListReader(final ISearchProvider provider) throws IOException {
         if (null == schoolListReader) {
-            schoolListReader = new SchoolListReader(schoolListPath, provider);
+            schoolListReader = new SchoolListReader(provider);
             log.info("Creating singleton of SchoolListReader");
         }
 

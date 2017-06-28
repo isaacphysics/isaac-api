@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableMap;
 import com.opencsv.CSVWriter;
 import io.swagger.annotations.Api;
 
@@ -45,7 +46,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -330,7 +330,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 return user1.getFamilyName().compareTo(user2.getFamilyName());
             });
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS, Maps.newHashMap());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
+                    ImmutableMap.of(ASSIGNMENT_FK, assignment.getId()));
 
             // get game manager completion information for this assignment.
             return Response.ok(result).cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
@@ -779,9 +780,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             newAssignment.setGroupId(groupId);
 
             // modifies assignment passed in to include an id.
-            this.assignmentManager.createAssignment(newAssignment);
+            AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(newAssignment);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT, Maps.newHashMap());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT,
+                    ImmutableMap.of(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId(),
+                                    GROUP_FK, assignmentWithID.getGroupId(),
+                                    ASSIGNMENT_FK, assignmentWithID.getId()));
 
             return Response.ok(newAssignment).build();
         } catch (NoUserLoggedInException e) {
@@ -839,7 +843,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
             this.assignmentManager.deleteAssignment(assignmentToDelete);
 
-            this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT, Maps.newHashMap());
+            this.getLogManager().logEvent(currentlyLoggedInUser, request, DELETE_ASSIGNMENT,
+                    ImmutableMap.of(ASSIGNMENT_FK, assignmentToDelete.getId()));
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {

@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.configuration;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
@@ -33,18 +34,17 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
@@ -78,13 +78,13 @@ import uk.ac.cam.cl.dtg.segue.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
-import uk.ac.cam.cl.dtg.util.PropertiesManager;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.IPInfoDBLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.api.client.util.Lists;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -94,6 +94,8 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
  * 
@@ -101,14 +103,12 @@ import com.google.inject.name.Names;
 public class SegueGuiceConfigurationModule extends AbstractModule implements ServletContextListener {
     private static final Logger log = LoggerFactory.getLogger(SegueGuiceConfigurationModule.class);
 
-    private static PropertiesLoader configLocationProperties = null;
     private static PropertiesLoader globalProperties = null;
     
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
     private static KafkaStreamsProducer kafkaProducer;
     private static ContentMapper mapper = null;
-    private static ContentVersionController contentVersionController = null;
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
@@ -121,23 +121,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 	private static GroupManager groupManager = null;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
-    private static Reflections reflections = null;
+    private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
     
     /**
      * Create a SegueGuiceConfigurationModule.
      */
     public SegueGuiceConfigurationModule() {
-        if (globalProperties == null || configLocationProperties == null) {
+        if (globalProperties == null) {
             try {
-                if (null == configLocationProperties) {
-                    configLocationProperties = new PropertiesLoader("/config/segue-config-location.properties");
-
-                }
-
-                if (null == globalProperties) {
-                    globalProperties = new PropertiesLoader(
-                            configLocationProperties.getProperty(Constants.GENERAL_CONFIG_LOCATION));
-                }
+                globalProperties = new PropertiesLoader(System.getProperty("config.location"));
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
             }
@@ -182,7 +174,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.IP_INFO_DB_API_KEY, globalProperties);
         
         this.bindConstantToProperty(Constants.SCHOOL_CSV_LIST_PATH, globalProperties);
-        
+
+        this.bindConstantToProperty(CONTENT_INDEX, globalProperties);
     }
 
     /**
@@ -192,14 +185,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *             - when we cannot load the database.
      */
     private void configureDataPersistence() throws IOException {
-        // Setup different persistence bindings
-        // MongoDb - currently not used.
-        this.bindConstantToProperty(Constants.MONGO_DB_HOSTNAME, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_DB_PORT, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_CONNECTIONS_PER_HOST, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_CONNECTION_TIMEOUT, globalProperties);
-        this.bindConstantToProperty(Constants.MONGO_SOCKET_TIMEOUT, globalProperties);
-
         this.bindConstantToProperty(Constants.SEGUE_DB_NAME, globalProperties);
 
         // postgres
@@ -306,8 +291,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             @Named(Constants.SEARCH_CLUSTER_ADDRESS) final String address,
             @Named(Constants.SEARCH_CLUSTER_PORT) final int port) {
         if (null == elasticSearchClient) {
-            elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
-            log.info("Creating singleton of ElasticSearchProvider");
+
+            try {
+                elasticSearchClient = ElasticSearchProvider.getTransportClient(clusterName, address, port);
+                log.info("Creating singleton of ElasticSearchProvider");
+            } catch (UnknownHostException e) {
+                log.error("Could not create ElasticSearchProvider");
+                return null;
+            }
         }
         // eventually we want to do something like the below to make sure we get updated clients
 //        if (elasticSearchClient instanceof TransportClient) {
@@ -321,34 +312,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 //        }
 
         return elasticSearchClient;
-    }
-    
-    /**
-     * This provides a singleton of the contentVersionController for the segue facade.
-     * 
-     * @param generalProperties
-     *            - properties loader
-     * @param contentManager
-     *            - content manager (with associated persistence links).
-     * @return Content version controller with associated dependencies.
-     * @throws IOException
-     *             - if we can't load the properties file for live version.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private static ContentVersionController getContentVersionController(final PropertiesLoader generalProperties,
-            final IContentManager contentManager) throws IOException {
-
-        PropertiesManager versionPropertiesLoader = new PropertiesManager(
-                configLocationProperties.getProperty(Constants.LIVE_VERSION_CONFIG_LOCATION));
-
-        if (null == contentVersionController) {
-            contentVersionController = new ContentVersionController(generalProperties, versionPropertiesLoader,
-                    contentManager);
-            log.info("Creating singleton of ContentVersionController");
-        }
-        return contentVersionController;
     }
 
     /**
@@ -369,9 +332,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static GitContentManager getContentManager(final GitDb database, final ISearchProvider searchProvider,
-            final ContentMapper contentMapper) {
+            final ContentMapper contentMapper, final PropertiesLoader globalProperties) {
         if (null == contentManager) {
-            contentManager = new GitContentManager(database, searchProvider, contentMapper);
+            contentManager = new GitContentManager(database, searchProvider, contentMapper, globalProperties);
             log.info("Creating singleton of ContentManager");
         }
 
@@ -398,12 +361,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static ILogManager getLogManager(final PostgresSqlDb database, final KafkaStreamsProducer kafkaProducer,
             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm) {
         if (null == logManager) {
-            //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
-            
+
             //logManager = new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
 
-            logManager = new PgLogManagerEventListener(new PgLogManager(database, new ObjectMapper(), loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingProducer(kafkaProducer, lhm, new ObjectMapper()));
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
+            logManager.addListener(new KafkaLoggingProducer(kafkaProducer, lhm, objectMapper));
+
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -427,7 +392,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     private static ContentMapper getContentMapper() {
         if (null == mapper) {
-            mapper = new ContentMapper(getReflectionsClass());
+            mapper = new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg.segue"));
             log.info("Creating Singleton of the Content Mapper");
         }
 
@@ -447,7 +412,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            the class the queue will send messages with
      * @param emailPreferenceManager
      * 			- the class providing email preferences
-     * @param contentVersionController
+     * @param contentManager
      * 			- the content so we can access email templates
      * @param authenticator
      * 			- the authenticator
@@ -461,11 +426,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static EmailManager getMessageCommunicationQueue(final IUserDataManager database,
             final PropertiesLoader properties, final EmailCommunicator emailCommunicator,
             final AbstractEmailPreferenceManager emailPreferenceManager,
-            final ContentVersionController contentVersionController, final SegueLocalAuthenticator authenticator,
+            final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
-            				contentVersionController, logManager);
+            				contentManager, logManager);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
@@ -583,14 +548,14 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.toString(),
                     new TokenOwnerLookupMisuseHandler(emailManager, properties));
 
-            misuseMonitor.registerHandler(EmailVerificationMisusehandler.class.toString(),
-                    new EmailVerificationMisusehandler());
+            misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.toString(),
+                    new EmailVerificationMisuseHandler());
 
-            misuseMonitor.registerHandler(EmailVerificationRequestMisusehandler.class.toString(),
-                    new EmailVerificationRequestMisusehandler());
+            misuseMonitor.registerHandler(EmailVerificationRequestMisuseHandler.class.toString(),
+                    new EmailVerificationRequestMisuseHandler());
 
-            misuseMonitor.registerHandler(PasswordResetRequestMisusehandler.class.toString(),
-                    new PasswordResetRequestMisusehandler());
+            misuseMonitor.registerHandler(PasswordResetRequestMisuseHandler.class.toString(),
+                    new PasswordResetRequestMisuseHandler());
 
             misuseMonitor.registerHandler(SegueLoginMisuseHandler.class.toString(),
                     new SegueLoginMisuseHandler(emailManager, properties));
@@ -624,11 +589,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * @return segue version currently running.
      */
     public static String getSegueVersion() {
-        if (configLocationProperties != null) {
-            return configLocationProperties.getProperty(Constants.SEGUE_APP_VERSION);
-        }
-        log.warn("Unable to read segue version property");
-        return "UNKNOWN";
+        return System.getProperty("segue.version");
     }
 
     /**
@@ -697,7 +658,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param schoolManager
      *            - dependency
-     * @param versionManager
+     * @param contentManager
      *            - dependency
      * @param locationHistoryManager
      *            - dependency
@@ -714,11 +675,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static StatisticsManager getStatsManager(final UserAccountManager userManager,
             final ILogManager logManager, final SchoolListReader schoolManager,
-            final ContentVersionController versionManager, final LocationManager locationHistoryManager,
+            final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
             final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager) {
 
         if (null == statsManager) {
-            statsManager = new StatisticsManager(userManager, logManager, schoolManager, versionManager,
+            statsManager = new StatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
                     locationHistoryManager, groupManager, questionManager, gameManager);
             log.info("Created Singleton of Statistics Manager");
 
@@ -757,12 +718,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *
      * @return reflections.
      */
-    public static Reflections getReflectionsClass() {
-        if (null == reflections) {
+    public static Reflections getReflectionsClass(String pkg) {
+        if (!reflections.containsKey(pkg)) {
             log.info("Caching reflections scan on uk.ac.cam.cl.dtg.segue....");
-            reflections = new Reflections("uk.ac.cam.cl.dtg.segue");
+            reflections.put(pkg, new Reflections(pkg));
         }
-        return reflections;
+        return reflections.get(pkg);
     }
 
     /**
@@ -775,10 +736,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == contextListeners) {
             contextListeners = Lists.newArrayList();
 
-            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass()
+            Set<Class<? extends ServletContextListener>> subTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue")
                     .getSubTypesOf(ServletContextListener.class);
 
+            Set<Class<? extends ServletContextListener>> etlSubTypes = getReflectionsClass("uk.ac.cam.cl.dtg.segue.etl")
+                    .getSubTypesOf(ServletContextListener.class);
+
+            subTypes.removeAll(etlSubTypes);
+
             for (Class<? extends ServletContextListener> contextListener : subTypes) {
+
                 contextListeners.add(contextListener);
             }
         }

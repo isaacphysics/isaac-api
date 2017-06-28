@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -42,6 +43,9 @@ import uk.ac.cam.cl.dtg.segue.dto.users.UserSummaryDTO;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * AssignmentManager.
@@ -55,6 +59,7 @@ public class AssignmentManager implements IGroupObserver {
     private final UserAccountManager userManager;
 	private final GameManager gameManager;
     private final UserAssociationManager userAssociationManager;
+    private final PropertiesLoader properties;
 
     /**
      * AssignmentManager.
@@ -75,14 +80,14 @@ public class AssignmentManager implements IGroupObserver {
     @Inject
     public AssignmentManager(final IAssignmentPersistenceManager assignmentPersistenceManager,
             final GroupManager groupManager, final EmailManager emailManager, final UserAccountManager userManager,
-            final GameManager gameManager, final UserAssociationManager userAssociationManager) {
+            final GameManager gameManager, final UserAssociationManager userAssociationManager, final PropertiesLoader properties) {
         this.assignmentPersistenceManager = assignmentPersistenceManager;
         this.groupManager = groupManager;
         this.emailManager = emailManager;
         this.userManager = userManager; 
 		this.gameManager = gameManager;
         this.userAssociationManager = userAssociationManager;
-
+        this.properties = properties;
         groupManager.registerInterestInGroups(this);
     }
 
@@ -166,14 +171,32 @@ public class AssignmentManager implements IGroupObserver {
 				}
 			}
 			
-			
 		} catch (NoUserException e1) {
 			log.error(String.format("Could not find assignment owner (%s) for assignment (%s)", 
 							newAssignment.getOwnerUserId(), newAssignment.getId()));
 		}
-        
+
+		// inform all members of the group that there is now an assignment for them.
         try {
-            emailManager.sendGroupAssignment(users, gameboard);
+            final String gameboardURL = String.format("https://%s/#%s", properties.getProperty(HOST_NAME),
+                    gameboard.getId());
+            final String myAssignmentsURL = String.format("https://%s/assignments",
+                    properties.getProperty(HOST_NAME));
+
+            String gameboardName = gameboard.getId();
+            if (gameboard.getTitle() != null) {
+                gameboardName = gameboard.getTitle();
+            }
+
+            for (RegisteredUserDTO userDTO : users) {
+                emailManager.sendTemplatedEmailToUser(userDTO,
+                        emailManager.getEmailTemplateDTO("email-template-group-assignment"),
+                        ImmutableMap.of("gameboardURL", gameboardURL,
+                                "gameboardName", gameboardName,
+                                "myAssignmentsURL", myAssignmentsURL),
+                        EmailType.ASSIGNMENTS);
+            }
+
         } catch (ContentManagerException e) {
             log.error("Could not send group assignment emails due to content issue", e);
         }
@@ -304,8 +327,11 @@ public class AssignmentManager implements IGroupObserver {
         	RegisteredUserDTO groupOwner = this.userManager.getUserDTOById(group.getOwnerId());
 
             List<AssignmentDTO> existingAssignments = this.getAllAssignmentsSetByUserToGroup(groupOwner, group);
-           
-			emailManager.sendGroupWelcome(user, group, groupOwner, existingAssignments, gameManager);
+
+            emailManager.sendTemplatedEmailToUser(user,
+                    emailManager.getEmailTemplateDTO("email-template-group-welcome"),
+                    this.prepareGroupWelcomeEmailTokenMap(user, group, groupOwner, existingAssignments),
+                    EmailType.SYSTEM);
 
         } catch (ContentManagerException e) {
             log.info(String.format("Could not send group welcome email "), e);
@@ -314,5 +340,72 @@ public class AssignmentManager implements IGroupObserver {
         } catch (SegueDatabaseException e) {
             log.error("Unable to send group welcome e-mail due to a database error. Failing silently.", e);
         }
+    }
+
+    /**
+     * Helper to build up the list of tokens for addToGroup email.
+     *
+     * @param userDTO - identity of user
+     * @param userGroup - group being added to.
+     * @param groupOwner - Owner of the group
+     * @param existingAssignments - Any existing assignments that have been set.
+     * @return a map of string to string, with some values that may want to be shown in the email.
+     * @throws SegueDatabaseException if we can't get the gameboard details.
+     */
+    private Map<String, Object> prepareGroupWelcomeEmailTokenMap(final RegisteredUserDTO userDTO, final UserGroupDTO userGroup,
+                                                                 final RegisteredUserDTO groupOwner,
+                                                                 final List<AssignmentDTO> existingAssignments)
+            throws SegueDatabaseException {
+        Validate.notNull(userDTO);
+        String groupOwnerName = "Unknown";
+
+        if (groupOwner != null && groupOwner.getFamilyName() != null) {
+            groupOwnerName = groupOwner.getFamilyName();
+        }
+
+        if (groupOwner != null && groupOwner.getGivenName() != null && !groupOwner.getGivenName().isEmpty()) {
+            groupOwnerName = groupOwner.getGivenName().substring(0, 1) + ". " + groupOwnerName;
+        }
+
+        if (existingAssignments != null) {
+            Collections.sort(existingAssignments, Comparator.comparing(AssignmentDTO::getCreationDate));
+        }
+
+        final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:mm");
+        StringBuilder htmlSB = new StringBuilder();
+        StringBuilder plainTextSB = new StringBuilder();
+        final String accountURL = String.format("https://%s/account", properties.getProperty(HOST_NAME));
+
+        if (existingAssignments != null && existingAssignments.size() > 0) {
+            htmlSB.append("Your teacher has assigned the following assignments:<br>");
+            plainTextSB.append("Your teacher has assigned the following assignments:\n");
+
+            for (int i = 0; i < existingAssignments.size(); i++) {
+                GameboardDTO gameboard = gameManager.getGameboard(existingAssignments.get(i).getGameboardId());
+                String gameboardName = existingAssignments.get(i).getGameboardId();
+                if (gameboard != null && gameboard.getTitle() != null && !gameboard.getTitle().isEmpty()) {
+                    gameboardName = gameboard.getTitle();
+                }
+
+                String gameboardUrl = String.format("https://%s/#%s",
+                        properties.getProperty(HOST_NAME),
+                        existingAssignments.get(i).getGameboardId());
+
+                htmlSB.append(String.format("%d. <a href='%s'>%s</a> (set on %s)<br>", i + 1, gameboardUrl,
+                        gameboardName, DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
+
+                plainTextSB.append(String.format("%d. %s (set on %s)\n", i + 1, gameboardName,
+                        DATE_FORMAT.format(existingAssignments.get(i).getCreationDate())));
+            }
+        } else if (existingAssignments != null && existingAssignments.size() == 0) {
+            htmlSB.append("No assignments have been set yet.<br>");
+            plainTextSB.append("No assignments have been set yet.\n");
+        }
+
+        return new ImmutableMap.Builder<String, Object>()
+                .put("teacherName", groupOwnerName == null ? "" : groupOwnerName)
+                .put("accountURL", accountURL)
+                .put("assignmentsInfo", plainTextSB.toString())
+                .put("assignmentsInfo_HTML", htmlSB.toString()).build();
     }
 }

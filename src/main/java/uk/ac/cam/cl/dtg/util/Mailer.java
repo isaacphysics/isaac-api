@@ -32,7 +32,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.validation.constraints.Null;
 
-import org.elasticsearch.common.lang3.Validate;
+import org.apache.commons.lang3.Validate;
 
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or

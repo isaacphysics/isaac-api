@@ -44,6 +44,8 @@ public class SegueErrorResponse implements Serializable {
     
     private final String errorMessage;
 
+    private boolean bypassGenericSiteErrorPage = false;
+
     /**
      * Constructor for creating a response with just an error code and string message.
      * 
@@ -115,6 +117,14 @@ public class SegueErrorResponse implements Serializable {
      */
     public final String getErrorMessage() {
         return errorMessage;
+    }
+
+    public final boolean getBypassGenericSiteErrorPage() {
+        return bypassGenericSiteErrorPage;
+    }
+
+    public void setBypassGenericSiteErrorPage(boolean bypassGenericSiteErrorPage) {
+        this.bypassGenericSiteErrorPage = bypassGenericSiteErrorPage;
     }
 
     /**

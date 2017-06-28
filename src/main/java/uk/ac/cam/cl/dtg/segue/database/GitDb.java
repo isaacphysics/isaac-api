@@ -243,7 +243,7 @@ public class GitDb {
 
         // we need to check that the local remote is up to date in order to
         // determine if the commit exists or not.
-        this.pullLatestFromRemote();
+        this.fetchLatestFromRemote();
 
         try {
             Iterable<RevCommit> logs = gitHandle.log().add(ObjectId.fromString(this.getHeadSha())).call();
@@ -336,7 +336,7 @@ public class GitDb {
      * 
      * @return The version id of the latest version after the fetch.
      */
-    public synchronized String pullLatestFromRemote() {
+    public synchronized String fetchLatestFromRemote() {
         try {
             SshSessionFactory factory = new JschConfigSessionFactory() {
                 @Override

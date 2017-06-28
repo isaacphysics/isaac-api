@@ -16,6 +16,8 @@
 package uk.ac.cam.cl.dtg.segue.api;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
+import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 
 import java.util.List;
@@ -33,7 +35,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -306,10 +307,12 @@ public class AuthorisationFacade extends AbstractSegueFacade {
         try {
             RegisteredUserDTO user = userManager.getCurrentRegisteredUser(request);
 
-            associationManager.createAssociationWithToken(token, user);
+            AssociationToken associationToken = associationManager.createAssociationWithToken(token, user);
 
             this.getLogManager().logEvent(user, request, CREATE_USER_ASSOCIATION,
-                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, token));
+                    ImmutableMap.of(ASSOCIATION_TOKEN_FIELDNAME, associationToken.getToken(),
+                                    GROUP_FK, associationToken.getGroupId(),
+                                    USER_ID_FKEY_FIELDNAME, associationToken.getOwnerUserId()));
 
             return Response.ok(new ImmutableMap.Builder<String, String>().put("result", "success").build()).build();
         } catch (SegueDatabaseException e) {

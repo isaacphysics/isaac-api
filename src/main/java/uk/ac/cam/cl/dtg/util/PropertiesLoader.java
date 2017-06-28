@@ -19,9 +19,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Properties;
+import java.util.Set;
 
-import org.elasticsearch.common.lang3.Validate;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +76,12 @@ public class PropertiesLoader {
         }
 
         return value;
+    }
+
+    public Set<String> stringPropertyNames() {
+        Validate.notBlank(propertiesFile, "Property file cannot be null");
+
+        return loadedProperties.stringPropertyNames();
     }
 
     /**

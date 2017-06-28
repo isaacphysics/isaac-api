@@ -19,6 +19,7 @@ import java.util.*;
 
 import javax.annotation.Nullable;
 
+import com.google.inject.name.Named;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.collections4.comparators.ComparatorChain;
@@ -40,11 +41,11 @@ import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dto.*;
 import uk.ac.cam.cl.dtg.segue.api.Constants.BooleanOperator;
 import uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -71,7 +72,8 @@ public class GameManager {
     private final Random randomGenerator;
     private final MapperFacade mapper;
 
-    private final ContentVersionController versionManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     
     private final QuestionManager questionManager;
 
@@ -80,7 +82,7 @@ public class GameManager {
      * 
      * @param questionManager
      *            - so we can resolve game progress / user information.
-     * @param versionManager
+     * @param contentManager
      *            - so we can augment game objects with actual detailed content
      * @param gameboardPersistenceManager
      *            - a persistence manager that deals with storing and retrieving gameboards.
@@ -88,12 +90,13 @@ public class GameManager {
      *            - allows mapping between DO and DTO object types.
      */
     @Inject
-    public GameManager(final ContentVersionController versionManager,
-            final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
-            final QuestionManager questionManager) {
-        this.versionManager = versionManager;
+    public GameManager(final IContentManager contentManager,
+                       final GameboardPersistenceManager gameboardPersistenceManager, final MapperFacade mapper,
+                       final QuestionManager questionManager, @Named(CONTENT_INDEX) final String contentIndex) {
+        this.contentManager = contentManager;
         this.gameboardPersistenceManager = gameboardPersistenceManager;
         this.questionManager = questionManager;
+        this.contentIndex = contentIndex;
 
         this.randomGenerator = new Random();
 
@@ -103,7 +106,7 @@ public class GameManager {
     /**
      * Generate a random gameboard without any filter conditions specified.
      * 
-     * @see #generateRandomGameboard(List, List, List, List, List, AbstractSegueUserDTO)
+     * @see #generateRandomGameboard(String, List, List, List, List, List, AbstractSegueUserDTO)
      * @return gameboard containing random problems.
      * @throws NoWildcardException
      *             - when we are unable to provide you with a wildcard object.
@@ -114,13 +117,16 @@ public class GameManager {
      */
     public final GameboardDTO generateRandomGameboard() throws NoWildcardException, SegueDatabaseException,
             ContentManagerException {
-        return this.generateRandomGameboard(null, null, null, null, null, null);
+        return this.generateRandomGameboard(null, null, null, null, null,
+                null, null);
     }
 
     /**
      * This method expects only one of its 3 subject tag filter parameters to have more than one element due to
      * restrictions on the question filter interface.
-     * 
+     *
+     * @param title
+     *            title of the board
      * @param subjectsList
      *            list of subjects to include in filtered results
      * @param fieldsList
@@ -142,10 +148,10 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    public GameboardDTO generateRandomGameboard(final List<String> subjectsList, final List<String> fieldsList,
-            final List<String> topicsList, final List<Integer> levelsList, final List<String> conceptsList,
-            final AbstractSegueUserDTO boardOwner) throws NoWildcardException, SegueDatabaseException,
-            ContentManagerException {
+    public GameboardDTO generateRandomGameboard(final String title, final List<String> subjectsList,
+            final List<String> fieldsList, final List<String> topicsList, final List<Integer> levelsList,
+            final List<String> conceptsList, final AbstractSegueUserDTO boardOwner) throws NoWildcardException,
+            SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
         if (boardOwner instanceof RegisteredUserDTO) {
@@ -169,9 +175,9 @@ public class GameManager {
             // filter game board ready questions to make up a decent game board.
             log.debug("Created gameboard " + uuid);
 
-            GameboardDTO gameboardDTO = new GameboardDTO(uuid, null, selectionOfGameboardQuestions,
-                    getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter, boardOwnerId,
-                    GameboardCreationMethod.FILTER);
+            GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
+                    getRandomWildcard(mapper, subjectsList), generateRandomWildCardPosition(), new Date(), gameFilter,
+                    boardOwnerId, GameboardCreationMethod.FILTER);
 
             this.gameboardPersistenceManager.temporarilyStoreGameboard(gameboardDTO);
 
@@ -366,16 +372,33 @@ public class GameManager {
                 }
 
                 if (sortInstruction.getKey().equals(CREATED_DATE_FIELDNAME)) {
-                    comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
-                        public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+                    comparatorForSorting.addComparator((o1, o2) -> {
+                        if (o1.getCreationDate().getTime() == o2.getCreationDate().getTime()) {
+                            return 0;
+                        } else {
                             return o1.getCreationDate().getTime() > o2.getCreationDate().getTime() ? -1 : 1;
                         }
                     }, reverseOrder);
                 } else if (sortInstruction.getKey().equals(VISITED_DATE_FIELDNAME)) {
-                    comparatorForSorting.addComparator(new Comparator<GameboardDTO>() {
-                        public int compare(final GameboardDTO o1, final GameboardDTO o2) {
+                    comparatorForSorting.addComparator((o1, o2) -> {
+                        if (o1.getLastVisited().getTime() == o2.getLastVisited().getTime()) {
+                            return 0;
+                        } else {
                             return o1.getLastVisited().getTime() > o2.getLastVisited().getTime() ? -1 : 1;
                         }
+                    }, reverseOrder);
+                }  else if (sortInstruction.getKey().equals(TITLE_FIELDNAME)) {
+                    comparatorForSorting.addComparator((o1, o2) -> {
+                        if (o1.getTitle() == null && o2.getTitle() == null) {
+                            return 0;
+                        }
+                        if (o1.getTitle() == null) {
+                            return 1;
+                        }
+                        if (o2.getTitle() == null) {
+                            return -1;
+                        }
+                        return o1.getTitle().compareTo(o2.getTitle());
                     }, reverseOrder);
                 }
             }
@@ -663,8 +686,8 @@ public class GameManager {
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
 
-        ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager().findByFieldNames(
-                versionManager.getLiveVersion(), fieldsToMap, 0, -1, sortInstructions);
+        ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNames(
+                this.contentIndex, fieldsToMap, 0, -1, sortInstructions);
 
         if (wildcardResults.getTotalResults() == 0) {
             throw new NoWildcardException();
@@ -696,8 +719,8 @@ public class GameManager {
         Validate.notBlank(questionPageId);
 
         // go through each question in the question page
-        ResultsWrapper<ContentDTO> listOfQuestions = versionManager.getContentManager().getByIdPrefix(
-                versionManager.getLiveVersion(), questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
+        ResultsWrapper<ContentDTO> listOfQuestions = this.contentManager.getByIdPrefix(
+                this.contentIndex, questionPageId + ID_SEPARATOR, 0, NO_SEARCH_LIMIT);
         
         return this.filterQuestionParts(listOfQuestions.getResults());
     }
@@ -717,7 +740,7 @@ public class GameManager {
         Validate.notBlank(questionPageId);
 
         // do a depth first traversal of the question page to get the correct order of questions
-        ContentDTO questionPage = versionManager.getContentManager().getContentById(versionManager.getLiveVersion(),
+        ContentDTO questionPage = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(),
                 questionPageId);
         List<ContentDTO> dfs = Lists.newArrayList();
         dfs = depthFirstQuestionSearch(questionPage, dfs);
@@ -903,13 +926,13 @@ public class GameManager {
             final Long randomSeed) throws ContentManagerException {
         // get some questions
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(QUESTION_TYPE));
+        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(QUESTION_TYPE));
         fieldsToMap.putAll(generateFieldToMatchForQuestionFilter(gameFilter));
 
         // Search for questions that match the fields to map variable.
 
-        ResultsWrapper<ContentDTO> results = versionManager.getContentManager().findByFieldNamesRandomOrder(
-                versionManager.getLiveVersion(), fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
+        ResultsWrapper<ContentDTO> results = this.contentManager.findByFieldNamesRandomOrder(
+                this.contentIndex, fieldsToMap, index, MAX_QUESTIONS_TO_SEARCH, randomSeed);
 
         List<ContentDTO> questionsForGameboard = results.getResults();
 
@@ -955,13 +978,13 @@ public class GameManager {
         Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
         Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
 
-        if (questionAttemptsFromUser != null && questionAttemptsFromUser.containsKey(questionPageId)) {
+        if (questionAttemptsFromUser.containsKey(questionPageId)) {
             // get all questions in the question page: depends on each question
             // having an id that starts with the question page id.
 
             // Get the pass mark for the question page
-            IsaacQuestionPage questionPage = (IsaacQuestionPage) versionManager.getContentManager().getContentDOById(
-                    versionManager.getLiveVersion(), questionPageId);
+            IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(
+                    this.contentManager.getCurrentContentSHA(), questionPageId);
             
             if (null == questionPage) {
                 throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
@@ -1081,8 +1104,8 @@ public class GameManager {
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
         // FIXME - the 999 is a magic number because using NO_SEARCH_LIMIT doesn't work for all elasticsearch queries!
-        ResultsWrapper<ContentDTO> wildcardResults = versionManager.getContentManager().findByFieldNamesRandomOrder(
-                versionManager.getLiveVersion(), fieldsToMap, 0, 999);
+        ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNamesRandomOrder(
+                this.contentIndex, fieldsToMap, 0, 999);
 
         // try to increase randomness of wildcard results.
         Collections.shuffle(wildcardResults.getResults());
@@ -1129,11 +1152,10 @@ public class GameManager {
     private IsaacWildcard getWildCardById(final String id) throws NoWildcardException, ContentManagerException {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Arrays.asList(id));
-        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Arrays.asList(WILDCARD_TYPE));
+        fieldsToMap.put(immutableEntry(BooleanOperator.AND, ID_FIELDNAME), Collections.singletonList(id));
+        fieldsToMap.put(immutableEntry(BooleanOperator.AND, TYPE_FIELDNAME), Collections.singletonList(WILDCARD_TYPE));
 
-        Content wildcardResults = versionManager.getContentManager().getContentDOById(versionManager.getLiveVersion(),
-                id);
+        Content wildcardResults = this.contentManager.getContentDOById(this.contentManager.getCurrentContentSHA(), id);
 
         return mapper.map(wildcardResults, IsaacWildcard.class);
     }

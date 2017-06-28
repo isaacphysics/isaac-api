@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import uk.ac.cam.cl.dtg.segue.dao.TrimWhitespaceListDeserializer;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 
@@ -35,6 +36,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 @DTOMapping(ContentDTO.class)
 @JsonContentType("content")
+@JsonIgnoreProperties({ "_id" })
 public class Content extends ContentBase {
     protected String title;
     protected String subtitle;
@@ -50,7 +52,7 @@ public class Content extends ContentBase {
     protected Integer level;
 
     @JsonCreator
-    public Content(@JsonProperty("_id") String _id, @JsonProperty("id") String id, @JsonProperty("title") String title,
+    public Content(@JsonProperty("id") String id, @JsonProperty("title") String title,
             @JsonProperty("subtitle") String subtitle, @JsonProperty("type") String type,
             @JsonProperty("author") String author, @JsonProperty("encoding") String encoding,
             @JsonProperty("canonicalSourceFile") String canonicalSourceFile, @JsonProperty("layout") String layout,
@@ -58,7 +60,6 @@ public class Content extends ContentBase {
             @JsonProperty("attribution") String attribution,
             @JsonProperty("relatedContent") List<String> relatedContent, @JsonProperty("published") Boolean published,
             @JsonProperty("tags") Set<String> tags, @JsonProperty("level") Integer level) {
-        this._id = _id;
         this.id = id;
         this.title = title;
         this.subtitle = subtitle;

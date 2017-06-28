@@ -22,13 +22,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.collect.Maps;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
 import org.apache.commons.lang3.Validate;
-import org.elasticsearch.common.collect.Maps;
 import org.mongojack.internal.MongoJackModule;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -134,8 +134,6 @@ public class ContentMapper {
      * @param docJson
      *            - to load
      * @return A Content object or one of its registered sub classes
-     * @throws JsonParseException
-     * @throws JsonMappingException
      * @throws IOException
      *             - if there is a problem with IO
      */

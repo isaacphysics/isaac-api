@@ -1,0 +1,25 @@
+version: '2'
+services:
+  etl:
+    container_name: etl
+    image: docker.isaacscience.org/etl
+    build:
+      context: ./
+      dockerfile: Dockerfile-ETL
+    ports:
+      - "10.3.2.1:8090:8090"
+    volumes:
+      - /local/data/m2:/root/.m2:rw
+      - /local/data/isaac-config/segue-config.live.properties:/local/data/rutherford/conf/segue-config.properties:ro
+      - /local/data/isaac-config/content_indices.properties:/local/data/rutherford/conf/content_indices.properties:rw
+      - /local/data/rutherford-content:/local/data/rutherford/git-contentstore/rutherford-content:rw
+      - /local/data/keys:/local/data/rutherford/keys:ro
+      - /local/data/school_list_2016.csv:/local/data/rutherford/school_list_2016.csv:ro
+    extra_hosts:
+      - elasticsearch:$LOCAL_ELASTICSEARCH
+
+
+networks:
+  default:
+    external:
+      name: isaac

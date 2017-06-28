@@ -31,25 +31,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * deserialized using a custom serializer (ContentBaseDeserializer).
  */
 public abstract class ContentBase {
-    // this is a legacy field used for mongodb indexing
-    protected String _id;
+
     protected String id;
     protected String type;
     protected Set<String> tags;
     protected String canonicalSourceFile;
     protected String version;
-
-    @JsonProperty("_id")
-    @ObjectId
-    public String get_id() {
-        return _id;
-    }
-
-    @JsonProperty("_id")
-    @ObjectId
-    public void set_id(String _id) {
-        this._id = _id;
-    }
 
     public String getId() {
         return id;

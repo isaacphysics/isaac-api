@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015 Alistair Stead
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,16 +45,16 @@ import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisusehandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisusehandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -72,6 +74,8 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+
 /**
  * An email facade front end.
  *
@@ -85,7 +89,8 @@ public class EmailFacade extends AbstractSegueFacade {
     
     private final EmailManager emailManager;
     private final UserAccountManager userManager;
-    private final ContentVersionController versionManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     private final IMisuseMonitor misuseMonitor;
     private final AbstractEmailPreferenceManager emailPreferenceManager;
 
@@ -102,7 +107,7 @@ public class EmailFacade extends AbstractSegueFacade {
      *            - so we can provide email preferences
      * @param userManager
      *            - so we can look up users and verify permissions..
-     * @param contentVersionController
+     * @param contentManager
      *            - so we can look up email to send.
      * @param misuseMonitor
      *            - misuse monitor.
@@ -110,10 +115,11 @@ public class EmailFacade extends AbstractSegueFacade {
     @Inject
     public EmailFacade(final PropertiesLoader properties, final ILogManager logManager,
             final EmailManager emailManager, final UserAccountManager userManager,
-            final ContentVersionController contentVersionController,
-            final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
+                       final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                       final AbstractEmailPreferenceManager emailPreferenceManager, final IMisuseMonitor misuseMonitor) {
 		super(properties, logManager);
-		this.versionManager = contentVersionController;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
 		this.emailManager = emailManager;
 		this.userManager = userManager;
         this.emailPreferenceManager = emailPreferenceManager;
@@ -180,17 +186,12 @@ public class EmailFacade extends AbstractSegueFacade {
 		} catch (NoUserLoggedInException e2) {
     		return SegueErrorResponse.getNotLoggedInResponse();
 		}
-    	
-        String newVersion = versionManager.getLiveVersion();
 
-
-        ContentDTO c = null;
+        ContentDTO c;
 
         // Deserialize object into POJO of specified type, provided one exists.
         try {
-
-            IContentManager contentPersistenceManager = versionManager.getContentManager();
-            c = contentPersistenceManager.getContentById(newVersion, id);
+            c = this.contentManager.getContentById(this.contentManager.getCurrentContentSHA(), id);
 
             if (null == c) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "No content found with id: " + id);
@@ -210,7 +211,7 @@ public class EmailFacade extends AbstractSegueFacade {
             return error.toResponse();
         } 
         
-        EmailTemplateDTO emailTemplateDTO = null;
+        EmailTemplateDTO emailTemplateDTO;
 
         if (c instanceof EmailTemplateDTO) {
             emailTemplateDTO = (EmailTemplateDTO) c;
@@ -221,25 +222,28 @@ public class EmailFacade extends AbstractSegueFacade {
         }
         
 		try {
-            String htmlTemplatePreview = this.emailManager.getHTMLTemplatePreview(emailTemplateDTO, currentUser);
-            String plainTextTemplatePreview = this.emailManager.getPlainTextTemplatePreview(emailTemplateDTO,
-                    currentUser);
-			
-			
-			HashMap<String, String> previewMap = Maps.newHashMap();
+            Properties previewProperties = new Properties();
+            // Add all properties in the user DTO (preserving types) so they are available to email templates.
+            Map userPropertiesMap = new org.apache.commons.beanutils.BeanMap(currentUser);
+            previewProperties.putAll(emailManager.flattenTokenMap(userPropertiesMap, Maps.newHashMap(), ""));
+
+            //TODO: backwards compat - fix content so that case is correct.
+            previewProperties.put("givenname", currentUser.getGivenName() == null ? "" : currentUser.getGivenName());
+            previewProperties.put("familyname", currentUser.getFamilyName() == null ? "" : currentUser.getFamilyName());
+
+            EmailCommunicationMessage ecm = this.emailManager.constructMultiPartEmail(currentUser.getId(),
+                    currentUser.getEmail(), emailTemplateDTO, previewProperties, EmailType.SYSTEM);
+
+            HashMap<String, String> previewMap = Maps.newHashMap();
             previewMap.put("subject", emailTemplateDTO.getSubject());
-			previewMap.put("html", htmlTemplatePreview);
-			previewMap.put("plainText", plainTextTemplatePreview);
+			previewMap.put("html", ecm.getHTMLMessage());
+			previewMap.put("plainText", ecm.getPlainTextMessage());
+
 			return Response.ok(previewMap).build();
 		} catch (ResourceNotFoundException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
             						"Content could not be found: " + id);
             log.warn(error.getErrorMessage());
-            return error.toResponse();
-		} catch (SegueDatabaseException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, 
-            						"SegueDatabaseException during creation of email preview: " + id);
-            log.error(error.getErrorMessage());
             return error.toResponse();
 		} catch (ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, 
@@ -252,7 +256,6 @@ public class EmailFacade extends AbstractSegueFacade {
 	        log.info(error.getErrorMessage());
 	        return error.toResponse();
 		}
-
     }
     
     /**
@@ -338,7 +341,7 @@ public class EmailFacade extends AbstractSegueFacade {
             @PathParam("newemail") final String newemail, @PathParam("token") final String token) {
 
         try {
-            misuseMonitor.notifyEvent(newemail, EmailVerificationMisusehandler.class.toString());
+            misuseMonitor.notifyEvent(newemail, EmailVerificationMisuseHandler.class.toString());
             userManager.processEmailVerification(userid, newemail, token);
 
             // assume that if there are no exceptions that it worked.
@@ -353,7 +356,7 @@ public class EmailFacade extends AbstractSegueFacade {
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
-            log.error(String.format("Invalid email token request"));
+            log.error("Invalid email token request");
             return error.toResponse();
         }
     }
@@ -375,8 +378,7 @@ public class EmailFacade extends AbstractSegueFacade {
     public Response generateEmailVerificationToken(@PathParam("email") final String email,
             @Context final HttpServletRequest request) {
         try {
-
-            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisusehandler.class.toString());
+            misuseMonitor.notifyEvent(email, EmailVerificationRequestMisuseHandler.class.toString());
 
             userManager.emailVerificationRequest(request, email);
 
@@ -385,12 +387,7 @@ public class EmailFacade extends AbstractSegueFacade {
                     ImmutableMap.of(Constants.LOCAL_AUTH_EMAIL_VERIFICATION_TOKEN_FIELDNAME, email));
 
             return Response.ok().build();
-        } catch (CommunicationException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                    "Error sending verification message.", e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
+        } catch (CommunicationException | NoSuchAlgorithmException | InvalidKeySpecException | SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Error sending verification message.", e);
             log.error(error.getErrorMessage(), e);
@@ -404,18 +401,18 @@ public class EmailFacade extends AbstractSegueFacade {
     }
 
     /**
-     * sendEmails returns the valid email preferences.
-     * 
-     * This method will return serialised html that displays an email object
-     * 
+     * SendEmails
+     *
+     * Send emails to all users of specified roles if their email preferences allow it.
+     *
      * @param request
      *            - so that we can allow only logged in users to view their own data.
      * @param contentId
      *            - of the e-mail to send
      * @param emailTypeInt
      *            - the type of e-mail that is being sent.
-     * @param users
-     *            - string of user type to boolean (i.e. whether or not to send to this type)
+     * @param roles
+     *            - string of user roles to boolean (i.e. whether or not to send to this type)
      * @return Response object containing the serialized content object. (with no levels of recursion into the content)
      */
     @POST
@@ -426,42 +423,31 @@ public class EmailFacade extends AbstractSegueFacade {
     public final Response sendEmails(@Context final HttpServletRequest request,
 		    		@PathParam("contentid") final String contentId, 
 		    		@PathParam("emailtype") final Integer emailTypeInt, 
-		    		final Map<String, Boolean> users) {
-    	RegisteredUserDTO sender;
-    	
-		try {
-			sender = this.userManager.getCurrentRegisteredUser(request);
-			
-			if (!isUserAnAdmin(userManager, request)) {
-			    return SegueErrorResponse.getIncorrectRoleResponse();
-			}
-			
-		} catch (NoUserLoggedInException e2) {
-    		return SegueErrorResponse.getNotLoggedInResponse();
-		}
-
+		    		final Map<String, Boolean> roles) {
 		EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
-
 		List<RegisteredUserDTO> allSelectedUsers =  Lists.newArrayList();
 		
 		try {
-    		for (String key : users.keySet()) {
+            RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
+            if (!isUserAnAdmin(userManager, request)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
+    		for (String key : roles.keySet()) {
 				RegisteredUserDTO prototype = new RegisteredUserDTO();
 				List<RegisteredUserDTO> selectedUsers = Lists.newArrayList();
     			
                 Role inferredRole = Role.valueOf(key);
-                Boolean userGroupSelected = users.get(key);
+                Boolean userGroupSelected = roles.get(key);
 
                 if (null == userGroupSelected || !userGroupSelected) {
                     continue;
                 }
 
-                if (inferredRole != null) {
-                    prototype.setRole(inferredRole);
-		    		selectedUsers = this.userManager.findUsers(prototype);
-		    		allSelectedUsers.addAll(selectedUsers);
-    			}
-    		}
+                prototype.setRole(inferredRole);
+                selectedUsers = this.userManager.findUsers(prototype);
+                allSelectedUsers.addAll(selectedUsers);
+            }
     		
     		if (allSelectedUsers.size() == 0) {
                 SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
@@ -471,7 +457,6 @@ public class EmailFacade extends AbstractSegueFacade {
     		}
     		
 			emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
-		
 		} catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error processing your request.");
@@ -479,13 +464,15 @@ public class EmailFacade extends AbstractSegueFacade {
 			return error.toResponse();
         } catch (IllegalArgumentException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                    "An unknown type of user was supplied.");
+                    "An unknown type of role was supplied.");
             log.debug(error.getErrorMessage());
         } catch (ContentManagerException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error retrieving content.");
 			log.debug(error.getErrorMessage());
-		}
+		} catch (NoUserLoggedInException e2) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
     	
 		return Response.ok().build();
     }
@@ -513,24 +500,15 @@ public class EmailFacade extends AbstractSegueFacade {
     public final Response sendEmailsToUserIds(@Context final HttpServletRequest request,
             @PathParam("contentid") final String contentId, @PathParam("emailtype") final Integer emailTypeInt,
             final List<Long> userIds) {
-        RegisteredUserDTO sender;
+        EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
+        List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
 
         try {
-            sender = this.userManager.getCurrentRegisteredUser(request);
-
+            RegisteredUserDTO sender = this.userManager.getCurrentRegisteredUser(request);
             if (!isUserAnAdmin(userManager, request)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-        } catch (NoUserLoggedInException e2) {
-            return SegueErrorResponse.getNotLoggedInResponse();
-        }
-
-        EmailType emailType = EmailType.mapIntToPreference(emailTypeInt);
-
-        List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
-
-        try {
             for (Long userId : userIds) {
                 RegisteredUserDTO userDTO = this.userManager.getUserDTOById(userId);
                 if (userDTO != null) {
@@ -548,7 +526,6 @@ public class EmailFacade extends AbstractSegueFacade {
             }
 
             emailManager.sendCustomEmail(sender, contentId, allSelectedUsers, emailType);
-
         } catch (NoUserException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
                     "One or more userId(s) did not map to a valid user!.");
@@ -567,9 +544,10 @@ public class EmailFacade extends AbstractSegueFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "There was an error retrieving content.");
             log.debug(error.getErrorMessage());
+        } catch (NoUserLoggedInException e2) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
 
         return Response.ok().build();
     }
-
 }

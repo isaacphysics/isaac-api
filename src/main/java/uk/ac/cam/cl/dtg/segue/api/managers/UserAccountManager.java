@@ -31,6 +31,9 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
@@ -92,6 +96,7 @@ public class UserAccountManager {
     private final Cache<String, AnonymousUser> temporaryUserCache;
     private final Map<AuthenticationProvider, IAuthenticator> registeredAuthProviders;
     private final UserAuthenticationManager userAuthenticationManager;
+    private final PropertiesLoader properties;
 
     /**
      * Create an instance of the user manager class.
@@ -153,6 +158,8 @@ public class UserAccountManager {
         Validate.notNull(properties.getProperty(HMAC_SALT));
         Validate.notNull(Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS)));
         Validate.notNull(properties.getProperty(HOST_NAME));
+
+        this.properties = properties;
 
         this.database = database;
         this.questionAttemptDb = questionDb;
@@ -286,7 +293,13 @@ public class UserAccountManager {
             segueUserDTO.setFirstLogin(true);
             
             try {
-                emailManager.sendFederatedRegistrationConfirmation(segueUserDTO, provider);
+                ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider",
+                         provider.toLowerCase());
+
+                emailManager.sendTemplatedEmailToUser(segueUserDTO,
+                        emailManager.getEmailTemplateDTO("email-template-registration-confirmation-federated"),
+                        emailTokens, EmailType.SYSTEM);
+
             } catch (ContentManagerException e) {
                 log.error("Registration email could not be sent due to content issue: " + e.getMessage());
             }
@@ -653,7 +666,14 @@ public class UserAccountManager {
         // send an email confirmation and set up verification
         try {
         	RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
-            emailManager.sendRegistrationConfirmation(userToReturnDTO, userToReturn.getEmailVerificationToken());
+
+            ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL",
+                    generateEmailVerificationURL(userToReturnDTO, userToReturn.getEmailVerificationToken()));
+
+            emailManager.sendTemplatedEmailToUser(userToReturnDTO,
+                    emailManager.getEmailTemplateDTO("email-template-registration-confirmation"),
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         } catch (NoUserException e) {
@@ -673,7 +693,7 @@ public class UserAccountManager {
     /**
      * Method to update a user object in our database.
      * 
-     * @param user
+     * @param updatedUser
      *            - the user to update - must contain a user id
      * @throws InvalidPasswordException
      *             - the password provided does not meet our requirements.
@@ -686,48 +706,49 @@ public class UserAccountManager {
      *             - if there is a problem locating the authentication provider. This only applies for changing a
      *             password.
      */
-    public RegisteredUserDTO updateUserObject(final RegisteredUser user) throws InvalidPasswordException,
+    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
-        Validate.notNull(user.getId());
+        Validate.notNull(updatedUser.getId());
         MapperFacade mapper = this.dtoMapper;
 
         // We want to map to DTO first to make sure that the user cannot
         // change fields that aren't exposed to them
-        RegisteredUserDTO userDTOContainingUpdates = mapper.map(user, RegisteredUserDTO.class);
-        if (user.getId() == null) {
+        RegisteredUserDTO userDTOContainingUpdates = mapper.map(updatedUser, RegisteredUserDTO.class);
+        if (updatedUser.getId() == null) {
             throw new IllegalArgumentException(
                     "The user object specified has an id. Users cannot be updated without a specific id already set.");
         }
 
         // This is an update operation.
-        final RegisteredUser existingUser = this.findUserById(user.getId());
+        final RegisteredUser existingUser = this.findUserById(updatedUser.getId());
         // userToSave = existingUser;
 
         // Check that the user isn't trying to take an existing users e-mail.
-        if (this.findUserByEmail(user.getEmail()) != null && !existingUser.getEmail().equals(user.getEmail())) {
+        if (this.findUserByEmail(updatedUser.getEmail()) != null && !existingUser.getEmail().equals(updatedUser.getEmail())) {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
         }
 
         // Send a new verification email if the user has changed their email
-        if (!existingUser.getEmail().equals(user.getEmail())) {
+        if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
 
             IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                     .get(AuthenticationProvider.SEGUE);
 
             try {
-                authenticator.createEmailVerificationTokenForUser(existingUser, user.getEmail());
-            } catch (NoSuchAlgorithmException e1) {
-                log.error("Creation of email verification token failed: " + e1.getMessage());
-            } catch (InvalidKeySpecException e1) {
+                authenticator.createEmailVerificationTokenForUser(existingUser, updatedUser.getEmail());
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
                 log.error("Creation of email verification token failed: " + e1.getMessage());
             }
 
             log.info(String.format("Sending email for email address change for user (%s)"
-                    + " from email (%s) to email (%s)", user.getId(), 
-                    existingUser.getEmail(), user.getEmail()));
+                    + " from email (%s) to email (%s)", updatedUser.getId(),
+                    existingUser.getEmail(), updatedUser.getEmail()));
             try {
             	RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
-                this.emailManager.sendEmailVerificationChange(existingUserDTO, user);
+                emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                        emailManager.getEmailTemplateDTO("email-verification-change"),
+                        ImmutableMap.of("requestedemail", updatedUser.getEmail()), EmailType.SYSTEM);
+
             } catch (ContentManagerException | NoUserException e) {
                 log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
 			}
@@ -737,13 +758,22 @@ public class UserAccountManager {
         // Send a welcome email if the user has become a teacher
         try {
             RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
-            if (user.getRole() != existingUser.getRole()) {
-                switch (user.getRole()) {
+            if (updatedUser.getRole() != existingUser.getRole()) {
+                //TODO: refactor and just use updateUserRole method for the below
+                switch (updatedUser.getRole()) {
                     case TEACHER:
-                        this.emailManager.sendTeacherWelcome(existingUserDTO);
+                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
+                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                        "newrole", updatedUser.getRole().toString()),
+                                EmailType.SYSTEM);
                         break;
                     default:
-                        this.emailManager.sendRoleChange(existingUserDTO, user.getRole());
+                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                                emailManager.getEmailTemplateDTO("email-template-default-role-change"),
+                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                        "newrole", updatedUser.getRole().toString()),
+                                EmailType.SYSTEM);
                         break;
                 }
             }
@@ -759,15 +789,15 @@ public class UserAccountManager {
         userToSave.setRegistrationDate(existingUser.getRegistrationDate());
         userToSave.setLastUpdated(new Date());
 
-        if (user.getSchoolId() == null && existingUser.getSchoolId() != null) {
+        if (updatedUser.getSchoolId() == null && existingUser.getSchoolId() != null) {
             userToSave.setSchoolId(null);
         }
         // Correctly remove school_other when it is set to be the empty string:
-        if (user.getSchoolOther() == null || user.getSchoolOther().isEmpty()) {
+        if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
             userToSave.setSchoolOther(null);
         }
         
-        this.userAuthenticationManager.checkForSeguePasswordChange(user, userToSave);
+        this.userAuthenticationManager.checkForSeguePasswordChange(updatedUser, userToSave);
 
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
@@ -782,26 +812,18 @@ public class UserAccountManager {
         if (!userToSave.getEmail().equals(existingUser.getEmail())) {
             try {
                 RegisteredUserDTO userToSaveDTO = mapper.map(userToSave, RegisteredUserDTO.class);
-                this.emailManager.sendEmailVerification(userToSaveDTO, userToSave.getEmailVerificationToken());
+
+                Map<String, Object> emailTokens = ImmutableMap.of("verificationURL",
+                        this.generateEmailVerificationURL(userToSaveDTO, userToSave.getEmailVerificationToken()));
+
+                emailManager.sendTemplatedEmailToUser(userToSaveDTO,
+                        emailManager.getEmailTemplateDTO("email-template-email-verification"),
+                        emailTokens, EmailType.SYSTEM);
+
             } catch (ContentManagerException e) {
                 log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
-            } catch (NoUserException e) {
-                log.debug("ContentManagerException during sendEmailVerification " + e.getMessage());
-			}
+            }
             userToSave.setEmail(existingUser.getEmail());
-        }
-
-        // If the school has changed, update it. Check this using Objects.equals() to be null safe!
-        if (!Objects.equals(userToSave.getSchoolId(), existingUser.getSchoolId())
-                || !Objects.equals(userToSave.getSchoolOther(), existingUser.getSchoolOther())) {
-            LinkedHashMap<String, String> eventDetails = new LinkedHashMap<>();
-            eventDetails.put("oldSchoolId", existingUser.getSchoolId());
-            eventDetails.put("newSchoolId", userToSave.getSchoolId());
-            eventDetails.put("oldSchoolOther", existingUser.getSchoolOther());
-            eventDetails.put("newSchoolOther", userToSave.getSchoolOther());
-
-            logManager.logInternalEvent(this.convertUserDOToUserDTO(userToSave), Constants.USER_SCHOOL_CHANGE,
-                    eventDetails);
         }
 
         // save the user
@@ -828,10 +850,18 @@ public class UserAccountManager {
             if (userToSave.getRole() != requestedRole) {
                 switch (requestedRole) {
                     case TEACHER:
-                        this.emailManager.sendTeacherWelcome(existingUserDTO);
+                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                                emailManager.getEmailTemplateDTO("email-template-teacher-welcome"),
+                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                        "newrole", requestedRole.toString()),
+                                EmailType.SYSTEM);
                         break;
                     default:
-                        this.emailManager.sendRoleChange(existingUserDTO, requestedRole);
+                        emailManager.sendTemplatedEmailToUser(existingUserDTO,
+                                emailManager.getEmailTemplateDTO("email-template-default-role-change"),
+                                ImmutableMap.of("oldrole", existingUserDTO.getRole().toString(),
+                                        "newrole", requestedRole.toString()),
+                                EmailType.SYSTEM);
                         break;
                 }
             }
@@ -962,11 +992,18 @@ public class UserAccountManager {
         log.info(String.format("Sending password reset message to %s", user.getEmail()));
         try {
         	RegisteredUserDTO userDTO = this.getUserDTOById(user.getId());
-            this.emailManager.sendEmailVerification(userDTO, user.getEmailVerificationToken());
+
+        	Map<String, Object> emailTokens = ImmutableMap.of("verificationURL",
+                    this.generateEmailVerificationURL(userDTO, user.getEmailVerificationToken()));
+
+            emailManager.sendTemplatedEmailToUser(userDTO,
+                    emailManager.getEmailTemplateDTO("email-template-email-verification"),
+                    emailTokens, EmailType.SYSTEM);
+
         } catch (ContentManagerException e) {
             log.debug("ContentManagerException " + e.getMessage());
         } catch (NoUserException e) {
-            log.debug("ContentManagerException " + e.getMessage());
+            log.debug("NoUserException " + e.getMessage());
 		}
     }
 
@@ -1282,6 +1319,13 @@ public class UserAccountManager {
             throw new NoUserException();
         }
 
+        // since the federated providers didn't always provide email addresses - we have to check and update accordingly.
+        if (!localUserInformation.getEmail().contains("@") &&
+                !EmailVerificationStatus.DELIVERY_FAILED.equals(localUserInformation.getEmailVerificationStatus())) {
+           this.updateUserEmailVerificationStatus(localUserInformation.getEmail(),
+                   EmailVerificationStatus.DELIVERY_FAILED);
+        }
+
         logManager.logInternalEvent(this.convertUserDOToUserDTO(localUserInformation), Constants.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", federatedAuthenticator.name())
                         .build());
@@ -1436,5 +1480,22 @@ public class UserAccountManager {
         }
     }
 
+    /**
+     * @param userDTO
+     * @param emailVerificationToken
+     * @return
+     */
+    private String generateEmailVerificationURL(final RegisteredUserDTO userDTO, final String emailVerificationToken) {
+        final int TRUNCATED_TOKEN_LENGTH = 5;
+
+        List<NameValuePair> urlParamPairs = Lists.newArrayList();
+        urlParamPairs.add(new BasicNameValuePair("userid", userDTO.getId().toString()));
+        urlParamPairs.add(new BasicNameValuePair("email", userDTO.getEmail().toString()));
+        urlParamPairs.add(new BasicNameValuePair("token", emailVerificationToken.substring(0,
+                TRUNCATED_TOKEN_LENGTH)));
+        String urlParams = URLEncodedUtils.format(urlParamPairs, "UTF-8");
+
+        return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
+    }
 
 }

@@ -27,6 +27,8 @@ import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuantityDTO;
 import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+
 /**
  * DTO for isaacNumericQuestions.
  * 
@@ -35,7 +37,8 @@ import uk.ac.cam.cl.dtg.segue.quiz.ValidatesWith;
 @ValidatesWith(IsaacNumericValidator.class)
 public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
     private Boolean requireUnits;
-    private Integer significantFigures;
+    private Integer significantFiguresMin;
+    private Integer significantFiguresMax;
     private List<String> availableUnits;
 
     /**
@@ -102,23 +105,49 @@ public class IsaacNumericQuestionDTO extends IsaacQuestionBaseDTO {
     }
 
     /**
-     * Gets the significantFigures.
-     * 
-     * @return the significantFigures
+     * Gets the minimum allowed number of significant figures.
+     *
+     * @return the number of sig figs.
      */
     @JsonIgnore
-    public Integer getSignificantFigures() {
-        return significantFigures;
+    public int getSignificantFiguresMin() {
+        if (null == significantFiguresMin) {
+            return NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+        }
+        return significantFiguresMin;
     }
 
     /**
-     * Sets the significantFigures.
-     * 
+     * Sets the minimum allowed number of significant figures.
+     *
      * @param significantFigures
-     *            the significantFigures to set
+     *            - minimum allowed number of significant figures
      */
-    public void setSignificantFigures(final Integer significantFigures) {
-        this.significantFigures = significantFigures;
+    public void setSignificantFiguresMin(final Integer significantFigures) {
+        this.significantFiguresMin = significantFigures;
+    }
+
+    /**
+     * Gets the maximum allowed number of significant figures.
+     *
+     * @return the maximum allowed number of sig figs.
+     */
+    @JsonIgnore
+    public int getSignificantFiguresMax() {
+        if (null == significantFiguresMax) {
+            return NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES;
+        }
+        return significantFiguresMax;
+    }
+
+    /**
+     * Sets the maximum allowed number of significant figures.
+     *
+     * @param significantFigures
+     *            - maximum allowed number of significant figures
+     */
+    public void setSignificantFiguresMax(final Integer significantFigures) {
+        this.significantFiguresMax = significantFigures;
     }
 
     // stop the answer being returned for this type of question

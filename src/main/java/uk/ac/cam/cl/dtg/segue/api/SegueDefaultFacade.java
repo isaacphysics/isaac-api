@@ -33,7 +33,6 @@ import org.jboss.resteasy.annotations.cache.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.configuration.ISegueDTOConfigurationModule;
@@ -77,7 +76,7 @@ public class SegueDefaultFacade extends AbstractSegueFacade {
     @Inject
     public SegueDefaultFacade(final PropertiesLoader properties, final ContentMapper mapper,
             @Nullable final ISegueDTOConfigurationModule segueConfigurationModule,
-            final ContentVersionController contentVersionController, final UserAccountManager userManager,
+            final UserAccountManager userManager,
             final EmailManager emailManager,
             final ILogManager logManager) {
         super(properties, logManager);

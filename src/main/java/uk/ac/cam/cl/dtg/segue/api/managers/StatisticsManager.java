@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
 import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
@@ -51,6 +53,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -72,8 +75,8 @@ public class StatisticsManager {
     private UserAccountManager userManager;
     private ILogManager logManager;
     private SchoolListReader schoolManager;
-    private ContentVersionController versionManager;
-    //private IContentManager contentManager;
+    private final IContentManager contentManager;
+    private final String contentIndex;
     private GroupManager groupManager;
     private QuestionManager questionManager;
     private GameManager gameManager;
@@ -98,7 +101,7 @@ public class StatisticsManager {
      *            - to query Log information
      * @param schoolManager
      *            - to query School information
-     * @param versionManager
+     * @param contentManager
      *            - to query live version information
      * @param locationHistoryManager
      *            - so that we can query our location database (ip addresses)
@@ -109,14 +112,15 @@ public class StatisticsManager {
      */
     @Inject
     public StatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-            final SchoolListReader schoolManager, final ContentVersionController versionManager,
-            final LocationManager locationHistoryManager, final GroupManager groupManager,
+            final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
+                             final LocationManager locationHistoryManager, final GroupManager groupManager,
             final QuestionManager questionManager, final GameManager gameManager) {
         this.userManager = userManager;
         this.logManager = logManager;
         this.schoolManager = schoolManager;
 
-        this.versionManager = versionManager;
+        this.contentManager = contentManager;
+        this.contentIndex = contentIndex;
 
         this.locationHistoryManager = locationHistoryManager;
         this.groupManager = groupManager;
@@ -148,7 +152,7 @@ public class StatisticsManager {
 
         // get all the users
         List<RegisteredUserDTO> users = userManager.findUsers(new RegisteredUserDTO());
-        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<String, Object>();
+        ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
 
         List<RegisteredUserDTO> male = Lists.newArrayList();
         List<RegisteredUserDTO> female = Lists.newArrayList();
@@ -337,7 +341,7 @@ public class StatisticsManager {
      *             - if there is a database exception.
      */
     public List<Map<String, Object>> getSchoolStatistics() 
-            throws UnableToIndexSchoolsException, SegueDatabaseException {
+            throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cachedOutput = (List<Map<String, Object>>) this.longStatsCache
                 .getIfPresent(SCHOOL_STATS);
@@ -407,7 +411,7 @@ public class StatisticsManager {
      * @return A map of schools to integers (representing the number of registered users)
      * @throws UnableToIndexSchoolsException as per the description
      */
-    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException {
+    public Map<School, List<RegisteredUserDTO>> getUsersBySchool() throws UnableToIndexSchoolsException, SegueSearchException {
         List<RegisteredUserDTO> users;
         Map<School, List<RegisteredUserDTO>> usersBySchool = Maps.newHashMap();
 
@@ -454,10 +458,10 @@ public class StatisticsManager {
      *             - if the school list has not been indexed.
      */
     public List<RegisteredUserDTO> getUsersBySchoolId(final String schoolId) throws ResourceNotFoundException,
-            SegueDatabaseException, UnableToIndexSchoolsException {
+            SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
         Validate.notNull(schoolId);
 
-        List<RegisteredUserDTO> users = Lists.newArrayList();
+        List<RegisteredUserDTO> users;
 
         School s;
         try {
@@ -764,16 +768,16 @@ public class StatisticsManager {
         Map<Map.Entry<BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX),
-                new ArrayList<String>(ids));
+                new ArrayList<>(ids));
 
         fieldsToMap.put(immutableEntry(BooleanOperator.OR, TYPE_FIELDNAME),
                 Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
         // Search for questions that match the ids.
-        ResultsWrapper<ContentDTO> findByFieldNames = versionManager.getContentManager().findByFieldNames(
-                versionManager.getLiveVersion(), fieldsToMap, 0, ids.size());
+        ResultsWrapper<ContentDTO> allMatchingIds =
+                this.contentManager.getContentMatchingIds(this.contentIndex, ids, 0, ids.size());
 
-        List<ContentDTO> questionsForGameboard = findByFieldNames.getResults();
+        List<ContentDTO> questionsForGameboard = allMatchingIds.getResults();
 
         Map<String, ContentDTO> questionIdToQuestionMap = Maps.newHashMap();
         for (ContentDTO content : questionsForGameboard) {

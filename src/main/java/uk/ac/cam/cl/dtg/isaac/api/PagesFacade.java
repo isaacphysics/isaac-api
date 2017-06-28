@@ -16,18 +16,9 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_RESULTS_LIMIT_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_START_INDEX_AS_STRING;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.LEVEL_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TAGS_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_HOUR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -61,12 +52,12 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuestionSummaryPageDTO;
 import uk.ac.cam.cl.dtg.segue.api.SegueContentFacade;
-import uk.ac.cam.cl.dtg.segue.api.managers.ContentVersionController;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
@@ -96,12 +87,13 @@ public class PagesFacade extends AbstractIsaacFacade {
 
     private final SegueContentFacade api;
     private final MapperFacade mapper;
-    private final ContentVersionController versionManager;
     private final UserAccountManager userManager;
     private final URIManager uriManager;
     private final QuestionManager questionManager;
+    private final IContentManager contentManager;
 
     private final GameManager gameManager;
+    private final String contentIndex;
 
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
@@ -114,8 +106,8 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - Instance of Log Manager
      * @param mapper
      *            - Instance of Mapper facade.
-     * @param versionManager
-     *            - so we can find out the latest content version.
+     * @param contentManager
+     *            - so we can get the latest content.
      * @param userManager
      *            - So we can interrogate the user Manager.
      * @param uriManager
@@ -127,17 +119,18 @@ public class PagesFacade extends AbstractIsaacFacade {
      */
     @Inject
     public PagesFacade(final SegueContentFacade api, final PropertiesLoader propertiesLoader,
-            final ILogManager logManager, final MapperFacade mapper, final ContentVersionController versionManager,
-            final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
-            final GameManager gameManager) {
+                       final ILogManager logManager, final MapperFacade mapper, final IContentManager contentManager,
+                       final UserAccountManager userManager, final URIManager uriManager, final QuestionManager questionManager,
+                       final GameManager gameManager, @Named(CONTENT_INDEX) final String contentIndex) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
-        this.versionManager = versionManager;
+        this.contentManager = contentManager;
         this.userManager = userManager;
         this.uriManager = uriManager;
         this.questionManager = questionManager;
         this.gameManager = gameManager;
+        this.contentIndex = contentIndex;
     }
 
     /**
@@ -193,7 +186,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
                 + etagCodeBuilder.toString().hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
@@ -202,9 +195,16 @@ public class PagesFacade extends AbstractIsaacFacade {
             return cachedResponse;
         }
 
-        return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
-                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                .build();
+        try {
+            return listContentObjects(fieldsToMatch, startIndex, newLimit).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                    .build();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                    "Error locating the content requested", e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        }
     }
 
     /**
@@ -230,7 +230,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + "byId".hashCode()
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + "byId".hashCode()
                 + conceptId.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -249,7 +249,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         if (result.getEntity() instanceof SeguePageDTO) {
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION, versionManager.getLiveVersion())
+                    .put(CONCEPT_ID_LOG_FIELDNAME, conceptId).put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA())
                     .build();
 
             // the request log
@@ -338,7 +338,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode()
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode()
                 + etagCodeBuilder.toString().hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
@@ -346,32 +346,32 @@ public class PagesFacade extends AbstractIsaacFacade {
         if (cachedResponse != null) {
             return cachedResponse;
         }
+        try {
+            // Currently if you provide a search string we use a different
+            // library call. This is because the previous one does not allow fuzzy
+            // search.
+            if (searchString != null && !searchString.isEmpty()) {
+                ResultsWrapper<ContentDTO> c;
 
-        // Currently if you provide a search string we use a different
-        // library call. This is because the previous one does not allow fuzzy
-        // search.
-        if (searchString != null && !searchString.isEmpty()) {
-            ResultsWrapper<ContentDTO> c;
-            try {
-                c = api.segueSearch(searchString, versionManager.getLiveVersion(), fieldsToMatch, newStartIndex,
-                        newLimit);
-            } catch (ContentManagerException e1) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                        "Error locating the version requested", e1);
-                log.error(error.getErrorMessage(), e1);
-                return error.toResponse();
+                c = api.segueSearch(searchString, this.contentIndex, fieldsToMatch, newStartIndex,
+                            newLimit);
+
+                ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
+                        this.extractContentSummaryFromList(c.getResults()),
+                        c.getTotalResults());
+
+                return Response.ok(summarizedContent).tag(etag)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
+                        .build();
+            } else {
+                return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
+                        .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
             }
-
-            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
-                    this.extractContentSummaryFromList(c.getResults()),
-                    c.getTotalResults());
-
-            return Response.ok(summarizedContent).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
-                    .build();
-        } else {
-            return listContentObjects(fieldsToMatch, newStartIndex, newLimit).tag(etag)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();
+        } catch (ContentManagerException e1) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                    "Error locating the content requested", e1);
+            log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
         }
     }
 
@@ -427,7 +427,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             SeguePageDTO content = (SeguePageDTO) response.getEntity();
 
             Map<String, String> logEntry = ImmutableMap.of(QUESTION_ID_LOG_FIELDNAME, content.getId(),
-                    "contentVersion", versionManager.getLiveVersion());
+                    CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA());
 
             String userIdForRandomisation;
             if (user instanceof AnonymousUserDTO) {
@@ -533,7 +533,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             @Context final HttpServletRequest httpServletRequest, @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + pageId.hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -541,8 +541,8 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
         
         try {
-            Content contentDOById = this.versionManager.getContentManager().getContentDOById(
-                    this.versionManager.getLiveVersion(), pageId);
+            Content contentDOById = this.contentManager.getContentDOById(
+                    this.contentManager.getCurrentContentSHA(), pageId);
 
             if (!(contentDOById instanceof IsaacQuestionSummaryPage) || null == contentDOById) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
@@ -573,8 +573,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             // augment featuredQuestions
             for (GameboardItem id : summaryPageDO.getFeaturedQuestions()) {
-                ContentDTO question = this.versionManager.getContentManager().getContentById(
-                        this.versionManager.getLiveVersion(), id.getId());
+                ContentDTO question = this.contentManager.getContentById(
+                        this.contentManager.getCurrentContentSHA(), id.getId());
                 if (!(question instanceof IsaacQuestionPageDTO) || question == null) {
                     log.error(String.format(
                             "Unable to locate question id: %s. Removing from the question summary page. ", id.getId()));
@@ -612,7 +612,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             @PathParam("page") final String pageId) {
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + pageId.hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + pageId.hashCode() + "");
 
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
@@ -630,8 +630,11 @@ public class PagesFacade extends AbstractIsaacFacade {
         Response result = this.findSingleResult(fieldsToMatch);
 
         if (result.getEntity() instanceof SeguePageDTO) {
+
+
             ImmutableMap<String, String> logEntry = new ImmutableMap.Builder<String, String>()
-                    .put(PAGE_ID_LOG_FIELDNAME, pageId).put(CONTENT_VERSION, versionManager.getLiveVersion()).build();
+                    .put(PAGE_ID_LOG_FIELDNAME, pageId)
+                    .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
 
             // the request log
             getLogManager().logEvent(userManager.getCurrentUser(httpServletRequest), httpServletRequest,
@@ -661,7 +664,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + fragmentId.hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + fragmentId.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
@@ -673,10 +676,8 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         Response result = this.findSingleResult(fieldsToMatch);
 
-        Response cachableResult = Response.status(result.getStatus()).entity(result.getEntity())
+        return Response.status(result.getStatus()).entity(result.getEntity())
                 .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
-
-        return cachableResult;
     }
 
     /**
@@ -692,27 +693,30 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     public final Response getPodList(@Context final Request request,
                                      @PathParam("subject") final String subject) {
-
         // Calculate the ETag on current live version of the content
         // NOTE: Assumes that the latest version of the content is being used.
-        EntityTag etag = new EntityTag(versionManager.getLiveVersion().hashCode() + subject.hashCode() + "");
+        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + subject.hashCode() + "");
         Response cachedResponse = generateCachedResponse(request, etag);
         if (cachedResponse != null) {
             return cachedResponse;
         }
 
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
-        fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
+        try {
+            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
+            fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(POD_FRAGMENT_TYPE));
+            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(subject));
 
-        ResultsWrapper<ContentDTO> pods = api.findMatchingContent(versionManager.getLiveVersion(),
-                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
+            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), 0, MAX_PODS_TO_RETURN);
 
-        Response cachableResult = Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
-                .tag(etag)
-                .build();
-
-        return cachableResult;
+            return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
+                    .tag(etag)
+                    .build();
+        } catch (ContentManagerException e) {
+            log.error("Content manager exception while trying to request the pods.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable to retrieve Content requested due to an internal server error.", e).toResponse();
+        }
     }
 
     /**
@@ -728,9 +732,9 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @throws ContentManagerException
      *             - an exception when the content is not found
      */
-    public ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
+    private ContentDTO augmentContentWithRelatedContent(final String version, final ContentDTO contentToAugment)
             throws ContentManagerException {
-        return this.versionManager.getContentManager().populateRelatedContent(version, contentToAugment);
+        return this.contentManager.populateRelatedContent(version, contentToAugment);
     }
     
     /**
@@ -786,26 +790,26 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return A Response containing a single conceptPage or containing a SegueErrorResponse.
      */
     private Response findSingleResult(final Map<String, List<String>> fieldsToMatch) {
-        ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(versionManager.getLiveVersion(),
-                SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
-                                                                                        // type
-                                                                                        // checking.
-        ContentDTO c = null;
-        if (resultList.getResults().size() > 1) {
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
-                    + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
-                    .toResponse();
-        } else if (resultList.getResults().isEmpty()) {
-            return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: "
-                    + fieldsToMatch.values()).toResponse();
-        } else {
-            c = resultList.getResults().get(0);
-        }
-
         try {
-            return Response.ok(this.augmentContentWithRelatedContent(versionManager.getLiveVersion(), c)).build();
+            ResultsWrapper<ContentDTO> resultList = api.findMatchingContent(this.contentIndex,
+                    SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), null, null); // includes
+            // type
+            // checking.
+            ContentDTO c = null;
+            if (resultList.getResults().size() > 1) {
+                return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple results ("
+                        + resultList.getResults().size() + ") returned error. For search query: " + fieldsToMatch.values())
+                        .toResponse();
+            } else if (resultList.getResults().isEmpty()) {
+                return new SegueErrorResponse(Status.NOT_FOUND, "No content found that matches the query with parameters: "
+                        + fieldsToMatch.values()).toResponse();
+            } else {
+                c = resultList.getResults().get(0);
+            }
+
+            return Response.ok(this.augmentContentWithRelatedContent(this.contentIndex, c)).build();
         } catch (ContentManagerException e1) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested",
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content requested",
                     e1);
             log.error(error.getErrorMessage(), e1);
             return error.toResponse();
@@ -826,10 +830,10 @@ public class PagesFacade extends AbstractIsaacFacade {
      * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
      */
     private Response.ResponseBuilder listContentObjects(final Map<String, List<String>> fieldsToMatch,
-            final Integer startIndex, final Integer limit) {
+            final Integer startIndex, final Integer limit) throws ContentManagerException{
         ResultsWrapper<ContentDTO> c;
 
-        c = api.findMatchingContent(versionManager.getLiveVersion(),
+        c = api.findMatchingContent(this.contentIndex,
                 SegueContentFacade.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit);
 
         ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<ContentSummaryDTO>(
