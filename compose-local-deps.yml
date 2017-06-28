@@ -19,8 +19,36 @@ services:
     volumes:
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     ports:
-      - "9300:9300"
-      - "9200:9200"
+      - "9200-9400:9200-9400"
+
+  kafka:
+    network_mode: bridge
+    container_name: kafka
+    image: ucamcldtg/kafka
+    links:
+      - zookeeper:zookeeper
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile-kafka
+    volumes:
+#      - ../kafka-data:/kafka-data:rw
+      - ./kafka/server.properties:/opt/kafka/config/server.properties:ro
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+
+  zookeeper:
+    network_mode: bridge
+    container_name: zookeeper
+    image: ucamcldtg/zookeeper
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile-zookeeper
+    volumes:
+#      - ../zookeeper-data:/zookeeper-data:rw
+      - ./kafka/zoo.cfg:/opt/zookeeper/conf/zoo.cfg:ro
+
   postgres:
     network_mode: bridge
     container_name: postgres
