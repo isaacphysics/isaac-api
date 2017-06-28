@@ -23,7 +23,6 @@ services:
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     ports:
       - "9200-9400:9200-9400"
-<<<<<<< HEAD
 
   kafka:
     network_mode: bridge
@@ -53,8 +52,6 @@ services:
 #      - ../zookeeper-data:/zookeeper-data:rw
       - ./kafka/zoo.cfg:/opt/zookeeper/conf/zoo.cfg:ro
 
-=======
->>>>>>> 3d7568d3a73b63ba7c0c27812c6e4f75b4f3d1a5
   postgres:
     network_mode: bridge
     container_name: postgres
