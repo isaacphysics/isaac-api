@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.SUBJECT_INTEREST;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import com.google.api.client.util.Maps;
@@ -242,18 +241,13 @@ public class UsersFacade extends AbstractSegueFacade {
 
         RegisteredUser registeredUser = userSettingsObjectFromClient.getRegisteredUser();
 
-        Map<String, Boolean> emailPreferences = userSettingsObjectFromClient.getEmailPreferences();
-        Map<String, Boolean> subjectInterests = userSettingsObjectFromClient.getSubjectInterests();
+        Map<String, Map<String, Boolean>> userPreferences = userSettingsObjectFromClient.getUserPreferences();
 
         if (null != registeredUser.getId()) {
 
-            // Update email preferences & subject interests within the same request
-            List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
-                    registeredUser.getId(), emailPreferences);
-
             try {
                 return this.updateUserObject(request, response, registeredUser,
-                        userSettingsObjectFromClient.getPasswordCurrent(), userEmailPreferences, subjectInterests);
+                        userSettingsObjectFromClient.getPasswordCurrent(), userPreferences);
             } catch (IncorrectCredentialsProvidedException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
                         .toResponse();
@@ -262,33 +256,39 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
         } else {
-            return this.createUserObjectAndLogIn(request, response, registeredUser, emailPreferences);
+            return this.createUserObjectAndLogIn(request, response, registeredUser, userPreferences);
         }
 
     }
 
     /**
-     * An endpoint to be refactored out of this class, which provides access to subject interests.
+     * Provides access to user preferences, mapping preference types to an inner map of preference names and values
      * @param httpServletRequest - the request, to work ou the current user
-     * @return subject interest map
+     * @return user preference map
      */
     @GET
-    @Path("users/subject_interests")
+    @Path("users/user_preferences")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response getSubjectInterests(@Context final HttpServletRequest httpServletRequest) {
-        // FIXME - this endpoint does not belong here, and should probably return actual user preferences eventually.
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
-            List<UserPreference> subjectPreferences = userPreferenceManager.getUserPreferences(SUBJECT_INTEREST, currentUser.getId());
+            List<UserPreference> allUserPreferences = userPreferenceManager.getAllUserPreferences(currentUser.getId());
 
-            Map <String, Boolean> subjectInterests = Maps.newHashMap();
+            Map <String, Map<String, Boolean>> userPreferences = Maps.newHashMap();
 
-            for (UserPreference preference : subjectPreferences) {
-                subjectInterests.put(preference.getPreferenceName(), preference.getPreferenceValue());
+            for (UserPreference preference : allUserPreferences) {
+
+                if (!userPreferences.containsKey(preference.getPreferenceType())) {
+                    Map<String, Boolean> typePreferences = Maps.newHashMap();
+                    userPreferences.put(preference.getPreferenceType(), typePreferences);
+                }
+
+                userPreferences.get(preference.getPreferenceType())
+                        .put(preference.getPreferenceName(), preference.getPreferenceValue());
             }
 
-            return Response.ok(subjectInterests).build();
+            return Response.ok(userPreferences).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (SegueDatabaseException e) {
@@ -614,16 +614,15 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - the new user object from the clients perspective.
      * @param passwordCurrent
      * 			  - the current password, used if the password has changed
-     * @param emailPreferences
-     * 			  - the email preferences for this user
-     * @param subjectInterests - the subjects interests of the user, which should be removed from this method!
+     * @param userPreferences
+     * 			  - the preferences for this user
      * @return the updated user object.
      * @throws NoCredentialsAvailableException
      * @throws IncorrectCredentialsProvidedException
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
                                       final RegisteredUser userObjectFromClient, final String passwordCurrent,
-                                      final List<IEmailPreference> emailPreferences, final Map<String, Boolean> subjectInterests)
+                                      final Map<String, Map<String, Boolean>> userPreferences)
                                 throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
         Validate.notNull(userObjectFromClient.getId());
 
@@ -709,30 +708,23 @@ public class UsersFacade extends AbstractSegueFacade {
                 }
             }
 
-            // Now update the email preferences
-            emailPreferenceManager.saveEmailPreferences(userObjectFromClient.getId(), emailPreferences);
+            if (userPreferences != null) {
 
-            //----------------------------------------------------------------------------------------------------------
-            // FIXME - the code between the dashed lines should be refactored out of this class; it does not belong here!
-            // Finally update the subject interests:
-            if (subjectInterests != null){
-                try {
-                    List<UserPreference> userPreferences = Lists.newArrayList();
-                    List<String> acceptedSubjects = Arrays.asList("PHYSICS_UNI", "PHYSICS_ALEVEL", "PHYSICS_GCSE",
-                            "CHEMISTRY_UNI", "CHEMISTRY_ALEVEL", "CHEMISTRY_GCSE", "MATHS_UNI", "MATHS_ALEVEL", "MATHS_GCSE");
-                    for (String subject : subjectInterests.keySet()) {
-                        // Validate that what is being saved is in fact acceptable:
-                        if (!acceptedSubjects.contains(subject)) {
-                            return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preferences provided.").toResponse();
-                        }
-                        userPreferences.add(new UserPreference(updatedUser.getId(), SUBJECT_INTEREST, subject, subjectInterests.get(subject)));
+                List<UserPreference> preferenceList = Lists.newArrayList();
+
+                for (String preferenceType: userPreferences.keySet()) {
+
+                    for (String preferenceName :userPreferences.get(preferenceType).keySet()) {
+
+                        preferenceList.add(new UserPreference(updatedUser.getId(),
+                                preferenceType, preferenceName,
+                                userPreferences.get(preferenceType).get(preferenceName)));
                     }
-                    userPreferenceManager.saveUserPreferences(userPreferences);
-                } catch (SegueDatabaseException e) {
-                    return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid user preferences provided.").toResponse();
+
                 }
+                userPreferenceManager.saveUserPreferences(preferenceList);
+
             }
-            //----------------------------------------------------------------------------------------------------------
 
             return Response.ok(updatedUser).build();
         } catch (NoUserLoggedInException e) {
@@ -767,21 +759,34 @@ public class UsersFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
-     * @param emailPreferences
-     * 			  - the new email preferences for this user
+     * @param userPreferences
+     * 			  - the new preferences for this user
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-                                              final RegisteredUser userObjectFromClient, final Map<String, Boolean> emailPreferences) {
+                                              final RegisteredUser userObjectFromClient,
+                                              final Map<String, Map<String, Boolean>> userPreferences) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
                     userObjectFromClient);
 
-            List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
-                    savedUser.getId(), emailPreferences);
+            if (userPreferences != null) {
 
-            //Now update the email preferences
-            emailPreferenceManager.saveEmailPreferences(savedUser.getId(), userEmailPreferences);
+                List<UserPreference> preferenceList = Lists.newArrayList();
+
+                for (String preferenceType: userPreferences.keySet()) {
+
+                    for (String preferenceName :userPreferences.get(preferenceType).keySet()) {
+
+                        preferenceList.add(new UserPreference(savedUser.getId(),
+                                preferenceType, preferenceName,
+                                userPreferences.get(preferenceType).get(preferenceName)));
+                    }
+
+                }
+                userPreferenceManager.saveUserPreferences(preferenceList);
+
+            }
 
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {
