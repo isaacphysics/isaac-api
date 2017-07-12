@@ -34,12 +34,41 @@ public class GameboardItem {
     private List<String> tags;
 
     private Integer level;
+    private Integer questionPartsCorrect;
+    private Integer questionPartsIncorrect;
+    private Integer questionPartsNotAttempted;
+    private Float passMark;
     private GameboardItemState state;
     
     // optional field if we want to use the gameboard item outside of the context of a board.
     @Nullable
     private String boardId;
     
+    /**
+     * Generic constructor.
+     */
+    public GameboardItem() {}
+
+    /**
+     * Creates a GameboardItem from (shallow) copying the passed in GameboardItem.
+     *
+     * @param original
+     *          the original gameboard item to copy
+     */
+    public GameboardItem(GameboardItem original) {
+        this.setId(original.getId());
+        this.setTitle(original.getTitle());
+        this.setDescription(original.getDescription());
+        this.setUri(original.getUri());
+        this.setLevel(original.getLevel());
+        this.setQuestionPartsCorrect(original.getQuestionPartsCorrect());
+        this.setQuestionPartsIncorrect(original.getQuestionPartsIncorrect());
+        this.setQuestionPartsNotAttempted(original.getQuestionPartsNotAttempted());
+        this.setPassMark(original.getPassMark());
+        this.setState(original.getState());
+        this.setTags(original.getTags());
+    }
+
     /**
      * Gets the id.
      * 
@@ -152,6 +181,95 @@ public class GameboardItem {
      */
     public final void setLevel(final Integer level) {
         this.level = level;
+    }
+
+    /**
+     * Gets the number of questionPartsCorrect.
+     * 
+     * @return the number of questionPartsCorrect
+     */
+    public final Integer getQuestionPartsCorrect() {
+        return questionPartsCorrect;
+    }
+
+    /**
+     * Sets the number of correct question parts.
+     *
+     * @param questionPartsCorrect
+     *            the number of correct question parts to set
+     */
+    public final void setQuestionPartsCorrect(final Integer questionPartsCorrect) {
+        this.questionPartsCorrect = questionPartsCorrect;
+    }
+
+    /**
+     * Gets the number of questionPartsIncorrect.
+     * 
+     * @return the number of questionPartsIncorrect
+     */
+    public final Integer getQuestionPartsIncorrect() {
+        return questionPartsIncorrect;
+    }
+
+    /**
+     * Sets the number of incorrect question parts.
+     *
+     * @param questionPartsIncorrect
+     *            the number of incorrect question parts to set
+     */
+    public final void setQuestionPartsIncorrect(final Integer questionPartsIncorrect) {
+        this.questionPartsIncorrect = questionPartsIncorrect;
+    }
+
+    /**
+     * Gets the number of questionPartsNotAttempted.
+     * 
+     * @return the number of questionPartsNotAttempted
+     */
+    public final Integer getQuestionPartsNotAttempted() {
+        return questionPartsNotAttempted;
+    }
+
+    /**
+     * Sets the number of question parts not attempted.
+     *
+     * @param questionPartsNotAttempted
+     *            the number of question parts to set
+     */
+    public final void setQuestionPartsNotAttempted(final Integer questionPartsNotAttempted) {
+        this.questionPartsNotAttempted = questionPartsNotAttempted;
+    }
+
+    /**
+     * When question part information is included gets the total number of question parts.
+     *
+     * @return the total number of question parts or null
+     */
+    public final Integer getQuestionPartsTotal() {
+        Integer result = null;
+        if (questionPartsCorrect != null && questionPartsIncorrect != null && questionPartsNotAttempted != null) {
+            result = questionPartsCorrect +  questionPartsIncorrect + questionPartsNotAttempted;
+        }
+        return result;
+    }
+
+    /**
+     * Gets the passMark as a percentage.
+     *
+     * @return the passMark as a percentage
+     */
+    public Float getPassMark() {
+        return this.passMark;
+    }
+
+    /**
+     * Sets the pass mark for the question, sets it to be 100 if passed a null.
+     *
+     * @param passMark
+     *            the pass mark to set
+     */
+    public final void setPassMark(final Float passMark) {
+        this.passMark = passMark != null? passMark : 100f;
     }
 
     /**
