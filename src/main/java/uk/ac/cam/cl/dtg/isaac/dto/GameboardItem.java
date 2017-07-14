@@ -269,7 +269,7 @@ public class GameboardItem {
      *            the pass mark to set
      */
     public final void setPassMark(final Float passMark) {
-        this.passMark = passMark != null? passMark : 100f;
+        this.passMark = passMark;
     }
 
     /**

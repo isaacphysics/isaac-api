@@ -1018,8 +1018,8 @@ public class GameManager {
             throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
                     questionPageId));
         }
-
-        gameItem.setPassMark(questionPage.getPassMark());
+        float passMark = questionPage.getPassMark() != null ? questionPage.getPassMark() : 100f;
+        gameItem.setPassMark(passMark);
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
