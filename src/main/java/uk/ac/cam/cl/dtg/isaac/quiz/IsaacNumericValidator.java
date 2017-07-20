@@ -97,7 +97,7 @@ public class IsaacNumericValidator implements IValidator {
             log.error("Question does not have any answers. " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), null, false, new Content(""), false, false,
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(""), false, false,
                     new Date());
         }
 
@@ -106,7 +106,7 @@ public class IsaacNumericValidator implements IValidator {
             log.error("Question has broken significant figure rules! " + question.getId() + " src: "
                     + question.getCanonicalSourceFile());
 
-            return new QuantityValidationResponse(question.getId(), null, false, new Content(""), false, false,
+            return new QuantityValidationResponse(question.getId(), answerFromUser, false, new Content(""), false, false,
                     new Date());
         }
 

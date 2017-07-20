@@ -470,6 +470,11 @@ public class UsersFacade extends AbstractSegueFacade {
                     "You must specify the from_date and to_date you are interested in.").toResponse();
         }
 
+        if (fromDate > toDate) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The from_date must be before the to_date!").toResponse();
+        }
+
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -480,14 +485,26 @@ public class UsersFacade extends AbstractSegueFacade {
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
+            if (!events.equals(ANSWER_QUESTION) && currentUser.getRole() != Role.ADMIN) {
+                // Non-admins should not be able to choose random log events.
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
             // decide if the user is allowed to view this data.
             if (!currentUser.getId().equals(userIdOfInterest)
                     && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            // No point looking for stats from before the user registered (except for merged logs at registration and
+            // these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway: less than 1 month):
+            Date fromDateObject = new Date(fromDate);
+            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+                fromDateObject = userOfInterest.getRegistrationDate();
+            }
+
             Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
-                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate),
+                    Lists.newArrayList(events.split(",")), fromDateObject, new Date(toDate),
                     Arrays.asList(userOfInterest), binData);
 
             return Response.ok(eventLogsByDate).build();

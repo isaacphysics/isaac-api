@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.isaac.dto;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
@@ -72,5 +73,11 @@ public class IsaacQuestionPageDTO extends SeguePageDTO {
     public String getSupersededBy() { return supersededBy; }
 
     public void setSupersededBy(String supersededBy) { this.supersededBy = supersededBy; }
+
+    @Override
+    @JsonIgnore(false) // Override the parent class decorator!
+    public String getCanonicalSourceFile() {
+        return this.canonicalSourceFile;
+    }
 
 }

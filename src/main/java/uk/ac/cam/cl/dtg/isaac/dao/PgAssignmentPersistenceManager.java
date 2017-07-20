@@ -170,7 +170,8 @@ public class PgAssignmentPersistenceManager implements IAssignmentPersistenceMan
 
         try (Connection conn = database.getDatabaseConnection()) {
             PreparedStatement pst;
-            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ?");
+            pst = conn.prepareStatement("SELECT * FROM assignments WHERE owner_user_id = ? AND group_id = ?"
+                    + " ORDER BY creation_date");
 
             pst.setLong(1, assignmentOwnerId);
             pst.setLong(2, groupId);

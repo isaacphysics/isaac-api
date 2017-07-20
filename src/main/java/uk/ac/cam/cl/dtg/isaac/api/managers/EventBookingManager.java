@@ -223,7 +223,7 @@ public class EventBookingManager {
                                         propertiesLoader.getProperty(HOST_NAME)))
                                 .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                         propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                                .put("event.emailEventDetails", event.getEmailEventDetails())
+                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                 .put("event", event)
                                 .build(),
                         EmailType.SYSTEM);
@@ -313,7 +313,7 @@ public class EventBookingManager {
                         new ImmutableMap.Builder<String, Object>()
                                 .put("contactUsURL", String.format("https://%s/contact",
                                         propertiesLoader.getProperty(HOST_NAME)))
-                                .put("event.emailEventDetails", event.getEmailEventDetails())
+                                .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                 .put("event", event)
                                 .build(),
                         EmailType.SYSTEM);
@@ -381,7 +381,7 @@ public class EventBookingManager {
                                     propertiesLoader.getProperty(HOST_NAME)))
                             .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                     propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                            .put("event.emailEventDetails", event.getEmailEventDetails())
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM);
@@ -528,7 +528,7 @@ public class EventBookingManager {
                     new ImmutableMap.Builder<String, Object>()
                             .put("contactUsURL", String.format("https://%s/contact",
                                     propertiesLoader.getProperty(HOST_NAME)))
-                            .put("event.emailEventDetails", event.getEmailEventDetails())
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM);
@@ -579,7 +579,7 @@ public class EventBookingManager {
                                     propertiesLoader.getProperty(HOST_NAME)))
                             .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                     propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
-                            .put("event.emailEventDetails", event.getEmailEventDetails())
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM);
@@ -590,7 +590,7 @@ public class EventBookingManager {
                     new ImmutableMap.Builder<String, Object>()
                             .put("contactUsURL", String.format("https://%s/contact",
                                     propertiesLoader.getProperty(HOST_NAME)))
-                            .put("event.emailEventDetails", event.getEmailEventDetails())
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM);
@@ -601,7 +601,7 @@ public class EventBookingManager {
                     new ImmutableMap.Builder<String, Object>()
                             .put("contactUsURL", String.format("https://%s/contact",
                                     propertiesLoader.getProperty(HOST_NAME)))
-                            .put("event.emailEventDetails", event.getEmailEventDetails())
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
                     EmailType.SYSTEM);
