@@ -14,7 +14,7 @@ CREATE TABLE public.user_credentials
   CONSTRAINT user_id PRIMARY KEY (user_id),
   CONSTRAINT fk_user_id_pswd FOREIGN KEY (user_id)
       REFERENCES public.users (id) MATCH SIMPLE
-      ON UPDATE NO ACTION ON DELETE NO ACTION
+      ON UPDATE NO ACTION ON DELETE CASCADE
 )
 WITH (
   OIDS=FALSE
