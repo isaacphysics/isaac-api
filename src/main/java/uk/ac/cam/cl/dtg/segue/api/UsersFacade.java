@@ -394,7 +394,7 @@ public class UsersFacade extends AbstractSegueFacade {
      *
      * @param token
      *            - A password reset token
-     * @param userObject
+     * @param clientResponse
      *            - A user object containing password information.
      * @param request
      *            - For logging purposes.
@@ -404,10 +404,10 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response resetPassword(@PathParam("token") final String token, final Map<String, String> userObject,
+    public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
                                   @Context final HttpServletRequest request) {
         try {
-            String newPassword = userObject.get("password");
+            String newPassword = clientResponse.get("password");
             RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
 
             this.getLogManager().logEvent(userDTO, request, PASSWORD_RESET_REQUEST_SUCCESSFUL,
