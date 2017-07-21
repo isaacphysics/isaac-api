@@ -710,13 +710,26 @@ public class EventBookingManager {
         return new EmailAttachment("event.ics",
                 "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
     }
-  
+
+    /**
+     * Helper to generate a url with a pre-generated subject field for the contact page
+     * @param event - the event of interest
+     * @return customised contactus url for the event.
+     */
     private String generateEventContactUsURL(IsaacEventPageDTO event){
-        final DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
+        if (event.getDate() == null) {
+            return "https://%s/contact";
 
-        return String.format("https://%s/contact?subject=Event-%s-%s",
-                propertiesLoader.getProperty(HOST_NAME), event.getLocation().getAddress().getAddressLine1(),
-                shortDateFormatter.format(event.getDate()));
-
+        } else {
+            DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
+            return String.format("https://%s/contact?subject=Event-%s%s",
+                    propertiesLoader.getProperty(HOST_NAME),
+                    event.getLocation() != null &&
+                            event.getLocation().getAddress() != null &&
+                            event.getLocation().getAddress().getAddressLine1()!= null
+                            ? "-" + event.getLocation().getAddress().getAddressLine1()
+                            : "",
+                    shortDateFormatter.format(event.getDate()));
+        }
     }
 }
