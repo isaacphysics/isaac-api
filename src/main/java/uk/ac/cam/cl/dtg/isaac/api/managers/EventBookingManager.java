@@ -15,6 +15,11 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
+import biweekly.Biweekly;
+import biweekly.ICalendar;
+import biweekly.component.VEvent;
+import biweekly.io.TimezoneAssignment;
+import biweekly.property.Organizer;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -37,10 +42,9 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
@@ -227,7 +231,8 @@ public class EventBookingManager {
                                 .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                 .put("event", event)
                                 .build(),
-                        EmailType.SYSTEM);
+                        EmailType.SYSTEM,
+                        Arrays.asList(generateEventICSFile(event, booking)));
 
             } catch (ContentManagerException e) {
                 log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
@@ -371,6 +376,9 @@ public class EventBookingManager {
 
         // probably want to send a waiting list promotion email.
         try {
+            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
+                    .getId(), BookingStatus.CONFIRMED, additionalInformation);
+
             emailManager.sendTemplatedEmailToUser(userDTO,
                     emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),
                     new ImmutableMap.Builder<String, Object>()
@@ -385,10 +393,9 @@ public class EventBookingManager {
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
-                    EmailType.SYSTEM);
+                    EmailType.SYSTEM,
+                    Arrays.asList(generateEventICSFile(event, updatedStatus)));
 
-            updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                    .getId(), BookingStatus.CONFIRMED, additionalInformation);
         } catch (ContentManagerException e) {
             log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(),
                     userDTO.getEmail()), e);
@@ -583,7 +590,8 @@ public class EventBookingManager {
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
-                    EmailType.SYSTEM);
+                    EmailType.SYSTEM,
+                    Arrays.asList(generateEventICSFile(event, booking)));
 
         } else if (booking.getBookingStatus().equals(BookingStatus.CANCELLED)) {
             emailManager.sendTemplatedEmailToUser(user,
@@ -677,7 +685,35 @@ public class EventBookingManager {
         }
     }
 
-    private EmailAttachment generateEventICSFile() {
-        return null;
+    /**
+     * Helper method to generate an ics file for emailing to users who have booked on to an event.
+     * @param event - the event booked on
+     * @param bookingDetails - the booking details.
+     * @return email attachment containing an ics file.
+     */
+    private EmailAttachment generateEventICSFile(IsaacEventPageDTO event, EventBookingDTO bookingDetails) {
+        TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), true);
+
+        ICalendar ical = new ICalendar();
+        ical.getTimezoneInfo().setDefaultTimezone(london);
+
+        VEvent icalEvent = new VEvent();
+        icalEvent.setSummary(event.getTitle());
+        icalEvent.setDateStart(event.getDate(), true);
+        icalEvent.setDateEnd(event.getEndDate(), true);
+        icalEvent.setDescription(event.getSubtitle());
+
+        icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
+        icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
+        icalEvent.setUrl(String.format("https://%s/events/%s",
+                propertiesLoader.getProperty(HOST_NAME), event.getId()));
+
+        if (event.getLocation() != null && event.getAddress() != null) {
+            icalEvent.setLocation(event.getLocation().getAddress().toString());
+        }
+
+        ical.addEvent(icalEvent);
+        return new EmailAttachment("event.ics",
+                "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
     }
 }
