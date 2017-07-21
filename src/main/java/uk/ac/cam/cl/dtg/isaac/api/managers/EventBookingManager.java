@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.*;
+import java.text.DateFormat;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
@@ -224,8 +225,7 @@ public class EventBookingManager {
                                         propertiesLoader.getProperty(HOST_NAME)))
                                 .put("myAssignmentsURL", String.format("https://%s/assignments",
                                         propertiesLoader.getProperty(HOST_NAME)))
-                                .put("contactUsURL", String.format("https://%s/contact",
-                                        propertiesLoader.getProperty(HOST_NAME)))
+                                .put("contactUsURL", generateEventContactUsURL(event))
                                 .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                         propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
                                 .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
@@ -317,8 +317,7 @@ public class EventBookingManager {
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
                         new ImmutableMap.Builder<String, Object>()
-                                .put("contactUsURL", String.format("https://%s/contact",
-                                        propertiesLoader.getProperty(HOST_NAME)))
+                                .put("contactUsURL", generateEventContactUsURL(event))
                                 .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                 .put("event", event)
                                 .build(),
@@ -386,8 +385,7 @@ public class EventBookingManager {
                                     propertiesLoader.getProperty(HOST_NAME)))
                             .put("myAssignmentsURL", String.format("https://%s/assignments",
                                     propertiesLoader.getProperty(HOST_NAME)))
-                            .put("contactUsURL", String.format("https://%s/contact",
-                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", generateEventContactUsURL(event))
                             .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                     propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
@@ -534,8 +532,7 @@ public class EventBookingManager {
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
                     new ImmutableMap.Builder<String, Object>()
-                            .put("contactUsURL", String.format("https://%s/contact",
-                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", generateEventContactUsURL(event))
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
@@ -583,8 +580,7 @@ public class EventBookingManager {
                                     propertiesLoader.getProperty(HOST_NAME)))
                             .put("myAssignmentsURL", String.format("https://%s/assignments",
                                     propertiesLoader.getProperty(HOST_NAME)))
-                            .put("contactUsURL", String.format("https://%s/contact",
-                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", generateEventContactUsURL(event))
                             .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                     propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
@@ -597,8 +593,7 @@ public class EventBookingManager {
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-booking-cancellation-confirmed"),
                     new ImmutableMap.Builder<String, Object>()
-                            .put("contactUsURL", String.format("https://%s/contact",
-                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", generateEventContactUsURL(event))
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
@@ -608,8 +603,7 @@ public class EventBookingManager {
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
                     new ImmutableMap.Builder<String, Object>()
-                            .put("contactUsURL", String.format("https://%s/contact",
-                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", generateEventContactUsURL(event))
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
                             .build(),
@@ -715,5 +709,14 @@ public class EventBookingManager {
         ical.addEvent(icalEvent);
         return new EmailAttachment("event.ics",
                 "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
+    }
+  
+    private String generateEventContactUsURL(IsaacEventPageDTO event){
+        final DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
+
+        return String.format("https://%s/contact?subject=Event-%s-%s",
+                propertiesLoader.getProperty(HOST_NAME), event.getLocation().getAddress().getAddressLine1(),
+                shortDateFormatter.format(event.getDate()));
+
     }
 }
