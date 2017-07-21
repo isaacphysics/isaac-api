@@ -750,7 +750,7 @@ public class UserAccountManager {
 
             } catch (ContentManagerException | NoUserException e) {
                 log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-			} catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
                 log.error("Creation of email verification token failed: " + e1.getMessage());
             }
         }
