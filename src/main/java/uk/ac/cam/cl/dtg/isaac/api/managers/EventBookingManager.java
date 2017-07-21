@@ -42,6 +42,8 @@ import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.text.DateFormat;
 
@@ -714,22 +716,31 @@ public class EventBookingManager {
     /**
      * Helper to generate a url with a pre-generated subject field for the contact page
      * @param event - the event of interest
-     * @return customised contactus url for the event.
+     * @return customised contactUs url for the event.
      */
     private String generateEventContactUsURL(IsaacEventPageDTO event){
+        String defaultURL = String.format("https://%s/contact", propertiesLoader.getProperty(HOST_NAME));
         if (event.getDate() == null) {
-            return "https://%s/contact";
+            return defaultURL;
+        }
 
-        } else {
+        try {
             DateFormat shortDateFormatter = DateFormat.getDateInstance(DateFormat.SHORT);
-            return String.format("https://%s/contact?subject=Event-%s%s",
+            String location = event.getLocation() != null &&
+                    event.getLocation().getAddress() != null &&
+                    event.getLocation().getAddress().getAddressLine1() != null
+                    ? event.getLocation().getAddress().getAddressLine1()
+                    : "";
+
+            String contactUsSubject = "Event - " + location + " - " + shortDateFormatter.format(event.getDate());
+
+            return String.format("https://%s/contact?subject=%s",
                     propertiesLoader.getProperty(HOST_NAME),
-                    event.getLocation() != null &&
-                            event.getLocation().getAddress() != null &&
-                            event.getLocation().getAddress().getAddressLine1()!= null
-                            ? "-" + event.getLocation().getAddress().getAddressLine1()
-                            : "",
-                    shortDateFormatter.format(event.getDate()));
+                    URLEncoder.encode(contactUsSubject, java.nio.charset.StandardCharsets.UTF_8.toString()));
+
+        } catch (UnsupportedEncodingException e) {
+            log.error("Unable to encode url for contact us link, using default url instead", e);
+            return defaultURL;
         }
     }
 }
