@@ -498,7 +498,7 @@ public class ContentIndexer {
             if (c instanceof Quantity) {
                 Quantity quantity = (Quantity) c;
 
-                if (!quantity.getUnits().isEmpty()) {
+                if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
                     String units = quantity.getUnits();
                     String cleanKey = units.replace("\t", "").replace("\n", "").replace(" ", "");
 
