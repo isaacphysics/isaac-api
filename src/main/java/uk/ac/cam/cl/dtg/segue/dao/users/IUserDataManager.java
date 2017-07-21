@@ -170,17 +170,6 @@ public interface IUserDataManager {
     List<RegisteredUser> findUsers(List<Long> usersToLocate) throws SegueDatabaseException;
 
     /**
-     * Get a user by password reset token.
-     *
-     * @param token
-     *            - password reset token
-     * @return A user object.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    RegisteredUser getByResetToken(final String token) throws SegueDatabaseException;
-
-    /**
      * Get a user by email verification token.
      *
      * @param token
