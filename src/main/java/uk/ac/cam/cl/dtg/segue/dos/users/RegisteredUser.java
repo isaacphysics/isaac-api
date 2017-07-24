@@ -40,17 +40,6 @@ public class RegisteredUser extends AbstractSegueUser {
 
     private Integer defaultLevel;
 
-    // local password - only used for segue local authentication.
-    // current password - only used to validate password change
-    private String password;
-
-
-	private String secureSalt;
-
-    // password reset fields - only used for segue local authentication password resets
-    private String resetToken;
-    private Date resetExpiry;
-
     private String emailVerificationToken;
     private EmailVerificationStatus emailVerificationStatus;
 
@@ -76,14 +65,6 @@ public class RegisteredUser extends AbstractSegueUser {
      *            - gender of the user
      * @param registrationDate
      *            - date of registration
-     * @param schoolId
-     *            - the list of linked authentication provider accounts.
-     * @param password
-     *            - password for local segue authentication.
-     * @param resetToken
-     *            - resetToken for local segue authentication.
-     * @param resetExpiry
-     *            - resetExpiry for local segue authentication.
      * @param lastUpdated
      *            - the date this user was last updated.
      * @param emailVerificationToken
@@ -97,8 +78,6 @@ public class RegisteredUser extends AbstractSegueUser {
             @JsonProperty("email") final String email, @JsonProperty("role") final Role role,
             @JsonProperty("dateOfBirth") final Date dateOfBirth, @JsonProperty("gender") final Gender gender,
             @JsonProperty("registrationDate") final Date registrationDate,
-            @JsonProperty("schoolId") final String schoolId, @JsonProperty("password") final String password,
-            @JsonProperty("resetToken") final String resetToken, @JsonProperty("resetExpiry") final Date resetExpiry,
             @JsonProperty("lastUpdated") final Date lastUpdated,
             @JsonProperty("emailVerificationToken") final String emailVerificationToken,
             @JsonProperty("emailVerificationStatus") final EmailVerificationStatus emailVerificationStatus) {
@@ -110,10 +89,6 @@ public class RegisteredUser extends AbstractSegueUser {
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
         this.registrationDate = registrationDate;
-        this.schoolId = schoolId;
-        this.password = password;
-        this.resetToken = resetToken;
-        this.resetExpiry = resetExpiry;
         this.lastUpdated = lastUpdated;
         this.emailVerificationToken = emailVerificationToken;
         this.emailVerificationStatus = emailVerificationStatus;
@@ -340,84 +315,6 @@ public class RegisteredUser extends AbstractSegueUser {
     }
 
     /**
-     * Gets the password.
-     * 
-     * @return the password
-     */
-    public final String getPassword() {
-        return password;
-    }
-
-    /**
-     * Sets the password.
-     * 
-     * @param password
-     *            the password to set
-     */
-    public final void setPassword(final String password) {
-        this.password = password;
-    }
-    
-
-    /**
-     * Gets the secureSalt.
-     * 
-     * @return the secureSalt
-     */
-    public final String getSecureSalt() {
-        return secureSalt;
-    }
-
-    /**
-     * Sets the secureSalt.
-     * 
-     * @param secureSalt
-     *            the secureSalt to set
-     */
-    public final void setSecureSalt(final String secureSalt) {
-        this.secureSalt = secureSalt;
-    }
-
-    /**
-     * Gets the resetToken.
-     * 
-     * @return the resetToken
-     */
-    public final String getResetToken() {
-        return resetToken;
-    }
-
-    /**
-     * Sets the resetToken.
-     * 
-     * @param resetToken
-     *            the resetToken to set
-     */
-    public final void setResetToken(final String resetToken) {
-        this.resetToken = resetToken;
-    }
-
-    /**
-     * Gets the resetExpiry.
-     * 
-     * @return the resetExpiry
-     */
-    public final Date getResetExpiry() {
-        return resetExpiry;
-    }
-
-    /**
-     * Sets the resetExpiry.
-     * 
-     * @param resetExpiry
-     *            the resetExpiry to set
-     */
-    public final void setResetExpiry(final Date resetExpiry) {
-        this.resetExpiry = resetExpiry;
-    }
-
-    /**
-
      * Sets the email verification token.
      * 
      * @param verificationToken

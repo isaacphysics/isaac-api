@@ -27,7 +27,7 @@ services:
   kafka:
     network_mode: bridge
     container_name: kafka
-    image: ucamcldtg/kafka
+    image: ucamcldtg/kafka-standalone
     links:
       - zookeeper:zookeeper
     build:
@@ -44,7 +44,7 @@ services:
   zookeeper:
     network_mode: bridge
     container_name: zookeeper
-    image: ucamcldtg/zookeeper
+    image: ucamcldtg/zookeeper-standalone
     build:
       context: ./kafka
       dockerfile: Dockerfile-zookeeper

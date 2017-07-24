@@ -583,7 +583,9 @@ public class UserAccountManager {
     }
 
     /**
-     * Method to create a user object in our database.
+     * Method to create a user object in our database and log them in.
+     *
+     * Note: this method is intended for creation of accounts in segue - not for linked account registration.
      * 
      * @param request
      *            to enable access to anonymous user information.
@@ -591,6 +593,8 @@ public class UserAccountManager {
      *            to store the session in our own segue cookie.
      * @param user
      *            - the user DO to use for updates - must not contain a user id.
+     * @param newPassword
+     *            - new password for the account being created.
      * @throws InvalidPasswordException
      *             - the password provided does not meet our requirements.
      * @throws MissingRequiredFieldException
@@ -606,7 +610,7 @@ public class UserAccountManager {
      *             (i.e. an @isaacphysics.org or @isaacchemistry.org address).
      */
     public RegisteredUserDTO createUserObjectAndSession(final HttpServletRequest request,
-            final HttpServletResponse response, final RegisteredUser user) throws InvalidPasswordException,
+            final HttpServletResponse response, final RegisteredUser user, final String newPassword) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException,
             EmailMustBeVerifiedException {
         Validate.isTrue(user.getId() == null,
@@ -638,15 +642,9 @@ public class UserAccountManager {
         userToSave.setRegistrationDate(new Date());
         userToSave.setLastUpdated(new Date());
 
-        this.userAuthenticationManager.checkForSeguePasswordChange(user, userToSave);
-
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
             throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
-        } else if (!this.database.hasALinkedAccount(userToSave) && userToSave.getPassword() == null) {
-            // a user must have a way of logging on.
-            throw new MissingRequiredFieldException("This modification would mean that the user"
-                    + " no longer has a way of authenticating. Reverting change.");
         }
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
@@ -663,6 +661,9 @@ public class UserAccountManager {
         // save the user to get the userId
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
 
+        // create password for the user
+        authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
+
         // send an email confirmation and set up verification
         try {
         	RegisteredUserDTO userToReturnDTO = this.getUserDTOById(userToReturn.getId());
@@ -677,10 +678,11 @@ public class UserAccountManager {
         } catch (ContentManagerException e) {
             log.error("Registration email could not be sent due to content issue: " + e.getMessage());
         } catch (NoUserException e) {
-            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+            log.error("Registration email could not be sent due to not being able to locate the user: " + e.getMessage());
 		}
 
         // save the user again with updated token
+        //TODO: do we need this?
         userToReturn = this.database.createOrUpdateUser(userToReturn);
 
         logManager.logInternalEvent(this.convertUserDOToUserDTO(userToReturn), Constants.USER_REGISTRATION,
@@ -695,6 +697,7 @@ public class UserAccountManager {
      * 
      * @param updatedUser
      *            - the user to update - must contain a user id
+     * @param newPassword - the new password if being changed.
      * @throws InvalidPasswordException
      *             - the password provided does not meet our requirements.
      * @throws MissingRequiredFieldException
@@ -706,7 +709,7 @@ public class UserAccountManager {
      *             - if there is a problem locating the authentication provider. This only applies for changing a
      *             password.
      */
-    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser) throws InvalidPasswordException,
+    public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword) throws InvalidPasswordException,
             MissingRequiredFieldException, SegueDatabaseException, AuthenticationProviderMappingException {
         Validate.notNull(updatedUser.getId());
         MapperFacade mapper = this.dtoMapper;
@@ -716,7 +719,7 @@ public class UserAccountManager {
         RegisteredUserDTO userDTOContainingUpdates = mapper.map(updatedUser, RegisteredUserDTO.class);
         if (updatedUser.getId() == null) {
             throw new IllegalArgumentException(
-                    "The user object specified has an id. Users cannot be updated without a specific id already set.");
+                    "The user object specified does not have an id. Users cannot be updated without a specific id set.");
         }
 
         // This is an update operation.
@@ -728,31 +731,28 @@ public class UserAccountManager {
             throw new DuplicateAccountException("An account with that e-mail address already exists.");
         }
 
+        IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
+                .get(AuthenticationProvider.SEGUE);
+
         // Send a new verification email if the user has changed their email
         if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
-
-            IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
-                    .get(AuthenticationProvider.SEGUE);
-
             try {
                 authenticator.createEmailVerificationTokenForUser(existingUser, updatedUser.getEmail());
-            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
-                log.error("Creation of email verification token failed: " + e1.getMessage());
-            }
 
-            log.info(String.format("Sending email for email address change for user (%s)"
-                    + " from email (%s) to email (%s)", updatedUser.getId(),
-                    existingUser.getEmail(), updatedUser.getEmail()));
-            try {
-            	RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
+                RegisteredUserDTO existingUserDTO = this.getUserDTOById(existingUser.getId());
                 emailManager.sendTemplatedEmailToUser(existingUserDTO,
                         emailManager.getEmailTemplateDTO("email-verification-change"),
                         ImmutableMap.of("requestedemail", updatedUser.getEmail()), EmailType.SYSTEM);
 
-            } catch (ContentManagerException | NoUserException e) {
-                log.debug("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
-			}
+                log.info(String.format("Sending email for email address change for user (%s)"
+                                + " from email (%s) to email (%s)", existingUser.getId(),
+                        existingUser.getEmail(), updatedUser.getEmail()));
 
+            } catch (ContentManagerException | NoUserException e) {
+                log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+                log.error("Creation of email verification token failed: " + e1.getMessage());
+            }
         }
 
         // Send a welcome email if the user has become a teacher
@@ -778,7 +778,7 @@ public class UserAccountManager {
                 }
             }
         } catch (ContentManagerException | NoUserException e) {
-            log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
+            log.error("ContentManagerException during sendTeacherWelcome " + e.getMessage());
         }
 
         MapperFacade mergeMapper = new DefaultMapperFactory.Builder().mapNulls(false).build().getMapperFacade();
@@ -796,16 +796,10 @@ public class UserAccountManager {
         if (updatedUser.getSchoolOther() == null || updatedUser.getSchoolOther().isEmpty()) {
             userToSave.setSchoolOther(null);
         }
-        
-        this.userAuthenticationManager.checkForSeguePasswordChange(updatedUser, userToSave);
 
         // Before save we should validate the user for mandatory fields.
         if (!this.isUserValid(userToSave)) {
             throw new MissingRequiredFieldException("The user provided is missing a mandatory field");
-        } else if (!this.database.hasALinkedAccount(userToSave) && userToSave.getPassword() == null) {
-            // a user must have a way of logging on.
-            throw new MissingRequiredFieldException("This modification would mean that the user"
-                    + " no longer has a way of authenticating. Failing change.");
         }
 
         // Make sure the email address is preserved (can't be changed until new email is verified)
@@ -828,6 +822,10 @@ public class UserAccountManager {
 
         // save the user
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
+        if (null != newPassword && !newPassword.isEmpty()) {
+            authenticator.setOrChangeUsersPassword(userToReturn, newPassword);
+        }
+
         // return it to the caller
         return this.convertUserDOToUserDTO(userToReturn);
     }
@@ -1022,7 +1020,7 @@ public class UserAccountManager {
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
 
-        return authenticator.isValidResetToken(this.findUserByResetToken(token));
+        return authenticator.isValidResetToken(token);
     }
 
     /**
@@ -1092,8 +1090,8 @@ public class UserAccountManager {
      *
      * @param token
      *            - the password reset token
-     * @param userObject
-     *            - the supplied user DO
+     * @param newPassword
+     *            - the supplied password
      * @return the user which has had the password reset.
      * @throws InvalidTokenException
      *             - If the token provided is invalid.
@@ -1102,9 +1100,9 @@ public class UserAccountManager {
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    public RegisteredUserDTO resetPassword(final String token, final RegisteredUser userObject)
+    public RegisteredUserDTO resetPassword(final String token, final String newPassword)
             throws InvalidTokenException, InvalidPasswordException, SegueDatabaseException {
-        return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, userObject));
+        return this.convertUserDOToUserDTO(this.userAuthenticationManager.resetPassword(token, newPassword));
     }
 
     /**
@@ -1258,23 +1256,6 @@ public class UserAccountManager {
     }
 
     /**
-     * Library method that allows the api to locate a user object from the database based on a given unique password
-     * reset token.
-     *
-     * @param token
-     *            - to search for.
-     * @return user or null if we cannot find it.
-     * @throws SegueDatabaseException
-     *             - If there is an internal database error.
-     */
-    private RegisteredUser findUserByResetToken(final String token) throws SegueDatabaseException {
-        if (null == token) {
-            return null;
-        }
-        return this.database.getByResetToken(token);
-    }
-
-    /**
      * This method should use the provider specific reference to either register a new user or retrieve an existing
      * user.
      * 
@@ -1364,18 +1345,13 @@ public class UserAccountManager {
         }
 
         RegisteredUserDTO userDTO = this.dtoMapper.map(user, RegisteredUserDTO.class);
-
         // Augment with linked account information
         try {
             userDTO.setLinkedAccounts(this.database.getAuthenticationProvidersByUser(user));
-        } catch (SegueDatabaseException e) {
-            log.error("Unable to set linked accounts for user due to a database error.");
-        }
+            userDTO.setHasSegueAccount(this.userAuthenticationManager.hasLocalCredentials(user));
 
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            userDTO.setHasSegueAccount(true);
-        } else {
-            userDTO.setHasSegueAccount(false);
+        } catch (SegueDatabaseException e) {
+            log.error("Unable to set linked accounts or local account property for user due to a database error.");
         }
 
         return userDTO;
@@ -1383,7 +1359,7 @@ public class UserAccountManager {
 
     /**
      * Converts a list of userDOs into a List of userDTOs.
-     * 
+     *
      * @param listToConvert
      *            - list of DOs to convert
      * @return the list of user dtos.

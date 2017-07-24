@@ -232,11 +232,17 @@ public class UsersFacade extends AbstractSegueFacade {
                                                @Context final HttpServletResponse response, final String userObjectString) {
 
         UserSettings userSettingsObjectFromClient;
+        String newPassword;
         try {
             ObjectMapper tmpObjectMapper = new ObjectMapper();
             tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            userSettingsObjectFromClient = tmpObjectMapper.readValue(userObjectString, UserSettings.class);
 
+            //TODO: We need to change the way the frontend sends passwords to reduce complexity
+            Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
+            newPassword = (String) ((Map)mapRepresentation.get("registeredUser")).get("password");
+            ((Map)mapRepresentation.get("registeredUser")).remove("password");
+            userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
+            
             if (null == userSettingsObjectFromClient) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,  "No user settings provided.").toResponse();
             }
@@ -258,7 +264,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             try {
                 return this.updateUserObject(request, response, registeredUser,
-                        userSettingsObjectFromClient.getPasswordCurrent(), userEmailPreferences, subjectInterests);
+                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword, userEmailPreferences, subjectInterests);
             } catch (IncorrectCredentialsProvidedException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
                         .toResponse();
@@ -267,7 +273,7 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
         } else {
-            return this.createUserObjectAndLogIn(request, response, registeredUser, emailPreferences);
+            return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, emailPreferences);
         }
 
     }
@@ -442,7 +448,7 @@ public class UsersFacade extends AbstractSegueFacade {
      *
      * @param token
      *            - A password reset token
-     * @param userObject
+     * @param clientResponse
      *            - A user object containing password information.
      * @param request
      *            - For logging purposes.
@@ -452,14 +458,15 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response resetPassword(@PathParam("token") final String token, final RegisteredUser userObject,
+    public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
                                   @Context final HttpServletRequest request) {
         try {
-
-            RegisteredUserDTO userDTO = userManager.resetPassword(token, userObject);
+            String newPassword = clientResponse.get("password");
+            RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
 
             this.getLogManager().logEvent(userDTO, request, PASSWORD_RESET_REQUEST_SUCCESSFUL,
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
+
             // we can reset the misuse monitor for incorrect logins now.
             misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.toString());
 
@@ -524,6 +531,11 @@ public class UsersFacade extends AbstractSegueFacade {
                     "You must specify the from_date and to_date you are interested in.").toResponse();
         }
 
+        if (fromDate > toDate) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The from_date must be before the to_date!").toResponse();
+        }
+
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
@@ -534,14 +546,26 @@ public class UsersFacade extends AbstractSegueFacade {
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
 
+            if (!events.equals(ANSWER_QUESTION) && currentUser.getRole() != Role.ADMIN) {
+                // Non-admins should not be able to choose random log events.
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
+
             // decide if the user is allowed to view this data.
             if (!currentUser.getId().equals(userIdOfInterest)
                     && !userAssociationManager.hasPermission(currentUser, userOfInterestSummaryObject)) {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            // No point looking for stats from before the user registered (except for merged logs at registration and
+            // these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway: less than 1 month):
+            Date fromDateObject = new Date(fromDate);
+            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+                fromDateObject = userOfInterest.getRegistrationDate();
+            }
+
             Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
-                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate),
+                    Lists.newArrayList(events.split(",")), fromDateObject, new Date(toDate),
                     Arrays.asList(userOfInterest), binData);
 
             return Response.ok(eventLogsByDate).build();
@@ -668,6 +692,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - the new user object from the clients perspective.
      * @param passwordCurrent
      * 			  - the current password, used if the password has changed
+     * @param newPassword
+     * 			  - the new password, used if the password has changed
      * @param emailPreferences
      * 			  - the email preferences for this user
      * @param subjectInterests - the subjects interests of the user, which should be removed from this method!
@@ -676,7 +702,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * @throws IncorrectCredentialsProvidedException
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
-                                      final RegisteredUser userObjectFromClient, final String passwordCurrent,
+                                      final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
                                       final List<IEmailPreference> emailPreferences, final Map<String, Boolean> subjectInterests)
                                 throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
         Validate.notNull(userObjectFromClient.getId());
@@ -694,7 +720,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             // check if they are trying to change a password
-            if (userObjectFromClient.getPassword() != null && !userObjectFromClient.getPassword().isEmpty()) {
+            if (newPassword != null && !newPassword.isEmpty()) {
                 // only admins and the account owner can change passwords 
                 if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                         && currentlyLoggedInUser.getRole() != Role.ADMIN) {
@@ -705,6 +731,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 // Password change requires auth check unless admin is modifying non-admin user account
                 if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
+
                     this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
                             userObjectFromClient.getEmail(), passwordCurrent);
                 }
@@ -730,7 +757,7 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
+            RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient, newPassword);
 
             // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
             if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
@@ -803,7 +830,7 @@ public class UsersFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
                     .toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn("Missing field during update operation. ", e.getMessage());
+            log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (AuthenticationProviderMappingException e) {
@@ -821,15 +848,18 @@ public class UsersFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
+     * @param newPassword
+     *            - the new password for the user.
      * @param emailPreferences
      * 			  - the new email preferences for this user
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-                                              final RegisteredUser userObjectFromClient, final Map<String, Boolean> emailPreferences) {
+                                              final RegisteredUser userObjectFromClient, final String newPassword,
+                                              final Map<String, Boolean> emailPreferences) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
-                    userObjectFromClient);
+                    userObjectFromClient, newPassword);
 
             List<IEmailPreference> userEmailPreferences = emailPreferenceManager.mapToEmailPreferenceList(
                     savedUser.getId(), emailPreferences);
