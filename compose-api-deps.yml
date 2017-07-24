@@ -13,6 +13,52 @@ services:
     image: ucamcldtg/chemistry-checker
     restart: always
 
+  kafka-dev:
+    container_name: kafka-dev
+    image: ucamcldtg/kafka
+    links:
+      - zookeeper-dev:zookeeper
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile-kafka
+    volumes:
+      - /local/data/kafka-dev:/kafka-data:rw
+      - ./kafka/server.properties:/opt/kafka/config/server.properties:ro
+    depends_on:
+      - zookeeper-dev
+
+  zookeeper-dev:
+    container_name: zookeeper-dev
+    image: ucamcldtg/zookeeper
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile-zookeeper
+    volumes:
+      - /local/data/zookeeper-dev:/zookeeper-data:rw
+      - ./kafka/zoo.cfg:/opt/zookeeper/conf/zoo.cfg:ro
+
+  kafka-staging:
+    container_name: kafka-staging
+    links:
+      - zookeeper-staging:zookeeper
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile-kafka
+    volumes:
+      - /local/data/kafka-staging:/kafka-data:rw
+      - ./kafka/server.properties:/opt/kafka/config/server.properties:ro
+    depends_on:
+      - zookeeper-staging
+
+  zookeeper-staging:
+    container_name: zookeeper-staging
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile-zookeeper
+    volumes:
+      - /local/data/zookeeper-staging:/zookeeper-data:rw
+      - ./kafka/zoo.cfg:/opt/zookeeper/conf/zoo.cfg:ro
+
 networks:
   default:
     external:
