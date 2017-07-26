@@ -300,7 +300,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<ImmutableMap<String, Object>> result = Lists.newArrayList();
             final String userString = "user";
             final String resultsString = "results";
-            final String questionPartString = "questionPartResults";
+            final String correctPartString = "correctPartResults";
+            final String incorrectPartString = "incorrectPartResults";
 
             for (Entry<RegisteredUserDTO, List<GameboardItem>> e : this.gameManager.gatherGameProgressData(
                     groupMembers, gameboard).entrySet()) {
@@ -311,15 +312,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 if (userSummary.isAuthorisedFullAccess()) {
                     ArrayList<GameboardItemState> states = Lists.newArrayList();
                     ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
+                    ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
                     for (GameboardItem questionResult : e.getValue()) {
                         states.add(questionResult.getState());
                         correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
+                        incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
                     }
                     result.add(ImmutableMap.of(userString, userSummary, resultsString, states,
-                            questionPartString, correctQuestionParts));
+                            correctPartString, correctQuestionParts, incorrectPartString, incorrectQuestionParts));
                 } else {
                     result.add(ImmutableMap.of(userString, userSummary, resultsString, Lists.newArrayList(),
-                            questionPartString, Lists.newArrayList()));
+                            correctPartString, Lists.newArrayList(), incorrectPartString, Lists.newArrayList()));
                 }
             }
 
