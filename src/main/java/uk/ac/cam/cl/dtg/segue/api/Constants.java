@@ -194,6 +194,7 @@ public final class Constants {
     public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
     public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
     public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
+    public static final String FACEBOOK_USER_FIELDS = "FACEBOOK_USER_FIELDS";
 
     // Twitter properties
     public static final String TWITTER_SECRET = "TWITTER_SECRET";

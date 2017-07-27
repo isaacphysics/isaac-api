@@ -219,6 +219,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         this.bindConstantToProperty(Constants.FACEBOOK_CLIENT_ID, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_CALLBACK_URI, globalProperties);
         this.bindConstantToProperty(Constants.FACEBOOK_OAUTH_SCOPES, globalProperties);
+        this.bindConstantToProperty(Constants.FACEBOOK_USER_FIELDS, globalProperties);
 
         // Twitter
         this.bindConstantToProperty(Constants.TWITTER_SECRET, globalProperties);

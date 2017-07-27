@@ -103,7 +103,26 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException if we cannot contact the database for logging.
      */
     public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
-                                                   final Map<String, Object> tokenToValueMapping, final EmailType emailType)
+                                         final Map<String, Object> tokenToValueMapping, final EmailType emailType)
+            throws ContentManagerException, SegueDatabaseException {
+        this.sendTemplatedEmailToUser(userDTO, emailContentTemplate, tokenToValueMapping, emailType, null);
+    }
+
+    /**
+     * Send an email to a user based on a content template.
+     *
+     * @param userDTO - the user to email
+     * @param emailContentTemplate - the content template to send to the user.
+     * @param tokenToValueMapping - a Map of tokens to values that will be replaced in the email template.
+     * @param emailType - the type of email that this is so that it is filtered appropriately based on user email prefs.
+     * @param attachments
+     * 			  - list of attachment objects
+     * @throws ContentManagerException if we can't parse the content
+     * @throws SegueDatabaseException if we cannot contact the database for logging.
+     */
+    public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
+                                                   final Map<String, Object> tokenToValueMapping, final EmailType emailType,
+                                         @Nullable List<EmailAttachment> attachments)
             throws ContentManagerException, SegueDatabaseException {
 
         // generate properties from hashMap for token replacement process
@@ -121,7 +140,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
-                emailType);
+                emailType, attachments);
 
         if (emailType.equals(EmailType.SYSTEM)) {
                 addSystemEmailToQueue(emailCommunicationMessage);
@@ -156,8 +175,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         propertiesToReplace.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
-                propertiesToReplace,
-                EmailType.SYSTEM);
+                propertiesToReplace, EmailType.SYSTEM, null);
 
         this.addSystemEmailToQueue(e);
     }
@@ -209,7 +227,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("sig", SIGNATURE);
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
-                    emailType);
+                    emailType, null);
 
             ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
                     .put("userId", user.getId()).put("email", e.getRecipientAddress()).put("type", emailType)
@@ -464,7 +482,31 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         return template;
     }
-    
+
+    /**
+     * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage.
+     *
+     * @param userId
+     * 		- (nullable) the id of the user the email should be sent to
+     * @param userEmail
+     * 		- the email of the user
+     * @param emailType
+     *      - the type of e-mail being created
+     * @return
+     * 		- a multi-part EmailCommunicationMessage
+     * @throws ContentManagerException
+     * 		- if there has been an error accessing content
+     * @throws ResourceNotFoundException
+     * 		- if the resource has not been found
+     *
+     */
+    public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
+                                                             EmailTemplateDTO emailContent, Properties contentProperties,
+                                                             final EmailType emailType)
+            throws ContentManagerException, ResourceNotFoundException {
+        return this.constructMultiPartEmail(userId, userEmail, emailContent, contentProperties, emailType);
+    }
+
     /**
      * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage. 
      * 
@@ -474,6 +516,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- the email of the user 
      * @param emailType
      *      - the type of e-mail being created
+     * @param attachments
+     * 			  - list of attachment objects
      * @return
      * 		- a multi-part EmailCommunicationMessage
      * @throws ContentManagerException
@@ -483,7 +527,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 	
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
-            EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType)
+            EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType,
+                                                             @Nullable final List<EmailAttachment> attachments)
 					throws ContentManagerException, ResourceNotFoundException {
     	Validate.notNull(userEmail);
     	Validate.notEmpty(userEmail);
@@ -518,7 +563,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         return new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
                 plainTextMessage,
-                htmlMessage, emailType, replyToAddress, replyToName);
+                htmlMessage, emailType, replyToAddress, replyToName, attachments);
 
     }
 
