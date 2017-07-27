@@ -16,6 +16,7 @@
 package uk.ac.cam.cl.dtg.segue.comm;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * Class to hold the contents of an email.
@@ -39,28 +40,26 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
     private final String replyToName;
     
     private final EmailType emailType;
+
+    private final List<EmailAttachment> attachments;
     
     /**
-     * @param userId
-     *            (nullable) id of the user
-     * @param recipientAddress
-     *            address of user
-     * @param subject
-     *            subject of email
-     * @param plainTextMessage
-     *            message in email
-     * @param htmlMessage
-     *            html message in email
-     * @param emailType
-     * 			  the type of the message
-     * @param replyToAddress
-     *            (nullable) the preferred reply to address.
-     * @param replyToName
-     *            (nullable) the name to add to the reply-to field.
+     * @param userId (nullable) id of the user
+     * @param recipientAddress address of user
+     * @param subject subject of email
+     * @param plainTextMessage message in email
+     * @param htmlMessage html message in email
+     * @param emailType the type of the message
+     * @param replyToAddress (nullable) the preferred reply to address.
+     * @param replyToName the reply to name for the email message
+     * @param attachments list of attachments for the message
+     *
      */
     public EmailCommunicationMessage(@Nullable final Long userId, final String recipientAddress,
-            final String subject, final String plainTextMessage, final String htmlMessage, final EmailType emailType,
-            @Nullable final String replyToAddress, @Nullable final String replyToName) {
+                                     final String subject, final String plainTextMessage,
+                                     final String htmlMessage, final EmailType emailType,
+                                     @Nullable final String replyToAddress, @Nullable final String replyToName,
+                                     @Nullable final List<EmailAttachment> attachments) {
         this.userId = userId;
     	this.plainTextMessage = plainTextMessage;
         this.recipientAddress = recipientAddress;
@@ -69,6 +68,7 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
         this.replyToAddress = replyToAddress;
         this.replyToName = replyToName;
         this.emailType = emailType;
+        this.attachments = attachments;
     }
 
     /**
@@ -132,4 +132,10 @@ public class EmailCommunicationMessage implements ICommunicationMessage {
 		return emailType;
 	}
 
+    /**
+     * @return the list of attachments
+     */
+    public List<EmailAttachment> getAttachments() {
+        return attachments;
+    }
 }

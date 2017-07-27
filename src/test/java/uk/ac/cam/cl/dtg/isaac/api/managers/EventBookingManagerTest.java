@@ -85,14 +85,14 @@ public class EventBookingManagerTest {
         expectLastCall().atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus
-				.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
+				.CONFIRMED, someAdditionalInformation)).andReturn(firstBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
         expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
 
-        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().atLeastOnce();
 
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
@@ -128,7 +128,7 @@ public class EventBookingManagerTest {
         expectLastCall().atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus
-				.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
+				.CONFIRMED, someAdditionalInformation)).andReturn(firstBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
@@ -319,14 +319,14 @@ public class EventBookingManagerTest {
         expectLastCall().atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), someUser.getId(), BookingStatus
-				.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
+				.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
         expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
 
-        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().atLeastOnce();
 
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
@@ -380,12 +380,12 @@ public class EventBookingManagerTest {
         expectLastCall().atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.createBooking(testEvent.getId(), firstUserFull.getId(),
-				BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
+				BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
-        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().atLeastOnce();
 
         expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
@@ -442,14 +442,14 @@ public class EventBookingManagerTest {
         expectLastCall().atLeastOnce();
 
         expect(dummyEventBookingPersistenceManager.updateBookingStatus(testEvent.getId(), someUser.getId(),
-				BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(new EventBookingDTO()).atLeastOnce();
+				BookingStatus.CONFIRMED, someAdditionalInformation)).andReturn(secondBooking).atLeastOnce();
 
         dummyEventBookingPersistenceManager.releaseDistributedLock(testEvent.getId());
         expectLastCall().atLeastOnce();
 
         expect(dummyEmailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed")).andReturn(new EmailTemplateDTO()).atLeastOnce();
 
-        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject());
+        dummyEmailManager.sendTemplatedEmailToUser(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().atLeastOnce();
 
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);

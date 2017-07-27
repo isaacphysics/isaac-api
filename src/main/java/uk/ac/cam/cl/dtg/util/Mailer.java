@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Stephen Cummins
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,10 @@
 package uk.ac.cam.cl.dtg.util;
 
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.Properties;
 
+import javax.activation.DataHandler;
 import javax.annotation.Nullable;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
@@ -30,9 +32,9 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.validation.constraints.Null;
 
 import org.apache.commons.lang3.Validate;
+import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 
 /**
  * Mailer Class Utility Class for sending e-mails such as contact us forms or
@@ -85,11 +87,12 @@ public class Mailer {
      *             - if the address is not valid.
      */
     public void sendPlainTextMail(final String[] recipient, final String from, @Nullable final String replyTo,
-            @Nullable final String replyToName, final String subject, final String contents) throws MessagingException, AddressException, UnsupportedEncodingException {
+            @Nullable final String replyToName, final String subject, final String contents)
+			throws MessagingException, UnsupportedEncodingException {
         Message msg = this.setupMessage(recipient, from, replyTo, replyToName, subject);
         
         msg.setText(contents);
-        
+
         Transport.send(msg);
     }
 
@@ -111,15 +114,19 @@ public class Mailer {
      *            - The message body
      * @param html
      *            - The message body in html
+	 * @param attachments
+	 * 			  - list of attachment objects
      * @throws MessagingException
      *             - if we cannot send the message for some reason.
      * @throws AddressException
      *             - if the address is not valid.
      */
     public void sendMultiPartMail(final String[] recipient, final String from, @Nullable final String replyTo,
-			@Nullable final String replyToName, final String subject, final String plainText, final String html)
+			@Nullable final String replyToName, final String subject, final String plainText, final String html,
+			final List<EmailAttachment> attachments)
 			throws MessagingException, AddressException, UnsupportedEncodingException {
-        Message msg = this.setupMessage(recipient, from, replyTo, replyToName, subject);
+
+    	Message msg = this.setupMessage(recipient, from, replyTo, replyToName, subject);
         
         // Create the text part
         MimeBodyPart textPart = new MimeBodyPart();
@@ -131,6 +138,16 @@ public class Mailer {
         Multipart multiPart = new MimeMultipart("alternative");
         multiPart.addBodyPart(textPart);
         multiPart.addBodyPart(htmlPart);
+
+		if (attachments != null) {
+			for (EmailAttachment attachment : attachments) {
+				MimeBodyPart attachmentBodyPart = new MimeBodyPart();
+				DataHandler dataHandler = new DataHandler(attachment.getAttachment(), attachment.getMimeType());
+				attachmentBodyPart.setDataHandler(dataHandler);
+				attachmentBodyPart.setFileName(attachment.getFileName());
+				multiPart.addBodyPart(attachmentBodyPart);
+			}
+		}
 
         msg.setContent(multiPart);
         
@@ -212,7 +229,8 @@ public class Mailer {
      * @throws MessagingException - if there is an error in setting up the message
      */
     private Message setupMessage(final String[] recipient, final String from, @Nullable final String replyTo,
-			 @Nullable final String replyToName, final String subject) throws MessagingException, UnsupportedEncodingException {
+			 @Nullable final String replyToName, final String subject)
+			throws MessagingException, UnsupportedEncodingException {
         Validate.notEmpty(recipient);
         Validate.notBlank(recipient[0]);
         Validate.notBlank(from);
@@ -229,25 +247,24 @@ public class Mailer {
         Session s = Session.getDefaultInstance(p);
         Message msg = new MimeMessage(s);
 
-        InternetAddress sentBy = null;
+        InternetAddress sentBy;
         InternetAddress[] sender = new InternetAddress[1];
-        InternetAddress[] recievers = new InternetAddress[recipient.length];
+        InternetAddress[] receivers = new InternetAddress[recipient.length];
 
         sentBy = new InternetAddress(mailAddress, mailName);
         sender[0] = new InternetAddress(from);
         for (int i = 0; i < recipient.length; i++) {
-            recievers[i] = new InternetAddress(recipient[i]);
+            receivers[i] = new InternetAddress(recipient[i]);
         }
 
-        if (sentBy != null && sender != null && recievers != null) {
-            msg.setFrom(sentBy);
-            msg.setRecipients(RecipientType.TO, recievers);
-            msg.setSubject(subject);
+		msg.setFrom(sentBy);
+		msg.setRecipients(RecipientType.TO, receivers);
+		msg.setSubject(subject);
 
-            if (null != replyTo && null != replyToName) {
-                msg.setReplyTo(new InternetAddress[] { new InternetAddress(replyTo, replyToName) });
-            }
-        }
+		if (null != replyTo && null != replyToName) {
+			msg.setReplyTo(new InternetAddress[] { new InternetAddress(replyTo, replyToName) });
+		}
+
         return msg;
     }
 }
