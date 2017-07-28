@@ -32,4 +32,4 @@ SELECT users.id, users.password, users.secure_salt, users.reset_token, users.res
 -- check that the new table looks sensible.
 
 --- Step 4: Remove old fields from user table.
---- Manually remove these later...
+ALTER TABLE users DROP COLUMN password, DROP COLUMN secure_salt, DROP COLUMN reset_token, DROP COLUMN reset_expiry;

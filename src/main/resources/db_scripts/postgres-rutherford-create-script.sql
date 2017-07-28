@@ -543,10 +543,6 @@ CREATE TABLE users (
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
     default_level integer,
-    password text,
-    secure_salt text,
-    reset_token text,
-    reset_expiry timestamp without time zone,
     email_verification_token text
 );
 
