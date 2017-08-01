@@ -319,6 +319,10 @@ public class EventBookingManager {
                 emailManager.sendTemplatedEmailToUser(user,
                         emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
                         new ImmutableMap.Builder<String, Object>()
+                                .put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                                        propertiesLoader.getProperty(HOST_NAME)))
+                                .put("myAssignmentsURL", String.format("https://%s/assignments",
+                                        propertiesLoader.getProperty(HOST_NAME)))
                                 .put("contactUsURL", generateEventContactUsURL(event))
                                 .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                                 .put("event", event)
@@ -605,6 +609,10 @@ public class EventBookingManager {
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-waiting-list-addition-notification"),
                     new ImmutableMap.Builder<String, Object>()
+                            .put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("myAssignmentsURL", String.format("https://%s/assignments",
+                                    propertiesLoader.getProperty(HOST_NAME)))
                             .put("contactUsURL", generateEventContactUsURL(event))
                             .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
                             .put("event", event)
