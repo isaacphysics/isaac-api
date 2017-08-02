@@ -504,7 +504,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                                                              EmailTemplateDTO emailContent, Properties contentProperties,
                                                              final EmailType emailType)
             throws ContentManagerException, ResourceNotFoundException {
-        return this.constructMultiPartEmail(userId, userEmail, emailContent, contentProperties, emailType);
+        return this.constructMultiPartEmail(userId, userEmail, emailContent, contentProperties, emailType, null);
     }
 
     /**
