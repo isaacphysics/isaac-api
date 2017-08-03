@@ -6,6 +6,7 @@ import com.google.api.client.util.Maps;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
@@ -60,10 +61,11 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private static final int LONG_STATS_EVICTION_INTERVAL_MINUTES = 720; // 12 hours
     private static final long LONG_STATS_MAX_ITEMS = 20;
 
+    @Inject
     public KafkaStatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                                   final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
                                   final LocationManager locationHistoryManager, final GroupManager groupManager,
-                                  final QuestionManager questionManager, final GameManager gameManager, KafkaStreamsService kafkaStreamsService,
+                                  final QuestionManager questionManager, final GameManager gameManager, final KafkaStreamsService kafkaStreamsService,
                                   final StatisticsManager statsManager) {
 
         this.oldStatisticsManager = statsManager;

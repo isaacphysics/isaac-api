@@ -770,8 +770,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == kafkaStatsManager) {
             kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
                     locationHistoryManager, groupManager, questionManager, gameManager, streamsService, statsManager);
-            log.info("Created Singleton of Statistics Manager");
-
+            log.info("Created Singleton of Kafka Statistics Manager");
         }
 
         return kafkaStatsManager;
