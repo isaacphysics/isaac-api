@@ -42,7 +42,8 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
- * Created by du220 on 19/07/2017.
+ * KafkaStatisticsManager.
+ * TODO like the old stats manager, this file is a mess... it needs refactoring. This at least provides a starting point.
  */
 public class KafkaStatisticsManager implements IStatisticsManager {
 
@@ -63,9 +64,8 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
     @Inject
     public KafkaStatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
-                                  final SchoolListReader schoolManager, final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex,
-                                  final LocationManager locationHistoryManager, final GroupManager groupManager,
-                                  final QuestionManager questionManager, final GameManager gameManager, final KafkaStreamsService kafkaStreamsService,
+                                  final SchoolListReader schoolManager, final GroupManager groupManager,
+                                  final KafkaStreamsService kafkaStreamsService,
                                   final StatisticsManager statsManager) {
 
         this.oldStatisticsManager = statsManager;
@@ -558,7 +558,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
             try {
                 return streams.store(storeName, queryableStoreType);
             } catch (InvalidStateStoreException e) {
-                log.debug("Waiting for state store to become available.");
+                log.info("Waiting for state store to become available.");
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException ex) {

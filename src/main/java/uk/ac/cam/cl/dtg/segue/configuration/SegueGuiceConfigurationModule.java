@@ -741,15 +741,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param schoolManager
      *            - dependency
-     * @param contentManager
-     *            - dependency
-     * @param locationHistoryManager
-     *            - dependency
      * @param groupManager
-     *            - dependency
-     * @param questionManager
-     *            - dependency
-     * @param gameManager
      *            - dependency
        @param streamsService
      *            - dependency
@@ -762,14 +754,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final LocationManager locationHistoryManager,
-                                                     final GroupManager groupManager, final QuestionManager questionManager, final GameManager gameManager,
-                                                     final KafkaStreamsService streamsService,
+                                                     final GroupManager groupManager, final KafkaStreamsService streamsService,
                                                      final StatisticsManager statsManager) {
 
         if (null == kafkaStatsManager) {
-            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, contentManager, contentIndex,
-                    locationHistoryManager, groupManager, questionManager, gameManager, streamsService, statsManager);
+            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, groupManager, streamsService, statsManager);
             log.info("Created Singleton of Kafka Statistics Manager");
         }
 
