@@ -19,10 +19,10 @@ import java.io.IOException;
 import java.util.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -33,6 +33,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.connect.json.JsonDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
@@ -119,19 +121,19 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
                     if (record.value().path("user_id").asText().equals(oldUserId)) {
 
-                        Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
-                                .put("user_id", newUserId)
-                                .put("anonymous_user", false)
-                                .put("event_type", record.value().path("event_type").asText())
-                                .put("event_details_type", record.value().path("event_details_type").asText())
-                                .put("event_details", record.value().path("event_details"))
-                                .put("ip_address", record.value().path("ip_address").asText())
-                                .put("timestamp", record.value().path("timestamp").asText())
-                                .build();
+                        ObjectNode kafkaLogRecord = JsonNodeFactory.instance.objectNode();
+
+                        kafkaLogRecord.put("user_id", newUserId);
+                        kafkaLogRecord.put("anonymous_user", false);
+                        kafkaLogRecord.put("event_type", record.value().path("event_type").asText());
+                        kafkaLogRecord.put("event_details_type", record.value().path("event_details_type").asText());
+                        kafkaLogRecord.put("event_details", record.value().path("event_details"));
+                        kafkaLogRecord.put("ip_address", record.value().path("ip_address").asText());
+                        kafkaLogRecord.put("timestamp", record.value().path("timestamp").asText());
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", newUserId,
-                                String.format(objectMapper.writeValueAsString(kafkaLogRecord)));
+                        ProducerRecord producerRecord = new ProducerRecord<String, JsonNode>("topic_logged_events", newUserId,
+                                kafkaLogRecord);
 
                         kafkaProducer.Send(producerRecord);
                     }
@@ -139,8 +141,6 @@ public class KafkaLoggingManager extends LoggingEventHandler {
             }
 
         } catch (KafkaException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
             e.printStackTrace();
         } finally {
             loggedEventsConsumer.close();

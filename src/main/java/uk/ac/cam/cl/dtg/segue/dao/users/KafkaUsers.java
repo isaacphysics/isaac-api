@@ -53,12 +53,12 @@ public class KafkaUsers implements IUserDataManager {
         Map<String, Object> userDetails = new ImmutableMap.Builder<String, Object>()
                 .put("user_id", regUser.getId())
                 .put("role", regUser.getRole())
-                .put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth() : "null")
-                .put("gender", (regUser.getGender() != null) ? regUser.getGender() : "null")
+                .put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth() : "")
+                .put("gender", (regUser.getGender() != null) ? regUser.getGender() : "")
                 .put("registration_date", regUser.getRegistrationDate().getTime())
-                .put("school_id", (regUser.getSchoolId() != null) ? regUser.getSchoolId() : "null")
-                .put("school_other", (regUser.getSchoolOther() != null) ? regUser.getSchoolOther() : "null")
-                .put("default_level", (regUser.getDefaultLevel() != null) ? regUser.getDefaultLevel() : "null")
+                .put("school_id", (regUser.getSchoolId() != null) ? regUser.getSchoolId() : "")
+                .put("school_other", (regUser.getSchoolOther() != null) ? regUser.getSchoolOther() : "")
+                .put("default_level", (regUser.getDefaultLevel() != null) ? regUser.getDefaultLevel() : "")
                 .put("email_verification_status", regUser.getEmailVerificationStatus())
                 .build();
 

@@ -255,6 +255,7 @@ public final class DerivedStreams {
                 );
 
 
+
         // join user table to incoming event stream to get user data for stats processing
         KStream<String, JsonNode> userEvents = stream
 
