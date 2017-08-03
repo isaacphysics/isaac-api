@@ -213,6 +213,10 @@ public final class Constants {
     public static final String POSTGRES_DB_USER = "POSTGRES_DB_USER";
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
 
+    // Kafka Properties
+    public static final String KAFKA_HOSTNAME = "KAFKA_HOSTNAME";
+    public static final String KAFKA_PORT = "KAFKA_PORT";
+
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
     public static final Integer MAX_LOG_REQUEST_BODY_SIZE_IN_BYTES = 1000000;
