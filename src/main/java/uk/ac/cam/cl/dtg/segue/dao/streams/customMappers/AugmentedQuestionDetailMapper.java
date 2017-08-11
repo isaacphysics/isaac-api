@@ -45,10 +45,10 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 
 /**
- *  Concrete implementation of a JsonNode -> JsonNode ValueMapper for augmenting question part attempt details
+ *  JsonNode -> JsonNode ValueMapper for augmenting question part attempt details
  *  @author Dan Underwood
  */
-public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonNode> {
+public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode, JsonNode> {
 
     private JsonNodeFactory nodeFactory;
     private ObjectMapper objectMapper;
@@ -75,10 +75,10 @@ public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonN
      */
     public JsonNode apply(final JsonNode questionDetails) {
 
-        String questionId = questionDetails.path("questionId").asText();
+        String questionId = questionDetails.path("question_id").asText();
         Boolean questionCompletelyCorrect = true;
 
-        ArrayNode questionPartAttempts = (ArrayNode) questionDetails.path("partAttemptsCorrect");
+        ArrayNode questionPartAttempts = (ArrayNode) questionDetails.path("part_attempts_correct");
         ObjectNode refinedQuestionObjects = nodeFactory.objectNode();
         try {
 
@@ -87,32 +87,32 @@ public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonN
             JsonNode extraDetails = this.getExtraDetails(questionId);
 
             // has the user answered all question parts?
-            if (extraDetails.path("questionPartCount").asLong() != questionPartAttempts.size()) {
+            if (extraDetails.path("question_part_count").asLong() != questionPartAttempts.size()) {
                 questionCompletelyCorrect = false;
 
             } else {
 
-                Long attemptCount = questionPartAttempts.get(questionPartAttempts.size() - 1).path("correctAttemptCount").asLong();
+                Long attemptCount = questionPartAttempts.get(questionPartAttempts.size() - 1).path("correct_attempt_count").asLong();
 
                 if (attemptCount != 1) {
                     questionCompletelyCorrect = false;
                 }
             }
 
-            refinedQuestionObjects.put("questionId", questionId);
+            refinedQuestionObjects.put("question_id", questionId);
             refinedQuestionObjects.put("level", extraDetails.path("level"));
             refinedQuestionObjects.put("tags", extraDetails.path("tags"));
             refinedQuestionObjects.put("correct", questionCompletelyCorrect);
-            refinedQuestionObjects.put("dateAttempted", questionDetails.path("latestAttempt"));
+            refinedQuestionObjects.put("date_attempted", questionDetails.path("latest_attempt"));
 
             return refinedQuestionObjects;
 
         } catch (ContentManagerException e) {
-            refinedQuestionObjects.put("questionId", questionId);
+            refinedQuestionObjects.put("question_id", questionId);
             refinedQuestionObjects.put("level", "invalid");
             refinedQuestionObjects.put("tags", "invalid");
             refinedQuestionObjects.put("correct", "invalid");
-            refinedQuestionObjects.put("dateAttempted", "invalid");
+            refinedQuestionObjects.put("date_attempted", "invalid");
 
             return refinedQuestionObjects;
         }
@@ -128,7 +128,7 @@ public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonN
      */
     private JsonNode getExtraDetails(final String questionId) throws ContentManagerException {
 
-        /*ObjectNode jsonResponse = nodeFactory.objectNode();
+        ObjectNode jsonResponse = nodeFactory.objectNode();
 
         Validate.notBlank(questionId);
 
@@ -155,14 +155,14 @@ public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonN
         for (String tag: questionContent.getTags())
             tags.add(tag);
 
-        jsonResponse.put("questionId", questionId)
+        jsonResponse.put("question_id", questionId)
                 .put("level", questionContent.getLevel())
-                .put("questionPartCount", questionParts.size())
+                .put("question_part_count", questionParts.size())
                 .put("tags", tags);
 
-        return jsonResponse;*/
+        return jsonResponse;
 
-        JsonNode jsonResponse = nodeFactory.objectNode();
+        /*JsonNode jsonResponse = nodeFactory.objectNode();
 
         try {
 
@@ -190,6 +190,6 @@ public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode,JsonN
         } catch (IOException e) {
             //e.printStackTrace();
             return jsonResponse;
-        }
+        }*/
     }
 }

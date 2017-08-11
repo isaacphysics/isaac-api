@@ -19,6 +19,10 @@ package uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;
@@ -26,11 +30,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- *  Custom processor to handle instances of threshold passing for data counters
+ *  Custom processor to update postgres user achievements
  *  @author Dan Underwood
  */
 public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
 
+    private static final Logger log = LoggerFactory.getLogger(ThresholdAchievedProcessor.class);
     private ProcessorContext context;
     private PostgresSqlDb postgresDB;
 
@@ -41,12 +46,12 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
      * @param postgresDB
      *            client for postgres.
      */
-    public ThresholdAchievedProcessor(PostgresSqlDb postgresDB) {
+    public ThresholdAchievedProcessor(final PostgresSqlDb postgresDB) {
         this.postgresDB = postgresDB;
     }
 
     @Override
-    public void init(ProcessorContext context) {
+    public void init(final ProcessorContext context) {
         this.context = context;
 
         // Here you would perform any additional initializations
@@ -64,15 +69,15 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
      *            - details of the threshold achieved
      */
     @Override
-    public void process(String id, JsonNode details) {
+    public void process(final String id, final JsonNode details) {
 
         Long userId = Long.valueOf(id);
         String achievementId = details.path("type").asText();
         Long threshold = details.path("count").asLong();
         Long timestamp = details.path("latest_attempt").asLong();
 
-        //handle the event
 
+        //handle the event
         PreparedStatement pst;
         try (Connection conn = postgresDB.getDatabaseConnection()) {
 
@@ -87,18 +92,18 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
             pst.setTimestamp(4, new java.sql.Timestamp(timestamp));
 
             if (pst.executeUpdate() == 0) {
-                System.out.println("Unable to save question attempt.");
+                log.error("Unable to save user achievement.");
             }
 
 
         } catch (SQLException e) {
-            System.out.println(e);
+            log.error("SQLException: Unable to connect!", e);
         }
 
     }
 
     @Override
-    public void punctuate(long timestamp) {
+    public void punctuate(final long timestamp) {
         // Stays empty.  In this use case there would be no need for a periodical
         // action of this processor.
     }

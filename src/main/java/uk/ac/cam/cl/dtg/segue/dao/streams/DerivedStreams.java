@@ -102,10 +102,36 @@ public final class DerivedStreams {
         // user activity streaks
         userWeeklyStreaks(stream);
 
+        // teacher assignment activity
+        teacherAssignmentActivity(stream);
+
 
 
         return stream;
     }
+
+
+
+    /** Processing of teacher activity for creating and setting assignments
+     *
+     * @param stream incoming raw logged event data
+     * @return
+     */
+    private static KStream<String, JsonNode> teacherAssignmentActivity(final KStream<String, JsonNode> stream) {
+
+        KStream<String, JsonNode> setAssignments = filterByEventType(stream, "SET_NEW_ASSIGNMENT");
+
+
+
+
+
+        return stream;
+    }
+
+
+
+
+
 
 
 
@@ -222,6 +248,7 @@ public final class DerivedStreams {
      */
     public static void userStatistics(final KStream<String, JsonNode> stream) {
 
+        // only want to initialize stream once (could refactor into singleton...)
         if (UserStatsInitialized)
             return;
 
