@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.segue.api.userNotifications;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -23,11 +24,14 @@ import java.io.IOException;
 public class UserNotificationWebSocket {
 
     private KafkaStreams streams;
+    private ObjectMapper objectMapper;
+    private ConsumerLoop loop;
 
     public UserNotificationWebSocket(KafkaStreams streams) {
 
         System.out.println("new websocket");
         this.streams = streams;
+        this.objectMapper = new ObjectMapper();
     }
 
     @OnWebSocketMessage
@@ -43,26 +47,25 @@ public class UserNotificationWebSocket {
     @OnWebSocketConnect
     public void onConnect(final Session session) throws IOException {
 
-        System.out.println(session.getRemoteAddress().getHostString() + " connected!");
+        String requestUri = session.getUpgradeRequest().getRequestURI().toString();
+        String userId = requestUri.substring(requestUri.indexOf("user-notifications/") + 19);
 
-        ReadOnlyKeyValueStore<String, JsonNode> store = streams.store("userStore",
+        // first we query the kafka streams local user notification store to get any offline notifications
+        ReadOnlyKeyValueStore<String, JsonNode> userNotifications = streams.store("store_user_notifications",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore());
 
-        KeyValueIterator<String, JsonNode> it = store.all();
+        // send offline backlog to user
+        session.getRemote().sendString(objectMapper.writeValueAsString(userNotifications.get(userId)));
 
-        Integer i = 0;
-        while (it.hasNext()) {
-            //System.out.println(it.next());
-            i++;
-        }
-
-        System.out.print("userStore: " + i);
+        // then we set up a kafka consumer to listen for new notifications while the user remains connected
+        loop = new ConsumerLoop(session, userId, "topic_user_notifications", objectMapper);
+        loop.run();
 
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
-        System.out.println(session.getRemoteAddress().getHostString() + " closed!");
+        loop.shutdown();
     }
 
 }

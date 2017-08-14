@@ -17,6 +17,9 @@
 package uk.ac.cam.cl.dtg.segue.dao.streams;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -114,6 +117,47 @@ public class KafkaStreamsService {
         // parallel log for anonymous events (may want to optimise how we do this later)
         rawLoggedEvents[1].to(stringSerde, jsonSerde, "topic_anonymous_logged_events");
 
+
+        KStream<String, JsonNode> userNotifications = DerivedStreams.filterByEventType(rawLoggedEvents[0], "USER_REGISTRATION")
+                .mapValues(
+                        (value) -> {
+                            ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
+
+                            userNotification.put("message", "Welcome to Isaac Physics!");
+                            userNotification.put("status", "DELIVERED");
+                            userNotification.put("timestamp", value.path("timestamp"));
+
+                            return (JsonNode) userNotification;
+                        }
+                );
+
+        userNotifications.to(stringSerde, jsonSerde, "topic_user_notifications");
+
+        userNotifications
+                .groupByKey(stringSerde, jsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+                            ObjectNode notificationsRecord = JsonNodeFactory.instance.objectNode();
+
+                            notificationsRecord.putArray("notifications");
+                            return notificationsRecord;
+
+                        },
+                        // aggregator
+                        (userId, notificationEvent, userNotificationRecord) -> {
+
+                            if (notificationEvent.path("status").asText().matches("DELIVERED")) {
+                                ((ArrayNode) userNotificationRecord.path("notifications")).add(notificationEvent);
+                            } else {
+                                ((ArrayNode) userNotificationRecord.path("notifications")).removeAll();
+                            }
+
+                            return userNotificationRecord;
+
+                        },
+                        jsonSerde,
+                        "store_user_notifications");
 
 
         // SITE STATISTICS

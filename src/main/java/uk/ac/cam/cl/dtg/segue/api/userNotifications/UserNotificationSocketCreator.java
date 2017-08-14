@@ -12,12 +12,12 @@ public class UserNotificationSocketCreator implements WebSocketCreator {
 
     private KafkaStreams streams;
 
-    public UserNotificationSocketCreator(KafkaStreams streams) {
+    public UserNotificationSocketCreator(final KafkaStreams streams) {
         this.streams = streams;
     }
 
     @Override
-    public Object createWebSocket(ServletUpgradeRequest servletUpgradeRequest, ServletUpgradeResponse servletUpgradeResponse) {
+    public Object createWebSocket(final ServletUpgradeRequest servletUpgradeRequest, final ServletUpgradeResponse servletUpgradeResponse) {
         return new UserNotificationWebSocket(streams);
     }
 }

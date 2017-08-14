@@ -83,10 +83,10 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.publishLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        (httpRequest != null) ? getClientIpAddr(httpRequest) : null);
             } else {
                 this.publishLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        (httpRequest != null) ? getClientIpAddr(httpRequest) : null);
             }
 
         } catch (JsonProcessingException e) {
@@ -176,7 +176,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 .put("event_type", logEvent.getEventType())
                 .put("event_details_type", logEvent.getEventDetailsType())
                 .put("event_details", logEvent.getEventDetails())
-                .put("ip_address", logEvent.getIpAddress())
+                .put("ip_address", (logEvent.getIpAddress() != null) ? logEvent.getIpAddress() : "null")
                 .put("timestamp", logEvent.getTimestamp())
                 .build();
 
