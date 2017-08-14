@@ -32,7 +32,6 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProcessor;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -56,7 +55,6 @@ public class KafkaStreamsService {
     final static Deserializer<JsonNode> jsonDeserializer = new JsonDeserializer();
     final static Serde<JsonNode> jsonSerde = Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
     final static Serde<String> stringSerde = Serdes.String();
-    static ThresholdAchievedProcessor achievementProcessor;
 
 
 
@@ -115,14 +113,8 @@ public class KafkaStreamsService {
         rawLoggedEvents[1].to(stringSerde, jsonSerde, "topic_anonymous_logged_events");
 
 
-
         // SITE STATISTICS
         DerivedStreams.userStatistics(rawLoggedEvents[0]);
-
-        //*** BADGES & ACHIEVEMENTS ***//
-        //achievementProcessor = new ThresholdAchievedProcessor(database);
-        //DerivedStreams.userAchievements(rawLoggedEvents[0], contentManager, contentIndex, achievementProcessor);
-
 
 
         //use the builder and the streams configuration we set to setup and start a streams object
