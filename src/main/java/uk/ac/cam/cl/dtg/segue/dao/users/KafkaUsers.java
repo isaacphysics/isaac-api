@@ -103,17 +103,17 @@ public class KafkaUsers implements IUserDataManager {
 
     @Override
     public RegisteredUser getByLinkedAccount(AuthenticationProvider provider, String providerUserId) throws SegueDatabaseException {
-        return getByLinkedAccount(provider, providerUserId);
+        return pgUsers.getByLinkedAccount(provider, providerUserId);
     }
 
     @Override
     public boolean linkAuthProviderToAccount(RegisteredUser user, AuthenticationProvider provider, String providerUserId) throws SegueDatabaseException {
-        return linkAuthProviderToAccount(user, provider, providerUserId);
+        return pgUsers.linkAuthProviderToAccount(user, provider, providerUserId);
     }
 
     @Override
     public void unlinkAuthProviderFromUser(RegisteredUser user, AuthenticationProvider provider) throws SegueDatabaseException {
-        unlinkAuthProviderFromUser(user, provider);
+        pgUsers.unlinkAuthProviderFromUser(user, provider);
     }
 
     @Override
