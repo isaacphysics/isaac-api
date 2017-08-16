@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -37,6 +38,7 @@ import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProc
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -182,32 +184,98 @@ public final class DerivedStreams {
 
     public static KStream<String, JsonNode> userNotifications(final KStream<String, JsonNode> stream) {
 
-        return stream.
-                groupByKey(StringSerde, JsonSerde)
-                .aggregate(
-                        // initializer
-                        () -> {
-                            ObjectNode notificationsRecord = JsonNodeFactory.instance.objectNode();
+        String userNotificationTopic = "topic_user_notifications";
+        String userNotificationStore = "store_user_notifications";
+        List<KStream<String, JsonNode>> notificationStreams = Lists.newArrayList();
 
-                            notificationsRecord.putArray("notifications");
-                            return notificationsRecord;
 
-                        },
-                        // aggregator
-                        (userId, notificationEvent, userNotificationRecord) -> {
+        // welcome message
+        KStream<String, JsonNode> welcomeNotifications = filterByEventType(stream, "USER_REGISTRATION")
+                .mapValues(
+                        (value) -> {
+                            ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
 
-                            if (!notificationEvent.path("type").asText().matches("RECEIVED")) {
-                                ((ArrayNode) userNotificationRecord.path("notifications")).add(notificationEvent);
-                            } else {
-                                ((ArrayNode) userNotificationRecord.path("notifications")).removeAll();
-                            }
+                            userNotification.put("message", "Welcome to Isaac Physics!");
+                            userNotification.put("status", "DELIVERED");
+                            userNotification.put("type", value.path("event_type"));
+                            userNotification.put("timestamp", value.path("timestamp"));
 
-                            return userNotificationRecord;
+                            return (JsonNode) userNotification;
+                        }
+                );
 
-                        },
-                        JsonSerde, "store_user_notification_aggregation")
-                .toStream();
+        welcomeNotifications.to(StringSerde, JsonSerde, userNotificationTopic);
+        notificationStreams.add(welcomeNotifications);
 
+
+        // achievement unlocked
+        KStream<String, JsonNode> achievementNotifications = filterByEventType(stream, "ACHIEVEMENT_UNLOCKED")
+                .mapValues(
+                        (value) -> {
+                            ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
+
+                            userNotification.put("message", "You have unlocked an achievement!");
+                            userNotification.put("status", "DELIVERED");
+                            userNotification.put("type", value.path("event_type"));
+                            userNotification.put("timestamp", value.path("timestamp"));
+
+                            return (JsonNode) userNotification;
+                        }
+                );
+
+        achievementNotifications.to(StringSerde, JsonSerde, userNotificationTopic);
+        notificationStreams.add(achievementNotifications);
+
+
+        // notifications seen by user (perhaps could be done another way)
+        KStream<String, JsonNode> userSeenNotifications = filterByEventType(stream, "SEEN_NOTIFICATIONS")
+                .mapValues(
+                        (value) -> {
+                            ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
+
+                            // user has seen notifications, so sends flag to delete user notification state store records
+                            userNotification.put("status", "RECEIVED");
+
+                            return (JsonNode) userNotification;
+                        }
+                );
+
+        notificationStreams.add(userSeenNotifications);
+
+
+        // for all of the user notifications, aggregate into state store to persist them
+        for (KStream<String, JsonNode> notificationStream: notificationStreams
+             ) {
+
+            notificationStream
+                    .groupByKey(StringSerde, JsonSerde)
+                    .aggregate(
+                            // initializer
+                            () -> {
+                                ObjectNode notificationsRecord = JsonNodeFactory.instance.objectNode();
+
+                                notificationsRecord.putArray("notifications");
+                                return notificationsRecord;
+
+                            },
+                            // aggregator
+                            (userId, notificationEvent, userNotificationRecord) -> {
+
+                                if (notificationEvent.path("status").asText().matches("DELIVERED")) {
+                                    ((ArrayNode) userNotificationRecord.path("notifications")).add(notificationEvent);
+                                } else {
+                                    ((ArrayNode) userNotificationRecord.path("notifications")).removeAll();
+                                }
+
+                                return userNotificationRecord;
+
+                            },
+                            JsonSerde,
+                            userNotificationStore);
+
+        }
+
+        return stream;
     }
 
 

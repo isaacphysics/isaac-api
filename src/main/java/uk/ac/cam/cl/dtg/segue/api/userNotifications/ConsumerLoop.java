@@ -1,9 +1,11 @@
 package uk.ac.cam.cl.dtg.segue.api.userNotifications;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -61,7 +63,15 @@ public class ConsumerLoop implements Runnable {
                     if (record.key().matches(userId)) {
 
                         System.out.println(record.value());
-                        session.getRemote().sendString(objectMapper.writeValueAsString(record.value()));
+
+                        ArrayList<JsonNode> notificationList = Lists.newArrayList();
+                        Map<String, ArrayList<JsonNode>> notifications = Maps.newHashMap();
+
+                        notificationList.add(record.value());
+
+                        notifications.put("notifications", notificationList);
+                        session.getRemote().sendString(objectMapper.writeValueAsString(notifications));
+                        //session.getRemote().sendString(objectMapper.writeValueAsString(record.value()));
                     }
                 }
             }
