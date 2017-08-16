@@ -59,6 +59,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -357,7 +358,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException | SegueSearchException e1) {
+        } catch (InvalidStateStoreException | SegueSearchException e1) {
             log.error("Unable to get school statistics", e1);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
                     .toResponse();

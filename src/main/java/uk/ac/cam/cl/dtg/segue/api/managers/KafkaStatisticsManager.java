@@ -83,7 +83,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
     @Override
-    public synchronized Map<String, Object> outputGeneralStatistics() throws SegueDatabaseException {
+    public synchronized Map<String, Object> outputGeneralStatistics() throws InvalidStateStoreException, SegueDatabaseException {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> cachedOutput = (Map<String, Object>) this.longStatsCache.getIfPresent(GENERAL_STATS);
@@ -275,7 +275,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
     @Override
-    public Long getLogCount(String logTypeOfInterest) throws SegueDatabaseException {
+    public Long getLogCount(String logTypeOfInterest) throws InvalidStateStoreException {
 
         ReadOnlyKeyValueStore<String, Long> logEventCounts = waitUntilStoreIsQueryable("store_log_event_counts",
                 QueryableStoreTypes.<String, Long>keyValueStore(),
@@ -286,7 +286,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
     @Override
-    public List<Map<String, Object>> getSchoolStatistics() throws UnableToIndexSchoolsException, SegueDatabaseException, SegueSearchException {
+    public List<Map<String, Object>> getSchoolStatistics() throws UnableToIndexSchoolsException, InvalidStateStoreException, SegueSearchException {
 
         List<Map<String, Object>> result = Lists.newArrayList();
 
@@ -403,7 +403,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     }
 
     @Override
-    public List<RegisteredUserDTO> getUsersBySchoolId(String schoolId) throws ResourceNotFoundException, SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
+    public List<RegisteredUserDTO> getUsersBySchoolId(String schoolId) throws SegueDatabaseException, UnableToIndexSchoolsException, SegueSearchException {
 
         List<RegisteredUserDTO> users = Lists.newArrayList();
         Map<String, Date> lastSeenUserMap = getLastSeenUserMap();
@@ -554,17 +554,10 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private static <T> T waitUntilStoreIsQueryable(final String storeName,
                                                    final QueryableStoreType<T> queryableStoreType,
                                                    final KafkaStreams streams) {
-        while (true) {
-            try {
-                return streams.store(storeName, queryableStoreType);
-            } catch (InvalidStateStoreException e) {
-                log.info("Waiting for state store to become available.");
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-            }
+        try {
+            return streams.store(storeName, queryableStoreType);
+        } catch (InvalidStateStoreException e) {
+            throw new InvalidStateStoreException("State store '" + storeName + "' is unavailable!");
         }
     }
 
