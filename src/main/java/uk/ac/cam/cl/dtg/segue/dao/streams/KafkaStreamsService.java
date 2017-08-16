@@ -116,9 +116,6 @@ public class KafkaStreamsService {
 
 
 
-        // SITE STATISTICS
-        DerivedStreams.userStatistics(rawLoggedEvents[0]);
-
         //*** BADGES & ACHIEVEMENTS ***//
         //achievementProcessor = new ThresholdAchievedProcessor(database);
         //DerivedStreams.userAchievements(rawLoggedEvents[0], contentManager, contentIndex, achievementProcessor);
