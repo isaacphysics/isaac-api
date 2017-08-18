@@ -29,8 +29,12 @@ import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.errors.TopologyBuilderException;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
@@ -50,6 +54,8 @@ public class KafkaStreamsService {
     private final PostgresSqlDb database;
     private final IContentManager contentManager;
     private final String contentIndex;
+
+    private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
 
     final static Serializer<JsonNode> jsonSerializer = new JsonSerializer();
     final static Deserializer<JsonNode> jsonDeserializer = new JsonDeserializer();
@@ -98,36 +104,43 @@ public class KafkaStreamsService {
         streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 10 * 1000);
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, 10 * 1000);
+        streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
         streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
 
 
-        // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(stringSerde, jsonSerde, globalProperties.getProperty("RAW_LOG_STREAM"))
-                .branch(
-                        (k, v) -> !v.path("anonymous_user").asBoolean(),
-                        (k, v) -> v.path("anonymous_user").asBoolean()
-        );
+        try {
+            // raw logged events incoming data stream from kafka
+            KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(stringSerde, jsonSerde, "topic_logged_events")
+                    .branch(
+                            (k, v) -> !v.path("anonymous_user").asBoolean(),
+                            (k, v) -> v.path("anonymous_user").asBoolean()
+                    );
 
-        // parallel log for anonymous events (may want to optimise how we do this later)
-        rawLoggedEvents[1].to(stringSerde, jsonSerde, "topic_anonymous_logged_events");
-
-
-        // SITE STATISTICS
-        DerivedStreams.userStatistics(rawLoggedEvents[0]);
+            // parallel log for anonymous events (may want to optimise how we do this later)
+            rawLoggedEvents[1].to(stringSerde, jsonSerde, "topic_anonymous_logged_events");
 
 
-        //use the builder and the streams configuration we set to setup and start a streams object
-        streams = new KafkaStreams(builder, streamsConfiguration);
-        streams.cleanUp();
-        streams.start();
+            // SITE STATISTICS
+            DerivedStreams.userStatistics(rawLoggedEvents[0]);
 
-        // return when streams instance is initialized
-        while (true) {
 
-            if (streams.state().isRunning())
-                break;
+            //use the builder and the streams configuration we set to setup and start a streams object
+            streams = new KafkaStreams(builder, streamsConfiguration);
+            streams.cleanUp();
+            streams.start();
+
+            // return when streams instance is initialized
+            while (true) {
+
+                if (streams.state().isRunning())
+                    break;
+            }
+        } catch (TopologyBuilderException e) {
+            log.error(e.getMessage());
         }
+
+
 
     }
 

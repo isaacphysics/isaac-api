@@ -216,7 +216,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
             return Response.ok(kafkaStatsManager.outputGeneralStatistics())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
-        } catch (SegueDatabaseException e) {
+        } catch (SegueDatabaseException | InvalidStateStoreException e) {
             log.error("Unable to load general statistics.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -1076,9 +1076,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (ResourceNotFoundException e) {
-            return new SegueErrorResponse(Status.NOT_FOUND, "We cannot locate the school requested").toResponse();
-        } catch (SegueDatabaseException | SegueSearchException e) {
+        } catch (InvalidStateStoreException | SegueSearchException e) {
             log.error("Error while trying to list users belonging to a school.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
         } catch (NumberFormatException e) {
