@@ -298,7 +298,7 @@ public class InfoFacade extends AbstractSegueFacade {
         try {
             httpResponse = httpClient.execute(httpGet);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn("Error when checking status of ETL server: " + e.toString());
         }
 
         if (httpResponse != null && httpResponse.getStatusLine().getStatusCode() == 200) {
