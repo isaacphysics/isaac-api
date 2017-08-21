@@ -13,6 +13,9 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.connect.json.JsonDeserializer;
 import org.eclipse.jetty.websocket.api.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
 
 import java.io.IOException;
 import java.util.*;
@@ -27,6 +30,9 @@ public class ConsumerLoop implements Runnable {
     private final ObjectMapper objectMapper;
     private final Session session;
     private final String userId;
+    private volatile Boolean running = true;
+
+    private final Logger log = LoggerFactory.getLogger(ConsumerLoop.class);
 
     public ConsumerLoop(final Session session, final String userId,
                         final String topic, final ObjectMapper objectMapper) {
@@ -55,40 +61,29 @@ public class ConsumerLoop implements Runnable {
         try {
             consumer.subscribe(topics);
 
-            while (true) {
+            while (running) {
 
                 ConsumerRecords<String, JsonNode> records = consumer.poll(1000);
                 for (ConsumerRecord<String, JsonNode> record : records) {
 
                     if (record.key().matches(userId)) {
 
-                        System.out.println(record.value());
-
                         ArrayList<JsonNode> notificationList = Lists.newArrayList();
                         Map<String, ArrayList<JsonNode>> notifications = Maps.newHashMap();
 
                         notificationList.add(record.value());
-
                         notifications.put("notifications", notificationList);
                         session.getRemote().sendString(objectMapper.writeValueAsString(notifications));
-                        //session.getRemote().sendString(objectMapper.writeValueAsString(record.value()));
                     }
                 }
             }
-        } catch (WakeupException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        finally
-        {
-            consumer.close();
+        } catch (WakeupException | IOException e) {
+            log.error("Exception", e);
         }
     }
 
     public void shutdown() {
+        running = false;
         consumer.wakeup();
     }
 

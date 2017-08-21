@@ -78,7 +78,6 @@ public final class DerivedStreams {
 
         String userNotificationTopic = "topic_user_notifications";
         String userNotificationStore = "store_user_notifications";
-        List<KStream<String, JsonNode>> notificationStreams = Lists.newArrayList();
 
 
         // welcome message
@@ -96,9 +95,26 @@ public final class DerivedStreams {
                         }
                 );
 
-        welcomeNotifications.to(StringSerde, JsonSerde, userNotificationTopic);
-        notificationStreams.add(welcomeNotifications);
+        // write to the user notification topic while setting up a KStream instance based on that topic
+        KStream<String, JsonNode> userNotificationStream = welcomeNotifications
+                .through(StringSerde, JsonSerde, userNotificationTopic);
 
+        // achievement unlocked
+        KStream<String, JsonNode> test = filterByEventType(stream, "VIEW_GAMEBOARD_BY_ID")
+                .mapValues(
+                        (value) -> {
+                            ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
+
+                            userNotification.put("message", "You have viewed a gameboard!");
+                            userNotification.put("status", "DELIVERED");
+                            userNotification.put("type", value.path("event_type"));
+                            userNotification.put("timestamp", value.path("timestamp"));
+
+                            return (JsonNode) userNotification;
+                        }
+                );
+
+        test.to(StringSerde, JsonSerde, userNotificationTopic);
 
         // achievement unlocked
         KStream<String, JsonNode> achievementNotifications = filterByEventType(stream, "ACHIEVEMENT_UNLOCKED")
@@ -116,11 +132,10 @@ public final class DerivedStreams {
                 );
 
         achievementNotifications.to(StringSerde, JsonSerde, userNotificationTopic);
-        notificationStreams.add(achievementNotifications);
 
 
         // notifications seen by user (perhaps could be done another way)
-        KStream<String, JsonNode> userSeenNotifications = filterByEventType(stream, "SEEN_NOTIFICATIONS")
+        KStream<String, JsonNode> userSeenNotifications = filterByEventType(stream, "VIEW_NOTIFICATIONS")
                 .mapValues(
                         (value) -> {
                             ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
@@ -132,40 +147,41 @@ public final class DerivedStreams {
                         }
                 );
 
-        notificationStreams.add(userSeenNotifications);
 
 
         // for all of the user notifications, aggregate into state store to persist them
-        for (KStream<String, JsonNode> notificationStream: notificationStreams
-             ) {
+        userNotificationStream
+                .groupByKey(StringSerde, JsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+                            ObjectNode notificationsRecord = JsonNodeFactory.instance.objectNode();
 
-            notificationStream
-                    .groupByKey(StringSerde, JsonSerde)
-                    .aggregate(
-                            // initializer
-                            () -> {
-                                ObjectNode notificationsRecord = JsonNodeFactory.instance.objectNode();
+                            notificationsRecord.putArray("notifications");
+                            return notificationsRecord;
 
-                                notificationsRecord.putArray("notifications");
-                                return notificationsRecord;
+                        },
+                        // aggregator
+                        (userId, notificationEvent, userNotificationRecord) -> {
 
-                            },
-                            // aggregator
-                            (userId, notificationEvent, userNotificationRecord) -> {
+                            if (notificationEvent.path("status").asText().matches("DELIVERED")) {
+                                ((ArrayNode) userNotificationRecord.path("notifications")).add(notificationEvent);
+                            } else {
 
-                                if (notificationEvent.path("status").asText().matches("DELIVERED")) {
-                                    ((ArrayNode) userNotificationRecord.path("notifications")).add(notificationEvent);
-                                } else {
-                                    ((ArrayNode) userNotificationRecord.path("notifications")).removeAll();
+                                // remove records until only at most 10 most recent remain
+                                while (((ArrayNode) userNotificationRecord.path("notifications")).size() > 10) {
+                                    ((ArrayNode) userNotificationRecord.path("notifications")).remove(0);
                                 }
 
-                                return userNotificationRecord;
+                                //((ArrayNode) userNotificationRecord.path("notifications")).removeAll();
+                            }
 
-                            },
-                            JsonSerde,
-                            userNotificationStore);
+                            return userNotificationRecord;
 
-        }
+                        },
+                        JsonSerde,
+                        userNotificationStore);
+
 
         return stream;
     }

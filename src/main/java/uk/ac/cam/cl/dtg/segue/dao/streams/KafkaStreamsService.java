@@ -118,9 +118,6 @@ public class KafkaStreamsService {
         rawLoggedEvents[1].to(stringSerde, jsonSerde, "topic_anonymous_logged_events");
 
 
-        // SITE STATISTICS
-        DerivedStreams.userStatistics(rawLoggedEvents[0]);
-
         // USER NOTIFICATIONS
         DerivedStreams.userNotifications(rawLoggedEvents[0]);
 

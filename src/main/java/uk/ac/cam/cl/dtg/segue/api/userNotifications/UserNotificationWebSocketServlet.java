@@ -17,7 +17,8 @@ public class UserNotificationWebSocketServlet extends WebSocketServlet {
     public void configure(WebSocketServletFactory webSocketServletFactory) {
 
         webSocketServletFactory.getPolicy().setIdleTimeout(60000);
-        webSocketServletFactory.setCreator(new UserNotificationSocketCreator(KafkaStreamsProvider.getInstance().getStream()));
+        webSocketServletFactory.setCreator(new UserNotificationSocketCreator(WebsocketDependencyProvider.getKafkaStreamsService().getStream(),
+                WebsocketDependencyProvider.getLogManager(), WebsocketDependencyProvider.getUserManager()));
 
     }
 }
