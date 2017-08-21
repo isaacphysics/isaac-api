@@ -36,6 +36,7 @@ services:
     volumes:
 #      - ../kafka-data:/kafka-data:rw
       - ./kafka/server.properties:/opt/kafka/config/server.properties:ro
+      - ./kafka/run-kafka.sh:/run-kafka.sh:ro
     depends_on:
       - zookeeper
     ports:
