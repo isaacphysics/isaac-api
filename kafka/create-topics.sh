@@ -33,5 +33,5 @@ fi
 
 for ((i=0; i < ${#topics[@]}; i++))
 do
-	kafka-topics.sh --create --zookeeper zookeeper:2181 --topic ${topics[$i]} --partitions 1 --replication-factor 1
+	kafka-topics.sh --create --zookeeper zookeeper:2181 --topic ${topics[$i]} --partitions 1 --replication-factor 2
 done
