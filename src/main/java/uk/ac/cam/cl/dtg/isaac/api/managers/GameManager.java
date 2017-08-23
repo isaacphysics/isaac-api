@@ -977,7 +977,9 @@ public class GameManager {
         Validate.notNull(gameItem, "gameItem cannot be null");
         Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
-        int questionPartsCorrect = 0, questionPartsIncorrect = 0, questionPartsNotAttempted = 0;
+        int questionPartsCorrect = 0;
+        int questionPartsIncorrect = 0;
+        int questionPartsNotAttempted = 0;
         String questionPageId = gameItem.getId();
 
         // get all question parts in the question page: depends on each question
