@@ -3,11 +3,8 @@ package uk.ac.cam.cl.dtg.segue.api.managers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
@@ -15,13 +12,9 @@ import org.apache.kafka.streams.state.*;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.LocationManager;
-import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
@@ -35,11 +28,9 @@ import uk.ac.cam.cl.dtg.util.locations.Location;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.VIEW_QUESTION;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.ANSWER_QUESTION;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
  * KafkaStatisticsManager.
@@ -54,7 +45,6 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private KafkaStreamsService kafkaStreamsService;
     private IStatisticsManager oldStatisticsManager;
 
-    private Cache<String, Object> longStatsCache;
 
     private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
     private static final String GENERAL_STATS = "GENERAL_STATS";
@@ -94,9 +84,6 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         this.groupManager = groupManager;
         this.schoolManager = schoolManager;
 
-        this.longStatsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(LONG_STATS_EVICTION_INTERVAL_MINUTES, TimeUnit.MINUTES)
-                .maximumSize(LONG_STATS_MAX_ITEMS).build();
     }
 
 
@@ -113,16 +100,6 @@ public class KafkaStatisticsManager implements IStatisticsManager {
      */
     @Override
     public synchronized Map<String, Object> outputGeneralStatistics() throws InvalidStateStoreException, SegueDatabaseException {
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> cachedOutput = (Map<String, Object>) this.longStatsCache.getIfPresent(GENERAL_STATS);
-        if (cachedOutput != null) {
-            log.debug("Using cached statistics.");
-            return cachedOutput;
-        } else {
-            log.info("Calculating General Statistics");
-        }
-
 
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
 
@@ -345,7 +322,6 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         ib.put("groupCount", groupManager.getGroupCount());
 
         Map<String, Object> result = ib.build();
-        this.longStatsCache.put(GENERAL_STATS, result);
 
         log.info("Finished calculating General Statistics");
 
@@ -444,8 +420,6 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
                         return 0;
                     });
-
-            this.longStatsCache.put(SCHOOL_STATS, result);
 
         } catch (NullPointerException e) {
             e.printStackTrace();
