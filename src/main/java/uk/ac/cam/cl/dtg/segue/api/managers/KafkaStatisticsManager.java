@@ -252,11 +252,11 @@ public class KafkaStatisticsManager implements IStatisticsManager {
                 }
 
                 if (userLastSeenData.has(VIEW_QUESTION)) {
-                    viewQuestionEvents++;
+                    viewQuestionEvents += userLastSeenData.path(VIEW_QUESTION).path("count").asInt();;
                 }
 
                 if (userLastSeenData.has(ANSWER_QUESTION)) {
-                    answeredQuestionEvents++;
+                    answeredQuestionEvents += userLastSeenData.path(ANSWER_QUESTION).path("count").asInt();
 
                     if (userLastSeenNDays(userLastSeenData.path(ANSWER_QUESTION).path("latest").asLong(), sevenDays)) {
 
