@@ -182,7 +182,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
         ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", logEvent.getUserId(),
-                String.format(objectMapper.writeValueAsString(kafkaLogRecord)));
+                objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {
             kafkaProducer.Send(producerRecord);
