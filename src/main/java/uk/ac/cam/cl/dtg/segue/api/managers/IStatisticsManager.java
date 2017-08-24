@@ -162,6 +162,22 @@ public interface IStatisticsManager {
                                                                            final Date fromDate, final Date toDate, final List<RegisteredUserDTO> userList,
                                                                            final boolean binDataByMonth) throws SegueDatabaseException;
 
+
+    /**
+     * Calculate the number of users from the list provided that meet the criteria.
+     *
+     * @param users
+     *            - collection of users to consider.
+     * @param lastSeenUserMap
+     *            - The map of user event data. UserId --> last event date.
+     * @param daysFromToday
+     *            - the number of days from today that should be included in the calculation e.g. 7 would be the last
+     *            week's data.
+     * @return a collection containing the users who meet the criteria
+     */
+    public Collection<RegisteredUserDTO> getNumberOfUsersActiveForLastNDays(final Collection<RegisteredUserDTO> users,
+                                                                            final Map<String, Date> lastSeenUserMap, final int daysFromToday);
+
     /**
      * getLocationInformation.
      *

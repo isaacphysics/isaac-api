@@ -135,14 +135,14 @@ public final class DerivedStreams {
                 );
 
 
-        // maintain internal store of users' last seen times, by log event type
-        userEvents
+        // maintain internal store of users' last seen times by log event type, and counts per event type
+        KTable<String, JsonNode> userEventCounts = userEvents
                 .groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
                         () -> {
                             ObjectNode countRecord = JsonNodeFactory.instance.objectNode();
-                            countRecord.put("OVERALL", 0);
+                            countRecord.put("last_seen", 0);
                             return countRecord;
                         },
                         // aggregator
@@ -151,14 +151,41 @@ public final class DerivedStreams {
                             String eventType = logEvent.path("event_type").asText();
                             Timestamp stamp = new Timestamp(logEvent.path("timestamp").asLong());
 
-                            ((ObjectNode) countRecord).put(eventType, stamp.getTime());
-                            ((ObjectNode) countRecord).put("OVERALL", stamp.getTime());
+                            if (!countRecord.has(eventType)) {
+                                ObjectNode node = JsonNodeFactory.instance.objectNode();
+                                node.put("count", 0);
+                                node.put("latest", 0);
+                                ((ObjectNode) countRecord).put(eventType, node);
+                            }
+
+                            Long count = countRecord.path(eventType).path("count").asLong();
+                            ((ObjectNode) countRecord.path(eventType)).put("count", count + 1);
+                            ((ObjectNode) countRecord.path(eventType)).put("latest", stamp.getTime());
+
+                            ((ObjectNode) countRecord).put("last_seen", stamp.getTime());
 
                             return countRecord;
                         },
                         JsonSerde,
                         "store_user_last_seen"
                 );
+
+
+        /*userData
+                .join(
+                        userEventCounts,
+                        (userDataVal, userEventCountsVal) -> {
+
+                            ObjectNode joinedValueRecord = JsonNodeFactory.instance.objectNode();
+
+                            joinedValueRecord.put("user_data", userDataVal.path("user_data"));
+                            joinedValueRecord.put("user_last_seen_data", userEventCountsVal);
+
+                            return (JsonNode) joinedValueRecord;
+                        }
+                ).through(StringSerde, JsonSerde, "topic_user_data", "store_augmented_user_data");*/
+
+
 
 
 
@@ -174,7 +201,7 @@ public final class DerivedStreams {
 
 
 
-        // maintain internal store of log event counts per user type, per day
+        /*// maintain internal store of log event counts per user type, per day
         userEvents
                 .map(
                         (k, v) -> {
@@ -222,7 +249,7 @@ public final class DerivedStreams {
                         },
                         JsonSerde,
                         "store_daily_log_events"
-                );
+                );*/
 
 
         // streams initialized
