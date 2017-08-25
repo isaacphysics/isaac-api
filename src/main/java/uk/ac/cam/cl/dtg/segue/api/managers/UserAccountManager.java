@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
+import static org.apache.commons.lang3.text.WordUtils.capitalizeFully;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 import java.io.IOException;
@@ -294,7 +295,7 @@ public class UserAccountManager {
             
             try {
                 ImmutableMap<String, Object> emailTokens = ImmutableMap.of("provider",
-                         provider.toLowerCase());
+                        capitalizeFully(provider));
 
                 emailManager.sendTemplatedEmailToUser(segueUserDTO,
                         emailManager.getEmailTemplateDTO("email-template-registration-confirmation-federated"),
