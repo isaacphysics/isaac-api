@@ -195,13 +195,15 @@ public class TwitterAuthenticator implements IOAuth1Authenticator {
                     }
                 }
 
+                EmailVerificationStatus emailStatus = EmailVerificationStatus.NOT_VERIFIED;
                 String email = userInfo.getEmail();
                 if (null == email) {
                     email = userInfo.getId() + "-twitter";
+                    emailStatus = EmailVerificationStatus.DELIVERY_FAILED;
                 }
 
                 return new UserFromAuthProvider(String.valueOf(userInfo.getId()), givenName, familyName, email,
-                        EmailVerificationStatus.NOT_VERIFIED, null, null, null);
+                        emailStatus, null, null, null);
             } else {
                 throw new NoUserException();
             }
