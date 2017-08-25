@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import com.google.inject.Inject;
 
@@ -58,14 +58,15 @@ public class PostgresSqlDb implements Closeable {
         dataSource.setValidationQuery("SELECT 1");
         dataSource.setTestOnReturn(false);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);
-        dataSource.setMaxActive(100);
+        dataSource.setMaxTotal(100);
         dataSource.setInitialSize(10);
-        dataSource.setMaxWait(10000);
+        dataSource.setMaxWaitMillis(10000);
         dataSource.setRemoveAbandonedTimeout(60);
         dataSource.setMinEvictableIdleTimeMillis(30000);
         dataSource.setMinIdle(10);
         dataSource.setLogAbandoned(true);
-        dataSource.setRemoveAbandoned(true);
+        dataSource.setRemoveAbandonedOnBorrow(true);
+        dataSource.setEnableAutoCommitOnReturn(true);
     }
 
     /**
