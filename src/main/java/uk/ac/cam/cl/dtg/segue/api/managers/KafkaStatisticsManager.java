@@ -101,6 +101,8 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     @Override
     public synchronized Map<String, Object> outputGeneralStatistics() throws InvalidStateStoreException, SegueDatabaseException {
 
+        log.info("Calculating Kafka General Statistics");
+
         ImmutableMap.Builder<String, Object> ib = new ImmutableMap.Builder<>();
 
         // get user records from local kafka store
@@ -323,7 +325,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         Map<String, Object> result = ib.build();
 
-        log.info("Finished calculating General Statistics");
+        log.info("Finished calculating Kafka General Statistics");
 
         return result;
     }
