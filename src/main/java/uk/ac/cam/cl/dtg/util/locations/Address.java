@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.util.locations;
 
 /**
- *
+ * POJO representing an address
  */
 public class Address {
     private String addressLine1;
@@ -171,11 +171,31 @@ public class Address {
         this.country = country;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#hashCode()
-     */
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (addressLine1 != null) {
+            sb.append(addressLine1);
+        }
+        if (addressLine2 != null) {
+            sb.append(", ").append(addressLine2);
+        }
+        if (town != null) {
+            sb.append(", ").append(town);
+        }
+        if (county != null) {
+            sb.append(", ").append(county);
+        }
+        if (postalCode != null) {
+            sb.append(", ").append(town);
+        }
+        if (country != null) {
+            sb.append(", ").append(country);
+        }
+        return sb.toString();
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;

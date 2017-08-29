@@ -75,13 +75,14 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 	private final String clientSecret;
 	private final String callbackUri;
 	private final Collection<String> requestedScopes;
+	private final String requestedFields;
 	
 	private static final String FACEBOOK_API_VERSION = "2.8";
 	
     private static final String AUTH_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION + "/oauth/authorize";
     private static final String TOKEN_EXCHANGE_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION
             + "/oauth/access_token";
-	private static final String USER_INFO_URL = "https://graph.facebook.com/me";
+	private static final String USER_INFO_URL = "https://graph.facebook.com/v" + FACEBOOK_API_VERSION + "/me";
 	private static final String TOKEN_VERIFICATION_URL = "https://graph.facebook.com/debug_token";
 
 	// weak cache for mapping userInformation to credentials
@@ -93,12 +94,14 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
      * @param clientSecret The client secret provided by the Facebook api (https://developers.facebook.com/apps/)
      * @param callbackUri The callback url from the oauth process
      * @param requestedScopes The facebook permissions requested by this application
+     * @param requestedFields The facebook user info fields requested by this application
      */
     @Inject
     public FacebookAuthenticator(@Named(Constants.FACEBOOK_CLIENT_ID) final String clientId,
             @Named(Constants.FACEBOOK_SECRET) final String clientSecret,
             @Named(Constants.FACEBOOK_CALLBACK_URI) final String callbackUri,
-            @Named(Constants.FACEBOOK_OAUTH_SCOPES) final String requestedScopes) {
+            @Named(Constants.FACEBOOK_OAUTH_SCOPES) final String requestedScopes,
+            @Named(Constants.FACEBOOK_USER_FIELDS) final String requestedFields) {
         this.jsonFactory = new JacksonFactory();
         this.httpTransport = new NetHttpTransport();
 
@@ -106,6 +109,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
         this.clientId = clientId;
         this.callbackUri = callbackUri;
         this.requestedScopes = Arrays.asList(requestedScopes.split(","));
+        this.requestedFields = requestedFields;
 
         if (null == credentialStore) {
             credentialStore = new WeakHashMap<>();
@@ -226,7 +230,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 		FacebookUser userInfo = null;
 
 		try {
-			GenericUrl url = new GenericUrl(USER_INFO_URL);
+			GenericUrl url = new GenericUrl(USER_INFO_URL + "?fields=" + requestedFields);
 			url.set("access_token", credentials.getAccessToken());
 			
 			userInfo = JsonLoader.load(inputStreamToString(url.toURL().openStream()),

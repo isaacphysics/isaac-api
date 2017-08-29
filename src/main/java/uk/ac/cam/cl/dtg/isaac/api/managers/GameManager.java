@@ -454,13 +454,13 @@ public class GameManager {
             return gameboardDTO;
         }
 
-        int totalCompleted = 0;
         int totalUnavailable = 0;
-        
-        for (GameboardItem gameItem : gameboardDTO.getQuestions()) {
-            GameboardItemState state;
+        boolean gameboardStarted = false;
+        List<GameboardItem> questions = gameboardDTO.getQuestions();
+        List<Float> questionPercentages = Lists.newArrayList();
+        for (GameboardItem gameItem : questions) {
             try {
-                state = this.calculateQuestionState(gameItem.getId(), questionAttemptsFromUser);    
+                this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
             } catch (ResourceNotFoundException e) {
                 log.info(String.format(
                         "A question is unavailable (%s) - treating it as if it never existed for marking.",
@@ -468,22 +468,18 @@ public class GameManager {
                 totalUnavailable++;
                 continue;
             }
-            
-            gameItem.setState(state);
-            
-            if (state.equals(GameboardItemState.PASSED) || state.equals(GameboardItemState.PERFECT)) {
-                totalCompleted++;
+            if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {
+                gameboardStarted = true;
+                gameboardDTO.setStartedQuestion(gameboardStarted);
             }
-
-            if (!state.equals(GameboardItemState.NOT_ATTEMPTED) && !gameboardDTO.isStartedQuestion()) {
-                gameboardDTO.setStartedQuestion(true);
-            }
+            questionPercentages.add(
+                    100f * new Float(gameItem.getQuestionPartsCorrect()) / gameItem.getQuestionPartsTotal());
         }
-        
-        int totalQuestionInBoard = gameboardDTO.getQuestions().size() - totalUnavailable;
-        
-        double percentageCompleted = totalCompleted * 100 / totalQuestionInBoard;
-        gameboardDTO.setPercentageCompleted((int) Math.round(percentageCompleted));
+        int numberOfValidQuestions = questions.size() - totalUnavailable;
+        float boardPercentage = questionPercentages.stream()
+                .map(questionPercentage -> questionPercentage / numberOfValidQuestions)
+                .reduce(0f, (a, b) -> a + b);
+        gameboardDTO.setPercentageCompleted((int) Math.round(boardPercentage));
         
         if (user instanceof RegisteredUserDTO) {
             gameboardDTO
@@ -590,13 +586,13 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if we can't look up the question page details.
      */
-    public Map<RegisteredUserDTO, List<GameboardItemState>> gatherGameProgressData(
+    public Map<RegisteredUserDTO, List<GameboardItem>> gatherGameProgressData(
             final List<RegisteredUserDTO> users, final GameboardDTO gameboard) throws SegueDatabaseException,
             ContentManagerException {
         Validate.notNull(users);
         Validate.notNull(gameboard);
 
-        Map<RegisteredUserDTO, List<GameboardItemState>> result = Maps.newHashMap();
+        Map<RegisteredUserDTO, List<GameboardItem>> result = Maps.newHashMap();
 
         List<String> questionPageIds = Lists.newArrayList();
 
@@ -609,13 +605,15 @@ public class GameManager {
                 .getMatchingQuestionAttempts(users, questionPageIds);
 
         for (RegisteredUserDTO user : users) {
-            List<GameboardItemState> listOfQuestionStates = Lists.newArrayList();
+            List<GameboardItem> userGameItems = Lists.newArrayList();
 
-            for (GameboardItem question : gameboard.getQuestions()) {
-                listOfQuestionStates.add(this.calculateQuestionState(question.getId(),
-                        questionAttemptsForAllUsersOfInterest.get(user.getId())));
+            for (GameboardItem observerGameItem : gameboard.getQuestions()) {
+                GameboardItem userGameItem = new GameboardItem(observerGameItem);
+                this.augmentGameItemWithAttemptInformation(userGameItem,
+                        questionAttemptsForAllUsersOfInterest.get(user.getId()));
+                userGameItems.add(userGameItem);
             }
-            result.put(user, listOfQuestionStates);
+            result.put(user, userGameItems);
         }
 
         return result;
@@ -864,8 +862,8 @@ public class GameManager {
 
                 GameboardItemState questionState;
                 try {
-                    questionState = this.calculateQuestionState(gameboardItem.getId(),
-                            usersQuestionAttempts);
+                    this.augmentGameItemWithAttemptInformation(gameboardItem, usersQuestionAttempts);
+                    questionState = gameboardItem.getState();
                 } catch (ResourceNotFoundException e) {
                     throw new ContentManagerException(
                             "Resource not found exception, this shouldn't happen as the selectionOfGameboardQuestions "
@@ -963,102 +961,95 @@ public class GameManager {
     }
 
     /**
-     * CalculateQuestionState
+     * AugmentGameItemWithAttemptInformation
      * 
      * This method will calculate the question state for use in gameboards based on the question.
      * 
-     * @param questionPageId
-     *            - the gameboard item id.
+     * @param gameItem
+     *             - the gameboard item.
      * @param questionAttemptsFromUser
-     *            - the user that may or may not have attempted questions in the gameboard.
-     * @return The state of the gameboard item.
+     *             - the user that may or may not have attempted questions in the gameboard.
+     * @return gameItem
+     *             - the gameItem passed in having been modified (augmented)), returned for possiblity of chaining.
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      * @throws ResourceNotFoundException
      *             - if we cannot find the question specified.
      */
-    private GameboardItemState calculateQuestionState(final String questionPageId,
+    private GameboardItem augmentGameItemWithAttemptInformation(final GameboardItem gameItem,
             final Map<String, Map<String, List<QuestionValidationResponse>>> questionAttemptsFromUser)
             throws ContentManagerException, ResourceNotFoundException {
-        Validate.notBlank(questionPageId, "QuestionPageId cannot be empty or blank");
-        Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot null");
+        Validate.notNull(gameItem, "gameItem cannot be null");
+        Validate.notNull(questionAttemptsFromUser, "questionAttemptsFromUser cannot be null");
 
-        if (questionAttemptsFromUser.containsKey(questionPageId)) {
-            // get all questions in the question page: depends on each question
-            // having an id that starts with the question page id.
+        int questionPartsCorrect = 0;
+        int questionPartsIncorrect = 0;
+        int questionPartsNotAttempted = 0;
+        String questionPageId = gameItem.getId();
 
-            // Get the pass mark for the question page
-            IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(
-                    this.contentManager.getCurrentContentSHA(), questionPageId);
-            
-            if (null == questionPage) {
-                throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
-                        questionPageId));
-            }
-            
-            Float passMark = questionPage.getPassMark();
-            if (passMark == null) {
-                passMark = 100f;
-            }
-
-            // go through each question in the question page
-            Collection<QuestionDTO> listOfQuestions = getAllMarkableQuestionParts(questionPageId);
-
-            // go through all of the questions that make up this gameboard item.
-            int questionPartsCorrect = 0;
-            int questionPartsIncorrect = 0;
-            int questionPartsNotAttempted = 0;
-            for (ContentDTO contentDTO : listOfQuestions) {
-                // get the attempts for this particular question.
-                List<QuestionValidationResponse> questionAttempts = questionAttemptsFromUser.get(questionPageId).get(
-                        contentDTO.getId());
-
-                // If we have an entry for the question page and do not have
-                // any attempts for this question then it means that we have
-                // done something on this question but have not yet answered
-                // all parts.
-                if (questionAttemptsFromUser.get(questionPageId) != null && null == questionAttempts) {
-                    questionPartsNotAttempted++;
-                    continue;
-                }
-
-                boolean foundCorrectForThisQuestion = false;
-
-                // Go through the attempts in reverse chronological order
-                // for this question to determine if there is a
-                // correct answer somewhere.
-                for (int i = questionAttempts.size() - 1; i >= 0; i--) {
-                    if (questionAttempts.get(i).isCorrect() != null && questionAttempts.get(i).isCorrect()) {
-                        foundCorrectForThisQuestion = true;
-                        break;
+        // get all question parts in the question page: depends on each question
+        // having an id that starts with the question page id.
+        Collection<QuestionDTO> listOfQuestionParts = getAllMarkableQuestionParts(questionPageId);
+        Map<String, List<QuestionValidationResponse>> questionAttempts = questionAttemptsFromUser.get(questionPageId);
+        if (questionAttempts != null) {
+            for (ContentDTO questionPart : listOfQuestionParts) {
+                List<QuestionValidationResponse> questionPartAttempts = questionAttempts.get(questionPart.getId());
+                if (questionPartAttempts != null) {
+                    // Go through the attempts in reverse chronological order for this question part to determine if
+                    // there is a correct answer somewhere.
+                    boolean foundCorrectForThisQuestion = false;
+                    for (int i = questionPartAttempts.size() - 1; i >= 0; i--) {
+                        if (questionPartAttempts.get(i).isCorrect() != null
+                                && questionPartAttempts.get(i).isCorrect()) {
+                            foundCorrectForThisQuestion = true;
+                            break;
+                        }
                     }
-                }
-
-                if (foundCorrectForThisQuestion) {
-                    questionPartsCorrect++;
+                    if (foundCorrectForThisQuestion) {
+                        questionPartsCorrect++;
+                    } else {
+                        questionPartsIncorrect++;
+                    }
                 } else {
-                    questionPartsIncorrect++;
+                    questionPartsNotAttempted++;
                 }
             }
-
-            int totalParts = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
-
-            float percentCorrect = 100 * (float) questionPartsCorrect / totalParts;
-            float percentIncorrect = 100 * (float) questionPartsIncorrect / totalParts;
-
-            if (questionPartsCorrect == totalParts) {
-                return GameboardItemState.PERFECT;
-            } else if (percentCorrect >= passMark) {
-                return GameboardItemState.PASSED;
-            } else if (percentIncorrect > (100 - passMark)) {
-                return GameboardItemState.FAILED;
-            } else {
-                return GameboardItemState.IN_PROGRESS;
-            }
-
         } else {
-            return GameboardItemState.NOT_ATTEMPTED;
+            questionPartsNotAttempted = listOfQuestionParts.size();
         }
+
+        // Get the pass mark for the question page
+        IsaacQuestionPage questionPage = (IsaacQuestionPage) this.contentManager.getContentDOById(
+                this.contentManager.getCurrentContentSHA(), questionPageId);
+        if (questionPage == null) {
+            throw new ResourceNotFoundException(String.format("Unable to locate the question: %s for augmenting",
+                    questionPageId));
+        }
+        float passMark = questionPage.getPassMark() != null ? questionPage.getPassMark() : 100f;
+        gameItem.setPassMark(passMark);
+        gameItem.setQuestionPartsCorrect(questionPartsCorrect);
+        gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
+        gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
+
+        Integer questionPartsTotal = gameItem.getQuestionPartsTotal();
+        Float percentCorrect = 100f * new Float(questionPartsCorrect) / questionPartsTotal;
+        Float percentIncorrect = 100f * new Float(questionPartsIncorrect) / questionPartsTotal;
+
+        GameboardItemState state;
+        if (questionPartsCorrect == questionPartsTotal) {
+            state = GameboardItemState.PERFECT;
+        } else if (questionPartsNotAttempted == questionPartsTotal) {
+            state = GameboardItemState.NOT_ATTEMPTED;
+        } else if (percentCorrect >= gameItem.getPassMark()) {
+            state = GameboardItemState.PASSED;
+        } else if (percentIncorrect > (100 - gameItem.getPassMark())) {
+            state = GameboardItemState.FAILED;
+        } else {
+            state = GameboardItemState.IN_PROGRESS;
+        }
+        gameItem.setState(state);
+
+        return gameItem;
     }
     
     /**

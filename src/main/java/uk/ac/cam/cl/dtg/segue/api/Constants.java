@@ -194,6 +194,7 @@ public final class Constants {
     public static final String FACEBOOK_CLIENT_ID = "FACEBOOK_CLIENT_ID";
     public static final String FACEBOOK_CALLBACK_URI = "FACEBOOK_CALLBACK_URI";
     public static final String FACEBOOK_OAUTH_SCOPES = "FACEBOOK_OAUTH_SCOPES";
+    public static final String FACEBOOK_USER_FIELDS = "FACEBOOK_USER_FIELDS";
 
     // Twitter properties
     public static final String TWITTER_SECRET = "TWITTER_SECRET";
@@ -211,6 +212,10 @@ public final class Constants {
     public static final String POSTGRES_DB_URL = "POSTGRES_DB_URL";
     public static final String POSTGRES_DB_USER = "POSTGRES_DB_USER";
     public static final String POSTGRES_DB_PASSWORD = "POSTGRES_DB_PASSWORD";
+
+    // Kafka Properties
+    public static final String KAFKA_HOSTNAME = "KAFKA_HOSTNAME";
+    public static final String KAFKA_PORT = "KAFKA_PORT";
 
     // Logging component
     public static final String LOGGING_ENABLED = "LOGGING_ENABLED";
