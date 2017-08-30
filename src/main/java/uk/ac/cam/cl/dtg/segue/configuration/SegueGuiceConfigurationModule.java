@@ -105,8 +105,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static Client elasticSearchClient = null;
     private static UserAccountManager userManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
-    //private static ILogManager logManager;
-    private static LogManagerEventPublisher logManager;
+    private static ILogManager logManager;
+    //private static LogManagerEventPublisher logManager;
     private static EmailManager emailCommunicationQueue = null;
     private static IMisuseMonitor misuseMonitor = null;
     private static StatisticsManager statsManager = null;
@@ -253,8 +253,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
-        //bind(IUserDataManager.class).to(PgUsers.class);
-        bind(IUserDataManager.class).to(KafkaUsers.class);
+        bind(IUserDataManager.class).to(PgUsers.class);
+        //bind(IUserDataManager.class).to(KafkaUsers.class);
 
         bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
 
@@ -352,20 +352,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private static ILogManager getLogManager(final PostgresSqlDb database, final KafkaStreamsProducer kafkaProducer,
-            @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm,
+    private static ILogManager getLogManager(final PostgresSqlDb database,
+                                             @Named(Constants.LOGGING_ENABLED) final boolean loggingEnabled, final LocationManager lhm,
                                              @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                                             @Named(Constants.KAFKA_PORT) final String kafkaPort) {
+                                             @Named(Constants.KAFKA_PORT) final String kafkaPort) {//,
+                                             //final KafkaStreamsProducer kafkaProducer) {
 
         if (null == logManager) {
             //logManager = new MongoLogManager(database, new ObjectMapper(), loggingEnabled, lhm);
             
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
+            logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
 
-            logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort));
+            //logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
+            //logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
