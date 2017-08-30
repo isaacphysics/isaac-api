@@ -187,8 +187,8 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         try {
             kafkaProducer.Send(producerRecord);
 
-        } catch (KafkaException kex) {
-            kex.printStackTrace();
+        } catch (KafkaException e) {
+            throw new SegueDatabaseException("Could not connect to kafka instance: " + e.getMessage());
         }
     }
 

@@ -19,6 +19,8 @@ import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by du220 on 21/06/2017.
@@ -28,11 +30,14 @@ public class ConsumerLoop implements Runnable {
     private final KafkaConsumer<String, JsonNode> consumer;
     private final Collection<String> topics;
     private final ObjectMapper objectMapper;
+    private final AtomicBoolean shutdown;
+    private final CountDownLatch shutdownLatch;
+
     private final Session session;
     private final String userId;
-    private volatile Boolean running = true;
 
     private final Logger log = LoggerFactory.getLogger(ConsumerLoop.class);
+
 
     public ConsumerLoop(final Session session, final String userId,
                         final String topic, final ObjectMapper objectMapper) {
@@ -49,6 +54,9 @@ public class ConsumerLoop implements Runnable {
         this.objectMapper = objectMapper;
         this.consumer = new KafkaConsumer<String, JsonNode>(props);
         this.topics = new ArrayList<String>();
+        this.shutdown = new AtomicBoolean(false);
+        this.shutdownLatch = new CountDownLatch(1);
+
         this.topics.add(topic);
         this.session = session;
         this.userId = userId;
@@ -61,7 +69,7 @@ public class ConsumerLoop implements Runnable {
         try {
             consumer.subscribe(topics);
 
-            while (running) {
+            while (!shutdown.get()) {
 
                 ConsumerRecords<String, JsonNode> records = consumer.poll(1000);
                 for (ConsumerRecord<String, JsonNode> record : records) {
@@ -71,20 +79,32 @@ public class ConsumerLoop implements Runnable {
                         ArrayList<JsonNode> notificationList = Lists.newArrayList();
                         Map<String, ArrayList<JsonNode>> notifications = Maps.newHashMap();
 
-                        notificationList.add(record.value());
-                        notifications.put("notifications", notificationList);
-                        session.getRemote().sendString(objectMapper.writeValueAsString(notifications));
+                        if (!record.value().path("status").asText().equals("RECEIVED")) {
+                            notificationList.add(record.value());
+                            notifications.put("notifications", notificationList);
+                            session.getRemote().sendString(objectMapper.writeValueAsString(notifications));
+                        }
+
                     }
                 }
             }
-        } catch (WakeupException | IOException e) {
-            log.error("Exception", e);
+        } catch (IOException e) {
+            log.error("IO Exception", e);
+        } finally {
+            consumer.close();
+            shutdownLatch.countDown();
+
         }
     }
 
     public void shutdown() {
-        running = false;
-        consumer.wakeup();
+
+        try {
+            shutdown.set(true);
+            shutdownLatch.await();
+        } catch (InterruptedException e) {
+            log.error(e.getMessage());
+        }
     }
 
 }

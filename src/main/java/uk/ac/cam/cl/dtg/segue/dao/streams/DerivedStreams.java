@@ -89,6 +89,7 @@ public final class DerivedStreams {
                             userNotification.put("message", "Welcome to Isaac Physics!");
                             userNotification.put("status", "DELIVERED");
                             userNotification.put("type", value.path("event_type"));
+                            userNotification.put("link", "accountSettings");
                             userNotification.put("timestamp", value.path("timestamp"));
 
                             return (JsonNode) userNotification;
@@ -99,7 +100,7 @@ public final class DerivedStreams {
         KStream<String, JsonNode> userNotificationStream = welcomeNotifications
                 .through(StringSerde, JsonSerde, userNotificationTopic);
 
-        // achievement unlocked
+        // test
         KStream<String, JsonNode> test = filterByEventType(stream, "VIEW_GAMEBOARD_BY_ID")
                 .mapValues(
                         (value) -> {
@@ -108,6 +109,7 @@ public final class DerivedStreams {
                             userNotification.put("message", "You have viewed a gameboard!");
                             userNotification.put("status", "DELIVERED");
                             userNotification.put("type", value.path("event_type"));
+                            userNotification.put("link", "accountSettings");
                             userNotification.put("timestamp", value.path("timestamp"));
 
                             return (JsonNode) userNotification;
@@ -115,6 +117,25 @@ public final class DerivedStreams {
                 );
 
         test.to(StringSerde, JsonSerde, userNotificationTopic);
+
+
+        // test
+        KStream<String, JsonNode> test2 = filterByEventType(stream, "VIEW_QUESTION")
+                .mapValues(
+                        (value) -> {
+                            ObjectNode userNotification = JsonNodeFactory.instance.objectNode();
+
+                            userNotification.put("message", "Question!");
+                            userNotification.put("status", "DELIVERED");
+                            userNotification.put("type", value.path("event_type"));
+                            userNotification.put("link", "progress");
+                            userNotification.put("timestamp", value.path("timestamp"));
+
+                            return (JsonNode) userNotification;
+                        }
+                );
+
+        test2.to(StringSerde, JsonSerde, userNotificationTopic);
 
         // achievement unlocked
         KStream<String, JsonNode> achievementNotifications = filterByEventType(stream, "ACHIEVEMENT_UNLOCKED")
@@ -125,6 +146,7 @@ public final class DerivedStreams {
                             userNotification.put("message", "You have unlocked an achievement!");
                             userNotification.put("status", "DELIVERED");
                             userNotification.put("type", value.path("event_type"));
+                            userNotification.put("link", "progress");
                             userNotification.put("timestamp", value.path("timestamp"));
 
                             return (JsonNode) userNotification;
@@ -146,6 +168,8 @@ public final class DerivedStreams {
                             return (JsonNode) userNotification;
                         }
                 );
+
+        userSeenNotifications.to(StringSerde, JsonSerde, userNotificationTopic);
 
 
 
@@ -169,11 +193,16 @@ public final class DerivedStreams {
                             } else {
 
                                 // remove records until only at most 10 most recent remain
-                                while (((ArrayNode) userNotificationRecord.path("notifications")).size() > 10) {
+                                while ((userNotificationRecord.path("notifications")).size() > 10) {
                                     ((ArrayNode) userNotificationRecord.path("notifications")).remove(0);
                                 }
 
-                                //((ArrayNode) userNotificationRecord.path("notifications")).removeAll();
+                                // mark remaining notifications as received
+                                for (JsonNode node: userNotificationRecord.path("notifications")
+                                     ) {
+                                    ((ObjectNode) node).put("status", "RECEIVED");
+                                }
+
                             }
 
                             return userNotificationRecord;

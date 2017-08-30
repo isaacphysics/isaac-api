@@ -68,6 +68,8 @@ public class UserNotificationWebSocket {
         Long uId = Long.parseLong(userId);
         connectedUser = userManager.getUserDTOById(uId);
 
+        // add security checking!
+
 
         // first we query the kafka streams local user notification store to get any offline notifications
         ReadOnlyKeyValueStore<String, JsonNode> userNotifications = streams.store("store_user_notifications",
@@ -77,8 +79,6 @@ public class UserNotificationWebSocket {
         session.getRemote().sendString(objectMapper.writeValueAsString(userNotifications.get(userId)));
 
         // then we set up a kafka consumer to listen for new notifications while the user remains connected
-        //loop = new ConsumerLoop(session, userId, "topic_user_notifications", objectMapper);
-        //loop.run();
         consumerLoop = new ConsumerLoop(session, userId, "topic_user_notifications", objectMapper);
         thread = new Thread(consumerLoop);
         thread.start();
