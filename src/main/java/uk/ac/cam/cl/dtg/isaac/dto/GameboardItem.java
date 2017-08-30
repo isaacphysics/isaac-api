@@ -19,6 +19,9 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import uk.ac.cam.cl.dtg.isaac.api.Constants.GameboardItemState;
 
 /**
@@ -37,6 +40,8 @@ public class GameboardItem {
     private Integer questionPartsCorrect;
     private Integer questionPartsIncorrect;
     private Integer questionPartsNotAttempted;
+    @JsonIgnore
+    private Integer questionPartsTotal;
     private Float passMark;
     private GameboardItemState state;
     
@@ -245,12 +250,12 @@ public class GameboardItem {
      *
      * @return the total number of question parts or null
      */
+    @JsonProperty
     public final Integer getQuestionPartsTotal() {
-        Integer result = null;
         if (questionPartsCorrect != null && questionPartsIncorrect != null && questionPartsNotAttempted != null) {
-            result = questionPartsCorrect +  questionPartsIncorrect + questionPartsNotAttempted;
+            this.questionPartsTotal = questionPartsCorrect +  questionPartsIncorrect + questionPartsNotAttempted;
         }
-        return result;
+        return this.questionPartsTotal;
     }
 
     /**
