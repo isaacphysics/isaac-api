@@ -248,8 +248,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
         this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
-        log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(),
-                numberOfUnfilteredUsers - allSelectedUsers.size()));
+        log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size(), numberOfUnfilteredUsers - allSelectedUsers.size()));
     }
     
     
