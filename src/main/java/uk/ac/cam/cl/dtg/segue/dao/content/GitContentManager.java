@@ -458,8 +458,9 @@ public class GitContentManager implements IContentManager {
             throws ContentManagerException {
         if (contentDTO.getChildren() != null) {
             for (ContentBaseDTO childBaseContentDTO : contentDTO.getChildren()) {
-                ContentDTO childContentDTO = (ContentDTO) childBaseContentDTO;
-                this.populateRelatedContent(version, childContentDTO);
+                if (childBaseContentDTO instanceof ContentDTO) {
+                    this.populateRelatedContent(version, (ContentDTO) childContentDTO);
+                }
             }
         }
         if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {

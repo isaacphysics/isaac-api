@@ -290,16 +290,24 @@ public class ContentMapper {
         return mapOfDOsToDTOs.get(cls);
     }
 
-    // TODO MT JAVA DOC?
-    private void populateRelatedContentWithIDs(final ContentBase contentBase, final ContentBaseDTO resultBase) {
-        Content content = (Content) contentBase;
-        ContentDTO result = (ContentDTO) resultBase;
-
+    /**
+     * Populate relatedContent fields on the result and its children with IDs recursively.
+     * Only recurses to children of type Content, but this is currently the only possibility.
+     * When another subclass of ContentBase is introduced which also has relatedContent,
+     * we can decide whether we want to move relatedContent up to the abstract base class etc.
+     * @param content
+     *            - DO class.
+     * @param result
+     *            - target DTO class.
+     */
+    private void populateRelatedContentWithIDs(final Content content, final ContentDTO result) {
         List<ContentBase> contentChildren = content.getChildren();
         if (contentChildren != null) {
             List<ContentBaseDTO> resultChildren = result.getChildren();
             for (int i = 0; i < contentChildren.size(); i++) {
-                this.populateRelatedContentWithIDs(contentChildren.get(i), resultChildren.get(i));
+                if (contentChildren.get(i) instanceof Content && resultChildren.get(i) instanceof ContentDTO) {
+                    this.populateRelatedContentWithIDs((Content) contentChildren.get(i), (ContentDTO) resultChildren.get(i));
+                }
             }
         }
         if (result.getRelatedContent() != null) {
