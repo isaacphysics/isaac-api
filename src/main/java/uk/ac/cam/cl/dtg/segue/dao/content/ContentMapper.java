@@ -45,6 +45,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.JsonContentType;
 import uk.ac.cam.cl.dtg.segue.dos.users.AnonymousUser;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
@@ -289,6 +290,29 @@ public class ContentMapper {
         return mapOfDOsToDTOs.get(cls);
     }
 
+    // TODO MT JAVA DOC?
+    private void populateRelatedContentWithIDs(final ContentBase contentBase, final ContentBaseDTO resultBase) {
+        Content content = (Content) contentBase;
+        ContentDTO result = (ContentDTO) resultBase;
+
+        List<ContentBase> contentChildren = content.getChildren();
+        if (contentChildren != null) {
+            List<ContentBaseDTO> resultChildren = result.getChildren();
+            for (int i = 0; i < contentChildren.size(); i++) {
+                this.populateRelatedContentWithIDs(contentChildren.get(i), resultChildren.get(i));
+            }
+        }
+        if (result.getRelatedContent() != null) {
+            List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
+            for (String relatedId : content.getRelatedContent()) {
+                ContentSummaryDTO contentSummary = new ContentSummaryDTO();
+                contentSummary.setId(relatedId);
+                relatedContent.add(contentSummary);
+            }
+            result.setRelatedContent(relatedContent);
+        }
+    }
+
     /**
      * Find the default DTO class from a given Domain object.
      * 
@@ -302,17 +326,7 @@ public class ContentMapper {
         }
 
         ContentDTO result = getAutoMapper().map(content, this.mapOfDOsToDTOs.get(content.getClass()));
-        if (result.getRelatedContent() != null) {
-            List<ContentSummaryDTO> relatedContent = Lists.newArrayList();
-
-            for (String relatedId : content.getRelatedContent()) {
-                ContentSummaryDTO contentSummary = new ContentSummaryDTO();
-                contentSummary.setId(relatedId);
-                relatedContent.add(contentSummary);
-            }
-            result.setRelatedContent(relatedContent);
-        }
-
+        this.populateRelatedContentWithIDs(content, result);
         return result;
     }
 

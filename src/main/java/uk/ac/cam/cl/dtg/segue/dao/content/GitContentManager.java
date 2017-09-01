@@ -46,6 +46,7 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.dos.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
@@ -455,6 +456,12 @@ public class GitContentManager implements IContentManager {
     @Override
     public ContentDTO populateRelatedContent(final String version, final ContentDTO contentDTO)
             throws ContentManagerException {
+        if (contentDTO.getChildren() != null) {
+            for (ContentBaseDTO childBaseContentDTO : contentDTO.getChildren()) {
+                ContentDTO childContentDTO = (ContentDTO) childBaseContentDTO;
+                this.populateRelatedContent(version, childContentDTO);
+            }
+        }
         if (contentDTO.getRelatedContent() == null || contentDTO.getRelatedContent().isEmpty()) {
             return contentDTO;
         }
