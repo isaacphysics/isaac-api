@@ -44,7 +44,7 @@ import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.dos.content.*;
+import uk.ac.cam.cl.dtg.segue.dos.content.Content;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
@@ -84,6 +84,8 @@ public class GitContentManager implements IContentManager {
      *            - search provider that the content manager manages and controls.
      * @param contentMapper
      *            - The utility class for mapping content objects.
+     * @param globalProperties
+     *            - global properties.
      */
     @Inject
     public GitContentManager(final GitDb database, final ISearchProvider searchProvider,
@@ -92,9 +94,10 @@ public class GitContentManager implements IContentManager {
         this.mapper = contentMapper;
         this.searchProvider = searchProvider;
         this.globalProperties = globalProperties;
-        this.allowOnlyPublishedContent = Boolean.parseBoolean(globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
+        this.allowOnlyPublishedContent = Boolean.parseBoolean(
+                globalProperties.getProperty(Constants.SHOW_ONLY_PUBLISHED_CONTENT));
 
-        if(this.allowOnlyPublishedContent) {
+        if (this.allowOnlyPublishedContent) {
             log.info("API Configured to only allow published content to be returned.");
         }
 
@@ -149,7 +152,8 @@ public class GitContentManager implements IContentManager {
                     this.getUnpublishedFilter()).getResults());
 
             if (null == searchResults || searchResults.isEmpty()) {
-                log.error("Failed to locate the content (" + id + ") in the cache for version " + getCurrentContentSHA() + " (" + version + ")");
+                log.error("Failed to locate the content (" + id + ") in the cache for version "
+                        + getCurrentContentSHA() + " (" + version + ")");
                 return null;
             }
 
@@ -180,8 +184,9 @@ public class GitContentManager implements IContentManager {
     }
 
     @Override
-    public ResultsWrapper<ContentDTO> getContentMatchingIds(String version, Collection<String> ids, int startIndex, int limit)
-            throws ContentManagerException{
+    public ResultsWrapper<ContentDTO> getContentMatchingIds(final String version, final Collection<String> ids,
+                                                            final int startIndex, final int limit)
+            throws ContentManagerException {
 
         String k = "getContentMatchingIds~" + version + "~" + ids.toString() + "~" + startIndex + "~" + limit;
         if (!cache.asMap().containsKey(k)) {
@@ -196,7 +201,7 @@ public class GitContentManager implements IContentManager {
                 finalFilter.putAll(getUnpublishedFilter());
             }
 
-            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(version,CONTENT_TYPE, null,
+            ResultsWrapper<String> searchHits = this.searchProvider.termSearch(version, CONTENT_TYPE, null,
                     null,
                     startIndex, limit, finalFilter);
 
@@ -233,8 +238,9 @@ public class GitContentManager implements IContentManager {
             final Integer startIndex, final Integer limit) throws ContentManagerException {
 
         ResultsWrapper<String> searchHits = searchProvider.fuzzySearch(version, CONTENT_TYPE, searchString, startIndex,
-                limit, fieldsThatMustMatch, this.getUnpublishedFilter(), Constants.ID_FIELDNAME, Constants.TITLE_FIELDNAME,
-                Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME, Constants.CHILDREN_FIELDNAME);
+                limit, fieldsThatMustMatch, this.getUnpublishedFilter(), Constants.ID_FIELDNAME,
+                Constants.TITLE_FIELDNAME, Constants.TAGS_FIELDNAME, Constants.VALUE_FIELDNAME,
+                Constants.CHILDREN_FIELDNAME);
 
         List<Content> searchResults = mapper.mapFromStringListToContentList(searchHits.getResults());
 
@@ -277,7 +283,7 @@ public class GitContentManager implements IContentManager {
         // deal with unpublished filter if necessary
         Map<String, AbstractFilterInstruction> newFilterInstructions = filterInstructions;
         if (this.getUnpublishedFilter() != null) {
-            if(null == newFilterInstructions) {
+            if (null == newFilterInstructions) {
                 newFilterInstructions = Maps.newHashMap();
             }
             newFilterInstructions.putAll(this.getUnpublishedFilter());
@@ -395,7 +401,8 @@ public class GitContentManager implements IContentManager {
     public final Set<String> getTagsList(final String version) throws ContentManagerException {
         Validate.notBlank(version);
 
-        List<Object> tagObjects = (List<Object>)searchProvider.getById(version, "metadata", "tags").getSource().get("tags");
+        List<Object> tagObjects = (List<Object>) searchProvider.getById(version, "metadata", "tags")
+                .getSource().get("tags");
 
         return new HashSet<>(Lists.transform(tagObjects, Functions.toStringFunction()));
     }
@@ -406,9 +413,9 @@ public class GitContentManager implements IContentManager {
 
         SearchResponse r =  searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "unit");
         SearchHits hits = r.getHits();
-        ArrayList<String> units = new ArrayList<>((int)hits.getTotalHits());
-        for(SearchHit hit : hits) {
-            units.add((String)hit.getSource().get("unit"));
+        ArrayList<String> units = new ArrayList<>((int) hits.getTotalHits());
+        for (SearchHit hit : hits) {
+            units.add((String) hit.getSource().get("unit"));
         }
 
         return units;
@@ -422,29 +429,31 @@ public class GitContentManager implements IContentManager {
         }
 
         if (!searchProvider.hasIndex(version)) {
-            throw new ContentVersionUnavailableException(String.format("Version %s does not exist in the searchIndex.", version));
+            throw new ContentVersionUnavailableException(String.format("Version %s does not exist in the searchIndex.",
+                    version));
         }
     }
 
     @Override
     public final Map<Content, List<String>> getProblemMap(final String version) {
-        SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX), "contentError");
+        SearchResponse r = searchProvider.getAllByType(globalProperties.getProperty(Constants.CONTENT_INDEX),
+                "contentError");
 
         SearchHits hits = r.getHits();
         Map<Content, List<String>> map = new HashMap<>();
-        for(SearchHit hit : hits) {
+        for (SearchHit hit : hits) {
 
             Content partialContentWithErrors = new Content();
             Map src = hit.getSource();
-            partialContentWithErrors.setId((String)src.get("id"));
-            partialContentWithErrors.setTitle((String)src.get("title"));
+            partialContentWithErrors.setId((String) src.get("id"));
+            partialContentWithErrors.setTitle((String) src.get("title"));
             //partialContentWithErrors.setTags(pair.getKey().getTags()); // TODO: Support tags
-            partialContentWithErrors.setPublished((Boolean)src.get("published"));
-            partialContentWithErrors.setCanonicalSourceFile((String)src.get("canonicalSourceFile"));
+            partialContentWithErrors.setPublished((Boolean) src.get("published"));
+            partialContentWithErrors.setCanonicalSourceFile((String) src.get("canonicalSourceFile"));
 
             ArrayList<String> errors = new ArrayList<>();
-            for (Object v : (List)hit.getSource().get("errors") ) {
-                errors.add((String)v);
+            for (Object v : (List) hit.getSource().get("errors")) {
+                errors.add((String) v);
             }
 
             map.put(partialContentWithErrors, errors);
@@ -459,7 +468,7 @@ public class GitContentManager implements IContentManager {
         if (contentDTO.getChildren() != null) {
             for (ContentBaseDTO childBaseContentDTO : contentDTO.getChildren()) {
                 if (childBaseContentDTO instanceof ContentDTO) {
-                    this.populateRelatedContent(version, (ContentDTO) childContentDTO);
+                    this.populateRelatedContent(version, (ContentDTO) childBaseContentDTO);
                 }
             }
         }
@@ -506,8 +515,9 @@ public class GitContentManager implements IContentManager {
 
     @Override
     public String getCurrentContentSHA() {
-        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX), "metadata", "general");
-        return (String)r.getSource().get("version");
+        GetResponse r = searchProvider.getById(globalProperties.getProperty(Constants.CONTENT_INDEX), "metadata",
+                "general");
+        return (String) r.getSource().get("version");
     }
 
     /**

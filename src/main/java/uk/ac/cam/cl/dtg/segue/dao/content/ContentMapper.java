@@ -305,8 +305,10 @@ public class ContentMapper {
         if (contentChildren != null) {
             List<ContentBaseDTO> resultChildren = result.getChildren();
             for (int i = 0; i < contentChildren.size(); i++) {
-                if (contentChildren.get(i) instanceof Content && resultChildren.get(i) instanceof ContentDTO) {
-                    this.populateRelatedContentWithIDs((Content) contentChildren.get(i), (ContentDTO) resultChildren.get(i));
+                ContentBase contentChild = contentChildren.get(i);
+                ContentBaseDTO resultChild = resultChildren.get(i);
+                if (contentChild instanceof Content && resultChild instanceof ContentDTO) {
+                    this.populateRelatedContentWithIDs((Content) contentChild, (ContentDTO) resultChild);
                 }
             }
         }
@@ -323,7 +325,7 @@ public class ContentMapper {
 
     /**
      * Find the default DTO class from a given Domain object.
-     * 
+     *
      * @param content
      *            - Content DO to map to DTO.
      * @return DTO that can be used for mapping.
