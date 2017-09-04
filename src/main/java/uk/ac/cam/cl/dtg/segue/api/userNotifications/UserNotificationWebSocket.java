@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_AUTH_COOKIE;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_USER_ID;
 
 
 /**
@@ -70,10 +71,10 @@ public class UserNotificationWebSocket {
     public void onConnect(final Session session) throws IOException, SegueDatabaseException, NoUserException, InvalidSessionException {
 
         String requestUri = session.getUpgradeRequest().getRequestURI().toString();
-        String userId = requestUri.substring(requestUri.indexOf("user-notifications/") + 19);
+        /*String userId = requestUri.substring(requestUri.indexOf("user-notifications/") + 19);
 
         Long uId = Long.parseLong(userId);
-        connectedUser = userManager.getUserDTOById(uId);
+        connectedUser = userManager.getUserDTOById(uId);*/
 
         // add security checking!
         HttpCookie segueAuthCookie = null;
@@ -93,6 +94,11 @@ public class UserNotificationWebSocket {
                 HashMap.class);
 
         if (userManager.isValidUserFromSession(sessionInformation)) {
+
+            String userId = sessionInformation.get(SESSION_USER_ID);
+
+            Long uId = Long.parseLong(userId);
+            connectedUser = userManager.getUserDTOById(uId);
 
             // first we query the kafka streams local user notification store to get any offline notifications
             ReadOnlyKeyValueStore<String, JsonNode> userNotifications = streams.store("store_user_notifications",
