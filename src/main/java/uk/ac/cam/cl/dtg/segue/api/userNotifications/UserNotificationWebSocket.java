@@ -12,12 +12,19 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 
 import java.io.IOException;
+import java.net.HttpCookie;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_AUTH_COOKIE;
 
 
 /**
@@ -60,7 +67,7 @@ public class UserNotificationWebSocket {
 
 
     @OnWebSocketConnect
-    public void onConnect(final Session session) throws IOException, SegueDatabaseException, NoUserException {
+    public void onConnect(final Session session) throws IOException, SegueDatabaseException, NoUserException, InvalidSessionException {
 
         String requestUri = session.getUpgradeRequest().getRequestURI().toString();
         String userId = requestUri.substring(requestUri.indexOf("user-notifications/") + 19);
@@ -69,20 +76,36 @@ public class UserNotificationWebSocket {
         connectedUser = userManager.getUserDTOById(uId);
 
         // add security checking!
+        HttpCookie segueAuthCookie = null;
+        if (session.getUpgradeRequest().getCookies() == null) {
+            throw new InvalidSessionException("There are no cookies set.");
+        }
 
+        List<HttpCookie> cookies = session.getUpgradeRequest().getCookies();
 
-        // first we query the kafka streams local user notification store to get any offline notifications
-        ReadOnlyKeyValueStore<String, JsonNode> userNotifications = streams.store("store_user_notifications",
-                QueryableStoreTypes.<String, JsonNode>keyValueStore());
+        for (HttpCookie c : cookies) {
+            if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
+                segueAuthCookie = c;
+            }
+        }
 
-        // send offline backlog to user
-        session.getRemote().sendString(objectMapper.writeValueAsString(userNotifications.get(userId)));
+        Map<String, String> sessionInformation = objectMapper.readValue(segueAuthCookie.getValue(),
+                HashMap.class);
 
-        // then we set up a kafka consumer to listen for new notifications while the user remains connected
-        consumerLoop = new ConsumerLoop(session, userId, "topic_user_notifications", objectMapper);
-        thread = new Thread(consumerLoop);
-        thread.start();
+        if (userManager.isValidUserFromSession(sessionInformation)) {
 
+            // first we query the kafka streams local user notification store to get any offline notifications
+            ReadOnlyKeyValueStore<String, JsonNode> userNotifications = streams.store("store_user_notifications",
+                    QueryableStoreTypes.<String, JsonNode>keyValueStore());
+
+            // send offline backlog to user
+            session.getRemote().sendString(objectMapper.writeValueAsString(userNotifications.get(userId)));
+
+            // then we set up a kafka consumer to listen for new notifications while the user remains connected
+            consumerLoop = new ConsumerLoop(session, userId, "topic_user_notifications", objectMapper);
+            thread = new Thread(consumerLoop);
+            thread.start();
+        }
     }
 
     @OnWebSocketClose
