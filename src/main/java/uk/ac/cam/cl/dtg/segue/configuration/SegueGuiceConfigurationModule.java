@@ -59,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
+import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
@@ -111,6 +112,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static IMisuseMonitor misuseMonitor = null;
     private static StatisticsManager statsManager = null;
     private static KafkaStatisticsManager kafkaStatsManager = null;
+    private static KafkaTopicManager kafkaTopicManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
 
@@ -650,6 +652,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         return postgresDB;
     }
 
+    @Provides
+    @Singleton
+    @Inject
+    private static KafkaTopicManager getKafkaTopicManager() {
+        if (null == kafkaTopicManager) {
+            kafkaTopicManager = new KafkaTopicManager(globalProperties);
+        }
+        return kafkaTopicManager;
+    }
+
     /**
      * Gets the instance of the kafka connection wrapper.
      *
@@ -663,10 +675,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Singleton
     @Inject
     private static KafkaStreamsProducer getKafkaProducer(@Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                                         @Named(Constants.KAFKA_PORT) final String kafkaPort) {
+                                         @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                                         final KafkaTopicManager topicManager) {
 
         if (null == kafkaProducer) {
-            kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort);
+            kafkaProducer = new KafkaStreamsProducer(kafkaHost, kafkaPort, topicManager);
             log.info("Creating singleton of KafkaProducer.");
         }
         return kafkaProducer;
@@ -678,16 +691,16 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static KafkaStreamsService getKafkaStreamsService(final PostgresSqlDb database,
                                                               final IContentManager contentManager,
-                                                              @Named(CONTENT_INDEX) final String contentIndex) {
+                                                              @Named(CONTENT_INDEX) final String contentIndex,
+                                                              final KafkaTopicManager topicManager) {
 
         if (null == kafkaStreamsService) {
-            kafkaStreamsService = new KafkaStreamsService(globalProperties, database, contentManager, contentIndex);
+            kafkaStreamsService = new KafkaStreamsService(globalProperties, database, contentManager, contentIndex,
+                    topicManager);
             log.info("Creating singleton of Kafka Streams Service.");
         }
         return kafkaStreamsService;
     }
-
-
 
 
     /**

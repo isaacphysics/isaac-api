@@ -135,7 +135,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                         ProducerRecord producerRecord = new ProducerRecord<String, JsonNode>("topic_logged_events", newUserId,
                                 kafkaLogRecord);
 
-                        kafkaProducer.Send(producerRecord);
+                        kafkaProducer.send(producerRecord);
                     }
                 }
             }
@@ -185,7 +185,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {
-            kafkaProducer.Send(producerRecord);
+            kafkaProducer.send(producerRecord);
 
         } catch (KafkaException kex) {
             kex.printStackTrace();

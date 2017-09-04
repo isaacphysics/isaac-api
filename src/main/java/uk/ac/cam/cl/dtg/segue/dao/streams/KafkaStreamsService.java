@@ -17,8 +17,11 @@
 package uk.ac.cam.cl.dtg.segue.dao.streams;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -40,6 +43,8 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
@@ -54,6 +59,7 @@ public class KafkaStreamsService {
     private final PostgresSqlDb database;
     private final IContentManager contentManager;
     private final String contentIndex;
+    private final KafkaTopicManager topicManager;
 
     private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
 
@@ -85,12 +91,14 @@ public class KafkaStreamsService {
     public KafkaStreamsService(final PropertiesLoader globalProperties,
                                final PostgresSqlDb database,
                                final IContentManager contentManager,
-                               @Named(CONTENT_INDEX) final String contentIndex)  {
+                               @Named(CONTENT_INDEX) final String contentIndex,
+                               KafkaTopicManager topicManager)  {
 
         this.globalProperties = globalProperties;
         this.database = database;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
+        this.topicManager = topicManager;
 
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
@@ -108,6 +116,8 @@ public class KafkaStreamsService {
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
         streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
 
+        topicManager.ensureTopicExists("topic_logged_events");
+        topicManager.ensureTopicExists("topic_anonymous_logged_events");
 
         try {
             // raw logged events incoming data stream from kafka
