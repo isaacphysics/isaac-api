@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Create topics here
-/create-topics.sh &
+# /create-topics.sh &
 
 
 # Run kafka
