@@ -42,7 +42,7 @@ public class KafkaStreamsProducer implements Closeable {
         props.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, kafkaHost + ":" + kafkaPort);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000);
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 200);
 
         producer = new KafkaProducer<>(props);
 
