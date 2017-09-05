@@ -117,8 +117,8 @@ public class KafkaStreamsService {
 
 
         //*** BADGES & ACHIEVEMENTS ***//
-        //achievementProcessor = new ThresholdAchievedProcessor(database);
-        //DerivedStreams.userAchievements(rawLoggedEvents[0], contentManager, contentIndex, achievementProcessor);
+        achievementProcessor = new ThresholdAchievedProcessor(database);
+        DerivedStreams.userAchievements(rawLoggedEvents[0], contentManager, contentIndex, achievementProcessor);
 
 
 
