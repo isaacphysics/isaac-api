@@ -63,7 +63,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.util.Lists;
+import com.google.common.collect.Lists;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -76,6 +76,7 @@ public class GameboardPersistenceManager {
 
 	private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
 	private static final Long GAMEBOARD_TTL_MINUTES = 30L;
+	private static final int GAMEBOARD_ITEM_MAP_BATCH_SIZE = 1000;
 
 	private final PostgresSqlDb database;
     private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
@@ -463,8 +464,13 @@ public class GameboardPersistenceManager {
 			log.info("No question ids found; returning original gameboard without augmenting.");
 			return gameboards;
 		}
-		
-		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(qids));
+
+		Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
+		List<List<String>> questionIdBatches = Lists.partition(Lists.newArrayList(qids), GAMEBOARD_ITEM_MAP_BATCH_SIZE);
+		for (List<String> questionIdBatch : questionIdBatches) {
+			gameboardReadyQuestions.putAll(getGameboardItemMap(questionIdBatch));
+		}
+
 		for (GameboardDTO game : gameboards) {
 			// empty and re-populate the gameboard dto with fully augmented gameboard items.
 			game.setQuestions(new ArrayList<GameboardItem>());
