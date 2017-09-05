@@ -581,7 +581,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap;
                 userQuestionDataMap = this.gameManager.getDetailedGameProgressData(groupMembers, gameboard);
-
                 for (RegisteredUserDTO student : userQuestionDataMap.keySet()) {
                     Map<GameboardDTO, Map<String, Integer>> entry = grandTable.get(student);
                     if (null == entry) {
@@ -650,7 +649,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 List<Integer> marks = Lists.newArrayList();
                 for (AssignmentDTO assignment : assignments) {
                     GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
-                    Float total = 0f;
+                    int total = 0;
+                    int outOf = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
                     List<GameboardItem> questions = gameboard.getQuestions();
                     Map<String, Integer> gameboardPartials = Maps.newHashMap();
@@ -658,7 +658,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         gameboardPartials.put(question.getId(), 0);
                     }
                     HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
-                    Integer outOf = questions.size();
                     for (String s : questionIds) {
                         Integer mark = userAssignments.get(gameboard).get(s);
                         String[] tokens = s.split("\\|");
@@ -669,12 +668,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                     }
                     for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
-                        total += new Float(entry.getValue()) / questionParts.get(entry.getKey());
+                        total += entry.getValue();
+                        outOf += questionParts.get(entry.getKey());
                     }
-
                     totals.add(100 * new Double(total) / outOf);
                 }
-
                 Double overallTotal = totals.stream()
                         .map(boardTotal -> boardTotal / assignments.size())
                         .reduce(0d, (a, b) -> a + b);
