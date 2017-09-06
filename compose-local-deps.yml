@@ -35,7 +35,7 @@ services:
       dockerfile: Dockerfile-kafka
     volumes:
 #      - ../kafka-data:/kafka-data:rw
-      - ./kafka/server.properties:/opt/kafka/config/server.properties:ro
+      - ./kafka/server.properties.local:/opt/kafka/config/server.properties:ro
     depends_on:
       - zookeeper
     ports:

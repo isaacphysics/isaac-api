@@ -2,13 +2,11 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.streams.state.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
@@ -16,7 +14,6 @@ import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +49,8 @@ public class KafkaUsers implements IUserDataManager {
 
         Map<String, Object> userDetails = new ImmutableMap.Builder<String, Object>()
                 .put("user_id", regUser.getId())
+                .put("family_name", regUser.getFamilyName())
+                .put("given_name", regUser.getGivenName())
                 .put("role", regUser.getRole())
                 .put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth() : "")
                 .put("gender", (regUser.getGender() != null) ? regUser.getGender() : "")
@@ -74,7 +73,7 @@ public class KafkaUsers implements IUserDataManager {
             ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", regUser.getId().toString(),
                     String.format(objectMapper.writeValueAsString(kafkaLogRecord)));
 
-            kafkaProducer.Send(producerRecord);
+            kafkaProducer.send(producerRecord);
 
         } catch (KafkaException kex) {
             kex.printStackTrace();
@@ -103,17 +102,17 @@ public class KafkaUsers implements IUserDataManager {
 
     @Override
     public RegisteredUser getByLinkedAccount(AuthenticationProvider provider, String providerUserId) throws SegueDatabaseException {
-        return getByLinkedAccount(provider, providerUserId);
+        return pgUsers.getByLinkedAccount(provider, providerUserId);
     }
 
     @Override
     public boolean linkAuthProviderToAccount(RegisteredUser user, AuthenticationProvider provider, String providerUserId) throws SegueDatabaseException {
-        return linkAuthProviderToAccount(user, provider, providerUserId);
+        return pgUsers.linkAuthProviderToAccount(user, provider, providerUserId);
     }
 
     @Override
     public void unlinkAuthProviderFromUser(RegisteredUser user, AuthenticationProvider provider) throws SegueDatabaseException {
-        unlinkAuthProviderFromUser(user, provider);
+        pgUsers.unlinkAuthProviderFromUser(user, provider);
     }
 
     @Override

@@ -29,10 +29,9 @@ import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.*;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customAggregators.QuestionAnswerCounter;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customAggregators.QuestionAnswerInitializer;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customMappers.AugmentedQuestionDetailMapper;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProcessor;
+
 
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -51,22 +50,21 @@ public final class DerivedStreams {
     private static final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(JsonSerializer, JsonDeserializer);
     private static final Serde<String> StringSerde = Serdes.String();
     private static final Serde<Long> LongSerde = Serdes.Long();
-    private static final JsonNodeFactory NodeFactory = JsonNodeFactory.instance;
 
-    private static Boolean UserStatsInitialized = false;
-    private static Boolean UserWeeklyStreaksInitialized = false;
+    private static Boolean userStatsInitialized = false;
 
 
-    /** Private, empty constructor (static utility class). */
+    /**
+     * Private, empty constructor (static utility class).
+     */
     private DerivedStreams() {
     }
 
 
-
-
-    /** Function to filter incoming stream by logged event type.
+    /**
+     * Function to filter incoming stream by logged event type.
      *
-     * @param stream incoming raw logged event data
+     * @param stream    incoming raw logged event data
      * @param eventType logged event type to filter by
      * @return filtered stream
      */
@@ -81,12 +79,11 @@ public final class DerivedStreams {
     }
 
 
-
-
-    /** Stream processing of user achievements based on user activity captured by raw logged events.
+    /**
+     * Stream processing of user achievements based on user activity captured by raw logged events.
      * Stream records are passed through various filters and transformations to feed downward streams.
      *
-     * @param stream incoming raw logged event data
+     * @param stream         incoming raw logged event data
      * @param contentManager
      * @param contentIndex
      * @return
@@ -105,14 +102,12 @@ public final class DerivedStreams {
         // teacher assignment activity
         teacherAssignmentActivity(stream);
 
-
-
         return stream;
     }
 
 
-
-    /** Processing of teacher activity for creating and setting assignments
+    /**
+     * Processing of teacher activity for creating and setting assignments
      *
      * @param stream incoming raw logged event data
      * @return
@@ -121,17 +116,12 @@ public final class DerivedStreams {
 
         KStream<String, JsonNode> setAssignments = filterByEventType(stream, "SET_NEW_ASSIGNMENT");
 
-
-
-
-
         return stream;
     }
 
 
-
-
-    /** Processing of user weekly streaks based on timestamped user logged events.
+    /**
+     * Processing of user weekly streaks based on timestamped user logged events.
      *
      * @param stream incoming raw logged event data
      * @return
@@ -167,13 +157,12 @@ public final class DerivedStreams {
 
                             if (streakStartTimestamp == 0 || TimeUnit.DAYS
                                     .convert(latestEventTimestamp - streakEndTimestamp,
-                                            TimeUnit.MILLISECONDS) > 8 ) {
+                                            TimeUnit.MILLISECONDS) > 8) {
 
                                 updatedStreakRecord.put("streak_start", latestEventTimestamp);
                                 updatedStreakRecord.put("streak_end", latestEventTimestamp);
 
-                            }
-                            else {
+                            } else {
                                 updatedStreakRecord.put("streak_start", streakStartTimestamp);
                                 updatedStreakRecord.put("streak_end", latestEventTimestamp);
                             }
@@ -193,6 +182,182 @@ public final class DerivedStreams {
     }
 
 
+    /**
+     * Processes an incoming stream of logged events to update a number of internal state stores
+     * useful for providing site usage statistics.
+     *
+     * @param stream - incoming logged events stream
+     */
+    public static void userStatistics(final KStream<String, JsonNode> stream) {
+
+        if (userStatsInitialized)
+            return;
+
+        /**
+         * process user data in local data stores
+         * extract user record related events
+         */
+        KTable<String, JsonNode> userData = DerivedStreams.filterByEventType(stream, "CREATE_UPDATE_USER")
+                // set up a local user data store
+                .groupByKey(StringSerde, JsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+                            ObjectNode userRecord = JsonNodeFactory.instance.objectNode();
+
+                            userRecord.put("user_id", "");
+                            userRecord.put("user_data", "");
+
+                            return userRecord;
+                        },
+                        // aggregator
+                        (userId, userUpdateLogEvent, userRecord) -> {
+
+                            ((ObjectNode) userRecord).put("user_id", userId);
+                            ((ObjectNode) userRecord).put("user_data", userUpdateLogEvent.path("event_details"));
+
+                            return userRecord;
+                        },
+                        JsonSerde,
+                        "store_user_data"
+                );
+
+        // join user table to incoming event stream to get user data for stats processing
+        KStream<String, JsonNode> userEvents = stream
+
+                .join(
+                        userData,
+                        (logEventVal, userDataVal) -> {
+                            ObjectNode joinedValueRecord = JsonNodeFactory.instance.objectNode();
+
+                            joinedValueRecord.put("user_id", userDataVal.path("user_data").path("user_id"));
+                            joinedValueRecord.put("user_role", userDataVal.path("user_data").path("role"));
+                            joinedValueRecord.put("user_gender", userDataVal.path("user_data").path("gender"));
+                            joinedValueRecord.put("event_type", logEventVal.path("event_type"));
+                            joinedValueRecord.put("event_details", logEventVal.path("event_details"));
+                            joinedValueRecord.put("timestamp", logEventVal.path("timestamp"));
+
+                            return joinedValueRecord;
+                        }
+                );
+
+
+        // maintain internal store of users' last seen times by log event type, and counts per event type
+        KTable<String, JsonNode> userEventCounts = userEvents
+                .groupByKey(StringSerde, JsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+                            ObjectNode countRecord = JsonNodeFactory.instance.objectNode();
+                            countRecord.put("last_seen", 0);
+                            return countRecord;
+                        },
+                        // aggregator
+                        (userId, logEvent, countRecord) -> {
+
+                            String eventType = logEvent.path("event_type").asText();
+                            Timestamp stamp = new Timestamp(logEvent.path("timestamp").asLong());
+
+                            if (!countRecord.has(eventType)) {
+                                ObjectNode node = JsonNodeFactory.instance.objectNode();
+                                node.put("count", 0);
+                                node.put("latest", 0);
+                                ((ObjectNode) countRecord).put(eventType, node);
+                            }
+
+                            Long count = countRecord.path(eventType).path("count").asLong();
+                            ((ObjectNode) countRecord.path(eventType)).put("count", count + 1);
+                            ((ObjectNode) countRecord.path(eventType)).put("latest", stamp.getTime());
+
+                            ((ObjectNode) countRecord).put("last_seen", stamp.getTime());
+
+                            return countRecord;
+                        },
+                        JsonSerde,
+                        "store_user_last_seen"
+                );
+
+        /*userData
+                .join(
+                        userEventCounts,
+                        (userDataVal, userEventCountsVal) -> {
+
+                            ObjectNode joinedValueRecord = JsonNodeFactory.instance.objectNode();
+
+                            joinedValueRecord.put("user_data", userDataVal.path("user_data"));
+                            joinedValueRecord.put("user_last_seen_data", userEventCountsVal);
+
+                            return (JsonNode) joinedValueRecord;
+                        }
+                ).through(StringSerde, JsonSerde, "topic_user_data", "store_augmented_user_data");*/
+
+
+        // maintain internal store of log event type counts
+        userEvents
+                .map(
+                        (k, v) -> {
+                            return new KeyValue<String, JsonNode>(v.path("event_type").asText(), v);
+                        }
+                )
+                .groupByKey(StringSerde, JsonSerde)
+                .count("store_log_event_counts");
+
+
+
+        /*// maintain internal store of log event counts per user type, per day
+        userEvents
+                .map(
+                        (k, v) -> {
+
+                            Timestamp stamp = new Timestamp(v.path("timestamp").asLong());
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(stamp);
+                            cal.set(Calendar.HOUR_OF_DAY, 0);
+                            cal.set(Calendar.MINUTE, 0);
+                            cal.set(Calendar.SECOND, 0);
+                            cal.set(Calendar.MILLISECOND, 0);
+
+                            return new KeyValue<Long, JsonNode>(cal.getTimeInMillis(), v);
+                        }
+                )
+                .groupByKey(LongSerde, JsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+                            ObjectNode countRecord = JsonNodeFactory.instance.objectNode();
+                            return countRecord;
+                        },
+                        // aggregator
+                        (userId, logEvent, countRecord) -> {
+
+                            String userRole = logEvent.path("user_role").asText();
+
+                            if (!countRecord.has(userRole)) {
+                                ObjectNode logEventTypes = JsonNodeFactory.instance.objectNode();
+                                ((ObjectNode) countRecord).put(userRole, logEventTypes);
+                            }
+
+                            String eventType = logEvent.path("event_type").asText();
+
+                            if (countRecord.path(userRole).has(eventType)) {
+
+                                Long count = countRecord.path(userRole).path(eventType).asLong();
+                                ((ObjectNode) countRecord.path(userRole)).put(eventType, count + 1);
+
+                            } else {
+                                ((ObjectNode) countRecord.path(userRole)).put(eventType, 1);
+                            }
+
+                            return countRecord;
+                        },
+                        JsonSerde,
+                        "store_daily_log_events"
+                );*/
+
+
+        // streams initialized
+        userStatsInitialized = true;
+    }
 
 
     private static void processAchievement(final KStream<String, JsonNode> stream,
@@ -211,13 +376,10 @@ public final class DerivedStreams {
     }
 
 
-
-
-
-
-    /** Processing of user completed question attempts.
+    /**
+     * Processing of user completed question attempts.
      *
-     * @param stream incoming raw logged event data
+     * @param stream         incoming raw logged event data
      * @param contentManager
      * @param contentIndex
      * @return
@@ -243,7 +405,7 @@ public final class DerivedStreams {
          *      i) fetch the question details, including level, tags, no. of question parts
          *      ii) if user question part count = no. of question parts -> correct = true, else false
          */
-        KStream <String, JsonNode> questionAttempts = questionPartAttempts
+        KStream<String, JsonNode> questionAttempts = questionPartAttempts
 
                 // filter for correctly answered question parts
                 .filter(
@@ -268,6 +430,7 @@ public final class DerivedStreams {
 
                 // Group by the ["user_id"-"question_id"] key (gives all correct attempts at a question part by each user), then aggregate
                 // to maintain counts for unique user question part attempts
+
                 .groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
@@ -299,10 +462,9 @@ public final class DerivedStreams {
                             Long attemptDate = questionAttempt.path("event_details")
                                     .path("date_attempted").asLong();
 
-                            ObjectNode qPartCounts = NodeFactory.objectNode();
+                            ObjectNode qPartCounts = JsonNodeFactory.instance.objectNode();
                             qPartCounts.put("question_part_id", partAttemptId);
                             qPartCounts.put("correct_attempt_count", 1);
-
 
 
                             if (attemptRecord.path("question_id").asText().isEmpty()) {
@@ -352,8 +514,6 @@ public final class DerivedStreams {
 
                 // we then map the value onto a AugmentedQuestionDetail json object, which includes additional question details, and a flag stating if the user has the whole question correct
                 .mapValues(new AugmentedQuestionDetailMapper(contentManager, contentIndex));
-
-
 
 
         // This is the "true" correct question attempt stream, which takes into account all parts of a question
@@ -426,8 +586,6 @@ public final class DerivedStreams {
         }*/
 
 
-
-
         /** here is where we work out whether users have met certain thresholds for unlocking achievements.
          *  first define achievement thresholds, then filter all derived streams based on these and trigger the "unlocking process" to
          *  record the achievement for the user
@@ -439,13 +597,13 @@ public final class DerivedStreams {
 
 
         // trigger process for records that match threshold (total questions answered)
-        for (Integer threshold: thresholds
+        for (Integer threshold : thresholds
                 ) {
 
             processAchievement(correctTotalCountStream, threshold, achievementProcessor);
 
             // trigger process for records that match threshold (per level)
-            for (KStream<String, JsonNode> correctLevelCountStream: correctLevelCountStreams
+            for (KStream<String, JsonNode> correctLevelCountStream : correctLevelCountStreams
                     ) {
                 processAchievement(correctLevelCountStream, threshold, achievementProcessor);
             }

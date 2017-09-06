@@ -300,17 +300,29 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<ImmutableMap<String, Object>> result = Lists.newArrayList();
             final String userString = "user";
             final String resultsString = "results";
+            final String correctPartString = "correctPartResults";
+            final String incorrectPartString = "incorrectPartResults";
 
-            for (Entry<RegisteredUserDTO, List<GameboardItemState>> e : this.gameManager.gatherGameProgressData(
+            for (Entry<RegisteredUserDTO, List<GameboardItem>> e : this.gameManager.gatherGameProgressData(
                     groupMembers, gameboard).entrySet()) {
                 UserSummaryDTO userSummary = associationManager.enforceAuthorisationPrivacy(currentlyLoggedInUser,
                         userManager.convertToUserSummaryObject(e.getKey()));
 
                 // can the user access the data?
                 if (userSummary.isAuthorisedFullAccess()) {
-                    result.add(ImmutableMap.of(userString, userSummary, resultsString, e.getValue()));
+                    ArrayList<GameboardItemState> states = Lists.newArrayList();
+                    ArrayList<Integer> correctQuestionParts = Lists.newArrayList();
+                    ArrayList<Integer> incorrectQuestionParts = Lists.newArrayList();
+                    for (GameboardItem questionResult : e.getValue()) {
+                        states.add(questionResult.getState());
+                        correctQuestionParts.add(questionResult.getQuestionPartsCorrect());
+                        incorrectQuestionParts.add(questionResult.getQuestionPartsIncorrect());
+                    }
+                    result.add(ImmutableMap.of(userString, userSummary, resultsString, states,
+                            correctPartString, correctQuestionParts, incorrectPartString, incorrectQuestionParts));
                 } else {
-                    result.add(ImmutableMap.of(userString, userSummary, resultsString, Lists.newArrayList()));
+                    result.add(ImmutableMap.of(userString, userSummary, resultsString, Lists.newArrayList(),
+                            correctPartString, Lists.newArrayList(), incorrectPartString, Lists.newArrayList()));
                 }
             }
 
@@ -569,7 +581,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
 
                 Map<RegisteredUserDTO, Map<String, Integer>> userQuestionDataMap;
                 userQuestionDataMap = this.gameManager.getDetailedGameProgressData(groupMembers, gameboard);
-
                 for (RegisteredUserDTO student : userQuestionDataMap.keySet()) {
                     Map<GameboardDTO, Map<String, Integer>> entry = grandTable.get(student);
                     if (null == entry) {
@@ -636,11 +647,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 Map<GameboardDTO, Map<String, Integer>> userAssignments = grandTable.get(groupMember);
                 List<Double> totals = Lists.newArrayList();
                 List<Integer> marks = Lists.newArrayList();
-                Integer overallTotal = 0;
-                Integer overallOutOf = 0;
                 for (AssignmentDTO assignment : assignments) {
                     GameboardDTO gameboard = gameManager.getGameboard(assignment.getGameboardId());
-                    Integer total = 0;
+                    int total = 0;
+                    int outOf = 0;
                     List<String> questionIds = gameboardQuestionIds.get(gameboard);
                     List<GameboardItem> questions = gameboard.getQuestions();
                     Map<String, Integer> gameboardPartials = Maps.newHashMap();
@@ -648,8 +658,6 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         gameboardPartials.put(question.getId(), 0);
                     }
                     HashMap<String, Integer> questionParts = new HashMap<>(gameboardPartials);
-                    Integer outOf = questions.size();
-                    overallOutOf += outOf;
                     for (String s : questionIds) {
                         Integer mark = userAssignments.get(gameboard).get(s);
                         String[] tokens = s.split("\\|");
@@ -660,20 +668,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                         }
                     }
                     for (Entry<String, Integer> entry : gameboardPartials.entrySet()) {
-                        entry.setValue(entry.getValue() / questionParts.get(entry.getKey()));
                         total += entry.getValue();
+                        outOf += questionParts.get(entry.getKey());
                     }
-
-                    totals.add(new Double(total) / new Double(outOf));
-                    overallTotal = overallTotal + total;
+                    totals.add(100 * new Double(total) / outOf);
                 }
+                Double overallTotal = totals.stream()
+                        .map(boardTotal -> boardTotal / assignments.size())
+                        .reduce(0d, (a, b) -> a + b);
 
                 // The next three lines could be a little better if I were not this sleepy...
                 row.add(groupMember.getFamilyName());
                 row.add(groupMember.getGivenName());
-                row.add(String.format("%.0f", (100.0 * overallTotal) / new Double(overallOutOf)));
+                row.add(String.format("%.0f", overallTotal));
                 for (Double total : totals) {
-                    row.add(String.format("%.0f", 100.0 * total));
+                    row.add(String.format("%.0f", total));
                 }
                 row.add("");
                 for (Integer mark : marks) {
@@ -694,7 +703,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             String headerBuilder = String.format("Assignments for '%s' (%s)\nDownloaded on %s\nGenerated by: %s %s\n\n",
                     group.getGroupName(), group.getId(), new Date(), currentlyLoggedInUser.getGivenName(),
                     currentlyLoggedInUser.getFamilyName()) + stringWriter.toString()
-                    + "\n\nN.B.\n\"The percentages are for question pages, not individual question parts.\"\n";
+                    + "\n\nN.B.\n\"The percentages are for question parts completed, not question pages.\"\n";
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, DOWNLOAD_GROUP_PROGRESS_CSV,
                     ImmutableMap.of("groupId", groupId));
