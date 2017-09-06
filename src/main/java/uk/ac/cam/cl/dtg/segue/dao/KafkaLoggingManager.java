@@ -38,6 +38,7 @@ import org.apache.kafka.connect.json.JsonDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -60,6 +61,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
     private final ObjectMapper objectMapper;
     private final String kafkaHost;
     private final String kafkaPort;
+    private final KafkaStreamsService kafkaStreamsService;
 
 
     @Inject
@@ -67,13 +69,15 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                final LocationManager locationManager,
                                final ObjectMapper objectMapper,
                                @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                               @Named(Constants.KAFKA_PORT) final String kafkaPort) {
+                               @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                               final KafkaStreamsService kafkaStreamsService) {
 
         this.kafkaProducer = kafkaProducer;
         this.locationManager = locationManager;
         this.objectMapper = objectMapper;
         this.kafkaHost = kafkaHost;
         this.kafkaPort = kafkaPort;
+        this.kafkaStreamsService = kafkaStreamsService;
     }
 
 

@@ -257,7 +257,7 @@ public final class DerivedStreams {
                         (userId, loggedEvent) -> {
 
                             String qPartId = loggedEvent.path("event_details")
-                                    .path("question_id")
+                                    .path("questionId")
                                     .asText()
                                     .toLowerCase();
 

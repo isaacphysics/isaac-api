@@ -105,7 +105,7 @@ public class KafkaStreamsService {
 
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(stringSerde, jsonSerde, globalProperties.getProperty("RAW_LOG_STREAM"))
+        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(stringSerde, jsonSerde, "topic_logged_events")
                 .branch(
                         (k, v) -> !v.path("anonymous_user").asBoolean(),
                         (k, v) -> v.path("anonymous_user").asBoolean()

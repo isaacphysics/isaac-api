@@ -365,7 +365,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
 
             logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort));
+            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort, kafkaStreamsService));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
