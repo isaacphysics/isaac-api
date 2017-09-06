@@ -61,6 +61,7 @@ public class KafkaStreamsService {
     private final IContentManager contentManager;
     private final String contentIndex;
     private final KafkaTopicManager topicManager;
+    private ThresholdAchievedProcessor achievementProcessor;
 
     private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
 
