@@ -465,11 +465,7 @@ public class GameboardPersistenceManager {
 			return gameboards;
 		}
 
-		Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
-		List<List<String>> questionIdBatches = Lists.partition(Lists.newArrayList(qids), GAMEBOARD_ITEM_MAP_BATCH_SIZE);
-		for (List<String> questionIdBatch : questionIdBatches) {
-			gameboardReadyQuestions.putAll(getGameboardItemMap(questionIdBatch));
-		}
+		Map<String, GameboardItem> gameboardReadyQuestions = getGameboardItemMap(Lists.newArrayList(qids));
 
 		for (GameboardDTO game : gameboards) {
 			// empty and re-populate the gameboard dto with fully augmented gameboard items.
@@ -693,40 +689,36 @@ public class GameboardPersistenceManager {
 	 * @return a map of question id to fully populated gameboard item.
 	 */
 	private Map<String, GameboardItem> getGameboardItemMap(final List<String> questionIds) {
-		// build query the db to get full question information
-		Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+		Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
+		// Batch the queries to the db to avoid the elasticsearch query clause limit of 1024
+		List<List<String>> questionIdBatches = Lists.partition(questionIds, GAMEBOARD_ITEM_MAP_BATCH_SIZE);
+		for (List<String> questionIdBatch : questionIdBatches) {
+			// build query the db to get full question information
+			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
+			fieldsToMap.put(
+					immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
+							+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIds);
 
-		fieldsToMap.put(
-                immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-						+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIds);
+			fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
+					Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
 
-		fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
-                Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
+			// Search for questions that match the ids.
+			ResultsWrapper<ContentDTO> results;
+			try {
+				results = this.contentManager.findByFieldNames(this.contentIndex,
+						fieldsToMap, 0, questionIds.size());
+			} catch (ContentManagerException e) {
+				results = new ResultsWrapper<ContentDTO>();
+				log.error("Unable to locate questions for gameboard. Using empty results", e);
+			}
 
-		// Search for questions that match the ids.
-		ResultsWrapper<ContentDTO> results;
-        try {
-            results = this.contentManager.findByFieldNames(this.contentIndex,
-                    fieldsToMap, 0, questionIds.size());
-        } catch (ContentManagerException e) {
-            results = new ResultsWrapper<ContentDTO>();
-            log.error("Unable to locate questions for gameboard. Using empty results", e);
-        }
-        
-	    Map<String, GameboardItem> gameboardReadyQuestions = Maps.newHashMap();
-		
-	    if (null == results) {
-	        return gameboardReadyQuestions;
+			// Map each Content object into an GameboardItem object
+			List<ContentDTO> questionsForGameboard = results.getResults();
+			for (ContentDTO c : questionsForGameboard) {
+				GameboardItem questionInfo = this.convertToGameboardItem(c);
+				gameboardReadyQuestions.put(c.getId(), questionInfo);
+			}
 		}
-		
-	    List<ContentDTO> questionsForGameboard = results.getResults();
-
-		// Map each Content object into an GameboardItem object
-		for (ContentDTO c : questionsForGameboard) {
-			GameboardItem questionInfo = this.convertToGameboardItem(c);
-			gameboardReadyQuestions.put(c.getId(), questionInfo);
-		}
-		
 		return gameboardReadyQuestions;
 	}
 	
