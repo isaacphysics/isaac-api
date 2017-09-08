@@ -487,7 +487,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
             if (userOfInterest == null) {
-                throw new NoUserException();
+                throw new NoUserException("No user found with this ID.");
             }
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);

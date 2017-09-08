@@ -247,7 +247,7 @@ public class FacebookAuthenticator implements IOAuth2Authenticator {
 					userInfo.isVerified() ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED, 
 					        null, null, null);
 		} else {
-			throw new NoUserException();
+			throw new NoUserException("No user could be created from provider details!");
 		}
 	}
 
