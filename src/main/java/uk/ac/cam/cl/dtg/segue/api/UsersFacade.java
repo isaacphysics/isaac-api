@@ -678,6 +678,11 @@ public class UsersFacade extends AbstractSegueFacade {
                 if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
 
+                    if (null == passwordCurrent) {
+                        return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide your current password"
+                            + " to change your password!").toResponse();
+                    }
+
                     this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
                             userObjectFromClient.getEmail(), passwordCurrent);
                 }
