@@ -457,7 +457,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", "Isaac Physics Project");
-        globalTokens.put("emailPreferencesURL", String.format("https://%s/assignments",
+        globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
                 properties.getProperty(HOST_NAME)));
 
         if (null == emailCommunicationQueue) {
