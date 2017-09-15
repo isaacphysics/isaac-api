@@ -170,18 +170,41 @@ public class EventBookingManager {
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
 
+        EventBookingDTO booking = null;
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
             this.ensureCapacity(event, user);
 
-            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
+            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
                     additionalEventInformation);
+
+            emailManager.sendTemplatedEmailToUser(user,
+                    emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("myAssignmentsURL", String.format("https://%s/assignments",
+                                    propertiesLoader.getProperty(HOST_NAME)))
+                            .put("contactUsURL", generateEventContactUsURL(event))
+                            .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                            .put("event", event)
+                            .build(),
+                    EmailType.SYSTEM,
+                    Arrays.asList(generateEventICSFile(event, booking)));
+        
+        } catch (ContentManagerException e) {
+            log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
+                    .getEmail()), e);
+
         } finally {
             // release lock.
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
+        return booking;
     }
 
     /**
