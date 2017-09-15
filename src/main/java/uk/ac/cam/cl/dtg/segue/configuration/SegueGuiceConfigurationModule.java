@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 
@@ -86,6 +87,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -452,9 +454,15 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             final AbstractEmailPreferenceManager emailPreferenceManager,
             final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
+
+        Map<String, String> globalTokens = Maps.newHashMap();
+        globalTokens.put("sig", "Isaac Physics Project");
+        globalTokens.put("emailPreferencesURL", String.format("https://%s/assignments",
+                properties.getProperty(HOST_NAME)));
+
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
-            				contentManager, logManager);
+            				contentManager, logManager, globalTokens);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
