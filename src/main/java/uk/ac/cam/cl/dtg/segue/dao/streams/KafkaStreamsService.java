@@ -107,6 +107,7 @@ public class KafkaStreamsService {
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_APPNAME"));
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
+        streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
         streamsConfiguration.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 10 * 1000);
@@ -137,7 +138,7 @@ public class KafkaStreamsService {
 
             //use the builder and the streams configuration we set to setup and start a streams object
             streams = new KafkaStreams(builder, streamsConfiguration);
-            streams.cleanUp();
+            //streams.cleanUp(); // THIS DOESN'T WORK - IT LOCKS THE DIRECTORY AND THEN FAILS TO DELETE IT.
             streams.start();
 
             // return when streams instance is initialized
@@ -149,9 +150,6 @@ public class KafkaStreamsService {
         } catch (TopologyBuilderException e) {
             log.error(e.getMessage());
         }
-
-
-
     }
 
 
