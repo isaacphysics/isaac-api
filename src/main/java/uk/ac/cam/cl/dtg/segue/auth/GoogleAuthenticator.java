@@ -244,7 +244,7 @@ public class GoogleAuthenticator implements IOAuth2Authenticator {
                             : EmailVerificationStatus.NOT_VERIFIED, null, null, null);
 
         } else {
-            throw new NoUserException();
+            throw new NoUserException("No user could be created from provider details!");
         }
     }
 

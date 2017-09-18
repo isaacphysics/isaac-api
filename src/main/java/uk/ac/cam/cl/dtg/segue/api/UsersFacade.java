@@ -487,7 +487,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
             if (userOfInterest == null) {
-                throw new NoUserException();
+                throw new NoUserException("No user found with this ID.");
             }
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
@@ -677,6 +677,11 @@ public class UsersFacade extends AbstractSegueFacade {
                 // Password change requires auth check unless admin is modifying non-admin user account
                 if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
+
+                    if (null == passwordCurrent) {
+                        return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide your current password"
+                            + " to change your password!").toResponse();
+                    }
 
                     this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
                             userObjectFromClient.getEmail(), passwordCurrent);

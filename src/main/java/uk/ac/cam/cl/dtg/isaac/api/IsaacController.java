@@ -295,7 +295,7 @@ public class IsaacController extends AbstractIsaacFacade {
             user = userManager.getCurrentRegisteredUser(request);
             userOfInterestFull = userManager.getUserDTOById(userIdOfInterest);
             if (null == userOfInterestFull) {
-                throw new NoUserException();
+                throw new NoUserException("No user found with this ID.");
             }
             userOfInterestSummary = userManager.convertToUserSummaryObject(userOfInterestFull);
 

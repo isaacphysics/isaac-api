@@ -545,7 +545,7 @@ public class UserAccountManager {
         RegisteredUser findUserByEmail = this.findUserByEmail(email);
 
         if (null == findUserByEmail) {
-            throw new NoUserException();
+            throw new NoUserException("No user found with this email!");
         }
 
         return this.convertUserDOToUserDTO(findUserByEmail);
@@ -928,13 +928,15 @@ public class UserAccountManager {
      *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
+     * @throws NoUserException
+     *             - If no user found with provided email.
      */
     public final void resetPasswordRequest(final RegisteredUserDTO userObject) throws InvalidKeySpecException,
             NoSuchAlgorithmException, CommunicationException, SegueDatabaseException, NoUserException {
         RegisteredUser user = this.findUserByEmail(userObject.getEmail());
 
         if (null == user) {
-            throw new NoUserException();
+            throw new NoUserException("No user found with this email!");
         }
 
         RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
@@ -1050,7 +1052,7 @@ public class UserAccountManager {
 
         if (null == user) {
             log.warn(String.format("Recieved an invalid email token request for (%s)", email));
-            throw new NoUserException();    
+            throw new NoUserException("No user found with this email!");
         }
 
         if (!userid.equals(user.getId())) {
@@ -1283,7 +1285,7 @@ public class UserAccountManager {
         if (null == userFromProvider) {
             log.warn("Unable to create user for the provider "
                     + federatedAuthenticator);
-            throw new NoUserException();
+            throw new NoUserException("No user returned by the provider!");
         }
 
         RegisteredUser newLocalUser = this.dtoMapper.map(userFromProvider, RegisteredUser.class);
@@ -1297,8 +1299,8 @@ public class UserAccountManager {
 
         if (null == localUserInformation) {
             // we just put it in so something has gone very wrong.
-            log.error("Failed to retreive user even though we " + "just put it in the database.");
-            throw new NoUserException();
+            log.error("Failed to retrieve user even though we just put it in the database!");
+            throw new NoUserException("Failed to retrieve user immediately after saving to database!");
         }
 
         // since the federated providers didn't always provide email addresses - we have to check and update accordingly.

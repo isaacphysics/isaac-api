@@ -111,7 +111,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         RegisteredUser localUserAccount = userDataManager.getByEmail(usersEmailAddress);
         if (null == localUserAccount) {
-            throw new NoUserException();
+            throw new NoUserException("No user found with this email!");
         }
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(localUserAccount.getId());
