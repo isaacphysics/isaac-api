@@ -61,7 +61,6 @@ public class KafkaLoggingManager extends LoggingEventHandler {
     private final ObjectMapper objectMapper;
     private final String kafkaHost;
     private final String kafkaPort;
-    private final KafkaStreamsService kafkaStreamsService;
 
 
     @Inject
@@ -69,15 +68,13 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                final LocationManager locationManager,
                                final ObjectMapper objectMapper,
                                @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                               @Named(Constants.KAFKA_PORT) final String kafkaPort,
-                               final KafkaStreamsService kafkaStreamsService) {
+                               @Named(Constants.KAFKA_PORT) final String kafkaPort) {
 
         this.kafkaProducer = kafkaProducer;
         this.locationManager = locationManager;
         this.objectMapper = objectMapper;
         this.kafkaHost = kafkaHost;
         this.kafkaPort = kafkaPort;
-        this.kafkaStreamsService = kafkaStreamsService;
     }
 
 
