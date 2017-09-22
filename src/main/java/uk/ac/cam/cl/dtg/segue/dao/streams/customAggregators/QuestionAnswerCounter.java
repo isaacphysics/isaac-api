@@ -32,15 +32,15 @@ public class QuestionAnswerCounter implements Aggregator<String, JsonNode, JsonN
     @Override
     public JsonNode apply(final String id, final JsonNode latestEvent, final JsonNode aggregatorRecord) {
 
-        if (aggregatorRecord.path("userId").asText().isEmpty()) {
+        if (aggregatorRecord.path("user_id").asText().isEmpty()) {
             // annoyingly have to remove stringified escape character
-            ((ObjectNode) aggregatorRecord).put("userId", id.replace("\"", ""));
+            ((ObjectNode) aggregatorRecord).put("user_id", id.replace("\"", ""));
         }
 
         Long currentCount = aggregatorRecord.path("count").asLong();
 
         ((ObjectNode) aggregatorRecord).put("count", currentCount + 1);
-        ((ObjectNode) aggregatorRecord).put("latestAttempt", latestEvent.path("dateAttempted").asText());
+        ((ObjectNode) aggregatorRecord).put("latest_attempt", latestEvent.path("latest_attempt").asText());
 
         return aggregatorRecord;
     }

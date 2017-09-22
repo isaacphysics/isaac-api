@@ -38,10 +38,10 @@ public class QuestionAnswerInitializer implements Initializer<JsonNode> {
 
         ObjectNode countedMeasureRecord = JsonNodeFactory.instance.objectNode();
 
-        countedMeasureRecord.put("userId", "");
+        countedMeasureRecord.put("user_id", "");
         countedMeasureRecord.put("type", countedMeasure);
         countedMeasureRecord.put("count", 0);
-        countedMeasureRecord.put("latestAttempt", "");
+        countedMeasureRecord.put("latest_attempt", "");
 
         return countedMeasureRecord;
 

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -33,11 +34,10 @@ import uk.ac.cam.cl.dtg.segue.dao.streams.customAggregators.QuestionAnswerCounte
 import uk.ac.cam.cl.dtg.segue.dao.streams.customAggregators.QuestionAnswerInitializer;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customMappers.AugmentedQuestionDetailMapper;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProcessor;
-
-
 import java.sql.Timestamp;
-import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -95,8 +95,8 @@ public final class DerivedStreams {
                                                              final String contentIndex,
                                                              final ThresholdAchievedProcessor achievementProcessor) {
 
-        // user correct question attempts
-        userQuestionAttemptsComplete(stream, achievementProcessor, contentManager, contentIndex);
+        // user question attempts
+        userQuestionAttempts(stream, achievementProcessor, contentManager, contentIndex);
 
         // user activity streaks
         userWeeklyStreaks(stream);
@@ -362,20 +362,10 @@ public final class DerivedStreams {
     }
 
 
-    private static void processAchievement(final KStream<String, JsonNode> stream,
-                                           final Integer threshold,
-                                           final ThresholdAchievedProcessor achievementProcessor) {
 
-        KStream<String, JsonNode> filteredStream = stream.filter(
-                (k, v) -> v.path("count").asInt() == threshold
-        );
 
-        filteredStream.to(StringSerde, JsonSerde, "topic_user_achievements");
 
-        filteredStream.process(
-                () -> achievementProcessor
-        );
-    }
+
 
 
     /**
@@ -386,37 +376,20 @@ public final class DerivedStreams {
      * @param contentIndex
      * @return
      */
-    private static KStream<String, JsonNode> userQuestionAttemptsComplete(final KStream<String, JsonNode> stream,
+    private static KStream<String, JsonNode> userQuestionAttempts(final KStream<String, JsonNode> stream,
                                                                           final ThresholdAchievedProcessor achievementProcessor,
                                                                           final IContentManager contentManager,
                                                                           final String contentIndex) {
 
 
-        // stream of question part attempts
-        // filter logged events by "ANSWER_QUESTION" event type (this is a log of *part* attempts, not *whole question* attempts)
+        // stream of question *part* attempts
         KStream<String, JsonNode> questionPartAttempts = filterByEventType(stream, "ANSWER_QUESTION");
 
-        // Publish the derived "question part attempt" stream to a kafka topic
-        //questionPartAttempts.to(StringSerde, JsonSerde, "topic_question_part_attempts");
 
-
-        /** need to determine if a user has answered all parts of a question correctly. This requires some transformations to the incoming stream...
-         * steps include:
-         * 1) work out the number of question parts a user has answered correctly for a given question
-         * 2) check if the user answer count for question parts matches the number of parts to that question
-         *      i) fetch the question details, including level, tags, no. of question parts
-         *      ii) if user question part count = no. of question parts -> correct = true, else false
-         */
+        // need to determine if a user has answered all parts of a question correctly. This requires some transformations to the incoming stream...
         KStream<String, JsonNode> questionAttempts = questionPartAttempts
 
-                // filter for correctly answered question parts
-                .filter(
-                        (userId, loggedEvent) -> loggedEvent.path("event_details")
-                                .path("correct")
-                                .asBoolean()
-                )
-
-                // first map the ["user_id"] key to a ["user_id"-"question_id"] key
+                // map the ["user_id"] key to a ["user_id"-"question_id"] key
                 .map(
                         (userId, loggedEvent) -> {
 
@@ -429,10 +402,7 @@ public final class DerivedStreams {
                         }
                 )
 
-
-                // Group by the ["user_id"-"question_id"] key (gives all correct attempts at a question part by each user), then aggregate
-                // to maintain counts for unique user question part attempts
-
+                // group by the ["user_id"-"question_id"] and aggregate
                 .groupByKey(StringSerde, JsonSerde)
                 .aggregate(
                         // initializer
@@ -440,8 +410,13 @@ public final class DerivedStreams {
                             ObjectNode userQuestionAttemptRecord = JsonNodeFactory.instance.objectNode();
 
                             userQuestionAttemptRecord.put("question_id", "");
-                            userQuestionAttemptRecord.put("part_attempts_correct", "");
-                            userQuestionAttemptRecord.put("latest_attempt", "");
+
+                            ArrayNode qParts = JsonNodeFactory.instance.arrayNode();
+                            userQuestionAttemptRecord.put("part_attempts_correct", qParts);
+
+                            ObjectNode latestAttempt = JsonNodeFactory.instance.objectNode();
+                            latestAttempt.put("timestamp", "");
+                            userQuestionAttemptRecord.put("latest_attempt", latestAttempt);
 
                             return userQuestionAttemptRecord;
                         },
@@ -449,7 +424,7 @@ public final class DerivedStreams {
                         (userIdQuestionId, questionAttempt, attemptRecord) -> {
 
                             String questionId = questionAttempt.path("event_details")
-                                    .path("question_id")
+                                    .path("questionId")
                                     .asText()
                                     .toLowerCase();
 
@@ -460,160 +435,252 @@ public final class DerivedStreams {
                             String partAttemptId = questionId
                                     .substring(questionId.indexOf("|") + 1, questionId.length());
 
-                            // timestamp of latest event
-                            Long attemptDate = questionAttempt.path("event_details")
-                                    .path("date_attempted").asLong();
 
-                            ObjectNode qPartCounts = JsonNodeFactory.instance.objectNode();
-                            qPartCounts.put("question_part_id", partAttemptId);
-                            qPartCounts.put("correct_attempt_count", 1);
+                            ((ObjectNode) attemptRecord).put("question_id", questionPageId);
+                            ((ObjectNode) attemptRecord.path("latest_attempt"))
+                                    .put("timestamp", questionAttempt.path("timestamp").asLong())
+                                    .put("first_time_correct", false);
 
 
-                            if (attemptRecord.path("question_id").asText().isEmpty()) {
+                            Iterator<JsonNode> elements = attemptRecord.path("part_attempts_correct").elements();
+                            Boolean elementExists = false;
 
-                                ((ObjectNode) attemptRecord).put("question_id", questionPageId);
-                                ((ObjectNode) attemptRecord)
-                                        .putArray("part_attempts_correct")
-                                        .add(qPartCounts);
+                            while (elements.hasNext()) {
 
-                            } else {
+                                JsonNode node = elements.next();
 
-                                Iterator<JsonNode> elements = attemptRecord.path("part_attempts_correct").elements();
-                                Boolean elementExists = false;
+                                if (node.path("part_id").asText().matches(partAttemptId)) {
+                                    elementExists = true;
 
-                                while (elements.hasNext()) {
+                                    if (questionAttempt.path("event_details").path("correct").asBoolean()) {
+                                        Long correctCount =  node.path("correct_count").asLong();
 
-                                    JsonNode node = elements.next();
+                                        if (correctCount == 0)
+                                            ((ObjectNode) attemptRecord.path("latest_attempt")).put("first_time_correct", true);
 
-                                    if (node.path("question_part_id").asText().matches(partAttemptId)) {
-                                        elementExists = true;
-                                        Long currentCount = node.path("correct_attempt_count").asLong();
-                                        ((ObjectNode) node).put("correct_attempt_count", currentCount + 1);
-                                        break;
+                                        ((ObjectNode) node).put("correct_count", correctCount + 1);
                                     }
+                                    ((ObjectNode) attemptRecord.path("latest_attempt")).put("new_part_attempt", false);
+
+                                    break;
                                 }
-
-                                if (!elementExists)
-                                    ((ArrayNode) attemptRecord.path("part_attempts_correct")).add(qPartCounts);
-
                             }
 
-                            ((ObjectNode) attemptRecord).put("latest_attempt", attemptDate);
+                            if (!elementExists) {
+
+                                ObjectNode qPartCounts = JsonNodeFactory.instance.objectNode();
+                                qPartCounts.put("part_id", partAttemptId);
+                                if (questionAttempt.path("event_details").path("correct").asBoolean()) {
+                                    qPartCounts.put("correct_count", 1);
+                                    ((ObjectNode) attemptRecord.path("latest_attempt")).put("first_time_correct", true);
+                                } else {
+                                    qPartCounts.put("correct_count", 0);
+                                }
+
+                                ((ArrayNode) attemptRecord.path("part_attempts_correct")).add(qPartCounts);
+
+                                ((ObjectNode) attemptRecord.path("latest_attempt")).put("new_part_attempt", true);
+                            }
 
                             return attemptRecord;
 
                         },
                         JsonSerde,
                         "store_user_question_attempt_count"
-                )
-                .toStream()
+                ).toStream()
 
-                // finally map  the (["user_id"-"question_id"], question_attempt_details) key-value pair back to a <string, json> of (user_id, question_attempt_details),
-                // where question_attempt_details holds the aggregated info on the question_id and parts attempted by the user
+                // map the (["user_id"-"question_id"], question_attempt_details) key-value pair to (user_id, question_attempt_details)
                 .map(
                         (userIdQId, jsonDoc) -> new KeyValue<>(userIdQId.substring(0, userIdQId.indexOf("-")), jsonDoc)
                 )
 
-                // we then map the value onto a AugmentedQuestionDetail json object, which includes additional question details, and a flag stating if the user has the whole question correct
+                // get additional question details (levels, tags, etc.)
                 .mapValues(new AugmentedQuestionDetailMapper(contentManager, contentIndex));
 
 
-        // This is the "true" correct question attempt stream, which takes into account all parts of a question
+
+
+
+        // stream of events where user has answered a whole question for the first time
         KStream<String, JsonNode> completedQuestions = questionAttempts.filter(
-                (userId, questionAttempt) -> questionAttempt.path("correct")
-                        .asBoolean()
+                (userId, questionAttempt) -> questionAttempt.path("event").asText().equals("question_completed")
         );
 
-        // Publish the derived "completed question" stream to a kafka topic
-        //completedQuestions.to(StringSerde, JsonSerde, "topic_completed_questions");
+        // tags we are interested in monitoring for badges
+        ArrayList<String> tags = Lists.newArrayList();
+        tags.add("mechanics");
+        tags.add("waves");
+        tags.add("fields");
+        tags.add("circuits");
+        tags.add("chemphysics");
 
-        // total correct attempts counter (user id, number of correct answers)
-        KStream<String, JsonNode> correctTotalCountStream = completedQuestions
-                .groupByKey(StringSerde, JsonSerde)
+        KStream<String, JsonNode> correctCountStream = completedQuestions
+                .flatMap(
+                (key, value) -> {
+
+                    List<KeyValue<String, Long>> result = new ArrayList<>();
+                    result.add(new KeyValue<>(key + "-total", value.path("latest_attempt").asLong()));
+                    result.add(new KeyValue<>(key + "-level-" + value.path("level").asText(), value.path("latest_attempt").asLong()));
+
+                    Iterator<JsonNode> elements = value.path("tags").elements();
+
+                    while (elements.hasNext()) {
+
+                        JsonNode tagElement = elements.next();
+
+                        if (tags.contains(tagElement.asText()))
+                            result.add(new KeyValue<>(key + "-tag-" + tagElement.asText(), value.path("latest_attempt").asLong()));
+                    }
+
+                    return result;
+                }
+        )
+                .groupByKey(StringSerde, LongSerde)
                 .aggregate(
                         // initializer
-                        new QuestionAnswerInitializer("QUESTIONS_ANSWERED_TOTAL"),
-                        // aggregator
-                        new QuestionAnswerCounter(),
+                        () -> {
+
+                            ObjectNode userCorrectQuestionsRecord = JsonNodeFactory.instance.objectNode();
+                            userCorrectQuestionsRecord.put("count", 0);
+
+                            return userCorrectQuestionsRecord;
+                        },
+                        (userIdQuestionType, correctQuestion, correctRecord) -> {
+
+                            Long count = correctRecord.path("count").asLong();
+                            ((ObjectNode) correctRecord).put("count", count + 1);
+                            ((ObjectNode) correctRecord).put("latest_attempt", correctQuestion);
+
+                            return correctRecord;
+                        },
                         JsonSerde,
-                        "store_user_correct_question_total"
-                )
-                .toStream();
+                        "store_user_correct_questions"
 
-        // branch main stream into separate level streams
-        KStream<String, JsonNode>[] correctLevelCountStreams =
-                new KStream[6];
+                ).toStream()
+                .map(
+                        (key, value) -> {
 
-        for (int i = 0; i < correctLevelCountStreams.length; i++) {
-            final int level = i + 1;
+                            ObjectNode newValue = JsonNodeFactory.instance.objectNode();
 
-            correctLevelCountStreams[i] = completedQuestions
-                    .filter(
-                            (k, v) -> v.path("level").asInt() == level
-                    ).groupByKey(StringSerde, JsonSerde)
-                    .aggregate(
-                            // initializer
-                            new QuestionAnswerInitializer("QUESTIONS_ANSWERED_LEVEL_" + level),
-                            // aggregator
-                            new QuestionAnswerCounter(),
-                            JsonSerde,
-                            "store_user_correct_question_level_" + level
-                    )
-                    .toStream();
-        }
+                            newValue.put("latest_attempt", value.path("latest_attempt"));
+                            newValue.put("count", value.path("count"));
 
+                            String[] keyArray = key.split("-");
 
-        /** branch main stream into separate tag streams
-         * badges for tags need to be decided beforehand it seems...
-         */
-        /*String[] badgeTags = {"mechanics", "waves", "fields", "circuits"};
-        KStream<String, JsonNode>[] correctTagCountStreams = new KStream[badgeTags.length];
+                            if (keyArray[1].equals("total")) {
+                                newValue.put("type", "QUESTIONS_ANSWERED_TOTAL");
+                            } else if (keyArray[1].equals("level")) {
+                                newValue.put("type", "QUESTIONS_ANSWERED_LEVEL_" + keyArray[2]);
+                            } else if (keyArray[1].equals("tag")) {
+                                newValue.put("type", "QUESTIONS_ANSWERED_TAG_" + keyArray[2].toUpperCase());
+                            }
 
-        for (int i = 0; i < badgeTags.length; i++) {
-            final int tag = i;
-
-            correctTagCountStreams[i] = completedQuestions
-                    .filter(
-                            (k, v) -> v.path("tags").has(badgeTags[tag])
-                    ).groupByKey(stringSerde, jsonSerde)
-                    .aggregate(
-                        // initializer
-                        new QuestionAnswerInitializer("QUESTIONS_ANSWERED_TAG_" + badgeTags[tag]),
-                        // aggregator
-                        new QuestionAnswerCounter(),
-                        jsonSerde,
-                        "userCorrectTag" + badgeTags[tag]
-                    )
-                    .toStream();
-        }*/
+                            return new KeyValue<>(keyArray[0], newValue);
+                        }
+                );
 
 
         /** here is where we work out whether users have met certain thresholds for unlocking achievements.
          *  first define achievement thresholds, then filter all derived streams based on these and trigger the "unlocking process" to
          *  record the achievement for the user
          */
-
-
         // thresholds for achievement unlocking
         Integer[] thresholds = {1, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200};
 
-
         // trigger process for records that match threshold (total questions answered)
-        for (Integer threshold : thresholds
+        for (Integer threshold: thresholds
                 ) {
-
-            processAchievement(correctTotalCountStream, threshold, achievementProcessor);
-
-            // trigger process for records that match threshold (per level)
-            for (KStream<String, JsonNode> correctLevelCountStream : correctLevelCountStreams
-                    ) {
-                processAchievement(correctLevelCountStream, threshold, achievementProcessor);
-            }
+            correctCountStream.filter(
+                    (k, v) -> v.path("count").asInt() == threshold
+            ).process(
+                    () -> achievementProcessor
+            );
         }
 
-        return stream;
 
+
+
+
+
+
+
+
+
+        // local state store for user question progress - structure mimics the user progress API endpoint response
+        /*KTable<String, JsonNode> completedQuestionStore = completedQuestions
+                .groupByKey(StringSerde, JsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+
+                            ObjectNode correctByLevel = JsonNodeFactory.instance.objectNode();
+                            ObjectNode correctByTag = JsonNodeFactory.instance.objectNode();
+
+                            ObjectNode attemptsByLevel = JsonNodeFactory.instance.objectNode();
+                            ObjectNode attemptsByTag = JsonNodeFactory.instance.objectNode();
+
+                            ObjectNode unlockedAchievements = JsonNodeFactory.instance.objectNode();
+
+                            ObjectNode userCompletedQuestionsRecord = JsonNodeFactory.instance.objectNode();
+                            userCompletedQuestionsRecord.put("totalQuestionsAttempted", 0);
+                            userCompletedQuestionsRecord.put("totalQuestionsCorrect", 0);
+                            userCompletedQuestionsRecord.put("correctByTag", correctByTag);
+                            userCompletedQuestionsRecord.put("correctByLevel", correctByLevel);
+
+                            return userCompletedQuestionsRecord;
+                        },
+                        // aggregator
+                        (userId, completedQuestion, completedQuestionsRecord) -> {
+
+                            ((ObjectNode) completedQuestionsRecord).put("record_updated", completedQuestion.path("latest_attempt").asLong());
+
+                            Long totalCompletedQuestions = completedQuestionsRecord.path("totalQuestionsCorrect").asLong();
+                            ((ObjectNode) completedQuestionsRecord).put("totalQuestionsCorrect", totalCompletedQuestions + 1);
+
+
+                            // update level counts
+                            if (!completedQuestion.path("level").asText().equals("")) {
+                                ((ObjectNode) completedQuestionsRecord).put("correctByLevel",
+                                        updateCounters(completedQuestion.path("level"), completedQuestionsRecord.path("correctByLevel")));
+                            }
+
+                            //update tag counts
+                            if (completedQuestion.path("tags").size() > 0) {
+
+                                Iterator<JsonNode> elements = completedQuestion.path("tags").elements();
+
+                                while (elements.hasNext()) {
+
+                                    JsonNode tagElement = elements.next();
+
+                                    ((ObjectNode) completedQuestionsRecord).put("correctByTag",
+                                            updateCounters(tagElement, completedQuestionsRecord.path("correctByTag")));
+                                }
+
+                            }
+
+                            return completedQuestionsRecord;
+                        },
+                        JsonSerde,
+                        "store_user_completed_questions"
+                );*/
+
+        return stream;
     }
 
+
+    /*private static JsonNode updateCounters(JsonNode countedValue, JsonNode counterNode) {
+
+        String value = countedValue.asText();
+
+        if (!counterNode.has(value)) {
+            ((ObjectNode) counterNode).put(value, 0);
+        }
+
+        Long totalValueCount = counterNode.path(value).asLong();
+        ((ObjectNode) counterNode).put(value, totalValueCount + 1);
+
+        return counterNode;
+    }*/
 }
 

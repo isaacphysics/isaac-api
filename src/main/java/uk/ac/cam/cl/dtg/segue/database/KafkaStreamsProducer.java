@@ -52,10 +52,6 @@ public class KafkaStreamsProducer implements Closeable {
 
         producer = new KafkaProducer<>(props);
         this.topicManager = topicManager;
-
-        topicListCache = topicManager.listTopics();
-
-        send(new ProducerRecord<String, String>("foo", "Some content"));
     }
 
     public KafkaProducer getProducer() {
