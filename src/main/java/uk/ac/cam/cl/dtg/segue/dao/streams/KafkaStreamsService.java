@@ -34,6 +34,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProcessor;
@@ -51,12 +52,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 public class KafkaStreamsService {
 
     private KafkaStreams streams;
-    private PropertiesLoader globalProperties;
-    private final PostgresSqlDb database;
-    private final IContentManager contentManager;
-    private final String contentIndex;
-    private final KafkaTopicManager topicManager;
-    private ThresholdAchievedProcessor achievementProcessor;
 
     private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
 
@@ -88,14 +83,9 @@ public class KafkaStreamsService {
     public KafkaStreamsService(final PropertiesLoader globalProperties,
                                final PostgresSqlDb database,
                                final IContentManager contentManager,
+                               final GameManager gameManager,
                                @Named(CONTENT_INDEX) final String contentIndex,
                                KafkaTopicManager topicManager)  {
-
-        this.globalProperties = globalProperties;
-        this.database = database;
-        this.contentManager = contentManager;
-        this.contentIndex = contentIndex;
-        this.topicManager = topicManager;
 
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
@@ -132,14 +122,14 @@ public class KafkaStreamsService {
         DerivedStreams.userStatistics(rawLoggedEvents[0]);
 
         //*** BADGES & ACHIEVEMENTS ***//
-        achievementProcessor = new ThresholdAchievedProcessor(database);
-        DerivedStreams.userAchievements(rawLoggedEvents[0], contentManager, contentIndex, achievementProcessor);
+        ThresholdAchievedProcessor achievementProcessor = new ThresholdAchievedProcessor(database);
+        DerivedStreams.userAchievements(rawLoggedEvents[0], contentManager, gameManager, contentIndex, achievementProcessor);
 
 
 
             //use the builder and the streams configuration we set to setup and start a streams object
             streams = new KafkaStreams(builder, streamsConfiguration);
-            streams.cleanUp();
+            //streams.cleanUp();
             streams.start();
 
             // return when streams instance is initialized

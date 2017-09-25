@@ -29,13 +29,20 @@ import org.apache.kafka.connect.json.JsonDeserializer;
 import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customAggregators.QuestionAnswerCounter;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customAggregators.QuestionAnswerInitializer;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customMappers.AugmentedQuestionDetailMapper;
 import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProcessor;
+
+import java.sql.Array;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +53,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class DerivedStreams {
 
+    private static final Logger log = LoggerFactory.getLogger(DerivedStreams.class);
 
     private static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
     private static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
@@ -55,132 +63,18 @@ public final class DerivedStreams {
 
     private static Boolean userStatsInitialized = false;
 
+    private static enum Seasons {
+        SPRING,
+        SUMMER,
+        AUTUMN,
+        WINTER
+    }
+
 
     /**
      * Private, empty constructor (static utility class).
      */
     private DerivedStreams() {
-    }
-
-
-    /**
-     * Function to filter incoming stream by logged event type.
-     *
-     * @param stream    incoming raw logged event data
-     * @param eventType logged event type to filter by
-     * @return filtered stream
-     */
-    public static KStream<String, JsonNode> filterByEventType(final KStream<String, JsonNode> stream, final String eventType) {
-
-        return stream
-                .filter(
-                        (userId, loggedEvent) -> loggedEvent.path("event_type")
-                                .asText()
-                                .equals(eventType)
-                );
-    }
-
-
-    /**
-     * Stream processing of user achievements based on user activity captured by raw logged events.
-     * Stream records are passed through various filters and transformations to feed downward streams.
-     *
-     * @param stream         incoming raw logged event data
-     * @param contentManager
-     * @param contentIndex
-     * @return
-     */
-    public static KStream<String, JsonNode> userAchievements(final KStream<String, JsonNode> stream,
-                                                             final IContentManager contentManager,
-                                                             final String contentIndex,
-                                                             final ThresholdAchievedProcessor achievementProcessor) {
-
-        // user question attempts
-        userQuestionAttempts(stream, achievementProcessor, contentManager, contentIndex);
-
-        // user activity streaks
-        userWeeklyStreaks(stream);
-
-        // teacher assignment activity
-        teacherAssignmentActivity(stream);
-
-        return stream;
-    }
-
-
-    /**
-     * Processing of teacher activity for creating and setting assignments
-     *
-     * @param stream incoming raw logged event data
-     * @return
-     */
-    private static KStream<String, JsonNode> teacherAssignmentActivity(final KStream<String, JsonNode> stream) {
-
-        KStream<String, JsonNode> setAssignments = filterByEventType(stream, "SET_NEW_ASSIGNMENT");
-
-        return stream;
-    }
-
-
-    /**
-     * Processing of user weekly streaks based on timestamped user logged events.
-     *
-     * @param stream incoming raw logged event data
-     * @return
-     */
-    private static KStream<String, Long> userWeeklyStreaks(final KStream<String, JsonNode> stream) {
-
-        return stream
-                .groupByKey(StringSerde, JsonSerde)
-                .aggregate(
-                        // initializer
-                        () -> {
-                            ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
-
-                            streakRecord.put("streak_start", 0);
-                            streakRecord.put("streak_end", 0);
-
-                            return streakRecord;
-                        },
-                        // aggregator
-                        (userId, latestEvent, streakRecord) -> {
-                            ObjectNode updatedStreakRecord = JsonNodeFactory.instance.objectNode();
-
-                            // timestamp of streak start
-                            Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
-
-                            // timestamp of streak end
-                            Long streakEndTimestamp = streakRecord.path("streak_end").asLong();
-
-                            // timestamp of latest event
-                            Long latestEventTimestamp = latestEvent.path("event_details")
-                                    .path("date_attempted").asLong();
-
-
-                            if (streakStartTimestamp == 0 || TimeUnit.DAYS
-                                    .convert(latestEventTimestamp - streakEndTimestamp,
-                                            TimeUnit.MILLISECONDS) > 8) {
-
-                                updatedStreakRecord.put("streak_start", latestEventTimestamp);
-                                updatedStreakRecord.put("streak_end", latestEventTimestamp);
-
-                            } else {
-                                updatedStreakRecord.put("streak_start", streakStartTimestamp);
-                                updatedStreakRecord.put("streak_end", latestEventTimestamp);
-                            }
-
-                            return updatedStreakRecord;
-                        },
-                        JsonSerde,
-                        "store_user_streaks")
-
-                .mapValues(
-                        (jsonTimestamps) -> TimeUnit.DAYS
-                                .convert(jsonTimestamps.path("streak_end").asLong() - jsonTimestamps.path("streak_start").asLong(),
-                                        TimeUnit.MILLISECONDS) / 7
-                )
-                .toStream();
-
     }
 
 
@@ -362,10 +256,243 @@ public final class DerivedStreams {
     }
 
 
+    /**
+     * Stream processing of user achievements based on user activity captured by raw logged events.
+     * Stream records are passed through various filters and transformations to feed downward streams.
+     *
+     * @param stream         incoming raw logged event data
+     * @param contentManager
+     * @param contentIndex
+     * @return
+     */
+    public static KStream<String, JsonNode> userAchievements(final KStream<String, JsonNode> stream,
+                                                             final IContentManager contentManager,
+                                                             final GameManager gameManager,
+                                                             final String contentIndex,
+                                                             final ThresholdAchievedProcessor achievementProcessor) {
+
+        // user question attempts
+        userQuestionAttempts(stream, achievementProcessor, contentManager, contentIndex);
+
+        // user activity streaks
+        userWeeklyStreaks(stream.filter(
+                (userId, event) -> event.path("event_type").equals("ANSWER_QUESTION") || event.path("event_type").equals("SET_NEW_ASSIGNMENT")
+        ), achievementProcessor);
+
+        // teacher assignment activity
+        teacherAssignmentActivity(stream, gameManager, achievementProcessor);
+
+        return stream;
+    }
 
 
+    /**
+     * Processing of teacher activity for creating and setting assignments
+     *
+     * @param stream incoming raw logged event data
+     * @return
+     */
+    private static void teacherAssignmentActivity(final KStream<String, JsonNode> stream,
+                                                  final GameManager gameManager,
+                                                  final ThresholdAchievedProcessor achievementProcessor) {
 
 
+        KStream<String, JsonNode> setAssignments =
+                filterByEventType(stream, "SET_NEW_ASSIGNMENT").map(
+                        (userId, event) -> {
+
+                            String gameboardId = event.path("event_details").path("gameboardId").asText();
+                            String owner;
+                            ObjectNode transformedEventDetails = JsonNodeFactory.instance.objectNode();
+                            ArrayNode levels = JsonNodeFactory.instance.arrayNode();
+                            transformedEventDetails.put("timestamp", event.path("timestamp").asLong());
+
+                            try {
+
+                                GameboardDTO gameboard = gameManager.getGameboard(gameboardId);
+
+                                if (gameboard.getOwnerUserId().equals(userId)) {
+                                    owner = "custom";
+                                } else {
+                                    owner = "shared";
+                                }
+
+                                for (GameboardItem item: gameboard.getQuestions()
+                                        ) {
+
+                                    if (!levels.has(item.getLevel())) {
+                                        levels.add(item.getLevel());
+                                    }
+                                }
+
+                                transformedEventDetails.put("levels", levels);
+
+                                return new KeyValue<>(userId + "-" + owner, transformedEventDetails);
+
+                            } catch (SegueDatabaseException e) {
+                                String message = "Error whilst trying to access the gameboard in the database.";
+                                log.error(message, e);
+                                return new KeyValue<>(userId, event);
+                            }
+
+                        }
+                ).flatMap(
+                        (userIdOwnerType, event) -> {
+
+                            List<KeyValue<String, Long>> result = new ArrayList<>();
+                            result.add(new KeyValue<>(userIdOwnerType + "-total", event.path("timestamp").asLong()));
+
+                            Iterator<JsonNode> elements = event.path("levels").elements();
+
+                            while (elements.hasNext()) {
+
+                                JsonNode levelElement = elements.next();
+
+                                result.add(new KeyValue<>(userIdOwnerType + "-" + levelElement.asText(), event.path("timestamp").asLong()));
+                            }
+
+                            return result;
+                        }
+                ).groupByKey(StringSerde, LongSerde)
+                        .aggregate(
+                                // initializer
+                                () -> {
+                                    ObjectNode setAssignmentRecord = JsonNodeFactory.instance.objectNode()
+                                            .put("count", 0);
+
+                                    return setAssignmentRecord;
+                                },
+                                // aggregator
+                                (userIdOwnerTypeLevel, newAssignmentTimestamp, setAssignmentRecord) -> {
+
+                                    Long count = setAssignmentRecord.path("count").asLong();
+                                    ((ObjectNode) setAssignmentRecord).put("count", count + 1);
+                                    ((ObjectNode) setAssignmentRecord).put("latest_attempt", newAssignmentTimestamp);
+
+                                    return setAssignmentRecord;
+                                },
+                                JsonSerde,
+                                "store_set_assignment_count"
+                        ).toStream()
+                        .map(
+                                (userIdOwnerTypeLevel, countRecord) -> {
+
+                                    String[] keyArray = userIdOwnerTypeLevel.split("-");
+
+                                    if (keyArray[2].equals("total")) {
+                                        ((ObjectNode) countRecord).put("type", "SET_" + keyArray[1].toUpperCase() + "_ASSIGNMENT_TOTAL");
+                                    } else {
+                                        ((ObjectNode) countRecord).put("type", "SET_" + keyArray[1].toUpperCase() + "_ASSIGNMENT_LEVEL_" + keyArray[2]);
+                                    }
+
+                                    return new KeyValue<>(keyArray[0], countRecord);
+                                }
+                        );
+
+        // thresholds for achievement unlocking
+        Integer[] thresholds = {1, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200};
+
+        // trigger process for records that match threshold (total questions answered)
+        for (Integer threshold: thresholds
+                ) {
+            processAchievement(setAssignments, threshold, achievementProcessor);
+        }
+    }
+
+
+    /**
+     * Processing of user weekly streaks based on timestamped user logged events.
+     *
+     * @param stream incoming raw logged event data
+     * @return
+     */
+    private static void userWeeklyStreaks(final KStream<String, JsonNode> stream, final ThresholdAchievedProcessor achievementProcessor) {
+
+        stream
+                .map(
+                        (key, value) -> {
+
+                            Long eventTimestamp = value.path("timestamp").asLong();
+                            String season = getSeasonFromTimestamp(eventTimestamp);
+
+                            return new KeyValue<>(key + "-" + season.toUpperCase() + "-" + value.path("event_type").asText().toUpperCase(), value);
+                        }
+                )
+                .groupByKey(StringSerde, JsonSerde)
+                .aggregate(
+                        // initializer
+                        () -> {
+                            ObjectNode streakRecord = JsonNodeFactory.instance.objectNode();
+
+                            streakRecord.put("streak_start", 0);
+                            streakRecord.put("streak_end", 0);
+                            streakRecord.put("largest_streak", 0);
+
+                            return streakRecord;
+                        },
+                        // aggregator
+                        (userId, latestEvent, streakRecord) -> {
+                            ObjectNode updatedStreakRecord = JsonNodeFactory.instance.objectNode();
+
+                            // timestamp of streak start
+                            Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
+
+                            // timestamp of streak end
+                            Long streakEndTimestamp = streakRecord.path("streak_end").asLong();
+
+                            Integer largestStreak = streakRecord.path("largest_streak").asInt();
+
+                            // timestamp of latest event
+                            Long latestEventTimestamp = latestEvent.path("event_details")
+                                    .path("date_attempted").asLong();
+
+                            if (streakStartTimestamp == 0
+                                    || (TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.DAYS) > 8
+                                    && !getSeasonFromTimestamp(latestEventTimestamp).equals(getSeasonFromTimestamp(streakEndTimestamp)))) {
+
+                                updatedStreakRecord.put("streak_start", latestEventTimestamp);
+                                updatedStreakRecord.put("streak_end", latestEventTimestamp);
+
+                            } else {
+                                updatedStreakRecord.put("streak_start", streakStartTimestamp);
+                                updatedStreakRecord.put("streak_end", latestEventTimestamp);
+                            }
+
+                            if (TimeUnit.DAYS.convert(latestEventTimestamp - streakStartTimestamp, TimeUnit.DAYS) / 7 > largestStreak)
+                                updatedStreakRecord.put("updated", true);
+
+                            return updatedStreakRecord;
+                        },
+                        JsonSerde,
+                        "store_user_streaks")
+                .toStream()
+                .filter(
+                        (userId, streakRecord) -> streakRecord.path("updated").asBoolean()
+                )
+                .map(
+                        (userIdSeasonEventTypeKey, streakRecord) -> {
+
+                            ObjectNode achievementValue = JsonNodeFactory.instance.objectNode();
+
+                            achievementValue.put("latest_attempt", streakRecord.path("streak_end").asLong());
+                            achievementValue.put("count", streakRecord.path("largest_streak").asInt());
+
+                            String[] keyArray = userIdSeasonEventTypeKey.split("-");
+
+                            achievementValue.put("type", "ACTIVITY_STREAK_" + keyArray[1] + "_" + keyArray[2]);
+
+                            return new KeyValue<>(keyArray[0], (JsonNode) achievementValue);
+                        }
+                ).process(
+                        () -> achievementProcessor
+                );
+
+                /*.mapValues(
+                        (jsonTimestamps) -> TimeUnit.DAYS
+                                .convert(jsonTimestamps.path("streak_end").asLong() - jsonTimestamps.path("streak_start").asLong(),
+                                        TimeUnit.DAYS) / 7
+                )*/
+    }
 
 
     /**
@@ -376,7 +503,7 @@ public final class DerivedStreams {
      * @param contentIndex
      * @return
      */
-    private static KStream<String, JsonNode> userQuestionAttempts(final KStream<String, JsonNode> stream,
+    private static void userQuestionAttempts(final KStream<String, JsonNode> stream,
                                                                           final ThresholdAchievedProcessor achievementProcessor,
                                                                           final IContentManager contentManager,
                                                                           final String contentIndex) {
@@ -562,8 +689,8 @@ public final class DerivedStreams {
 
                             ObjectNode newValue = JsonNodeFactory.instance.objectNode();
 
-                            newValue.put("latest_attempt", value.path("latest_attempt"));
-                            newValue.put("count", value.path("count"));
+                            newValue.put("latest_attempt", value.path("latest_attempt").asLong());
+                            newValue.put("count", value.path("count").asInt());
 
                             String[] keyArray = key.split("-");
 
@@ -590,11 +717,7 @@ public final class DerivedStreams {
         // trigger process for records that match threshold (total questions answered)
         for (Integer threshold: thresholds
                 ) {
-            correctCountStream.filter(
-                    (k, v) -> v.path("count").asInt() == threshold
-            ).process(
-                    () -> achievementProcessor
-            );
+            processAchievement(correctCountStream, threshold, achievementProcessor);
         }
 
 
@@ -665,8 +788,65 @@ public final class DerivedStreams {
                         "store_user_completed_questions"
                 );*/
 
-        return stream;
     }
+
+
+
+
+
+    /**
+     * Function to filter incoming stream by logged event type.
+     *
+     * @param stream    incoming raw logged event data
+     * @param eventType logged event type to filter by
+     * @return filtered stream
+     */
+    private static KStream<String, JsonNode> filterByEventType(final KStream<String, JsonNode> stream, final String eventType) {
+
+        return stream
+                .filter(
+                        (userId, loggedEvent) -> loggedEvent.path("event_type")
+                                .asText()
+                                .equals(eventType)
+                );
+    }
+
+
+
+
+
+    private static void processAchievement(final KStream<String, JsonNode> stream,
+                                           final Integer threshold,
+                                           final ThresholdAchievedProcessor achievementProcessor) {
+
+        KStream<String, JsonNode> filteredStream = stream.filter(
+                (k, v) -> v.path("count").asInt() == threshold
+        );
+
+        filteredStream.process(
+                () -> achievementProcessor
+        );
+    }
+
+
+    private static String getSeasonFromTimestamp(Long timestamp) {
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(timestamp);
+        switch (cal.get(Calendar.MONTH)) {
+
+            case 8:case 9:case 10:
+                return Seasons.AUTUMN.name();
+            case 11:case 0:case 1:
+                return Seasons.WINTER.name();
+            case 2:case 3:case 4:
+                return Seasons.SPRING.name();
+            default:
+                return Seasons.SUMMER.name();
+
+        }
+    }
+
 
 
     /*private static JsonNode updateCounters(JsonNode countedValue, JsonNode counterNode) {

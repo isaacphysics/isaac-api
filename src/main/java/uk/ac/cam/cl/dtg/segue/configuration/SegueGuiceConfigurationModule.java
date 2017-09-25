@@ -691,11 +691,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static KafkaStreamsService getKafkaStreamsService(final PostgresSqlDb database,
                                                               final IContentManager contentManager,
+                                                              final GameManager gameManager,
                                                               @Named(CONTENT_INDEX) final String contentIndex,
                                                               final KafkaTopicManager topicManager) {
 
         if (null == kafkaStreamsService) {
-            kafkaStreamsService = new KafkaStreamsService(globalProperties, database, contentManager, contentIndex,
+            kafkaStreamsService = new KafkaStreamsService(globalProperties, database, contentManager, gameManager, contentIndex,
                     topicManager);
             log.info("Creating singleton of Kafka Streams Service.");
         }
