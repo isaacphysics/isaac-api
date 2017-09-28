@@ -44,8 +44,10 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
+
 
 /**
  * Kafka logging listener
@@ -83,10 +85,10 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.publishLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
             } else {
                 this.publishLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
             }
 
         } catch (JsonProcessingException e) {
@@ -250,38 +252,6 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         logEvent.setTimestamp(new Date());
 
         return logEvent;
-    }
-
-
-
-    /**
-     * Extract client ip address.
-     *
-     * Solution retrieved from:
-     * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
-     *
-     * @param request
-     *            - to attempt to extract a valid Ip from.
-     * @return string representation of the client's ip address.
-     */
-    private static String getClientIpAddr(final HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_CLIENT_IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
     }
 
 }
