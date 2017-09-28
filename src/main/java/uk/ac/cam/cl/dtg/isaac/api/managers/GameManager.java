@@ -1025,8 +1025,8 @@ public class GameManager {
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
-
-        Integer questionPartsTotal = gameItem.getQuestionPartsTotal();
+        Integer questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
+        gameItem.setQuestionPartsTotal(questionPartsTotal);
         Float percentCorrect = 100f * new Float(questionPartsCorrect) / questionPartsTotal;
         Float percentIncorrect = 100f * new Float(questionPartsIncorrect) / questionPartsTotal;
 
