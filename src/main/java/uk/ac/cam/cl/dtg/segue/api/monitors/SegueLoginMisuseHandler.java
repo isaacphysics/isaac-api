@@ -19,10 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
-import uk.ac.cam.cl.dtg.segue.comm.EmailType;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import com.google.inject.Inject;
@@ -82,18 +79,6 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        final String subject = "HARD Threshold limit reached for LoginMisuseHandler";
-
-        EmailCommunicationMessage e = new EmailCommunicationMessage(null,
-                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
-                null, null, null);
-
-        try {
-			emailManager.addSystemEmailToQueue(e);
-		} catch (SegueDatabaseException e1) {
-			log.error("Database access error when attempting to send hard threshold limit warnings: " 
-								+ e1.getMessage());
-		}
         log.warn("Hard threshold limit: " + message);
     }
 }
