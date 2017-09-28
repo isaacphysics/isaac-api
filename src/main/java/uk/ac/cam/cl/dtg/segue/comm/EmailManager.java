@@ -539,10 +539,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	Validate.notNull(userEmail);
     	Validate.notEmpty(userEmail);
 
-    	contentProperties.putAll(this.globalStringTokens);
+        // Ensure global properties are included, but in a safe manner (allow contentProperties to override globals!)
+        Properties contentPropertiesToUse = new Properties();
+        contentPropertiesToUse.putAll(this.globalStringTokens);
+        contentPropertiesToUse.putAll(contentProperties);
 
-        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
-        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties, true);
+        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentPropertiesToUse);
+        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentPropertiesToUse, true);
 
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();
