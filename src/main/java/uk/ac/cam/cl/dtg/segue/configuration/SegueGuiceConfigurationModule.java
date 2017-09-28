@@ -37,16 +37,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.*;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -592,6 +583,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.toString(),
                     new AnonQuestionAttemptMisuseHandler());
+
+            misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.toString(),
+                    new IPQuestionAttemptMisuseHandler(emailManager, properties));
         }
 
         return misuseMonitor;
