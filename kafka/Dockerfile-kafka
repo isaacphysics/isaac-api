@@ -1,6 +1,6 @@
 FROM java:openjdk-8-jdk
 
-ARG kafka_version=0.10.2.1
+ARG kafka_version=0.11.0.0
 ARG scala_version=2.12
 
 RUN apt-get update

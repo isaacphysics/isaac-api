@@ -15,18 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
-import com.google.common.collect.ImmutableSet;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.StringSerializer;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaTopicManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
@@ -55,7 +53,6 @@ public class KafkaStreamsProducer implements Closeable {
 
         topicListCache = topicManager.listTopics();
 
-        send(new ProducerRecord<String, String>("foo", "Some content"));
     }
 
     public KafkaProducer getProducer() {

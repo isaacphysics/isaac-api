@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2017 Dan Underwood
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,6 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -30,15 +28,12 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
-import org.apache.kafka.streams.processor.StateStore;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.apache.kafka.test.ProcessorTopologyTestDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import uk.ac.cam.cl.dtg.segue.dao.streams.DerivedStreams;
-import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 
 
 import java.io.BufferedReader;
@@ -47,14 +42,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.easymock.EasyMock.createMock;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test class for the KafkaStreamsService class.
+ * Test class for the SiteStatsStreamsService class.
  */
 @PowerMockIgnore({"javax.ws.*"})
-public class KafkaStreamsServiceTest {
+public class SiteStatsStreamsServiceTest {
 
     private ProcessorTopologyTestDriver driver;
     private BufferedReader br = null;
@@ -99,7 +93,7 @@ public class KafkaStreamsServiceTest {
 
 
         // SITE STATISTICS
-        DerivedStreams.userStatistics(rawLoggedEvents[0]);
+        SiteStatisticsStreamsApplication.streamProcess(rawLoggedEvents[0]);
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
@@ -109,8 +103,6 @@ public class KafkaStreamsServiceTest {
         while ((line = br.readLine()) != null) {
 
             String[] fields = line.split(csvSplitBy);
-
-            //JsonNode eventDetails = objectMapper.readTree(fields[4]);
 
             Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
                     .put("user_id", fields[0])
@@ -127,6 +119,8 @@ public class KafkaStreamsServiceTest {
                     objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
         }
     }
+
+
 
 
     @Test
