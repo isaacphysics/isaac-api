@@ -61,11 +61,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private final IContentManager contentManager;
 
     private final ILogManager logManager;
-    
-    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
-    private static final String SIGNATURE = "Isaac Physics Project";
-    private static final int MINIMUM_TAG_LENGTH = 4;
 
+    private final Map<String, String> globalStringTokens;
+
+    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
+    private static final int MINIMUM_TAG_LENGTH = 4;
     private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa z");
 
     /**
@@ -79,16 +79,21 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            content for email templates
      * @param logManager
      *            so we can log e-mail events.
+     * @param globalStringTokens a map containing a token that if seen in an email template should be replaced with some
+     *                           static string.
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
 		    		emailPreferenceManager, final PropertiesLoader globalProperties,
-                        final IContentManager contentManager, final ILogManager logManager) {
+                        final IContentManager contentManager, final ILogManager logManager,
+                        final Map<String, String> globalStringTokens) {
         super(communicator);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentManager = contentManager;
         this.logManager = logManager;
+        this.globalStringTokens = globalStringTokens;
+
         FULL_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY));
     }
 
@@ -127,6 +132,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // generate properties from hashMap for token replacement process
         Properties propertiesToReplace = new Properties();
+        propertiesToReplace.putAll(this.globalStringTokens);
+
         propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
 
         // Add all properties in the user DTO (preserving types) so they are available to email templates.
@@ -136,7 +143,6 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // default properties
         //TODO: We should find and replace this in templates as the case is wrong.
         propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        propertiesToReplace.putIfAbsent("sig", SIGNATURE);
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
@@ -171,8 +177,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // generate properties from hashMap for token replacement process
         Properties propertiesToReplace = new Properties();
+        propertiesToReplace.putAll(this.globalStringTokens);
         propertiesToReplace.putAll(this.flattenTokenMap(emailValues, Maps.newHashMap(), ""));
-        propertiesToReplace.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
                 propertiesToReplace, EmailType.SYSTEM, null);
@@ -221,10 +227,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             }
 
             Properties p = new Properties();
+            p.putAll(this.globalStringTokens);
             p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
             p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
             p.put("email", user.getEmail());
-            p.put("sig", SIGNATURE);
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
                     emailType, null);
@@ -533,10 +539,13 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     	Validate.notNull(userEmail);
     	Validate.notEmpty(userEmail);
 
-    	contentProperties.putIfAbsent("sig", SIGNATURE);
+        // Ensure global properties are included, but in a safe manner (allow contentProperties to override globals!)
+        Properties contentPropertiesToUse = new Properties();
+        contentPropertiesToUse.putAll(this.globalStringTokens);
+        contentPropertiesToUse.putAll(contentProperties);
 
-        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
-        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties, true);
+        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentPropertiesToUse);
+        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentPropertiesToUse, true);
 
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();

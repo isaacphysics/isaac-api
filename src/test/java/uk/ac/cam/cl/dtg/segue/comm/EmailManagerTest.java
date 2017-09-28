@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.comm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 import java.util.Date;
 import java.util.List;
@@ -241,7 +242,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         try {
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
             manager.sendTemplatedEmailToUser(userDTO,
@@ -316,7 +317,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         try {
             Map<String, Object> emailTokens = ImmutableMap.of("providerString", "testString", "providerWord", "testWord");
             manager.sendTemplatedEmailToUser(userDTO,
@@ -389,7 +390,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         try {
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
                     "https://dev.isaacphysics.org/resetpassword/resetToken");
@@ -460,7 +461,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         try {
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
 
@@ -508,7 +509,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         try {
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
 
@@ -563,7 +564,7 @@ public class EmailManagerTest {
         }
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         try {
 
             ImmutableMap<String, Object> emailTokens = ImmutableMap.of("verificationURL", "https://testUrl.com");
@@ -601,7 +602,7 @@ public class EmailManagerTest {
     public void sendCustomEmail_checkNullProperties_replacedWithEmptyString() {
 
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
 
         List<RegisteredUserDTO> allSelectedUsers = Lists.newArrayList();
         allSelectedUsers.add(userDTOWithNulls);
@@ -655,7 +656,7 @@ public class EmailManagerTest {
     @Test
     public void flattenTokenMap_checkTemplateReplacement_successfulReplacement() {
         EmailManager manager = new EmailManager(emailCommunicator, emailPreferenceManager, mockPropertiesLoader,
-                mockContentManager, logManager);
+                mockContentManager, logManager, generateGlobalTokenMap());
         Date someDate = new Date();
 
         Map<String, Object> inputMap = Maps.newHashMap();
@@ -665,6 +666,14 @@ public class EmailManagerTest {
         Map<String, String> mapUnderTest = manager.flattenTokenMap(inputMap, Maps.newHashMap(), "");
 
         assert(mapUnderTest.get("address.line1").equals("Computer Laboratory"));
+    }
+
+    private Map generateGlobalTokenMap() {
+        Map<String, String> globalTokens = Maps.newHashMap();
+        globalTokens.put("sig", "Isaac Physics Project");
+        globalTokens.put("emailPreferencesURL", "https://test/assignments");
+
+        return globalTokens;
     }
 
 }
