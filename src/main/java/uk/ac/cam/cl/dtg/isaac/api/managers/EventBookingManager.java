@@ -183,10 +183,6 @@ public class EventBookingManager {
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
                     new ImmutableMap.Builder<String, Object>()
-                            .put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
-                                    propertiesLoader.getProperty(HOST_NAME)))
-                            .put("myAssignmentsURL", String.format("https://%s/assignments",
-                                    propertiesLoader.getProperty(HOST_NAME)))
                             .put("contactUsURL", generateEventContactUsURL(event))
                             .put("authorizationLink", String.format("https://%s/account?authToken=%s",
                                     propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
@@ -197,7 +193,7 @@ public class EventBookingManager {
                     Arrays.asList(generateEventICSFile(event, booking)));
         
         } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send welcome email (%s) to user (%s)", event.getId(), user
+            log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
                     .getEmail()), e);
 
         } finally {
