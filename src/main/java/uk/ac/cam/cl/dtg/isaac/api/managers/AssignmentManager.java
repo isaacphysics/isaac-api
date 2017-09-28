@@ -180,8 +180,6 @@ public class AssignmentManager implements IGroupObserver {
         try {
             final String gameboardURL = String.format("https://%s/#%s", properties.getProperty(HOST_NAME),
                     gameboard.getId());
-            final String myAssignmentsURL = String.format("https://%s/assignments",
-                    properties.getProperty(HOST_NAME));
 
             String gameboardName = gameboard.getId();
             if (gameboard.getTitle() != null) {
@@ -192,8 +190,7 @@ public class AssignmentManager implements IGroupObserver {
                 emailManager.sendTemplatedEmailToUser(userDTO,
                         emailManager.getEmailTemplateDTO("email-template-group-assignment"),
                         ImmutableMap.of("gameboardURL", gameboardURL,
-                                "gameboardName", gameboardName,
-                                "myAssignmentsURL", myAssignmentsURL),
+                                "gameboardName", gameboardName),
                         EmailType.ASSIGNMENTS);
             }
 

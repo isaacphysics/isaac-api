@@ -459,6 +459,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         globalTokens.put("sig", "Isaac Physics Project");
         globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
                 properties.getProperty(HOST_NAME)));
+        globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("contactUsURL", String.format("https://%s/contact",
+                properties.getProperty(HOST_NAME)));
 
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
