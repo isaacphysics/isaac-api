@@ -28,7 +28,6 @@ import javax.servlet.ServletContextListener;
 import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 
-import org.eclipse.jetty.util.annotation.Name;
 import org.elasticsearch.client.Client;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -58,8 +57,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaTopicManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaStreamsService;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;

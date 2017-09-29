@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.segue.dao.streams;
+package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -36,10 +36,9 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customMappers.AugmentedQuestionDetailMapper;
-import uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors.ThresholdAchievedProcessor;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.customMappers.AugmentedQuestionDetailMapper;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.customProcessors.ThresholdAchievedProcessor;
 
-import java.sql.Array;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;

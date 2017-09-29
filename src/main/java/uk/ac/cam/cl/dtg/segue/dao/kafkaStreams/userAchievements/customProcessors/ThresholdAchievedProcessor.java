@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package uk.ac.cam.cl.dtg.segue.dao.streams.customProcessors;
+package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.customProcessors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.Connection;

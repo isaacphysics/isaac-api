@@ -9,7 +9,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
@@ -25,18 +24,15 @@ public class KafkaUsers implements IUserDataManager {
 
     private PgUsers pgUsers;
     private KafkaStreamsProducer kafkaProducer;
-    private KafkaStreamsService streamsService;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
     public KafkaUsers(PostgresSqlDb postgresSqlDb,
-                      KafkaStreamsProducer kafkaProducer,
-                      KafkaStreamsService streamsService) {
+                      KafkaStreamsProducer kafkaProducer) {
 
         this.pgUsers = new PgUsers(postgresSqlDb);
         this.kafkaProducer = kafkaProducer;
-        this.streamsService = streamsService;
 
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }

@@ -1,8 +1,7 @@
-package uk.ac.cam.cl.dtg.segue.dao.streams;
+package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
