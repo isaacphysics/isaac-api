@@ -106,8 +106,8 @@ public class UserAchievementStreamsApplication {
     public void start() {
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events");
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events");
+        kafkaTopicManager.ensureTopicExists("topic_logged_events", -1);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", 7200000);
 
         // raw logged events incoming data stream from kafka
         KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")

@@ -38,6 +38,7 @@ import org.apache.kafka.connect.json.JsonDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
@@ -67,13 +68,18 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                final LocationManager locationManager,
                                final ObjectMapper objectMapper,
                                @Named(Constants.KAFKA_HOSTNAME) final String kafkaHost,
-                               @Named(Constants.KAFKA_PORT) final String kafkaPort) {
+                               @Named(Constants.KAFKA_PORT) final String kafkaPort,
+                               KafkaTopicManager kafkaTopicManager) {
 
         this.kafkaProducer = kafkaProducer;
         this.locationManager = locationManager;
         this.objectMapper = objectMapper;
         this.kafkaHost = kafkaHost;
         this.kafkaPort = kafkaPort;
+
+        // ensure topics exist before attempting to consume
+        kafkaTopicManager.ensureTopicExists("topic_logged_events", -1);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", 7200000);
     }
 
 

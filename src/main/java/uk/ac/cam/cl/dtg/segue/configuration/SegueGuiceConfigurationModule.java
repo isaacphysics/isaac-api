@@ -57,8 +57,8 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaStreamsService;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.KafkaTopicManager;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.users.*;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
@@ -99,7 +99,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     // Singletons - we only ever want there to be one instance of each of these.
     private static PostgresSqlDb postgresDB;
     private static KafkaStreamsProducer kafkaProducer;
-    private static KafkaStreamsService kafkaStreamsService;
     private static ContentMapper mapper = null;
     private static GitContentManager contentManager = null;
     private static Client elasticSearchClient = null;
@@ -114,6 +113,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static KafkaTopicManager kafkaTopicManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
+
+	// kafka streams applications
+    private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
 
     private static Collection<Class<? extends ServletContextListener>> contextListeners;
     private static Map<String, Reflections> reflections = com.google.common.collect.Maps.newHashMap();
@@ -367,7 +369,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             //logManager = new PgLogManager(database, objectMapper, loggingEnabled, lhm);
 
             logManager = new PgLogManagerEventListener(new PgLogManager(database, objectMapper, loggingEnabled, lhm));
-            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort));
+            logManager.addListener(new KafkaLoggingManager(kafkaProducer, lhm, objectMapper, kafkaHost, kafkaPort, kafkaTopicManager));
 
             log.info("Creating singleton of LogManager");
             if (loggingEnabled) {
@@ -685,22 +687,24 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     }
 
 
+    /**
+     * Gets the instance of the site statistics kafka stream application
+     * @return Site Statistics Stream App object
+     */
     @Provides
     @Singleton
     @Inject
-    private static KafkaStreamsService getKafkaStreamsService(final PostgresSqlDb database,
-                                                              final IContentManager contentManager,
-                                                              final GameManager gameManager,
-                                                              @Named(CONTENT_INDEX) final String contentIndex,
-                                                              final KafkaTopicManager topicManager) {
+    private static SiteStatisticsStreamsApplication getSiteStatsStreamsApp() {
 
-        if (null == kafkaStreamsService) {
-            kafkaStreamsService = new KafkaStreamsService(globalProperties, database, contentManager, gameManager, contentIndex,
-                    topicManager);
-            log.info("Creating singleton of Kafka Streams Service.");
+        if (null == statisticsStreamsApplication) {
+
+            log.info("Creating singleton of Site Stats Kafka Streams Application.");
+            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager);
+            statisticsStreamsApplication.start();
         }
-        return kafkaStreamsService;
+        return statisticsStreamsApplication;
     }
+
 
 
     /**
@@ -757,8 +761,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      *            - dependency
      * @param groupManager
      *            - dependency
-       @param streamsService
-     *            - dependency
      * @param statsManager
      *            - dependency
      * @return kafka stats manager
@@ -768,11 +770,11 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     private static KafkaStatisticsManager getKafkaStatsManager(final UserAccountManager userManager,
                                                      final ILogManager logManager, final SchoolListReader schoolManager,
-                                                     final GroupManager groupManager, final KafkaStreamsService streamsService,
+                                                     final GroupManager groupManager, SiteStatisticsStreamsApplication statisticsStreamsApplication,
                                                      final StatisticsManager statsManager) {
 
         if (null == kafkaStatsManager) {
-            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, groupManager, streamsService, statsManager);
+            kafkaStatsManager = new KafkaStatisticsManager(userManager, logManager, schoolManager, groupManager, statisticsStreamsApplication, statsManager);
             log.info("Created Singleton of Kafka Statistics Manager");
         }
 
