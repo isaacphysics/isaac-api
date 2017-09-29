@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Stephen Cummins
+ * Copyright 2017 James Sharkey
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,23 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
+import uk.ac.cam.cl.dtg.segue.comm.EmailType;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
-import com.google.inject.Inject;
+public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
 
-/**
- * Handler to detect bruteforce login attempts.
- * 
- * Preventing users from overusing this endpoint is important as they may be trying to brute force someones password.
- *
- */
-public class SegueLoginMisuseHandler implements IMisuseHandler {
-    private static final Logger log = LoggerFactory.getLogger(SegueLoginMisuseHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(IPQuestionAttemptMisuseHandler.class);
 
-    public static final Integer SOFT_THRESHOLD = 5;
-    public static final Integer HARD_THRESHOLD = 10;
-    public static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_TEN_MINUTES;
+    private static final Integer SOFT_THRESHOLD = 120;  // Two attempts minute for an hour, or 24 anonymous users.
+    private static final Integer HARD_THRESHOLD = 1200;  // One every three seconds for an hour; far too high!
+    private static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_HOUR;
 
     private PropertiesLoader properties;
     private EmailManager emailManager;
@@ -47,7 +43,7 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
      *            - so that we can look up properties set.
      */
     @Inject
-    public SegueLoginMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
+    public IPQuestionAttemptMisuseHandler(final EmailManager emailManager, final PropertiesLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }
@@ -57,11 +53,6 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
         return SOFT_THRESHOLD;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see uk.ac.cam.cl.dtg.segue.api.managers.IMisuseEvent#getHardThreshold()
-     */
     @Override
     public Integer getHardThreshold() {
         return HARD_THRESHOLD;
@@ -74,11 +65,20 @@ public class SegueLoginMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
+        log.warn("Too many requests from an IP Address: " + message);
     }
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        log.warn("Hard threshold limit: " + message);
+        final String subject = "HARD Threshold limit reached for IP Address based Question Attempts!";
+        EmailCommunicationMessage e = new EmailCommunicationMessage(null,
+                properties.getProperty(Constants.SERVER_ADMIN_ADDRESS), subject, message, message, EmailType.ADMIN,
+                null, null, null);
+        try {
+            emailManager.addSystemEmailToQueue(e);
+        } catch (SegueDatabaseException e1) {
+            log.error("Database error when attempting to send threshold limit warnings: " + e1.getMessage());
+        }
+        log.warn("Too many requests from an IP Address: " + message + " This may be a scripted attack!");
     }
 }
