@@ -17,6 +17,8 @@
 package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -40,6 +42,8 @@ import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Properties;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
 /**
  * Concrete Kafka streams processing application for generating site statistics
@@ -69,11 +73,12 @@ public class UserAchievementStreamsApplication {
      * @param kafkaTopicManager
      *              - manager for kafka topic administration
      */
+    @Inject
     public UserAchievementStreamsApplication(final PropertiesLoader globalProperties,
                                              final KafkaTopicManager kafkaTopicManager,
                                              final PostgresSqlDb database,
                                              final IContentManager contentManager,
-                                             final String contentIndex,
+                                             @Named(CONTENT_INDEX) final String contentIndex,
                                              final GameManager gameManager) {
 
         this.kafkaTopicManager = kafkaTopicManager;
@@ -84,7 +89,7 @@ public class UserAchievementStreamsApplication {
 
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_user-achievements-v-"
-                + globalProperties.getProperty("SITE_STATS_STREAMS_APP_VERSION"));
+                + globalProperties.getProperty("USER_ACHIEVEMENTS_STREAMS_APP_VERSION"));
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
@@ -96,6 +101,8 @@ public class UserAchievementStreamsApplication {
         streamsConfiguration.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
         streamsConfiguration.put(StreamsConfig.consumerPrefix(ConsumerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
         streamsConfiguration.put(StreamsConfig.producerPrefix(ProducerConfig.METADATA_MAX_AGE_CONFIG), 60 * 1000);
+
+        start();
 
     }
 
@@ -145,7 +152,7 @@ public class UserAchievementStreamsApplication {
 
         // user question attempts
         ThresholdAchievedProcessor achievementProcessor = new ThresholdAchievedProcessor(database);
-        UserQuestionAttempts.process(rawStream, achievementProcessor, contentManager, contentIndex, gameManager);
+        UserQuestionAttempts.process(rawStream, achievementProcessor, contentManager, contentIndex);
 
         // user activity streaks
         UserWeeklyStreaks.process(rawStream.filter(
@@ -153,7 +160,7 @@ public class UserAchievementStreamsApplication {
         ), achievementProcessor);
 
         // teacher assignment activity
-        TeacherAssignmentActivity.process(rawStream, gameManager, achievementProcessor);
+        //TeacherAssignmentActivity.process(rawStream, gameManager, achievementProcessor);
 
     }
 

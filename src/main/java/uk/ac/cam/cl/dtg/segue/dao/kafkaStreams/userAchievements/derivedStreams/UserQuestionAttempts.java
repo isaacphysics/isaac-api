@@ -56,8 +56,7 @@ public final class UserQuestionAttempts {
     public static void process(KStream<String, JsonNode> stream,
                                ThresholdAchievedProcessor achievementProcessor,
                                IContentManager contentManager,
-                               String contentIndex,
-                               GameManager gameManager) {
+                               String contentIndex) {
 
 
 
@@ -75,10 +74,9 @@ public final class UserQuestionAttempts {
 
                             String qPartId = loggedEvent.path("event_details")
                                     .path("questionId")
-                                    .asText()
-                                    .toLowerCase();
+                                    .asText();
 
-                            return new KeyValue<>(userId.toLowerCase() + "-" + qPartId.substring(0, qPartId.indexOf("|")), loggedEvent);
+                            return new KeyValue<>(userId + "-" + qPartId.substring(0, qPartId.indexOf("|")), loggedEvent);
                         }
                 )
 
@@ -105,8 +103,7 @@ public final class UserQuestionAttempts {
 
                             String questionId = questionAttempt.path("event_details")
                                     .path("questionId")
-                                    .asText()
-                                    .toLowerCase();
+                                    .asText();
 
                             String questionPageId = userIdQuestionId
                                     .substring(userIdQuestionId.indexOf("-") + 1,

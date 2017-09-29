@@ -45,7 +45,7 @@ public final class UserWeeklyStreaks {
 
     private UserWeeklyStreaks(){}
 
-    private static enum Seasons {
+    private enum Seasons {
         SPRING,
         SUMMER,
         AUTUMN,
@@ -56,7 +56,6 @@ public final class UserWeeklyStreaks {
      * Processing of user weekly streaks based on timestamped user logged events.
      *
      * @param stream incoming raw logged event data
-     * @return
      */
     public static void process(final KStream<String, JsonNode> stream, final ThresholdAchievedProcessor achievementProcessor) {
 
@@ -139,11 +138,6 @@ public final class UserWeeklyStreaks {
                 () -> achievementProcessor
         );
 
-                /*.mapValues(
-                        (jsonTimestamps) -> TimeUnit.DAYS
-                                .convert(jsonTimestamps.path("streak_end").asLong() - jsonTimestamps.path("streak_start").asLong(),
-                                        TimeUnit.DAYS) / 7
-                )*/
     }
 
 

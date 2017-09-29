@@ -29,11 +29,15 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
+import uk.ac.cam.cl.dtg.segue.dos.content.SeguePage;
 import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
 
+import javax.validation.constraints.Null;
+import javax.ws.rs.core.Response;
 import java.util.Iterator;
 import java.util.List;
 
@@ -155,18 +159,23 @@ public class AugmentedQuestionDetailMapper implements ValueMapper<JsonNode, Json
             }
 
             ContentDTO questionPage = contentManager.getContentById(this.contentIndex, questionId);
-            SeguePageDTO questionContent = (SeguePageDTO) questionPage;
+            if (questionPage instanceof SeguePageDTO) {
+                SeguePageDTO questionContent = (SeguePageDTO) questionPage;
 
+                ArrayNode tags = nodeFactory.arrayNode();
+                for (String tag: questionContent.getTags())
+                    tags.add(tag);
 
-            ArrayNode tags = nodeFactory.arrayNode();
-            for (String tag: questionContent.getTags())
-                tags.add(tag);
-
-            jsonResponse
-                    .put("question_part_count", questionParts.size())
-                    .put("type", questionContent.getType())
-                    .put("level", questionContent.getLevel())
-                    .put("tags", tags);
+                jsonResponse
+                        .put("question_part_count", questionParts.size())
+                        .put("type", questionContent.getType())
+                        .put("level", questionContent.getLevel())
+                        .put("tags", tags);
+            } else {
+                SegueErrorResponse error = new SegueErrorResponse(Response.Status.NOT_FOUND,
+                        "No question page object found for given id: " + questionId);
+                log.warn(error.getErrorMessage());
+            }
 
 
         } catch (ContentManagerException e) {
