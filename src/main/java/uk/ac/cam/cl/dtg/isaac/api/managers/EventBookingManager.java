@@ -338,7 +338,6 @@ public class EventBookingManager {
      *
      * @param event                 - The event in question.
      * @param userDTO               - The user whose booking should be updated
-     * @param additionalInformation additional information to be stored with this booking e.g. dietary requirements.
      * @return the updated booking.
      * @throws SegueDatabaseException       - if there is a database error
      * @throws EmailMustBeVerifiedException - if this method requires a validated e-mail address.
@@ -347,7 +346,7 @@ public class EventBookingManager {
      * @throws EventBookingUpdateException  - Unable to update the event booking.
      */
     public EventBookingDTO promoteFromWaitingListOrCancelled(final IsaacEventPageDTO event, final RegisteredUserDTO
-            userDTO, final Map<String, String> additionalInformation)
+            userDTO)
             throws SegueDatabaseException, EmailMustBeVerifiedException,
             DuplicateBookingException, EventBookingUpdateException, EventIsFullException {
 
@@ -374,7 +373,7 @@ public class EventBookingManager {
         // probably want to send a waiting list promotion email.
         try {
             updatedStatus = this.bookingPersistenceManager.updateBookingStatus(eventBooking.getEventId(), userDTO
-                    .getId(), BookingStatus.CONFIRMED, additionalInformation);
+                    .getId(), BookingStatus.CONFIRMED, eventBooking.getAdditionalInformation());
 
             emailManager.sendTemplatedEmailToUser(userDTO,
                     emailManager.getEmailTemplateDTO("email-event-booking-waiting-list-promotion-confirmed"),

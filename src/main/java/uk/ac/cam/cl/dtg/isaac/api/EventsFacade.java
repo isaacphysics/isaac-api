@@ -390,7 +390,7 @@ public class EventsFacade extends AbstractIsaacFacade {
             IsaacEventPageDTO event = this.getEventDTOById(request, eventId);
 
             EventBookingDTO eventBookingDTO
-                    = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest, additionalInformation);
+                    = this.bookingManager.promoteFromWaitingListOrCancelled(event, userOfInterest);
 
             this.getLogManager().logEvent(userManager.getCurrentUser(request), request,
                     Constants.ADMIN_EVENT_WAITING_LIST_PROMOTION, ImmutableMap.of(EVENT_ID_FKEY_FIELDNAME, event.getId(),
