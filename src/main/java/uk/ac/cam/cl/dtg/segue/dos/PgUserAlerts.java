@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.segue.dos;
 
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.IAlertListener;
+import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -66,7 +68,13 @@ public class PgUserAlerts implements IUserAlerts {
 
             ResultSet results = pst.executeQuery();
             results.next();
-            return buildPgUserAlert(results);
+
+            IUserAlert alert = buildPgUserAlert(results);
+
+            IAlertListener listener = UserAlertsWebSocket.connectedSockets.get(userId);
+            listener.notifyAlert(alert);
+
+            return alert;
 
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
