@@ -905,9 +905,11 @@ public class UserAccountManager {
      *             - if we cannot find the user account specified
      */
     public void deleteUserAccount(final RegisteredUserDTO userToDelete) throws NoUserException, SegueDatabaseException {
-        Validate.notNull(userToDelete);
-
         // check the user exists
+        if(null == userToDelete) {
+            throw new NoUserException("Unable to delete the user as no user was provided.");
+        }
+
         RegisteredUser userDOById = this.findUserById(userToDelete.getId());
 
         // delete the user.

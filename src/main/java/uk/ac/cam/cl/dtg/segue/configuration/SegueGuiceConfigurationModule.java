@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import ma.glasnost.orika.MapperFacade;
 
@@ -37,16 +38,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.*;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.EmailVerificationRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
-import uk.ac.cam.cl.dtg.segue.api.monitors.LogEventMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
-import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.*;
 import uk.ac.cam.cl.dtg.segue.auth.*;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -86,6 +78,7 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 /**
  * This class is responsible for injecting configuration values for persistence related classes.
@@ -452,9 +445,21 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             final AbstractEmailPreferenceManager emailPreferenceManager,
             final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final SegueLocalAuthenticator authenticator,
             final ILogManager logManager) {
+
+        Map<String, String> globalTokens = Maps.newHashMap();
+        globalTokens.put("sig", "Isaac Physics Project");
+        globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("myAssignmentsURL", String.format("https://%s/assignments",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("myBookedEventsURL", String.format("https://%s/events?show_booked_only=true",
+                properties.getProperty(HOST_NAME)));
+        globalTokens.put("contactUsURL", String.format("https://%s/contact",
+                properties.getProperty(HOST_NAME)));
+
         if (null == emailCommunicationQueue) {
             emailCommunicationQueue = new EmailManager(emailCommunicator, emailPreferenceManager, properties,
-            				contentManager, logManager);
+            				contentManager, logManager, globalTokens);
             log.info("Creating singleton of EmailCommunicationQueue");
         }
         return emailCommunicationQueue;
@@ -592,6 +597,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             misuseMonitor.registerHandler(AnonQuestionAttemptMisuseHandler.class.toString(),
                     new AnonQuestionAttemptMisuseHandler());
+
+            misuseMonitor.registerHandler(IPQuestionAttemptMisuseHandler.class.toString(),
+                    new IPQuestionAttemptMisuseHandler(emailManager, properties));
         }
 
         return misuseMonitor;
