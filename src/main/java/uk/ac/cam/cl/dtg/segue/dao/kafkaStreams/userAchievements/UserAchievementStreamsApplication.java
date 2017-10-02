@@ -156,7 +156,7 @@ public class UserAchievementStreamsApplication {
 
         // user activity streaks
         UserWeeklyStreaks.process(rawStream.filter(
-                (userId, event) -> event.path("event_type").equals("ANSWER_QUESTION") || event.path("event_type").equals("SET_NEW_ASSIGNMENT")
+                (userId, event) -> event.path("event_type").asText().equals("ANSWER_QUESTION") || event.path("event_type").asText().equals("SET_NEW_ASSIGNMENT")
         ), achievementProcessor);
 
         // teacher assignment activity

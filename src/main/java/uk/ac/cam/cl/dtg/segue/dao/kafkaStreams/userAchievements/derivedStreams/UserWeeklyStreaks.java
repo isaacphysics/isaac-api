@@ -83,7 +83,6 @@ public final class UserWeeklyStreaks {
                         },
                         // aggregator
                         (userId, latestEvent, streakRecord) -> {
-                            ObjectNode updatedStreakRecord = JsonNodeFactory.instance.objectNode();
 
                             // timestamp of streak start
                             Long streakStartTimestamp = streakRecord.path("streak_start").asLong();
@@ -91,28 +90,28 @@ public final class UserWeeklyStreaks {
                             // timestamp of streak end
                             Long streakEndTimestamp = streakRecord.path("streak_end").asLong();
 
+                            // record of largest streak length
                             Integer largestStreak = streakRecord.path("largest_streak").asInt();
 
                             // timestamp of latest event
-                            Long latestEventTimestamp = latestEvent.path("event_details")
-                                    .path("date_attempted").asLong();
+                            Long latestEventTimestamp = latestEvent.path("timestamp").asLong();
 
-                            if (streakStartTimestamp == 0
-                                    || (TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.DAYS) > 8
-                                    && !getSeasonFromTimestamp(latestEventTimestamp).equals(getSeasonFromTimestamp(streakEndTimestamp)))) {
+                            if (streakStartTimestamp == 0 ||
+                                    ((TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.DAYS) > 8)
+                                    || !getSeasonFromTimestamp(latestEventTimestamp).equals(getSeasonFromTimestamp(streakEndTimestamp)))) {
 
-                                updatedStreakRecord.put("streak_start", latestEventTimestamp);
-                                updatedStreakRecord.put("streak_end", latestEventTimestamp);
+                                ((ObjectNode) streakRecord).put("streak_start", latestEventTimestamp);
+                                ((ObjectNode) streakRecord).put("streak_end", latestEventTimestamp);
 
                             } else {
-                                updatedStreakRecord.put("streak_start", streakStartTimestamp);
-                                updatedStreakRecord.put("streak_end", latestEventTimestamp);
+                                ((ObjectNode) streakRecord).put("streak_start", streakStartTimestamp);
+                                ((ObjectNode) streakRecord).put("streak_end", latestEventTimestamp);
                             }
 
                             if (TimeUnit.DAYS.convert(latestEventTimestamp - streakStartTimestamp, TimeUnit.DAYS) / 7 > largestStreak)
-                                updatedStreakRecord.put("updated", true);
+                                ((ObjectNode) streakRecord).put("updated", true);
 
-                            return updatedStreakRecord;
+                            return streakRecord;
                         },
                         JsonSerde,
                         "store_user_streaks")
