@@ -17,11 +17,8 @@
 package uk.ac.cam.cl.dtg.segue.dao.streams;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -37,14 +34,12 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
 
@@ -61,7 +56,7 @@ public class KafkaStreamsService {
     private final String contentIndex;
     private final KafkaTopicManager topicManager;
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaStatisticsManager.class);
+    private static final Logger log = LoggerFactory.getLogger(KafkaStreamsService.class);
 
     final static Serializer<JsonNode> jsonSerializer = new JsonSerializer();
     final static Deserializer<JsonNode> jsonDeserializer = new JsonDeserializer();
