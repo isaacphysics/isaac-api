@@ -34,6 +34,10 @@ import org.apache.kafka.test.ProcessorTopologyTestDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import uk.ac.cam.cl.dtg.segue.dao.streams.DerivedStreams;
+import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
+import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
+import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 
 import java.io.BufferedReader;
@@ -42,6 +46,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.easymock.EasyMock.createMock;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -98,7 +104,7 @@ public class SiteStatsStreamsServiceTest {
         driver = new ProcessorTopologyTestDriver(config, builder);
 
         String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
-
+/*
         br = new BufferedReader(new FileReader(csvFile));
         while ((line = br.readLine()) != null) {
 
@@ -117,7 +123,7 @@ public class SiteStatsStreamsServiceTest {
             driver.process("topic_logged_events",
                     fields[0].getBytes(),
                     objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
-        }
+        }*/
     }
 
 
@@ -193,4 +199,13 @@ public class SiteStatsStreamsServiceTest {
         }
     }
 
+    private void assertClassUnchanged(Class c, String hash) {
+        String newHash = ClassVersionHash.hashClass(c);
+        assertEquals("Class '" + c.getSimpleName() + "' has changed - need up to update test and (possibly) Kafka streams application ID version number in KafkaStreamsService.\nNew class hash: " + newHash + "\n", newHash, hash);
+    }
+
+    @Test
+    public void streamsClassVersions_Test() {
+        assertClassUnchanged(KafkaStreamsService.class,"a6f8775d342497f745dcffd33e7663c129064a0c4ed253bb189c54acc8529fbc");
+    }
 }
