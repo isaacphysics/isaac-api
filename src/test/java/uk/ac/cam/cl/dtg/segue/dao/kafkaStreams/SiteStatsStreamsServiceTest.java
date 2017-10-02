@@ -34,9 +34,6 @@ import org.apache.kafka.test.ProcessorTopologyTestDriver;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import uk.ac.cam.cl.dtg.segue.dao.streams.DerivedStreams;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
-import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 
@@ -46,7 +43,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.easymock.EasyMock.createMock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -201,11 +197,11 @@ public class SiteStatsStreamsServiceTest {
 
     private void assertClassUnchanged(Class c, String hash) {
         String newHash = ClassVersionHash.hashClass(c);
-        assertEquals("Class '" + c.getSimpleName() + "' has changed - need up to update test and (possibly) Kafka streams application ID version number in KafkaStreamsService.\nNew class hash: " + newHash + "\n", newHash, hash);
+        assertEquals("Class '" + c.getSimpleName() + "' has changed - need up to update test and (possibly) Kafka streams application ID version number in SiteStatisticsStreamsApplication.\nNew class hash: " + newHash + "\n", newHash, hash);
     }
 
     @Test
     public void streamsClassVersions_Test() {
-        assertClassUnchanged(KafkaStreamsService.class,"a6f8775d342497f745dcffd33e7663c129064a0c4ed253bb189c54acc8529fbc");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"8537da484ac395c4d42c9656652087e274047c8cf5ad1ca0bfd022b387b3221d");
     }
 }
