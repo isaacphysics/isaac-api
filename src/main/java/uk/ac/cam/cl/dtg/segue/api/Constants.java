@@ -15,6 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import org.apache.kafka.streams.StreamsConfig;
+
 /**
  * Utility class to provide common segue-specific constants.
  * 
@@ -246,6 +248,9 @@ public final class Constants {
     public static final String ADMIN_CHANGE_USER_SCHOOL = "ADMIN_CHANGE_USER_SCHOOL";
     public static final String CHANGE_USER_ROLE = "CHANGE_USER_ROLE";
     public static final String REMOVE_USER_FROM_GROUP = "REMOVE_USER_FROM_GROUP";
+    public static final String NOTIFICATION_VIEW_LIST = "NOTIFICATION_VIEW_LIST";
+    public static final String NOTIFICATION_CLICK = "NOTIFICATION_CLICK";
+    public static final String NOTIFICATION_DISMISS = "NOTIFICATION_DISMISS";
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";

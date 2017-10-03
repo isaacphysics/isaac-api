@@ -80,7 +80,6 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final QuestionManager questionManager;
     private IMisuseMonitor misuseMonitor;
-    private final IUserAlerts userAlerts;
 
     /**
      * 
@@ -103,7 +102,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     public QuestionFacade(final PropertiesLoader properties, final ContentMapper mapper,
                           final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final UserAccountManager userManager,
                           final QuestionManager questionManager,
-                          final ILogManager logManager, final IMisuseMonitor misuseMonitor, final IUserAlerts userAlerts) {
+                          final ILogManager logManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);
 
         this.questionManager = questionManager;
@@ -112,7 +111,6 @@ public class QuestionFacade extends AbstractSegueFacade {
         this.contentIndex = contentIndex;
         this.userManager = userManager;
         this.misuseMonitor = misuseMonitor;
-        this.userAlerts = userAlerts;
     }
 
     /**
@@ -219,14 +217,6 @@ public class QuestionFacade extends AbstractSegueFacade {
             }
 
             this.getLogManager().logEvent(currentUser, request, ANSWER_QUESTION, response.getEntity());
-
-            if (currentUser instanceof RegisteredUserDTO) {
-                try {
-                    userAlerts.createAlert(((RegisteredUserDTO) currentUser).getId(), "You answered a question! (" + questionId + ")", "progress");
-                } catch (SegueDatabaseException e) {
-                    e.printStackTrace();
-                }
-            }
 
             return response;
 
