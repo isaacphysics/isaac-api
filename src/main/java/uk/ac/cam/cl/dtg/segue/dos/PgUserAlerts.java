@@ -7,10 +7,7 @@ import uk.ac.cam.cl.dtg.segue.api.userAlerts.UserAlertsWebSocket;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 
 public class PgUserAlerts implements IUserAlerts {
@@ -28,10 +25,10 @@ public class PgUserAlerts implements IUserAlerts {
                 result.getLong("user_id"),
                 result.getString("message"),
                 result.getString("link"),
-                result.getDate("created"),
-                result.getDate("seen"),
-                result.getDate("clicked"),
-                result.getDate("dismissed"));
+                result.getTimestamp("created"),
+                result.getTimestamp("seen"),
+                result.getTimestamp("clicked"),
+                result.getTimestamp("dismissed"));
     }
 
     @Override
@@ -59,20 +56,22 @@ public class PgUserAlerts implements IUserAlerts {
 
             pst = conn
                     .prepareStatement("INSERT INTO user_alerts "
-                            + "(user_id, message, link) "
-                            + "VALUES (?, ?, ?) RETURNING *");
+                            + "(user_id, message, link, created) "
+                            + "VALUES (?, ?, ?, ?) RETURNING *");
 
             pst.setLong(1, userId);
             pst.setString(2, message);
             pst.setString(3, link);
+            pst.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
 
             ResultSet results = pst.executeQuery();
             results.next();
 
             IUserAlert alert = buildPgUserAlert(results);
 
-            IAlertListener listener = UserAlertsWebSocket.connectedSockets.get(userId);
-            listener.notifyAlert(alert);
+            for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(userId)) {
+                listener.notifyAlert(alert);
+            }
 
             return alert;
 
@@ -98,11 +97,12 @@ public class PgUserAlerts implements IUserAlerts {
                     q += "dismissed";
                     break;
             }
-            q += " WHERE id = ?";
+            q += "= ?  WHERE id = ?";
             pst = conn
                     .prepareStatement(q);
 
-            pst.setLong(1, alertId);
+            pst.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+            pst.setLong(2, alertId);
 
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to update user notification.");

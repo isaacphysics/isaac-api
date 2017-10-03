@@ -222,7 +222,7 @@ public class QuestionFacade extends AbstractSegueFacade {
 
             if (currentUser instanceof RegisteredUserDTO) {
                 try {
-                    userAlerts.createAlert(((RegisteredUserDTO) currentUser).getId(), "You answered a question! (" + questionId + ")", null);
+                    userAlerts.createAlert(((RegisteredUserDTO) currentUser).getId(), "You answered a question! (" + questionId + ")", "progress");
                 } catch (SegueDatabaseException e) {
                     e.printStackTrace();
                 }

@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -15,14 +17,13 @@ import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.io.IOException;
 import java.net.HttpCookie;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SEGUE_AUTH_COOKIE;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.SESSION_USER_ID;
@@ -35,7 +36,7 @@ public class UserAlertsWebSocket implements IAlertListener {
     private final IUserAlerts userAlerts;
     private Session session;
 
-    public static HashMap<Long,UserAlertsWebSocket> connectedSockets = new HashMap<>();
+    public static HashMap<Long, List<UserAlertsWebSocket>> connectedSockets = new HashMap<>();
 
     @Inject
     public UserAlertsWebSocket(final ObjectMapper objectMapper,
@@ -48,9 +49,15 @@ public class UserAlertsWebSocket implements IAlertListener {
     }
 
     @OnWebSocketMessage
-    public void onText(Session session, String message) throws IOException {
+    public void onText(Session session, String message) throws IOException, SegueDatabaseException {
 
-        System.out.println("WS TEXT: " + message);
+        JsonNode alertFeedback = objectMapper.readTree(message);
+
+        for (IUserAlert.AlertEvents event : IUserAlert.AlertEvents.values()) {
+            if (alertFeedback.path("feedback").asText().equals(event.name()))
+                userAlerts.recordAlertEvent(alertFeedback.path("notificationId").asLong(), event);
+        }
+
     }
 
 
@@ -83,7 +90,9 @@ public class UserAlertsWebSocket implements IAlertListener {
             Long uId = Long.parseLong(userId);
             connectedUser = userManager.getUserDTOById(uId);
 
-            connectedSockets.put(connectedUser.getId(), this);
+            if (!connectedSockets.containsKey(connectedUser.getId()))
+                connectedSockets.put(connectedUser.getId(), new LinkedList<>());
+            connectedSockets.get(connectedUser.getId()).add(this);
 
             session.getRemote().sendString(objectMapper.writeValueAsString(ImmutableMap.of("notifications", userAlerts.getUserAlerts(connectedUser.getId()))));
 
@@ -93,7 +102,7 @@ public class UserAlertsWebSocket implements IAlertListener {
 
     @OnWebSocketClose
     public void onClose(Session session, int status, String reason) {
-        connectedSockets.remove(connectedUser.getId());
+        connectedSockets.get(connectedUser.getId()).remove(this);
     }
 
     @Override
