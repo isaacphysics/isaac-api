@@ -168,7 +168,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     try {
                         RegisteredUserDTO user = userManager.getUserDTOById(assignment.getOwnerUserId());
                         if (user == null) {
-                            throw new NoUserException();
+                            throw new NoUserException("No user found with this ID.");
                         }
                         UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
                         assignment.setAssignerSummary(userSummary);

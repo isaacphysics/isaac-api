@@ -433,7 +433,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
 
                 if (null == user) {
-                    throw new NoUserException();
+                    throw new NoUserException("No user found with this ID.");
                 }
 
                 // if a user already has this role, abort
@@ -521,7 +521,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
                     if (null == user) {
                         log.error(String.format("No user could be found with email (%s)", email));
-                        throw new NoUserException();
+                        throw new NoUserException("No user found with this email.");
                     }
                 }
             }

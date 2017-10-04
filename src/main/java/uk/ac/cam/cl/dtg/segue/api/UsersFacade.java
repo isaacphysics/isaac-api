@@ -487,7 +487,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
             if (userOfInterest == null) {
-                throw new NoUserException();
+                throw new NoUserException("No user found with this ID.");
             }
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
@@ -678,6 +678,11 @@ public class UsersFacade extends AbstractSegueFacade {
                 if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
 
+                    if (null == passwordCurrent) {
+                        return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide your current password"
+                            + " to change your password!").toResponse();
+                    }
+
                     this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
                             userObjectFromClient.getEmail(), passwordCurrent);
                 }
@@ -815,9 +820,10 @@ public class UsersFacade extends AbstractSegueFacade {
 
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
-                    .toResponse();
+            log.warn("Invalid password exception occurred during registration!");
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (FailedToHashPasswordException e) {
+            log.error("Failed to hash password during user registration!");
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to set a password.").toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
@@ -831,9 +837,11 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (AuthenticationProviderMappingException e) {
+            log.warn("Unable to map to a known authenticator during registration. The provider is unknown!");
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (EmailMustBeVerifiedException e) {
+            log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "You cannot register with an Isaac email address.").toResponse();
         }
