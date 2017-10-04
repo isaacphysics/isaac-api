@@ -2,8 +2,6 @@ package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -19,8 +17,6 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlert;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
-import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
-import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 
 import java.io.IOException;
@@ -62,8 +58,15 @@ public class UserAlertsWebSocket implements IAlertListener {
 
         if (feedbackType.equals(NOTIFICATION_VIEW_LIST)) {
 
+            Iterator<JsonNode> iter = alertFeedback.path("notificationIds").elements();
+
+            while (iter.hasNext())
+                userAlerts.recordAlertEvent(iter.next().asLong(), IUserAlert.AlertEvents.SEEN);
+
+
             Map<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
                     .put("notification_ids", alertFeedback.path("notificationIds")).build();
+
 
             logManager.logInternalEvent(connectedUser, NOTIFICATION_VIEW_LIST, eventDetails);
 
