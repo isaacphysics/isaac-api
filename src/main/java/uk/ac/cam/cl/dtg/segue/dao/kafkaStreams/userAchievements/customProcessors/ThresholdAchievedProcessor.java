@@ -18,6 +18,7 @@ package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.customProcessor
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.client.util.Sets;
+import com.google.common.collect.Maps;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -88,20 +90,26 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
 
             // check if user has the achievement already
             pst = conn.prepareStatement(
-                    "SELECT achievement_id FROM user_achievements WHERE user_id = ?;"
+                    "SELECT achievement_id, threshold FROM user_achievements WHERE user_id = ?;"
             );
 
             pst.setLong(1, userId);
 
             ResultSet results = pst.executeQuery();
-            Set<String> achievementsObtained = Sets.newHashSet();
+            Map<String, Set<Long>> achievementsObtained = Maps.newHashMap();
 
             while (results.next()) {
-                achievementsObtained.add(results.getString("achievement_id"));
+
+                if (!achievementsObtained.containsKey(results.getString("achievement_id"))) {
+                    Set<Long> thresholdsObtained = Sets.newHashSet();
+                    achievementsObtained.put(results.getString("achievement_id"), thresholdsObtained);
+                }
+                achievementsObtained.get(results.getString("achievement_id")).add(results.getLong("threshold"));
+
             }
 
             // if not, award it
-            if (!achievementsObtained.contains(achievementId)) {
+            if (!achievementsObtained.containsKey(achievementId) || !achievementsObtained.get(achievementId).contains(threshold)) {
                 pst = conn.prepareStatement(
                         "INSERT INTO user_achievements (user_id, achievement_id, threshold, timestamp)"
                                 + " VALUES (?, ?, ?, ?);"
