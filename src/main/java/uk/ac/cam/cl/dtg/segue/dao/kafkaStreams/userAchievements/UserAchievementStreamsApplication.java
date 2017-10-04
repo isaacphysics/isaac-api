@@ -39,6 +39,7 @@ import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.derivedStreams.T
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.derivedStreams.UserQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.derivedStreams.UserWeeklyStreaks;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.util.Properties;
@@ -54,6 +55,7 @@ public class UserAchievementStreamsApplication {
     private KafkaTopicManager kafkaTopicManager;
     private KafkaStreams streams;
     private PostgresSqlDb database;
+    private IUserAlerts userAlerts;
     private IContentManager contentManager;
     private GameManager gameManager;
     private String contentIndex;
@@ -79,13 +81,15 @@ public class UserAchievementStreamsApplication {
                                              final PostgresSqlDb database,
                                              final IContentManager contentManager,
                                              @Named(CONTENT_INDEX) final String contentIndex,
-                                             final GameManager gameManager) {
+                                             final GameManager gameManager,
+                                             final IUserAlerts userAlerts) {
 
         this.kafkaTopicManager = kafkaTopicManager;
         this.database = database;
         this.contentManager = contentManager;
         this.gameManager = gameManager;
         this.contentIndex = contentIndex;
+        this.userAlerts = userAlerts;
 
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_user-achievements-v-"
@@ -151,7 +155,7 @@ public class UserAchievementStreamsApplication {
     public void streamProcess(final KStream<String, JsonNode> rawStream) {
 
         // user question attempts
-        ThresholdAchievedProcessor achievementProcessor = new ThresholdAchievedProcessor(database);
+        ThresholdAchievedProcessor achievementProcessor = new ThresholdAchievedProcessor(database, userAlerts);
         UserQuestionAttempts.process(rawStream, achievementProcessor, contentManager, contentIndex);
 
         // user activity streaks

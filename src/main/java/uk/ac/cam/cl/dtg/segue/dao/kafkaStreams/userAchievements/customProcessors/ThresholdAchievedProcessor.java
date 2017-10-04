@@ -17,15 +17,20 @@
 package uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.customProcessors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.api.client.util.Sets;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 
 /**
  *  Custom processor to update postgres user achievements
@@ -36,6 +41,7 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
     private static final Logger log = LoggerFactory.getLogger(ThresholdAchievedProcessor.class);
     private ProcessorContext context;
     private PostgresSqlDb postgresDB;
+    private IUserAlerts userAlerts;
 
 
     /**
@@ -44,8 +50,10 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
      * @param postgresDB
      *            client for postgres.
      */
-    public ThresholdAchievedProcessor(final PostgresSqlDb postgresDB) {
+    public ThresholdAchievedProcessor(final PostgresSqlDb postgresDB,
+                                      final IUserAlerts userAlerts) {
         this.postgresDB = postgresDB;
+        this.userAlerts = userAlerts;
     }
 
     @Override
@@ -74,25 +82,50 @@ public class ThresholdAchievedProcessor implements Processor<String, JsonNode> {
         Long threshold = details.path("count").asLong();
         Long timestamp = details.path("latest_attempt").asLong();
 
-
         //handle the event
         PreparedStatement pst;
         try (Connection conn = postgresDB.getDatabaseConnection()) {
 
+            // check if user has the achievement already
             pst = conn.prepareStatement(
-                    "INSERT INTO user_achievements (user_id, achievement_id, threshold, timestamp)"
-                    + " VALUES (?, ?, ?, ?);"
+                    "SELECT achievement_id FROM user_achievements WHERE user_id = ?;"
             );
 
             pst.setLong(1, userId);
-            pst.setString(2, achievementId);
-            pst.setLong(3, threshold);
-            pst.setTimestamp(4, new java.sql.Timestamp(timestamp));
 
-            if (pst.executeUpdate() == 0) {
-                log.error("Unable to save user achievement.");
+            ResultSet results = pst.executeQuery();
+            Set<String> achievementsObtained = Sets.newHashSet();
+
+            while (results.next()) {
+                achievementsObtained.add(results.getString("achievement_id"));
             }
 
+            // if not, award it
+            if (!achievementsObtained.contains(achievementId)) {
+                pst = conn.prepareStatement(
+                        "INSERT INTO user_achievements (user_id, achievement_id, threshold, timestamp)"
+                                + " VALUES (?, ?, ?, ?);"
+                );
+
+                pst.setLong(1, userId);
+                pst.setString(2, achievementId);
+                pst.setLong(3, threshold);
+                pst.setTimestamp(4, new java.sql.Timestamp(timestamp));
+
+                if (pst.executeUpdate() == 0) {
+                    log.error("Unable to save user achievement.");
+                }
+
+                // send user notification
+                try {
+                    userAlerts.createAlert(userId, "You have unlocked an achievement!", "progress");
+                } catch (SegueDatabaseException e) {
+                    e.printStackTrace();
+                }
+
+
+
+            }
 
         } catch (SQLException e) {
             log.error("SQLException: Unable to connect!", e);
