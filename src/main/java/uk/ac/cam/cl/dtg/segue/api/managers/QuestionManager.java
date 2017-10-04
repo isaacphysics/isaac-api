@@ -25,7 +25,6 @@ import java.util.Random;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -36,7 +35,6 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.isaac.configuration.IsaacApplicationRegister;
-import uk.ac.cam.cl.dtg.isaac.configuration.IsaacGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
@@ -46,12 +44,7 @@ import uk.ac.cam.cl.dtg.segue.dos.content.DTOMapping;
 import uk.ac.cam.cl.dtg.segue.dos.content.Question;
 import uk.ac.cam.cl.dtg.segue.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ChoiceQuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.segue.dto.content.SeguePageDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.*;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
@@ -122,7 +115,8 @@ public class QuestionManager {
                 validateQuestionResponse = validator.validateQuestionResponse(question,
                         answerFromUser);
             } catch (ValidatorUnavailableException e) {
-                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":" + e.getMessage());
+                return SegueErrorResponse.getServiceUnavailableResponse(e.getClass().getSimpleName() + ":"
+                        + e.getMessage());
             }
 
             return Response.ok(
@@ -183,6 +177,7 @@ public class QuestionManager {
                 new ArrayList<QuestionDTO>());
 
         this.augmentQuestionObjectWithAttemptInformation(page, questionsToAugment, usersQuestionAttempts);
+        QuestionManager.augmentRelatedQuestionsWithAttemptInformation(page, usersQuestionAttempts);
 
         shuffleChoiceQuestionsChoices(userId, questionsToAugment);
 
@@ -239,6 +234,50 @@ public class QuestionManager {
 
         }
         return page;
+    }
+
+    /**
+     * A mathod which audments related questions with attempt information.
+     * i.e. sets whether the related content summary has been completed.
+     * @param content the content to be augmented.
+     * @param usersQuestionAttempts the user's question attempts.
+     */
+    private static void augmentRelatedQuestionsWithAttemptInformation(
+            final ContentDTO content,
+            final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
+
+        // Check if all question parts have been answered
+        List<ContentSummaryDTO> relatedContents = content.getRelatedContent();
+        if (relatedContents != null) {
+            for (ContentSummaryDTO relatedContentSummary : relatedContents) {
+                int numberOfCorrectQuestionParts = 0;
+                Map<String, List<QuestionValidationResponse>> attemptsAtQuestion =
+                        usersQuestionAttempts.get(relatedContentSummary.getId());
+                if (attemptsAtQuestion != null) {
+                    for (List<QuestionValidationResponse> questionPartAttempts : attemptsAtQuestion.values()) {
+                        for (QuestionValidationResponse questionPartAttempt : questionPartAttempts) {
+                            if (questionPartAttempt.isCorrect()) {
+                                numberOfCorrectQuestionParts++;
+                                break;
+                            }
+                        }
+                    }
+                }
+                int numberOfQuestionParts = relatedContentSummary.getNumberOfQuestionParts();
+                relatedContentSummary.setCompleted(numberOfCorrectQuestionParts >= numberOfQuestionParts);
+            }
+        }
+
+        // for all children recurse
+        List<ContentBaseDTO> children = content.getChildren();
+        if (children != null) {
+            for (ContentBaseDTO child : children) {
+                if (child instanceof ContentDTO) {
+                    ContentDTO childContent = (ContentDTO) child;
+                    QuestionManager.augmentRelatedQuestionsWithAttemptInformation(childContent, usersQuestionAttempts);
+                }
+            }
+        }
     }
 
     /**

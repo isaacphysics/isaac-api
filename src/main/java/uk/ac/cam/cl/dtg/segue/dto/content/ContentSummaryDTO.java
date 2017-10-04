@@ -32,38 +32,14 @@ public class ContentSummaryDTO {
     private String level;
     private List<String> tags;
     private String url;
+    private Boolean completed;
+    private Integer numberOfQuestionParts;
 
     /**
      * Private constructor required for Dozer.
      */
     public ContentSummaryDTO() {
         tags = new ArrayList<String>();
-    }
-
-    /**
-     * Full constructor.
-     * 
-     * @param id
-     *            - id
-     * @param title
-     *            - title
-     * @param type
-     *            - type
-     * @param level
-     *            - level
-     * @param tags
-     *            - tags
-     * @param url
-     *            - url
-     */
-    public ContentSummaryDTO(final String id, final String title, final String type, final String level,
-            final List<String> tags, final String url) {
-        this.id = id;
-        this.type = type;
-        this.level = level;
-        this.tags = tags;
-        this.title = title;
-        this.url = url;
     }
 
     /**
@@ -197,5 +173,43 @@ public class ContentSummaryDTO {
      */
     public void setUrl(final String url) {
         this.url = url;
+    }
+
+    /**
+     * Gets whether the question is completed.
+     *
+     * @return completed
+     */
+    public Boolean getCompleted() {
+        return completed;
+    }
+
+    /**
+     * Sets whether the question has been completed.
+     *
+     * @param completed
+     *            the value to set completion
+     */
+    public void setCompleted(final Boolean completed) {
+        this.completed = completed;
+    }
+
+    /**
+     * Gets the number of question parts.
+     *
+     * @return the number of question parts
+     */
+    public Integer getNumberOfQuestionParts() {
+        return numberOfQuestionParts;
+    }
+
+    /**
+     * Sets the number of question parts.
+     *
+     * @param numberOfQuestionParts
+     *            the numberOfQuestionParts to set
+     */
+    public void setNumberOfQuestionParts(final Integer numberOfQuestionParts) {
+        this.numberOfQuestionParts = numberOfQuestionParts;
     }
 }

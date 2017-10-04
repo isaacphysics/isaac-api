@@ -49,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentBaseDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dto.content.ContentSummaryDTO;
+import uk.ac.cam.cl.dtg.segue.dto.content.QuestionDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
@@ -495,6 +496,7 @@ public class GitContentManager implements IContentManager {
 
         for (ContentDTO relatedContent : results.getResults()) {
             ContentSummaryDTO summary = this.mapper.getAutoMapper().map(relatedContent, ContentSummaryDTO.class);
+            GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
             relatedContentDTOs.add(summary);
         }
 
@@ -530,5 +532,39 @@ public class GitContentManager implements IContentManager {
             return ImmutableMap.of("published", new SimpleFilterInstruction("true"));
         }
         return null;
+    }
+
+    /**
+     * A method which adds information to the contentSummaryDTO, summary, from values evaluated from the content.
+     * @param content the original content object which was used to create the summary.
+     *                Its instance should not get altered from calling this method.
+     * @param summary summary of the content.
+     *                The values of this instance could be changed by this method.
+     */
+    private static void generateDerivedSummaryValues(final ContentDTO content, final ContentSummaryDTO summary) {
+        summary.setNumberOfQuestionParts(GitContentManager.calculateNumberOfQuestionParts(content, 0));
+    }
+
+    /**
+     * Recursively walks through the content object and its children to count the number of question parts in the page.
+     * @param content the content page and, on later invocations, its children.
+     * @param questionPartCount a number to track how many question parts have been seen so far.
+     * @return the number of question parts seen in this contentDTO and its children.
+     */
+    private static int calculateNumberOfQuestionParts(final ContentDTO content, final int questionPartCount) {
+        if (content instanceof QuestionDTO) {
+            return questionPartCount + 1;
+        }
+        int childQuestionPartCount = 0;
+        List<ContentBaseDTO> children = content.getChildren();
+        if (children != null) {
+            for (ContentBaseDTO child : children) {
+                if (child instanceof ContentDTO) {
+                    ContentDTO childContent = (ContentDTO) child;
+                    childQuestionPartCount += calculateNumberOfQuestionParts(childContent, questionPartCount);
+                }
+            }
+        }
+        return questionPartCount + childQuestionPartCount;
     }
 }
