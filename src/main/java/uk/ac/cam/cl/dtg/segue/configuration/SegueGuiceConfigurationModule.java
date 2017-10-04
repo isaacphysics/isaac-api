@@ -113,6 +113,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static KafkaTopicManager kafkaTopicManager = null;
     //private static IStatisticsManager statsManager = null;
 	private static GroupManager groupManager = null;
+	private static IUserAlerts userAlerts = null;
 
 	// kafka streams applications
     private static SiteStatisticsStreamsApplication statisticsStreamsApplication;
@@ -266,6 +267,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(AbstractEmailPreferenceManager.class).to(PgEmailPreferenceManager.class);
 
         bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
+
+        bind(IUserAlerts.class).to(PgUserAlerts.class);
     }
 
     /**

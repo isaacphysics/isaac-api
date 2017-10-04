@@ -292,6 +292,22 @@
 			<classifier>test</classifier>
 			<scope>test</scope>
 		</dependency>
+
+		<!--Jetty JSR-356 Websocket server side dependency -->
+		<dependency>
+			<groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>javax-websocket-server-impl</artifactId>
+			<version>9.3.12.v20160915</version>
+		</dependency>
+
+		<!--Jetty Websocket API server side dependency -->
+		<dependency>
+			<groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>websocket-server</artifactId>
+			<version>9.3.12.v20160915</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
