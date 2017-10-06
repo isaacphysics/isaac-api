@@ -119,7 +119,9 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         try {
             loggedEventsConsumer.subscribe(topics);
 
-            while (true) {
+            Boolean running = true;
+
+            while (running) {
 
                 ConsumerRecords<String, JsonNode> records = loggedEventsConsumer.poll(1000);
                 for (ConsumerRecord<String, JsonNode> record : records) {
@@ -144,6 +146,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                         kafkaProducer.send(producerRecord);
                     }
                 }
+                running = false;
             }
 
         } catch (KafkaException e) {

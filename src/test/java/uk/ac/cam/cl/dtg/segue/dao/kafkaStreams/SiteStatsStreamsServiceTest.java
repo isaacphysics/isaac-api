@@ -39,7 +39,10 @@ import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
@@ -100,7 +103,8 @@ public class SiteStatsStreamsServiceTest {
         driver = new ProcessorTopologyTestDriver(config, builder);
 
         String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
-/*
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         br = new BufferedReader(new FileReader(csvFile));
         while ((line = br.readLine()) != null) {
 
@@ -113,13 +117,13 @@ public class SiteStatsStreamsServiceTest {
                     .put("event_details_type", fields[3])
                     .put("event_details", objectMapper.readTree(fields[4]))
                     .put("ip_address", fields[5])
-                    .put("timestamp", fields[6])
+                    .put("timestamp", dateFormat.parse(fields[6]).getTime())
                     .build();
 
             driver.process("topic_logged_events",
                     fields[0].getBytes(),
                     objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
-        }*/
+        }
     }
 
 
@@ -195,13 +199,54 @@ public class SiteStatsStreamsServiceTest {
         }
     }
 
-    private void assertClassUnchanged(Class c, String hash) {
-        String newHash = ClassVersionHash.hashClass(c);
-        assertEquals("Class '" + c.getSimpleName() + "' has changed - need up to update test and (possibly) Kafka streams application ID version number in SiteStatisticsStreamsApplication.\nNew class hash: " + newHash + "\n", newHash, hash);
+
+    @Test
+    public void userLastSeen_Test() throws Exception {
+
+        HashMap<String, JsonNode> testData = new HashMap<>();
+
+        br = new BufferedReader(new FileReader("C:/dev/isaac-other-resources/kafka-streams-user-last-seen.test"));
+        while ((line = br.readLine()) != null) {
+
+            String[] fields = line.split(csvSplitBy);
+            testData.put(fields[0], objectMapper.readTree(fields[1]));
+        }
+
+        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("store_user_last_seen");
+        KeyValueIterator<String, JsonNode> iter = store.all();
+
+        while (iter.hasNext()) {
+
+            KeyValue<String, JsonNode> entry = iter.next();
+            Iterator<Map.Entry<String, JsonNode>> innerIter = entry.value.fields();
+
+            assertTrue(testData.containsKey(entry.key));
+
+            while (innerIter.hasNext()) {
+
+                Map.Entry<String, JsonNode> innerEntry = innerIter.next();
+
+                if (innerEntry.getValue().asText().equals("last_seen")) {
+                    assertTrue(testData.get(entry.key).has("last_seen") && testData.get(entry.key).path("last_seen").equals(innerEntry.getValue()));
+                } else {
+                    assertTrue(testData.get(entry.key).has(innerEntry.getKey()) && testData.get(entry.key).path(innerEntry.getKey()).equals(innerEntry.getValue()));
+                }
+            }
+        }
+
     }
+
 
     @Test
     public void streamsClassVersions_Test() {
         assertClassUnchanged(SiteStatisticsStreamsApplication.class,"8537da484ac395c4d42c9656652087e274047c8cf5ad1ca0bfd022b387b3221d");
+    }
+
+
+
+
+    private void assertClassUnchanged(Class c, String hash) {
+        String newHash = ClassVersionHash.hashClass(c);
+        assertEquals("Class '" + c.getSimpleName() + "' has changed - need up to update test and (possibly) Kafka streams application ID version number in SiteStatisticsStreamsApplication.\nNew class hash: " + newHash + "\n", newHash, hash);
     }
 }
