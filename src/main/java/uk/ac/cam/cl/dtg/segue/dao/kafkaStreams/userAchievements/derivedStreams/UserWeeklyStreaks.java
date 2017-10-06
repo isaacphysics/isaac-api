@@ -97,19 +97,22 @@ public final class UserWeeklyStreaks {
                             Long latestEventTimestamp = latestEvent.path("timestamp").asLong();
 
                             if (streakStartTimestamp == 0 ||
-                                    ((TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.DAYS) > 8)
+                                    (((streakEndTimestamp != 0 && TimeUnit.DAYS.convert(latestEventTimestamp - streakEndTimestamp, TimeUnit.MILLISECONDS) > 8))
                                     || !getSeasonFromTimestamp(latestEventTimestamp).equals(getSeasonFromTimestamp(streakEndTimestamp)))) {
 
                                 ((ObjectNode) streakRecord).put("streak_start", latestEventTimestamp);
-                                ((ObjectNode) streakRecord).put("streak_end", latestEventTimestamp);
-
-                            } else {
-                                ((ObjectNode) streakRecord).put("streak_start", streakStartTimestamp);
-                                ((ObjectNode) streakRecord).put("streak_end", latestEventTimestamp);
+                                streakStartTimestamp = latestEventTimestamp;
                             }
 
-                            if (TimeUnit.DAYS.convert(latestEventTimestamp - streakStartTimestamp, TimeUnit.DAYS) / 7 > largestStreak)
+                            ((ObjectNode) streakRecord).put("streak_end", latestEventTimestamp);
+
+                            Long weeksSinceStart = TimeUnit.DAYS.convert(latestEventTimestamp - streakStartTimestamp, TimeUnit.MILLISECONDS) / 7;
+                            if (weeksSinceStart > largestStreak) {
+
+                                ((ObjectNode) streakRecord).put("largest_streak", weeksSinceStart);
                                 ((ObjectNode) streakRecord).put("updated", true);
+                            }
+
 
                             return streakRecord;
                         },
@@ -117,7 +120,7 @@ public final class UserWeeklyStreaks {
                         "store_user_streaks")
                 .toStream()
                 .filter(
-                        (userId, streakRecord) -> streakRecord.path("updated").asBoolean()
+                        (userId, streakRecord) -> streakRecord.path("updated").asBoolean() && streakRecord.path("largest_streak").asInt() > 0
                 )
                 .map(
                         (userIdSeasonEventTypeKey, streakRecord) -> {

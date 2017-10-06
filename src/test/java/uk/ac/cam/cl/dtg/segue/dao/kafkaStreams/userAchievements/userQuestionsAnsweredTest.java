@@ -37,6 +37,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentMapper;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.IContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.UserAchievementStreamsApplication;
@@ -45,13 +48,21 @@ import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.customProcessors
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.derivedStreams.TeacherAssignmentActivity;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.derivedStreams.UserQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.userAchievements.derivedStreams.UserWeeklyStreaks;
+import uk.ac.cam.cl.dtg.segue.database.GitDb;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.IUserAlerts;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserAlert;
+import uk.ac.cam.cl.dtg.segue.dos.PgUserAlerts;
+import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.util.ClassVersionHash;
+import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -59,6 +70,7 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_INDEX;
+import static uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule.getReflectionsClass;
 
 /**
  * Test class for the UserAchievementStreamsService class.
@@ -76,7 +88,7 @@ public class userQuestionsAnsweredTest {
     private final Serde<JsonNode> JsonSerde = Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
     private final Serde<String> StringSerde = Serdes.String();
     private final ObjectMapper objectMapper = new ObjectMapper();
-
+    private static PropertiesLoader globalProperties;
 
     /**
      * Initial configuration of tests.
@@ -84,16 +96,31 @@ public class userQuestionsAnsweredTest {
      * @throws Exception
      *             - test exception
      */
-    @Inject
-    public final void setUp(final PostgresSqlDb database,
-                            final IContentManager contentManager,
-                            @Named(CONTENT_INDEX) final String contentIndex,
-                            IUserAlerts userAlerts) throws Exception {
+    @Before
+    public final void setUp() throws Exception {
+
+        globalProperties = new PropertiesLoader("C:/dev/isaac-other-resources/segue-config.properties");
+
         KStreamBuilder builder = new KStreamBuilder();
         Properties streamsConfiguration = new Properties();
 
+        PostgresSqlDb database = new PostgresSqlDb(globalProperties.getProperty(Constants.POSTGRES_DB_URL),
+                globalProperties.getProperty(Constants.POSTGRES_DB_USER),
+                globalProperties.getProperty(Constants.POSTGRES_DB_PASSWORD));
+
+        PgUserAlerts userAlerts = new PgUserAlerts(database);
+
+        GitDb gitDb = new GitDb(globalProperties.getProperty(Constants.LOCAL_GIT_DB), globalProperties
+                .getProperty(Constants.REMOTE_GIT_SSH_URL), globalProperties
+                .getProperty(Constants.REMOTE_GIT_SSH_KEY_PATH));
+
+        GitContentManager contentManager = new GitContentManager(gitDb,
+                new ElasticSearchProvider(ElasticSearchProvider.getTransportClient("isaac", "localhost", 9300)),
+                new ContentMapper(getReflectionsClass("uk.ac.cam.cl.dtg.segue")));
+
+
         // kafka streaming config variables
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "kafka-streams-test-app");
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "kafka-streams-test-badges-app");
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, StringSerde.getClass().getName());
         streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, StringSerde.getClass().getName());
@@ -110,12 +137,16 @@ public class userQuestionsAnsweredTest {
         // parallel log for anonymous events (may want to optimise how we do this later)
         rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events");
 
-        UserQuestionAttempts.process(rawLoggedEvents[0], new ThresholdAchievedProcessor(database, userAlerts), contentManager, contentIndex);
+        //UserQuestionAttempts.process(rawLoggedEvents[0], new ThresholdAchievedProcessor(database, userAlerts), contentManager, Constants.CONTENT_INDEX);
+        UserWeeklyStreaks.process(rawLoggedEvents[0], new ThresholdAchievedProcessor(database, userAlerts));
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
 
-        String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
+        String csvFile = "C:/dev/isaac-other-resources/badges/kafka-streams-test.data";
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         br = new BufferedReader(new FileReader(csvFile));
         while ((line = br.readLine()) != null) {
 
@@ -128,8 +159,10 @@ public class userQuestionsAnsweredTest {
                     .put("event_details_type", fields[3])
                     .put("event_details", objectMapper.readTree(fields[4]))
                     .put("ip_address", fields[5])
-                    .put("timestamp", fields[6])
+                    .put("timestamp", dateFormat.parse(fields[6]).getTime())
                     .build();
+
+            System.out.println(kafkaLogRecord);
 
             driver.process("topic_logged_events",
                     fields[0].getBytes(),
@@ -137,7 +170,28 @@ public class userQuestionsAnsweredTest {
         }
     }
 
-    private void assertClassUnchanged(Class c, String hash) {
+
+
+    @Test
+    public void userWeeklyStreak_Test() throws Exception {
+
+        ReadOnlyKeyValueStore<String, JsonNode> store = driver.getKeyValueStore("store_user_streaks");
+        KeyValueIterator<String, JsonNode> iter = store.all();
+
+        while (iter.hasNext()) {
+
+            KeyValue<String, JsonNode> node = iter.next();
+            System.out.println(node);
+        }
+
+    }
+
+
+
+
+
+
+    /*private void assertClassUnchanged(Class c, String hash) {
         String newHash = ClassVersionHash.hashClass(c);
         assertEquals("Class '" + c.getSimpleName() + "' has changed - need up to update test and (possibly) Kafka streams application ID version number in SiteStatisticsStreamsApplication.\nNew class hash: " + newHash + "\n", newHash, hash);
     }
@@ -153,7 +207,7 @@ public class userQuestionsAnsweredTest {
         assertClassUnchanged(UserWeeklyStreaks.class,"ba3f134b960fc293e84609db505e02a831b451531ed3372be0a5c8c249d6ea23");
         assertClassUnchanged(ThresholdAchievedProcessor.class,"2b794835812b341d30c7d452c27dfd100255077eff26e810e654b5e1361f5bba");
         assertClassUnchanged(AugmentedQuestionDetailMapper.class,"4188da2d1fc1655660ff995b640ec4a6aa12ad85ce8b6af7b961dcf6defb46a5");
-    }
+    }*/
 
 
 }
