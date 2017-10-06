@@ -69,8 +69,10 @@ public class PgUserAlerts implements IUserAlerts {
 
             IUserAlert alert = buildPgUserAlert(results);
 
-            for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(userId)) {
-                listener.notifyAlert(alert);
+            if (UserAlertsWebSocket.connectedSockets.containsKey(userId)) {
+                for(IAlertListener listener : UserAlertsWebSocket.connectedSockets.get(userId)) {
+                    listener.notifyAlert(alert);
+                }
             }
 
             return alert;
