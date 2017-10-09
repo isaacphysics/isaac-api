@@ -33,6 +33,14 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KTable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.users.IUserDataManager;
+import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
+import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
 import java.sql.Timestamp;
@@ -43,9 +51,11 @@ import java.util.Properties;
  *  @author Dan Underwood
  */
 public class SiteStatisticsStreamsApplication {
+    private static final Logger log = LoggerFactory.getLogger(SiteStatisticsStreamsApplication.class);
 
     private KafkaTopicManager kafkaTopicManager;
     private KafkaStreams streams;
+    private static UserAccountManager userManager;
     static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
     static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     static final Serde<String> StringSerde = Serdes.String();
@@ -61,11 +71,15 @@ public class SiteStatisticsStreamsApplication {
      *              - properties object containing global variables
      * @param kafkaTopicManager
      *              - manager for kafka topic administration
+     * @param userManager
+     *              - manager for retrieving user details
      */
     public SiteStatisticsStreamsApplication(final PropertiesLoader globalProperties,
-                                            final KafkaTopicManager kafkaTopicManager) {
+                                            final KafkaTopicManager kafkaTopicManager,
+                                            final UserAccountManager userManager) {
 
         this.kafkaTopicManager = kafkaTopicManager;
+        this.userManager = userManager;
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_site_stats-v-"
                 + globalProperties.getProperty("SITE_STATS_STREAMS_APP_VERSION"));
@@ -90,18 +104,18 @@ public class SiteStatisticsStreamsApplication {
     public void start() {
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events", -1);
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", 7200000);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", -1);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", 7200000);
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events")
+        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_test")
                 .branch(
                         (k, v) -> !v.path("anonymous_user").asBoolean(),
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 );
 
         // parallel log for anonymous events (may want to optimise how we do this later)
-        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events");
+        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events_test");
 
         streamProcess(rawLoggedEvents[0]);
 
@@ -128,7 +142,7 @@ public class SiteStatisticsStreamsApplication {
     public static void streamProcess(KStream<String, JsonNode> rawStream) {
 
         // process user data in local data stores, extract user record related events
-        KTable<String, JsonNode> userData = rawStream
+        /*KTable<String, JsonNode> userData = rawStream
                 .filter(
                         (userId, loggedEvent) -> loggedEvent.path("event_type")
                                 .asText()
@@ -155,12 +169,37 @@ public class SiteStatisticsStreamsApplication {
                         },
                         JsonSerde,
                         "store_user_data"
-                );
+                );*/
 
 
         // join user table to incoming event stream to get user data for stats processing
         KStream<String, JsonNode> userEvents = rawStream
-                .join(
+                .map(
+                        (userId, logEvent) -> {
+
+                            ObjectNode newValueRecord = JsonNodeFactory.instance.objectNode();
+
+                            try {
+
+                                RegisteredUserDTO user = userManager.getUserDTOById(Long.parseLong(userId));
+
+                                newValueRecord.put("user_id", user.getId());
+                                newValueRecord.put("user_role", (user.getRole() != null) ? user.getRole().name() : "");
+                                newValueRecord.put("user_gender", (user.getGender() != null) ? user.getGender().name() : "");
+                            } catch (SegueDatabaseException e) {
+                                log.error("Unable to access database", e);
+                            } catch (NoUserException e) {
+                                log.error("Unable to get user data from database", e);
+                            }
+
+                            newValueRecord.put("event_type", logEvent.path("event_type").asText());
+                            newValueRecord.put("event_details", logEvent.path("event_details"));
+                            newValueRecord.put("timestamp", logEvent.path("timestamp").asLong());
+
+                            return new KeyValue<String, JsonNode>(userId, newValueRecord);
+                        }
+                );
+                /*.join(
                         userData,
                         (logEventVal, userDataVal) -> {
                             ObjectNode joinedValueRecord = JsonNodeFactory.instance.objectNode();
@@ -174,7 +213,7 @@ public class SiteStatisticsStreamsApplication {
 
                             return joinedValueRecord;
                         }
-                );
+                );*/
 
 
         // maintain internal store of users' last seen times by log event type, and counts per event type

@@ -107,9 +107,9 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         // get user records from local kafka store
         // this is much faster than accessing postgres
-        ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
+        /*ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                statisticsStreamsApplication.getStream());
+                statisticsStreamsApplication.getStream());*/
 
         // get user activity data from local kafka store
         ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
@@ -120,7 +120,8 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         Map<String, Object> gender = Maps.newHashMap();
         Map<String, Object> role = Maps.newHashMap();
 
-        KeyValueIterator<String, JsonNode> it = userStore.all();
+        //KeyValueIterator<String, JsonNode> it = userStore.all();
+        Iterator<RegisteredUserDTO> it = userManager.findUsers(new RegisteredUserDTO()).iterator();
 
         Integer userCount = 0;
 
@@ -162,18 +163,24 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         while (it.hasNext()) {
 
-            JsonNode userData = it.next().value.path("user_data");
+            //JsonNode userData = it.next().value.path("user_data");
+            RegisteredUserDTO user = it.next();
 
             try {
 
                 userCount++;
 
-                String userId = userData.path("user_id").asText();
+                /*String userId = userData.path("user_id").asText();
                 String usrGender = userData.path("gender").asText();
                 String usrRole = userData.path("role").asText();
 
                 Integer usrSchoolId = userData.path("school_id").asInt();
-                String usrSchoolOther = userData.path("school_other").asText();
+                String usrSchoolOther = userData.path("school_other").asText();*/
+                String userId = String.valueOf(user.getId());
+                String usrGender = (user.getGender() != null) ? user.getGender().name() : "";
+                String usrRole = (user.getRole() != null) ? user.getRole().name() : "";
+                String usrSchoolId = (user.getSchoolId() != null) ? user.getSchoolId() : "";
+                String usrSchoolOther = (user.getSchoolOther() != null) ? user.getSchoolOther() : "";
 
                 JsonNode userLastSeenData = userLastSeenStore.get(userId);
                 Long lastSeen = userLastSeenData.path("last_seen").asLong();
@@ -209,7 +216,8 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
                 // schools
-                if ((usrSchoolId.toString().equals("0") || usrSchoolId.toString().equals("")) && usrSchoolOther.equals("")) {
+                if ((usrSchoolId.equals("0") || usrSchoolId == null || usrSchoolId.equals(""))
+                        && (usrSchoolOther.equals("") || usrSchoolOther == null)) {
                     hasNoSchoolCount++;
                 } else {
                     hasSchoolCount++;

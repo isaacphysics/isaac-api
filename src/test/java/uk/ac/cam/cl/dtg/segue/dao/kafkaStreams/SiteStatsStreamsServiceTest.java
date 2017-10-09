@@ -39,8 +39,6 @@ import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -102,7 +100,7 @@ public class SiteStatsStreamsServiceTest {
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
-        String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
+        /*String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         br = new BufferedReader(new FileReader(csvFile));
@@ -123,7 +121,7 @@ public class SiteStatsStreamsServiceTest {
             driver.process("topic_logged_events",
                     fields[0].getBytes(),
                     objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
-        }
+        }*/
     }
 
 
@@ -238,8 +236,8 @@ public class SiteStatsStreamsServiceTest {
 
 
     @Test
-    public void streamsClassVersions_Test() {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"8537da484ac395c4d42c9656652087e274047c8cf5ad1ca0bfd022b387b3221d");
+    public void streamsClassVersions_Test() throws Exception {
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"6a0d06bf02fd90fd95bb41fdadca81a3c1fabf8950d709243663ac44ef98a0ec");
     }
 
 

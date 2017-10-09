@@ -15,6 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.database;
 
+import org.apache.commons.lang3.Validate;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -41,6 +42,8 @@ public class KafkaStreamsProducer implements Closeable {
     private Set<String> topicListCache = Collections.emptySet();
 
     public KafkaStreamsProducer(final String kafkaHost, final String kafkaPort, final KafkaTopicManager topicManager) {
+        Validate.notBlank(kafkaHost);
+        Validate.notBlank(kafkaPort);
 
         Properties props = new Properties();
         props.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, kafkaHost + ":" + kafkaPort);
@@ -59,7 +62,9 @@ public class KafkaStreamsProducer implements Closeable {
         return this.producer;
     }
 
-    public void send(ProducerRecord<String, String> record) throws KafkaException {
+    public void send(ProducerRecord<String, String> record) throws KafkaException, NullPointerException  {
+        Validate.notBlank(record.key());
+
         if (!topicListCache.contains(record.topic())) {
             topicManager.ensureTopicExists(record.topic(), 0);
             topicListCache = topicManager.listTopics();

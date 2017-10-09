@@ -78,8 +78,8 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         this.kafkaPort = kafkaPort;
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events", -1);
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events", 7200000);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", -1);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", 7200000);
     }
 
 
@@ -89,10 +89,10 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.publishLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        (httpRequest != null) ? getClientIpAddr(httpRequest) : null);
             } else {
                 this.publishLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        (httpRequest != null) ? getClientIpAddr(httpRequest) : null);
             }
 
         } catch (JsonProcessingException e) {
@@ -114,7 +114,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
         KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props);
         ArrayList<String> topics = Lists.newArrayList();
-        topics.add("topic_anonymous_logged_events");
+        topics.add("topic_anonymous_logged_events_test");
 
         try {
             loggedEventsConsumer.subscribe(topics);
@@ -140,7 +140,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                         kafkaLogRecord.put("timestamp", record.value().path("timestamp").asText());
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord producerRecord = new ProducerRecord<String, JsonNode>("topic_logged_events", newUserId,
+                        ProducerRecord producerRecord = new ProducerRecord<String, JsonNode>("topic_logged_events_test", newUserId,
                                 kafkaLogRecord);
 
                         kafkaProducer.send(producerRecord);
@@ -185,12 +185,12 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 .put("event_type", logEvent.getEventType())
                 .put("event_details_type", logEvent.getEventDetailsType())
                 .put("event_details", logEvent.getEventDetails())
-                .put("ip_address", logEvent.getIpAddress())
+                .put("ip_address", (logEvent.getIpAddress() != null) ? logEvent.getIpAddress() : "")
                 .put("timestamp", logEvent.getTimestamp())
                 .build();
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", logEvent.getUserId(),
+        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", logEvent.getUserId(),
                 objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {

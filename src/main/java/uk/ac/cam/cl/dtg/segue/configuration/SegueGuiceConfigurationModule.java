@@ -257,8 +257,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
-        //bind(IUserDataManager.class).to(PgUsers.class);
-        bind(IUserDataManager.class).to(KafkaUsers.class);
+        bind(IUserDataManager.class).to(PgUsers.class);
+        //bind(IUserDataManager.class).to(KafkaUsers.class);
 
         bind(IPasswordDataManager.class).to(PgPasswordDataManager.class);
 
@@ -702,7 +702,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         if (null == statisticsStreamsApplication) {
 
             log.info("Creating singleton of Site Stats Kafka Streams Application.");
-            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager);
+            statisticsStreamsApplication = new SiteStatisticsStreamsApplication(globalProperties, kafkaTopicManager, userManager);
             statisticsStreamsApplication.start();
         }
         return statisticsStreamsApplication;
