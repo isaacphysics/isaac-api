@@ -201,9 +201,14 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         Validate.notNull(userToAttachToken);
 
         LocalUserCredential luc = passwordDataManager.getLocalUserCredential(userToAttachToken.getId());
-        if (null == luc || null == luc.getPassword() || null == luc.getSecureSalt()) {
-            log.debug(String.format("No credentials available for this account id (%s)", luc.getUserId()));
-            throw new NoCredentialsAvailableException("This user does not have any local credentials setup.");
+        if (null == luc) {
+            // create a new luc as this user didn't have one before - they won't ever be able to login with this
+            luc = new LocalUserCredential(userToAttachToken.getId(),
+                    "LOCKED@" + new String(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH)),
+                    new String(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(), SHORT_KEY_LENGTH)),
+                    this.preferredAlgorithm.hashingAlgorithmName());
         }
 
         // Trim the "=" padding off the end of the base64 encoded token so that the URL that is
@@ -211,7 +216,6 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
         String token = new String(Base64.encodeBase64(this.preferredAlgorithm.computeHash(UUID.randomUUID().toString(),
                 luc.getSecureSalt(), SHORT_KEY_LENGTH))).replace("=", "").replace("/", "")
                 .replace("+", "");
-
 
         luc.setResetToken(token);
 
