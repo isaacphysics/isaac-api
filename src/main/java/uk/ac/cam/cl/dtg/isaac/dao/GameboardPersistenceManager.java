@@ -697,7 +697,7 @@ public class GameboardPersistenceManager {
 			Map<Map.Entry<Constants.BooleanOperator, String>, List<String>> fieldsToMap = Maps.newHashMap();
 			fieldsToMap.put(
 					immutableEntry(Constants.BooleanOperator.OR, Constants.ID_FIELDNAME + '.'
-							+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIds);
+							+ Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX), questionIdBatch);
 
 			fieldsToMap.put(immutableEntry(Constants.BooleanOperator.OR, Constants.TYPE_FIELDNAME),
 					Arrays.asList(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE));
