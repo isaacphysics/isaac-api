@@ -74,7 +74,7 @@ public class KafkaUsers implements IUserDataManager {
         } catch (KafkaException kex) {
             kex.printStackTrace();
         } catch (JsonProcessingException jex) {
-
+            jex.printStackTrace();
         }
 
         return regUser;
