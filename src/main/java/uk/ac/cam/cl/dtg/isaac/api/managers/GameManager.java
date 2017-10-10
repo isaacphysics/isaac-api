@@ -449,10 +449,10 @@ public class GameManager {
             return gameboardDTO;
         }
 
-        int totalUnavailable = 0;
         boolean gameboardStarted = false;
         List<GameboardItem> questions = gameboardDTO.getQuestions();
-        List<Float> questionPercentages = Lists.newArrayList();
+        int totalNumberOfQuestionsParts = 0;
+        int totalNumberOfCorrectQuestionParts = 0;
         for (GameboardItem gameItem : questions) {
             try {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
@@ -460,20 +460,16 @@ public class GameManager {
                 log.info(String.format(
                         "A question is unavailable (%s) - treating it as if it never existed for marking.",
                         gameItem.getId()));
-                totalUnavailable++;
                 continue;
             }
             if (!gameboardStarted && !gameItem.getState().equals(Constants.GameboardItemState.NOT_ATTEMPTED)) {
                 gameboardStarted = true;
                 gameboardDTO.setStartedQuestion(gameboardStarted);
             }
-            questionPercentages.add(
-                    100f * new Float(gameItem.getQuestionPartsCorrect()) / gameItem.getQuestionPartsTotal());
+            totalNumberOfQuestionsParts += gameItem.getQuestionPartsTotal();
+            totalNumberOfCorrectQuestionParts += gameItem.getQuestionPartsCorrect();
         }
-        int numberOfValidQuestions = questions.size() - totalUnavailable;
-        float boardPercentage = questionPercentages.stream()
-                .map(questionPercentage -> questionPercentage / numberOfValidQuestions)
-                .reduce(0f, (a, b) -> a + b);
+        float boardPercentage = 100f * totalNumberOfCorrectQuestionParts / totalNumberOfQuestionsParts;
         gameboardDTO.setPercentageCompleted((int) Math.round(boardPercentage));
         
         if (user instanceof RegisteredUserDTO) {
@@ -1025,8 +1021,8 @@ public class GameManager {
         gameItem.setQuestionPartsCorrect(questionPartsCorrect);
         gameItem.setQuestionPartsIncorrect(questionPartsIncorrect);
         gameItem.setQuestionPartsNotAttempted(questionPartsNotAttempted);
-
-        Integer questionPartsTotal = gameItem.getQuestionPartsTotal();
+        Integer questionPartsTotal = questionPartsCorrect + questionPartsIncorrect + questionPartsNotAttempted;
+        gameItem.setQuestionPartsTotal(questionPartsTotal);
         Float percentCorrect = 100f * new Float(questionPartsCorrect) / questionPartsTotal;
         Float percentIncorrect = 100f * new Float(questionPartsIncorrect) / questionPartsTotal;
 

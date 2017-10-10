@@ -504,13 +504,6 @@ public class UserAuthenticationManager {
             IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                     .get(AuthenticationProvider.SEGUE);
 
-            if (this.database.hasALinkedAccount(userDO)
-                    && !authenticator.hasPasswordRegistered(userDO)) {
-                // User is not authenticated locally - tell them to use their provider(s)
-                this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO);
-                return;
-            }
-
             // User is valid and authenticated locally, proceed with reset
             // Generate token
             String token = authenticator.createPasswordResetTokenForUser(userDO);
@@ -520,9 +513,16 @@ public class UserAuthenticationManager {
                     String.format("https://%s/resetpassword/%s",
                             properties.getProperty(HOST_NAME), token));
 
-            this.emailManager.sendTemplatedEmailToUser(userAsDTO,
-                    emailManager.getEmailTemplateDTO("email-template-password-reset"),
-                    emailValues, EmailType.SYSTEM);
+            if (this.database.hasALinkedAccount(userDO)
+                    && !authenticator.hasPasswordRegistered(userDO)) {
+                // User is not authenticated locally - allow them to reset their password but tell them about providers
+                this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO, emailValues);
+            } else {
+                this.emailManager.sendTemplatedEmailToUser(userAsDTO,
+                        emailManager.getEmailTemplateDTO("email-template-password-reset"),
+                        emailValues, EmailType.SYSTEM);
+            }
+
         } catch (ContentManagerException e) {
             log.error("ContentManagerException " + e.getMessage());
         } catch (NoCredentialsAvailableException e) {
@@ -578,12 +578,14 @@ public class UserAuthenticationManager {
      *            - a user with the givenName, email and token fields set
      * @param userAsDTO
      *            - A user DTO object sanitised so that we can send it to the email manager.
+     * @param additionalEmailValues
+     *            - Additional email values to find and replace including any password reset urls.
      * @throws CommunicationException
      *             - if a fault occurred whilst sending the communique
      * @throws SegueDatabaseException
      *             - If there is an internal database error.
      */
-    private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO)
+    private void sendFederatedAuthenticatorResetMessage(final RegisteredUser user, final RegisteredUserDTO userAsDTO, final Map<String, Object> additionalEmailValues)
             throws CommunicationException,
             SegueDatabaseException {
         Validate.notNull(user);
@@ -626,12 +628,12 @@ public class UserAuthenticationManager {
         try {
             Map<String, Object> emailTokens = ImmutableMap.of("providerString", providersString,
                     "providerWord", providerWord);
+            emailTokens.putAll(additionalEmailValues);
 
             emailManager.sendTemplatedEmailToUser(userAsDTO,
                     emailManager.getEmailTemplateDTO("email-template-federated-password-reset"),
                     emailTokens, EmailType.SYSTEM);
 
-            //emailManager.sendFederatedPasswordReset(userAsDTO, providersString, providerWord);
         } catch (ContentManagerException contentException) {
             log.error(String.format("Error sending federated email verification message - %s", 
                             contentException.getMessage()));

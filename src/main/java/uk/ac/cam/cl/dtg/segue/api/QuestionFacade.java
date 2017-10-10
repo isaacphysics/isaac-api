@@ -29,6 +29,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.AnonQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
+import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.QuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -48,6 +49,7 @@ import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -191,6 +193,7 @@ public class QuestionFacade extends AbstractSegueFacade {
             // We store response.getEntity() in either case so that we can treat them the same in later analysis.
             if (currentUser instanceof RegisteredUserDTO) {
                 try {
+                    // Monitor misuse on a per-question per-registered user basis, with higher limits:
                     misuseMonitor.notifyEvent(((RegisteredUserDTO) currentUser).getId().toString() + "|" + questionId,
                             QuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
@@ -200,11 +203,24 @@ public class QuestionFacade extends AbstractSegueFacade {
                 }
             } else {
                 try {
+                    // Monitor misuse on a per-question per-anonymous user basis:
                     misuseMonitor.notifyEvent(((AnonymousUserDTO) currentUser).getSessionId() + "|" + questionId,
                             AnonQuestionAttemptMisuseHandler.class.toString());
                 } catch (SegueResourceMisuseException e) {
                     this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
                     String message = "You have made too many attempts at this question part. Please log in or try again later.";
+                    return SegueErrorResponse.getRateThrottledResponse(message);
+                }
+                try {
+                    // And monitor on a blanket per IP Address basis for non-logged in users.
+                    // If we see serious misuse, this could be moved to *before* the attempt validation and checking,
+                    // to save server load. Since this occurs after the anon user notify event, that will catch most
+                    // misuse and this will catch misuse ignoring cookies or with repeated new anon accounts.
+                    misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request),
+                            IPQuestionAttemptMisuseHandler.class.toString());
+                } catch (SegueResourceMisuseException e) {
+                    this.getLogManager().logEvent(currentUser, request, QUESTION_ATTEMPT_RATE_LIMITED, response.getEntity());
+                    String message = "Too many question attempts! Please log in or try again later.";
                     return SegueErrorResponse.getRateThrottledResponse(message);
                 }
             }

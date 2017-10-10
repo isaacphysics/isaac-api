@@ -309,8 +309,8 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         // Stop users logging in who have already locked their account.
         if (misuseMonitor.hasMisused(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
                 SegueLoginMisuseHandler.class.toString())) {
-            log.error("Segue Login Blocked for: " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
-                    + " rate limited - too many logins.");
+            log.error("Segue Login Blocked for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                    + "). Rate limited - too many logins.");
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
 
@@ -328,12 +328,12 @@ public class AuthenticationFacade extends AbstractSegueFacade {
                 misuseMonitor.notifyEvent(credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME).toLowerCase(),
                         SegueLoginMisuseHandler.class.toString());
 
-                log.info("Incorrect credentials received for " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
-                        + " Error reason: " + e.getClass() + " message: " + e.getMessage());
+                log.info("Incorrect credentials received for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                        + "). Error reason: " + e.getMessage());
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
-                log.error("Segue Login Blocked for: " + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
-                        + " rate limited - too many logins.");
+                log.error("Segue Login Blocked for (" + credentials.get(LOCAL_AUTH_EMAIL_FIELDNAME)
+                        + "). Rate limited - too many logins.");
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
         } catch (SegueDatabaseException e) {
