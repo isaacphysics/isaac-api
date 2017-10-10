@@ -232,7 +232,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
 
             if (null == groupIdOfInterest) {
-                return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser)).build();
+                return Response.ok(this.assignmentManager.getAllAssignmentsSetByUser(currentlyLoggedInUser))
+                        .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
             } else {
                 UserGroupDTO group = this.groupManager.getGroupById(groupIdOfInterest);
 
