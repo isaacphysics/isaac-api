@@ -55,7 +55,7 @@ public class SiteStatisticsStreamsApplication {
 
     private KafkaTopicManager kafkaTopicManager;
     private KafkaStreams streams;
-    private static UserAccountManager userManager;
+    //private static UserAccountManager userManager;
     static final Serializer<JsonNode> JsonSerializer = new JsonSerializer();
     static final Deserializer<JsonNode> JsonDeserializer = new JsonDeserializer();
     static final Serde<String> StringSerde = Serdes.String();
@@ -75,11 +75,11 @@ public class SiteStatisticsStreamsApplication {
      *              - manager for retrieving user details
      */
     public SiteStatisticsStreamsApplication(final PropertiesLoader globalProperties,
-                                            final KafkaTopicManager kafkaTopicManager,
-                                            final UserAccountManager userManager) {
+                                            final KafkaTopicManager kafkaTopicManager) {
+                                            //final UserAccountManager userManager) {
 
         this.kafkaTopicManager = kafkaTopicManager;
-        this.userManager = userManager;
+        //this.userManager = userManager;|
 
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_site_stats-v-"
                 + globalProperties.getProperty("SITE_STATS_STREAMS_APP_VERSION"));
@@ -142,7 +142,7 @@ public class SiteStatisticsStreamsApplication {
     public static void streamProcess(KStream<String, JsonNode> rawStream) {
 
         // process user data in local data stores, extract user record related events
-        /*KTable<String, JsonNode> userData = rawStream
+        KTable<String, JsonNode> userData = rawStream
                 .filter(
                         (userId, loggedEvent) -> loggedEvent.path("event_type")
                                 .asText()
@@ -169,12 +169,12 @@ public class SiteStatisticsStreamsApplication {
                         },
                         JsonSerde,
                         "store_user_data"
-                );*/
+                );
 
 
         // join user table to incoming event stream to get user data for stats processing
         KStream<String, JsonNode> userEvents = rawStream
-                .map(
+                /*.map(
                         (userId, logEvent) -> {
 
                             ObjectNode newValueRecord = JsonNodeFactory.instance.objectNode();
@@ -198,8 +198,8 @@ public class SiteStatisticsStreamsApplication {
 
                             return new KeyValue<String, JsonNode>(userId, newValueRecord);
                         }
-                );
-                /*.join(
+                );*/
+                .join(
                         userData,
                         (logEventVal, userDataVal) -> {
                             ObjectNode joinedValueRecord = JsonNodeFactory.instance.objectNode();
@@ -213,7 +213,7 @@ public class SiteStatisticsStreamsApplication {
 
                             return joinedValueRecord;
                         }
-                );*/
+                );
 
 
         // maintain internal store of users' last seen times by log event type, and counts per event type

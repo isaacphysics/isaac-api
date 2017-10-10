@@ -39,6 +39,8 @@ import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -100,7 +102,7 @@ public class SiteStatsStreamsServiceTest {
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
-        /*String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
+        String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         br = new BufferedReader(new FileReader(csvFile));
@@ -121,7 +123,7 @@ public class SiteStatsStreamsServiceTest {
             driver.process("topic_logged_events",
                     fields[0].getBytes(),
                     objectMapper.writeValueAsString(kafkaLogRecord).getBytes());
-        }*/
+        }
     }
 
 
@@ -139,16 +141,16 @@ public class SiteStatsStreamsServiceTest {
 
             Map<String, Object> userRecord = new ImmutableMap.Builder<String, Object>()
                     .put("user_id", fields[0])
-                    .put("family_name", fields[1])
-                    .put("given_name", fields[2])
+                    //.put("family_name", fields[1])
+                    //.put("given_name", fields[2])
                     .put("role", fields[3])
-                    .put("date_of_birth", fields[4])
+                    //.put("date_of_birth", fields[4])
                     .put("gender", fields[5])
-                    .put("registration_date", fields[6])
+                    //.put("registration_date", fields[6])
                     .put("school_id", fields[7])
                     .put("school_other", fields[8])
-                    .put("default_level", fields[9])
-                    .put("email_verification_status", fields[10])
+                    //.put("default_level", fields[9])
+                    //.put("email_verification_status", fields[10])
                     .build();
 
             testData.put(fields[0], userRecord);
@@ -161,11 +163,9 @@ public class SiteStatsStreamsServiceTest {
 
             KeyValue<String, JsonNode> entry = iter.next();
 
-            String test = testData.get(entry.key).get("family_name").toString();
-
             assertTrue(testData.containsKey(entry.key)
-                    && (testData.get(entry.key).get("family_name").toString().equals(entry.value.path("user_data").path("family_name").asText()))
-                    && (testData.get(entry.key).get("given_name").toString().equals(entry.value.path("user_data").path("given_name").asText()))
+                    //&& (testData.get(entry.key).get("family_name").toString().equals(entry.value.path("user_data").path("family_name").asText()))
+                    //&& (testData.get(entry.key).get("given_name").toString().equals(entry.value.path("user_data").path("given_name").asText()))
                     && (testData.get(entry.key).get("gender").toString().equals(entry.value.path("user_data").path("gender").asText()))
                     && (testData.get(entry.key).get("role").toString().equals(entry.value.path("user_data").path("role").asText()))
             );
@@ -237,7 +237,7 @@ public class SiteStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"6a0d06bf02fd90fd95bb41fdadca81a3c1fabf8950d709243663ac44ef98a0ec");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"00f43a7f4fe5e698e31c8123d83f12f863a8cbf1a5c1c35c958840cbafcd3740");
     }
 
 
