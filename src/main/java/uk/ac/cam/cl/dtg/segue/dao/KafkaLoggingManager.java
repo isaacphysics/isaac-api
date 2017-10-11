@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.lang3.Validate;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -109,10 +110,11 @@ public class KafkaLoggingManager extends LoggingEventHandler {
     public void transferLogEventsToRegisteredUser(final String oldUserId, final String newUserId) {
 
         Properties props = new Properties();
-        props.put("bootstrap.servers",  kafkaHost + ":" + kafkaPort);
-        props.put("key.deserializer", StringDeserializer.class.getName());
-        props.put("value.deserializer", JsonDeserializer.class.getName());
-        props.put("group.id", oldUserId);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,  kafkaHost + ":" + kafkaPort);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class.getName());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, oldUserId);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props);
         ArrayList<String> topics = Lists.newArrayList();
@@ -131,19 +133,19 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
                     if (record.value().path("user_id").asText().equals(oldUserId)) {
 
-                        ObjectNode kafkaLogRecord = JsonNodeFactory.instance.objectNode();
-
-                        kafkaLogRecord.put("user_id", newUserId);
-                        kafkaLogRecord.put("anonymous_user", false);
-                        kafkaLogRecord.put("event_type", record.value().path("event_type").asText());
-                        kafkaLogRecord.put("event_details_type", record.value().path("event_details_type").asText());
-                        kafkaLogRecord.put("event_details", record.value().path("event_details"));
-                        kafkaLogRecord.put("ip_address", record.value().path("ip_address").asText());
-                        kafkaLogRecord.put("timestamp", record.value().path("timestamp").asText());
+                        Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
+                                .put("user_id", newUserId)
+                                .put("anonymous_user", false)
+                                .put("event_type", record.value().path("event_type").asText())
+                                .put("event_details_type", record.value().path("event_details_type").asText())
+                                .put("event_details", record.value().path("event_details"))
+                                .put("ip_address", (record.value().path("ip_address").asText() != null) ? record.value().path("ip_address").asText() : "")
+                                .put("timestamp", record.value().path("timestamp").asText())
+                                .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord producerRecord = new ProducerRecord<String, JsonNode>("topic_logged_events_test", newUserId,
-                                kafkaLogRecord);
+                        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", newUserId,
+                                objectMapper.writeValueAsString(kafkaLogRecord));
 
                         kafkaProducer.send(producerRecord);
                     }
@@ -153,6 +155,8 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
         } catch (KafkaException e) {
             e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            log.error("Could not process Json document: " + e);
         } finally {
             loggedEventsConsumer.close();
         }
