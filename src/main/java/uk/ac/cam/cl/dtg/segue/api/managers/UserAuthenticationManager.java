@@ -44,6 +44,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IFederatedAuthenticator;
@@ -317,6 +318,21 @@ public class UserAuthenticationManager {
             log.debug("We cannot read the session information. It probably doesn't exist");
             // assuming that no user is logged in.
             return null;
+        }
+
+        // Check if the request originated from Isaac:
+        String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
+        if (null == referrer) {
+            log.warn("Authenticated request had no 'Referer' information set!");
+        } else if (!referrer.startsWith("https://" + Constants.HOST_NAME)) {
+            log.warn("Authenticated request had non-Isaac 'Referer': '" + referrer + "'");
+        }
+        String origin = request.getHeader("Origin");
+        boolean isPostRequest = "POST".equals(request.getMethod());
+        if (isPostRequest && null == origin) {
+            log.warn("Authenticated POST request had no 'Origin' information!");
+        } else if (isPostRequest && !origin.startsWith("https://" + Constants.HOST_NAME)) {
+            log.warn("Authenticated request had non-Isaac 'Origin': '" + origin + "'");
         }
 
         // check if the users session is valid.
