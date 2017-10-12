@@ -779,7 +779,7 @@ public class UserAuthenticationManager {
      *            - map containing session information retrieved from the cookie.
      * @return true if it is still valid, false if not.
      */
-    private boolean isValidUsersSession(final Map<String, String> sessionInformation) {
+    public boolean isValidUsersSession(final Map<String, String> sessionInformation) {
         Validate.notNull(sessionInformation);
 
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));

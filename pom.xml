@@ -269,13 +269,45 @@
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
-			<version>0.10.2.0</version>
+			<version>0.11.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-streams</artifactId>
-			<version>0.10.2.0</version>
+			<version>0.11.0.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-streams</artifactId>
+			<version>0.11.0.0</version>
+			<classifier>test</classifier>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
+			<version>0.11.0.0</version>
+			<classifier>test</classifier>
+			<scope>test</scope>
+		</dependency>
+
+		<!--Jetty JSR-356 Websocket server side dependency -->
+		<dependency>
+			<groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>javax-websocket-server-impl</artifactId>
+			<version>9.3.12.v20160915</version>
+		</dependency>
+
+		<!--Jetty Websocket API server side dependency -->
+		<dependency>
+			<groupId>org.eclipse.jetty.websocket</groupId>
+			<artifactId>websocket-server</artifactId>
+			<version>9.3.12.v20160915</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
