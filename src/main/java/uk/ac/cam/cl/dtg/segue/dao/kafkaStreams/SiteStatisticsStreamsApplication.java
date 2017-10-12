@@ -81,8 +81,7 @@ public class SiteStatisticsStreamsApplication {
         this.kafkaTopicManager = kafkaTopicManager;
         //this.userManager = userManager;|
 
-        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_site_stats-v-"
-                + globalProperties.getProperty("SITE_STATS_STREAMS_APP_VERSION"));
+        streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "streamsapp_site_stats-v1.0");
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
                 globalProperties.getProperty("KAFKA_HOSTNAME") + ":" + globalProperties.getProperty("KAFKA_PORT"));
         streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, globalProperties.getProperty("KAFKA_STREAMS_STATE_DIR"));
