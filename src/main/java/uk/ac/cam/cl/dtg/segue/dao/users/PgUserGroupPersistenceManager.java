@@ -288,6 +288,6 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      */
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-                set.getDate("created"));
+                set.getDate("created"), set.getBoolean("archived"));
     }
 }

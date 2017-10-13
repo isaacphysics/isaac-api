@@ -87,7 +87,7 @@ public class GroupManager {
         Validate.notBlank(groupName);
         Validate.notNull(groupOwner);
 
-        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), new Date());
+        UserGroup group = new UserGroup(null, groupName, groupOwner.getId(), new Date(), false);
 
         return this.convertGroupToDTO(groupDatabase.createGroup(group));
     }
