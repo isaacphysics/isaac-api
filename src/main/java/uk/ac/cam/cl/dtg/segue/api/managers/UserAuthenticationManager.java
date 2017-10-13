@@ -37,6 +37,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.collect.Maps;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.codec.binary.Base64;
@@ -504,8 +505,10 @@ public class UserAuthenticationManager {
             IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                     .get(AuthenticationProvider.SEGUE);
 
-            // User is valid and authenticated locally, proceed with reset
-            // Generate token
+            // Before we create a reset token, record if they already have a password:
+            boolean userHadPasswordRegistered = authenticator.hasPasswordRegistered(userDO);
+
+            // Generate reset token, whether or not they have a local password set up:
             String token = authenticator.createPasswordResetTokenForUser(userDO);
             log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
 
@@ -513,9 +516,9 @@ public class UserAuthenticationManager {
                     String.format("https://%s/resetpassword/%s",
                             properties.getProperty(HOST_NAME), token));
 
-            if (this.database.hasALinkedAccount(userDO)
-                    && !authenticator.hasPasswordRegistered(userDO)) {
-                // User is not authenticated locally - allow them to reset their password but tell them about providers
+            if (this.database.hasALinkedAccount(userDO) && !userHadPasswordRegistered) {
+                // If user wasn't previously authenticated locally, and has a linked account
+                // allow them to reset their password but tell them about their provider(s):
                 this.sendFederatedAuthenticatorResetMessage(userDO, userAsDTO, emailValues);
             } else {
                 this.emailManager.sendTemplatedEmailToUser(userAsDTO,
@@ -626,8 +629,9 @@ public class UserAuthenticationManager {
         }
 
         try {
-            Map<String, Object> emailTokens = ImmutableMap.of("providerString", providersString,
-                    "providerWord", providerWord);
+            Map<String, Object> emailTokens = Maps.newHashMap();
+            emailTokens.putAll(ImmutableMap.of("providerString", providersString,
+                    "providerWord", providerWord));
             emailTokens.putAll(additionalEmailValues);
 
             emailManager.sendTemplatedEmailToUser(userAsDTO,
@@ -775,7 +779,7 @@ public class UserAuthenticationManager {
      *            - map containing session information retrieved from the cookie.
      * @return true if it is still valid, false if not.
      */
-    private boolean isValidUsersSession(final Map<String, String> sessionInformation) {
+    public boolean isValidUsersSession(final Map<String, String> sessionInformation) {
         Validate.notNull(sessionInformation);
 
         Integer sessionExpiryTimeInSeconds = Integer.parseInt(properties.getProperty(SESSION_EXPIRY_SECONDS));

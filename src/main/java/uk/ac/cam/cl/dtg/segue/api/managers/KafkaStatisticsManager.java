@@ -17,7 +17,7 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
+import uk.ac.cam.cl.dtg.segue.dao.kafkaStreams.SiteStatisticsStreamsApplication;
 import uk.ac.cam.cl.dtg.segue.dos.users.Gender;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
 import uk.ac.cam.cl.dtg.segue.dos.users.School;
@@ -42,7 +42,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     private ILogManager logManager;
     private GroupManager groupManager;
     private SchoolListReader schoolManager;
-    private KafkaStreamsService kafkaStreamsService;
+    private SiteStatisticsStreamsApplication statisticsStreamsApplication;
     private IStatisticsManager oldStatisticsManager;
 
 
@@ -65,7 +65,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
      *            - to query School information
      * @param groupManager
      *            - so that we can see how many groups we have site wide.
-     * @param kafkaStreamsService
+     * @param statisticsStreamsApplication
      *            - to query kafka state stores
      * @param statsManager
      *            - old stats manager injected in for non-kafkaized elements
@@ -73,12 +73,12 @@ public class KafkaStatisticsManager implements IStatisticsManager {
     @Inject
     public KafkaStatisticsManager(final UserAccountManager userManager, final ILogManager logManager,
                                   final SchoolListReader schoolManager, final GroupManager groupManager,
-                                  final KafkaStreamsService kafkaStreamsService,
+                                  final SiteStatisticsStreamsApplication statisticsStreamsApplication,
                                   final StatisticsManager statsManager) {
 
         this.oldStatisticsManager = statsManager;
 
-        this.kafkaStreamsService = kafkaStreamsService;
+        this.statisticsStreamsApplication = statisticsStreamsApplication;
         this.logManager = logManager;
         this.userManager = userManager;
         this.groupManager = groupManager;
@@ -109,18 +109,19 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         // this is much faster than accessing postgres
         ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                    kafkaStreamsService.getStream());
+                statisticsStreamsApplication.getStream());
 
         // get user activity data from local kafka store
         ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                kafkaStreamsService.getStream());
+                statisticsStreamsApplication.getStream());
 
 
         Map<String, Object> gender = Maps.newHashMap();
         Map<String, Object> role = Maps.newHashMap();
 
         KeyValueIterator<String, JsonNode> it = userStore.all();
+        //Iterator<RegisteredUserDTO> it = userManager.findUsers(new RegisteredUserDTO()).iterator();
 
         Integer userCount = 0;
 
@@ -163,6 +164,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         while (it.hasNext()) {
 
             JsonNode userData = it.next().value.path("user_data");
+            //RegisteredUserDTO user = it.next();
 
             try {
 
@@ -174,6 +176,11 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
                 Integer usrSchoolId = userData.path("school_id").asInt();
                 String usrSchoolOther = userData.path("school_other").asText();
+                /*String userId = String.valueOf(user.getId());
+                String usrGender = (user.getGender() != null) ? user.getGender().name() : "";
+                String usrRole = (user.getRole() != null) ? user.getRole().name() : "";
+                String usrSchoolId = (user.getSchoolId() != null) ? user.getSchoolId() : "";
+                String usrSchoolOther = (user.getSchoolOther() != null) ? user.getSchoolOther() : "";*/
 
                 JsonNode userLastSeenData = userLastSeenStore.get(userId);
                 Long lastSeen = userLastSeenData.path("last_seen").asLong();
@@ -209,7 +216,8 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
 
                 // schools
-                if ((usrSchoolId.toString().equals("0") || usrSchoolId.toString().equals("")) && usrSchoolOther.equals("")) {
+                if ((usrSchoolId.toString().equals("0") || usrSchoolId == null || usrSchoolId.toString().equals(""))
+                        && (usrSchoolOther.equals("") || usrSchoolOther == null)) {
                     hasNoSchoolCount++;
                 } else {
                     hasSchoolCount++;
@@ -346,7 +354,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         ReadOnlyKeyValueStore<String, Long> logEventCounts = waitUntilStoreIsQueryable("store_log_event_counts",
                 QueryableStoreTypes.<String, Long>keyValueStore(),
-                kafkaStreamsService.getStream());
+                statisticsStreamsApplication.getStream());
 
         return (logEventCounts.get(logTypeOfInterest) != null) ? logEventCounts.get(logTypeOfInterest) : Long.valueOf(0);
     }
@@ -450,12 +458,12 @@ public class KafkaStatisticsManager implements IStatisticsManager {
             // get user data from local kafka store
             ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                    kafkaStreamsService.getStream());
+                    statisticsStreamsApplication.getStream());
 
             // get user activity data from local kafka store
             ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
                     QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                    kafkaStreamsService.getStream());
+                    statisticsStreamsApplication.getStream());
 
             KeyValueIterator<String, JsonNode> it = userStore.all();
 
@@ -522,12 +530,12 @@ public class KafkaStatisticsManager implements IStatisticsManager {
         // get user data from local kafka store
         ReadOnlyKeyValueStore<String, JsonNode> userStore = waitUntilStoreIsQueryable("store_user_data",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                kafkaStreamsService.getStream());
+                statisticsStreamsApplication.getStream());
 
         // get user activity data from local kafka store
         ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                kafkaStreamsService.getStream());
+                statisticsStreamsApplication.getStream());
 
         KeyValueIterator<String, JsonNode> it = userStore.all();
 
@@ -580,7 +588,7 @@ public class KafkaStatisticsManager implements IStatisticsManager {
 
         ReadOnlyKeyValueStore<String, JsonNode> userLastSeenStore = waitUntilStoreIsQueryable("store_user_last_seen",
                 QueryableStoreTypes.<String, JsonNode>keyValueStore(),
-                kafkaStreamsService.getStream());
+                statisticsStreamsApplication.getStream());
 
         KeyValueIterator<String, JsonNode> it = userLastSeenStore.all();
 

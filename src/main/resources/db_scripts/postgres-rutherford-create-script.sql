@@ -570,6 +570,30 @@ ALTER TABLE users_id_seq OWNER TO rutherford;
 ALTER SEQUENCE users_id_seq OWNED BY users.id;
 
 
+CREATE SEQUENCE user_alerts_id_seq
+START WITH 1
+INCREMENT BY 1
+NO MINVALUE
+NO MAXVALUE
+CACHE 1;
+
+
+CREATE TABLE user_alerts
+(
+    id INTEGER DEFAULT nextval('user_alerts_id_seq'::regclass) PRIMARY KEY NOT NULL,
+    user_id INTEGER NOT NULL,
+    message TEXT,
+    link TEXT,
+    created TIMESTAMP DEFAULT now() NOT NULL,
+    seen TIMESTAMP,
+    clicked TIMESTAMP,
+    dismissed TIMESTAMP
+);
+CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts (id);
+CREATE UNIQUE INDEX user_alerts_pkey ON user_alerts (id);
+
+
+
 --
 -- Name: assignments id; Type: DEFAULT; Schema: public; Owner: rutherford
 --

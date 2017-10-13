@@ -2,21 +2,17 @@ package uk.ac.cam.cl.dtg.segue.dao.users;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.streams.state.*;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.streams.KafkaStreamsService;
 import uk.ac.cam.cl.dtg.segue.database.KafkaStreamsProducer;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 import uk.ac.cam.cl.dtg.segue.dos.users.RegisteredUser;
 
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,18 +24,15 @@ public class KafkaUsers implements IUserDataManager {
 
     private PgUsers pgUsers;
     private KafkaStreamsProducer kafkaProducer;
-    private KafkaStreamsService streamsService;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
     public KafkaUsers(PostgresSqlDb postgresSqlDb,
-                      KafkaStreamsProducer kafkaProducer,
-                      KafkaStreamsService streamsService) {
+                      KafkaStreamsProducer kafkaProducer) {
 
         this.pgUsers = new PgUsers(postgresSqlDb);
         this.kafkaProducer = kafkaProducer;
-        this.streamsService = streamsService;
 
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
@@ -52,16 +45,16 @@ public class KafkaUsers implements IUserDataManager {
 
         Map<String, Object> userDetails = new ImmutableMap.Builder<String, Object>()
                 .put("user_id", regUser.getId())
-                .put("family_name", regUser.getFamilyName())
-                .put("given_name", regUser.getGivenName())
+                //.put("family_name", regUser.getFamilyName())
+                //.put("given_name", regUser.getGivenName())
                 .put("role", regUser.getRole())
-                .put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth() : "")
+                //.put("date_of_birth", (regUser.getDateOfBirth() != null) ? regUser.getDateOfBirth() : "")
                 .put("gender", (regUser.getGender() != null) ? regUser.getGender() : "")
-                .put("registration_date", regUser.getRegistrationDate().getTime())
+                //.put("registration_date", regUser.getRegistrationDate().getTime())
                 .put("school_id", (regUser.getSchoolId() != null) ? regUser.getSchoolId() : "")
                 .put("school_other", (regUser.getSchoolOther() != null) ? regUser.getSchoolOther() : "")
-                .put("default_level", (regUser.getDefaultLevel() != null) ? regUser.getDefaultLevel() : "")
-                .put("email_verification_status", regUser.getEmailVerificationStatus())
+                //.put("default_level", (regUser.getDefaultLevel() != null) ? regUser.getDefaultLevel() : "")
+                //.put("email_verification_status", regUser.getEmailVerificationStatus())
                 .build();
 
         Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
@@ -73,15 +66,15 @@ public class KafkaUsers implements IUserDataManager {
                 .build();
         try {
             // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-            ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events", regUser.getId().toString(),
-                    String.format(objectMapper.writeValueAsString(kafkaLogRecord)));
+            ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", regUser.getId().toString(),
+                    objectMapper.writeValueAsString(kafkaLogRecord));
 
-            kafkaProducer.Send(producerRecord);
+            kafkaProducer.send(producerRecord);
 
         } catch (KafkaException kex) {
             kex.printStackTrace();
         } catch (JsonProcessingException jex) {
-
+            jex.printStackTrace();
         }
 
         return regUser;

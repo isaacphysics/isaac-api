@@ -80,6 +80,15 @@ public abstract class LogManagerEventPublisher implements ILogManager {
 
         this.logManager.logInternalEvent(user, eventType, eventDetails);
 
+        if (null != logListeners) {
+
+            for (LoggingEventHandler listener: logListeners
+                    ) {
+                listener.handleEvent(user, null, eventType, eventDetails);
+            }
+
+        }
+
     }
 
     @Override

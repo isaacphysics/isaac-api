@@ -1479,4 +1479,12 @@ public class UserAccountManager {
         return String.format("https://%s/verifyemail?%s", properties.getProperty(HOST_NAME), urlParams);
     }
 
+
+
+    public Boolean isValidUserFromSession(final Map<String, String> sessionInformation) {
+
+        return this.userAuthenticationManager.isValidUsersSession(sessionInformation);
+    }
+
+
 }

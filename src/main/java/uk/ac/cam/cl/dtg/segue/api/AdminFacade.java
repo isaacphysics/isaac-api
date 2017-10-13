@@ -125,7 +125,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final String contentIndex;
 
     private final StatisticsManager statsManager;
-    //private final KafkaStatisticsManager kafkaStatsManager;
+    private final KafkaStatisticsManager kafkaStatsManager;
 
     private final LocationManager locationManager;
 
@@ -155,14 +155,14 @@ public class AdminFacade extends AbstractSegueFacade {
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
-                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager) {
-                       //final KafkaStatisticsManager kafkaStatsManager) {
+                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                       final KafkaStatisticsManager kafkaStatsManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.statsManager = statsManager;
-        //this.kafkaStatsManager = kafkaStatsManager;
+        this.kafkaStatsManager = kafkaStatsManager;
         this.locationManager = locationManager;
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
@@ -203,7 +203,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - to determine access.
      * @return stats
      */
-    /*@GET
+    @GET
     @Path("/stats/v2/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
@@ -222,7 +222,7 @@ public class AdminFacade extends AbstractSegueFacade {
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
-    }*/
+    }
 
     /**
      * Locations stats.
@@ -327,7 +327,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - to determine caching.
      * @return stats
      */
-    /*@GET
+    @GET
     @Path("/stats/schools/v2")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
@@ -363,7 +363,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
                     .toResponse();
         }
-    }*/
+    }
 
     /**
      * Get user last seen information map.
@@ -1053,7 +1053,7 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - of the school of interest.
      * @return stats
      */
-    /*@GET
+    @GET
     @Path("/users/schools/{school_id}/v2")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
@@ -1089,7 +1089,7 @@ public class AdminFacade extends AbstractSegueFacade {
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "IOException while trying to communicate with the school service.").toResponse();
         }
-    }*/
+    }
 
     /**
      * Service method to fetch the event data for a specified user.
@@ -1139,13 +1139,13 @@ public class AdminFacade extends AbstractSegueFacade {
             throw new ForbiddenException("You must be logged in as an admin to access this function.");
         }
 
-        //if (!newVersion) {
+        if (!newVersion) {
             return this.statsManager.getEventLogsByDate(
                     Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-        /*} else {
+        } else {
             return this.kafkaStatsManager.getEventLogsByDate(
                     Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
-        }*/
+        }
 
     }
 
