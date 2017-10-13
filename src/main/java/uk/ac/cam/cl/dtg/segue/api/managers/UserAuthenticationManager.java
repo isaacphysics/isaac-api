@@ -323,19 +323,21 @@ public class UserAuthenticationManager {
             return null;
         }
 
-        // Check if the request originated from Isaac:
-        String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
-        if (null == referrer) {
-            log.warn("Authenticated request had no 'Referer' information set!");
-        } else if (!referrer.startsWith("https://" + Constants.HOST_NAME + "/")) {
-            log.warn("Authenticated request had non-Isaac 'Referer': '" + referrer + "'");
-        }
-        String origin = request.getHeader("Origin");
-        boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
-        if (expectOriginHeader && null == origin) {
-            log.warn("Authenticated request had no 'Origin' information!");
-        } else if (expectOriginHeader && !origin.startsWith("https://" + Constants.HOST_NAME)) {
-            log.warn("Authenticated request had non-Isaac 'Origin': '" + origin + "'");
+        if (properties.getProperty(Constants.SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.PROD.name())) {
+            // If in production, check if the request originated from Isaac:
+            String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
+            if (null == referrer) {
+                log.warn("Authenticated request had no 'Referer' information set!");
+            } else if (!referrer.startsWith("https://" + Constants.HOST_NAME + "/")) {
+                log.warn("Authenticated request had non-Isaac 'Referer': '" + referrer + "'");
+            }
+            String origin = request.getHeader("Origin");
+            boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
+            if (expectOriginHeader && null == origin) {
+                log.warn("Authenticated request had no 'Origin' information!");
+            } else if (expectOriginHeader && !origin.startsWith("https://" + Constants.HOST_NAME)) {
+                log.warn("Authenticated request had non-Isaac 'Origin': '" + origin + "'");
+            }
         }
 
         // check if the users session is valid.
