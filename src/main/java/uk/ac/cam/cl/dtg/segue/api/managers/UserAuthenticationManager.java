@@ -327,16 +327,20 @@ public class UserAuthenticationManager {
             // If in production, check if the request originated from Isaac:
             String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
             if (null == referrer) {
-                log.warn("Authenticated request had no 'Referer' information set!");
+                log.warn("Authenticated request had no 'Referer' information set! Attempted to access: "
+                        + request.getPathInfo());
             } else if (!referrer.startsWith("https://" + Constants.HOST_NAME + "/")) {
-                log.warn("Authenticated request had non-Isaac 'Referer': '" + referrer + "'");
+                log.warn("Authenticated request had unexpected Referer: '" + referrer + "'. Attempted to access: "
+                        + request.getPathInfo());
             }
             String origin = request.getHeader("Origin");
             boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
             if (expectOriginHeader && null == origin) {
-                log.warn("Authenticated request had no 'Origin' information!");
+                log.warn("Authenticated request had no 'Origin' information! Attempted to access: "
+                        + request.getPathInfo());
             } else if (expectOriginHeader && !origin.startsWith("https://" + Constants.HOST_NAME)) {
-                log.warn("Authenticated request had non-Isaac 'Origin': '" + origin + "'");
+                log.warn("Authenticated request had unexpected Origin: '" + origin + "'. Attempted to access: "
+                        + request.getPathInfo());
             }
         }
 
