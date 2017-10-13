@@ -327,7 +327,7 @@ public class UserAuthenticationManager {
         String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
         if (null == referrer) {
             log.warn("Authenticated request had no 'Referer' information set!");
-        } else if (!referrer.startsWith("https://" + Constants.HOST_NAME)) {
+        } else if (!referrer.startsWith("https://" + Constants.HOST_NAME + "/")) {
             log.warn("Authenticated request had non-Isaac 'Referer': '" + referrer + "'");
         }
         String origin = request.getHeader("Origin");
