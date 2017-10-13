@@ -38,7 +38,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.HttpMethod;
 
-import com.google.common.collect.ImmutableList;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.codec.binary.Base64;
@@ -81,6 +80,7 @@ import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 
 /**
