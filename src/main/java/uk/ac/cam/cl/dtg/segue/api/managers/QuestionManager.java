@@ -15,12 +15,7 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.managers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -245,29 +240,30 @@ public class QuestionManager {
     private static void augmentRelatedQuestionsWithAttemptInformation(
             final ContentDTO content,
             final Map<String, Map<String, List<QuestionValidationResponse>>> usersQuestionAttempts) {
-
         // Check if all question parts have been answered
-        List<ContentSummaryDTO> relatedContents = content.getRelatedContent();
-        if (relatedContents != null) {
-            for (ContentSummaryDTO relatedContentSummary : relatedContents) {
-                int numberOfCorrectQuestionParts = 0;
-                Map<String, List<QuestionValidationResponse>> attemptsAtQuestion =
-                        usersQuestionAttempts.get(relatedContentSummary.getId());
-                if (attemptsAtQuestion != null) {
-                    for (List<QuestionValidationResponse> questionPartAttempts : attemptsAtQuestion.values()) {
-                        for (QuestionValidationResponse questionPartAttempt : questionPartAttempts) {
-                            if (questionPartAttempt.isCorrect()) {
-                                numberOfCorrectQuestionParts++;
-                                break;
+        List<ContentSummaryDTO> relatedContentSummaries = content.getRelatedContent();
+        if (relatedContentSummaries != null) {
+            for (ContentSummaryDTO relatedContentSummary : relatedContentSummaries) {
+                String questionId = relatedContentSummary.getId();
+                Map<String, List<QuestionValidationResponse>> questionAttempts = usersQuestionAttempts.get(questionId);
+                boolean questionAnsweredCorrectly = false;
+                if (questionAttempts != null) {
+                    for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
+                        questionAnsweredCorrectly = false;
+                        for (QuestionValidationResponse partAttempt : questionAttempts.get(relatedQuestionPartId)) {
+                            questionAnsweredCorrectly = partAttempt.isCorrect();
+                            if (questionAnsweredCorrectly) {
+                                break; // exit on first correct attempt
                             }
+                        }
+                        if (!questionAnsweredCorrectly) {
+                            break; // exit on first false question part
                         }
                     }
                 }
-                int numberOfQuestionParts = relatedContentSummary.getNumberOfQuestionParts();
-                relatedContentSummary.setCompleted(numberOfCorrectQuestionParts >= numberOfQuestionParts);
+                relatedContentSummary.setCorrect(questionAnsweredCorrectly);
             }
         }
-
         // for all children recurse
         List<ContentBaseDTO> children = content.getChildren();
         if (children != null) {

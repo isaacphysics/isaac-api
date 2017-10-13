@@ -542,29 +542,29 @@ public class GitContentManager implements IContentManager {
      *                The values of this instance could be changed by this method.
      */
     private static void generateDerivedSummaryValues(final ContentDTO content, final ContentSummaryDTO summary) {
-        summary.setNumberOfQuestionParts(GitContentManager.calculateNumberOfQuestionParts(content, 0));
+        List<String> questionPartIds = Lists.newArrayList();
+        GitContentManager.collateQuestionPartIds(content, questionPartIds);
+        summary.setQuestionPartIds(questionPartIds);
     }
 
     /**
-     * Recursively walks through the content object and its children to count the number of question parts in the page.
-     * @param content the content page and, on later invocations, its children.
-     * @param questionPartCount a number to track how many question parts have been seen so far.
-     * @return the number of question parts seen in this contentDTO and its children.
+     * Recursively walk through the content object and its children to populate the questionPartIds list with the IDs
+     * of any content of type QuestionDTO.
+     * @param content the content page and, on recursive invocations, its children.
+     * @param questionPartIds a list to track the question part IDs in the content and its children.
      */
-    private static int calculateNumberOfQuestionParts(final ContentDTO content, final int questionPartCount) {
+    private static void collateQuestionPartIds(final ContentDTO content, final List<String> questionPartIds) {
         if (content instanceof QuestionDTO) {
-            return questionPartCount + 1;
+            questionPartIds.add(content.getId());
         }
-        int childQuestionPartCount = 0;
         List<ContentBaseDTO> children = content.getChildren();
         if (children != null) {
             for (ContentBaseDTO child : children) {
                 if (child instanceof ContentDTO) {
                     ContentDTO childContent = (ContentDTO) child;
-                    childQuestionPartCount += calculateNumberOfQuestionParts(childContent, questionPartCount);
+                    collateQuestionPartIds(childContent, questionPartIds);
                 }
             }
         }
-        return questionPartCount + childQuestionPartCount;
     }
 }

@@ -15,6 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.dto.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.api.client.util.Lists;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,14 +35,15 @@ public class ContentSummaryDTO {
     private String level;
     private List<String> tags;
     private String url;
-    private Boolean completed;
-    private Integer numberOfQuestionParts;
+    private Boolean correct;
+    private List<String> questionPartIds;
 
     /**
      * Private constructor required for Dozer.
      */
     public ContentSummaryDTO() {
-        tags = new ArrayList<String>();
+        tags = Lists.newArrayList();
+        questionPartIds = Lists.newArrayList();
     }
 
     /**
@@ -176,40 +180,41 @@ public class ContentSummaryDTO {
     }
 
     /**
-     * Gets whether the question is completed.
+     * Gets whether the question is completed correctly.
      *
-     * @return completed
+     * @return correct
      */
-    public Boolean getCompleted() {
-        return completed;
+    public Boolean getCorrect() {
+        return this.correct;
     }
 
     /**
-     * Sets whether the question has been completed.
+     * Sets whether the question has been completed correctly.
      *
-     * @param completed
+     * @param correct
      *            the value to set completion
      */
-    public void setCompleted(final Boolean completed) {
-        this.completed = completed;
+    public void setCorrect(final Boolean correct) {
+        this.correct = correct;
     }
 
     /**
-     * Gets the number of question parts.
+     * Gets a list of the question part IDs
      *
-     * @return the number of question parts
+     * @return list of question part IDs for any questions in this content
      */
-    public Integer getNumberOfQuestionParts() {
-        return numberOfQuestionParts;
+    @JsonIgnore
+    public List<String> getQuestionPartIds() {
+        return this.questionPartIds;
     }
 
     /**
-     * Sets the number of question parts.
+     * Sets a list of question part IDs
      *
-     * @param numberOfQuestionParts
-     *            the numberOfQuestionParts to set
+     * @param questionPartIds list of question part IDs for any questions in this content
      */
-    public void setNumberOfQuestionParts(final Integer numberOfQuestionParts) {
-        this.numberOfQuestionParts = numberOfQuestionParts;
+    @JsonIgnore
+    public void setQuestionPartIds(List<String> questionPartIds) {
+        this.questionPartIds = questionPartIds;
     }
 }
