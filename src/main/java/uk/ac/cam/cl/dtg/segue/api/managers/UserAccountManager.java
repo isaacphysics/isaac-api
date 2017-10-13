@@ -659,6 +659,9 @@ public class UserAccountManager {
             log.error("Creation of email verification token failed: " + e1.getMessage());
         }
 
+        // FIXME: Before creating the user object, ensure password is valid. This should really be in a transaction.
+        authenticator.ensureValidPassword(newPassword);
+
         // save the user to get the userId
         RegisteredUser userToReturn = this.database.createOrUpdateUser(userToSave);
 
@@ -734,6 +737,11 @@ public class UserAccountManager {
 
         IPasswordAuthenticator authenticator = (IPasswordAuthenticator) this.registeredAuthProviders
                 .get(AuthenticationProvider.SEGUE);
+
+        // Check if there is a new password and it is invalid as early as possible:
+        if (null != newPassword && !newPassword.isEmpty()) {
+            authenticator.ensureValidPassword(newPassword);
+        }
 
         // Send a new verification email if the user has changed their email
         if (!existingUser.getEmail().equals(updatedUser.getEmail())) {
