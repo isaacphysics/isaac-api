@@ -36,7 +36,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.HttpMethod;
 
+import com.google.common.collect.ImmutableList;
 import ma.glasnost.orika.MapperFacade;
 
 import org.apache.commons.codec.binary.Base64;
@@ -88,6 +90,7 @@ import com.google.inject.Inject;
 public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
+    private static final List<String> ORIGIN_HEADER_REQUEST_METHODS = ImmutableList.of(HttpMethod.POST, HttpMethod.DELETE, HttpMethod.PUT);
 
     private final PropertiesLoader properties;
     private final IUserDataManager database;
@@ -328,10 +331,10 @@ public class UserAuthenticationManager {
             log.warn("Authenticated request had non-Isaac 'Referer': '" + referrer + "'");
         }
         String origin = request.getHeader("Origin");
-        boolean isPostRequest = "POST".equals(request.getMethod());
-        if (isPostRequest && null == origin) {
-            log.warn("Authenticated POST request had no 'Origin' information!");
-        } else if (isPostRequest && !origin.startsWith("https://" + Constants.HOST_NAME)) {
+        boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
+        if (expectOriginHeader && null == origin) {
+            log.warn("Authenticated request had no 'Origin' information!");
+        } else if (expectOriginHeader && !origin.startsWith("https://" + Constants.HOST_NAME)) {
             log.warn("Authenticated request had non-Isaac 'Origin': '" + origin + "'");
         }
 
