@@ -120,14 +120,14 @@ public class SiteStatisticsStreamsApplication {
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
-        streams.start();
-
-        // return when streams instance is initialized
-        while (true) {
-
-            if (streams.state().isRunning())
-                break;
-        }
+//        streams.start();
+//
+//        // return when streams instance is initialized
+//        while (true) {
+//
+//            if (streams.state().isRunning())
+//                break;
+//        }
 
     }
 
