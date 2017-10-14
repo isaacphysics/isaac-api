@@ -126,8 +126,12 @@ public class KafkaLoggingManager extends LoggingEventHandler {
             Boolean running = true;
 
             while (running) {
+                log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
 
                 ConsumerRecords<String, JsonNode> records = loggedEventsConsumer.poll(1000);
+
+                log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - Poll Complete (%s records)", oldUserId, newUserId, records.count()));
+
                 for (ConsumerRecord<String, JsonNode> record : records) {
                     Map<String, Object> data = new HashMap<>();
 
