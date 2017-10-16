@@ -686,7 +686,7 @@ public class UserAccountManager {
         //TODO: do we need this?
         userToReturn = this.database.createOrUpdateUser(userToReturn);
 
-        logManager.logInternalEvent(this.convertUserDOToUserDTO(userToReturn), Constants.USER_REGISTRATION,
+        logManager.logEvent(this.convertUserDOToUserDTO(userToReturn), request, Constants.USER_REGISTRATION,
                 ImmutableMap.builder().put("provider", AuthenticationProvider.SEGUE.name()).build());
 
         // return it to the caller.
