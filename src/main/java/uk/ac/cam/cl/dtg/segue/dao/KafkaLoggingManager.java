@@ -119,6 +119,8 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         ArrayList<String> topics = Lists.newArrayList();
         topics.add("topic_anonymous_logged_events_test");
 
+        log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
+        int totalRecordCount = 0;
         try (KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props)) {
             loggedEventsConsumer.subscribe(topics);
 
@@ -126,13 +128,12 @@ public class KafkaLoggingManager extends LoggingEventHandler {
             Long now = new Date().getTime();
 
             while (running) {
-                log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
                 ConsumerRecords<String, JsonNode> records = loggedEventsConsumer.poll(1000);
-                log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - Poll Complete (%s records)", oldUserId, newUserId, records.count()));
+                totalRecordCount += records.count();
 
                 if (records.count() == 0) {
                     running = false;
-                    log.info("Kafka Test Transfer Log Events - returned no records. Exiting.");
+                    log.info(String.format("Kafka Test Transfer Log Events - exiting after reaching end of topic. Read %s records", totalRecordCount));
                 }
 
                 for (ConsumerRecord<String, JsonNode> record : records) {
@@ -142,7 +143,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
                         if (now < ts) {
                             running = false;
-                            log.info("Kafka Test Transfer Log Events - reached current time. Exiting.");
+                            log.info(String.format("Kafka Test Transfer Log Events - exiting after reaching current time. Read %s records.", totalRecordCount));
                         }
 
                         Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
