@@ -58,6 +58,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -95,6 +96,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * User facade.
@@ -268,7 +270,12 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
         } else {
-            return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, emailPreferences);
+            try {
+                misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, emailPreferences);
+            } catch (SegueResourceMisuseException e) {
+                return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later ot contact us!");
+            }
         }
 
     }
