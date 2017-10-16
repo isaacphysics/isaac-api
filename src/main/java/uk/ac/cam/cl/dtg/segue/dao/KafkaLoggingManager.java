@@ -81,8 +81,8 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         this.kafkaPort = kafkaPort;
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", -1);
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", 7200000);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_test_debug1", -1);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test_debug1", 7200000);
     }
 
 
@@ -118,7 +118,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
 
         KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props);
         ArrayList<String> topics = Lists.newArrayList();
-        topics.add("topic_anonymous_logged_events_test");
+        topics.add("topic_anonymous_logged_events_test_debug1");
 
         try {
             loggedEventsConsumer.subscribe(topics);
@@ -148,7 +148,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                 .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", newUserId,
+                        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test_debug1", newUserId,
                                 objectMapper.writeValueAsString(kafkaLogRecord));
 
                         kafkaProducer.send(producerRecord);
@@ -200,7 +200,7 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                 .build();
 
         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", logEvent.getUserId(),
+        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test_debug1", logEvent.getUserId(),
                 objectMapper.writeValueAsString(kafkaLogRecord));
 
         try {

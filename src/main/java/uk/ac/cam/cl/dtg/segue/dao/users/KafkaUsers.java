@@ -66,7 +66,7 @@ public class KafkaUsers implements IUserDataManager {
                 .build();
         try {
             // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-            ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", regUser.getId().toString(),
+            ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test_debug1", regUser.getId().toString(),
                     objectMapper.writeValueAsString(kafkaLogRecord));
 
             kafkaProducer.send(producerRecord);

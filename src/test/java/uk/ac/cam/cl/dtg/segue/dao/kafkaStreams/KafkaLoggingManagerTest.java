@@ -36,7 +36,7 @@ public class KafkaLoggingManagerTest {
 
         KafkaConsumer<String, String> loggedEventsConsumer = new KafkaConsumer<String, String>(props);
         ArrayList<String> topics = Lists.newArrayList();
-        topics.add("topic_logged_events_test");
+        topics.add("topic_logged_events_test_debug1");
 
         try {
             loggedEventsConsumer.subscribe(topics);

@@ -103,31 +103,31 @@ public class SiteStatisticsStreamsApplication {
     public void start() {
 
         // ensure topics exist before attempting to consume
-        kafkaTopicManager.ensureTopicExists("topic_logged_events_test", -1);
-        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test", 7200000);
+        kafkaTopicManager.ensureTopicExists("topic_logged_events_test_debug1", -1);
+        kafkaTopicManager.ensureTopicExists("topic_anonymous_logged_events_test_debug1", 7200000);
 
         // raw logged events incoming data stream from kafka
-        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_test")
+        KStream<String, JsonNode>[] rawLoggedEvents = builder.stream(StringSerde, JsonSerde, "topic_logged_events_test_debug1")
                 .branch(
                         (k, v) -> !v.path("anonymous_user").asBoolean(),
                         (k, v) -> v.path("anonymous_user").asBoolean()
                 );
 
         // parallel log for anonymous events (may want to optimise how we do this later)
-        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events_test");
+        rawLoggedEvents[1].to(StringSerde, JsonSerde, "topic_anonymous_logged_events_test_debug1");
 
         streamProcess(rawLoggedEvents[0]);
 
         // use the builder and the streams configuration we set to setup and start a streams object
         streams = new KafkaStreams(builder, streamsConfiguration);
-        streams.start();
+        /*streams.start();
 
         // return when streams instance is initialized
         while (true) {
 
             if (streams.state().isRunning())
                 break;
-        }
+        }*/
 
     }
 
