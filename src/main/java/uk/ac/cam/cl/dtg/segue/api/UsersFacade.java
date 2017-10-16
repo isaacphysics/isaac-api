@@ -421,7 +421,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Invalid password reset token supplied: " + token);
             return error.toResponse();
         } catch (InvalidPasswordException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "No password supplied.");
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Database error has occurred during reset password process. Please try again later";
@@ -778,8 +778,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
-                    .toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
