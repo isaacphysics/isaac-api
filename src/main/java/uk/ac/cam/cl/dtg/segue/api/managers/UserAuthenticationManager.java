@@ -330,7 +330,7 @@ public class UserAuthenticationManager {
             if (null == referrer) {
                 log.warn("Authenticated request had no 'Referer' information set! Attempted to access: "
                         + request.getPathInfo());
-            } else if (!referrer.startsWith("https://" + Constants.HOST_NAME + "/")) {
+            } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
                 log.warn("Authenticated request had unexpected Referer: '" + referrer + "'. Attempted to access: "
                         + request.getPathInfo());
             }
@@ -339,7 +339,7 @@ public class UserAuthenticationManager {
             if (expectOriginHeader && null == origin) {
                 log.warn("Authenticated request had no 'Origin' information! Attempted to access: "
                         + request.getPathInfo());
-            } else if (expectOriginHeader && !origin.startsWith("https://" + Constants.HOST_NAME)) {
+            } else if (expectOriginHeader && !origin.startsWith("https://" + properties.getProperty(HOST_NAME))) {
                 log.warn("Authenticated request had unexpected Origin: '" + origin + "'. Attempted to access: "
                         + request.getPathInfo());
             }
