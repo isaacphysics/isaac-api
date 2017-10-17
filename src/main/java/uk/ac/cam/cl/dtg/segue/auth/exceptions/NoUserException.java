@@ -24,4 +24,14 @@ package uk.ac.cam.cl.dtg.segue.auth.exceptions;
 public class NoUserException extends Exception {
     private static final long serialVersionUID = 3621435558202513642L;
 
+    /**
+     * Creates a NoUserException.
+     *
+     * @param message
+     *            - to accompany the exception.
+     */
+    public NoUserException(final String message) {
+        super(message);
+    }
+
 }

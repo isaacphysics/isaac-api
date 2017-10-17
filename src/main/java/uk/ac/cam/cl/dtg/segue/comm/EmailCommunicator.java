@@ -17,6 +17,7 @@ package uk.ac.cam.cl.dtg.segue.comm;
 
 import javax.mail.MessagingException;
 
+import com.google.api.client.util.Lists;
 import org.apache.commons.lang3.Validate;
 
 import org.elasticsearch.common.recycler.Recycler;
@@ -75,7 +76,7 @@ public class EmailCommunicator implements ICommunicator<EmailCommunicationMessag
             } else {
                 mailer.sendMultiPartMail(new String[] { email.getRecipientAddress() }, this.fromAddress,
                         email.getReplyToAddress(), email.getReplyToName(), email.getSubject(),
-                        email.getPlainTextMessage(), email.getHTMLMessage());
+                        email.getPlainTextMessage(), email.getHTMLMessage(), email.getAttachments());
             }
         } catch (MessagingException e) {
             throw new CommunicationException(e);

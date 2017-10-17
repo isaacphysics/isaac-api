@@ -61,11 +61,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     private final IContentManager contentManager;
 
     private final ILogManager logManager;
-    
-    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
-    private static final String SIGNATURE = "Isaac Physics Project";
-    private static final int MINIMUM_TAG_LENGTH = 4;
 
+    private final Map<String, String> globalStringTokens;
+
+    private static final Logger log = LoggerFactory.getLogger(EmailManager.class);
+    private static final int MINIMUM_TAG_LENGTH = 4;
     private static final DateFormat FULL_DATE_FORMAT = new SimpleDateFormat("EEE d MMM yyyy h:mm aaa z");
 
     /**
@@ -79,16 +79,21 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *            content for email templates
      * @param logManager
      *            so we can log e-mail events.
+     * @param globalStringTokens a map containing a token that if seen in an email template should be replaced with some
+     *                           static string.
      */
     @Inject
     public EmailManager(final EmailCommunicator communicator, final AbstractEmailPreferenceManager 
 		    		emailPreferenceManager, final PropertiesLoader globalProperties,
-                        final IContentManager contentManager, final ILogManager logManager) {
+                        final IContentManager contentManager, final ILogManager logManager,
+                        final Map<String, String> globalStringTokens) {
         super(communicator);
         this.emailPreferenceManager = emailPreferenceManager;
         this.globalProperties = globalProperties;
         this.contentManager = contentManager;
         this.logManager = logManager;
+        this.globalStringTokens = globalStringTokens;
+
         FULL_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY));
     }
 
@@ -103,11 +108,32 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @throws SegueDatabaseException if we cannot contact the database for logging.
      */
     public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
-                                                   final Map<String, Object> tokenToValueMapping, final EmailType emailType)
+                                         final Map<String, Object> tokenToValueMapping, final EmailType emailType)
+            throws ContentManagerException, SegueDatabaseException {
+        this.sendTemplatedEmailToUser(userDTO, emailContentTemplate, tokenToValueMapping, emailType, null);
+    }
+
+    /**
+     * Send an email to a user based on a content template.
+     *
+     * @param userDTO - the user to email
+     * @param emailContentTemplate - the content template to send to the user.
+     * @param tokenToValueMapping - a Map of tokens to values that will be replaced in the email template.
+     * @param emailType - the type of email that this is so that it is filtered appropriately based on user email prefs.
+     * @param attachments
+     * 			  - list of attachment objects
+     * @throws ContentManagerException if we can't parse the content
+     * @throws SegueDatabaseException if we cannot contact the database for logging.
+     */
+    public void sendTemplatedEmailToUser(final RegisteredUserDTO userDTO, final EmailTemplateDTO emailContentTemplate,
+                                                   final Map<String, Object> tokenToValueMapping, final EmailType emailType,
+                                         @Nullable List<EmailAttachment> attachments)
             throws ContentManagerException, SegueDatabaseException {
 
         // generate properties from hashMap for token replacement process
         Properties propertiesToReplace = new Properties();
+        propertiesToReplace.putAll(this.globalStringTokens);
+
         propertiesToReplace.putAll(this.flattenTokenMap(tokenToValueMapping, Maps.newHashMap(), ""));
 
         // Add all properties in the user DTO (preserving types) so they are available to email templates.
@@ -117,11 +143,10 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         // default properties
         //TODO: We should find and replace this in templates as the case is wrong.
         propertiesToReplace.putIfAbsent("givenname", userDTO.getGivenName() == null ? "" : userDTO.getGivenName());
-        propertiesToReplace.putIfAbsent("sig", SIGNATURE);
 
         EmailCommunicationMessage emailCommunicationMessage
                 = constructMultiPartEmail(userDTO.getId(), userDTO.getEmail(), emailContentTemplate, propertiesToReplace,
-                emailType);
+                emailType, attachments);
 
         if (emailType.equals(EmailType.SYSTEM)) {
                 addSystemEmailToQueue(emailCommunicationMessage);
@@ -152,12 +177,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // generate properties from hashMap for token replacement process
         Properties propertiesToReplace = new Properties();
+        propertiesToReplace.putAll(this.globalStringTokens);
         propertiesToReplace.putAll(this.flattenTokenMap(emailValues, Maps.newHashMap(), ""));
-        propertiesToReplace.put("sig", SIGNATURE);
 
         EmailCommunicationMessage e = constructMultiPartEmail(null, recipientEmailAddress, emailContent,
-                propertiesToReplace,
-                EmailType.SYSTEM);
+                propertiesToReplace, EmailType.SYSTEM, null);
 
         this.addSystemEmailToQueue(e);
     }
@@ -203,13 +227,15 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             }
 
             Properties p = new Properties();
+            p.putAll(this.globalStringTokens);
             p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
             p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
             p.put("email", user.getEmail());
-            p.put("sig", SIGNATURE);
+            // FIXME - why is this even necessary? For the "preview email" endpoint these are all added automatically!
+            p.put("id", user.getId().toString());
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
-                    emailType);
+                    emailType, null);
 
             ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>()
                     .put("userId", user.getId()).put("email", e.getRecipientAddress()).put("type", emailType)
@@ -230,8 +256,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
         this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
-        log.info(String.format("Added %d emails to the queue. %d were filtered.", allSelectedUsers.size(),
-                numberOfUnfilteredUsers - allSelectedUsers.size()));
+        log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size(), numberOfUnfilteredUsers - allSelectedUsers.size()));
     }
     
     
@@ -464,7 +490,31 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         return template;
     }
-    
+
+    /**
+     * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage.
+     *
+     * @param userId
+     * 		- (nullable) the id of the user the email should be sent to
+     * @param userEmail
+     * 		- the email of the user
+     * @param emailType
+     *      - the type of e-mail being created
+     * @return
+     * 		- a multi-part EmailCommunicationMessage
+     * @throws ContentManagerException
+     * 		- if there has been an error accessing content
+     * @throws ResourceNotFoundException
+     * 		- if the resource has not been found
+     *
+     */
+    public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
+                                                             EmailTemplateDTO emailContent, Properties contentProperties,
+                                                             final EmailType emailType)
+            throws ContentManagerException, ResourceNotFoundException {
+        return this.constructMultiPartEmail(userId, userEmail, emailContent, contentProperties, emailType, null);
+    }
+
     /**
      * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage. 
      * 
@@ -474,6 +524,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 		- the email of the user 
      * @param emailType
      *      - the type of e-mail being created
+     * @param attachments
+     * 			  - list of attachment objects
      * @return
      * 		- a multi-part EmailCommunicationMessage
      * @throws ContentManagerException
@@ -483,15 +535,19 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * 	
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
-            EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType)
+            EmailTemplateDTO emailContent, Properties contentProperties, final EmailType emailType,
+                                                             @Nullable final List<EmailAttachment> attachments)
 					throws ContentManagerException, ResourceNotFoundException {
     	Validate.notNull(userEmail);
     	Validate.notEmpty(userEmail);
 
-    	contentProperties.putIfAbsent("sig", SIGNATURE);
+        // Ensure global properties are included, but in a safe manner (allow contentProperties to override globals!)
+        Properties contentPropertiesToUse = new Properties();
+        contentPropertiesToUse.putAll(this.globalStringTokens);
+        contentPropertiesToUse.putAll(contentProperties);
 
-        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentProperties);
-        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentProperties, true);
+        String plainTextContent = completeTemplateWithProperties(emailContent.getPlainTextContent(), contentPropertiesToUse);
+        String HTMLContent = completeTemplateWithProperties(emailContent.getHtmlContent(), contentPropertiesToUse, true);
 
         String replyToAddress = emailContent.getReplyToEmailAddress();
         String replyToName = emailContent.getReplyToName();
@@ -518,7 +574,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         return new EmailCommunicationMessage(userId, userEmail, emailContent.getSubject(),
                 plainTextMessage,
-                htmlMessage, emailType, replyToAddress, replyToName);
+                htmlMessage, emailType, replyToAddress, replyToName, attachments);
 
     }
 

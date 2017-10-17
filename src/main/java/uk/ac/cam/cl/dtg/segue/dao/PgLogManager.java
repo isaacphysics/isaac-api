@@ -51,6 +51,7 @@ import uk.ac.cam.cl.dtg.segue.dos.LogEvent;
 import uk.ac.cam.cl.dtg.segue.dto.users.AbstractSegueUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * @author sac92
@@ -93,10 +94,10 @@ public class PgLogManager implements ILogManager {
         try {
             if (user instanceof RegisteredUserDTO) {
                 this.persistLogEvent(((RegisteredUserDTO) user).getId().toString(), null, eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
             } else {
                 this.persistLogEvent(null, ((AnonymousUserDTO) user).getSessionId(), eventType, eventDetails,
-                        getClientIpAddr(httpRequest));
+                        RequestIPExtractor.getClientIpAddr(httpRequest));
             }
 
         } catch (JsonProcessingException e) {
@@ -328,8 +329,8 @@ public class PgLogManager implements ILogManager {
         // count actual logged events (where id strictly NOT NULL) in those months, and not count an extra '1' for
         // empty months where id is NULL by definition of the JOIN.
         queryToBuild.append("SELECT to_char(gen_month, 'YYYY-MM-01'), count(id)");
-        queryToBuild.append(" FROM generate_series(?, ?, INTERVAL '1' MONTH) m(gen_month) LEFT OUTER JOIN filtered_logs");
-        queryToBuild.append(" ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
+        queryToBuild.append(" FROM generate_series(date_trunc('month', ?::timestamp), ?, INTERVAL '1' MONTH) m(gen_month)");
+        queryToBuild.append(" LEFT OUTER JOIN filtered_logs ON ( date_trunc('month', \"timestamp\") = date_trunc('month', gen_month) )");
         queryToBuild.append(" GROUP BY gen_month ORDER BY gen_month ASC;");
 
         try (Connection conn = database.getDatabaseConnection()) {
@@ -494,52 +495,6 @@ public class PgLogManager implements ILogManager {
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
-    }
-
-    /**
-     * Extract client ip address.
-     * 
-     * Solution retrieved from:
-     * http://stackoverflow.com/questions/4678797/how-do-i-get-the-remote-address-of-a-client-in-servlet
-     * 
-     * @param request
-     *            - to attempt to extract a valid Ip from.
-     * @return string representation of the client's ip address.
-     */
-    private static String getClientIpAddr(final HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && ip.contains(",")) {
-            // If X-Forwarded-For contains multiple comma-separated IP addresses, we want only the last one.
-            log.debug("X-Forwarded-For contained multiple IP addresses, extracting last: '" + ip + "'");
-            ip = ip.substring(ip.lastIndexOf(',') + 1).trim();
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            // Isaac adds this custom header which could be used:
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_CLIENT_IP");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            // In production, this will usually be the router address which may be unhelpful.
-            ip = request.getRemoteAddr();
-        }
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            // We *must* return a *valid* inet field for postgres! Null would be
-            // acceptable, but is used for internal log events; 'unknown' is not allowed!
-            // So if all else fails, use the impossible source address '0.0.0.0' to mark this.
-            ip = "0.0.0.0";
-        }
-        return ip;
     }
 
     /**

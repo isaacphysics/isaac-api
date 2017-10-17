@@ -57,6 +57,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -94,6 +95,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * User facade.
@@ -226,11 +228,17 @@ public class UsersFacade extends AbstractSegueFacade {
                                                @Context final HttpServletResponse response, final String userObjectString) {
 
         UserSettings userSettingsObjectFromClient;
+        String newPassword;
         try {
             ObjectMapper tmpObjectMapper = new ObjectMapper();
             tmpObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            userSettingsObjectFromClient = tmpObjectMapper.readValue(userObjectString, UserSettings.class);
 
+            //TODO: We need to change the way the frontend sends passwords to reduce complexity
+            Map<String, Object> mapRepresentation = tmpObjectMapper.readValue(userObjectString, HashMap.class);
+            newPassword = (String) ((Map)mapRepresentation.get("registeredUser")).get("password");
+            ((Map)mapRepresentation.get("registeredUser")).remove("password");
+            userSettingsObjectFromClient = tmpObjectMapper.convertValue(mapRepresentation, UserSettings.class);
+            
             if (null == userSettingsObjectFromClient) {
                 return new SegueErrorResponse(Status.BAD_REQUEST,  "No user settings provided.").toResponse();
             }
@@ -247,7 +255,7 @@ public class UsersFacade extends AbstractSegueFacade {
 
             try {
                 return this.updateUserObject(request, response, registeredUser,
-                        userSettingsObjectFromClient.getPasswordCurrent(), userPreferences);
+                        userSettingsObjectFromClient.getPasswordCurrent(), newPassword, userPreferences);
             } catch (IncorrectCredentialsProvidedException e) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Incorrect credentials provided.", e)
                         .toResponse();
@@ -256,7 +264,12 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
         } else {
-            return this.createUserObjectAndLogIn(request, response, registeredUser, userPreferences);
+            try {
+                misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, userPreferences);
+            } catch (SegueResourceMisuseException e) {
+                return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later ot contact us!");
+            }
         }
 
     }
@@ -388,7 +401,7 @@ public class UsersFacade extends AbstractSegueFacade {
      *
      * @param token
      *            - A password reset token
-     * @param userObject
+     * @param clientResponse
      *            - A user object containing password information.
      * @param request
      *            - For logging purposes.
@@ -398,14 +411,15 @@ public class UsersFacade extends AbstractSegueFacade {
     @Path("users/resetpassword/{token}")
     @Consumes(MediaType.APPLICATION_JSON)
     @GZIP
-    public Response resetPassword(@PathParam("token") final String token, final RegisteredUser userObject,
+    public Response resetPassword(@PathParam("token") final String token, final Map<String, String> clientResponse,
                                   @Context final HttpServletRequest request) {
         try {
-
-            RegisteredUserDTO userDTO = userManager.resetPassword(token, userObject);
+            String newPassword = clientResponse.get("password");
+            RegisteredUserDTO userDTO = userManager.resetPassword(token, newPassword);
 
             this.getLogManager().logEvent(userDTO, request, PASSWORD_RESET_REQUEST_SUCCESSFUL,
                     ImmutableMap.of(LOCAL_AUTH_EMAIL_FIELDNAME, userDTO.getEmail()));
+
             // we can reset the misuse monitor for incorrect logins now.
             misuseMonitor.resetMisuseCount(userDTO.getEmail().toLowerCase(), SegueLoginMisuseHandler.class.toString());
 
@@ -414,7 +428,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Invalid password reset token supplied: " + token);
             return error.toResponse();
         } catch (InvalidPasswordException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "No password supplied.");
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Database error has occurred during reset password process. Please try again later";
@@ -470,15 +484,25 @@ public class UsersFacade extends AbstractSegueFacade {
                     "You must specify the from_date and to_date you are interested in.").toResponse();
         }
 
+        if (fromDate > toDate) {
+            return new SegueErrorResponse(Status.BAD_REQUEST,
+                    "The from_date must be before the to_date!").toResponse();
+        }
+
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(httpServletRequest);
 
             RegisteredUserDTO userOfInterest = userManager.getUserDTOById(userIdOfInterest);
             if (userOfInterest == null) {
-                throw new NoUserException();
+                throw new NoUserException("No user found with this ID.");
             }
 
             UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(userOfInterest);
+
+            if (!events.equals(ANSWER_QUESTION) && currentUser.getRole() != Role.ADMIN) {
+                // Non-admins should not be able to choose random log events.
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
 
             // decide if the user is allowed to view this data.
             if (!currentUser.getId().equals(userIdOfInterest)
@@ -486,8 +510,15 @@ public class UsersFacade extends AbstractSegueFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            // No point looking for stats from before the user registered (except for merged logs at registration and
+            // these will only be ANONYMOUS_SESSION_DURATION_IN_MINUTES before registration anyway: less than 1 month):
+            Date fromDateObject = new Date(fromDate);
+            if (fromDateObject.before(userOfInterest.getRegistrationDate())) {
+                fromDateObject = userOfInterest.getRegistrationDate();
+            }
+
             Map<String, Map<LocalDate, Long>> eventLogsByDate = this.statsManager.getEventLogsByDateAndUserList(
-                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate),
+                    Lists.newArrayList(events.split(",")), fromDateObject, new Date(toDate),
                     Arrays.asList(userOfInterest), binData);
 
             return Response.ok(eventLogsByDate).build();
@@ -614,6 +645,8 @@ public class UsersFacade extends AbstractSegueFacade {
      *            - the new user object from the clients perspective.
      * @param passwordCurrent
      * 			  - the current password, used if the password has changed
+     * @param newPassword
+     * 			  - the new password, used if the password has changed
      * @param userPreferences
      * 			  - the preferences for this user
      * @return the updated user object.
@@ -621,7 +654,7 @@ public class UsersFacade extends AbstractSegueFacade {
      * @throws IncorrectCredentialsProvidedException
      */
     private Response updateUserObject(final HttpServletRequest request, final HttpServletResponse response,
-                                      final RegisteredUser userObjectFromClient, final String passwordCurrent,
+                                      final RegisteredUser userObjectFromClient, final String passwordCurrent, final String newPassword,
                                       final Map<String, Map<String, Boolean>> userPreferences)
                                 throws IncorrectCredentialsProvidedException, NoCredentialsAvailableException {
         Validate.notNull(userObjectFromClient.getId());
@@ -639,7 +672,7 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             // check if they are trying to change a password
-            if (userObjectFromClient.getPassword() != null && !userObjectFromClient.getPassword().isEmpty()) {
+            if (newPassword != null && !newPassword.isEmpty()) {
                 // only admins and the account owner can change passwords 
                 if (!currentlyLoggedInUser.getId().equals(userObjectFromClient.getId())
                         && currentlyLoggedInUser.getRole() != Role.ADMIN) {
@@ -650,6 +683,12 @@ public class UsersFacade extends AbstractSegueFacade {
                 // Password change requires auth check unless admin is modifying non-admin user account
                 if (!(currentlyLoggedInUser.getRole() == Role.ADMIN && userObjectFromClient.getRole() != Role.ADMIN)) {
                     // authenticate the user to check they are allowed to change the password
+
+                    if (null == passwordCurrent) {
+                        return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide your current password"
+                            + " to change your password!").toResponse();
+                    }
+
                     this.userManager.ensureCorrectPassword(AuthenticationProvider.SEGUE.name(),
                             userObjectFromClient.getEmail(), passwordCurrent);
                 }
@@ -675,7 +714,7 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
 
-            RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient);
+            RegisteredUserDTO updatedUser = userManager.updateUserObject(userObjectFromClient, newPassword);
 
             // If the user's role has changed, record it. Check this using Objects.equals() to be null safe!
             if (!Objects.equals(updatedUser.getRole(), existingUserFromDb.getRole())) {
@@ -708,7 +747,7 @@ public class UsersFacade extends AbstractSegueFacade {
                 }
             }
 
-            if (userPreferences != null) {
+            if (userPreferences != null || userPreferences.size() != 0) {
 
                 List<UserPreference> preferenceList = Lists.newArrayList();
 
@@ -738,10 +777,9 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
-                    .toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn("Missing field during update operation. ", e.getMessage());
+            log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "
                     + "Please make sure you have specified all mandatory fields in your response.").toResponse();
         } catch (AuthenticationProviderMappingException e) {
@@ -759,16 +797,18 @@ public class UsersFacade extends AbstractSegueFacade {
      *            to tell the browser to store the session in our own segue cookie.
      * @param userObjectFromClient
      *            - the new user object from the clients perspective.
+     * @param newPassword
+     *            - the new password for the user.
      * @param userPreferences
      * 			  - the new preferences for this user
      * @return the updated user object.
      */
     private Response createUserObjectAndLogIn(final HttpServletRequest request, final HttpServletResponse response,
-                                              final RegisteredUser userObjectFromClient,
+                                              final RegisteredUser userObjectFromClient, final String newPassword,
                                               final Map<String, Map<String, Boolean>> userPreferences) {
         try {
             RegisteredUserDTO savedUser = userManager.createUserObjectAndSession(request, response,
-                    userObjectFromClient);
+                    userObjectFromClient, newPassword);
 
             if (userPreferences != null) {
 
@@ -790,9 +830,10 @@ public class UsersFacade extends AbstractSegueFacade {
 
             return Response.ok(savedUser).build();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
-                    .toResponse();
+            log.warn("Invalid password exception occurred during registration!");
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (FailedToHashPasswordException e) {
+            log.error("Failed to hash password during user registration!");
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to set a password.").toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
@@ -806,9 +847,11 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(errorMsg, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (AuthenticationProviderMappingException e) {
+            log.warn("Unable to map to a known authenticator during registration. The provider is unknown!");
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
                     "Unable to map to a known authenticator. The provider: is unknown").toResponse();
         } catch (EmailMustBeVerifiedException e) {
+            log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
             return new SegueErrorResponse(Status.BAD_REQUEST,
                     "You cannot register with an Isaac email address.").toResponse();
         }

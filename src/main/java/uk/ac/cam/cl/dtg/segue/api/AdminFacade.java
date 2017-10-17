@@ -59,6 +59,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.jboss.resteasy.annotations.GZIP;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -72,6 +73,8 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;
 
 import uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType;
+import uk.ac.cam.cl.dtg.segue.api.managers.IStatisticsManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.KafkaStatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.StatisticsManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
@@ -122,6 +125,7 @@ public class AdminFacade extends AbstractSegueFacade {
     private final String contentIndex;
 
     private final StatisticsManager statsManager;
+    private final KafkaStatisticsManager kafkaStatsManager;
 
     private final LocationManager locationManager;
 
@@ -151,12 +155,14 @@ public class AdminFacade extends AbstractSegueFacade {
     public AdminFacade(final PropertiesLoader properties, final UserAccountManager userManager,
                        final IContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
-                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager) {
+                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                       final KafkaStatisticsManager kafkaStatsManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.contentIndex = contentIndex;
         this.statsManager = statsManager;
+        this.kafkaStatsManager = kafkaStatsManager;
         this.locationManager = locationManager;
         this.schoolReader = schoolReader;
         this.userPreferenceManager = userPreferenceManager;
@@ -164,7 +170,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     /**
      * Statistics endpoint.
-     * 
+     *
      * @param request
      *            - to determine access.
      * @return stats
@@ -179,10 +185,38 @@ public class AdminFacade extends AbstractSegueFacade {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
                         .toResponse();
             }
-            
+
             return Response.ok(statsManager.outputGeneralStatistics())
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
         } catch (SegueDatabaseException e) {
+            log.error("Unable to load general statistics.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Statistics endpoint.
+     *
+     * @param request
+     *            - to determine access.
+     * @return stats
+     */
+    @GET
+    @Path("/stats/v2/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaStatistics(@Context final HttpServletRequest request) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin to access this endpoint.")
+                        .toResponse();
+            }
+
+            return Response.ok(kafkaStatsManager.outputGeneralStatistics())
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+        } catch (SegueDatabaseException | InvalidStateStoreException e) {
             log.error("Unable to load general statistics.", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
@@ -283,6 +317,54 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+
+    /**
+     * Statistics endpoint.
+     *
+     * @param request
+     *            - to determine access.
+     * @param requestForCache
+     *            - to determine caching.
+     * @return stats
+     */
+    @GET
+    @Path("/stats/schools/v2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaSchoolsStatistics(@Context final HttpServletRequest request,
+                                         @Context final Request requestForCache) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            List<Map<String, Object>> schoolStatistics = kafkaStatsManager.getSchoolStatistics();
+
+            // Calculate the ETag
+            EntityTag etag = new EntityTag(schoolStatistics.toString().hashCode() + "");
+
+            Response cachedResponse = generateCachedResponse(requestForCache, etag);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(schoolStatistics).tag(etag)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false))
+                    .build();
+        } catch (UnableToIndexSchoolsException e) {
+            log.error("Unable to get school statistics", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (InvalidStateStoreException | SegueSearchException e1) {
+            log.error("Unable to get school statistics", e1);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error during user lookup")
+                    .toResponse();
+        }
+    }
+
     /**
      * Get user last seen information map.
      * 
@@ -351,7 +433,7 @@ public class AdminFacade extends AbstractSegueFacade {
                 RegisteredUserDTO user = this.userManager.getUserDTOById(userid);
 
                 if (null == user) {
-                    throw new NoUserException();
+                    throw new NoUserException("No user found with this ID.");
                 }
 
                 // if a user already has this role, abort
@@ -439,7 +521,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
                     if (null == user) {
                         log.error(String.format("No user could be found with email (%s)", email));
-                        throw new NoUserException();
+                        throw new NoUserException("No user found with this email.");
                     }
                 }
             }
@@ -961,6 +1043,54 @@ public class AdminFacade extends AbstractSegueFacade {
         }
     }
 
+
+    /**
+     * Get users by school id.
+     *
+     * @param request
+     *            - to determine access.
+     * @param schoolId
+     *            - of the school of interest.
+     * @return stats
+     */
+    @GET
+    @Path("/users/schools/{school_id}/v2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaSchoolStatistics(@Context final HttpServletRequest request,
+                                        @PathParam("school_id") final String schoolId) {
+        try {
+            if (!isUserStaff(request)) {
+                return new SegueErrorResponse(Status.FORBIDDEN, "You must be an admin user to access this endpoint.")
+                        .toResponse();
+            }
+
+            School school = schoolReader.findSchoolById(schoolId);
+
+            Map<String, Object> result = ImmutableMap.of("school", school, "users",
+                    kafkaStatsManager.getUsersBySchoolId(schoolId));
+
+            return Response.ok(result).build();
+        } catch (UnableToIndexSchoolsException e) {
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Unable To Index SchoolIndexer Exception in admin facade", e).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (InvalidStateStoreException | SegueSearchException e) {
+            log.error("Error while trying to list users belonging to a school.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error").toResponse();
+        } catch (NumberFormatException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The school id provided is invalid.").toResponse();
+        } catch (JsonParseException | JsonMappingException e) {
+            log.error("Problem parsing school", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school").toResponse();
+        } catch (IOException e) {
+            log.error("Problem parsing school", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "IOException while trying to communicate with the school service.").toResponse();
+        }
+    }
+
     /**
      * Service method to fetch the event data for a specified user.
      *
@@ -991,7 +1121,8 @@ public class AdminFacade extends AbstractSegueFacade {
     private Map<String, Map<LocalDate, Long>> fetchEventDataForAllUsers(@Context final Request request,
              @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
              @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
-             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin)
+             @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin,
+                                                                        final Boolean newVersion)
             throws BadRequestException, ForbiddenException, NoUserLoggedInException, SegueDatabaseException {
 
         final boolean binData = null != bin && bin;
@@ -1008,8 +1139,14 @@ public class AdminFacade extends AbstractSegueFacade {
             throw new ForbiddenException("You must be logged in as an admin to access this function.");
         }
 
-        return this.statsManager.getEventLogsByDate(
-                Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
+        if (!newVersion) {
+            return this.statsManager.getEventLogsByDate(
+                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
+        } else {
+            return this.kafkaStatsManager.getEventLogsByDate(
+                    Lists.newArrayList(events.split(",")), new Date(fromDate), new Date(toDate), binData);
+        }
+
     }
 
     /**
@@ -1043,7 +1180,62 @@ public class AdminFacade extends AbstractSegueFacade {
         Map<String, Map<LocalDate, Long>> eventLogsByDate;
         try {
             eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
-                    toDate, events, bin);
+                    toDate, events, bin, false);
+        } catch (BadRequestException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (ForbiddenException e) {
+            return new SegueErrorResponse(Status.FORBIDDEN, e.getMessage()).toResponse();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (SegueDatabaseException e) {
+            log.error("Database error while getting event details for a user.", e);
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to complete the request.").toResponse();
+        }
+
+        EntityTag etag = new EntityTag(eventLogsByDate.toString().hashCode() + "");
+
+        Response cachedResponse = generateCachedResponse(requestForCaching, etag);
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
+        return Response.ok(eventLogsByDate).tag(etag)
+                .cacheControl(getCacheControl(NUMBER_SECONDS_IN_FIVE_MINUTES, false)).build();
+    }
+
+
+    /**
+     * Get the event data for a specified user.
+     *
+     * @param request
+     *            - request information used authentication
+     * @param requestForCaching
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param fromDate
+     *            - date to start search
+     * @param toDate
+     *            - date to end search
+     * @param events
+     *            - comma separated list of events of interest.,
+     * @param bin
+     *            - Should we group data into the first day of the month? true or false.
+     * @return Returns a map of eventType to Map of dates to total number of events.
+     */
+    @GET
+    @Path("/users/event_data/over_time/v2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @GZIP
+    public Response getKafkaEventDataForAllUsers(@Context final Request request,
+                                            @Context final HttpServletRequest httpServletRequest, @Context final Request requestForCaching,
+                                            @QueryParam("from_date") final Long fromDate, @QueryParam("to_date") final Long toDate,
+                                            @QueryParam("events") final String events, @QueryParam("bin_data") final Boolean bin) {
+
+        Map<String, Map<LocalDate, Long>> eventLogsByDate;
+        try {
+            eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
+                    toDate, events, bin, true);
         } catch (BadRequestException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (ForbiddenException e) {
@@ -1097,7 +1289,7 @@ public class AdminFacade extends AbstractSegueFacade {
         try {
             Map<String, Map<LocalDate, Long>> eventLogsByDate;
             eventLogsByDate = fetchEventDataForAllUsers(request, httpServletRequest, requestForCaching, fromDate,
-                    toDate, events, bin);
+                    toDate, events, bin, false);
 
             StringWriter stringWriter = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(stringWriter);

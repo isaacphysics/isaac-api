@@ -448,6 +448,26 @@ CREATE TABLE user_associations_tokens (
 
 ALTER TABLE user_associations_tokens OWNER TO rutherford;
 
+
+--
+-- Name: user_credentials; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE user_credentials (
+    user_id integer NOT NULL,
+    password text NOT NULL,
+    secure_salt text,
+    security_scheme text DEFAULT 'SeguePBKDF2v1'::text NOT NULL,
+    reset_token text,
+    reset_expiry timestamp with time zone,
+    created timestamp with time zone DEFAULT now(),
+    last_updated timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE user_credentials OWNER TO rutherford;
+
+
 --
 -- Name: user_email_preferences; Type: TABLE; Schema: public; Owner: rutherford
 --
@@ -523,10 +543,6 @@ CREATE TABLE users (
     email_verification_status character varying(255),
     last_seen timestamp without time zone,
     default_level integer,
-    password text,
-    secure_salt text,
-    reset_token text,
-    reset_expiry timestamp without time zone,
     email_verification_token text
 );
 
@@ -552,6 +568,30 @@ ALTER TABLE users_id_seq OWNER TO rutherford;
 --
 
 ALTER SEQUENCE users_id_seq OWNED BY users.id;
+
+
+CREATE SEQUENCE user_alerts_id_seq
+START WITH 1
+INCREMENT BY 1
+NO MINVALUE
+NO MAXVALUE
+CACHE 1;
+
+
+CREATE TABLE user_alerts
+(
+    id INTEGER DEFAULT nextval('user_alerts_id_seq'::regclass) PRIMARY KEY NOT NULL,
+    user_id INTEGER NOT NULL,
+    message TEXT,
+    link TEXT,
+    created TIMESTAMP DEFAULT now() NOT NULL,
+    seen TIMESTAMP,
+    clicked TIMESTAMP,
+    dismissed TIMESTAMP
+);
+CREATE UNIQUE INDEX user_alerts_id_uindex ON user_alerts (id);
+CREATE UNIQUE INDEX user_alerts_pkey ON user_alerts (id);
+
 
 
 --
@@ -748,6 +788,14 @@ ALTER TABLE ONLY user_gameboards
 
 
 --
+-- Name: user_id; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_credentials
+    ADD CONSTRAINT user_id PRIMARY KEY (user_id);
+
+
+--
 -- Name: user_email_preferences user_id_email_preference_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -820,6 +868,14 @@ ALTER TABLE ONLY assignments
 
 ALTER TABLE ONLY event_bookings
     ADD CONSTRAINT event_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: fk_user_id_pswd; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY user_credentials
+    ADD CONSTRAINT fk_user_id_pswd FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 
 --

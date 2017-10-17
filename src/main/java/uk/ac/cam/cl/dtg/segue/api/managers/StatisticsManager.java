@@ -71,7 +71,7 @@ import com.google.inject.Inject;
  * StatisticsManager.
  * TODO this file is a mess... it needs refactoring.
  */
-public class StatisticsManager {
+public class StatisticsManager implements IStatisticsManager {
     private UserAccountManager userManager;
     private ILogManager logManager;
     private SchoolListReader schoolManager;
