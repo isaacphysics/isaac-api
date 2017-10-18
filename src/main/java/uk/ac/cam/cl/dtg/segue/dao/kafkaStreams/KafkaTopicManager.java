@@ -40,16 +40,24 @@ public class KafkaTopicManager {
 
                 if (retentionMillis != 0) {
 
+                    Map<ConfigResource, Config> updateConfig = new HashMap<ConfigResource, Config>();
                     ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, name);
 
-                    // create a new entry for updating the retention.ms value on the same topic
-                    ConfigEntry retentionEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(retentionMillis));
-                    Map<ConfigResource, Config> updateConfig = new HashMap<ConfigResource, Config>();
-                    updateConfig.put(resource, new Config(Collections.singleton(retentionEntry)));
+                    if (retentionMillis == -2) {
+
+                        ConfigEntry cleanupPolicy = new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, TopicConfig.CLEANUP_POLICY_COMPACT);
+                        updateConfig.put(resource, new Config(Collections.singleton(cleanupPolicy)));
+
+                    } else {
+
+                        // create a new entry for updating the retention.ms value on the same topic
+                        ConfigEntry retentionEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(retentionMillis));
+                        updateConfig.put(resource, new Config(Collections.singleton(retentionEntry)));
+
+                    }
 
                     AlterConfigsResult alterConfigsResult = adminClient.alterConfigs(updateConfig);
                     alterConfigsResult.all();
-
                 }
             }
         } catch (InterruptedException e) {
