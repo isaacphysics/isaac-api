@@ -57,7 +57,7 @@ import javax.servlet.http.HttpServletRequest;
  * This class implements the logging event handler interface to listen to log events, and publishes them to a kafka topic
  */
 public class KafkaLoggingManager extends LoggingEventHandler {
-    private static final Logger log = LoggerFactory.getLogger(PgLogManager.class);
+    private static final Logger log = LoggerFactory.getLogger(KafkaLoggingManager.class);
 
     private KafkaStreamsProducer kafkaProducer;
     private LocationManager locationManager;
@@ -116,22 +116,35 @@ public class KafkaLoggingManager extends LoggingEventHandler {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, oldUserId);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props);
         ArrayList<String> topics = Lists.newArrayList();
         topics.add("topic_anonymous_logged_events_test");
 
-        try {
+        log.info(String.format("Kafka Test Transfer Log Events - OldUser (%s) NewUser (%s) - About to poll", oldUserId, newUserId));
+        int totalRecordCount = 0;
+        try (KafkaConsumer<String, JsonNode> loggedEventsConsumer = new KafkaConsumer<String, JsonNode>(props)) {
             loggedEventsConsumer.subscribe(topics);
 
             Boolean running = true;
+            Long now = new Date().getTime();
 
             while (running) {
-
                 ConsumerRecords<String, JsonNode> records = loggedEventsConsumer.poll(1000);
+                totalRecordCount += records.count();
+
+                if (records.count() == 0) {
+                    running = false;
+                    log.info(String.format("Kafka Test Transfer Log Events - exiting after reaching end of topic. Read %s records", totalRecordCount));
+                }
+
                 for (ConsumerRecord<String, JsonNode> record : records) {
-                    Map<String, Object> data = new HashMap<>();
+                    Long ts = record.value().path("timestamp").asLong();
 
                     if (record.value().path("user_id").asText().equals(oldUserId)) {
+
+                        if (now < ts) {
+                            running = false;
+                            log.info(String.format("Kafka Test Transfer Log Events - exiting after reaching current time. Read %s records.", totalRecordCount));
+                        }
 
                         Map<String, Object> kafkaLogRecord = new ImmutableMap.Builder<String, Object>()
                                 .put("user_id", newUserId)
@@ -140,25 +153,22 @@ public class KafkaLoggingManager extends LoggingEventHandler {
                                 .put("event_details_type", record.value().path("event_details_type").asText())
                                 .put("event_details", record.value().path("event_details"))
                                 .put("ip_address", (record.value().path("ip_address").asText() != null) ? record.value().path("ip_address").asText() : "")
-                                .put("timestamp", record.value().path("timestamp").asText())
+                                .put("timestamp", ts.toString())
                                 .build();
 
                         // producerRecord contains the name of the kafka topic we are publishing to, followed by the message to be sent.
-                        ProducerRecord producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", newUserId,
+                        ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("topic_logged_events_test", newUserId,
                                 objectMapper.writeValueAsString(kafkaLogRecord));
 
                         kafkaProducer.send(producerRecord);
                     }
                 }
-                running = false;
             }
 
         } catch (KafkaException e) {
             e.printStackTrace();
         } catch (JsonProcessingException e) {
             log.error("Could not process Json document: " + e);
-        } finally {
-            loggedEventsConsumer.close();
         }
 
     }

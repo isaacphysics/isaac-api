@@ -89,13 +89,7 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
     @Override
     public void setOrChangeUsersPassword(final RegisteredUser userToSetPasswordFor, final String plainTextPassword)
             throws InvalidPasswordException, SegueDatabaseException {
-        if (null == plainTextPassword || plainTextPassword.isEmpty()) {
-            throw new InvalidPasswordException("Invalid password. You cannot have an empty password.");
-        }
-
-        if (plainTextPassword.length() < 6) {
-            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
-        }
+        ensureValidPassword(plainTextPassword);
 
         this.updateUsersPasswordWithoutValidation(userToSetPasswordFor, plainTextPassword);
     }
@@ -245,6 +239,17 @@ public class SegueLocalAuthenticator implements IPasswordAuthenticator {
 
         // check the token matches and hasn't expired (I know that we have just looked it up but that might change so checking anyway)
         return luc.getResetToken().equals(token) && luc.getResetExpiry().after(now);
+    }
+
+    @Override
+    public void ensureValidPassword(final String password) throws InvalidPasswordException {
+        if (null == password || password.isEmpty()) {
+            throw new InvalidPasswordException("Invalid password. You cannot have an empty password.");
+        }
+
+        if (password.length() < 6) {
+            throw new InvalidPasswordException("Password must be at least 6 characters in length.");
+        }
     }
 
     @Override

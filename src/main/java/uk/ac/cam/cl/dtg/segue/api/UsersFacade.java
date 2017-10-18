@@ -58,6 +58,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetRequestMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
@@ -95,6 +96,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
 
 /**
  * User facade.
@@ -268,7 +270,12 @@ public class UsersFacade extends AbstractSegueFacade {
                         .toResponse();
             }
         } else {
-            return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, emailPreferences);
+            try {
+                misuseMonitor.notifyEvent(RequestIPExtractor.getClientIpAddr(request), RegistrationMisuseHandler.class.toString());
+                return this.createUserObjectAndLogIn(request, response, registeredUser, newPassword, emailPreferences);
+            } catch (SegueResourceMisuseException e) {
+                return SegueErrorResponse.getRateThrottledResponse("Too many registration requests. Please try again later ot contact us!");
+            }
         }
 
     }
@@ -421,7 +428,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Invalid password reset token supplied: " + token);
             return error.toResponse();
         } catch (InvalidPasswordException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "No password supplied.");
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
             return error.toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Database error has occurred during reset password process. Please try again later";
@@ -778,8 +785,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error("Unable to modify user", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error while modifying the user").toResponse();
         } catch (InvalidPasswordException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage())
-                    .toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
             log.warn("Missing field during update operation. ", e);
             return new SegueErrorResponse(Status.BAD_REQUEST, "You are missing a required field. "

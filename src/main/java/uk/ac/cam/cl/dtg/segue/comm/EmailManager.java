@@ -231,6 +231,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             p.put("givenname", user.getGivenName() == null ? "" : user.getGivenName());
             p.put("familyname", user.getFamilyName() == null ? "" : user.getFamilyName());
             p.put("email", user.getEmail());
+            // FIXME - why is this even necessary? For the "preview email" endpoint these are all added automatically!
+            p.put("id", user.getId().toString());
 
             EmailCommunicationMessage e = constructMultiPartEmail(user.getId(), user.getEmail(), emailContent, p,
                     emailType, null);
