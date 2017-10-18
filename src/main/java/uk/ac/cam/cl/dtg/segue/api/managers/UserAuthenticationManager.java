@@ -334,14 +334,14 @@ public class UserAuthenticationManager {
                 log.warn("Authenticated request had unexpected Referer: '" + referrer + "'. Attempted to access: "
                         + request.getPathInfo());
             }
+            // If the client sends an Origin header, we should afford them better security. If they do not send the header,
+            // we can draw no conclusions and must allow the request through.
             String origin = request.getHeader("Origin");
             boolean expectOriginHeader = ORIGIN_HEADER_REQUEST_METHODS.contains(request.getMethod());
-            if (expectOriginHeader && null == origin) {
-                log.warn("Authenticated request had no 'Origin' information! Attempted to access: "
-                        + request.getPathInfo());
-            } else if (expectOriginHeader && !origin.startsWith("https://" + properties.getProperty(HOST_NAME))) {
-                log.warn("Authenticated request had unexpected Origin: '" + origin + "'. Attempted to access: "
-                        + request.getPathInfo());
+            if (expectOriginHeader && null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
+                log.error("Authenticated request had unexpected Origin: '" + origin + "'. Blocked access to: "
+                        + request.getMethod() + " " + request.getPathInfo());
+                return null;
             }
         }
 
