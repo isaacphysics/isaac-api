@@ -15,7 +15,10 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.kafka.streams.StreamsConfig;
+
+import java.util.List;
 
 /**
  * Utility class to provide common segue-specific constants.
@@ -237,6 +240,7 @@ public final class Constants {
     public static final String CREATE_USER_GROUP = "CREATE_USER_GROUP";
     public static final String DELETE_USER_GROUP = "DELETE_USER_GROUP";
     public static final String SEND_EMAIL = "SEND_EMAIL";
+    public static final String SENT_MASS_EMAIL = "SENT_MASS_EMAIL";
     public static final String USER_SCHOOL_CHANGE = "USER_SCHOOL_CHANGE";
     public static final String EVENT_BOOKING = "EVENT_BOOKING";
     public static final String EVENT_WAITING_LIST_BOOKING = "EVENT_WAITING_LIST_BOOKING";
@@ -251,6 +255,14 @@ public final class Constants {
     public static final String NOTIFICATION_VIEW_LIST = "NOTIFICATION_VIEW_LIST";
     public static final String NOTIFICATION_CLICK = "NOTIFICATION_CLICK";
     public static final String NOTIFICATION_DISMISS = "NOTIFICATION_DISMISS";
+
+    public static final List<String> SEGUE_LOG_EVENT_TYPES = ImmutableList.of(ADMIN_CHANGE_USER_SCHOOL, ADMIN_EVENT_BOOKING_CANCELLED,
+            ADMIN_EVENT_BOOKING_CONFIRMED, ADMIN_EVENT_BOOKING_DELETED, ADMIN_EVENT_WAITING_LIST_PROMOTION, ANSWER_QUESTION,
+            CHANGE_USER_ROLE, CREATE_USER_ASSOCIATION, CREATE_USER_GROUP, DELETE_USER_ACCOUNT, DELETE_USER_GROUP,
+            EMAIL_VERIFICATION_REQUEST_RECEIVED, EVENT_BOOKING, EVENT_BOOKING_CANCELLED, EVENT_WAITING_LIST_BOOKING,
+            LOG_OUT, MERGE_USER, PASSWORD_RESET_REQUEST_RECEIVED, PASSWORD_RESET_REQUEST_SUCCESSFUL, QUESTION_ATTEMPT_RATE_LIMITED,
+            REMOVE_USER_FROM_GROUP, REVOKE_USER_ASSOCIATION, SEND_EMAIL, SENT_MASS_EMAIL, USER_REGISTRATION, USER_SCHOOL_CHANGE,
+            NOTIFICATION_CLICK, NOTIFICATION_DISMISS, NOTIFICATION_VIEW_LIST);
 
     // IP Geocoding stuff
     public static final String IP_INFO_DB_API_KEY = "IP_INFO_DB_API_KEY";

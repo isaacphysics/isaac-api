@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.CONTENT_VERSION_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.DEFAULT_TIME_LOCALITY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.SENT_MASS_EMAIL;
 
 /**
  * EmailManager
@@ -255,7 +256,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         ImmutableMap<String, Object> eventDetails = new ImmutableMap.Builder<String, Object>().put("userIds", ids)
                 .put("contentObjectId", contentObjectId)
                 .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
-        this.logManager.logInternalEvent(sendingUser, "SENT_MASS_EMAIL", eventDetails);
+        this.logManager.logInternalEvent(sendingUser, SENT_MASS_EMAIL, eventDetails);
         log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
                 allSelectedUsers.size(), numberOfUnfilteredUsers - allSelectedUsers.size()));
     }

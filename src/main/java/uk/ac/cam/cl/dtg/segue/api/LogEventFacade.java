@@ -15,8 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.ISAAC_LOG_EVENT_TYPES;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 import io.swagger.annotations.Api;
 
 import java.util.Map;
@@ -98,6 +99,13 @@ public class LogEventFacade extends AbstractSegueFacade {
                     + TYPE_FIELDNAME + " property.").toResponse();
         }
 
+        String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
+
+        if (ISAAC_LOG_EVENT_TYPES.contains(eventType) || SEGUE_LOG_EVENT_TYPES.contains(eventType)) {
+            return new SegueErrorResponse(Status.FORBIDDEN, "Unable to record log message, restricted '"
+                    + TYPE_FIELDNAME + "' value.").toResponse();
+        }
+
         // implement arbitrary log size limit.
         AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpRequest);
         String uid;
@@ -118,7 +126,6 @@ public class LogEventFacade extends AbstractSegueFacade {
                     httpRequest.getContentLength()));
         }
 
-        String eventType = (String) eventJSON.get(TYPE_FIELDNAME);
         // remove the type information as we don't need it.
         eventJSON.remove(TYPE_FIELDNAME);
 
