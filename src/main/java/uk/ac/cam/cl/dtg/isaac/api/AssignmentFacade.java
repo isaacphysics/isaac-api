@@ -327,7 +327,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
 
-            // quick fix to sort list by user last name
+            // quick fix to sort list by user last name, first name
+            result.sort((result1, result2) -> {
+                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
+                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
+
+                if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                    return -1;
+                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                    return 1;
+                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                    return 0;
+                }
+
+                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
+            });
             result.sort((result1, result2) -> {
                 UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
                 UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
@@ -340,7 +354,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     return 0;
                 }
 
-                return user1.getFamilyName().compareTo(user2.getFamilyName());
+                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
             });
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
@@ -396,7 +410,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
             
-            // quick hack to sort list by user last name
+            // quick hack to sort list by user last name, first name
+            groupMembers.sort((user1, user2) -> {
+                if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                    return -1;
+                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                    return 1;
+                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                    return 0;
+                }
+                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
+            });
             groupMembers.sort((user1, user2) -> {
                 if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
                     return -1;
@@ -405,7 +429,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
                     return 0;
                 }
-                return user1.getFamilyName().compareTo(user2.getFamilyName());
+                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
             });
 
             List<String[]> rows = Lists.newArrayList();
