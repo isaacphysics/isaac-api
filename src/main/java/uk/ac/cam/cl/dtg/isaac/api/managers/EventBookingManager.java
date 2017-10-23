@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.eventbookings.BookingStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.eventbookings.EventBookingDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailAttachment;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -37,8 +38,10 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.associations.InvalidUserAssociationTokenException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dos.AssociationToken;
 import uk.ac.cam.cl.dtg.segue.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.segue.dos.users.Role;
+import uk.ac.cam.cl.dtg.segue.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.segue.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.PropertiesLoader;
 
@@ -61,6 +64,7 @@ public class EventBookingManager {
     private final EmailManager emailManager;
     private final UserAssociationManager userAssociationManager;
     private final PropertiesLoader propertiesLoader;
+    private final GroupManager groupManager;
 
     /**
      * EventBookingManager.
@@ -73,11 +77,13 @@ public class EventBookingManager {
     public EventBookingManager(final EventBookingPersistenceManager bookingPersistenceManager,
                                final EmailManager emailManager,
                                final UserAssociationManager userAssociationManager,
-                               final PropertiesLoader propertiesLoader) {
+                               final PropertiesLoader propertiesLoader,
+                               final GroupManager groupManager) {
         this.bookingPersistenceManager = bookingPersistenceManager;
         this.emailManager = emailManager;
         this.userAssociationManager = userAssociationManager;
         this.propertiesLoader = propertiesLoader;
+        this.groupManager = groupManager;
     }
 
     /**
@@ -164,18 +170,37 @@ public class EventBookingManager {
                     + " booked on to it.", event.getId(), user.getEmail()));
         }
 
+        EventBookingDTO booking = null;
         try {
             // Obtain an exclusive database lock to lock the booking
             this.bookingPersistenceManager.acquireDistributedLock(event.getId());
 
             this.ensureCapacity(event, user);
 
-            return this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
+            booking = this.bookingPersistenceManager.createBooking(event.getId(), user.getId(), BookingStatus.CONFIRMED,
                     additionalEventInformation);
+
+            emailManager.sendTemplatedEmailToUser(user,
+                    emailManager.getEmailTemplateDTO("email-event-booking-confirmed"),
+                    new ImmutableMap.Builder<String, Object>()
+                            .put("contactUsURL", generateEventContactUsURL(event))
+                            .put("authorizationLink", String.format("https://%s/account?authToken=%s",
+                                    propertiesLoader.getProperty(HOST_NAME), event.getIsaacGroupToken()))
+                            .put("event.emailEventDetails", event.getEmailEventDetails() == null ? "" : event.getEmailEventDetails())
+                            .put("event", event)
+                            .build(),
+                    EmailType.SYSTEM,
+                    Arrays.asList(generateEventICSFile(event, booking)));
+        
+        } catch (ContentManagerException e) {
+            log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
+                    .getEmail()), e);
+
         } finally {
             // release lock.
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
+        return booking;
     }
 
     /**
@@ -532,6 +557,9 @@ public class EventBookingManager {
                             .build(),
                     EmailType.SYSTEM);
 
+            // auto remove them from the group
+            this.removeUserFromEventGroup(event, user);
+
         } finally {
             this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
@@ -540,17 +568,20 @@ public class EventBookingManager {
     /**
      * Delete a booking permanently.
      *
-     * @param eventId - event id
-     * @param userId  - user id to unbook
+     * @param event - event context
+     * @param user  - user to unbook
      * @throws SegueDatabaseException - if an error occurs.
      */
-    public void deleteBooking(final String eventId, final Long userId) throws SegueDatabaseException {
+    public void deleteBooking(final IsaacEventPageDTO event, final RegisteredUserDTO user) throws SegueDatabaseException {
         try {
             // Obtain an exclusive database lock to lock the booking
-            this.bookingPersistenceManager.acquireDistributedLock(eventId);
-            this.bookingPersistenceManager.deleteBooking(eventId, userId);
+            this.bookingPersistenceManager.acquireDistributedLock(event.getId());
+            this.bookingPersistenceManager.deleteBooking(event.getId(), user.getId());
+
+            this.removeUserFromEventGroup(event, user);
+
         } finally {
-            this.bookingPersistenceManager.releaseDistributedLock(eventId);
+            this.bookingPersistenceManager.releaseDistributedLock(event.getId());
         }
     }
 
@@ -729,6 +760,29 @@ public class EventBookingManager {
         } catch (UnsupportedEncodingException e) {
             log.error("Unable to encode url for contact us link, using default url instead", e);
             return defaultURL;
+        }
+    }
+
+    /**
+     * Helper method to undo the group association made when a user books on an event.
+     * @param event context
+     * @param user to remove
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    private void removeUserFromEventGroup(final IsaacEventPageDTO event, final RegisteredUserDTO user)
+            throws SegueDatabaseException{
+        try {
+            // auto remove them from the group
+            if (event.getIsaacGroupToken() != null) {
+                AssociationToken associationToken = this.userAssociationManager.lookupTokenDetails(user, event.getIsaacGroupToken());
+                UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
+                if (group != null) {
+                    this.groupManager.removeUserFromGroup(group, user);
+                }
+            }
+        } catch (InvalidUserAssociationTokenException e) {
+            log.error(String.format("Unable to auto remove user (%s) using token (%s) as the token is invalid.",
+                    user.getEmail(), event.getIsaacGroupToken()));
         }
     }
 }
