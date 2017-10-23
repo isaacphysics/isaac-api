@@ -32,7 +32,8 @@ public class AssignmentDO {
 	private Long groupId;
 	private Long ownerUserId;
 	private Date creationDate;
-	
+	private Date dueDate;
+
 	/**
 	 * Complete AssignmentDO constructor with all dependencies.
 	 * 
@@ -46,14 +47,17 @@ public class AssignmentDO {
 	 *            - Group id who should be assigned the game board.
 	 * @param creationDate
 	 *            - the date the assignment was created.
+	 * @param dueDate
+	 *            - the date the assignment should be completed by.
 	 */
     public AssignmentDO(final Long id, final String gameboardId, final Long ownerUserId, final Long groupId,
-            final Date creationDate) {
+            final Date creationDate, final Date dueDate) {
 		this.id = id;
 		this.gameboardId = gameboardId;
 		this.ownerUserId = ownerUserId;
 		this.groupId = groupId;
 		this.creationDate = creationDate;
+		this.dueDate = dueDate;
 	}
 	
 	/**
@@ -176,4 +180,20 @@ public class AssignmentDO {
 		}
         return true;
     }
+
+	/**
+	 * get the due date of the assignment
+	 * @return
+	 */
+	public Date getDueDate() {
+		return dueDate;
+	}
+
+	/**
+	 * set the due date of an assignment
+	 * @param dueDate
+	 */
+	public void setDueDate(Date dueDate) {
+		this.dueDate = dueDate;
+	}
 }
