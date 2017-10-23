@@ -102,6 +102,7 @@ public class EventBookingPersistenceManager {
 
 	/**
      * Modify an existing event booking's status
+     *
      * @param eventId - the id of the event
      * @param userId = the user who is registered against the event
      * @param bookingStatus - the new booking status for this booking.

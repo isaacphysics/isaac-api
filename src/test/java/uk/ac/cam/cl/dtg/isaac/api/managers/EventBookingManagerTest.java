@@ -424,6 +424,7 @@ public class EventBookingManagerTest {
         firstUser.setRole(Role.TEACHER);
         firstBooking.setUserBooked(firstUser);
         firstBooking.setBookingStatus(BookingStatus.WAITING_LIST);
+        firstBooking.setAdditionalInformation(someAdditionalInformation);
 
         EventBookingDTO secondBooking = new EventBookingDTO();
         UserSummaryDTO secondUser = new UserSummaryDTO();
@@ -432,6 +433,7 @@ public class EventBookingManagerTest {
         secondBooking.setEventId(testEvent.getId());
         secondBooking.setUserBooked(firstUser);
         secondBooking.setBookingStatus(BookingStatus.CANCELLED);
+        secondBooking.setAdditionalInformation(someAdditionalInformation);
 
         List<EventBookingDTO> currentBookings = Arrays.asList(firstBooking, secondBooking);
 
@@ -458,7 +460,7 @@ public class EventBookingManagerTest {
         replay(dummyEventBookingPersistenceManager, dummyPropertiesLoader, dummyEmailManager);
 
         try {
-            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
+            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser);
             // success
         } catch (EventIsFullException e) {
             fail("Expected successful booking as no waiting list bookings.");
@@ -512,7 +514,7 @@ public class EventBookingManagerTest {
         replay(dummyEventBookingPersistenceManager);
 
         try {
-            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser, someAdditionalInformation);
+            ebm.promoteFromWaitingListOrCancelled(testEvent, someUser);
             fail("Expected failure booking as no space for this event.");
         } catch (EventIsFullException e) {
             // success
