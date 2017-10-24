@@ -327,7 +327,21 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 }
             }
 
-            // quick fix to sort list by user last name
+            // quick fix to sort list by user last name, first name
+            result.sort((result1, result2) -> {
+                UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
+                UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
+
+                if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                    return -1;
+                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                    return 1;
+                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                    return 0;
+                }
+
+                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
+            });
             result.sort((result1, result2) -> {
                 UserSummaryDTO user1 = (UserSummaryDTO) result1.get(userString);
                 UserSummaryDTO user2 = (UserSummaryDTO) result2.get(userString);
@@ -340,7 +354,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     return 0;
                 }
 
-                return user1.getFamilyName().compareTo(user2.getFamilyName());
+                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
             });
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, VIEW_ASSIGNMENT_PROGRESS,
@@ -396,7 +410,17 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
             List<String> questionIds = Lists.newArrayList();
             
-            // quick hack to sort list by user last name
+            // quick hack to sort list by user last name, first name
+            groupMembers.sort((user1, user2) -> {
+                if (user1.getGivenName() == null && user2.getGivenName() != null) {
+                    return -1;
+                } else if (user1.getGivenName() != null && user2.getGivenName() == null) {
+                    return 1;
+                } else if (user1.getGivenName() == null && user2.getGivenName() == null) {
+                    return 0;
+                }
+                return user1.getGivenName().toLowerCase().compareTo(user2.getGivenName().toLowerCase());
+            });
             groupMembers.sort((user1, user2) -> {
                 if (user1.getFamilyName() == null && user2.getFamilyName() != null) {
                     return -1;
@@ -405,7 +429,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 } else if (user1.getFamilyName() == null && user2.getFamilyName() == null) {
                     return 0;
                 }
-                return user1.getFamilyName().compareTo(user2.getFamilyName());
+                return user1.getFamilyName().toLowerCase().compareTo(user2.getFamilyName().toLowerCase());
             });
 
             List<String[]> rows = Lists.newArrayList();
@@ -758,46 +782,47 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * 
      * @param request
      *            - so that we can identify the current user.
-     * @param gameboardId
-     *            - board to assign
-     * @param groupId
-     *            - assignee group
+     * @param assignmentDTOFromClient a partially completed DTO for the assignment.
      * @return the assignment object.
      */
     @POST
-    @Path("/assign/{gameboard_id}/{group_id}")
+    @Path("/assign/")
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     public Response assignGameBoard(@Context final HttpServletRequest request,
-            @PathParam("gameboard_id") final String gameboardId, @PathParam("group_id") final Long groupId) {
+            final AssignmentDTO assignmentDTOFromClient) {
+
+        if (assignmentDTOFromClient.getGameboardId() == null || assignmentDTOFromClient.getGroupId() == null) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "A required field was missing. Must provide group and gameboard ids").toResponse();
+        }
+
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
-            UserGroupDTO assigneeGroup = groupManager.getGroupById(groupId);
+            UserGroupDTO assigneeGroup = groupManager.getGroupById(assignmentDTOFromClient.getGroupId());
             if (null == assigneeGroup) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The group id specified does not exist.")
                         .toResponse();
             }
 
-            GameboardDTO gameboard = this.gameManager.getGameboard(gameboardId);
+            GameboardDTO gameboard = this.gameManager.getGameboard(assignmentDTOFromClient.getGameboardId());
             if (null == gameboard) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "The gameboard id specified does not exist.")
                         .toResponse();
             }
 
-            AssignmentDTO newAssignment = new AssignmentDTO();
-            newAssignment.setGameboardId(gameboard.getId());
-            newAssignment.setOwnerUserId(currentlyLoggedInUser.getId());
-            newAssignment.setGroupId(groupId);
+            assignmentDTOFromClient.setOwnerUserId(currentlyLoggedInUser.getId());
+            assignmentDTOFromClient.setCreationDate(null);
+            assignmentDTOFromClient.setId(null);
 
             // modifies assignment passed in to include an id.
-            AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(newAssignment);
+            AssignmentDTO assignmentWithID = this.assignmentManager.createAssignment(assignmentDTOFromClient);
 
             this.getLogManager().logEvent(currentlyLoggedInUser, request, SET_NEW_ASSIGNMENT,
                     ImmutableMap.of(Constants.GAMEBOARD_ID_FKEY, assignmentWithID.getGameboardId(),
                                     GROUP_FK, assignmentWithID.getGroupId(),
                                     ASSIGNMENT_FK, assignmentWithID.getId()));
 
-            return Response.ok(newAssignment).build();
+            return Response.ok(assignmentDTOFromClient).build();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (DuplicateAssignmentException e) {

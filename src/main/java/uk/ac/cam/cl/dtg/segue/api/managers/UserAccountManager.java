@@ -287,6 +287,12 @@ public class UserAccountManager {
 
             return this.convertUserDOToUserDTO(getCurrentRegisteredUserDO(request));
         } else {
+            if (this.findUserByEmail(providerUserDO.getEmail()) != null) {
+                log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
+                        + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
+                throw new DuplicateAccountException("You do not use " + capitalizeFully(provider) + " to log on to Isaac."
+                + " You may have registered using a different provider, or a username and password.");
+            }
             // this must be a registration request
             RegisteredUser segueUserDO = this.registerUserWithFederatedProvider(
                     authenticator.getAuthenticationProvider(), providerUserDO);
