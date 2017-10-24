@@ -250,10 +250,14 @@ public class QuestionManager {
                 if (questionAttempts != null) {
                     for (String relatedQuestionPartId : relatedContentSummary.getQuestionPartIds()) {
                         questionAnsweredCorrectly = false;
-                        for (QuestionValidationResponse partAttempt : questionAttempts.get(relatedQuestionPartId)) {
-                            questionAnsweredCorrectly = partAttempt.isCorrect();
-                            if (questionAnsweredCorrectly) {
-                                break; // exit on first correct attempt
+                        List<QuestionValidationResponse> questionPartAttempts =
+                                questionAttempts.get(relatedQuestionPartId);
+                        if (questionPartAttempts != null) {
+                            for (QuestionValidationResponse partAttempt : questionPartAttempts) {
+                                questionAnsweredCorrectly = partAttempt.isCorrect();
+                                if (questionAnsweredCorrectly) {
+                                    break; // exit on first correct attempt
+                                }
                             }
                         }
                         if (!questionAnsweredCorrectly) {
