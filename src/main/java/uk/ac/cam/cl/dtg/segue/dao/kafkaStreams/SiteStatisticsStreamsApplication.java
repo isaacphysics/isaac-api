@@ -191,9 +191,6 @@ public class SiteStatisticsStreamsApplication {
                         "localstore_user_data"
                 );
 
-        userData.print();
-
-
         // join user table to incoming event stream to get user data for stats processing
         KStream<String, JsonNode> userEvents = rawStream
                 /*.map(
