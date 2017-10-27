@@ -701,34 +701,44 @@ public class EventBookingManager {
 
     /**
      * Helper method to generate an ics file for emailing to users who have booked on to an event.
+     *
+     * Note: This method may return null in the event we cannot communicate with a third party service.
+     *
      * @param event - the event booked on
      * @param bookingDetails - the booking details.
      * @return email attachment containing an ics file.
      */
     private EmailAttachment generateEventICSFile(IsaacEventPageDTO event, EventBookingDTO bookingDetails) {
-        TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), true);
 
-        ICalendar ical = new ICalendar();
-        ical.getTimezoneInfo().setDefaultTimezone(london);
+        try {
+            // note this library will go out to a third part to get a sensible timezone value.
+            TimezoneAssignment london = TimezoneAssignment.download(TimeZone.getTimeZone(DEFAULT_TIME_LOCALITY), true);
 
-        VEvent icalEvent = new VEvent();
-        icalEvent.setSummary(event.getTitle());
-        icalEvent.setDateStart(event.getDate(), true);
-        icalEvent.setDateEnd(event.getEndDate(), true);
-        icalEvent.setDescription(event.getSubtitle());
+            ICalendar ical = new ICalendar();
+            ical.getTimezoneInfo().setDefaultTimezone(london);
 
-        icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
-        icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
-        icalEvent.setUrl(String.format("https://%s/events/%s",
-                propertiesLoader.getProperty(HOST_NAME), event.getId()));
+            VEvent icalEvent = new VEvent();
+            icalEvent.setSummary(event.getTitle());
+            icalEvent.setDateStart(event.getDate(), true);
+            icalEvent.setDateEnd(event.getEndDate(), true);
+            icalEvent.setDescription(event.getSubtitle());
 
-        if (event.getLocation() != null && event.getAddress() != null) {
-            icalEvent.setLocation(event.getLocation().getAddress().toString());
+            icalEvent.setOrganizer(new Organizer("Isaac Physics", "events@isaacphysics.org"));
+            icalEvent.setUid(String.format("%s@%s.isaacphysics.org", bookingDetails.getUserBooked().getId(), event.getId()));
+            icalEvent.setUrl(String.format("https://%s/events/%s",
+                    propertiesLoader.getProperty(HOST_NAME), event.getId()));
+
+            if (event.getLocation() != null && event.getAddress() != null) {
+                icalEvent.setLocation(event.getLocation().getAddress().toString());
+            }
+
+            ical.addEvent(icalEvent);
+            return new EmailAttachment("event.ics",
+                    "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to generate ics file for event email", e);
+            return null;
         }
-
-        ical.addEvent(icalEvent);
-        return new EmailAttachment("event.ics",
-                "text/calendar; charset=\"utf-8\"; method=PUBLISH", Biweekly.write(ical).go());
     }
 
     /**
