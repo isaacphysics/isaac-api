@@ -38,6 +38,7 @@ import uk.ac.cam.cl.dtg.util.ClassVersionHash;
 
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -102,7 +103,7 @@ public class SiteStatsStreamsServiceTest {
 
         driver = new ProcessorTopologyTestDriver(config, builder);
 
-        String csvFile = "C:/dev/isaac-other-resources/kafka-streams-test.data";
+        String csvFile = new File("").getAbsolutePath().concat("/src/test/resources/test_data/kafka-streams-test.data");
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         br = new BufferedReader(new FileReader(csvFile));
@@ -134,7 +135,8 @@ public class SiteStatsStreamsServiceTest {
 
         HashMap<String, Map<String, Object>> testData = new HashMap<>();
 
-        br = new BufferedReader(new FileReader("C:/dev/isaac-other-resources/kafka-streams-user-data-table-update.test"));
+        String filePath = new File("").getAbsolutePath();
+        br = new BufferedReader(new FileReader(filePath.concat("/src/test/resources/test_data/kafka-streams-user-data-table-update.test")));
         while ((line = br.readLine()) != null) {
 
             String[] fields = line.split(csvSplitBy);
@@ -180,7 +182,8 @@ public class SiteStatsStreamsServiceTest {
 
         HashMap<String, Long> testData = new HashMap<>();
 
-        br = new BufferedReader(new FileReader("C:/dev/isaac-other-resources/kafka-streams-log-event-counts.test"));
+        String filePath = new File("").getAbsolutePath();
+        br = new BufferedReader(new FileReader(filePath.concat("/src/test/resources/test_data/kafka-streams-log-event-counts.test")));
         while ((line = br.readLine()) != null) {
 
             String[] fields = line.split(csvSplitBy);
@@ -203,7 +206,8 @@ public class SiteStatsStreamsServiceTest {
 
         HashMap<String, JsonNode> testData = new HashMap<>();
 
-        br = new BufferedReader(new FileReader("C:/dev/isaac-other-resources/kafka-streams-user-last-seen.test"));
+        String filePath = new File("").getAbsolutePath();
+        br = new BufferedReader(new FileReader(filePath.concat("/src/test/resources/test_data/kafka-streams-user-last-seen.test")));
         while ((line = br.readLine()) != null) {
 
             String[] fields = line.split(csvSplitBy);
@@ -237,7 +241,7 @@ public class SiteStatsStreamsServiceTest {
 
     @Test
     public void streamsClassVersions_Test() throws Exception {
-        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"00f43a7f4fe5e698e31c8123d83f12f863a8cbf1a5c1c35c958840cbafcd3740");
+        assertClassUnchanged(SiteStatisticsStreamsApplication.class,"3c4f22c5d76d7832666d4a262bd49e2d2d195a340118fe77840dd3024b493a92");
     }
 
 
